@@ -1265,22 +1265,7 @@ bool service::run()
         //
         if( getuid() == 0 )
         {
-            if( !f_user.isEmpty() )
-            {
-                struct passwd* pswd(getpwnam(f_user.toUtf8().data()));
-                if( nullptr == pswd )
-                {
-                    common::fatal_error( QString("Cannot locate user '%1'! Create it first, then run the server.").arg(f_user) );
-                    exit(1);
-                }
-                const int sw_usr_id = pswd->pw_uid;
-                //
-                if( setuid( sw_usr_id ) != 0 )
-                {
-                    common::fatal_error( QString("Cannot drop to user '%1'!").arg(f_user) );
-                    exit(1);
-                }
-            }
+            // Group first, then user. Otherwise you lose privs to change your group!
             //
             if( !f_group.isEmpty() )
             {
@@ -1295,6 +1280,23 @@ bool service::run()
                 if( setgid( sw_grp_id ) != 0 )
                 {
                     common::fatal_error( QString("Cannot drop to group '%1'!").arg(f_group) );
+                    exit(1);
+                }
+            }
+            //
+            if( !f_user.isEmpty() )
+            {
+                struct passwd* pswd(getpwnam(f_user.toUtf8().data()));
+                if( nullptr == pswd )
+                {
+                    common::fatal_error( QString("Cannot locate user '%1'! Create it first, then run the server.").arg(f_user) );
+                    exit(1);
+                }
+                const int sw_usr_id = pswd->pw_uid;
+                //
+                if( setuid( sw_usr_id ) != 0 )
+                {
+                    common::fatal_error( QString("Cannot drop to user '%1'!").arg(f_user) );
                     exit(1);
                 }
             }
