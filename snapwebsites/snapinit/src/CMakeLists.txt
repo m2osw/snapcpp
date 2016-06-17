@@ -33,6 +33,10 @@
 project(snapinit)
 
 add_executable(${PROJECT_NAME}
+    main.cpp
+    service.h
+    service.cpp
+    snapinit.h
     snapinit.cpp
 )
 
