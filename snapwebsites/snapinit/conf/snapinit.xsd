@@ -69,6 +69,8 @@
             <xs:element ref="cron"/>
             <xs:element ref="recovery"/>
             <xs:element ref="coredump"/>
+            <xs:element ref="user"/>
+            <xs:element ref="group"/>
           </xs:choice>
           <xs:attribute name="name" type="name" use="required"/>
           <xs:attribute name="disabled" type="disabled"/>
@@ -171,6 +173,9 @@
       </xs:choice>
     </xs:complexType>
   </xs:element>
+
+  <xs:element name="user" type="xs:string"/>
+  <xs:element name="group" type="xs:string"/>
 
 </xs:schema>
 <!--
