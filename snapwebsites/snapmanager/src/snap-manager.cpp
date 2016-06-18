@@ -653,6 +653,10 @@ void snap_manager::onCurrentTabChanged( int index )
     }
     else if( index == TAB_WEBSITES )
     {
+        loadWebsites();
+    }
+    else if( index == TAB_SITES )
+    {
         loadSites();
     }
 
@@ -1067,11 +1071,13 @@ void snap_manager::domainWithSelection()
     // may change in between...
     bool enable_websites = f_domain_org_name != "";
     f_tabs->setTabEnabled(TAB_WEBSITES, enable_websites);
+#if 0
     if(enable_websites)
     {
         // TODO: call that function when the tab is clicked instead!
         loadWebsites();
     }
+#endif
 }
 
 bool snap_manager::domainChanged()
