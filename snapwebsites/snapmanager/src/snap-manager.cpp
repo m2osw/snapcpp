@@ -1639,7 +1639,18 @@ void snap_manager::on_websiteSelectionChanged( const QModelIndex & /*selected*/,
         return;
     }
 
-    const QString text                    ( f_website_model.data( f_website_list->currentIndex() ).toString());
+    auto curidx( f_website_list->currentIndex() );
+    if( !curidx.isValid() )
+    {
+        return;
+    }
+
+    if( f_website_model.rowCount() == 0 )
+    {
+        return;
+    }
+
+    const QString text                    ( f_website_model.data( curidx ).toString());
     const QString core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
     f_website_org_name = text;
