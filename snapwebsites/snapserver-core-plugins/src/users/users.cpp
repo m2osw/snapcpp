@@ -1347,37 +1347,42 @@ void users::user_logout()
  * To go back to the default, either set "users::force_lowercase"
  * to 0 or delete it.
  *
+ * \note If you change the "users::force_lowercase" setting, you must restart the plugin
+ *       due to the static value being preserved.
+ *
  * \param[in] email  The email of the user.
  *
  * \return The user_key based on the email all or mostly in lowercase or not.
  */
 QString users::email_to_user_key(QString const & email)
 {
-    enum force_lowercase_t
+    // It's better to use the new strongly typed enumerations.
+    //
+    enum class force_lowercase_t
     {
-        FORCE_LOWERCASE_UNDEFINED,
-        FORCE_LOWERCASE_YES,
-        FORCE_LOWERCASE_NO
+        UNDEFINED,
+        YES,
+        NO
     };
 
-    static force_lowercase_t force_lowercase(FORCE_LOWERCASE_UNDEFINED);
+    static force_lowercase_t force_lowercase(force_lowercase_t::UNDEFINED);
 
-    if(force_lowercase == 0)
+    if(force_lowercase == force_lowercase_t::UNDEFINED)
     {
         QtCassandra::QCassandraValue const force_lowercase_parameter(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_FORCE_LOWERCASE)));
         if(force_lowercase_parameter.nullValue()
         || force_lowercase_parameter.safeSignedCharValue())
         {
             // this is the default if undefined
-            force_lowercase = FORCE_LOWERCASE_YES;
+            force_lowercase = force_lowercase_t::YES;
         }
         else
         {
-            force_lowercase = FORCE_LOWERCASE_NO;
+            force_lowercase = force_lowercase_t::NO;
         }
     }
 
-    if(force_lowercase == FORCE_LOWERCASE_YES)
+    if(force_lowercase == force_lowercase_t::YES)
     {
         // in this case, it is easy we can force the entire email to lowercase
         return email.toLower();

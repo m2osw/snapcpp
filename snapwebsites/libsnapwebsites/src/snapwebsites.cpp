@@ -1109,6 +1109,7 @@ void server::config(int argc, char * argv[], uint32_t flags)
     {
         // Override log_config and output only to the console
         //
+        logging::set_progname(argv[0]);
         logging::configure_console();
     }
     else if( f_opt->is_defined("logfile") )

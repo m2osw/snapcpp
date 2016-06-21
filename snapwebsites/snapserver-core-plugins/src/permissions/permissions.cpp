@@ -2507,9 +2507,9 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  *
  * \code
  * # For an administrator, make sure to specify the website
- * snapbackend http://www.example.com [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeadministrator
+ * snapbackend http://www.example.com [--config snapserver.conf] --servername <name> --param ROOT_USER_EMAIL=joe@example.com --action permissions::makeadministrator
  * # For a root user, you do not need to specify the website, but probably should too
- * snapbackend [http://www.example.com] [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
+ * snapbackend [http://www.example.com] [--config snapserver.conf] --servername <name> --param ROOT_USER_EMAIL=joe@example.com --action permissions::makeroot
  * \endcode
  *
  * If you have problems with it (it does not seem to work,) try with
@@ -2612,7 +2612,7 @@ void permissions::on_backend_action(QString const & action)
         }
         int64_t const identifier(identifier_value.int64Value());
 
-        QString const site_key(f_snap->get_site_key_with_slash());
+        //QString const site_key(f_snap->get_site_key_with_slash());
         content::path_info_t user_ipath;
         user_ipath.set_path(QString("%1/%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
         content::path_info_t dpath;
