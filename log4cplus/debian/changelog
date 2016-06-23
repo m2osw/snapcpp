@@ -1,3 +1,9 @@
+log4cplus (1.2.0.426~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 23 Jun 2016 03:01:58 -0700
+
 log4cplus (1.2.0.425~xenial) xenial; urgency=high
 
   * Nightly build.
