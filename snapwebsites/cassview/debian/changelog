@@ -1,3 +1,9 @@
+cassview (0.1.1.50~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 24 Jun 2016 03:03:20 -0700
+
 cassview (0.1.1.49~xenial) xenial; urgency=high
 
   * Nightly build.
