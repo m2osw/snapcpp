@@ -50,6 +50,8 @@ void snap_cassandra::connect()
         throw snap_cassandra_not_available_exception(msg);
     }
 
+    f_cassandra->setDefaultConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+
     if( !f_cassandra->connect(f_snapdbproxy_addr, f_snapdbproxy_port) )
     {
         QString const msg("could not connect QCassandra to snapdbproxy.");
@@ -65,7 +67,7 @@ void snap_cassandra::init_context()
 {
 // WARNING: This function should not be used anymore (only to check whether
 //          the context exists,) because the context is normally created
-//          by snapmanager now.
+//          by snapmanager[.cgi] now.
 SNAP_LOG_WARNING("snap_cassandra::init_context() should not be used anymore...");
 
     // create the context if it does not exist yet
