@@ -99,6 +99,24 @@ c) setup the swap memory; this just offers to add a swap if none is
    partition when they setup their disk, although with LVM we can always
    add it too (but right now, we won't work on that possibility!)
 
+   https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-16-04
+
+   sudo fallocate -l 1G /var/cache/swapfile
+   sudo chmod 600 /var/cache/swapfile
+   sudo mkswap /var/cache/swapfile
+   sudo vim /etc/fstab
+
+   # swapfile
+   /var/cache/swapfile none swap sw 0 0
+
+   sudo vim /etc/sysctl.conf
+
+   # Avoid swapping unless viewed as really useful or it is necessary
+   vm.swappiness = 10
+   vm.vfs_cache_pressure = 50
+
+   
+
 
 d) setup NTP; I'm not too sure whether we just want NTP or some other
    (more precise) time service; but snapmanager.cgi should be taking

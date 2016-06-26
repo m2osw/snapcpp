@@ -178,6 +178,10 @@ void memory::on_process_watch(QDomDocument doc)
     e.setAttribute("swap_free",   QString("%1").arg(kb_swap_free));
     //e.setAttribute("swap_cached", QString("%1").arg(kb_swap_cached)); -- we get a link error on this one... (Ubuntu 14.04) even though it is defined in the headers
     e.setAttribute("swap_total",  QString("%1").arg(kb_swap_total));
+
+    // TBD: we should probably look into processing /proc/swaps
+    //      as well, that way we would get details such as what
+    //      files / partition is being used, etc.
 }
 
 

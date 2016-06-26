@@ -1895,21 +1895,30 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
     //, f_socket(-1) -- auto-init
     //, f_signal_info() -- auto-init
 {
-    if(sigismember(&g_signal_handlers, f_signal))
+    int const r(sigismember(&g_signal_handlers, f_signal));
+    if(r != 0)
     {
-        // this could be fixed, but probably not worth the trouble...
-        throw snap_communicator_initialization_error("the same signal cannot be created more than once in your entire process.");
+        if(r == 1)
+        {
+            // this could be fixed, but probably not worth the trouble...
+            throw snap_communicator_initialization_error("the same signal cannot be created more than once in your entire process.");
+        }
+        // f_singal is not considered valid by this OS
+        throw snap_communicator_initialization_error("posix_signal (f_signal) is not a valid/recognized signal number.");
     }
 
     // create a mask for that signal
     //
     sigset_t set;
     sigemptyset(&set);
-    sigaddset(&set, f_signal);
+    sigaddset(&set, f_signal); // ignore error, we already know f_signal is valid
 
     // first we block the signal
     //
-    sigprocmask(SIG_BLOCK, &set, nullptr);
+    if(sigprocmask(SIG_BLOCK, &set, nullptr) != 0)
+    {
+        throw snap_communicator_runtime_error("sigprocmask() failed to block signal.");
+    }
 
     // second we create a "socket" for the signal (really it is a file
     // descriptor manager by the kernel)
@@ -1924,7 +1933,7 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
 
     // mark this signal as in use
     //
-    sigaddset(&g_signal_handlers, f_signal);
+    sigaddset(&g_signal_handlers, f_signal); // ignore error, we already know f_signal is valid
 }
 
 
@@ -1942,7 +1951,7 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
 snap_communicator::snap_signal::~snap_signal()
 {
     close(f_socket);
-    sigdelset(&g_signal_handlers, f_signal);
+    sigdelset(&g_signal_handlers, f_signal);     // ignore error, we already know f_signal is valid
 }
 
 

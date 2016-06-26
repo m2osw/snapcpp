@@ -491,6 +491,24 @@ More or less, the concept of the file structure we want to use:
      
          [a-z][a-z0-9_]*[a-z0-9]
 
+ * File handling, why using the block size can be useful?
+   (i.e. a block size is generally 4096 on Linux, this can
+   be changed, though, thus we need to get the disk defined
+   block size!)
+
+   There is a command named fallocate() which can be used to
+   allocate/diallocate (mark the file sparse) on a per block
+   basis. This can be really useful since a file with many
+   "holes" can immediately be deallocated, bit by bit...
+
+   The allocation feature can be used to make sure that space
+   is available on disk to write the final data (i.e. if you
+   need 3 blocks, call fallocate() with offset equal to EOF
+   and the length as 3 x 4096 and if that fails, a write
+   with the data would fail anyway...)
+
+   Check out `man 2 fallocate` (or just `man fallocate`.)
+
  * Directory structure:
 
    - /var/lib/snapdb

@@ -1639,6 +1639,8 @@ bool snap_backend::process_backend_uri(QString const & uri)
         // parent process
         if(p == -1)
         {
+            int const e(errno);
+
             // fork() failed
             g_communicator->remove_connection(g_child_connection);
             g_child_connection.reset();
@@ -1647,7 +1649,6 @@ bool snap_backend::process_backend_uri(QString const & uri)
             //       we could try to sleep for a while if the error
             //       is ENOMEM or EAGAIN
             //
-            int const e(errno);
             SNAP_LOG_FATAL("snap_backend::process_backend_uri() could not create a child process (errno: ")(e)(" -- ")(strerror(e))(").");
             // we do not try again, we just abandon the whole process
             exit(1);
