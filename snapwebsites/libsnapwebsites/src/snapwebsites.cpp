@@ -1891,36 +1891,46 @@ bool server::nofork() const
  * This function is used to find children that died and remove them
  * from the list of zombies.
  *
+ * \warning
+ * Although the signalfd() function returns a child PID, when you run
+ * parallel child processes and may get multiple SIGCHLD very quickly,
+ * you may miss a few with time. This means you could get zombies if
+ * you do not check all the children...
+ *
  * \param[in] child_pid  The process identification of the child that died.
  */
 void server::capture_zombies(pid_t child_pid)
 {
+    // unfortunately, we cannot just do a waidpid() on child_pid specifically...
+    //
+    // TODO:
+    // we probably want to change the algorithm to be able to
+    // use waitpid(-1, ...) instead of looping through the list of
+    // all the running children each time (it is probably more effective
+    // than calling waitpid(child_pid, ...) for each existing child),
+    // however, at this point the check_status() function makes that
+    // call so we cannot have it here too...
+    //
+    NOTUSED(child_pid);
+
     // capture zombies first
     snap_child_vector_t::size_type max_children(f_children_running.size());
     for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
     {
-        if(f_children_running[idx]->get_child_pid() == child_pid)
+        // note that some children could become ready "at the same time"
+        // (i.e. some SIGCHLD can be lost because a process is not expected
+        // to stack more than one signal number at a time...)
+        //
+        if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
         {
-            if(f_children_running[idx]->check_status() != snap_child::status_t::SNAP_CHILD_STATUS_READY)
-            {
-                throw snapwebsites_exception_invalid_parameters("somehow capture_zombies() was called with a pid_t that did not represent a dead child.");
-            }
-
             // it is ready, so it can be reused now
             f_children_waiting.push_back(f_children_running[idx]);
             f_children_running.erase(f_children_running.begin() + idx);
-            return;
-        }
-        //if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
-        //{
-        //    // it is ready, so it can be reused now
-        //    f_children_waiting.push_back(f_children_running[idx]);
-        //    f_children_running.erase(f_children_running.begin() + idx);
 
-        //    // removed one child so decrement index:
-        //    --idx;
-        //    --max_children;
-        //}
+            // removed one child so decrement index:
+            --idx;
+            --max_children;
+        }
     }
 }
 
@@ -2440,7 +2450,7 @@ void server::process_connection(int socket)
         // and tell the user about a problem without telling much...
         // (see the logs for more info.)
         // TBD Translation?
-        std::string err("Status: HTTP/1.1 503 Service Unavailable\n"
+        std::string const err("Status: HTTP/1.1 503 Service Unavailable\n"
                       "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
                       "Content-type: text/html\n"
                       "\n"
@@ -2453,7 +2463,7 @@ void server::process_connection(int socket)
     }
 
     // since we do not create any object holding this socket, we have
-    // to close it here...
+    // to close it here... (the child has a dup() of it already)
     close(socket);
 }
 

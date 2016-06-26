@@ -2741,8 +2741,8 @@ bool snap_child::process(int socket)
         return false;
     }
 
-// to avoid the fork use 1 on the next line
-// (much easier to debug a crashing problem in a snap child!)
+    // to avoid the fork use --nofork on the command line
+    //
     pid_t const p(fork_child());
     if(p != 0)
     {
@@ -2930,11 +2930,18 @@ snap_child::status_t snap_child::check_status()
             else if(WIFSIGNALED(status))
             {
                 // stopped because of a signal
-                SNAP_LOG_FATAL("child process ")(f_child_pid)(" exited after it received signal #")(WTERMSIG(status));
+                SNAP_LOG_ERROR("child process ")(f_child_pid)(" exited after it received signal #")(WTERMSIG(status));
             }
+            // else -- other statuses are ignored for now
 #pragma GCC diagnostic pop
-            // other statuses are ignored for now
+
+            // mark that child as done
             f_child_pid = 0;
+        }
+        else if(r != 0)
+        {
+            // TODO: throw instead?
+            SNAP_LOG_ERROR("waitpid() returned ")(r)(", we expected -1, 0 or ")(f_child_pid)(" instead.");
         }
     }
 

@@ -72,6 +72,7 @@ qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
 add_library( ${PROJECT_NAME} SHARED
     addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
     cache_control.cpp                           # parse / handle Cache-Control settings
+    chownnm.cpp                                 # chown using user and group names instead of uid/gid
     compression.cpp                             # compress/decompress data
     dbutils.cpp                                 # utilities to help convert coded table and row names and column data. (see snap_tables.cpp too!)
     floats.cpp                                  # Floats helper functions
