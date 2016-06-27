@@ -69,11 +69,10 @@ namespace
 
 // random bytes generator
 //
+template<int RANDOM_BUFFER_SIZE>
 class random_generator
 {
 public:
-    static const int    RANDOM_BUFFER_SIZE = 256;
-
     unsigned char get_byte()
     {
         if(f_pos >= RANDOM_BUFFER_SIZE)
@@ -114,6 +113,15 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_PASSWORD_BLOCKED_USER_COUNTER:
+        return "password::blocked_user_counter";
+
+    case name_t::SNAP_NAME_PASSWORD_BLOCKED_USER_COUNTER_LIFETIME:
+        return "password::blocked_user_counter_lifetime";
+
+    case name_t::SNAP_NAME_PASSWORD_BLOCKED_USER_FIREWALL_DURATION:
+        return "password::blocked_user_firewall_duration";
+
     case name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST:
         return "password::check_blacklist";
 
@@ -122,6 +130,9 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED:
         return "password::check_username_reversed";
+
+    case name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S:
+        return "password::count_bad_password_503s";
 
     case name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES:
         return "password::count_failures";
@@ -373,6 +384,7 @@ void password::bootstrap(snap_child * snap)
     SNAP_LISTEN(password, "users", users::users, user_logged_in, _1);
     SNAP_LISTEN(password, "users", users::users, save_password, _1, _2, _3);
     SNAP_LISTEN(password, "users", users::users, invalid_password, _1, _2);
+    SNAP_LISTEN(password, "users", users::users, blocked_user, _1, _2);
 }
 
 
@@ -899,7 +911,7 @@ QString password::create_password(QString const & policy)
     //
     policy_t pp(policy);
 
-    random_generator gen;
+    random_generator<256> gen;
 
     QString result;
 
@@ -1288,6 +1300,70 @@ void password::on_invalid_password(QtCassandra::QCassandraRow::pointer_t row, QS
     //                 Apache2 at some point...
     //
     sleep((count - 1) * pp.get_invalid_passwords_slowdown());
+}
+
+
+/** \brief Once a user is blocked, call this on each further login attempt.
+ *
+ * This function further counts the number of login attempts that are
+ * invalid. This allows us to block the user IP address instead of just
+ * blocking the log in process itself.
+ *
+ * The duration is defined by the blocked user counter lifetime
+ * and the blocked user firewall duration. The number of times
+ * the user can attempt once the login is blocked is defined
+ * by the blocked user counter.
+ *
+ * The time is defined in days (instead of hours for the login block.)
+ *
+ * \param[in] row  The row in the users table of the user who failed testing
+ *                 his password.
+ * \param[in] policy  The policy concerned with this invalid password.
+ */
+void password::on_blocked_user(QtCassandra::QCassandraRow::pointer_t row, QString const & policy)
+{
+    policy_t pp(policy);
+
+    int64_t count(0);
+
+    {
+        snap_lock lock(row->rowKey());
+
+        QtCassandra::QCassandraValue count_503s(row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S))->value());
+        count = count_503s.safeInt64Value(0, 0) + 1LL;
+        count_503s.setInt64Value(count);
+        count_503s.setTtl(pp.get_blocked_user_counter_lifetime() * 24LL * 60LL * 60LL);
+        row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S))->setValue(count_503s);
+    }
+
+    // WARNING: This counter does not get incremented if the user enters
+    //          his password properly; for this reason, we use a bit of
+    //          randomness here to make sure that hackers cannot determine
+    //          whether one of the passwords they entered is the correct
+    //          one... (i.e. the number of times a hacker can enter an
+    //          invalid password after the user was blocked will vary
+    //          slightly: <block-user-counter> + (0 to 10)
+    //
+    //          This means the hacker cannot know that one of the passwords
+    //          he entered while receiving 503 errors is the one.
+    //
+    random_generator<1> gen;
+    int const jitter(gen.get_byte() % 11);
+    if(count > pp.get_blocked_user_counter() + jitter)
+    {
+        // user tried too many times, now tell the firewall about it
+        //
+        // TBD: we may still want to define a way to tell the firewall
+        //      how long it should block the user in days rather than
+        //      1 day, 1 week, 1 month...
+        //
+        //QtCassandra::QCassandraValue value;
+        //value.setSignedCharValue(1);
+        //value.setTtl(pp.get_blocked_user_firewall_duration() * 24LL * 60LL * 60LL);
+        //row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED))->setValue(value);
+        QString const remote_addr(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
+        server::block_ip(remote_addr, pp.get_blocked_user_firewall_duration());
+    }
 }
 
 

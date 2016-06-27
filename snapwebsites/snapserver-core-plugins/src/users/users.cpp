@@ -2222,12 +2222,14 @@ QString users::login_user(QString const & email, QString const & password, bool 
                 QtCassandra::QCassandraValue password_blocked;
                 if(row->exists(get_name(name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED)))
                 {
-                    // TBD: should we actually send a note to the firewall?
-                    //      (I think we want to if the "hacker" is still
-                    //      trying again and again--we would need yet another
-                    //      counter, although it would depend on whether all
-                    //      those hits are from the same IP or not too...)
+                    // increase the 503s counter and block the IP if
+                    // we received too many attempts
                     //
+                    if(!valid_password)
+                    {
+                        blocked_user(row, "users");
+                    }
+
                     f_snap->die(snap_child::http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
                             "Service Not Available",
                             // WARNING: with the password was valid CANNOT be

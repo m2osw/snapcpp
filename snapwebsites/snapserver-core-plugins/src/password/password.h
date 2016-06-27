@@ -26,14 +26,18 @@ namespace password
 
 enum class name_t
 {
+    SNAP_NAME_PASSWORD_BLOCKED_USER_COUNTER,
+    SNAP_NAME_PASSWORD_BLOCKED_USER_COUNTER_LIFETIME,
+    SNAP_NAME_PASSWORD_BLOCKED_USER_FIREWALL_DURATION,
     SNAP_NAME_PASSWORD_CHECK_BLACKLIST,
     SNAP_NAME_PASSWORD_CHECK_USERNAME,
     SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED,
+    SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S,
     SNAP_NAME_PASSWORD_COUNT_FAILURES,
     SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES,
     SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST,
-    SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER,
     SNAP_NAME_PASSWORD_INVALID_PASSWORDS_BLOCK_DURATION,
+    SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER,
     SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER_LIFETIME,
     SNAP_NAME_PASSWORD_INVALID_PASSWORDS_SLOWDOWN,
     SNAP_NAME_PASSWORD_LIMIT_DURATION,
@@ -79,61 +83,67 @@ public:
 class policy_t
 {
 public:
-    explicit        policy_t(QString const & policy_name = QString());
+    explicit            policy_t(QString const & policy_name = QString());
 
-    void            count_password_characters(QString const & password);
+    void                count_password_characters(QString const & password);
 
-    bool            get_limit_duration() const;
-    int64_t         get_maximum_duration() const;
-    int64_t         get_minimum_length() const;
-    int64_t         get_minimum_lowercase_letters() const;
-    int64_t         get_minimum_uppercase_letters() const;
-    int64_t         get_minimum_letters() const;
-    int64_t         get_minimum_digits() const;
-    int64_t         get_minimum_spaces() const;
-    int64_t         get_minimum_specials() const;
-    int64_t         get_minimum_unicode() const;
-    int64_t         get_minimum_variation() const;
-    int64_t         get_minimum_length_of_variations() const;
-    bool            get_check_blacklist() const;
-    int64_t         get_check_username() const;
-    bool            get_check_username_reversed() const;
-    bool            get_prevent_old_passwords() const;
-    int64_t         get_minimum_old_passwords() const;
-    int64_t         get_old_passwords_maximum_age() const;
-    int64_t         get_delay_between_password_changes() const;
-    int64_t         get_invalid_passwords_counter() const;
-    int64_t         get_invalid_passwords_block_duration() const;
-    int64_t         get_invalid_passwords_counter_lifetime() const;
-    int64_t         get_invalid_passwords_slowdown() const;
+    bool                get_limit_duration() const;
+    int64_t             get_maximum_duration() const;
+    int64_t             get_minimum_length() const;
+    int64_t             get_minimum_lowercase_letters() const;
+    int64_t             get_minimum_uppercase_letters() const;
+    int64_t             get_minimum_letters() const;
+    int64_t             get_minimum_digits() const;
+    int64_t             get_minimum_spaces() const;
+    int64_t             get_minimum_specials() const;
+    int64_t             get_minimum_unicode() const;
+    int64_t             get_minimum_variation() const;
+    int64_t             get_minimum_length_of_variations() const;
+    bool                get_check_blacklist() const;
+    int64_t             get_check_username() const;
+    bool                get_check_username_reversed() const;
+    bool                get_prevent_old_passwords() const;
+    int64_t             get_minimum_old_passwords() const;
+    int64_t             get_old_passwords_maximum_age() const;
+    int64_t             get_delay_between_password_changes() const;
+    int64_t             get_invalid_passwords_counter() const;
+    int64_t             get_invalid_passwords_block_duration() const;
+    int64_t             get_invalid_passwords_counter_lifetime() const;
+    int64_t             get_invalid_passwords_slowdown() const;
+    int64_t             get_blocked_user_counter() const;
+    QString const &     get_blocked_user_firewall_duration() const;
+    int64_t             get_blocked_user_counter_lifetime() const;
 
-    QString         compare(policy_t const & rhs) const;
-    QString         is_blacklisted(QString const & user_password) const;
+    QString             compare(policy_t const & rhs) const;
+    QString             is_blacklisted(QString const & user_password) const;
 
 private:
-    int64_t         f_maximum_duration = 92; // 3 months in days
-    int64_t         f_minimum_length = 0;
-    int64_t         f_minimum_lowercase_letters = 0;
-    int64_t         f_minimum_uppercase_letters = 0;
-    int64_t         f_minimum_letters = 0;
-    int64_t         f_minimum_digits = 0;
-    int64_t         f_minimum_spaces = 0;
-    int64_t         f_minimum_specials = 0;
-    int64_t         f_minimum_unicode = 0;
-    int64_t         f_minimum_variation = 0;
-    int64_t         f_minimum_length_of_variations = 0;
-    int64_t         f_minimum_old_passwords = 0;
-    int64_t         f_old_passwords_maximum_age = 0;
-    int64_t         f_check_username = 2;
-    int64_t         f_delay_between_password_changes = 0;
-    int64_t         f_invalid_passwords_counter = 5;
-    int64_t         f_invalid_passwords_block_duration = 3;
-    int64_t         f_invalid_passwords_counter_lifetime = 1;
-    int64_t         f_invalid_passwords_slowdown = 1;
-    bool            f_limit_duration = false;
-    bool            f_check_blacklist = false;
-    bool            f_prevent_old_passwords = false;
-    bool            f_check_username_reversed = true;
+    int64_t             f_maximum_duration = 92; // 3 months in days
+    int64_t             f_minimum_length = 0;
+    int64_t             f_minimum_lowercase_letters = 0;
+    int64_t             f_minimum_uppercase_letters = 0;
+    int64_t             f_minimum_letters = 0;
+    int64_t             f_minimum_digits = 0;
+    int64_t             f_minimum_spaces = 0;
+    int64_t             f_minimum_specials = 0;
+    int64_t             f_minimum_unicode = 0;
+    int64_t             f_minimum_variation = 0;
+    int64_t             f_minimum_length_of_variations = 0;
+    int64_t             f_minimum_old_passwords = 0;
+    int64_t             f_old_passwords_maximum_age = 0;
+    int64_t             f_check_username = 2;
+    int64_t             f_delay_between_password_changes = 0;
+    int64_t             f_invalid_passwords_counter = 5;
+    int64_t             f_invalid_passwords_block_duration = 3;
+    int64_t             f_invalid_passwords_counter_lifetime = 1;
+    int64_t             f_invalid_passwords_slowdown = 1;
+    int64_t             f_blocked_user_counter = 5;
+    QString             f_blocked_user_firewall_duration = "week";
+    int64_t             f_blocked_user_counter_lifetime = 5;
+    bool                f_limit_duration = false;
+    bool                f_check_blacklist = false;
+    bool                f_prevent_old_passwords = false;
+    bool                f_check_username_reversed = true;
 };
 
 
@@ -181,6 +191,7 @@ public:
     void                on_user_logged_in(users::users::user_logged_info_t & logged_info);
     void                on_save_password(QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & password_policy);
     void                on_invalid_password(QtCassandra::QCassandraRow::pointer_t row, QString const & policy);
+    void                on_blocked_user(QtCassandra::QCassandraRow::pointer_t row, QString const & policy);
 
     // path::path_execute implementation
     bool                on_path_execute(content::path_info_t & ipath);

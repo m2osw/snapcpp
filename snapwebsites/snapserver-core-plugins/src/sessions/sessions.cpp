@@ -1952,7 +1952,7 @@ void sessions::attach_to_session(session_info const & info, QString const & name
  */
 QString sessions::detach_from_session(session_info const & info, QString const & name)
 {
-    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+    QString const key(f_snap->get_website_key() + "/" + info.get_session_key());
 
     QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))

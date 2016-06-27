@@ -326,6 +326,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(logged_in_user_ready, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(save_password, (QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & policy), (row, user_password, policy), DONE);
     SNAP_SIGNAL_WITH_MODE(invalid_password, (QtCassandra::QCassandraRow::pointer_t row, QString const & policy), (row, policy), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(blocked_user, (QtCassandra::QCassandraRow::pointer_t row, QString const & policy), (row, policy), NEITHER);
 
     int64_t                 get_total_session_duration();
     int64_t                 get_user_session_duration();

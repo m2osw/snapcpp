@@ -75,6 +75,14 @@ policy_t::policy_t(QString const & policy_name)
         f_invalid_passwords_block_duration   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_BLOCK_DURATION))->value().safeInt64Value(0, 3);
         f_invalid_passwords_counter_lifetime = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER_LIFETIME))->value().safeInt64Value(0, 1);
         f_invalid_passwords_slowdown         = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_SLOWDOWN))->value().safeInt64Value(0, 1);
+        f_blocked_user_counter               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_BLOCKED_USER_COUNTER))->value().safeInt64Value(0, 5);
+        f_blocked_user_firewall_duration     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_BLOCKED_USER_FIREWALL_DURATION))->value().stringValue();
+        f_blocked_user_counter_lifetime      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_BLOCKED_USER_COUNTER_LIFETIME))->value().safeInt64Value(0, 5);
+
+        if(f_blocked_user_firewall_duration.isEmpty())
+        {
+            f_blocked_user_firewall_duration = "week";
+        }
     }
 }
 
@@ -557,6 +565,65 @@ int64_t policy_t::get_invalid_passwords_counter_lifetime() const
 int64_t policy_t::get_invalid_passwords_slowdown() const
 {
     return f_invalid_passwords_slowdown;
+}
+
+
+/** \brief Maximum count of invalid password while login a blocked user.
+ *
+ * This function represents the total number of times a user can try
+ * to log in with an invalid password when that user is already marked
+ * as blocked.
+ *
+ * \warning
+ * Do NOT use this counter as is. It only gets incremented when the user
+ * enters an invalid password. Using the counter as is would means that a
+ * hacker would know whether one of the <em>invalid</em> passwords he tried
+ * is an invalid password.
+ *
+ * \return The number of times an invalid password can be used when a user
+ *         is blocked and before he gets his IP address blocked, minimum 1.
+ */
+int64_t policy_t::get_blocked_user_counter() const
+{
+    return std::max(static_cast<int64_t>(1LL), f_blocked_user_counter);
+}
+
+
+/** \brief Duration of the IP block by the firewall.
+ *
+ * This function returns the amount of time the firewall blocks the
+ * user IP address once the number of attempts reached the blocked
+ * user counter attempts.
+ *
+ * The default is one week.
+ *
+ * \return The duration of an IP block.
+ */
+QString const & policy_t::get_blocked_user_firewall_duration() const
+{
+    return f_blocked_user_firewall_duration;
+}
+
+
+/** \brief Lifetime of the blocked user invalid password counter.
+ *
+ * The counter is saved in the Cassandra database using a TTL defined by
+ * this parameter. The Cassandra TTL is in seconds, however, we use days
+ * in this value. Thus, the minimum lifetime of the invalid password counter
+ * for already blocked users is 1 day.
+ *
+ * Once the TTL elapses, the counter is deleted (hidden at first, really)
+ * by the Cassandra cluster, and thus looks like it is still zero (0).
+ * In effect, it automatically resets the counter.
+ *
+ * We do not offer a mechanism which would keep the number of failures
+ * forever although this value can be set to a really large number.
+ *
+ * \return The blocked user invalid password counter lifetime.
+ */
+int64_t policy_t::get_blocked_user_counter_lifetime() const
+{
+    return std::max(static_cast<int64_t>(1LL), f_blocked_user_counter_lifetime);
 }
 
 

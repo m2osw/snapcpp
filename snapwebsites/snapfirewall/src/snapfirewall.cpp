@@ -841,7 +841,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
             return;
         }
 
-        int64_t block_period(24LL * 60LL * 60LL * 1000000LL);
+        int64_t block_period(24LL * 60LL * 60LL * 1000000LL); // 1 day by default
         QString const period(message.get_parameter("period"));
         if(!period.isEmpty())
         {

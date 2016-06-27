@@ -165,6 +165,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/password/invalid_passwords_slowdown/node()"/>
 						</div>
 
+						<!-- number of password failures while user is blocked and before an IP block -->
+						<div class="editor-block">
+							<label for="blocked_user_counter" class="editor-title">User Blocked Counter:</label>
+							<xsl:copy-of select="page/body/password/blocked_user_counter/node()"/>
+						</div>
+
+						<!-- how long we keep the user blocked counter -->
+						<div class="editor-block">
+							<label for="user_blocked_counter_lifetime" class="editor-title">Lifetime of User Blocked Counter (in days):</label>
+							<xsl:copy-of select="page/body/password/blocked_user_counter_lifetime/node()"/>
+						</div>
+
+						<!-- duration of an IP block once too may attempts were made -->
+						<div class="editor-block">
+							<label for="blocked_user_firewall_duration" class="editor-title">User Blocked Firewall Duration:</label>
+							<xsl:copy-of select="page/body/password/blocked_user_firewall_duration/node()"/>
+						</div>
+
 					</fieldset>
 
 					<fieldset class="old-passwords-management">
