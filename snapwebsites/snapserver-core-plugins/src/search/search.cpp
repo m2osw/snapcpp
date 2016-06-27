@@ -197,10 +197,24 @@ void search::bootstrap(snap_child * snap)
  */
 void search::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
+    // use only the last section of the path (basename) because in most
+    // cases the path is not as relevant (if relevant at all) to the search
+    //
     QString query(path);
-    query.replace('/', ' ');
+    int pos(query.lastIndexOf('/'));
+    if(pos == query.length() - 1)
+    {
+        query.remove(pos, 1);
+        pos = query.lastIndexOf('/');
+    }
+    if(pos >= 0)
+    {
+        query.remove(0, pos + 1);
+    }
     query = query.simplified();
+
     // the query should never be empty since the home page should always work...
+    //
     if(!query.isEmpty())
     {
         // add a space between the previous link and this one
