@@ -21,12 +21,26 @@
 // When signaled, it will terminate those services cleanly.
 /////////////////////////////////////////////////////////////////////////////////
 
+// snapinit
+//
 #include "snapinit.h"
 #include "service.h"
+
+// our library
+//
+#include "chownnm.h"
 #include "log.h"
 #include "mkdir_p.h"
 #include "not_used.h"
 
+// c++ library
+//
+#include <algorithm>
+#include <exception>
+#include <sstream>
+
+// c library
+//
 #include <fcntl.h>
 #include <proc/sysinfo.h>
 #include <syslog.h>
@@ -35,10 +49,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include <algorithm>
-#include <exception>
-#include <sstream>
 
 /** \file
  * \brief Initialize a Snap! server on your server.
@@ -515,6 +525,10 @@ snap_init::snap_init( int argc, char * argv[] )
                             " snapinit not started. (in snapinit.cpp/snap_init::snap_init())");
             snap::NOTREACHED();
         }
+        // TODO: add code to verify that we like that name (i.e. if the
+        //       name includes periods we will reject it when sending
+        //       messages to/from snapcommunicator)
+        //
         f_server_name = host;
     }
 
@@ -717,7 +731,41 @@ void snap_init::init()
 
     // make sure the path to the lock file exists
     //
-    snap::mkdir_p(f_lock_filename, true);
+    if(snap::mkdir_p(f_lock_filename, true) != 0)
+    {
+        common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\"; without the filename).")
+                            .arg(f_lock_filename));
+        snap::NOTREACHED();
+    }
+
+    // create the run-time directory because other processes may not
+    // otherwise have enough permissions (i.e. not be root as possibly
+    // required for this task)
+    //
+    // however, if we are not root ourselves, then we probably are
+    // running as the developer and that means we cannot actually
+    // do that (either the programmer does it manually on each reboot
+    // or he changes the path to a different place...)
+    //
+    if(getuid() == 0)
+    {
+        // user can change the path in snapinit.conf (although it does not
+        // get passed down at this point... so each tool has to be properly
+        // adjusted if modified here.)
+        //
+        QString const runpath(f_config.contains("runpath") ? f_config["runpath"] : "/var/run/snapwebsites");
+        if(snap::mkdir_p(runpath, false) != 0)
+        {
+            common::fatal_error(QString("the path to runtime data could not be created (mkdir -p \"%1\").")
+                                .arg(runpath));
+            snap::NOTREACHED();
+        }
+
+        // for sub-processes to be able to access that folder we need to
+        // also setup the user and group as expected
+        //
+        snap::chownnm(runpath, "snapwebsites", "snapwebsites");
+    }
 
     // Stop on these signals, log them, then terminate.
     //

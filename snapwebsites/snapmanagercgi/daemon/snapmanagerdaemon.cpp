@@ -29,6 +29,10 @@
 
 #include "snapmanagerdaemon.h"
 
+#include "mkdir_p.h"
+
+#include <sstream>
+
 namespace
 {
     std::vector<std::string> const g_configuration_files
@@ -230,11 +234,27 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
     // get the data path, we will be saving the status of each computer
     // in the cluster using this path
     //
+    // Note: the user could change this path to use /run/snapwebsites/...
+    //       instead so that way it saves the data to RAM instead of disk;
+    //       however, by default we use the disk because it may end up being
+    //       rather large and we do not want to swarm the memory of small
+    //       VPSes; also that way snapmanager.cgi knows of all the statuses
+    //       immediately after a reboot
+    //
     f_data_path = "/var/lib/snapwebsites/cluster-status";
     if(f_config.contains("data_path"))
     {
         // use .conf definition when available
         f_data_path = f_config["data_path"];
+    }
+    // make sure directory exists
+    if(snap::mkdir_p(f_data_path, false) != 0)
+    {
+        std::stringstream msg;
+        msg << "manager_daemon:mkdir_p(...): process could not create cluster-status directory \""
+            << f_data_path
+            << "\".";
+        throw std::runtime_error(msg.str());
     }
 
     // get the list of front end servers (as far as snapmanager.cgi is

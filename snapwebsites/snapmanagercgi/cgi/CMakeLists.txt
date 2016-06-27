@@ -53,6 +53,7 @@ add_executable( ${PROJECT_NAME}
     main.cpp
     messenger.cpp
     snapmanagercgi.cpp
+    status_file.cpp
 )
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snapmanager.cgi )

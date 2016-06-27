@@ -1,7 +1,7 @@
 #!/bin/sh
 if test "$1" = "-r"
 then
-	BUILD/snapwebsites/src/snapinit --remove-lock
+	BUILD/snapwebsites/snapinit/src/snapinit --remove-lock
 fi
 
 # We have many binary paths where we can find the executables

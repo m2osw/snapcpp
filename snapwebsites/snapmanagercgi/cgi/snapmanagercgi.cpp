@@ -28,6 +28,7 @@
 //
 
 #include "snapmanagercgi.h"
+#include "status_file.h"
 
 // C lib
 //
@@ -37,18 +38,6 @@
 
 namespace
 {
-
-/** \brief The magic at expected on the first line of a status file.
- *
- * This string defines the magic string expected on the first line of
- * the file.
- *
- * \note
- * Note that our reader ignores \r characters so this is not currently
- * a 100% exact match, but since only our application is expected to
- * create / read these files, we are not too concerned.
- */
-char const status_file_magic[] = "Snap! Status v1";
 
 std::vector<std::string> const g_configuration_files
 {
@@ -540,6 +529,7 @@ void manager::generate_content(QDomDocument doc, QDomElement root)
     {
         // the function is to be applied to that specific host
         //
+        QString const host(f_uri.query_option("host"));
         if(!function.isEmpty())
         {
             // apply a function on that specific host
@@ -550,6 +540,7 @@ void manager::generate_content(QDomDocument doc, QDomElement root)
             // no function + specific host, show a complete status from
             // that host
             //
+            get_host_status(doc, output, host);
         }
     }
     else
@@ -574,6 +565,100 @@ void manager::generate_content(QDomDocument doc, QDomElement root)
 }
 
 
+void manager::get_host_status(QDomDocument doc, QDomElement output, QString const host)
+{
+    // define the path to the .db file
+    //
+    QString filename;
+    if(f_opt.get_string("data_path").empty())
+    {
+        filename = host + ".db";
+    }
+    else
+    {
+        filename = QString("%1/%2.db")
+                    .arg(QString::fromUtf8(f_opt.get_string("data_path").c_str()))
+                    .arg(host);
+    }
+
+    // create, open, read the file
+    //
+    status_file file(filename.toUtf8().data());
+    if(!file.open())
+    {
+        // TODO: add error info in output
+        return;
+    }
+
+    // output/table
+    QDomElement table(doc.createElement("table"));
+    output.appendChild(table);
+
+    table.setAttribute("class", "server-status");
+
+    // output/table/tr
+    QDomElement tr(doc.createElement("tr"));
+    table.appendChild(tr);
+
+    // output/table/tr/th[1]
+    QDomElement th(doc.createElement("th"));
+    tr.appendChild(th);
+
+        QDomText text(doc.createTextNode("Name"));
+        th.appendChild(text);
+
+    // output/table/tr/th[2]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+        text = doc.createTextNode("Value");
+        th.appendChild(text);
+
+    // read each name/value pair
+    //
+    QString name;
+    QString value;
+    while(file.readvar(name, value))
+    {
+        // output/table/tr
+        tr = doc.createElement("tr");
+        table.appendChild(tr);
+
+            // output/table/tr/td[1]
+            QDomElement td(doc.createElement("td"));
+            tr.appendChild(td);
+
+                //// output/table/td[1]/a
+                //QDomElement anchor(doc.createElement("a"));
+                //td.appendChild(anchor);
+
+                //QString const path(dir.gl_pathv[idx]);
+                //int basename_pos(path.lastIndexOf('/'));
+                //if(basename_pos < 0)
+                //{
+                //    // this should not happen, although it is perfectly
+                //    // possible that the administrator used "" as the
+                //    // path where statuses should be saved.
+                //    //
+                //    basename_pos = 0;
+                //}
+                //QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
+
+                //anchor.setAttribute("href", QString("?host=%1").arg(host));
+
+                text = doc.createTextNode(name);
+                td.appendChild(text);
+
+            // output/table/tr/td[2]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
+                text = doc.createTextNode(value);
+                td.appendChild(text);
+    }
+}
+
+
 void manager::get_cluster_status(QDomDocument doc, QDomElement output)
 {
     struct err_callback
@@ -591,117 +676,6 @@ void manager::get_cluster_status(QDomDocument doc, QDomElement output)
             // do not abort on a directory read error...
             return 0;
         }
-    };
-
-    class safe_status_file
-    {
-    public:
-        safe_status_file(char const * filename)
-            : f_filename(filename)
-            //, f_fd(-1)
-        {
-        }
-
-        ~safe_status_file()
-        {
-            close();
-        }
-
-        void close()
-        {
-            if(f_fd != -1)
-            {
-                // Note: there is no need for an explicit unlock, the close()
-                //       has the same effect on that file
-                //::flock(f_fd, LOCK_UN);
-                ::close(f_fd);
-            }
-        }
-
-        bool open()
-        {
-            close();
-
-            // open the file
-            //
-            f_fd = ::open(f_filename.c_str(), O_RDONLY | O_CLOEXEC, 0);
-            if(f_fd < 0)
-            {
-                SNAP_LOG_ERROR("could not open file \"")
-                              (f_filename)
-                              ("\" to save snapmanagerdamon status.");
-                return false;
-            }
-
-            // make sure we are the only one on the case
-            //
-            if(::flock(f_fd, LOCK_SH) != 0)
-            {
-                SNAP_LOG_ERROR("could not lock file \"")
-                              (f_filename)
-                              ("\" to read snapmanagerdamon status.");
-                return false;
-            }
-
-            // transform to a FILE * so that way we benefit from the
-            // caching mechanism without us having to re-implement such
-            //
-            f_file = fdopen(f_fd, "rb");
-            if(f_file == nullptr)
-            {
-                SNAP_LOG_ERROR("could not allocate a FILE* for file \"")
-                              (f_filename)
-                              ("\" to read snapmanagerdamon status.");
-                return false;
-            }
-
-            return true;
-        }
-
-        bool readline(QString & result)
-        {
-            std::string line;
-            for(;;)
-            {
-                char buf[2];
-                int const r(::fread(buf, sizeof(buf[0]), 1, f_file));
-                if(r != 1)
-                {
-                    // reached end of file?
-                    if(feof(f_file))
-                    {
-                        // we reached the EOF
-                        result = QString::fromUtf8(line.c_str());
-                        return false;
-                    }
-                    // there was an error
-                    int const e(errno);
-                    SNAP_LOG_ERROR("an error occurred while reading status file. Error: ")
-                                  (e)
-                                  (", ")
-                                  (strerror(e));
-                    result = QString();
-                    return false; // simulate an EOF so we stop the reading loop
-                }
-                if(buf[0] == '\n')
-                {
-                    result = QString::fromUtf8(line.c_str());
-                    return true;
-                }
-                // ignore any '\r'
-                if(buf[0] != '\r')
-                {
-                    buf[1] = '\0';
-                    line += buf;
-                }
-            }
-            snap::NOTREACHED();
-        }
-
-    private:
-        std::string f_filename;
-        int         f_fd = -1;
-        FILE *      f_file = nullptr;
     };
 
     std::string pattern;
@@ -755,14 +729,14 @@ void manager::get_cluster_status(QDomDocument doc, QDomElement output)
     QDomElement tr(doc.createElement("tr"));
     table.appendChild(tr);
 
-    // output/table/th[1]
+    // output/table/tr/th[1]
     QDomElement th(doc.createElement("th"));
     tr.appendChild(th);
 
         QDomText text(doc.createTextNode("Host"));
         th.appendChild(text);
 
-    // output/table/th[2]
+    // output/table/tr/th[2]
     th = doc.createElement("th");
     tr.appendChild(th);
 
@@ -772,32 +746,29 @@ void manager::get_cluster_status(QDomDocument doc, QDomElement output)
     bool has_error(false);
     for(size_t idx(0); idx < dir.gl_pathc; ++idx)
     {
-        safe_status_file file(dir.gl_pathv[idx]);
+        status_file file(dir.gl_pathv[idx]);
         if(file.open())
         {
-            QString line;
-            if(!file.readline(line))
+            // we got what looks like a valid status file
+            //
+            QString name;
+            QString value;
+            while(file.readvar(name, value))
             {
-                SNAP_LOG_ERROR("an error occurred while trying to read the first line of status file \"")
-                              (dir.gl_pathv[idx])
-                              ("\".");
-                has_error = true;
-            }
-            else if(line == status_file_magic)
-            {
-                // we got what looks like a valid status file
-                //
-                while(file.readline(line))
+                if(name == "status")
                 {
-                    int const pos(line.indexOf('='));
-                    if(pos < 1)
-                    {
-                        SNAP_LOG_ERROR("invalid line in \"")
-                                      (dir.gl_pathv[idx])
-                                      ("\", it has no \"name=...\".");
-                    }
-                    else
-                    {
+                    // output/table/tr
+                    tr = doc.createElement("tr");
+                    table.appendChild(tr);
+
+                    // output/table/tr/td[1]
+                    QDomElement td(doc.createElement("td"));
+                    tr.appendChild(td);
+
+                        // output/table/tr/td[1]/a
+                        QDomElement anchor(doc.createElement("a"));
+                        td.appendChild(anchor);
+
                         QString const path(dir.gl_pathv[idx]);
                         int basename_pos(path.lastIndexOf('/'));
                         if(basename_pos < 0)
@@ -810,53 +781,34 @@ void manager::get_cluster_status(QDomDocument doc, QDomElement output)
                         }
                         QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
 
-                        QString const name(line.mid(0, pos));
-                        QString const value(line.mid(pos + 1));
+                        anchor.setAttribute("href", QString("?host=%1").arg(host));
 
-                        if(name == "status")
-                        {
-                            // output/table/tr
-                            tr = doc.createElement("tr");
-                            table.appendChild(tr);
+                            // output/table/tr/td[1]/<text>
+                            text = doc.createTextNode(host);
+                            anchor.appendChild(text);
 
-                            // output/table/td[1]
-                            QDomElement td(doc.createElement("td"));
-                            tr.appendChild(td);
+                    // output/table/tr/td[2]
+                    td = doc.createElement("td");
+                    tr.appendChild(td);
 
-                                // output/table/td[1]/a
-                                QDomElement anchor(doc.createElement("a"));
-                                td.appendChild(anchor);
+                        // output/table/tr/td[2]/<text>
+                        text = doc.createTextNode(value);
+                        td.appendChild(text);
 
-                                anchor.setAttribute("href", QString("?host=%1").arg(host));
-
-                                    text = doc.createTextNode(host);
-                                    anchor.appendChild(text);
-
-                            // output/table/td[2]
-                            td = doc.createElement("td");
-                            tr.appendChild(td);
-
-                                text = doc.createTextNode(value);
-                                td.appendChild(text);
-                        }
-                    }
+                    // there can be only one status; if we add other
+                    // variables, then remove that break!
+                    //
+                    break;
                 }
             }
-            else
+
+            if(file.has_error())
             {
-                SNAP_LOG_ERROR("status file \"")
-                              (dir.gl_pathv[idx])
-                              ("\" does not start with the expected magic. Found: \"")
-                              (line)
-                              ("\", expected: \"")
-                              (status_file_magic)
-                              ("\".");
                 has_error = true;
             }
         }
         else
         {
-            SNAP_LOG_ERROR("could not open file \"")(dir.gl_pathv[idx])("\", skipping.");
             has_error = true;
         }
     }

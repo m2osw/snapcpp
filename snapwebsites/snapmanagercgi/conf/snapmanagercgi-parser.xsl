@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<body>
 				<div>
 					<ul class="breadcrumbs">
-						<li><a href="/">Home</a></li>
+						<li><a href="/cgi-bin/snapmanager.cgi">Home</a></li>
 						<!-- more entries... -->
 					</ul>
 				</div>
