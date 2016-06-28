@@ -1301,11 +1301,19 @@ QString epayment_stripe::get_stripe_key(bool const debug)
 
             if(settings_permissions.allowed())
             {
-                messages_plugin->set_error(
-                        "Stripe Not Setup",
-                        QString("The Stripe service is not yet properly setup. Please go to %1 to enter your Stripe live key.").arg(settings_ipath.get_key()),
-                        "An empty key generally happens because the administrator did not yet enter said key.",
-                        false);
+                // avoid repeating ourselves once the user is on the
+                // very page where he can enter his information
+                //
+                content::path_info_t main_ipath;
+                main_ipath.set_path(f_snap->get_uri().path());
+                if(main_ipath.get_key() != settings_ipath.get_key())
+                {
+                    messages_plugin->set_error(
+                            "Stripe Not Setup",
+                            QString("The Stripe service is not yet properly setup. Please go to the <a href=\"%1\">Stripe Settings</a> page to enter your Stripe live key.").arg(settings_ipath.get_key()),
+                            "An empty key generally happens because the administrator did not yet enter said key.",
+                            false);
+                }
 
                 server_access::server_access * server_access_plugin(server_access::server_access::instance());
                 server_access_plugin->ajax_redirect(settings_ipath.get_key(), "_top");
@@ -1315,8 +1323,8 @@ QString epayment_stripe::get_stripe_key(bool const debug)
                 // TODO: People who do not have permission should see this
                 //       but really only of the very few pages where the
                 //       stripe payment would be required. At the same
-                //       time, if not setup we should not give users without
-                //       the required permissions to make a payment with
+                //       time, we should not give users without the
+                //       required permissions to make a payment with
                 //       e-Stripe if not properly setup anyway.
                 //
                 //messages_plugin->set_error(

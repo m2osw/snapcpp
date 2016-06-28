@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<a class="settings-save-button" href="#">Save Changes</a>
 					<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
 				</xsl:if-->
-				<h2>Stripe Settings</h2>
+				<!--h2>Stripe Settings</h2-->
 				<div>
 					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
 
@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<legend>Stripe Access Codes</legend>
 
 						<div class="editor-block">
-							<label for="secret" class="settings-title">Secret (sk_live_...)</label>
+							<label for="secret" class="settings-title">Secret (sk_live_...): <span class="required">*</span></label>
 							<xsl:copy-of select="page/body/epayment_stripe/secret/node()"/>
 						</div>
 
