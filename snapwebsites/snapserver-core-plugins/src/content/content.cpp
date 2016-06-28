@@ -1035,7 +1035,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
             // TODO: here we probably need to force a new branch so the
             //       user would not see the old revisions by default...
             //
-            SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(ipath.get_key())("\" as we received a create_page() request on a deleted page.");
+            SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(ipath.get_key())("\" as we received a create_content() request on a deleted page.");
             status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
             ipath.set_status(status);
         }
@@ -1976,7 +1976,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                         //       would not see the old revisions (unless he
                         //       is an administrator)
                         //
-                        SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(attachment_ipath.get_key())("\" as we received a create_page() request on a deleted page.");
+                        SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(attachment_ipath.get_key())("\" as we received a create_attachment() request on a deleted page.");
                         status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
                         attachment_ipath.set_status(status);
                     }

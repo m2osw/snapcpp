@@ -26,12 +26,37 @@ Important parts of Cassandra that we are using:
      of the data to the other X - 1 nodes
 
  * Simple database with (1) context [keyspace], (2) tables, (3) rows,
-   (4) columns, and (5) values. Nothing more.
+   (4) columns, (5) values, (6) time to live (TTL), (7) write timestamp.
+   Nothing more.
 
    * Cassandra makes use of multiple contexts; we have to see the usefulness
      as it does not look like we would even want to have more than one for
      ourselves (although they have separate contexts to handle the system
      data)
+
+   * Cassandra manages a TTL for each value; by default it is set to 'null'
+     (undefined); we would prefer to use a specific date in the future
+     because that way you do not have to use a TTL that could change between
+     various cells (which it does right now with our Cassandra
+     implementation!); we could still offer a TTL a la Cassandra which
+     uses "time() + tll" calculated just at the time you save a cell.
+
+   * The write timestamp tells us when that specific cell was written,
+     which is useful to share between nodes (i.e. to know when the last
+     write occurred)
+
+   * The time to live and write timestamp are saved along each value
+     in Cassandra; this is very practical as we can have one value such
+     as a password::counter value which is used to count the number of
+     times a user entered the wrong password but keep the counter only
+     for a few hours; that counter can also be saved in the same
+     row along other values which either do not have a TTL or have
+     a different TTL... However, for a session, the entire row should
+     be given a TTL and in many situations the TTL should be kept
+     (i.e. a later INSERT without a USING TTL ### in Cassandra will
+     lose the prevent TTL since the new data is considered on its
+     own; also Cassandra does not offer a TTL on a row, only on each
+     cell / value.)
 
  * "Only columns are sorted." (rows are sorted, but using their MD5 sum
    so it is generally not viewed as a useful sort.) We created indexes
@@ -219,7 +244,7 @@ Important parts of Cassandra that we are using:
    us to save all the incoming data in a file used as a queue and once done
    with that queue, it gets deleted
 
- * With Cassandra CQL, they developers have started to use prepared
+ * With Cassandra CQL, the developers have started to use prepared
    statements (which I do not see the point because we should be limited
    to GET, SET, and DELETE, so one byte is more than enough to know what
    you want to do...), and also to create a VIEW (just like a la SQL,

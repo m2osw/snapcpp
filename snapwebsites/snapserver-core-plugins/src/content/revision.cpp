@@ -1033,7 +1033,7 @@ void content::set_current_revision(QString const& key, snap_version::version_num
  *
  * \return This function returns a copy of the revision key just computed.
  */
-QString content::set_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
+QString content::set_revision_key(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale, bool working_branch)
 {
     // key in the data table
     QString const current_revision_key(generate_revision_key(key, branch, revision, locale));
@@ -1077,7 +1077,7 @@ QString content::set_revision_key(QString const& key, snap_version::version_numb
  *
  * \return A copy of the current revision key saved in the database.
  */
-QString content::set_revision_key(QString const& key, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch)
+QString content::set_revision_key(QString const & key, snap_version::version_number_t branch, QString const & revision, QString const & locale, bool working_branch)
 {
     // key in the data table
     QString const current_revision_key(generate_revision_key(key, revision, locale));

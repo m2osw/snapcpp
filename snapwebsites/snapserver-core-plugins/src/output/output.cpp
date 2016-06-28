@@ -804,7 +804,7 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
     QDomElement previous_li;
     snap_string_list segments = ipath.get_segments();
     int max_segments(ipath.get_cpath() == "" ? 0 : segments.size());
-    int first(-1);
+    int first(show_home ? 0 : 1);
     bool has_last(false);
     for(int i(max_segments); i >= 0; --i)
     {
@@ -819,7 +819,6 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         if((show_home && i == 0)
         || (!show_home && i == 1))
         {
-            first = i;
             classes << "first";
         }
         if(!has_last
@@ -834,11 +833,14 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         {
             classes << "odd";
         }
-        else if(first != -1)
+        else
         {
             classes << "even";
         }
-        li.setAttribute("class", classes.join(" "));
+        if(!classes.isEmpty())
+        {
+            li.setAttribute("class", classes.join(" "));
+        }
         li.setAttribute("typeOf", "ListItem");
         li.setAttribute("property", "itemListElement");
 
