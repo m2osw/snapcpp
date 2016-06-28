@@ -1273,10 +1273,19 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
         return;
     }
 
-    const QString query_string(QString("INSERT INTO %1.%2(key,column1,value)VALUES(?,?,?)")
+    QString query_string(QString("INSERT INTO %1.%2(key,column1,value)VALUES(?,?,?)")
         .arg(f_context->contextName())
         .arg(f_tableName)
         );
+
+    // define TTL only if the user defined it (Cassandra uses a 'null' when
+    // undefined and that's probably better than having either a really large
+    // value or 0 if that would work as 'permanent' in Cassandra.)
+    //
+    if(value.ttl() != QCassandraValue::TTL_PERMANENT)
+    {
+        query_string += QString("USING TTL %1").arg(value.ttl());
+    }
 
     QCassandraOrder insert_value;
     insert_value.setCql( query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );

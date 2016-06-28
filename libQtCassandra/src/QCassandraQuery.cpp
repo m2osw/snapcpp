@@ -233,7 +233,7 @@ void QCassandraQuery::setStatementConsistency()
        CASS_CONSISTENCY_SERIAL
        CASS_CONSISTENCY_LOCAL_SERIAL
        CASS_CONSISTENCY_LOCAL_ONE
-       */
+    */
     CassConsistency consist( CASS_CONSISTENCY_UNKNOWN );
 
     if     ( CONSISTENCY_LEVEL_ONE          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ONE;          

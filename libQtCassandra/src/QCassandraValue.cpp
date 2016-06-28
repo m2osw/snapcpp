@@ -2324,6 +2324,20 @@ bool QCassandraValue::operator >= (const QCassandraValue& rhs)
  *
  * This value can be set using the setTtl() function.
  *
+ * \warning
+ * The value is NOT read from an existing cell in the database. This is
+ * because it slows down the SELECT quite a bit to read this value each
+ * time even though 99.9% of the time it is not defined. If you really
+ * need to have access, you can directly access the QCassandraQuery
+ * system and send your own "SELECT TTL(value) FROM ...". Chances are,
+ * you do not need to know how much longer a cell has to live. However,
+ * if you read a cell to modify it and then save it back and that cell
+ * may have a TTL, then it would be crusial to get that value. So far,
+ * though, we only had to update with the standard TTL (i.e. if we update
+ * a cell with a TTL, the TTL is reset back to the original, so something
+ * that gets modified will last another full cycle instead of whatever
+ * is left on it.)
+ *
  * \return The number of seconds the cell will live.
  */
 int32_t QCassandraValue::ttl() const
