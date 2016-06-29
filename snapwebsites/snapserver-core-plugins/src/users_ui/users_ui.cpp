@@ -313,6 +313,14 @@ void users_ui::on_attach_to_session()
         users::users * users_plugin(users::users::instance());
         users_plugin->attach_to_session(users::get_name(users::name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
     }
+    else if(!f_user_changing_password_key_clear)
+    {
+        // it was not empty when on_detach_from_session() was called
+        // so we have to detach now (i.e. delete from the session)
+        //
+        users::users * users_plugin(users::users::instance());
+        NOTUSED(users_plugin->detach_from_session(users::get_name(users::name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY)));
+    }
 }
 
 
@@ -332,7 +340,8 @@ void users_ui::on_detach_from_session()
     // So the concerned function(s) should clear() the variable when
     // officially done with it.
     users::users * users_plugin(users::users::instance());
-    f_user_changing_password_key = users_plugin->detach_from_session(users::get_name(users::name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
+    f_user_changing_password_key = users_plugin->get_from_session(users::get_name(users::name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
+    f_user_changing_password_key_clear = f_user_changing_password_key.isEmpty();
 }
 
 

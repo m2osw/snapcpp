@@ -125,6 +125,7 @@ private:
 
     zpsnap_child_t          f_snap;
     QString                 f_user_changing_password_key;   // not quite logged in user
+    bool                    f_user_changing_password_key_clear = true;
 };
 
 } // namespace users

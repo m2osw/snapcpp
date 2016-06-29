@@ -284,6 +284,10 @@ void detectadblocker::on_detach_from_session()
             bool const timed_out(timeout + 86400 * prevent_ads_duration < start_time);
             if(timed_out)
             {
+                // delete only once it timed out; this has the side
+                // effect of re-testing the client side on a future
+                // hit
+                //
                 users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME));
             }
             f_detected = !timed_out && time_status[1] == "true";

@@ -1285,7 +1285,7 @@ void users::user_logout()
 
     // drop the referrer if there is one, it is a security
     // issue to keep that info on an explicit log out!
-    NOTUSED(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+    NOTUSED(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
@@ -1865,7 +1865,7 @@ void users::verify_user(content::path_info_t & ipath)
 
         // drop the referrer if there is one, it is a security
         // issue to keep that info on an almost explicit log out!
-        NOTUSED(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+        NOTUSED(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
         sessions::sessions::instance()->save_session(*f_info, new_random);
 
@@ -2306,7 +2306,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
                     {
                         // here we detach from the session since we want to
                         // redirect only once to that page
-                        logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+                        logged_info.set_uri(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
                         if(logged_info.get_uri().isEmpty())
                         {
                             // User is now logged in, redirect him
@@ -3393,7 +3393,7 @@ sessions::sessions::session_info const & users::get_session() const
  *
  * \sa detach_from_session()
  */
-void users::attach_to_session(QString const& name, QString const& data)
+void users::attach_to_session(QString const & name, QString const & data)
 {
     sessions::sessions::instance()->attach_to_session(*f_info, name, data);
 }
@@ -3440,7 +3440,7 @@ QString users::detach_from_session(QString const & name)
  *
  * \return The data attached to the named session field.
  */
-QString users::get_from_session(QString const& name) const
+QString users::get_from_session(QString const & name) const
 {
     return sessions::sessions::instance()->get_from_session(*f_info, name);
 }
@@ -3570,9 +3570,17 @@ void users::on_attach_to_session()
     {
         // note that if we lose those "website" messages,
         // they will still be in our logs
+        //
         QString const data(messages_plugin->serialize());
         attach_to_session(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_MESSAGES), data);
         messages_plugin->clear_messages();
+    }
+    else if(f_has_user_messages)
+    {
+        // we had messages when on_detach_from_session() was called,
+        // so we have to drop them now
+        //
+        NOTUSED(detach_from_session(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_MESSAGES)));
     }
 }
 
@@ -3587,8 +3595,10 @@ void users::on_detach_from_session()
 {
     // the message handling is here because the messages plugin cannot have
     // a dependency on the users plugin which is the one handling the session
-    QString const data(detach_from_session(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_MESSAGES)));
-    if(!data.isEmpty())
+    //
+    QString const data(get_from_session(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_MESSAGES)));
+    f_has_user_messages = !data.isEmpty();
+    if(f_has_user_messages)
     {
         messages::messages::instance()->unserialize(data);
     }

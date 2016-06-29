@@ -119,12 +119,15 @@ DTD of the XSLT 2.0.
 <!ATTLIST javascript name CDATA #REQUIRED>
 
 <!-- HTML tags that are used in default values or background values
-     we're not trying to replicate the whole HTML DTD, so we simply here -->
+     we are not trying to replicate the whole HTML DTD, so we simply here
+     WARNING: the rel parameter accepts a space separated list of
+              tokens so we cannot verify them with a DTD...
+              (alternate|archives|author|bookmark|external|first|help|home|index|last|license|next|nofollow|noopener|noreferrer|prefetch|prev|search|sidebar|tag|up) -->
 <!ELEMENT a ANY>
 <!ATTLIST a class CDATA #IMPLIED
             field_type CDATA #IMPLIED
             href CDATA #IMPLIED
-            rel (home|nofollow) #IMPLIED
+            rel CDATA #IMPLIED
             target CDATA #IMPLIED
             title CDATA ""
             product-guid CDATA #IMPLIED
@@ -238,6 +241,9 @@ DTD of the XSLT 2.0.
              value CDATA #IMPLIED
              for CDATA #IMPLIED>
 
+<!-- WARNING: the rel parameter accepts a space separated list of
+              tokens so we cannot verify them with a DTD...
+              (alternate|archives|author|dns-prefetch|first|help|home|icon|index|last|license|manifest|next|pingback|preconnect|prefetch|preload|prerender|prev|search|stylesheet|sidebar|up) -->
 <!ELEMENT link ANY> <!-- marked as ANY to support RSS feeds -->
 <!ATTLIST link href CDATA #REQUIRED
                hreflang CDATA #IMPLIED

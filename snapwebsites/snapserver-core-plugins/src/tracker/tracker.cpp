@@ -342,6 +342,8 @@ void tracker::on_detach_from_session()
     {
         QString const remote_addr(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
 
+        // TODO: make use of the snap::addr object to convert to IPv4/6
+        //
         struct in6_addr addr6;
         int const r6(inet_pton(AF_INET6, remote_addr.toUtf8().data(), &addr6));
         if(r6 == 1)

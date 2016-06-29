@@ -382,6 +382,7 @@ private:
     QString                     f_user_key;                     // user email address (may not be logged in)
     controlled_vars::fbool_t    f_user_logged_in;               // user is logged in only if this is true
     controlled_vars::fbool_t    f_administrative_logged_in;     // user is logged in and has administrative rights if this is true
+    bool                        f_has_user_messages = false;    // whether there were messages when on_detach_from_session() was called
     QString                     f_user_changing_password_key;   // not quite logged in user
     std::shared_ptr<sessions::sessions::session_info> f_info;   // user, logged in or anonymous, cookie related information
 };
