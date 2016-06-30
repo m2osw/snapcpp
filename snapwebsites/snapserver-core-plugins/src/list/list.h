@@ -159,19 +159,16 @@ public:
     //       backend whenever we update a list.)
 
 private:
-    typedef controlled_vars::auto_init<int32_t, -1>     m1int32_t;
-    typedef controlled_vars::auto_init<int32_t, 1>      p1int32_t;
-
-    zpsnap_child_t                  f_snap;
-    content::path_info_t &          f_ipath;                // path to the list
-    mutable controlled_vars::fbool_t f_retrieved_list_name;
-    mutable QString                 f_list_name;            // name used in query string
-    m1int32_t                       f_maximum_number_of_items; // maximum number of items
-    mutable m1int32_t               f_number_of_items;      // total number of items
-    m1int32_t                       f_start_offset;         // if -1, ignore
-    p1int32_t                       f_page;                 // page count starts at 1
-    mutable m1int32_t               f_page_size;            // number of item per page
-    mutable m1int32_t               f_default_page_size;    // to know whether the query string should include the size
+    snap_child *                    f_snap = nullptr;
+    content::path_info_t &          f_ipath;                        // path to the list
+    mutable bool                    f_retrieved_list_name = false;
+    mutable QString                 f_list_name;                    // name used in query string
+    int32_t                         f_maximum_number_of_items = -1; // maximum number of items
+    mutable int32_t                 f_number_of_items = -1;         // total number of items
+    int32_t                         f_start_offset = -1;            // if -1, ignore
+    int32_t                         f_page = 1;                     // page count starts at 1
+    mutable int32_t                 f_page_size = -1;               // number of item per page
+    mutable int32_t                 f_default_page_size = -1;       // to know whether the query string should include the size
 };
 
 
@@ -316,14 +313,14 @@ private:
     // tests
     SNAP_TEST_PLUGIN_TEST_DECL(test_add_page_twice)
 
-    zpsnap_child_t                          f_snap;
-    snap_backend::zpsnap_backend_t          f_backend;
+    snap_child *                            f_snap = nullptr;
+    snap_backend *                          f_backend = nullptr;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
     QtCassandra::QCassandraTable::pointer_t f_listref_table;
     snap_expr::expr::expr_map_t             f_check_expressions;
     snap_expr::expr::expr_map_t             f_item_key_expressions;
-    controlled_vars::fbool_t                f_ping_backend;
-    controlled_vars::fbool_t                f_list_link;
+    bool                                    f_ping_backend = false;
+    bool                                    f_list_link = false;
     priority_t                              f_priority = LIST_PRIORITY_NEW_PAGE;                // specific order in which pages should be worked on
     int64_t                                 f_start_date_offset = LIST_PROCESSING_LATENCY;      // minimum amount of time to wait for the next data
     int64_t                                 f_date_limit = 0;

@@ -160,10 +160,12 @@ paging_t::paging_t(snap_child * snap, content::path_info_t & ipath)
     , f_ipath(ipath)
     //, f_retrieved_list_name(false) -- auto-init
     //, f_list_name("") -- auto-init
+    //, f_maximum_number_of_items(-1) -- auto-init
     //, f_number_of_items(-1) -- auto-init
     //, f_start_offset(-1) -- auto-init
     //, f_page(1) -- auto-init
     //, f_page_size(-1) -- auto-init
+    //, f_default_page_size(-1) -- auto-init
 {
 }
 
@@ -1156,11 +1158,16 @@ int32_t paging_t::get_page_size() const
  */
 list::list()
     //: f_snap(nullptr) -- auto-init
+    //, f_backend(nullptr) -- auto-init
     //, f_list_table(nullptr) -- auto-init
     //, f_listref_table(nullptr) -- auto-init
     //, f_check_expressions() -- auto-init
     //, f_item_key_expressions() -- auto-init
     //, f_ping_backend(false) -- auto-init
+    //, f_list_link(false) -- auto-init
+    //, f_priority(LIST_PRIORITY_NEW_PAGE) -- auto-init
+    //, f_start_date_offset(LIST_PROCESSING_LATENCY) -- auto-init
+    //, f_date_limit(0) -- auto-init
 {
 }
 
@@ -1537,7 +1544,7 @@ void list::on_modified_content(content::path_info_t & ipath)
 
     {
         // we need to have this run by a single process at a time
-        // otherwise we'll miss some dropCell() calls
+        // otherwise we will miss some dropCell() calls
         snap_lock lock(QString("%1#list-reference").arg(ipath.get_key()));
 
         // handle a reference so it is possible to delete the old key for that
@@ -1548,15 +1555,14 @@ void list::on_modified_content(content::path_info_t & ipath)
         {
             QByteArray const old_key(existing_entry.binaryValue());
 
-            // get the smallest of the two priority, we need to keep that
-            // smaller number
+            // get the smallest of the two priorities
             //
-            priority_t old_priority(QtCassandra::safeUnsignedCharValue(old_key, 0));
-            int64_t old_key_start_date(QtCassandra::safeUnsignedCharValue(old_key, 0));
-
-            // keep the smallest priority
+            priority_t const old_priority(QtCassandra::safeUnsignedCharValue(old_key, 0));
             priority = std::min(priority, old_priority);
-            // keep the latest date at which to update
+
+            // get the largest of the two dates
+            //
+            int64_t const old_key_start_date(QtCassandra::safeInt64Value(old_key, 1));
             key_start_date = std::max(key_start_date, old_key_start_date);
 
             // create the key with the new or old priority, whichever is
@@ -1572,7 +1578,7 @@ void list::on_modified_content(content::path_info_t & ipath)
                 // same page over and over again within the same child process,
                 // then the key will not change.)
                 //
-                list_table->row(site_key)->dropCell(old_key); // was using start_date instead of "now"...
+                list_table->row(site_key)->dropCell(old_key);
             }
         }
         else
@@ -1985,7 +1991,7 @@ void list::on_backend_action(QString const & action)
 {
     if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
     {
-        f_backend = dynamic_cast<snap_backend *>(f_snap.get());
+        f_backend = dynamic_cast<snap_backend *>(f_snap);
         if(!f_backend)
         {
             throw list_exception_no_backend("list::on_backend_action(): could not determine the snap_backend pointer");
@@ -2022,11 +2028,7 @@ void list::on_backend_action(QString const & action)
             date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
         }
 
-        snap_backend * sb(dynamic_cast<snap_backend *>(f_snap.get()));
-        if(sb != nullptr)
-        {
-            sb->add_uri_for_processing(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_NAMESPACE)).arg(action), date_limit, site_key);
-        }
+        f_backend->add_uri_for_processing(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_NAMESPACE)).arg(action), date_limit, site_key);
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSLIST))
     {
@@ -2829,7 +2831,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
                 {
-                    csspp::safe_bool_t save_list_link(*f_list_link.ptr());
+                    csspp::safe_bool_t save_list_link(f_list_link);
                     links::links::instance()->create_link(source, destination);
                 }
 
@@ -2860,7 +2862,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-                csspp::safe_bool_t save_list_link(*f_list_link.ptr());
+                csspp::safe_bool_t save_list_link(f_list_link);
                 links::links::instance()->delete_this_link(source, destination);
 
                 did_work = 1;
