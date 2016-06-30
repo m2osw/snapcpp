@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<legend>Stripe Access Codes</legend>
 
 						<div class="editor-block">
-							<label for="secret" class="settings-title">Secret (sk_live_...): <span class="required">*</span></label>
+							<label for="secret" class="settings-title">Live Secret Key (sk_live_...): <span class="required">*</span></label>
 							<xsl:copy-of select="page/body/epayment_stripe/secret/node()"/>
 						</div>
 
@@ -67,7 +67,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						</div>
 
 						<div class="editor-block">
-							<label for="secret" class="settings-title">Test (sk_test_...):</label>
+							<label for="secret" class="settings-title">Test Secret Key (sk_test_...):</label>
 							<xsl:copy-of select="page/body/epayment_stripe/test_secret/node()"/>
 							<p>
 								You may use the stripe public key:
