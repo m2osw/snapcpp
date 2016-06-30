@@ -917,8 +917,9 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     // now we want to add the "domains" and "websites" tables to be
     // complete
     //
-    create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
-    create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
+    create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain rules");
+    create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website rules");
+    create_table(snap::get_name(snap::name_t::SNAP_NAME_SITES),    "Various global settings for websites");
 
     connect( f_queryQueue.back().get(), &QCassandraQuery::queryFinished, this, &snap_manager::onContextCreated );
     startQuery();

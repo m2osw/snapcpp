@@ -1341,11 +1341,6 @@ void server::prepare_cassandra()
     // setup the server name, this is important for locks
     context->setHostName(f_parameters["server_name"]);
 
-    // create missing tables
-    //create_table(context, get_name(name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
-    //create_table(context, get_name(name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
-    //create_table(context, get_name(name_t::SNAP_NAME_BACKEND),  "List of sites to run backends against.");
-
     // Create all the missing tables from all the plugins which
     // packages are currently installed
     create_table_list(context);

@@ -102,6 +102,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <table name="websites" model="data">
     <description>List of website rules</description>
   </table>
+  <table name="sites" model="data">
+    <description>Various global settings for websites</description>
+  </table>
   <table name="backend" model="queue">
     <description>List of website URIs to run backends against</description>
   </table>

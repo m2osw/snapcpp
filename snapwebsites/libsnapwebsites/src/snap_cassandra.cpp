@@ -86,7 +86,7 @@ SNAP_LOG_WARNING("snap_cassandra::init_context() should not be used anymore...")
         QtCassandra::QCassandraSchema::Value & replication_val = fields["replication"];
 
         // TODO: add support for replications defined as a % so if we
-        //       discover 10 nodes, we user 5 when replication is 50%
+        //       discover 10 nodes, we use 5 when replication is 50%
         //       (however, once set, we do not change this number...)
         //
         // TODO: if the number of nodes is smaller than the number we
