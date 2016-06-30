@@ -2057,7 +2057,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         err_callback.on_redirect(
                             // message
                             "Auto-Logged Out",
-                            QString("For safety, we logged you out as you were idle for some time. The page on which you were (%1) requires you to be logged in. You may enter your login name and password below to immediately be returned to that page.").arg(page_title),
+                            QString("For safety, we logged you out as you were idle for some time. The page on which you were (%1) requires you to be logged in. You may enter your login name and password below to immediately return to that page.").arg(page_title),
                             QString("User trying to \"%1\" on page \"%2\" when not logged in (session timed out).").arg(action).arg(ipath.get_cpath()),
                             false,
                             // redirect
