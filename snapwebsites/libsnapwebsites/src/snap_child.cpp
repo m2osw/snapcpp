@@ -5919,7 +5919,6 @@ void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandr
         }
     }
 
-//fprintf(stderr, "Setting [%s] parameter\n", name.toUtf8().data());
     f_site_table->row(f_site_key)->cell(name)->setValue(value);
 }
 

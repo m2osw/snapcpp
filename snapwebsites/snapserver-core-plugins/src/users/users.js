@@ -1,6 +1,6 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.10
+ * Version: 0.0.1.11
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -134,8 +134,10 @@ snapwebsites.Users.prototype.startAutoLogout = function()
     // So here we want to make sure that we do not break the limit if
     // that ever happens.
     //
-    // XXX: make sure that such long delays are accurate within a few
-    //      milliseconds (i.e. +/-50ms is just fine) and not hours...
+    // Note: I checked the Firefox implementation of window.setTimeout()
+    //       and it takes the interval at he time of the call to calculate
+    //       the date when it will be triggered, so even if 24.8 days later
+    //       it will still be correct and execute with 50ms or so
     //
     if(delay > 0x7FFFFFFF)
     {
@@ -205,9 +207,6 @@ snapwebsites.Users.prototype.autoLogout_ = function()
     // since the user is now logged out, then the reload will send
     // him to another page if this page requires the user to be logged
     // in to view this page
-    //
-    // XXX: at some point we want to add an argument to clearly
-    //      specify that we are kicking the user out!
     //
     redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
                                .replace(/\?a=edit&/, "?")

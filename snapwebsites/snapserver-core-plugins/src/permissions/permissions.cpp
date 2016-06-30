@@ -2039,7 +2039,36 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                 page_title = revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
             }
 
-            // if the page is inside an IFRAME we want to remove the iframe
+            // check whether the URL included "hit=transparent"
+            // because if so the error should be converted to an
+            // informational message instead
+            //
+            {
+                QString const qs_hit(f_snap->get_server_parameter("qs_hit"));
+                snap_uri const & uri(f_snap->get_uri());
+                if(uri.has_query_option(qs_hit)
+                && uri.query_option(qs_hit) == users::get_name(users::name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
+                {
+                    path::path_error_callback * ptr(dynamic_cast<path::path_error_callback *>(&err_callback));
+                    if(ptr != nullptr)
+                    {
+                        ptr->set_autologout();
+
+                        err_callback.on_redirect(
+                            // message
+                            "Auto-Logged Out",
+                            QString("For safety, we logged you out as you were idle for some time. The page on which you were (%1) requires you to be logged in. You may enter your login name and password below to immediately be returned to that page.").arg(page_title),
+                            QString("User trying to \"%1\" on page \"%2\" when not logged in (session timed out).").arg(action).arg(ipath.get_cpath()),
+                            false,
+                            // redirect
+                            "login",
+                            snap_child::http_code_t::HTTP_CODE_FOUND);
+                        return;
+                    }
+                }
+            }
+
+            // redirect to the login page
             //
             err_callback.on_redirect(
                 // message
@@ -2086,8 +2115,10 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                     return;
                 }
             }
+
             // user is already logged in; no redirect even once we support
             // the double password feature
+            //
             err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
                     QString("You are not authorized to apply this action (%1) to this page (%2).").arg(action).arg(ipath.get_key()),

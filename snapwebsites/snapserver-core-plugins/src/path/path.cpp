@@ -64,139 +64,150 @@ SNAP_PLUGIN_START(path, 1, 0)
 
 
 
-class path_error_callback : public permission_error_callback
+path_error_callback::path_error_callback(snap_child * snap, content::path_info_t & ipath)
+    : f_snap(snap)
+    , f_ipath(ipath)
+    //, f_plugin(nullptr)
+    //, f_autologout(false)
 {
-public:
-    path_error_callback(snap_child * snap, content::path_info_t & ipath)
-        : f_snap(snap)
-        , f_ipath(ipath)
-        //, f_plugin(nullptr)
-    {
-    }
+}
 
-    void set_plugin(plugins::plugin * p)
-    {
-        f_plugin = p;
-    }
 
-    virtual void on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
+void path_error_callback::set_plugin(plugins::plugin * p)
+{
+    f_plugin = p;
+}
+
+
+void path_error_callback::set_autologout(bool autologout)
+{
+    f_autologout = autologout;
+}
+
+
+void path_error_callback::on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
+{
+    // first check whether we are handling an AJAX request
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    if(server_access_plugin->is_ajax_request())
     {
-        // first check whether we are handling an AJAX request
-        server_access::server_access * server_access_plugin(server_access::server_access::instance());
-        if(server_access_plugin->is_ajax_request())
-        {
 //std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
-            messages::messages::instance()->set_error(err_name, err_description, err_details, false);
-            QString const err_code_string(QString("%1").arg(static_cast<int>(err_code)));
-            server_access_plugin->ajax_append_data("error-code", err_code_string.toUtf8());
-            server_access_plugin->create_ajax_result(f_ipath, false);
-            server_access_plugin->ajax_output();
-            f_snap->output_result(snap_child::HEADER_MODE_ERROR, f_snap->get_output());
-            f_snap->exit(0);
-            NOTREACHED();
-        }
-
-        // give a chance to other plugins to handle the error
-        // (Especially the attachment plugin when "weird" data was requested)
-        if(err_by_mime_type && f_plugin)
-        {
-            // will this plugin handle that error?
-            permission_error_callback::error_by_mime_type * handle_error(dynamic_cast<permission_error_callback::error_by_mime_type *>(f_plugin.get()));
-            if(handle_error)
-            {
-                // attempt to inform the user using the proper type of data
-                // so that way it is easier to debug than sending HTML
-                try
-                {
-                    // define a default error name if undefined
-                    QString http_name;
-                    f_snap->define_http_name(err_code, http_name);
-
-                    // log the error
-                    SNAP_LOG_FATAL("path::on_error(): ")(err_details)(" (")(static_cast<int>(err_code))(" ")(err_name)(": ")(err_description)(")");
-
-                    // On error we do not return the HTTP protocol, only the Status field
-                    // it just needs to be first to make sure it works right
-                    f_snap->set_header("Status", QString("%1 %2\n")
-                            .arg(static_cast<int>(err_code))
-                            .arg(http_name));
-
-                    // content type has to be defined by the handler, also
-                    // the output auto-generated
-                    //f_snap->set_header(get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
-                    //f_snap->output_result(HEADER_MODE_ERROR, html.toUtf8());
-                    handle_error->on_handle_error_by_mime_type(err_code, err_name, err_description, f_ipath.get_key());
-                }
-                catch(...)
-                {
-                    // ignore all errors because at this point we must die quickly.
-                    SNAP_LOG_FATAL("path.cpp:on_error(): try/catch caught an exception");
-                }
-
-                // exit with an error
-                f_snap->exit(1);
-                NOTREACHED();
-            }
-        }
-        f_snap->die(err_code, err_name, err_description, err_details);
+        messages::messages::instance()->set_error(err_name, err_description, err_details, false);
+        QString const err_code_string(QString("%1").arg(static_cast<int>(err_code)));
+        server_access_plugin->ajax_append_data("error-code", err_code_string.toUtf8());
+        server_access_plugin->create_ajax_result(f_ipath, false);
+        server_access_plugin->ajax_output();
+        f_snap->output_result(snap_child::HEADER_MODE_ERROR, f_snap->get_output());
+        f_snap->exit(0);
         NOTREACHED();
     }
 
-    virtual void on_redirect(
-            /* message::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
-            /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
+    // give a chance to other plugins to handle the error
+    // (Especially the attachment plugin when "weird" data was requested)
+    if(err_by_mime_type && f_plugin != nullptr)
     {
-        // TODO: remove this message dependency
-        server_access::server_access * server_access_plugin(server_access::server_access::instance());
-        if(server_access_plugin->is_ajax_request())
+        // will this plugin handle that error?
+        permission_error_callback::error_by_mime_type * handle_error(dynamic_cast<permission_error_callback::error_by_mime_type *>(f_plugin));
+        if(handle_error)
         {
-            // Since the user sent an AJAX request, we have to reply with
-            // an AJAX answer; however, we CANNOT send an AJAX redirect
-            // when sending an error back to the client... so we actually
-            // use set_warning() instead of set_error().
-            //
+            // attempt to inform the user using the proper type of data
+            // so that way it is easier to debug than sending HTML
+            try
+            {
+                // define a default error name if undefined
+                QString http_name;
+                f_snap->define_http_name(err_code, http_name);
+
+                // log the error
+                SNAP_LOG_FATAL("path::on_error(): ")(err_details)(" (")(static_cast<int>(err_code))(" ")(err_name)(": ")(err_description)(")");
+
+                // On error we do not return the HTTP protocol, only the Status field
+                // it just needs to be first to make sure it works right
+                f_snap->set_header("Status", QString("%1 %2\n")
+                        .arg(static_cast<int>(err_code))
+                        .arg(http_name));
+
+                // content type has to be defined by the handler, also
+                // the output auto-generated
+                //f_snap->set_header(get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
+                //f_snap->output_result(HEADER_MODE_ERROR, html.toUtf8());
+                handle_error->on_handle_error_by_mime_type(err_code, err_name, err_description, f_ipath.get_key());
+            }
+            catch(...)
+            {
+                // ignore all errors because at this point we must die quickly.
+                SNAP_LOG_FATAL("path.cpp:on_error(): try/catch caught an exception");
+            }
+
+            // exit with an error
+            f_snap->exit(1);
+            NOTREACHED();
+        }
+    }
+    f_snap->die(err_code, err_name, err_description, err_details);
+    NOTREACHED();
+}
+
+
+void path_error_callback::on_redirect(
+        /* messages::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
+        /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
+{
+    // TODO: remove this message dependency
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    if(server_access_plugin->is_ajax_request())
+    {
+        // Since the user sent an AJAX request, we have to reply with
+        // an AJAX answer; however, we CANNOT send an AJAX redirect
+        // when sending an error back to the client... so we actually
+        // use set_warning() instead of set_error().
+        //
 //std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
-            if(!err_security)
-            {
-                messages::messages::instance()->set_warning(err_name, err_description, err_details);
-            }
-            else
-            {
-                // we cannot generate a warning with a secure error message...
-                // we just log it for now.
-                SNAP_LOG_FATAL(logging::log_security_t::LOG_SECURITY_SECURE)
-                        ("path::on_redirect(): ")(err_details)(" (")
-                                    (err_name)(": ")(err_description)(")");
-                // we still generate a warning so the end users has a chance
-                // to see something at some point
-                messages::messages::instance()->set_warning("An Error Occurred", "An unspecified error occurred.", "Please check your secure log for more information.");
-            }
+        if(!err_security)
+        {
+            messages::messages::instance()->set_warning(err_name, err_description, err_details);
+        }
+        else
+        {
+            // we cannot generate a warning with a secure error message...
+            // we just log it for now.
+            SNAP_LOG_FATAL(logging::log_security_t::LOG_SECURITY_SECURE)
+                    ("path::on_redirect(): ")(err_details)(" (")
+                                (err_name)(": ")(err_description)(")");
+            // we still generate a warning so the end users has a chance
+            // to see something at some point
+            messages::messages::instance()->set_warning("An Error Occurred", "An unspecified error occurred.", "Please check your secure log for more information.");
+        }
 
-            // we are about to die without calling the die() or page_redirect()
-            // functions so we need to call the attach_to_session() function
-            // explicitly
+        // we are about to die without calling the die() or page_redirect()
+        // functions so we need to call the attach_to_session() function
+        // explicitly
+        //
+        server::server::instance()->attach_to_session();
+
+        server_access_plugin->create_ajax_result(f_ipath, true);
+        server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
+        server_access_plugin->ajax_output();
+        f_snap->output_result(snap_child::HEADER_MODE_REDIRECT, f_snap->get_output());
+        f_snap->exit(0);
+    }
+    else
+    {
+        if(f_autologout)
+        {
+            // an auto-logout is not an error
             //
-            server::server::instance()->attach_to_session();
-
-            server_access_plugin->create_ajax_result(f_ipath, true);
-            server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
-            server_access_plugin->ajax_output();
-            f_snap->output_result(snap_child::HEADER_MODE_REDIRECT, f_snap->get_output());
-            f_snap->exit(0);
+            messages::messages::instance()->set_info(err_name, err_description);
         }
         else
         {
             messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
-            f_snap->page_redirect(path, http_code, err_description, err_details);
         }
-        NOTREACHED();
+        f_snap->page_redirect(path, http_code, err_description, err_details);
     }
+    NOTREACHED();
+}
 
-private:
-    zpsnap_child_t          f_snap;
-    content::path_info_t &  f_ipath;
-    plugins::plugin_zptr_t  f_plugin;
-};
 
 
 /** \brief Called by plugins that can handle dynamic paths.

@@ -61,6 +61,25 @@ public:
 };
 
 
+class path_error_callback : public permission_error_callback
+{
+public:
+    path_error_callback(snap_child * snap, content::path_info_t & ipath);
+    void set_plugin(plugins::plugin * p);
+    void set_autologout(bool autologout = true);
+    virtual void on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type);
+    virtual void on_redirect(
+            /* messages::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
+            /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code);
+
+private:
+    snap_child *            f_snap = nullptr;
+    content::path_info_t &  f_ipath;
+    plugins::plugin *       f_plugin = nullptr;
+    bool                    f_autologout = false;
+};
+
+
 class path
         : public plugins::plugin
 {
