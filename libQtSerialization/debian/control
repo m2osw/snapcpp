@@ -1,7 +1,7 @@
 Source: libqtserialization
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, doxygen, graphviz, snapcmakemodules (>= 1.0.25.158~xenial), qt5-default
+Build-Depends: debhelper, cmake, doxygen, graphviz, snapcmakemodules (>= 1.0.25.159~xenial), qt5-default
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libqtserialization
