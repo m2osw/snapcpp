@@ -84,7 +84,7 @@ namespace
             advgetopt::getopt::help_argument
         },
         {
-            '\0',
+            'h',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             nullptr,
