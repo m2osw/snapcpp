@@ -1167,7 +1167,7 @@ void snap_layout::set_theme()
 
     try
     {
-        const QString context_name( f_opt->get_string("context").c_str() );
+        QString const context_name( f_opt->get_string("context").c_str() );
 
         if( theme.isEmpty() )
         {
