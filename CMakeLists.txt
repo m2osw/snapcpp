@@ -98,13 +98,6 @@ ConfigureMakeProject( PROJECT_NAME csspp
     DEPENDS cmake advgetopt
 )
 
-# Google does not release Page Rank anymore
-#ConfigureMakeProject( PROJECT_NAME googlerank
-#    CONFIG_ARGS
-#        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-#    DEPENDS cmake controlled_vars
-#)
-
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
