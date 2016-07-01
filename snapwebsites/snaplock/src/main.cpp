@@ -91,6 +91,14 @@ int main(int argc, char * argv[])
             std::cerr << "snaplock: invalid argument: " << e.what() << std::endl;
         }
     }
+    catch( std::overflow_error const & e )
+    {
+        SNAP_LOG_FATAL("snaplock: std::overflow_error caught! ")(e.what());
+        if(g_isatty)
+        {
+            std::cerr << "snaplock: std::overflow_error caught! " << e.what() << std::endl;
+        }
+    }
     catch( std::exception const & e )
     {
         SNAP_LOG_FATAL("snaplock: std::exception caught! ")(e.what());

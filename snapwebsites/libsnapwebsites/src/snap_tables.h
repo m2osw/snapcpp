@@ -75,7 +75,7 @@ public:
     private:
         QString                 f_name;
         QString                 f_description;
-        model_t                 f_model;
+        model_t                 f_model = model_t::MODEL_CONTENT;
     };
 
     bool                            load(QString const & path);

@@ -182,8 +182,7 @@ bool snap_tables::load_xml(QString const & filename)
     QString errmsg;
     int line(0);
     int column(0);
-    doc.setContent(&file, false, &errmsg, &line, &column);
-    if(!errmsg.isEmpty())
+    if(!doc.setContent(&file, false, &errmsg, &line, &column))
     {
         SNAP_LOG_ERROR("tables::load_xml() could not read XML in \"")(filename)("\", error:")(line)("/")(column)(": ")(errmsg)(".");
         return false;

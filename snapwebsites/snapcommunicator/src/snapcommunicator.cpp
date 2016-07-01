@@ -722,7 +722,7 @@ private:
     sorted_list_of_strings_t                f_understood_commands;
     int64_t                                 f_started_on = -1;
     int64_t                                 f_ended_on = -1;
-    connection_type_t                       f_type;
+    connection_type_t                       f_type = connection_type_t::CONNECTION_TYPE_DOWN;
     QString                                 f_server_name;
     sorted_list_of_strings_t                f_services;
     sorted_list_of_strings_t                f_services_heard_of;

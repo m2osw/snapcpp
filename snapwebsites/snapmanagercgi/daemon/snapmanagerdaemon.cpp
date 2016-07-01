@@ -462,7 +462,11 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
 
             // start the status thread, used to gather this computer's status
             //
-            f_status_thread.start();
+            if(!f_status_thread.start())
+            {
+                SNAP_LOG_ERROR("snapmanagerdaemon could not start its helper thread. Quitting immediately.");
+                stop(false);
+            }
 
             return;
         }
@@ -543,9 +547,15 @@ void manager_daemon::stop(bool quitting)
 
     if(f_status_connection)
     {
-        snap::snap_communicator_message cmd;
-        cmd.set_command("STOP");
-        f_status_connection->send_message(cmd);
+        // WARNING: we cannot send a message to the status thread
+        //          if it was not started
+        //
+        if(f_status_thread.is_running())
+        {
+            snap::snap_communicator_message cmd;
+            cmd.set_command("STOP");
+            f_status_connection->send_message(cmd);
+        }
 
         // WARNING: currently, the send_message() of an inter-process
         //          connection immediately writes the message in the
