@@ -1079,6 +1079,8 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     // save the owner
     row->cell(primary_owner)->setValue(owner);
 
+    SNAP_LOG_DEBUG("Started creation of page \"")(ipath.get_key())("\".");
+
     // setup first branch
     snap_version::version_number_t const branch_number(ipath.get_branch());
 
@@ -1155,6 +1157,8 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
         child_branch = parent_branch;
     }
 
+    SNAP_LOG_DEBUG("Creation of page \"")(ipath.get_key())("\" in content plugin is ready for other modules to react.");
+
     return true;
 }
 
@@ -1172,6 +1176,8 @@ void content::create_content_done(path_info_t & ipath, QString const & owner, QS
 {
     NOTUSED(owner);
     NOTUSED(type);
+
+    SNAP_LOG_DEBUG("Finalization of page \"")(ipath.get_key())("\" in content plugin (i.e. create_content_done() function) is running now.");
 
     // now the page was created and is ready to be used
     // (although the revision data is not yet available...
@@ -1192,6 +1198,8 @@ void content::create_content_done(path_info_t & ipath, QString const & owner, QS
     QtCassandra::QCassandraValue ready;
     ready.setSignedCharValue(1);
     content_table->row(get_name(name_t::SNAP_NAME_CONTENT_INDEX))->cell(ipath.get_key())->setValue(ready);
+
+    SNAP_LOG_DEBUG("Page \"")(ipath.get_key())("\" creation was completed.");
 }
 
 
@@ -1319,6 +1327,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     check_attachment_security(file, secure, true);
     if(!secure.allowed())
     {
+        SNAP_LOG_ERROR("attachment not created because it is viewed as insecure; reference: \"")(file.get_attachment_cpath())("\".");
         return false;
     }
 

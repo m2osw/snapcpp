@@ -622,7 +622,7 @@ QString const& attachment_file::get_field_name() const
  *
  * \sa set_attachment_cpath()
  */
-QString const& attachment_file::get_attachment_cpath() const
+QString const & attachment_file::get_attachment_cpath() const
 {
     return f_attachment_cpath;
 }
