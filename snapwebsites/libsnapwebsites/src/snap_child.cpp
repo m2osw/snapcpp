@@ -4122,6 +4122,7 @@ void snap_child::connect_cassandra()
         throw snap_logic_exception("server pointer is nullptr");
     }
     f_cassandra = QtCassandra::QCassandra::create();
+    f_cassandra->setDefaultConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     bool connected(false);
     try
     {
@@ -4142,6 +4143,11 @@ void snap_child::connect_cassandra()
         NOTREACHED();
     }
 
+// WARNING: The f_casssandra->contexts() function should not be used anymore
+//          (only to check whether the context exists,) because the context
+//          is normally created by snapmanager[.cgi] now.
+SNAP_LOG_WARNING("snap_child::connect_cassandra() should not be used anymore...");
+
     // select the Snap! context
     f_cassandra->contexts();
     QString const context_name(get_name(name_t::SNAP_NAME_CONTEXT));
@@ -4154,7 +4160,7 @@ void snap_child::connect_cassandra()
                 QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
         NOTREACHED();
     }
-    // setup the host name for locks to function properly
+    // setup the host name for locks to function properly (TODO: remove since we are not using the libQtCassandra lock anymore!)
     f_context->setHostName(server->get_parameter("server_name"));
 
     // TBD -- Is that really the right place for this?
