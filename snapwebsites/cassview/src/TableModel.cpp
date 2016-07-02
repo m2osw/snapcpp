@@ -70,12 +70,7 @@ bool TableModel::fetchFilter( const QByteArray& key )
 
 QVariant TableModel::data( QModelIndex const & idx, int role ) const
 {
-    if( role == Qt::UserRole )
-    {
-        return QueryModel::data( idx, role );
-    }
-
-    if( role != Qt::DisplayRole && role != Qt::EditRole )
+    if( role != Qt::DisplayRole && role != Qt::EditRole && role != Qt::UserRole )
     {
         return QVariant();
     }
@@ -89,11 +84,25 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
     {
         auto iter = f_sortMap.begin();
         for( int i = 0; i < idx.row(); ++i) iter++;
-        return iter->first;
+        if( role == Qt::UserRole )
+        {
+            return iter->second;
+        }
+        else
+        {
+            return iter->first;
+        }
     }
     else
     {
-        return f_dbutils->get_row_name( f_rows[idx.row()] );
+        if( role == Qt::UserRole )
+        {
+            return QueryModel::data( idx, role );
+        }
+        else
+        {
+            return f_dbutils->get_row_name( f_rows[idx.row()] );
+        }
     }
 }
 
@@ -106,7 +115,7 @@ void TableModel::fetchCustomData( QCassandraQuery::pointer_t q )
     }
 
     const QByteArray value(q->getByteArrayColumn(0));
-    f_sortMap[f_dbutils->get_row_name(value)] = QModelIndex();
+    f_sortMap[f_dbutils->get_row_name(value)] = value;
 }
 
 

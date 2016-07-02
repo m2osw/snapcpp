@@ -42,7 +42,7 @@ public:
     virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
 
 private:
-    typedef std::map<QString,QModelIndex> sort_map_t;
+    typedef std::map<QString,QByteArray> sort_map_t;
     sort_map_t                      f_sortMap;
     std::shared_ptr<snap::dbutils>  f_dbutils;
     bool                            f_sortModel = false;
