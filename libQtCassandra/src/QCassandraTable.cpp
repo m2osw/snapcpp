@@ -462,6 +462,15 @@ QString QCassandraTable::getTableOptions() const
  */
 void QCassandraTable::create()
 {
+    // TODO: this is actually wrong because it only creates the table
+    //       it should be capable of either creating the table or altering
+    //       it because the libQtCassandra user may have changed some
+    //       parameters
+    //
+    //       so if the table exists, we should switch to ALTER TABLE ...
+    //       command instead (for Snap! we do not ever tweak table
+    //       parameters dynamically, so we are good for now.)
+    //
     QString query_string( QString( "CREATE TABLE IF NOT EXISTS %1.%2"
         "(key BLOB,column1 BLOB,value BLOB,PRIMARY KEY(key, column1))"
         "WITH COMPACT STORAGE"
@@ -471,7 +480,7 @@ void QCassandraTable::create()
             );
     query_string += getTableOptions();
 
-    // 1) Load exiting tables from the database,
+    // 1) Load existing tables from the database,
     // 2) Create the table using the query string,
     // 3) Add this object into the list.
     //
