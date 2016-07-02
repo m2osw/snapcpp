@@ -220,7 +220,20 @@ int main(int argc, char *argv[])
 
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
-    tcp_client_server::get_addr_port(communicator_host, communicator_addr, communicator_port, "tcp");
+    try
+    {
+        tcp_client_server::get_addr_port(communicator_host, communicator_addr, communicator_port, "tcp");
+    }
+    catch(tcp_client_server::tcp_client_server_parameter_error const & e)
+    {
+        std::cerr << "tcp_client_server::tcp_client_server_parameter_error exception occurred in get_addr_port(): " << e.what() << std::endl;
+        exit(1);
+    }
+    catch(std::exception const & e)
+    {
+        std::cerr << "!!! exception [" << getpid() << "]: " << e.what() << std::endl;
+        exit(1);
+    }
     snap::snap_lock::initialize_snapcommunicator(communicator_addr.toUtf8().data(), communicator_port);
 
     std::cout << "+ Starting test with " << process_count << " processes and repeat the lock " << repeat << " times" << std::endl;

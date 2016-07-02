@@ -81,8 +81,8 @@ public:
     virtual void                process_message_b(snap::snap_communicator_message const & message) override;
 
 private:
-    manager_daemon *            f_manager_daemon;
-    manager_status *            f_manager_status;
+    manager_daemon *            f_manager_daemon = nullptr;
+    manager_status *            f_manager_status = nullptr;
     QString                     f_server_name;
 };
 

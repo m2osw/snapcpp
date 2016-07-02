@@ -2491,7 +2491,10 @@ void snap_communicator::snap_inter_thread_message_connection::process_read()
     uint64_t value(1);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
-    read(is_thread_a ? *f_thread_a : *f_thread_b, &value, sizeof(value));
+    if(read(is_thread_a ? *f_thread_a : *f_thread_b, &value, sizeof(value)) != sizeof(value))
+    {
+        throw snap_communicator_runtime_error("an error occurred while reading from inter-thread eventfd description.");
+    }
 #pragma GCC diagnostic pop
 
     // send the message for processing

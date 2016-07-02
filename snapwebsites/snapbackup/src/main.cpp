@@ -262,7 +262,6 @@ int main(int argc, char *argv[])
         else
         {
             throw std::runtime_error("You must specify --drop-context, --dump-context, or --restore-context!");
-            retval = 1;
         }
     }
     catch(std::exception const& e)

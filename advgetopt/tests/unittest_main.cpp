@@ -119,16 +119,11 @@ int unittest_main(int argc, char * argv[])
         remove_from_args( arg_list, "--seed", "-s" );
     }
     srand(seed);
-    std::cout << "wpkg[" << getpid() << "]:unittest: seed is " << seed << std::endl;
+    std::cout << "advgetopt[" << getpid() << "]:unittest: seed is " << seed << std::endl;
 
     // we can only have one of those for ALL the tests that directly
     // access the library...
     // (because the result is cached and thus cannot change)
-#if defined(MO_WINDOWS)
-    _putenv_s("WPKG_SUBST", "f=/opt/wpkg|/m2osw/packages:h=usr/local/bin/wpkg");
-#else
-    putenv(const_cast<char *>("WPKG_SUBST=f=/opt/wpkg|/m2osw/packages:h=usr/local/bin/wpkg"));
-#endif
 
     if( !configData.tmp.empty() )
     {
