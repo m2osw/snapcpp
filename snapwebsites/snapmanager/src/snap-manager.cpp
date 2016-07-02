@@ -109,9 +109,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     //connect(f_domain_filter, SIGNAL(itemClicked()), this, SLOT(on_domainFilter_clicked()));
     f_domain_filter_string = getChild<QLineEdit>(this, "domainFilterString");
     f_domain_list = getChild<QListView>(this, "domainList");
-    f_domain_sort_filter = QPointer<QSortFilterProxyModel>( new QSortFilterProxyModel(this) );
-    f_domain_sort_filter->setSourceModel( &f_domain_model );
-    f_domain_list->setModel( f_domain_sort_filter );
+    f_domain_list->setModel( &f_domain_model );
     connect
         ( f_domain_list->selectionModel()
         , &QItemSelectionModel::currentChanged
@@ -133,10 +131,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
 
     // get website friends that are going to be used here and there
     f_website_list = getChild<QListView>(this, "websiteList");
-    f_website_sort_filter = QPointer<QSortFilterProxyModel>( new QSortFilterProxyModel(this) );
-    f_website_sort_filter->setSourceModel( &f_website_model );
-    f_website_sort_filter->setDynamicSortFilter( false );
-    f_website_list->setModel( f_website_sort_filter );
+    f_website_list->setModel( &f_website_model );
     connect
         ( f_website_list->selectionModel()
         , &QItemSelectionModel::currentChanged
@@ -1248,6 +1243,9 @@ void snap_manager::on_domainSave_clicked()
             return;
         }
 
+#if 0
+        // This doesn't make a lot of sense in CQL land, since INSERT and UPDATE do basically the same thing.
+        //
         QString const table_name              ( snap::get_name( snap::name_t::SNAP_NAME_DOMAINS));
         QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
@@ -1282,6 +1280,7 @@ void snap_manager::on_domainSave_clicked()
             }
             return;
         }
+#endif
         saveDomain();
     }
 }
@@ -1530,11 +1529,6 @@ void snap_manager::loadWebsites()
 
 void snap_manager::onWebsitesLoaded()
 {
-    // For some reason, dynamic sort is failing on this model,
-    // but works just fine on the f_domain_sort_filter.
-    //
-    f_website_sort_filter->sort(0);
-
     // at first some of the entries are disabled
     // until a select is made or New is clicked
     f_website_name->setEnabled(false);

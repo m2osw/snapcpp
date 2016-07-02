@@ -40,6 +40,8 @@ WebsiteModel::WebsiteModel()
 
 void WebsiteModel::doQuery()
 {
+    f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
+
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
 
@@ -91,68 +93,36 @@ bool WebsiteModel::fetchFilter( const QByteArray& key )
 }
 
 
-#if 0
 QVariant WebsiteModel::data( QModelIndex const & idx, int role ) const
 {
+    if( role != Qt::DisplayRole && role != Qt::EditRole && role != Qt::UserRole )
+    {
+        return QVariant();
+    }
+
+    if( static_cast<int>(f_sortMap.size()) <= idx.row() )
+    {
+        return QVariant();
+    }
+
+    auto iter = f_sortMap.begin();
+    for( int i = 0; i < idx.row(); ++i) iter++;
     if( role == Qt::UserRole )
     {
-        return QueryModel::data( idx, role );
+        return iter->second;
     }
-
-    if( role != Qt::DisplayRole && role != Qt::EditRole )
+    else
     {
-        return QVariant();
+        return iter->first;
     }
-
-    if( static_cast<int>(f_rows.size()) <= idx.row() )
-    {
-        return QVariant();
-    }
-
-    const QByteArray& row( f_rows[idx.row()] );
-    tld_result r;
-    tld_info info;
-    const char *d = row.data();
-    r = tld( d, &info );
-    if( r != TLD_RESULT_SUCCESS )
-    {
-        QMessageBox::critical
-                ( 0
-                , "Invalid TLD in Domain Name"
-                , QString("The TLD of this domain: \"%1\" is not valid. This entry will be skipped.")
-                          .arg(row.data())
-                , QMessageBox::Ok
-                );
-        return QVariant();
-    }
-    const char *domain = d; // by default assume no sub-domain
-    for(; d < info.f_tld; ++d)
-    {
-        if(*d == '.')
-        {
-            domain = d + 1;
-        }
-    }
-
-    //const int mid_pos(f_domain_org_name.length() + 2);
-    //if( key.length() <= mid_pos)
-    if( domain != f_domain_org_name )
-    {
-        // note that the length of the key is at least 4 additional
-        // characters but at this point we don't make sure that the
-        // key itself is fully correct (it should be)
-        QMessageBox::warning
-                ( 0
-                  , tr("Invalid Website Index")
-                  , tr("Somehow we have found an invalid entry in the list of websites. It is suggested that you regenerate the index. Note that this index is not used by the Snap server itself.")
-                  , QMessageBox::Ok
-                  );
-        return QueryModel::data( idx, role );
-    }
-
-    return row;
 }
-#endif
+
+
+void WebsiteModel::fetchCustomData( QCassandraQuery::pointer_t q )
+{
+    const QByteArray value(q->getByteArrayColumn(0));
+    f_sortMap[f_dbutils->get_row_name(value)] = value;
+}
 
 
 // vim: ts=4 sw=4 et

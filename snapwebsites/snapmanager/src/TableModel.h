@@ -16,9 +16,11 @@
 //
 #pragma once
 
+#include <QModelIndex>
+
 #include <QtCassandra/QueryModel.h>
 
-#include <QModelIndex>
+#include <snapwebsites/dbutils.h>
 
 class TableModel
     : public QtCassandra::QueryModel
@@ -28,11 +30,19 @@ class TableModel
 public:
     TableModel();
 
+    void doQuery();
+
     // Read only access
     //
-    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const;
+    virtual bool     fetchFilter( const QByteArray& key ) override;
+    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
+    virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
 
-    void doQuery();
+private:
+    typedef std::map<QString,QByteArray> sort_map_t;
+    sort_map_t                      f_sortMap;
+    std::shared_ptr<snap::dbutils>  f_dbutils;
 };
+
 
 // vim: ts=4 sw=4 et

@@ -17,7 +17,6 @@
 //===============================================================================
 
 #include "TableModel.h"
-#include <snapwebsites/dbutils.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
 
@@ -39,6 +38,8 @@ TableModel::TableModel()
 
 void TableModel::doQuery()
 {
+    f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
+
     auto q = QCassandraQuery::create(f_session);
     q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
@@ -51,32 +52,51 @@ void TableModel::doQuery()
 }
 
 
+bool TableModel::fetchFilter( const QByteArray& key )
+{
+    QString const row_name( f_dbutils->get_row_name( key ) );
+
+    if( !f_filter.isEmpty() )
+    {
+        if( f_filter.indexIn( row_name ) == -1 )
+        {
+            return false;
+        }
+    }
+    //
+    return true;
+}
+
+
 QVariant TableModel::data( QModelIndex const & idx, int role ) const
 {
+    if( role != Qt::DisplayRole && role != Qt::EditRole && role != Qt::UserRole )
+    {
+        return QVariant();
+    }
+
+    if( static_cast<int>(f_sortMap.size()) <= idx.row() )
+    {
+        return QVariant();
+    }
+
+    auto iter = f_sortMap.begin();
+    for( int i = 0; i < idx.row(); ++i) iter++;
     if( role == Qt::UserRole )
     {
-        return QueryModel::data( idx, role );
+        return iter->second;
     }
-
-    if( role != Qt::DisplayRole && role != Qt::EditRole )
+    else
     {
-        return QVariant();
+        return iter->first;
     }
+}
 
-    if( static_cast<int>(f_rows.size()) <= idx.row() )
-    {
-        return QVariant();
-    }
 
-    QSettings settings;
-    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
-    if( f_keyspaceName == snap_keyspace )
-    {
-        snap::dbutils du( f_tableName, "" );
-        return du.get_row_name( f_rows[idx.row()] );
-    }
-
-    return QueryModel::data( idx, role );
+void TableModel::fetchCustomData( QCassandraQuery::pointer_t q )
+{
+    const QByteArray value(q->getByteArrayColumn(0));
+    f_sortMap[f_dbutils->get_row_name(value)] = value;
 }
 
 

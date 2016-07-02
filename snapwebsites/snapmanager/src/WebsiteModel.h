@@ -18,6 +18,8 @@
 
 #include <QtCassandra/QueryModel.h>
 
+#include <snapwebsites/dbutils.h>
+
 #include <QModelIndex>
 
 class WebsiteModel
@@ -28,17 +30,21 @@ class WebsiteModel
 public:
     WebsiteModel();
 
+    void doQuery();
+
     void setDomainOrgName( const QString& val ) { f_domain_org_name = val; }
 
     // Read only access
     //
-    virtual bool     fetchFilter( const QByteArray& key );
-    //virtual QVariant data       ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
-
-    void doQuery();
+    virtual bool     fetchFilter( const QByteArray& key ) override;
+    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
+    virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
 
 private:
-    QString f_domain_org_name;
+    typedef std::map<QString,QByteArray> sort_map_t;
+    QString                         f_domain_org_name;
+    sort_map_t                      f_sortMap;
+    std::shared_ptr<snap::dbutils>  f_dbutils;
 };
 
 // vim: ts=4 sw=4 et
