@@ -930,23 +930,41 @@ void snap_manager::onContextCreated( QCassandraQuery::pointer_t /*q*/ )
 
 void snap_manager::create_table(QString const & table_name, QString const & comment)
 {
-    QString query_str( "CREATE TABLE %1.%2 (key blob, column1 blob, value blob, PRIMARY KEY ((key), column1))\n" );
 
-    // this is the default for contexts, but just in case we were
-    // to change that default at a later time...
-    //
-    query_str += QString("WITH comment = '%1'\n").arg(comment);
-    query_str += QString("AND memtable_flush_period_in_ms = 3600000\n");
-    query_str += QString("AND gc_grace_seconds = 864000\n");
-    query_str += QString("AND compaction =\n");
-    query_str += QString( "\t{ 'class': 'SizeTieredCompactionStrategy', "
-                          "'min_threshold': '4', "
-                          "'max_threshold': '22'}\n" );
-    auto query( createQuery(table_name, query_str) );
-    query->setDescription( QString("Create [%1] table, comment=[%2]")
-        .arg(table_name)
-        .arg(comment) );
-    addQuery(query);
+    // use RAII at some point, although an exception and we exit anyway...
+    QtCassandra::QCassandraSession::pointer_t save_session(f_session);
+
+    {
+        f_session = QtCassandra::QCassandraSession::create();
+
+        // increase timeout to 5 min. while creating tables
+        // (must be done before the connect() below)
+        //
+        f_session->setTimeout(5 * 60 * 1000);
+
+        f_session->connect( f_cassandra_host, f_cassandra_port );
+
+        QString query_str( "CREATE TABLE %1.%2 (key blob, column1 blob, value blob, PRIMARY KEY ((key), column1))\n" );
+
+        // this is the default for contexts, but just in case we were
+        // to change that default at a later time...
+        //
+        query_str += QString("WITH comment = '%1'\n").arg(comment);
+        query_str += QString("AND memtable_flush_period_in_ms = 3600000\n");
+        query_str += QString("AND gc_grace_seconds = 864000\n");
+        query_str += QString("AND compaction =\n");
+        query_str += QString( "\t{ 'class': 'SizeTieredCompactionStrategy', "
+                              "'min_threshold': '4', "
+                              "'max_threshold': '22'}\n" );
+        auto query( createQuery(table_name, query_str) );
+        query->setDescription( QString("Create [%1] table, comment=[%2]")
+            .arg(table_name)
+            .arg(comment) );
+        addQuery(query);
+    }
+
+    // restore "normal" session
+    f_session = save_session;
 }
 
 

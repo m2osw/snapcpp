@@ -613,6 +613,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
         // see: https://datastax-oss.atlassian.net/browse/CPP-362
         //      https://datastax-oss.atlassian.net/browse/CPP-300
         //
+        //SNAP_LOG_INFO("creating sub-Cassandra-session for this slow order (")(order.cql())(")");
         order_session = QtCassandra::QCassandraSession::create();
         {
             snap::snap_thread::snap_lock lock(g_connections_mutex);
@@ -626,7 +627,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
         order_session = f_session;
     }
 
-    auto q( QtCassandra::QCassandraQuery::create( f_session ) );
+    auto q( QtCassandra::QCassandraQuery::create( order_session ) );
     send_order(q, order);
 
     // success

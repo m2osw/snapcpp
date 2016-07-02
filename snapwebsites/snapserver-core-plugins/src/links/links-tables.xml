@@ -21,7 +21,7 @@ See libsnapwebsites/src/core-tables.xml for documentation.
 -->
 <keyspace>
   <!-- TODO: enter the schema -->
-  <table name="link" model="content">
+  <table name="links" model="content">
     <description>Links index table</description>
   </table>
 </keyspace>
