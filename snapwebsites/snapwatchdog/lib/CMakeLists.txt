@@ -81,6 +81,10 @@ install(
     TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
 )
 install(
+    FILES "snapwatchdog-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
+)
+install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwatchdog
     FILES_MATCHING PATTERN "*.h"

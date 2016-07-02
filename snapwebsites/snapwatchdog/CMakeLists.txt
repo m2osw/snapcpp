@@ -96,6 +96,8 @@ include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
+set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
+
 ##
 ## Compiling
 ##
