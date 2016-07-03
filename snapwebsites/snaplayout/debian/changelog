@@ -1,3 +1,9 @@
+snaplayout (1.0.0.40~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 03 Jul 2016 02:02:42 -0700
+
 snaplayout (1.0.0.39~xenial) xenial; urgency=high
 
   * Nightly build.
