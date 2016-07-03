@@ -508,6 +508,31 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
         }
     }
 
+    // Get the list of dependencies that must be started first.
+    //
+    {
+        f_dependsList.clear();
+        //
+        QDomElement sub_element(e.firstChildElement("dependencies"));
+        if( !sub_element.isNull() )
+        {
+            QDomNode n( sub_element.firstChild() );
+            while( !n.isNull() )
+            {
+                if( n.isElement() )
+                {
+                    QDomElement subelm(n.toElement());
+                    if( subelm.tagName() == "entry" )
+                    {
+                        f_dependsList << subelm.text();
+                    }
+                }
+                //
+                n = n.nextSibling();
+            }
+        }
+    }
+
     // compute the full path to the binary
     //
     // note: f_command cannot be empty here

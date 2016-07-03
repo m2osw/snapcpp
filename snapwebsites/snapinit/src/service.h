@@ -109,6 +109,7 @@ private:
     QString                     f_options;
     QString                     f_user;
     QString                     f_group;
+    QStringList                 f_dependsList;
     pid_t                       f_pid = 0;
     pid_t                       f_old_pid = 0;
     int                         f_short_run_count = 0;

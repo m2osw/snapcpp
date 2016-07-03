@@ -761,10 +761,13 @@ void snap_init::init()
             snap::NOTREACHED();
         }
 
+        QString const user ( f_config.contains("user")  ? f_config["user"]  : "snapwebsites" );
+        QString const group( f_config.contains("group") ? f_config["group"] : "snapwebsites" );
+
         // for sub-processes to be able to access that folder we need to
         // also setup the user and group as expected
         //
-        snap::chownnm(runpath, "snapwebsites", "snapwebsites");
+        snap::chownnm(runpath, user, group);
     }
 
     // Stop on these signals, log them, then terminate.
