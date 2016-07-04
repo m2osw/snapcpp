@@ -1489,9 +1489,28 @@ void snap_init::user_signal_caught(int sig)
  *
  * \return true if the snapinit process lock file exists.
  */
-bool snap_init::is_running()
+bool snap_init::is_running() const
 {
     return f_lock_file.exists();
+}
+
+
+/** \brief Check whether a service is running.
+ *
+ * \return true if the snapinit process is running.
+ */
+bool snap_init::is_running( const QString& service_name ) const
+{
+    for( auto service : f_service_list )
+    {
+        if( service->get_service_name() == service_name )
+        {
+            return service->is_running();
+        }
+    }
+
+    // Service not found!
+    return false;
 }
 
 

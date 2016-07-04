@@ -67,7 +67,7 @@ public:
     void                        configure(QDomElement e, QString const & binary_path, bool const debug, bool const ignore_path_check);
 
     // snap::snap_communicator::snap_timer implementation
-    virtual void                process_timeout();
+    virtual void                process_timeout() override;
 
     bool                        exists() const;
     bool                        run();
