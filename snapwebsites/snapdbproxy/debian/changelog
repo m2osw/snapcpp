@@ -1,3 +1,15 @@
+snapdbproxy (1.0.1.41~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 04 Jul 2016 02:02:49 -0700
+
+snapdbproxy (1.0.1.40~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 03 Jul 2016 02:01:36 -0700
+
 snapdbproxy (1.0.1.39~xenial) xenial; urgency=high
 
   * Nightly build.
