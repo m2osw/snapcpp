@@ -1100,8 +1100,8 @@ bool service::run()
     //
     if( !f_dependsList.isEmpty() )
     {
-        auto snap_init( f_snap_init.lock() );
-        for( auto svc : f_dependsList )
+        const auto snap_init( f_snap_init.lock() );
+        for( const auto& svc : f_dependsList )
         {
             if( !snap_init->is_running(svc) )
             {
