@@ -47,19 +47,21 @@ include_directories(
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${snapmanager_SOURCE_DIR}
 )
+
 
 add_executable( ${PROJECT_NAME}
     main.cpp
-    messenger.cpp
     snapmanagercgi.cpp
-    status_file.cpp
 )
+    #messenger.cpp -- not used at this time, instead we use the $data_path/... files
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snapmanager.cgi )
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries( ${PROJECT_NAME}
+    snapmanager
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     ${AS2JS_LIBRARIES}

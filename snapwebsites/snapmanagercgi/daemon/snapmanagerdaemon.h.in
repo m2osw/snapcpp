@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "lib/manager.h"
+
 #include "advgetopt/advgetopt.h"
 #include "snapwebsites/addr.h"
 #include "snapwebsites/log.h"
@@ -36,6 +38,8 @@ namespace snap_manager
 #define SNAPMANAGERDAEMON_VERSION_STRING  "@SNAPMANAGERCGI_VERSION_MAJOR@.@SNAPMANAGERCGI_VERSION_MINOR@.@SNAPMANAGERCGI_VERSION_PATCH@"
 
 class manager_daemon;
+class manager_status;
+
 
 class manager_messenger
         : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
@@ -61,10 +65,6 @@ protected:
 
 
 
-class manager_daemon;
-class manager_status;
-
-
 class status_connection
         : public snap::snap_communicator::snap_inter_thread_message_connection
 {
@@ -75,6 +75,7 @@ public:
 
     void                        set_thread_b(manager_status * ms);
     void                        set_server_name(QString const & server_name);
+    QString const &             get_public_ip() const;
 
     // snap::snap_communicator::snap_pipe_message_connection implementation
     virtual void                process_message_a(snap::snap_communicator_message const & message) override;
@@ -105,6 +106,7 @@ public:
     void                        process_message(snap::snap_communicator_message const & message);
 
     // list of functions used to gather status information
+    void                        status_ip_address();
     void                        status_check_running_services();
     void                        status_has_list_of_frontend_computers();
 
@@ -124,14 +126,20 @@ private:
 
 
 class manager_daemon
+    : public manager
 {
 public:
-                                manager_daemon( int argc, char * argv[] );
+    typedef std::shared_ptr<manager_daemon> pointer_t;
+
+                                manager_daemon();
     virtual                     ~manager_daemon();
 
+    void                        init(int argc, char * argv[]);
     int                         run();
     void                        process_message(snap::snap_communicator_message const & message);
     void                        forward_message(snap::snap_communicator_message const & message);
+    void                        unreachable_message(snap::snap_communicator_message const & message);
+    QString const &             get_public_ip() const;
 
 private:
     static void                 sighandler( int sig );
@@ -143,13 +151,7 @@ private:
     void                            installer(snap::snap_communicator_message const & message);
     int                                 install(QString const & package_name);
 
-    advgetopt::getopt                           f_opt;
-    snap::snap_config                           f_config;
-    QString                                     f_log_conf = "/etc/snapwebsites/snaplock.properties";
-    QString                                     f_data_path = "/var/lib/snapswebsites/cluster-status";
-    QString                                     f_server_name;
     QString                                     f_server_types;             // sent to use by snapcommunicator
-    bool                                        f_debug = true;
     int                                         f_communicator_port = -1;   // snap server port
     QString                                     f_communicator_address;     // snap server address
     snap::snap_communicator::pointer_t          f_communicator;
@@ -159,6 +161,7 @@ private:
     snap::snap_thread                           f_status_thread;
     QString                                     f_status;           // our status
     QString                                     f_output;           // commands output, to be sent to end user
+    QString                                     f_public_ip;        // this server public IP address (as far as snapcommunicator is concerned)
 };
 
 

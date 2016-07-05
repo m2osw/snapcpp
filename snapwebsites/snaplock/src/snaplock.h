@@ -121,6 +121,7 @@ public:
     void                entering();
     void                entered();
     ticket_id_t         get_ticket_number() const;
+    time_t              get_obtention_timeout() const;
     time_t              get_lock_timeout() const;
     void                max_ticket(int64_t new_max_ticket);
     void                add_ticket();

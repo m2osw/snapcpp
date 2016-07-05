@@ -84,11 +84,17 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 
 ##
 ## Compiling
 ##
 add_subdirectory( conf   )          # Configuration files and samples
+add_subdirectory( lib    )          # Common code to CGI, daemon, plugins
 add_subdirectory( cgi    )          # The snapmanager.cgi application
 add_subdirectory( daemon )          # The snapmanagerdaemon to apply commands on any computer
 add_subdirectory( doc    )          # Documentation generation

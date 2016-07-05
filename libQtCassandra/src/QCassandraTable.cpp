@@ -1282,9 +1282,16 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
         return;
     }
 
-    QString query_string(QString("INSERT INTO %1.%2(key,column1,value)VALUES(?,?,?)")
+    // We expect all of our orders to be serialized within a session, to
+    // ensure such a serialization, we have to ourselves specify the
+    // TIMESTAMP parameter. This also means a DROP may have problems
+    // and it adds some slowness.
+    //
+    int64_t const timestamp(QCassandra::timeofday());
+    QString query_string(QString("INSERT INTO %1.%2(key,column1,value)VALUES(?,?,?)USING TIMESTAMP %3")
         .arg(f_context->contextName())
         .arg(f_tableName)
+        .arg(timestamp)
         );
 
     // define TTL only if the user defined it (Cassandra uses a 'null' when
@@ -1293,7 +1300,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     //
     if(value.ttl() != QCassandraValue::TTL_PERMANENT)
     {
-        query_string += QString("USING TTL %1").arg(value.ttl());
+        query_string += QString(" AND TTL %1").arg(value.ttl());
     }
 
     QCassandraOrder insert_value;

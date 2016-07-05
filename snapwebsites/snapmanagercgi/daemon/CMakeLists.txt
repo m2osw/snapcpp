@@ -63,6 +63,7 @@ add_executable( ${PROJECT_NAME}
 )
 
 target_link_libraries( ${PROJECT_NAME}
+    snapmanager
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     ${AS2JS_LIBRARIES}

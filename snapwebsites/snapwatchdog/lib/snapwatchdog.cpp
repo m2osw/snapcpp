@@ -356,7 +356,7 @@ char const * get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_logic_exception("Invalid SNAP_NAME_WATCHDOG_CPU_...");
+        throw snap_logic_exception("Invalid SNAP_NAME_WATCHDOG_...");
 
     }
     NOTREACHED();

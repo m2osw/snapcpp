@@ -36,147 +36,32 @@
 #include <glob.h>
 #include <sys/file.h>
 
-namespace
-{
-
-std::vector<std::string> const g_configuration_files
-{
-    "@snapwebsites@",  // project name
-    "/etc/snapwebsites/snapmanagercgi.conf"
-};
-
-advgetopt::getopt::option const g_snapmanagercgi_options[] =
-{
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        nullptr,
-        nullptr,
-        "Usage: %p [-<opt>]",
-        advgetopt::getopt::help_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        nullptr,
-        nullptr,
-        "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "clients",
-        nullptr,
-        "Define the address of computers that are authorized to connect to this snapmanager.cgi instance.",
-        advgetopt::getopt::optional_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "connect",
-        nullptr,
-        "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-        advgetopt::getopt::optional_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "data_path",
-        "/var/lib/snapwebsites/cluster-status",
-        "Path to this process data directory to save the cluster status.",
-        advgetopt::getopt::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "log_config",
-        "/etc/snapwebsites/snapmanagercgi.properties",
-        "Full path of log configuration file",
-        advgetopt::getopt::optional_argument
-    },
-    {
-        'h',
-        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "help",
-        nullptr,
-        "Show this help screen.",
-        advgetopt::getopt::no_argument
-    },
-    {
-        '\0',
-        0,
-        "stylesheet",
-        "/etc/snapwebsites/snapmanagercgi-parser.xsl",
-        "The stylesheet to use to transform the data before sending it to the client as HTML.",
-        advgetopt::getopt::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "version",
-        nullptr,
-        "Show the version of the snapcgi executable.",
-        advgetopt::getopt::no_argument
-    },
-    {
-        '\0',
-        0,
-        nullptr,
-        nullptr,
-        nullptr,
-        advgetopt::getopt::end_of_options
-    }
-};
-
-
-
-}
-// no name namespace
-
 
 
 namespace snap_manager
 {
 
 
-/** \brief Initialize the manager.
+/** \brief Initialize the manager_cgi.
  *
- * The manager gets initialized with the argc and argv in case it
+ * The manager_cgi gets initialized with the argc and argv in case it
  * gets started from the command line. That way one can use --version
  * and --help, especially.
- *
- * \param[in] argc  The number of argiments defined in argv.
- * \param[in] argv  The array of arguments.
  */
-manager::manager( int argc, char * argv[] )
-    : f_opt(argc, argv, g_snapmanagercgi_options, g_configuration_files, "SNAPMANAGERCGI_OPTIONS")
+manager_cgi::manager_cgi()
+    : manager(false)
     , f_communicator_port(4040)
     , f_communicator_address("127.0.0.1")
 {
-    if(f_opt.is_defined("version"))
-    {
-        std::cerr << SNAPMANAGERCGI_VERSION_STRING << std::endl;
-        exit(1);
-    }
-    if(f_opt.is_defined("help"))
-    {
-        f_opt.usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", argv[0]);
-        exit(1);
-    }
-
-    // read log_config and setup the logger
-    std::string logconfig(f_opt.get_string("log_config"));
-    snap::logging::configure_conffile( logconfig.c_str() );
 }
 
 
-manager::~manager()
+manager_cgi::~manager_cgi()
 {
 }
 
 
-int manager::error(char const * code, char const * msg, char const * details)
+int manager_cgi::error(char const * code, char const * msg, char const * details)
 {
     if(details == nullptr)
     {
@@ -212,12 +97,20 @@ int manager::error(char const * code, char const * msg, char const * details)
  *
  * \return true if the request is accepted, false otherwise.
  */
-bool manager::verify()
+bool manager_cgi::verify()
 {
-    // If not defined, keep the default of localhost:4040
-    if(f_opt.is_defined("snapcommunicator"))
+    if(!f_config.contains("stylesheet"))
     {
-        snap_addr::addr const a(f_opt.get_string("snapcommunicator"), "127.0.0.1", 4040, "tcp");
+        error("503 Service Unavailable",
+              "The snapmanager.cgi service is not currently available.",
+              "The stylesheet parameter is not defined.");
+        return false;
+    }
+
+    // If not defined, keep the default of localhost:4040
+    if(f_config.contains("snapcommunicator"))
+    {
+        snap_addr::addr const a(f_config["snapcommunicator"].toUtf8().data(), "127.0.0.1", 4040, "tcp");
         f_communicator_address = a.get_ipv4or6_string(false, false);
         f_communicator_port = a.get_port();
     }
@@ -283,7 +176,7 @@ bool manager::verify()
 
     // verify that this is a client we allow to use snapmanager.cgi
     //
-    if(!f_opt.is_defined("clients"))
+    if(!f_config.contains("clients"))
     {
         error("403 Forbidden", "You are not allowed on this server.", "The clients=... parameter is undefined.");
         return false;
@@ -291,7 +184,7 @@ bool manager::verify()
 
     {
         snap_addr::addr const remote_address(std::string(remote_addr) + ":80", "tcp");
-        std::string const client(f_opt.get_string("clients"));
+        std::string const client(f_config.contains("clients") ? f_config["clients"].toUtf8().data() : "");
 
         snap::snap_string_list const client_list(QString::fromUtf8(client.c_str()).split(',', QString::SkipEmptyParts));
         bool found(false);
@@ -444,7 +337,7 @@ bool manager::verify()
  *
  * \return 0 if the process worked as expected, 1 otherwise.
  */
-int manager::process()
+int manager_cgi::process()
 {
     // WARNING: do not use std::string because nullptr will crash
     char const * request_method( getenv("REQUEST_METHOD") );
@@ -461,7 +354,7 @@ int manager::process()
                     << "Allow: GET, POST"                       << std::endl
                     << "Content-Type: text/html; charset=utf-8" << std::endl
                     << "Content-Length: " << body.length()      << std::endl
-                    << "X-Powered-By: snap.cgi"                 << std::endl
+                    << "X-Powered-By: snapmanager.cgi"          << std::endl
                     << std::endl
                     << body;
         return false;
@@ -488,11 +381,10 @@ int manager::process()
 
     generate_content(doc, root);
 
-    std::string const xsl_filename(f_opt.get_string("stylesheet"));
 //SNAP_LOG_WARNING("Doc = [")(doc.toString())("]");
 
     snap::xslt x;
-    x.set_xsl_from_file(QString::fromUtf8(xsl_filename.c_str()));
+    x.set_xsl_from_file(f_config["stylesheet"]); // setup the .xsl file
     x.set_document(doc);
     QString const body(x.evaluate_to_string());
 
@@ -502,7 +394,7 @@ int manager::process()
                 << "Connection: close"                      << std::endl
                 << "Content-Type: text/html; charset=utf-8" << std::endl
                 << "Content-Length: " << body.length()      << std::endl
-                << "X-Powered-By: snap.cgi"                 << std::endl
+                << "X-Powered-By: snapmanager.cgi"          << std::endl
                 << std::endl
                 << body;
 
@@ -512,10 +404,10 @@ int manager::process()
 
 /** \brief Generate the body of the page.
  *
- * This function checks the various query strings passed to the manager
+ * This function checks the various query strings passed to the manager_cgi
  * and depending on those, generates a page.
  */
-void manager::generate_content(QDomDocument doc, QDomElement root)
+void manager_cgi::generate_content(QDomDocument doc, QDomElement root)
 {
     QDomElement output(doc.createElement("output"));
     root.appendChild(output);
@@ -565,19 +457,19 @@ void manager::generate_content(QDomDocument doc, QDomElement root)
 }
 
 
-void manager::get_host_status(QDomDocument doc, QDomElement output, QString const host)
+void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const host)
 {
     // define the path to the .db file
     //
     QString filename;
-    if(f_opt.get_string("data_path").empty())
+    if(!f_config.contains("data_path"))
     {
         filename = host + ".db";
     }
     else
     {
         filename = QString("%1/%2.db")
-                    .arg(QString::fromUtf8(f_opt.get_string("data_path").c_str()))
+                    .arg(f_config["data_path"])
                     .arg(host);
     }
 
@@ -659,7 +551,7 @@ void manager::get_host_status(QDomDocument doc, QDomElement output, QString cons
 }
 
 
-void manager::get_cluster_status(QDomDocument doc, QDomElement output)
+void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 {
     struct err_callback
     {
@@ -679,13 +571,13 @@ void manager::get_cluster_status(QDomDocument doc, QDomElement output)
     };
 
     std::string pattern;
-    if(f_opt.get_string("data_path").empty())
+    if(!f_config.contains("data_path"))
     {
         pattern = "*.db";
     }
     else
     {
-        pattern = f_opt.get_string("data_path") + "/*.db";
+        pattern = (f_config["data_path"] + "/*.db").toUtf8().data();
     }
     glob_t dir = glob_t();
     int const r(glob(pattern.c_str(), GLOB_NOESCAPE, err_callback::func, &dir));

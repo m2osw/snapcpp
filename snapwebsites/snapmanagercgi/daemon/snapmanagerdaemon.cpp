@@ -33,106 +33,6 @@
 
 #include <sstream>
 
-namespace
-{
-    std::vector<std::string> const g_configuration_files
-    {
-        //"/etc/snapwebsites/snapmanagerdaemon.conf" -- we use the snap f_config variable instead
-    };
-
-    const advgetopt::getopt::option g_snapmanagerdaemon_options[] =
-    {
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "Usage: %p [-<opt>]",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-            "config",
-            "/etc/snapwebsites/snapmanagerdaemon.conf",
-            "Path and filename of the snapmanagerdaemon configuration file.",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "connect",
-            nullptr,
-            "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-            "debug",
-            nullptr,
-            "Set the service in debug mode.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "log_config",
-            "/etc/snapwebsites/snapmanagerdaemon.properties",
-            "Full path of log configuration file",
-            advgetopt::getopt::required_argument
-        },
-        {
-            'h',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "help",
-            nullptr,
-            "Show this help screen.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-            "server-name",
-            0,
-            "Name of the server on which snapmanagerdaemon is running.",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-            "snapdbproxy",
-            0,
-            "The IP address and port of the snapdbproxy service.",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "version",
-            nullptr,
-            "Show the version of the snapcgi executable.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            0,
-            nullptr,
-            nullptr,
-            nullptr,
-            advgetopt::getopt::end_of_options
-        }
-    };
-}
-// no name namespace
 
 
 
@@ -149,64 +49,26 @@ namespace snap_manager
  * \param[in] argc  The number of argiments defined in argv.
  * \param[in] argv  The array of arguments.
  */
-manager_daemon::manager_daemon( int argc, char * argv[] )
-    : f_opt(argc, argv, g_snapmanagerdaemon_options, g_configuration_files, "SNAPMANAGERDAEMON_OPTIONS")
+manager_daemon::manager_daemon(  )
+    : manager(true)
     , f_communicator_port(4040)
     , f_communicator_address("127.0.0.1")
     , f_status_connection(new status_connection(this))
     , f_status_runner(f_status_connection)
     , f_status_thread("status", &f_status_runner)
 {
-    // --help
-    //
-    if(f_opt.is_defined("help"))
-    {
-        f_opt.usage(f_opt.no_error, "Usage: %s -<arg> ...\n", argv[0]);
-        exit(1);
-    }
+}
 
-    // --version
-    //
-    if(f_opt.is_defined("version"))
-    {
-        std::cerr << SNAPMANAGERDAEMON_VERSION_STRING << std::endl;
-        exit(1);
-    }
 
-    // read the configuration file
-    //
-    f_config.read_config_file( QString::fromUtf8( f_opt.get_string("config").c_str() ) );
+void manager_daemon::init(int argc, char * argv[])
+{
+    manager::init(argc, argv);
 
-    // --server-name (mandatory)
-    f_server_name = f_opt.get_string("server-name").c_str();
     f_status_connection->set_server_name(f_server_name);
-
-    // --debug
-    //
-    f_debug = f_opt.is_defined("debug");
-
-    // setup the logger
-    // the definition in the configuration file has priority...
-    //
-    f_log_conf = QString::fromUtf8(f_opt.get_string("log_config").c_str());
-    if(f_config.contains("log_config"))
-    {
-        // use .conf definition when available
-        f_log_conf = f_config["log_config"];
-    }
-    snap::logging::configure_conffile( f_log_conf );
-
-    if(f_debug)
-    {
-        // Force the logger level to DEBUG
-        // (unless already lower)
-        //
-        snap::logging::reduce_log_output_level( snap::logging::log_level_t::LOG_LEVEL_DEBUG );
-    }
 
     // --connect <communicator IP:port> (mandatory)
     //
-    tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_address, f_communicator_port, "tcp");
+    tcp_client_server::get_addr_port(f_opt->get_string("connect").c_str(), f_communicator_address, f_communicator_port, "tcp");
 
     // TODO: make us snapwebsites by default and root only when required...
     //       (and use RAII to do the various switches)
@@ -222,43 +84,8 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
         throw std::runtime_error("fatal error: could not setup executable to run as group root.");
     }
 
-    // make sure there are no standalone parameters
-    //
-    if( f_opt.is_defined( "--" ) )
-    {
-        std::cerr << "fatal error: unexpected parameter found on daemon command line." << std::endl;
-        f_opt.usage(f_opt.error, "Usage: %s -<arg> ...\n", argv[0]);
-        snap::NOTREACHED();
-    }
-
-    // get the data path, we will be saving the status of each computer
-    // in the cluster using this path
-    //
-    // Note: the user could change this path to use /run/snapwebsites/...
-    //       instead so that way it saves the data to RAM instead of disk;
-    //       however, by default we use the disk because it may end up being
-    //       rather large and we do not want to swarm the memory of small
-    //       VPSes; also that way snapmanager.cgi knows of all the statuses
-    //       immediately after a reboot
-    //
-    f_data_path = "/var/lib/snapwebsites/cluster-status";
-    if(f_config.contains("data_path"))
-    {
-        // use .conf definition when available
-        f_data_path = f_config["data_path"];
-    }
-    // make sure directory exists
-    if(snap::mkdir_p(f_data_path, false) != 0)
-    {
-        std::stringstream msg;
-        msg << "manager_daemon:mkdir_p(...): process could not create cluster-status directory \""
-            << f_data_path
-            << "\".";
-        throw std::runtime_error(msg.str());
-    }
-
-    // get the list of front end servers (as far as snapmanager.cgi is
-    // concerned)
+    // get the list of front end servers (i.e. list of computer(s)
+    // accepting snapmanager.cgi requests)
     //
     if(f_config.contains("snapmanager_frontend"))
     {
@@ -388,7 +215,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERRESEND,MANAGERSTATUS,QUITTING,READY,STOP,UNKNOWN");
+            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERRESEND,MANAGERSTATUS,QUITTING,READY,STOP,UNKNOWN,UNREACHABLE");
 
             f_messenger->send_message(reply);
 
@@ -468,12 +295,24 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
                 stop(false);
             }
 
+            // request a copy of our public IP address
+            {
+                snap::snap_communicator_message public_ip;
+                public_ip.set_command("PUBLIC_IP");
+                f_messenger->send_message(public_ip);
+            }
             return;
         }
         break;
 
     case 'S':
-        if(command == "STOP")
+        if(command == "SERVER_PUBLIC_IP")
+        {
+            // snapcommunicator replied
+            //
+            f_public_ip = message.get_parameter("public_ip");
+        }
+        else if(command == "STOP")
         {
             // Someone is asking us to leave (probably snapinit)
             //
@@ -488,6 +327,11 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // we sent a command that Snap! Communicator did not understand
             //
             SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            return;
+        }
+        else if(command == "UNREACHABLE")
+        {
+            unreachable_message(message);
             return;
         }
         break;
@@ -659,6 +503,50 @@ void manager_daemon::forward_message(snap::snap_communicator_message const & mes
     {
         f_messenger->send_message(message);
     }
+}
+
+
+/** \brief Retrieve a copy of the public IP of this server.
+ *
+ * This function returns the IP address of this server as defined in
+ * the snapcommunicator.conf file ("listen" parameter.)
+ *
+ * \note
+ * This IP address is defined by sending a PUBLIC_IP message to
+ * the running snapcommunicator which replies with a SERVER_PUBLIC_IP
+ * message. This can take a little time and the IP address may not
+ * be available immediately...
+ *
+ * \return A string with the public IP address of this server.
+ */
+QString const & manager_daemon::get_public_ip() const
+{
+    return f_public_ip;
+}
+
+
+/** \brief A computer was unreachable, make sure to take note.
+ *
+ * The snapcommunicator will attempt to connect to remote computers
+ * that are expected to run snapcommunicator, either with a direct
+ * connection or to send it a GOSSIP message.
+ *
+ * If these connections fail, the snapcommunicator system sends an
+ * UNREACHABLE message to all the local services currently
+ * registered.
+ *
+ * Here we acknowledge the fact and make sure the mark that computer
+ * as Down (it could still be marked as Up from previous runs.)
+ *
+ * \param[in] message  The message being worked on.
+ */
+void manager_daemon::unreachable_message(snap::snap_communicator_message const & message)
+{
+    // the parameter "who" must exist and define the IP address of the
+    // computer that could not connect
+    //
+    QString const & addr(message.get_parameter("who"));
+
 }
 
 

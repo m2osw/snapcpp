@@ -178,6 +178,19 @@ Important parts of Cassandra that we are using:
    the data will be saved on 3 nodes before the database says it is done
    with it. It will never copy the data on the 12 nodes.)
 
+   An interesting read in resolving consistency in the real world:
+   https://en.wikipedia.org/wiki/Paxos_(computer_science)
+   However, for us, we probably want computers running the snapdatabase
+   library/driver to assign the timestamp whenever it receives an order
+   and not let the destination computers choose such (it is very important
+   if we want to make sure we keep orders serialized. The C++ driver to
+   handle Cassandra CQL does not do that so it NEVER guarantees which
+   data arrives first when sending the same data twice to the same driver
+   because when a node becomes overloaded, the driver auto-switch to another
+   node and thus some data ends up being sent out of order and without our
+   own TIMESTAMP info, the orders can end up being processed in the wrong
+   order.)
+
    * Cassandra also offers a consistency of ZERO (write can fail) and
      a consistency of ANY (write can happen on any node, even if that's
      not a matching destination--i.e. token mismatch--although our own

@@ -30,36 +30,60 @@
 #include "snapmanagercgi.h"
 
 
+namespace snap
+{
+
+// definitions from the plugins so we can define the name and filename of
+// the server plugin
+namespace plugins
+{
+extern QString g_next_register_name;
+extern QString g_next_register_filename;
+}
+
+} // no name namespace
 
 
 int main(int argc, char * argv[])
 {
     try
     {
-        snap_manager::manager cgi(argc, argv);
+        // we need these globals to "properly" initializes the first
+        // "plugin" (the core system or server)
+        //
+        snap::plugins::g_next_register_name = "server";
+        snap::plugins::g_next_register_filename = "snapmanagercgi.cpp";
+
+        snap_manager::manager_cgi::pointer_t cgi(new snap_manager::manager_cgi());
+
+        snap::plugins::g_next_register_name.clear();
+        snap::plugins::g_next_register_filename.clear();
+        
         try
         {
-            if(!cgi.verify())
+            cgi->init(argc, argv);
+
+            if(!cgi->verify())
             {
                 // not acceptable, the verify() function already sent a
                 // response, just exit with 1
                 return 1;
             }
-            return cgi.process();
+            return cgi->process();
         }
         catch(std::runtime_error const & e)
         {
             // this should rarely happen!
-            return cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
+            return cgi->error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
         }
         catch(std::logic_error const & e)
         {
             // this should never happen!
-            return cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
+            return cgi->error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
         }
         catch(...)
         {
-            return cgi.error("503 Service Unavailable", nullptr, "The Snap! C++ CGI script caught an unknown exception.");
+            return cgi->error("503 Service Unavailable", nullptr, "The Snap! C++ CGI script caught an unknown exception.");
         }
     }
     catch(std::exception const & e)

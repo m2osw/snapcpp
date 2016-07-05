@@ -655,12 +655,26 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
                     snaplock_ticket::ticket_id_t const ticket_id(key_ticket.second->get_ticket_number());
                     time_t const lock_timeout(key_ticket.second->get_lock_timeout());
 
-                    QString const msg(QString("ticket id: %1  object name: \"%2\"  key: %3  timeout %4 %5\n")
+                    QString timeout_msg;
+                    if(lock_timeout == 0)
+                    {
+                        time_t const obtention_timeout(key_ticket.second->get_obtention_timeout());
+                        timeout_msg = QString("obtention %1 %2")
+                                    .arg(snap::snap_child::date_to_string(obtention_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_SHORT))
+                                    .arg(snap::snap_child::date_to_string(obtention_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_TIME));
+                    }
+                    else
+                    {
+                        timeout_msg = QString("timeout %1 %2")
+                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_SHORT))
+                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_TIME));
+                    }
+
+                    QString const msg(QString("ticket id: %1  object name: \"%2\"  key: %3  %4\n")
                                     .arg(ticket_id)
                                     .arg(obj_name)
                                     .arg(key)
-                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_SHORT))
-                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_TIME)));
+                                    .arg(timeout_msg));
                     ticketlist += msg;
                 }
             }

@@ -1,0 +1,148 @@
+// Snap Websites Server -- snap manager CGI, daemon, library, plugins
+// Copyright (C) 2016  Made to Order Software Corp.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#pragma once
+
+//#include <snapwebsites/plugins.h>
+//#include <snapwebsites/snap_config.h>
+//#include <snapwebsites/snap_signals.h>
+#include <snapwebsites/snapwebsites.h>
+
+//#include <advgetopt/advgetopt.h>
+
+//#include <QDomDocument>
+
+
+//namespace snap
+//{
+//
+//
+///** \brief A fake child class to support plugins.
+// *
+// * We do not use children with our plugins like we do in snapserver
+// * and snapwatchdog. Here we just fake it.
+// *
+// * The manager itself derives from snap_child so we can use the manager
+// * as the object when a snap_child pointer is required.
+// */
+//class snap_child
+//{
+//public:
+//};
+//
+//
+//} // namespace snap
+
+
+
+#define    SNAPMANAGERCGI_VERSION_MAJOR   @SNAPMANAGERCGI_VERSION_MAJOR@
+#define    SNAPMANAGERCGI_VERSION_MINOR   @SNAPMANAGERCGI_VERSION_MINOR@
+#define    SNAPMANAGERCGI_VERSION_PATCH   @SNAPMANAGERCGI_VERSION_PATCH@
+#define    SNAPMANAGERCGI_VERSION_STRING  "@SNAPMANAGERCGI_VERSION_MAJOR@.@SNAPMANAGERCGI_VERSION_MINOR@.@SNAPMANAGERCGI_VERSION_PATCH@"
+
+
+namespace snap_manager
+{
+
+
+enum class name_t
+{
+    SNAP_NAME_MANAGER_DATA_PATH,
+    SNAP_NAME_MANAGER_SERVER_NAME,
+    SNAP_NAME_MANAGER_SERVERSTATS,
+    SNAP_NAME_MANAGER_STATISTICS_FREQUENCY,
+    SNAP_NAME_MANAGER_STATISTICS_PERIOD,
+    SNAP_NAME_MANAGER_STATISTICS_TTL
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
+
+
+class snapmanager_exception : public snap::snap_exception
+{
+public:
+    snapmanager_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    snapmanager_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    snapmanager_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+};
+
+class snapmanager_exception_cannot_load_plugins : public snapmanager_exception
+{
+public:
+    snapmanager_exception_cannot_load_plugins(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    snapmanager_exception_cannot_load_plugins(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    snapmanager_exception_cannot_load_plugins(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+};
+
+class snapmanager_exception_invalid_parameters : public snapmanager_exception
+{
+public:
+    snapmanager_exception_invalid_parameters(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    snapmanager_exception_invalid_parameters(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    snapmanager_exception_invalid_parameters(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+};
+
+
+
+
+
+
+
+class manager
+        : public snap::plugins::plugin
+        , public snap::snap_child
+        , public std::enable_shared_from_this<manager>
+{
+public:
+    typedef std::shared_ptr<manager>         pointer_t;
+
+                        manager(bool daemon);
+
+    void                init(int argc, char * argv[]);
+
+    static pointer_t    instance();
+    virtual QString     description() const override;
+    virtual QString     dependencies() const override;
+    virtual void        bootstrap(snap::snap_child * snap);
+
+    void                load_plugins();
+
+    SNAP_SIGNAL_WITH_MODE(retrieve_status, (QDomDocument doc), (doc), NEITHER);
+
+    static int          get_version_major() __attribute__ ((const));
+    static int          get_version_minor() __attribute__ ((const));
+    static int          get_version_patch() __attribute__ ((const));
+    static char const * get_version_string() __attribute__ ((const));
+
+protected:
+    bool const                                  f_daemon = false;
+    bool                                        f_debug = false;
+    advgetopt::getopt::pointer_t                f_opt;
+    snap::snap_config                           f_config;
+    QString                                     f_server_name;
+    QString                                     f_data_path = "/var/lib/snapwebsites/cluster-status";
+
+private:
+    QString                                     f_log_conf = "/etc/snapwebsites/snapmanager.properties";
+    QString                                     f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
+    snap::snap_string_list                      f_plugins;
+};
+
+
+} // snap_manager namespace
+// vim: ts=4 sw=4 et
+

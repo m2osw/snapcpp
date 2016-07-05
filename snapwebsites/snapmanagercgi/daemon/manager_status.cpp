@@ -70,6 +70,7 @@ namespace
  */
 manager_status::status_function_t const g_status_functions[] =
 {
+    &manager_status::status_ip_address,
     &manager_status::status_check_running_services,
     &manager_status::status_has_list_of_frontend_computers
 };
@@ -162,6 +163,21 @@ bool manager_status::is_snapmanager_frontend(QString const & server_name) const
  */
 void manager_status::run()
 {
+    // first wait for the public IP address because sending a status
+    // without it is not going to make it complete
+    //
+    while(f_status_connection->get_public_ip().isEmpty())
+    {
+        f_status_connection->poll(1000000LL);
+
+        if(!continue_running() || !f_running)
+        {
+            // well... no time to even calculate a first status...
+            //
+            return;
+        }
+    }
+
     // run as long as the parent thread did not ask us to quit
     //
     QString status;
@@ -359,6 +375,12 @@ int manager_status::package_status(QString const & package_name, bool add_info_o
     }
 
     return r;
+}
+
+
+void manager_status::status_ip_address()
+{
+    f_server_status["ip"] = f_status_connection->get_public_ip();
 }
 
 

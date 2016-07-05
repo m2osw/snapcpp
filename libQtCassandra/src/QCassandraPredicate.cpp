@@ -91,13 +91,14 @@ void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count 
 {
     if(!f_startCellKey.isEmpty())
     {
-        query += " AND column1 >= ?";
+        query += " AND column1>=?";
         bind_count += 1;
     }
 
     if(!f_endCellKey.isEmpty())
     {
-        query += " AND column1 <= ?";
+        // The end boundary is NEVER included in the results
+        query += " AND column1<?";
         bind_count += 1;
     }
 

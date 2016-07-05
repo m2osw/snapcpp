@@ -413,35 +413,43 @@ QString path_info_t::get_parameter(QString const & name) const
  * delete that very page). It also very much helps the backend processes
  * which would otherwise attempt updates too early or too late.
  *
- * The status returned is any one of the status_t values, although the
- * general and working numbers may be mixed together (i.e. a page can
- * at the same time be hidden and updated.)
+ * The status returned is any one of the status_t values.
  *
- * The function may return a status with the path_info_t::status_t::UNDEFINED
+ * The function may return a status with the
+ * path_info_t::status_t::error_t::UNDEFINED
  * error in which case the page does not exist at all. Note that this
  * function will not lie to you and say that the page does not exist just
  * because it is marked as deleted or some other similar valid status.
- * In that very case, the page simply is not defined in the
- * Cassandra database.
+ * In this very case (i.e. path_info_t::status_t::error_t::UNDEFINED,)
+ * the page simply is not defined in the Cassandra database at all.
  *
- * The function may returned the special status named
- * SNAP_CONTENT_STATUS_UNSUPPORTED. When that happens, you cannot know what
- * to do with that very page because a more advanced Snap version is running
- * and marked the page with a status that you do not yet understand... In
- * that case, the best is for your function to return and not process the
- * page in any way.
+ * Note that if the page does not yet have a status, but it has a
+ * primary ownere defined, then the function does not set the error
+ * to path_info_t::status_t::error_t::UNDEFINED. Instead it sets
+ * no error and the status is set to path_info_t::status_t::state_t::CREATE.
+ * Note that the create state cannot be saved in the database (attempting
+ * to do so will throw.) You are expected to change that status to NORMAL
+ * or HIDDEN before saving.
+ *
+ * The function may returned with the status error set to the special
+ * value path_info_t::status_t::error_t::UNSUPPORTED. When that happens,
+ * you cannot know what to do with that very page because a more advanced
+ * Snap version is running and marked the page with a status that you do
+ * not yet understand... In that case, the best is for your function to
+ * return and not process the page in any way.
  *
  * \important
  * Access to the status values make use the QUORUM consistency instead
- * of the default of ONE. This is to ensure that all instances see the
- * same/latest value saved in the database. This does NOT ensure 100%
- * consistency between various instances, however, it is not that likely
- * that two people would apply status changes to a page so simultaneously
- * that it would fail consistently (i.e. we do not use a lock to update
- * the status.) Note that if a Cassandra node is down, it is likely to
- * block the Snap! server as it has to wait on that one node (forever).
- * It will eventually time out, but most certainly after Apache already
- * said that the request could not be satisfied.
+ * of the default (which was ONE in older versions of Snap!) This is to
+ * ensure that all instances see the same/latest value saved in the
+ * database. This does NOT ensure 100% consistency between various
+ * instances, however, it is not that likely that two people would apply
+ * status changes to a page so simultaneously that it would fail
+ * consistently (i.e. we do not use a lock to update the status.)
+ * Note that if a Cassandra node is down, it is likely to block the Snap!
+ * server as it has to wait on that one node (forever). It will eventually
+ * time out, but most certainly after Apache already said that the request
+ * could not be satisfied.
  *
  * \note
  * The status is not cached in the path_info_t object because (1) we could
@@ -449,7 +457,7 @@ QString path_info_t::get_parameter(QString const & name) const
  * libQtCassandra library has its own cache which is common to all the
  * path_info_t objects.
  *
- * \return The current raw status of the page.
+ * \return The current status of the page.
  */
 path_info_t::status_t path_info_t::get_status() const
 {
@@ -472,8 +480,21 @@ path_info_t::status_t path_info_t::get_status() const
     QtCassandra::QCassandraValue const & value(cell->value());
     if(value.size() != sizeof(uint32_t))
     {
-        // this case is legal, it happens when creating a new page
-        result.set_error(status_t::error_t::UNDEFINED);
+        // this case can be legal, it happens when creating a new page
+        //
+        QString const primary_owner(content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        if(primary_owner.isEmpty())
+        {
+            // page not being created yet
+            //
+            result.set_error(status_t::error_t::UNDEFINED);
+        }
+        else
+        {
+            // page is being created now
+            //
+            result.reset_state(status_t::state_t::CREATE);
+        }
         return result;
     }
 
@@ -486,43 +507,36 @@ path_info_t::status_t path_info_t::get_status() const
 
 /** \brief Change the current status of the page.
  *
- * This function can be used to change the status of the page from its
+ * This function is used to change the status of the page from its
  * current status to a new status.
  *
  * The function re-reads the status first to make sure we can indeed
  * change the value. Then it verifies that the status can go from the
  * existing status to the new status. If not, we assume that the code
- * is wrong an thus raise an exception.
- *
- * The path_info_t object is not using RAII to handle the status cleanly
- * because these variables can be copied or duplicated and the status of
- * one variable could be misinterpreted. Therefore, any function that
- * changes the the status to a temporary state (SNAP_CONTENT_STATUS_CREATING,
- * SNAP_CONTENT_STATUS_CLONING, or SNAP_CONTENT_STATUS_REMOVING at time of
- * writing) should use RAII to make sure that the object gets a valid status
- * once the function is done dealing with the page.
+ * is wrong and raise an exception.
  *
  * \important
- * Status values are using the QUORUM consistency instead of the default of
- * ONE. This is to ensure that all instances see the same/latest value
- * saved in the database. However, it blocks the Snap! server until the
- * write returns and that could be a problem, especially if a node is down.
- * Such a write will eventually time out.
+ * The Cassandra C++ driver makes use of threads and a certain level of
+ * logic to determine which node to send data to next. This means you
+ * cannot change the status of a page more than once per run because
+ * you cannot ensure the order in which the statuses are going to be
+ * saved in the data (You may think you are saving A then B, but if
+ * A is sent to a worker thread that has many other entries to deal
+ * with first, then B could very well arrive on a node before A and
+ * then the wrong status ends up being saved.
  *
- * \bug
- * At this point the function expects the status to be properly managed
- * from the outside. That being said, status changes should only be handled
- * by functions defined in the content plugin and not functions from other
- * plugins. Yet, there is a problem where a page status may be set to a
- * value and not properly restored as expected later. When that occurs, the
- * database will "remember" the wrong status. We will need to have a way to
- * fix a website by going through all of the pages and making sure their
- * status is a currently working status. This is probably a job for the
- * content backend that also handles things like the trashcan.
+ * \important
+ * Status values are using the QUORUM consistency instead of the default
+ * (which was ONE in older versions of Snap!) This is to ensure that all
+ * instances see the same/latest value saved in the database. However,
+ * it blocks the Snap! server until the write returns and that could be
+ * a problem, especially if a node is down. Such a write will eventually
+ * time out.
  *
  * \exception content_exception_invalid_sequence
  * This exception is raised if the change in status is not valid. (i.e.
- * changing from status A to status B is not allowed.)
+ * changing from status A to status B is not allowed or the new status
+ * is erroneous.)
  *
  * \param[in] status  The new status for this page.
  */
@@ -532,38 +546,42 @@ void path_info_t::set_status(status_t const & status)
     if(status.is_error())
     {
         throw content_exception_invalid_sequence(QString("changing page status to error %1 is not allowed, page \"%2\"")
-                        .arg(static_cast<int>(status.get_status()))
+                        .arg(static_cast<int>(status.get_error()))
                         .arg(f_key));
     }
 
-    status_t now(get_status());
+    status_t const now(get_status());
 
     if(!now.valid_transition(status))
     {
-        throw content_exception_invalid_sequence(QString("changing page status from %1/%2 to %3/%4 is not supported, page \"%5\"")
+        throw content_exception_invalid_sequence(QString("changing page status from %1 to %2 is not supported, page \"%3\"")
                         .arg(static_cast<int>(now.get_state()))
-                        .arg(static_cast<int>(now.get_working()))
                         .arg(static_cast<int>(status.get_state()))
-                        .arg(static_cast<int>(status.get_working()))
                         .arg(f_key));
     }
 
-    if(status.is_working())
-    {
-        QtCassandra::QCassandraTable::pointer_t processing_table(f_content_plugin->get_processing_table());
-        signed char const one_byte(1);
-        processing_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(one_byte);
-    }
+    //if(status.is_working())
+    //{
+    //    QtCassandra::QCassandraTable::pointer_t processing_table(f_content_plugin->get_processing_table());
+    //    signed char const one_byte(1);
+    //    processing_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(one_byte);
+    //}
     QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
 
     // we use QUORUM in the consistency level to make sure that information
-    // is available on all Cassandra nodes all at once
+    // is available on all Cassandra nodes all at once (although this is
+    // now the default anyway, we make sure it is at least QUORUM here
+    // still... QUORUM is important with the C++ CQL driver because you
+    // cannot know whether the data is sent to this or that node.)
     //
-    // we save the date when we changed the status so that way we know whether
-    // the process when to lala land or is still working on the status; a
-    // backend is responsible for fixing "invalid" status (i.e. after 10 min.
+    // we save the date when we change the status so that way we know whether
+    // the process went to la la land or is still working on the status; a
+    // backend is responsible for fixing "invalid" statuses (i.e. after 10 min.
     // a status is reset back to something like DELETED or HIDDEN if not
-    // otherwise considered valid.)
+    // otherwise considered valid.) -- WARNING: this is not done anymore
+    // since we do not have a 'working' status and the processing table
+    // is not assigned anything anymore!
+    //
     QtCassandra::QCassandraValue changed;
     int64_t const start_date(f_snap->get_start_date());
     changed.setInt64Value(start_date);

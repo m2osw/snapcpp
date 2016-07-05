@@ -4632,6 +4632,8 @@ public:
             //
             f_thread.stop();
 
+            // TODO: fix address in error message using a snap::addr so
+            //       as to handle IPv6 seemlessly.
             SNAP_LOG_ERROR("connection to ")(f_thread_runner.get_address())(":")(f_thread_runner.get_port())(" failed with: ")(f_thread_runner.get_last_error());
 
             // signal that an error occurred

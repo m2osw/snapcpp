@@ -285,6 +285,7 @@ void cookie_consent_silktide::on_generate_header_content(content::path_info_t & 
 
     // check whether the adminstrator defined options for this plugin;
     // if so we have a JavaScript with a small JSON file...
+    //
     bool has_options(false);
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());

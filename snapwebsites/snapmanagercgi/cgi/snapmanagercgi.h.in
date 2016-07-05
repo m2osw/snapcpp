@@ -16,57 +16,57 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "advgetopt/advgetopt.h"
+#include "lib/manager.h"
+
 #include "snapwebsites/addr.h"
 #include "snapwebsites/log.h"
 #include "snapwebsites/snap_exception.h"
 #include "snapwebsites/snap_communicator.h"
 #include "snapwebsites/snap_uri.h"
-#include "snapwebsites/snapwebsites.h"
 #include "snapwebsites/xslt.h"
 
 #include <string>
 #include <iostream>
 
+
+
 namespace snap_manager
 {
 
-#define SNAPMANAGERCGI_VERSION_MAJOR   @SNAPMANAGERCGI_VERSION_MAJOR@
-#define SNAPMANAGERCGI_VERSION_MINOR   @SNAPMANAGERCGI_VERSION_MINOR@
-#define SNAPMANAGERCGI_VERSION_PATCH   @SNAPMANAGERCGI_VERSION_PATCH@
-#define SNAPMANAGERCGI_VERSION_STRING  "@SNAPMANAGERCGI_VERSION_MAJOR@.@SNAPMANAGERCGI_VERSION_MINOR@.@SNAPMANAGERCGI_VERSION_PATCH@"
+
+
+
+
+//class messenger
+//        : public snap::snap_communicator::snap_tcp_blocking_client_message_connection
+//{
+//public:
+//                            messenger(std::string const & address, int port, snap::snap_communicator_message const & message);
+//                            ~messenger();
+//
+//    QString const &         result();
+//
+//    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
+//    void                    process_timeout();
+//    void                    process_message(snap::snap_communicator_message const & message);
+//
+//private:
+//    snap::snap_communicator_message f_message;
+//    QString                         f_result;
+//};
 
 
 
 
 
-class messenger
-        : public snap::snap_communicator::snap_tcp_blocking_client_message_connection
+class manager_cgi
+    : public manager
 {
 public:
-                            messenger(std::string const & address, int port, snap::snap_communicator_message const & message);
-                            ~messenger();
+    typedef std::shared_ptr<manager_cgi>    pointer_t;
 
-    QString const &         result();
-
-    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
-    void                    process_timeout();
-    void                    process_message(snap::snap_communicator_message const & message);
-
-private:
-    snap::snap_communicator_message f_message;
-    QString                         f_result;
-};
-
-
-
-
-
-class manager
-{
-public:
-                                manager( int argc, char * argv[] );
-    virtual                     ~manager();
+                                manager_cgi();
+    virtual                     ~manager_cgi();
 
     int                         error(char const * code, char const * msg, char const * details);
     bool                        verify();
@@ -77,7 +77,6 @@ private:
     void                        get_host_status(QDomDocument doc, QDomElement output, QString const host);
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
 
-    advgetopt::getopt           f_opt;
     snap::snap_uri              f_uri;
     int                         f_communicator_port = -1;    // snap server port
     std::string                 f_communicator_address;      // snap server address

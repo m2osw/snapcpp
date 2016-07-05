@@ -293,6 +293,7 @@ public:
     void                too_busy(QString const & addr);
     void                shutting_down(QString const & addr);
     void                start();
+    void                server_unreachable(QString const & addr);
     void                gossip_received(QString const & addr);
 
 private:
@@ -348,6 +349,7 @@ private:
 
     QString                                             f_server_name;
     QString                                             f_neighbors_cache_filename;
+    std::string                                         f_public_ip;        // f_listener IP address
     snap::snap_communicator::pointer_t                  f_communicator;
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
@@ -804,6 +806,7 @@ public:
 
     // snap_tcp_client_permanent_message_connection implementation
     virtual void                process_message(snap::snap_communicator_message const & message);
+    virtual void                process_connection_failed(std::string const & error_message);
     virtual void                process_connected();
 
     void                        kill();
@@ -901,6 +904,32 @@ void gossip_to_remote_snap_communicator::process_message(snap::snap_communicator
         //
         f_remote_communicators->gossip_received(f_addr);
     }
+}
+
+
+/** \brief The remote connection failed, we cannot gossip with it.
+ *
+ * This function gets called if a connection to a remote communicator fails.
+ *
+ * In case of a gossip, this is because that other computer is expected to
+ * connect with us, but it may not know about us so we tell it hello for
+ * that reason.
+ *
+ * We have this function because on a failure we want to mark that
+ * computer as being down. This is important for the snapmanagerdaemon.
+ *
+ * \param[in] error_message  The error that occurred.
+ */
+void gossip_to_remote_snap_communicator::process_connection_failed(std::string const & error_message)
+{
+    // make sure the default function does its job.
+    //
+    snap::snap_communicator::snap_tcp_client_permanent_message_connection::process_connection_failed(error_message);
+
+    // now let people know about the fact that this other computer is
+    // unreachable
+    //
+    f_remote_communicators->server_unreachable(f_addr);
 }
 
 
@@ -1165,6 +1194,19 @@ void remote_communicator_connections::start()
             start_time += 1000000;
         }
     }
+}
+
+
+void remote_communicator_connections::server_unreachable(QString const & addr)
+{
+    // we do not have the name of the computer in snapcommunicator so
+    // we just broadcast the IP address of the non-responding computer
+    //
+    snap::snap_communicator_message unreachable;
+    unreachable.set_service(".");
+    unreachable.set_command("UNREACHABLE");
+    unreachable.add_parameter("who", addr);
+    f_communicator_server->broadcast_message(unreachable);
 }
 
 
@@ -1661,7 +1703,8 @@ void snap_communicator_server::init()
         //
         if(listen_addr.get_network_type() != snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK)
         {
-            f_listener.reset(new listener(shared_from_this(), listen_addr.get_ipv4or6_string(), listen_addr.get_port(), max_pending_connections, false, f_server_name));
+            f_public_ip = listen_addr.get_ipv4or6_string();
+            f_listener.reset(new listener(shared_from_this(), f_public_ip, listen_addr.get_port(), max_pending_connections, false, f_server_name));
             f_listener->set_name("snap communicator listener");
             f_communicator->add_connection(f_listener);
         }
@@ -1803,22 +1846,22 @@ void snap_communicator_server::verify_command(base_connection::pointer_t connect
  */
 void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp)
 {
-    {
-        QString const received_message(message.to_message());
-        if(f_debug_lock
-        || (received_message.indexOf(":snaplock ") == -1
-         && received_message.indexOf(":lock_") == -1))
-        {
-            SNAP_LOG_TRACE("received a message [")(received_message)("]");
-        }
-    }
-
     // if the destination server was specified, we have to forward
     // the message to that specific server
     //
     QString const server_name(message.get_server());
     QString const service(message.get_service());
     QString const command(message.get_command());
+    QString const sent_from_service(message.get_sent_from_service());
+
+    if(f_debug_lock
+    || (command != "UNLOCKED"
+     && sent_from_service != "snaplock"
+     && !sent_from_service.startsWith("lock_")
+     && (command != "REGISTER" || !message.has_parameter("service") || !message.get_parameter("service").startsWith("lock_"))))
+    {
+        SNAP_LOG_TRACE("received a message [")(message.to_message())("]");
+    }
 
     base_connection::pointer_t base(std::dynamic_pointer_cast<base_connection>(connection));
     remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(connection));
@@ -2441,7 +2484,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     reply.set_command("COMMANDS");
 
                     // list of commands understood by snapcommunicator
-                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LOG,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER");
+                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LOG,PUBLIC_IP,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER");
 
                     //verify_command(base, reply); -- this verification does not work with remote snap communicator connections
                     if(remote_communicator)
@@ -2469,6 +2512,26 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 SNAP_LOG_INFO("Logging reconfiguration.");
                 snap::logging::reconfigure();
                 return;
+            }
+            break;
+
+        case 'P':
+            if(command == "PUBLIC_IP")
+            {
+                if(service_conn)
+                {
+                    snap::snap_communicator_message reply;
+                    reply.set_command("SERVER_PUBLIC_IP");
+                    reply.add_parameter("public_ip", QString::fromUtf8(f_public_ip.c_str()));
+                    verify_command(base, reply);
+                    service_conn->send_message(reply);
+                }
+                else
+                {
+                    // we have to have a remote or service connection here
+                    //
+                    throw snap::snap_exception("PUBLIC_IP sent on a \"weird\" connection.");
+                }
             }
             break;
 
@@ -3006,7 +3069,10 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
         //
         if(server_name == f_server_name)
         {
-            SNAP_LOG_DEBUG("received event \"")(command)("\" for local service \"")(service)("\", which is not currently registered. Dropping message.");
+            if(!service.startsWith("lock_"))
+            {
+                SNAP_LOG_DEBUG("received event \"")(command)("\" for local service \"")(service)("\", which is not currently registered. Dropping message.");
+            }
             return;
         }
     }

@@ -298,12 +298,19 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
     p.add_argument("--log=" + temporary_log);
     p.add_argument("-");
     p.set_input(file.get_file().get_data()); // pipe data in
-    p.run();
+    int const code(p.run());
     QString const output(p.get_output(true));
 
     if(!output.isEmpty())
     {
-        secure.not_permitted("anti-virus: " + output);
+        // mark that it is not secure only if r is 1 (i.e. if
+        // clamscan said a virus was found, and not on plain
+        // messages or errors.)
+        //
+        if(code == 1)
+        {
+            secure.not_permitted("anti-virus: " + output);
+        }
 
         // if an error occurred, also convert the logs
         //
@@ -313,7 +320,7 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
             if(out.open(QIODevice::Append))
             {
                 // TODO: convert to use our logger?
-                QString const timestamp(QDateTime::currentDateTimeUtc().toString("MM/dd/yyyy hh:mm:ss' antivirus: '"));
+                QString const timestamp(QDateTime::currentDateTimeUtc().toString("yyyy/MM/dd hh:mm:ss 'antivirus': "));
                 QByteArray const timestamp_buf(timestamp.toUtf8());
                 char buf[1024];
                 for(;;)

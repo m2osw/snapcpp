@@ -233,20 +233,27 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
         {
             // setup the status using RAII
             path_info_t::status_t src_now(source.get_status());
-            if(src_now.is_working())
-            {
-                // we cannot work on a page when another process is already
-                // working on that page...
-                SNAP_LOG_ERROR("clone_page() called with a source (")(source.get_key())(") which is being processed now (working: ")(static_cast<int>(src_now.get_working()))(").");
-                f_result = false;
-                return;
-            }
-            path_info_t::raii_status_t source_state(source, f_source.f_processing_state, f_source.f_done_state);
+            // TODO: this is problematic; the old way was not really correct
+            //       because we really have to first go through the entire
+            //       tree to be cloned, lock all those pages, then do the
+            //       cloning work... right now, it does not work that way at
+            //       all!
+            //
+            //if(src_now.is_working())
+            //{
+            //    // we cannot work on a page when another process is already
+            //    // working on that page...
+            //    SNAP_LOG_ERROR("clone_page() called with a source (")(source.get_key())(") which is being processed now (working: ")(static_cast<int>(src_now.get_working()))(").");
+            //    f_result = false;
+            //    return;
+            //}
+            //path_info_t::raii_status_t source_state(source, f_source.f_processing_state, f_source.f_done_state);
+            source.set_status(f_source.f_done_state);
 
             // nothing to check for the destination,
             // at this point the current status would be undefined
             // (should be extended in the future though...)
-            path_info_t::raii_status_t destination_state(destination, f_destination.f_processing_state, f_destination.f_done_state);
+            //path_info_t::raii_status_t destination_state(destination, f_destination.f_processing_state, f_destination.f_done_state);
 
             // save the date when we cloned the page
             f_content_table->row(destination.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_CLONED))->setValue(f_start_date);
@@ -274,6 +281,12 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             copy_branches(page);
             f_clones.f_pages.push_back(page);
 
+            // now that the copy is done we can save the copy state
+            //
+            destination.set_status(f_destination.f_done_state);
+
+            // finally clone the children if any
+            //
             clone_children(source, destination);
         }
 
@@ -598,14 +611,14 @@ bool content::move_page(path_info_t & ipath_source, path_info_t & ipath_destinat
     // setup the clone parameters
     clone_info_t source;
     source.f_ipath = ipath_source;
-    source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
-    source.f_processing_state.set_working(path_info_t::status_t::working_t::CLONING);
+    //source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
+    //source.f_processing_state.set_working(path_info_t::status_t::working_t::CLONING);
     source.f_done_state.set_state(path_info_t::status_t::state_t::MOVED);
 
     clone_info_t destination;
     destination.f_ipath = ipath_destination;
-    destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
-    destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);
+    //destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
+    //destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);
     destination.f_done_state = ipath_source.get_status();
 
     return clone_page(source, destination);
@@ -697,8 +710,8 @@ bool content::trash_page(path_info_t & ipath)
     // setup the clone parameters
     clone_info_t source;
     source.f_ipath = ipath;
-    source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
-    source.f_processing_state.set_working(path_info_t::status_t::working_t::REMOVING);
+    //source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
+    //source.f_processing_state.set_working(path_info_t::status_t::working_t::REMOVING);
     source.f_done_state.set_state(path_info_t::status_t::state_t::DELETED);
 
     clone_info_t destination;
@@ -706,9 +719,10 @@ bool content::trash_page(path_info_t & ipath)
     destination.f_ipath.force_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
     destination.f_ipath.force_revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
     destination.f_ipath.force_locale("xx"); // TBD: should the language be set as... maybe the page being deleted?
-    destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
-    destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);
+    //destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
+    //destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);
     destination.f_done_state.set_state(path_info_t::status_t::state_t::HIDDEN);
+    //destination.f_done_state = ipath_source.get_status(); -- TODO: should we save the source status instead of forcing it to HIDDEN?
 
     return clone_page(source, destination);
 }

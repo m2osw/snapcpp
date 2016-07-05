@@ -511,6 +511,7 @@ int process::run()
 
         int open()
         {
+            close();
             if(pipe(f_pipes + 0) != 0)
             {
                 return -1;
@@ -595,17 +596,15 @@ int process::run()
         try
         {
             // convert arguments so we can use them with execvpe()
-            std::vector<std::string> args;
             std::vector<char const *> args_strings;
-            std::string cmd(f_command.toUtf8().data());
-            args_strings.push_back(cmd.c_str());
+            std::string const cmd(f_command.toUtf8().data());
+            args_strings.push_back(strdup(cmd.c_str()));
             int const args_max(f_arguments.size());
             for(int i(0); i < args_max; ++i)
             {
-                args.push_back(f_arguments[i].toUtf8().data());
-                args_strings.push_back(args.rbegin()->c_str());
+                args_strings.push_back(strdup(f_arguments[i].toUtf8().data()));
             }
-            args_strings.push_back(NULL);
+            args_strings.push_back(nullptr);
 
             // convert arguments so we can use them with execvpe()
             environment_map_t src_envs(f_environment);
@@ -625,7 +624,7 @@ int process::run()
                             // do not overwrite
                             if(src_envs.find(name) == src_envs.end())
                             {
-                                // in Linux all is UTF-8 so we're already good here
+                                // in Linux all is UTF-8 so we are already good here
                                 src_envs[name] = s + 1;
                             }
                             break;
@@ -634,14 +633,12 @@ int process::run()
                     }
                 }
             }
-            std::vector<std::string> envs;
             std::vector<char const *> envs_strings;
             for(environment_map_t::const_iterator it(src_envs.begin()); it != src_envs.end(); ++it)
             {
-                envs.push_back(it->first + "=" + it->second);
-                envs_strings.push_back(envs.rbegin()->c_str());
+                envs_strings.push_back(strdup((it->first + "=" + it->second).c_str()));
             }
-            envs_strings.push_back(NULL);
+            envs_strings.push_back(nullptr);
 
             // replace the stdin and stdout with the pipes
             // TODO test result of the dup() command because if -1 things

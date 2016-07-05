@@ -140,6 +140,8 @@ snap_string_list list_all(QString const & plugin_paths)
  *
  * \param[in] plugin_paths  The colon (:) separated list of paths to
  *                          directories with plugins.
+ * \param[in] snap  A pointer to the child object loading these plugins.
+ *                  This pointer gets passed to the bootstrap() signal.
  * \param[in] server  A pointer to the server to register it as a plugin.
  * \param[in] list_of_plugins  The list of plugins to load.
  *

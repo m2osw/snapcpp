@@ -30,12 +30,38 @@
 #include "snapmanagerdaemon.h"
 
 
+namespace snap
+{
+
+// definitions from the plugins so we can define the name and filename of
+// the server plugin
+namespace plugins
+{
+extern QString g_next_register_name;
+extern QString g_next_register_filename;
+}
+
+} // no name namespace
+
+
 int main(int argc, char * argv[])
 {
     try
     {
-        snap_manager::manager_daemon daemon(argc, argv);
-        return daemon.run();
+        // we need these globals to "properly" initializes the first
+        // "plugin" (the core system or server)
+        //
+        snap::plugins::g_next_register_name = "server";
+        snap::plugins::g_next_register_filename = "snapmanagercgi.cpp";
+
+        snap_manager::manager_daemon::pointer_t daemon(new snap_manager::manager_daemon);
+
+        snap::plugins::g_next_register_name.clear();
+        snap::plugins::g_next_register_filename.clear();
+
+        daemon->init(argc, argv);
+
+        return daemon->run();
     }
     catch(std::runtime_error const & e)
     {

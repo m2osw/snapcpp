@@ -291,7 +291,9 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
             snap::NOTUSED(poll(&fd, 1, 0));
             if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
             {
-                SNAP_LOG_ERROR("snapdbproxy_connection::read() attempted to read from a socket that is closed.");
+                // this happens all the time so we just use a trace on it
+                // (at first it was an error)
+                SNAP_LOG_TRACE("snapdbproxy_connection::read() attempted to read from a socket that is closed.");
                 return -1L;
             }
         }

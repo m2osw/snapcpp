@@ -269,7 +269,6 @@ public:
             UNDEFINED,
             UNSUPPORTED
         };
-        typedef controlled_vars::limited_auto_enum_init<error_t, error_t::NO_ERROR, error_t::UNSUPPORTED, error_t::NO_ERROR> safe_error_t;
 
         // general state
         // WARNING: these numbers are saved in the database, their value CANNOT change
@@ -282,20 +281,6 @@ public:
             MOVED = 4,
             DELETED = 5
         };
-        typedef controlled_vars::limited_auto_enum_init<state_t, state_t::UNKNOWN_STATE, state_t::DELETED, state_t::UNKNOWN_STATE> safe_state_t;
-
-        // working state
-        // WARNING: these numbers are saved in the database, their value CANNOT change
-        enum class working_t
-        {
-            UNKNOWN_WORKING = 0,
-            NOT_WORKING = 1,
-            CREATING = 2,
-            CLONING = 3,
-            REMOVING = 4,
-            UPDATING = 5
-        };
-        typedef controlled_vars::limited_auto_enum_init<working_t, working_t::UNKNOWN_WORKING, working_t::UPDATING, working_t::NOT_WORKING> safe_working_t;
 
                                     status_t();
                                     status_t(status_type current_status);
@@ -308,39 +293,35 @@ public:
         error_t                     get_error() const;
         bool                        is_error() const;
 
-        // reset the error, set the state and working values
-        void                        reset_state(state_t state, working_t working);
+        // reset the error and set the state values
+        void                        reset_state(state_t state);
 
-        // general status, may include a working status (see below)
+        // general status
         void                        set_state(state_t state);
         state_t                     get_state() const;
         bool                        is_unknown() const;
-
-        // working status used along the general status
-        void                        set_working(working_t working);
-        working_t                   get_working() const;
-        bool                        is_working() const;
 
         // convert to/from string for scripts, permissions, etc.
         static std::string          status_name_to_string(state_t const state);
         static state_t              string_to_status_name(std::string const & state);
 
     private:
-        safe_error_t                f_error;
-        safe_state_t                f_state;
-        safe_working_t              f_working;
+        error_t                     f_error = error_t::NO_ERROR;
+        state_t                     f_state = state_t::UNKNOWN_STATE;
     };
 
-    class raii_status_t
-    {
-    public:
-                                    raii_status_t(path_info_t & ipath, status_t now, status_t end);
-                                    ~raii_status_t();
+    // this does not work right when you are connected to any number of
+    // Cassandra nodes (i.e. reordering of the set_status() can happen)
+    //class raii_status_t
+    //{
+    //public:
+    //                                raii_status_t(path_info_t & ipath, status_t now, status_t end);
+    //                                ~raii_status_t();
 
-    private:
-        path_info_t &               f_ipath;
-        status_t const              f_end;
-    };
+    //private:
+    //    path_info_t &               f_ipath;
+    //    status_t const              f_end;
+    //};
 
     typedef std::shared_ptr<path_info_t>            pointer_t;
     typedef std::vector<path_info_t *>              vector_path_info_t;
@@ -673,7 +654,7 @@ public:
     struct clone_info_t
     {
         path_info_t             f_ipath;
-        path_info_t::status_t   f_processing_state;
+        //path_info_t::status_t   f_processing_state; -- we cannot have intermediate states
         path_info_t::status_t   f_done_state;
     };
 

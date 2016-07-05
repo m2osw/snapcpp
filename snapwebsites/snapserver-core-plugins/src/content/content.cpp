@@ -1036,7 +1036,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
             //       user would not see the old revisions by default...
             //
             SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(ipath.get_key())("\" as we received a create_content() request on a deleted page.");
-            status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
+            status.reset_state(path_info_t::status_t::state_t::NORMAL);
             ipath.set_status(status);
         }
 
@@ -1072,9 +1072,13 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     }
 
     // first, we want to save the status
-    path_info_t::status_t status(ipath.get_status());
-    status.reset_state(path_info_t::status_t::state_t::CREATE, path_info_t::status_t::working_t::CREATING);
-    ipath.set_status(status);
+    //
+    // This is not required anymore because a page with a primary owner
+    // is automatically viewed as in the CREATE state
+    //
+    //path_info_t::status_t status(ipath.get_status());
+    //status.reset_state(path_info_t::status_t::state_t::CREATE);
+    //ipath.set_status(status);
 
     // save the owner
     row->cell(primary_owner)->setValue(owner);
@@ -1183,13 +1187,13 @@ void content::create_content_done(path_info_t & ipath, QString const & owner, QS
     // (although the revision data is not yet available...
     // but at this point we do not have a good way to handle
     // that part yet.)
+    //
     path_info_t::status_t status(ipath.get_status());
     if(status.get_state() == path_info_t::status_t::state_t::CREATE)
     {
         status.set_state(path_info_t::status_t::state_t::NORMAL);
+        ipath.set_status(status);
     }
-    status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
-    ipath.set_status(status);
 
     // the page now exists and is considered valid so add it to the content
     // index for all the have access to
@@ -1977,7 +1981,8 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                     parent_row->cell(name)->setValue(attachment_ipath.get_key());
 
                     path_info_t::status_t status(attachment_ipath.get_status());
-                    if(status.get_state() == path_info_t::status_t::state_t::DELETED)
+                    if(status.get_state() == path_info_t::status_t::state_t::DELETED
+                    || status.get_state() == path_info_t::status_t::state_t::MOVED)
                     {
                         // restore to a NORMAL page
                         //
@@ -1986,7 +1991,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                         //       is an administrator)
                         //
                         SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(attachment_ipath.get_key())("\" as we received a create_attachment() request on a deleted page.");
-                        status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
+                        status.reset_state(path_info_t::status_t::state_t::NORMAL);
                         attachment_ipath.set_status(status);
                     }
 
@@ -3494,8 +3499,11 @@ void content::on_save_content()
         {
             if(status.get_error() == path_info_t::status_t::error_t::UNDEFINED)
             {
-                status.reset_state(path_info_t::status_t::state_t::CREATE, path_info_t::status_t::working_t::CREATING);
-                ipath.set_status(status);
+                // by saving the primary owner, we mark a page as be in
+                // the CREATE state already
+                //
+                //status.reset_state(path_info_t::status_t::state_t::CREATE);
+                //ipath.set_status(status);
 
                 // we only set the primary owner on creation, which means
                 // a plugin can take over the ownership of a page and we
@@ -3504,14 +3512,17 @@ void content::on_save_content()
             }
             else
             {
-                throw snap_logic_exception(QString("somehow on_save_content() stumble on erroneous status %1 (%2)").arg(static_cast<int>(status.get_error())).arg(d->f_path));
+                throw snap_logic_exception(QString("somehow on_save_content() stumble on an erroneous status %1 (%2)").arg(static_cast<int>(status.get_error())).arg(d->f_path));
             }
         }
-        else
-        {
-            status.set_working(path_info_t::status_t::working_t::UPDATING);
-            ipath.set_status(status);
-        }
+        // we do not have a transition state anymore... (it was not tested
+        // anyway, at some point we may want to have a form of lock instead?)
+        //
+        //else
+        //{
+        //    status.set_working(path_info_t::status_t::working_t::UPDATING);
+        //    ipath.set_status(status);
+        //}
 
         // make sure we have our different basic content dates setup
         int64_t const start_date(f_snap->get_start_date());
@@ -3699,7 +3710,7 @@ void content::on_save_content()
                     //       user would not see the old revisions by default...
                     //
                     SNAP_LOG_WARNING("Marked page \"")(moved_from_ipath.get_key())("\" as we moved to page \"")(ipath.get_key())("\".");
-                    moved_status.reset_state(path_info_t::status_t::state_t::MOVED, path_info_t::status_t::working_t::NOT_WORKING);
+                    moved_status.reset_state(path_info_t::status_t::state_t::MOVED);
                     moved_from_ipath.set_status(moved_status);
 
                     // link both pages together in this branch
@@ -3856,19 +3867,24 @@ void content::on_save_content()
     }
 
     // allow other plugins to add their own stuff dynamically
+    //
     // (this mechanism is working only comme-ci comme-ca since all
     // the other plugins should anyway have workable defaults; however,
     // once in a while, defaults are not enough; for example the shorturl
     // needs to generate a shorturl, there is no real default other than:
     // that page has no shorturl.)
-    f_snap->trace("Generate missing pages (parents of other pages).\n");
+    //
+    // The page is already considered created so the
+    // content::create_content_impl() function just returns true quickly.
+    //
+    f_snap->trace("Generate create_content() events to all the new pages so other plugins have a chance to do their job.\n");
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
+        //bool created(false);
         QString const path(d->f_path);
         if(path.startsWith(site_key))
         {
-            // TODO: we may want to have a better way to choose the language
             path_info_t ipath;
             ipath.set_path(path);
             links::link_info info(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
@@ -3880,15 +3896,26 @@ void content::on_save_content()
                 QString const type_key(child_info.key());
                 int const pos(type_key.indexOf("/types/taxonomy/system/content-types/"));
                 create_content(ipath, d->f_owner, type_key.mid(pos + 37));
+                //created = true;
             }
         }
         // else -- if the path does not start with site_key we have a problem
 
-        path_info_t ipath;
-        ipath.set_path(d->f_path);
-        path_info_t::status_t status(ipath.get_status());
-        status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
-        ipath.set_status(status);
+        //if(!created) -- we cannot be 100% sure that create_content() worked as expected
+        {
+            // mark the page as ready for use if create_content() was
+            // not called (it should always be, though)
+            //
+            path_info_t ipath;
+            ipath.set_path(d->f_path);
+            path_info_t::status_t status(ipath.get_status());
+            if(status.get_state() == path_info_t::status_t::state_t::CREATE)
+            {
+                status.set_state(path_info_t::status_t::state_t::NORMAL);
+                //status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
+                ipath.set_status(status);
+            }
+        }
     }
 
     // we are done with that set of data, release it from memory

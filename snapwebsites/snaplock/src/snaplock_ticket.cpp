@@ -396,17 +396,17 @@ snaplock_ticket::snaplock_ticket(
     , f_service_name(service_name)
     , f_entering_key(entering_key)
 {
-    SNAP_LOG_INFO("Attempting to lock \"")
-                 (f_object_name)
-                 ("\" on \"")
-                 (f_entering_key)
-                 ("\" for \"")
-                 (f_server_name)
-                 ("/")
-                 (f_service_name)
-                 ("\" (timeout: ")
-                 (f_obtention_timeout)
-                 (").");
+    SNAP_LOG_TRACE("Attempting to lock \"")
+                  (f_object_name)
+                  ("\" on \"")
+                  (f_entering_key)
+                  ("\" for \"")
+                  (f_server_name)
+                  ("/")
+                  (f_service_name)
+                  ("\" (timeout: ")
+                  (f_obtention_timeout)
+                  (").");
 }
 
 
@@ -480,6 +480,20 @@ void snaplock_ticket::entered()
 snaplock_ticket::ticket_id_t snaplock_ticket::get_ticket_number() const
 {
     return f_our_ticket;
+}
+
+
+/** \brief Get the obtention timeout date.
+ *
+ * This function returns the obtention timeout. Note that if the lock
+ * was already obtained, then this date may be in the past. You can test
+ * that by checking the get_lock_timeout() function first.
+ *
+ * \return The date when the obtention of the ticket timeouts.
+ */
+time_t snaplock_ticket::get_obtention_timeout() const
+{
+    return f_obtention_timeout;
 }
 
 
@@ -701,7 +715,7 @@ void snaplock_ticket::activate_lock()
  */
 void snaplock_ticket::drop_ticket()
 {
-    SNAP_LOG_INFO("Unlock on \"")(f_object_name)("\" with key \"")(f_entering_key)("\".");
+    SNAP_LOG_TRACE("Unlock on \"")(f_object_name)("\" with key \"")(f_entering_key)("\".");
 
     snap::snap_communicator_message drop_ticket_message;
     drop_ticket_message.set_command("DROPTICKET");

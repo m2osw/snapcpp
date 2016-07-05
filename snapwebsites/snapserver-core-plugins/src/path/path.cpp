@@ -1031,6 +1031,11 @@ bool path::check_for_redirect_impl(content::path_info_t & ipath)
             if(moved_ipath.get_status().get_state() == content::path_info_t::status_t::state_t::NORMAL)
             {
                 // we have a valid destination, go there
+                //
+                // TODO: check that the user has enough permissions to view
+                //       the destination; if so then do the redirect,
+                //       otherwise there is no need to redirect
+                //
                 f_snap->page_redirect(moved_ipath.get_key(),
                             snap_child::http_code_t::HTTP_CODE_MOVED_PERMANENTLY,
                             "Redirect to the new version of this page.",
@@ -1038,13 +1043,13 @@ bool path::check_for_redirect_impl(content::path_info_t & ipath)
                                     .arg(ipath.get_key()).arg(moved_ipath.get_key()));
                 NOTREACHED();
             }
-            // else -- if the destination status is MOVED, we can loop over it!
+            // else -- TODO: if the destination status is MOVED, we can process it too!
         }
 
         // we cannot redirect to the copy, so just say not found
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                     "Invalid Page",
-                    "This page is not currently valid. It can not be viewed.",
+                    "This page is not currently valid. It cannot be viewed.",
                     QString("User tried to access page \"%1\" but it is marked as MOVED and the destination is either unspecified or not NORMAL.")
                             .arg(ipath.get_key()));
         NOTREACHED();

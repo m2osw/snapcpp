@@ -211,8 +211,7 @@ void content::backend_action_reset_status(bool const force)
                     if(status.nullValue())
                     {
                         // no valid status, mark the page as normal
-                        int32_t s(static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
-                                + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256));
+                        int32_t s(static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL)));
                         status.setInt32Value(s);
                         content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(status);
                     }
@@ -237,7 +236,7 @@ void content::backend_action_reset_status(bool const force)
 
                         }
                         // the working status is always reset to "not working"
-                        s = (s & ~0x0FF00) | (static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256);
+                        //s = (s & ~0x0FF00) | (static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256);
 
                         if(force || s != current_status)
                         {
@@ -338,6 +337,8 @@ void content::backend_action_new_file()
     // otherwise nothing happens...
     //
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(key));
+    file_row->clearCache();
+
     auto reference_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     reference_column_predicate->setStartCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
     reference_column_predicate->setEndCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
@@ -346,7 +347,6 @@ void content::backend_action_new_file()
     unsigned char const one(1);
     for(;;)
     {
-        file_row->clearCache();
         file_row->readCells(reference_column_predicate);
         QtCassandra::QCassandraCells const content_cells(file_row->cells());
         if(content_cells.isEmpty())
@@ -408,12 +408,13 @@ void content::backend_action_rebuild_index()
         QtCassandra::QCassandraValue ready;
         ready.setSignedCharValue(1);
 
+        content_table->clearCache();
+
         auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
         // process 100 in a row
         row_predicate->setCount(100);
         for(;;)
         {
-            content_table->clearCache();
             uint32_t const count(content_table->readRows(row_predicate));
             if(count == 0)
             {
@@ -457,13 +458,13 @@ void content::backend_action_rebuild_index()
     //
     {
         QtCassandra::QCassandraRow::pointer_t row(content_table->row(get_name(name_t::SNAP_NAME_CONTENT_INDEX)));
+        row->clearCache();
 
         auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
         column_predicate->setCount(100);
         column_predicate->setIndex(); // behave like an index
         for(;;)
         {
-            row->clearCache();
             row->readCells(column_predicate);
             QtCassandra::QCassandraCells const cells(row->cells());
             if(cells.isEmpty())
@@ -533,6 +534,7 @@ void content::backend_process_status()
 
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t processing_table(get_processing_table());
+    processing_table->clearCache();
 
     // any page with this start date or less gets its processing state
     // reset by this backend; we may want the 10 minutes to be saved in
@@ -551,7 +553,6 @@ void content::backend_process_status()
     row_predicate->setCount(100);
     for(;;)
     {
-        processing_table->clearCache();
         uint32_t const count(processing_table->readRows(row_predicate));
         if(count == 0)
         {
@@ -589,11 +590,10 @@ void content::backend_process_status()
                         if(status.get_state() == path_info_t::status_t::state_t::CREATE)
                         {
                             // a create failed, set it to normal...
-                            // (should we instead set it to hidden?)
+                            // (should we instead set it to hidden and let the administrator know?)
                             status.set_state(path_info_t::status_t::state_t::NORMAL);
+                            ipath.set_status(status);
                         }
-                        status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
-                        ipath.set_status(status);
                     }
                 }
                 else
@@ -671,6 +671,7 @@ void content::backend_process_files()
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW)));
+    new_row->clearCache();
 
 // test this file over and over again until it worked
 //new_row->cell(QByteArray::fromHex("1f2bcb1bd25c07eb88373f7c9f50adb6"))->setValue(true);
@@ -678,12 +679,13 @@ void content::backend_process_files()
 //files_table->row(QByteArray::fromHex("1f2bcb1bd25c07eb88373f7c9f50adb6"))->cell("content::files::reference::http://csnap.m2osw.com/css/finball/style.css")->setValue(ref);
 //std::cerr << "-------------------------------------- backend_process_files() START\n";
 
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    QString const file_reference(QString::fromUtf8(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)));
+
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     column_predicate->setCount(100); // should this be a parameter?
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        new_row->clearCache();
         new_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const new_cells(new_row->cells());
         if(new_cells.isEmpty())
@@ -705,16 +707,17 @@ void content::backend_process_files()
                 QByteArray file_key(new_cell->columnKey());
 
                 QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
-                auto reference_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
-                reference_column_predicate->setStartCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
-                reference_column_predicate->setEndCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
+                file_row->clearCache();
+
+                auto reference_column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+                reference_column_predicate->setStartCellKey(file_reference);
+                reference_column_predicate->setEndCellKey(file_reference + ";");
                 reference_column_predicate->setCount(100);
                 reference_column_predicate->setIndex(); // behave like an index
-                bool first(true); // load the files only once each
                 permission_flag secure;
+                bool first(true); // load the files only once each
                 for(;;)
                 {
-                    file_row->clearCache();
                     file_row->readCells(reference_column_predicate);
                     QtCassandra::QCassandraCells const content_cells(file_row->cells());
                     if(content_cells.isEmpty())
@@ -732,14 +735,13 @@ void content::backend_process_files()
                         QtCassandra::QCassandraCell::pointer_t content_cell(*cc);
                         if(!content_cell->value().nullValue())
                         {
-                            QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
-                                     static_cast<int>(content_cell->columnKey().size() - (strlen(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2)));
-
                             int8_t const reference_value(content_cell->value().signedCharValue());
-                            if(attachment_key.startsWith(site_key_utf8))
+                            if(reference_value == 1)
                             {
-                                // if not 1, then it was already checked
-                                if(reference_value == 1)
+                                QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
+                                         static_cast<int>(content_cell->columnKey().size() - (strlen(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2)));
+
+                                if(attachment_key.startsWith(site_key_utf8))
                                 {
                                     if(first)
                                     {
@@ -750,10 +752,12 @@ void content::backend_process_files()
                                         {
                                             SNAP_LOG_ERROR("the files backend could not load attachment at \"")(attachment_key.data())("\".");
 
+                                            // always save the secure flag
+                                            //
                                             signed char const sflag(CONTENT_SECURE_UNDEFINED);
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
-                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded from database."));
 
                                             // TODO generate a message about the error...
                                         }
@@ -762,6 +766,7 @@ void content::backend_process_files()
                                             check_attachment_security(file, secure, false);
 
                                             // always save the secure flag
+                                            //
                                             signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_INSECURE);
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
@@ -771,6 +776,7 @@ void content::backend_process_files()
                                             {
                                                 // only process the attachment further if it is
                                                 // considered secure
+                                                //
                                                 process_attachment(file_row, file);
                                             }
                                         }
@@ -794,17 +800,16 @@ void content::backend_process_files()
                                     int8_t const reference_checked(2);
                                     content_cell->setValue(reference_checked);
                                 }
-                            }
-                            else
-                            {
-                                // check whether all references were checked
-                                // because if not we need to not drop that
-                                // row (not yet)
-                                if(reference_value == 1)
+                                else
                                 {
+                                    // check whether all references were checked
+                                    // because if not we need to not drop that
+                                    // row (not yet)
+                                    //
                                     drop_row = false;
                                 }
                             }
+
                         }
                     }
                 }
