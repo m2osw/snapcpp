@@ -522,7 +522,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                 if( n.isElement() )
                 {
                     QDomElement subelm(n.toElement());
-                    if( subelm.tagName() == "service" )
+                    if( subelm.tagName() == "dependency" )
                     {
                         f_dependsList << subelm.text();
                     }

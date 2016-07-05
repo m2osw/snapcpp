@@ -180,7 +180,7 @@
 
   <xs:group name="dependsGroup">
     <xs:sequence>
-      <xs:element name="service" type="xs:string"/>
+      <xs:element name="dependency" type="xs:string"/>
     </xs:sequence>
   </xs:group>
 

@@ -190,7 +190,7 @@
     <user>snapwebsites</user>
     <group>snapwebsites</group>
     <dependencies>
-      <service>snapcommunicator</service>
+      <dependency>snapcommunicator</dependency>
     </dependencies>
   </service>
   <service name="snaplock" required="required" disabled="disabled">
@@ -201,7 +201,7 @@
     <user>snapwebsites</user>
     <group>snapwebsites</group>
     <dependencies>
-      <service>snapdbproxy</service>
+      <dependency>snapdbproxy</dependency>
     </dependencies>
   </service>
   <service name="snapfirewall" required="required" disabled="disabled">
@@ -216,9 +216,9 @@
     <user>snapwebsites</user>
     <group>snapwebsites</group>
     <dependencies>
-      <service>snapcommunicator</service>
-      <service>snapdbproxy</service>
-      <service>snapfirewall</service>
+      <dependency>snapcommunicator</dependency>
+      <dependency>snapdbproxy</dependency>
+      <dependency>snapfirewall</dependency>
     </dependencies>
   </service>
   <service name="sendmail" disabled="disabled">
