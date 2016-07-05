@@ -1,8 +1,9 @@
 Source: snapmanagercgi
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, zip, qt5-default, libqt5webkit5-dev, doxygen,
+Build-Depends: debhelper, cmake, zip, doxygen,
     graphviz, libxml2-utils, libprocps4-dev,
+    qt5-default, libqt5xmlpatterns5-dev,
     snapcmakemodules (>= 1.0.23.231~trusty),
     snapbase-dev,
     libadvgetopt-dev (>= 1.0.16.368~xenial),
