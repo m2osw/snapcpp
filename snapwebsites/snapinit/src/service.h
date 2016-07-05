@@ -24,6 +24,7 @@
 #pragma once
 
 #include <snapwebsites/snap_communicator.h>
+#include <snapwebsites/snap_string_list.h>
 
 #include <QDomElement>
 #include <QFile>
@@ -67,7 +68,7 @@ public:
     void                        configure(QDomElement e, QString const & binary_path, bool const debug, bool const ignore_path_check);
 
     // snap::snap_communicator::snap_timer implementation
-    virtual void                process_timeout();
+    virtual void                process_timeout() override;
 
     bool                        exists() const;
     bool                        run();
@@ -109,6 +110,7 @@ private:
     QString                     f_options;
     QString                     f_user;
     QString                     f_group;
+    snap::snap_string_list      f_dependsList;
     pid_t                       f_pid = 0;
     pid_t                       f_old_pid = 0;
     int                         f_short_run_count = 0;

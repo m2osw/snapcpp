@@ -11,7 +11,7 @@
   <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
   <xs:annotation>
     <xs:documentation>
-      PART 1: type definitions 
+      PART 1: type definitions
     </xs:documentation>
   </xs:annotation>
 
@@ -51,7 +51,7 @@
   <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
   <xs:annotation>
     <xs:documentation>
-      PART 2: elements 
+      PART 2: elements
     </xs:documentation>
   </xs:annotation>
 
@@ -71,6 +71,7 @@
             <xs:element ref="coredump"/>
             <xs:element ref="user"/>
             <xs:element ref="group"/>
+            <xs:element ref="dependencies"/>
           </xs:choice>
           <xs:attribute name="name" type="name" use="required"/>
           <xs:attribute name="disabled" type="disabled"/>
@@ -176,6 +177,18 @@
 
   <xs:element name="user" type="xs:string"/>
   <xs:element name="group" type="xs:string"/>
+
+  <xs:group name="dependsGroup">
+    <xs:sequence>
+      <xs:element name="service" type="xs:string"/>
+    </xs:sequence>
+  </xs:group>
+
+  <xs:element name="dependencies" type="dependsType"/>
+
+  <xs:complexType name="dependsType">
+    <xs:group ref="dependsGroup" minOccurs="1" maxOccurs="unbounded"/>
+  </xs:complexType>
 
 </xs:schema>
 <!--

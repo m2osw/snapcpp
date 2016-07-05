@@ -508,6 +508,31 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
         }
     }
 
+    // Get the list of dependencies that must be started first.
+    //
+    {
+        f_dependsList.clear();
+        //
+        QDomElement sub_element(e.firstChildElement("dependencies"));
+        if( !sub_element.isNull() )
+        {
+            QDomNode n( sub_element.firstChild() );
+            while( !n.isNull() )
+            {
+                if( n.isElement() )
+                {
+                    QDomElement subelm(n.toElement());
+                    if( subelm.tagName() == "service" )
+                    {
+                        f_dependsList << subelm.text();
+                    }
+                }
+                //
+                n = n.nextSibling();
+            }
+        }
+    }
+
     // compute the full path to the binary
     //
     // note: f_command cannot be empty here
@@ -573,7 +598,7 @@ done:;
 
 /** \brief Process a timeout on a connection.
  *
- * This function should probably be cut in a few sub-functions. It
+ * This function should probably be cut into a few sub-functions. It
  * handles all the time out callbacks from snapcommunicator. These
  * are used to start and stop services.
  *
@@ -755,8 +780,8 @@ void service::process_timeout()
         }
         else
         {
-            // give the OS a little time to get it shit back together
-            // (we may have run out of memory for a small while)
+            // give the OS a little time to get its shit back together
+            // (we may have run out of memory for a little while)
             //
             set_timeout_delay(3 * 1000000LL);
         }
@@ -1068,6 +1093,23 @@ bool service::run()
     if( failed() || is_stopping() )
     {
         return false;
+    }
+
+    // Check to make sure dependent processes have started first.
+    // Defer if not.
+    //
+    if( !f_dependsList.isEmpty() )
+    {
+        const auto snap_init( f_snap_init.lock() );
+        for( const auto& svc : f_dependsList )
+        {
+            if( !snap_init->is_running(svc) )
+            {
+                // Return at this point, since dependent services are not started yet...
+                //
+                return false;
+            }
+        }
     }
 
     // mark when this service is started using the current system
