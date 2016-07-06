@@ -1,0 +1,141 @@
+# Current default firewall.
+#
+# This will be converted to a fully dynamic firewall setup capability
+# through our iplock tool and snapfirewall to manage the rules. Until
+# then, we install this by default. It can be edited as required by
+# your setup.
+#
+
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+
+:bad_tcp_packets - [0:0]
+:bad_robots - [0:0]
+
+
+#########
+# INPUT #
+#########
+-A INPUT -j bad_tcp_packets
+-A INPUT -j bad_robots
+
+# local network
+-A INPUT -i lo -s @PUBLIC_IP@ -j ACCEPT
+-A INPUT -i lo -s @LOCAL_IP@ -j ACCEPT
+-A INPUT -i lo -s 127.0.0.1 -j ACCEPT
+-A INPUT -i lo -j LOG --log-prefix "reject_lo: " --log-uid
+-A INPUT -i lo -j REJECT
+
+# Accept all existing connections
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PUBLIC_IP@ -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @LOCAL_IP@ -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+
+# Very much limit port 22 (SSH)
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
+# Reject any connections (i.e. --syn) from anywhere else on that port
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j LOG --log-prefix "unwanted SSH: " --log-uid
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j REJECT --reject-with icmp-port-unreachable
+
+# Temporary to initialize website from your computer
+# (i.e. give access to snapserver or a Cassandra node over the Internet)
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 4004 -d @PUBLIC_IP@ -s x.x.x.x --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 9042 -d @PUBLIC_IP@ -s x.x.x.x --syn -j ACCEPT
+
+# Various services
+# SMTP (postfix)
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 25 -d @PUBLIC_IP@ --syn -j ACCEPT
+# DNS (bind)
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 53 -d @PUBLIC_IP@ --syn -j ACCEPT
+-A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --sport 53 -d @PUBLIC_IP@ -j ACCEPT
+# NTP
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 123 -d @PUBLIC_IP@ --syn -j ACCEPT
+-A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --sport 123 -d @PUBLIC_IP@ -j ACCEPT
+# Apache
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 80 -d @PUBLIC_IP@ --syn -j ACCEPT
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ --syn -j ACCEPT
+
+# LAN (TCP/UDP)
+-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m tcp -s @PRIVATE_NETWORK_IPS@ -d @LOCAL_IP@ --syn -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p udp -m udp -s @PRIVATE_NETWORK_IPS@ -d @LOCAL_IP@ -j ACCEPT
+
+# Allow pings
+-A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
+
+# Reject anything else!
+-A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "block service: " --log-uid
+-A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "block service: " --log-uid
+-A INPUT -i @PUBLIC_INTERFACE@ -p all -j REJECT
+-A INPUT -i @PRIVATE_INTERFACE@ -p all -j REJECT
+
+
+###################
+# bad_tcp_packets #
+###################
+# Bad TCP packets (from the wrong addresses)
+# We just don't respond
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j DROP
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 10.0.0.0/8 -j DROP
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 172.16.0.0/12 -j LOG --log-prefix "bad_tcp_packet(172): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 172.16.0.0/12 -j DROP
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j LOG --log-prefix "bad_tcp_packet(224): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j DROP
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(0): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j DROP
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(1): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j DROP
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j DROP
+
+# Let out local network computers communicate via our VPN
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s @PRIVATE_NETWORK_IPS@ -j RETURN
+
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j DROP
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j DROP
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 172.16.0.0/12 -j LOG --log-prefix "bad_tcp_packet(172): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 172.16.0.0/12 -j DROP
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j LOG --log-prefix "bad_tcp_packet(224): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j DROP
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(0): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j DROP
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(1): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j DROP
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j DROP
+
+##############
+# bad_robots #
+##############
+# This queue is for Snap! to add robots that are doing DoS attacks
+# and other annoying robots
+
+
+
+##########
+# OUTPUT #
+##########
+-A OUTPUT -o lo -d 127.0.0.1 -j ACCEPT
+#-A OUTPUT -o lo -d 10.0.0.1 -j ACCEPT
+-A OUTPUT -o lo -d @PUBLIC_IP@ -j ACCEPT
+-A OUTPUT -o lo -d @LOCAL_IP@ -j ACCEPT
+-A OUTPUT -o lo -j REJECT
+
+-A OUTPUT -o @PUBLIC_INTERFACE@ -p tcp -m tcp -s @PUBLIC_IP@ -j ACCEPT
+-A OUTPUT -o @PUBLIC_INTERFACE@ -p udp -m udp -s @PUBLIC_IP@ -j ACCEPT
+-A OUTPUT -o @PUBLIC_INTERFACE@ -p icmp -m icmp --icmp-type any -s @PUBLIC_IP@ -j ACCEPT
+-A OUTPUT -o @PUBLIC_INTERFACE@ -j REJECT
+
+-A OUTPUT -o @PRIVATE_INTERFACE@ -p tcp -m tcp -j ACCEPT
+-A OUTPUT -o @PRIVATE_INTERFACE@ -p udp -m udp -j ACCEPT
+-A OUTPUT -o @PRIVATE_INTERFACE@ -p icmp -m icmp --icmp-type any -j ACCEPT
+-A OUTPUT -o @PRIVATE_INTERFACE@ -j REJECT
+
+# Apply all of that now
+COMMIT
