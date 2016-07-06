@@ -47,36 +47,6 @@ namespace snap_manager
 {
 
 
-namespace
-{
-
-/** \brief List of functions to run to gather a computer's status.
- *
- * This function calculates the status of a computer. This includes
- * many things such as:
- *
- * \li Is a certain package installed
- * \li Is a certain process currently running
- * \li Is a certain .conf file defined and does it make sense
- *     (i.e. are parameters out of wack, missing, etc.)
- *
- * We do not record the system load or similar things that the
- * snapwatchdog takes care of. We are more interested about
- * the installation currently running on a certain system.
- *
- * The snapmanager gives the administrator a way to monitor
- * all the computers in a cluster and act on them by adding,
- * removing, updating software and other similar actions.
- */
-manager_status::status_function_t const g_status_functions[] =
-{
-    &manager_status::status_ip_address,
-    &manager_status::status_check_running_services,
-    &manager_status::status_has_list_of_frontend_computers
-};
-
-}
-// no name namespace
 
 
 
@@ -93,10 +63,12 @@ manager_status::status_function_t const g_status_functions[] =
  * name of the service is specified and in that case it will
  * forward messages to snapcommunicator.
  *
+ * \param[in] md  The manager daemon object.
  * \param[in] sc  The status connection object.
  */
-manager_status::manager_status(status_connection::pointer_t sc)
+manager_status::manager_status(manager_daemon * md, status_connection::pointer_t sc)
     : snap_runner("manager_status")
+    , f_manager_daemon(md)
     , f_status_connection(sc)
     //, f_running(true)
 {
@@ -122,6 +94,10 @@ manager_status::manager_status(status_connection::pointer_t sc)
  */
 void manager_status::set_snapmanager_frontend(QString const & snapmanager_frontend)
 {
+    // guard is not needed because the frontend IPs are set once
+    // before the thread starts
+    //snap::snap_thread::snap_lock guard(f_mutex);
+
     f_snapmanager_frontend = snapmanager_frontend.split(",", QString::SkipEmptyParts);
 
     for(auto & f : f_snapmanager_frontend)
@@ -147,8 +123,48 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
  */
 bool manager_status::is_snapmanager_frontend(QString const & server_name) const
 {
+    // guard is not needed because the frontend IPs are set once
+    // before the thread starts
     return f_snapmanager_frontend.empty()
         || f_snapmanager_frontend.contains(server_name);
+}
+
+
+/** \brief Check whether any frontend IPs were listed.
+ *
+ * This function checks whether any frontend IPs were listed in
+ * the configuration file.
+ *
+ * \return true if frontend IPs are defined.
+ */
+bool manager_status::has_snapmanager_frontend() const
+{
+    // guard is not needed because the frontend IPs are set once
+    // before the thread starts
+    //snap::snap_thread::snap_lock guard(f_mutex);
+    return !f_snapmanager_frontend.empty();
+}
+
+
+/** \brief Check whether a plugin should skip doing any work in a status call.
+ *
+ * Whenever we generate the status of a server, we emit the retrieve_status()
+ * signal. This one runs against all the plugins and stops only once all the
+ * plugins are done. Unfortunately, this can be a very long time since some
+ * plugins retrieve statuses that take time to gather.
+ *
+ * In order to allow for a fast STOP command, the plugins are expected to
+ * check whether they are required to stop as soon as possible. This should
+ * be checked on entry of the retrieve_status() implementation and if the
+ * plugin has several parts or a loop, check between parts and on each
+ * inner loop iterations (unless the inner loop is really fast, do it in
+ * the one prior.)
+ *
+ * \return true if the thread has been asked to stop as soon as possible.
+ */
+bool manager_status::stop_now_prima() const
+{
+    return !continue_running() || !f_running;
 }
 
 
@@ -163,21 +179,6 @@ bool manager_status::is_snapmanager_frontend(QString const & server_name) const
  */
 void manager_status::run()
 {
-    // first wait for the public IP address because sending a status
-    // without it is not going to make it complete
-    //
-    while(f_status_connection->get_public_ip().isEmpty())
-    {
-        f_status_connection->poll(1000000LL);
-
-        if(!continue_running() || !f_running)
-        {
-            // well... no time to even calculate a first status...
-            //
-            return;
-        }
-    }
-
     // run as long as the parent thread did not ask us to quit
     //
     QString status;
@@ -186,32 +187,22 @@ void manager_status::run()
     {
         // first gather a new set of statuses
         //
-        f_server_status.clear();
+        server_status_t server_status;
 
-        size_t const max_status(sizeof(g_status_functions) / sizeof(g_status_functions[0]));
-        for(size_t idx(0); idx < max_status; ++idx)
+        f_manager_daemon->retrieve_status(server_status);
+        if(!continue_running() || !f_running)
         {
-            // we may be asked to wake up immediately and at that point
-            // we may notice that we are not expected to continue working
-            //
-            if(!continue_running() || !f_running)
-            {
-                return;
-            }
-
-            // get one status
-            //
-            (this->*g_status_functions[idx])();
+            return;
         }
 
-        // now convert the resulting f_server_status to a string,
+        // now convert the resulting server_status to a string,
         // make sure to place the "status" first since we load just
         // that when we show the entire cluster information
         //
         QString const previous_status(status);
         status.clear();
         QString status_string;
-        for(auto const & ss : f_server_status)
+        for(auto const & ss : server_status)
         {
             if(ss.first == "status")
             {
@@ -356,7 +347,7 @@ int manager_status::package_status(QString const & package_name, bool add_info_o
     p.set_command("dpkg-query");
     p.add_argument("-W");
     p.add_argument(package_name);
-    int r(p.run());
+    int const r(p.run());
 
     // the output is saved so we can send it to the user and log it...
     if(r == 0)
@@ -371,32 +362,13 @@ int manager_status::package_status(QString const & package_name, bool add_info_o
         // stderr...), so we ignore it
         //
         //f_output += package_name + " is not installed";
-        SNAP_LOG_TRACE("package named \"")(package_name)("\" isnot installed.");
+        SNAP_LOG_TRACE("package named \"")(package_name)("\" is not installed.");
     }
 
     return r;
 }
 
 
-void manager_status::status_ip_address()
-{
-    f_server_status["ip"] = f_status_connection->get_public_ip();
-}
-
-
-void manager_status::status_check_running_services()
-{
-    f_server_status["status"] = "Up";
-}
-
-
-void manager_status::status_has_list_of_frontend_computers()
-{
-    if(f_snapmanager_frontend.isEmpty())
-    {
-        f_server_status["warning:snapmanager_no_frontend"] = "The snapmanager_frontend variable is empty. This is most likely not what you want.";
-    }
-}
 
 
 
@@ -425,12 +397,14 @@ void manager_status::status_has_list_of_frontend_computers()
 # | backend       | one or more snapbackend                   | Back  |
 # | base          | snamanager.cgi and dependencies           | All   |
 # | cassandra     | cassandra database                        | Back  |
-# | firewall      | snapfirewall                              | All   |
+# | firewall      | snapfirewall + iplock (need overhaul)     | All   |
 # | frontend      | apache with snap.cgi                      | Front |
 # | mailserver    | postfix with snapbounce                   | Front |
 # | ntp           | time server                               | All   |
 # | vpn           | tinc / openvpn                            | All   |
 # | logserver     | loggingserver from log4cplus              | Back  |
+# | rkhunter      | check that no rootkit gets installed      | All   |
+# | tripwire      | check that no files gets changed          | All   |
 # +===============+===========================================+=======+
 #
 # Note that the snapserver plugins come with clamav.
