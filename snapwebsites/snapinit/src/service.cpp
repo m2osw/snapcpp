@@ -639,6 +639,20 @@ void service::process_timeout()
     {
         if(is_running())
         {
+            // Make sure the services which depend on this have stopped first...
+            //
+            const auto snap_init( f_snap_init.lock() );
+            snap::snap_string_list depends_on_list;
+            snap_init->get_depends_on_list( f_service_name, depends_on_list );
+            for( const auto& service_name : depends_on_list )
+            {
+                if( !snap_init->get_service_has_stopped( service_name ) )
+                {
+                    // Leave timer running and come back again.
+                    return;
+                }
+            }
+
             // f_stopping is the signal we want to send to the service
             //
             SNAP_LOG_WARNING("service ")(f_service_name)(", pid=")(f_pid)(", failed to respond to ")(f_stopping == SIGTERM ? "STOP" : "SIGTERM")(" signal, using `kill -")(f_stopping)("`.");
@@ -652,10 +666,10 @@ void service::process_timeout()
                 //
                 int const e(errno);
                 QString msg(QString("Unable to kill service \"%1\", pid=%2! errno=%3 -- %4")
-                                .arg(f_service_name)
-                                .arg(f_pid)
-                                .arg(e)
-                                .arg(strerror(e)));
+                            .arg(f_service_name)
+                            .arg(f_pid)
+                            .arg(e)
+                            .arg(strerror(e)));
                 SNAP_LOG_FATAL(msg);
                 syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
 
@@ -826,6 +840,12 @@ bool service::service_may_have_died()
     mark_process_as_dead();
 
     return true;
+}
+
+
+bool service::is_dependency_of( const QString& service_name )
+{
+    return f_dependsList.contains(service_name);
 }
 
 
@@ -1598,6 +1618,16 @@ void service::set_stopping()
         set_enable(true);
         set_timeout_delay(SNAPINIT_STOP_DELAY);
         set_timeout_date(-1); // ignore any date timeout
+
+        // Now set stopping on all processes which depend on this service:
+        //
+        const auto snap_init( f_snap_init.lock() );
+        snap::snap_string_list depends_on_list;
+        snap_init->get_depends_on_list( f_service_name, depends_on_list );
+        for( const auto& service_name : depends_on_list )
+        {
+            snap_init->set_stopping( service_name );
+        }
     }
     else
     {

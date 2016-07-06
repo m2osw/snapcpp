@@ -1630,7 +1630,54 @@ void snap_init::log_selected_servers() const
 
 
 
+/** \brief Find who depends on the named service
+ *
+ * \return list of services who depend on the named service
+ */
+void snap_init::get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const
+{
+    ret_list.clear();
+    for( auto service : f_service_list )
+    {
+        if( service->is_dependency_of( service_name ) )
+        {
+            ret_list << service->get_service_name();
+        }
+    }
+}
 
+
+
+/** \brief Check whether a service is running.
+ */
+void snap_init::set_stopping( const QString& service_name ) const
+{
+    for( auto service : f_service_list )
+    {
+        if( service->get_service_name() == service_name )
+        {
+            service->set_stopping();
+            break;
+        }
+    }
+}
+
+
+
+/** \brief Check whether a service is running.
+ */
+bool snap_init::get_service_has_stopped( const QString& service_name ) const
+{
+    for( auto service : f_service_list )
+    {
+        if( service->get_service_name() == service_name )
+        {
+            return service->has_stopped();
+        }
+    }
+
+    return false; // not found!
+}
 
 
 /** \brief Ask all services to quit.

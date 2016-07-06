@@ -92,6 +92,7 @@ public:
     int                         get_recovery() const;
     int                         get_priority() const;
     bool                        service_may_have_died();
+    bool                        is_dependency_of( const QString& service_name );
 
     bool                        operator < (service const & rhs) const;
 
