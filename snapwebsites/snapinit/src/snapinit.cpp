@@ -1501,12 +1501,15 @@ bool snap_init::is_running() const
  */
 bool snap_init::is_running( const QString& service_name ) const
 {
-    for( auto service : f_service_list )
+    auto find_service_name = [service_name]( const auto& svc )
     {
-        if( service->get_service_name() == service_name )
-        {
-            return service->is_running();
-        }
+        return svc->get_service_name() == service_name;
+    };
+
+    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(), find_service_name );
+    if( iter != f_service_list.end() )
+    {
+        return (*iter)->is_running();
     }
 
     // Service not found!
@@ -1652,13 +1655,15 @@ void snap_init::get_depends_on_list( const QString& service_name, snap::snap_str
  */
 void snap_init::set_stopping( const QString& service_name ) const
 {
-    for( auto service : f_service_list )
+    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
+    [service_name]( const auto& svc )
     {
-        if( service->get_service_name() == service_name )
-        {
-            service->set_stopping();
-            break;
-        }
+        return svc->get_service_name() == service_name;
+    });
+
+    if( iter != f_service_list.end() )
+    {
+        (*iter)->set_stopping();
     }
 }
 
@@ -1668,12 +1673,15 @@ void snap_init::set_stopping( const QString& service_name ) const
  */
 bool snap_init::get_service_has_stopped( const QString& service_name ) const
 {
-    for( auto service : f_service_list )
+    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
+    [service_name]( const auto& svc )
     {
-        if( service->get_service_name() == service_name )
-        {
-            return service->has_stopped();
-        }
+        return svc->get_service_name() == service_name;
+    });
+
+    if( iter != f_service_list.end() )
+    {
+        return (*iter)->has_stopped();
     }
 
     return false; // not found!
