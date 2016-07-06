@@ -1,3 +1,15 @@
+advgetopt (1.1.0.45~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 06 Jul 2016 02:03:07 -0700
+
+advgetopt (1.1.0.44~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 05 Jul 2016 20:20:40 -0700
+
 advgetopt (1.1.0.43~xenial) xenial; urgency=high
 
   * Nightly build.
