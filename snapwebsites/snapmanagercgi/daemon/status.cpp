@@ -72,120 +72,41 @@ char const status_file_magic[] = "Snap! Status v1\n";
  */
 void manager_daemon::set_manager_status(snap::snap_communicator_message const & message)
 {
-    // WARNING: not using the ofstream class because we want to lock
-    //          the file and there is no standard way to access 'fd'
-    //          in an ofstream object
-    //
-    class safe_status_file
-    {
-    public:
-        safe_status_file(QString const & data_path, QString const & server)
-            : f_filename(QString("%1/%2.db").arg(data_path).arg(server).toUtf8().data())
-            //, f_fd(-1)
-            //, f_keep(false)
-        {
-        }
-
-        ~safe_status_file()
-        {
-            close();
-        }
-
-        void close()
-        {
-            if(f_fd != -1)
-            {
-                // Note: there is no need for an explicit unlock, the close()
-                //       has the same effect on that file
-                //::flock(f_fd, LOCK_UN);
-                ::close(f_fd);
-            }
-            if(!f_keep)
-            {
-                ::unlink(f_filename.c_str());
-            }
-        }
-
-        bool open()
-        {
-            close();
-
-            // open the file
-            //
-            f_fd = ::open(f_filename.c_str(), O_WRONLY | O_CLOEXEC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-            if(f_fd < 0)
-            {
-                SNAP_LOG_ERROR("could not open file \"")
-                              (f_filename)
-                              ("\" to save snapmanagerdamon status.");
-                return false;
-            }
-
-            // make sure we are the only one on the case
-            //
-            if(::flock(f_fd, LOCK_EX) != 0)
-            {
-                SNAP_LOG_ERROR("could not lock file \"")
-                              (f_filename)
-                              ("\" to save snapmanagerdamon status.");
-                return false;
-            }
-
-            return true;
-        }
-
-        bool write(void const * buf, size_t size)
-        {
-            if(::write(f_fd, buf, size) != static_cast<ssize_t>(size))
-            {
-                SNAP_LOG_ERROR("could not write to file \"")
-                              (f_filename)
-                              ("\" to save snapmanagerdamon status.");
-                return false;
-            }
-
-            return true;
-        }
-
-        void keep()
-        {
-            // it worked, make sure the file is kept around
-            // (if this does not get called the file gets deleted)
-            //
-            f_keep = true;
-        }
-
-    private:
-        std::string f_filename;
-        int         f_fd = -1;
-        bool        f_keep = false;
-    };
-
-    // TBD: should we check that the name of the sending service is one of us?
-    //
-
     QString const server(message.get_sent_from_server());
     QString const status(message.get_parameter("status"));
 
-    {
-        QByteArray const status_utf8(status.toUtf8());
+    server_status s(f_data_path, server);
 
-        safe_status_file out(f_data_path, server);
-        if(!out.open()
-        || !out.write(status_file_magic, sizeof(status_file_magic) - 1)
-        || !out.write(status_utf8.data(), status_utf8.size()))
-        {
-            return;
-        }
-        out.keep();
+    // get this snapcommunicator status in our server_status object
+    //
+    if(!s.from_string(status))
+    {
+        return;
+    }
+
+    // convert a few parameter to header parameters so they can be loaded
+    // first without having to load the entire file (which can become
+    // really big with time and additional packages to manage)
+    //
+    snap_manager::status_t header_status(s.get_field_status("self", "status"));
+    header_status.set_plugin_name("header");
+    s.set_field(header_status);
+
+    snap_manager::status_t header_ip(s.get_field_status("self", "ip"));
+    header_ip.set_plugin_name("header");
+    s.set_field(header_ip);
+
+    if(!s.write())
+    {
+        return;
     }
 
     // keep a copy of our own information
     //
-    if(server == f_server_name)
-    {
-        f_status = status;
-    }
+    //if(server == f_server_name)
+    //{
+    //    f_status = s;
+    //}
 }
 
 

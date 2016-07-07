@@ -160,20 +160,27 @@ void self::bootstrap(snap_child * snap)
  *
  * \param[in] server_status  The map of statuses.
  */
-void self::on_retrieve_status(snap_manager::server_status_t & server_status)
+void self::on_retrieve_status(snap_manager::server_status & server_status)
 {
     if(f_snap->stop_now_prima())
     {
         return;
     }
 
-    server_status["status"] = "Up";
+    {
+        snap_manager::status_t const up(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "status", "Up");
+        server_status.set_field(up);
+    }
 
-    server_status["ip"] = f_snap->get_public_ip();
+    {
+        snap_manager::status_t const ip(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "ip", f_snap->get_public_ip());
+        server_status.set_field(ip);
+    }
 
     if(!f_snap->has_snapmanager_frontend())
     {
-        server_status["warning:snapmanager_no_frontend"] = "The snapmanager_frontend variable is empty. This is most likely not what you want.";
+        snap_manager::status_t const no_frontend(snap_manager::status_t::state_t::STATUS_STATE_WARNING, get_plugin_name(), "no_frontend", "The snapmanager_frontend variable is empty. This is most likely not what you want.");
+        server_status.set_field(no_frontend);
     }
 }
 

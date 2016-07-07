@@ -154,7 +154,7 @@ private:
     status_connection::pointer_t                f_status_connection;
     manager_status                              f_status_runner;
     snap::snap_thread                           f_status_thread;
-    QString                                     f_status;           // our status
+    //server_status                               f_status;           // our status
     QString                                     f_output;           // commands output, to be sent to end user
 };
 

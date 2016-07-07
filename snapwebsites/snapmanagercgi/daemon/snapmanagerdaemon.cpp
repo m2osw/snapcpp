@@ -309,6 +309,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
                 SNAP_LOG_ERROR("snapmanagerdaemon could not start its helper thread. Quitting immediately.");
                 stop(false);
             }
+            return;
         }
         else if(command == "STOP")
         {

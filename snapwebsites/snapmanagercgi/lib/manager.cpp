@@ -200,23 +200,8 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_MANAGER_DATA_PATH:
-        return "data_path";
-
-    case name_t::SNAP_NAME_MANAGER_SERVER_NAME:
-        return "server_name";
-
-    case name_t::SNAP_NAME_MANAGER_SERVERSTATS:
-        return "serverstats";
-
-    case name_t::SNAP_NAME_MANAGER_STATISTICS_FREQUENCY:
-        return "statistics_frequency";
-
-    case name_t::SNAP_NAME_MANAGER_STATISTICS_PERIOD:
-        return "statistics_period";
-
-    case name_t::SNAP_NAME_MANAGER_STATISTICS_TTL:
-        return "statistics_ttl";
+    case name_t::SNAP_NAME_MANAGER_STATUS_FILE_HEADER:
+        return "header";
 
     default:
         // invalid index
@@ -299,14 +284,23 @@ void manager::init(int argc, char * argv[])
     // setup the logger
     // the definition in the configuration file has priority...
     //
-    if(f_config.contains("log_config"))
+    if(f_config.contains("log_server")
+    && snap::logging::is_loggingserver_available(f_config["log_server"]))
     {
-        // use .conf definition when available
-        f_log_conf = f_config["log_config"];
+        f_log_conf = f_config["log_server"];
     }
     else
     {
-        f_log_conf = QString::fromUtf8(f_opt->get_string("log-config").c_str());
+        QString log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
+        if(f_config.contains(log_config_filename))
+        {
+            // use .conf definition when available
+            f_log_conf = f_config[log_config_filename];
+        }
+        else
+        {
+            f_log_conf = QString::fromUtf8(f_opt->get_string("log-config").c_str());
+        }
     }
     snap::logging::configure_conffile( f_log_conf );
 

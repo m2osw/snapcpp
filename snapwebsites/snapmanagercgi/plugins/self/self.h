@@ -71,7 +71,7 @@ public:
     virtual void            bootstrap(snap_child * snap);
 
     // server signal
-    void                    on_retrieve_status(snap_manager::server_status_t & server_status);
+    void                    on_retrieve_status(snap_manager::server_status & server_status);
 
 private:
     snap_manager::manager * f_snap = nullptr;

@@ -187,9 +187,9 @@ void manager_status::run()
     {
         // first gather a new set of statuses
         //
-        server_status_t server_status;
+        server_status plugin_status("");
 
-        f_manager_daemon->retrieve_status(server_status);
+        f_manager_daemon->retrieve_status(plugin_status);
         if(!continue_running() || !f_running)
         {
             return;
@@ -202,29 +202,22 @@ void manager_status::run()
         QString const previous_status(status);
         status.clear();
         QString status_string;
-        for(auto const & ss : server_status)
+        snap_manager::status_t::map_t const & statuses(plugin_status.get_statuses());
+        for(auto const & ss : statuses)
         {
-            if(ss.first == "status")
+            if(ss.second.get_plugin_name() == "self"
+            && ss.second.get_field_name() == "status")
             {
-                status_string = ss.second;
+                status_string = ss.second.to_string();
             }
             else
             {
-                // sanity check to make sure user does not use '='
-                // in the name (otherwise we will have a bug when
-                // parsing that back to name / value later.)
-                //
-                if(ss.first.indexOf('=') != -1)
-                {
-                    throw std::runtime_error("the name of a status variable cannot include an '=' character.");
-                }
-
-                status += QString("%1=%2\n").arg(ss.first).arg(ss.second);
+                status += ss.second.to_string() + "\n";
             }
         }
 
         // always prepend the status variable
-        status = QString("status=%1\n%2").arg(status_string).arg(status);
+        status = QString("%1\n%2").arg(status_string).arg(status);
 
         // generate a message to send the snapmanagerdaemon
         // (but only if the status changed, otherwise it would be a waste)
