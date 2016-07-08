@@ -646,7 +646,13 @@ void service::process_timeout()
             snap_init->get_depends_on_list( f_service_name, depends_on_list );
             for( const auto& service_name : depends_on_list )
             {
-                if( !snap_init->get_service_has_stopped( service_name ) )
+                const auto svc( snap_init->get_service( service_name ) );
+                if( !svc )
+                {
+                    SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
+                    return;
+                }
+                if( svc->has_stopped() )
                 {
                     // Leave timer running and come back again.
                     return;
@@ -1121,11 +1127,18 @@ bool service::run()
     if( !f_dependsList.isEmpty() )
     {
         const auto snap_init( f_snap_init.lock() );
-        for( const auto& svc : f_dependsList )
+        for( const auto& service_name : f_dependsList )
         {
-            if( !snap_init->is_running(svc) )
+            const auto svc( snap_init->get_service( service_name ) );
+            if( !svc )
             {
-                // Return at this point, since dependent services are not started yet...
+                SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
+                return false;
+            }
+            if( !svc->is_running() || !svc->is_registered() )
+            {
+                // Return at this point, since dependent services are not
+                // started and registered yet...
                 //
                 return false;
             }
@@ -1626,7 +1639,13 @@ void service::set_stopping()
         snap_init->get_depends_on_list( f_service_name, depends_on_list );
         for( const auto& service_name : depends_on_list )
         {
-            snap_init->set_stopping( service_name );
+            const auto svc( snap_init->get_service( service_name ) );
+            if( !svc )
+            {
+                SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
+                return;
+            }
+            svc->set_stopping();
         }
     }
     else
@@ -1711,6 +1730,23 @@ bool service::is_connection_required() const
 bool service::is_snapdbproxy() const
 {
     return !f_snapdbproxy_addr.isEmpty();
+}
+
+
+
+/** \brief returns the registration status with snapcommunicator
+ */
+bool service::is_registered() const
+{
+    return f_registered;
+}
+
+
+/** \brief sets the registration status with snapcommunicator
+ */
+void service::set_registered( const bool val )
+{
+    f_registered = val;
 }
 
 

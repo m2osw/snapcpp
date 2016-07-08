@@ -1235,22 +1235,19 @@ void snap_init::init_message_functions()
             "STATUS",
             [&]( snap::snap_communicator_message const& message )
             {
-                // Look at the return status and note that the service is registered.
-                QString msg( QString("command='%1'', to_message='%2'', from_server='%3'', from_service='%4', server='%5', service='%6'")
-                    .arg(message.get_command())
-                    .arg(message.to_message())
-                    .arg(message.get_sent_from_server())
-                    .arg(message.get_sent_from_service())
-                    .arg(message.get_server())
-                    .arg(message.get_service())
-                );
-                QStringList parms;
-                const auto& all_parms(message.get_all_parameters());
-                for( const auto& parm : all_parms.keys() )
+                const auto service_parm(message.get_parameter("service"));
+                const auto status_parm(message.get_parameter("status"));
+                //
+                const auto& iter = std::find_if( f_service_list.begin() , f_service_list.end(),
+                    [&](service::pointer_t const & s)
+                    {
+                        return s->get_service_name() == service_parm;
+                    });
+                if( iter != f_service_list.end() )
                 {
-                    parms << QString("%1='%2'").arg(parm).arg(all_parms[parm]);
+                   (*iter)->set_registered( status_parm == "up" );
                 }
-                SNAP_LOG_INFO("received status from server: msg='")(msg)("', params={")(parms.join(' '))("}");
+                SNAP_LOG_TRACE("received status from server: service=")(service_parm)(", status=")(status_parm);
             }
         },
         {
@@ -1352,31 +1349,34 @@ void snap_init::service_died()
     bool repeat(false);
     do
     {
-        repeat = false;
-        for(auto const & s : f_service_list)
-        {
-            if(s->service_may_have_died())
+        const auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
+            [&]( const auto& s )
             {
-                repeat = true;
+                return s->service_may_have_died();
+            });
 
-                // if snapcommunicator already died, we cannot forward
-                // the DIED or any other message
-                //
-                if(f_listener_connection)
-                {
-                    snap::snap_communicator_message register_snapinit;
-                    register_snapinit.set_command("DIED");
-                    register_snapinit.set_service(".");
-                    register_snapinit.add_parameter("service", s->get_service_name());
-                    register_snapinit.add_parameter("pid", s->get_old_pid());
-                    f_listener_connection->send_message(register_snapinit);
-                }
+        repeat = false;
+        if( iter != f_service_list.end() )
+        {
+            repeat = true;
 
-                // the service_may_have_died() can change the f_service_list
-                // map so we need to restart the loop otherwise we may crash
-                //
-                break;
+            // if snapcommunicator already died, we cannot forward
+            // the DIED or any other message
+            //
+            if(f_listener_connection)
+            {
+                snap::snap_communicator_message register_snapinit;
+                register_snapinit.set_command("DIED");
+                register_snapinit.set_service(".");
+                register_snapinit.add_parameter("service", (*iter)->get_service_name());
+                register_snapinit.add_parameter("pid", (*iter)->get_old_pid());
+                f_listener_connection->send_message(register_snapinit);
             }
+
+            // the service_may_have_died() can change the f_service_list
+            // map so we need to restart the loop otherwise we may crash
+            //
+            //break;
         }
     }
     while(repeat);
@@ -1538,28 +1538,6 @@ bool snap_init::is_running() const
 }
 
 
-/** \brief Check whether a service is running.
- *
- * \return true if the snapinit process is running.
- */
-bool snap_init::is_running( const QString& service_name ) const
-{
-    auto find_service_name = [service_name]( const auto& svc )
-    {
-        return svc->get_service_name() == service_name;
-    };
-
-    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(), find_service_name );
-    if( iter != f_service_list.end() )
-    {
-        return (*iter)->is_running();
-    }
-
-    // Service not found!
-    return false;
-}
-
-
 /** \brief Retrieve the path to the spool directory.
  *
  * The spool directory is used by the anacron tool and we do the
@@ -1693,10 +1671,9 @@ void snap_init::get_depends_on_list( const QString& service_name, snap::snap_str
 }
 
 
-
-/** \brief Check whether a service is running.
+/** \brief Query a service by name
  */
-void snap_init::set_stopping( const QString& service_name ) const
+service::pointer_t snap_init::get_service( const QString& service_name ) const
 {
     auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
     [service_name]( const auto& svc )
@@ -1704,30 +1681,12 @@ void snap_init::set_stopping( const QString& service_name ) const
         return svc->get_service_name() == service_name;
     });
 
-    if( iter != f_service_list.end() )
+    if( iter == f_service_list.end() )
     {
-        (*iter)->set_stopping();
-    }
-}
-
-
-
-/** \brief Check whether a service is running.
- */
-bool snap_init::get_service_has_stopped( const QString& service_name ) const
-{
-    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
-    [service_name]( const auto& svc )
-    {
-        return svc->get_service_name() == service_name;
-    });
-
-    if( iter != f_service_list.end() )
-    {
-        return (*iter)->has_stopped();
+        return service::pointer_t();
     }
 
-    return false; // not found!
+    return (*iter);
 }
 
 

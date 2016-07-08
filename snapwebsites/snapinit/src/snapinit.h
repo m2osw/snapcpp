@@ -293,14 +293,13 @@ public:
     void                        remove_terminated_services();
     void                        user_signal_caught(int sig);
     bool                        is_running() const;
-    bool                        is_running( const QString& service_name ) const;
-    void                        set_stopping( const QString& service_name ) const;
-    void                        get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const;
-    bool                        get_service_has_stopped( const QString& service_name ) const;
     QString const &             get_spool_path() const;
     QString const &             get_server_name() const;
     service::pointer_t          get_connection_service() const;
     service::pointer_t          get_snapdbproxy_service() const;
+
+    void                        get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const;
+    service::pointer_t          get_service( const QString& service_name ) const;
 
     static void                 sighandler( int sig );
 
