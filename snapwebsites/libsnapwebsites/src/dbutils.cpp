@@ -1103,7 +1103,7 @@ QString dbutils::get_column_value( const QByteArray& key, const QCassandraValue&
                         break;
 
                     case 1:
-                        v = "create";
+                        v = "create"; // should not be saved!
                         break;
 
                     case 2:
@@ -1127,41 +1127,43 @@ QString dbutils::get_column_value( const QByteArray& key, const QCassandraValue&
                         break;
 
                     }
-                    switch(status & 0x0000FF00)
-                    {
-                    case 0 * 256:
-                        v += " (unknown working)";
-                        break;
+                    // working is not supported anymore
+                    //switch(status & 0x0000FF00)
+                    //{
+                    //case 0 * 256:
+                    //    v += " (unknown working)";
+                    //    break;
 
-                    case 1 * 256:
-                        // "not working" is not shown
-                        break;
+                    //case 1 * 256:
+                    //    // "not working" is not shown
+                    //    break;
 
-                    case 2 * 256:
-                        v += " (creating)";
-                        break;
+                    //case 2 * 256:
+                    //    v += " (creating)";
+                    //    break;
 
-                    case 3 * 256:
-                        v += " (cloning)";
-                        break;
+                    //case 3 * 256:
+                    //    v += " (cloning)";
+                    //    break;
 
-                    case 4 * 256:
-                        v += " (removing)";
-                        break;
+                    //case 4 * 256:
+                    //    v += " (removing)";
+                    //    break;
 
-                    case 5 * 256:
-                        v += " (updating)";
-                        break;
+                    //case 5 * 256:
+                    //    v += " (updating)";
+                    //    break;
 
-                    default:
-                        v += QString(" (unknown working status: %1)").arg(status & 0x0000FF00);
-                        break;
+                    //default:
+                    //    v += QString(" (unknown working status: %1)").arg(status & 0x0000FF00);
+                    //    break;
 
-                    }
+                    //}
                 }
                 else
                 {
-                    v = QString("%1 (%2)").arg(status & 255).arg((status / 256) & 255);
+                    //v = QString("%1 (%2)").arg(status & 255).arg((status / 256) & 255);
+                    v = QString("%1").arg(status & 0x000000FF);
                 }
             }
             break;
@@ -1453,11 +1455,12 @@ void dbutils::set_column_value( const QByteArray& key, QCassandraValue& cvalue, 
         {
             uint32_t cv;
             QString state_name(v);
-            int pos(v.indexOf("("));
-            if(pos != -1)
-            {
-                state_name = state_name.left(pos).trimmed();
-            }
+            //int pos(v.indexOf("("));
+            //if(pos != -1)
+            //{
+            //    state_name = state_name.left(pos).trimmed();
+            //}
+            state_name = state_name.trimmed();
             if(state_name == "0" || state_name == "unknown" || state_name == "unknown state")
             {
                 cv = 0;
@@ -1486,44 +1489,44 @@ void dbutils::set_column_value( const QByteArray& key, QCassandraValue& cvalue, 
             {
                 throw snap_exception( "error: unknown status state value! Must be between 0 and +5 or a valid name!" );
             }
-            if(pos != -1)
-            {
-                // there is processing status
-                QString working_name(v.mid(pos + 1).trimmed());
-                if(working_name.right(1) == ")")
-                {
-                    working_name.remove(working_name.length() - 1, 1);
-                }
-                if(working_name == "0" || working_name == "unknown" || working_name == "unknown working")
-                {
-                    cv |= 0 * 256;
-                }
-                else if(working_name == "1" || working_name == "not working")
-                {
-                    cv |= 1 * 256;
-                }
-                else if(working_name == "2" || working_name == "creating")
-                {
-                    cv |= 2 * 256;
-                }
-                else if(working_name == "3" || working_name == "cloning")
-                {
-                    cv |= 3 * 256;
-                }
-                else if(working_name == "4" || working_name == "removing")
-                {
-                    cv |= 4 * 256;
-                }
-                else if(working_name == "5" || working_name == "updating")
-                {
-                    cv |= 5 * 256;
-                }
-            }
-            else
-            {
-                // use not working by default
-                cv |= 1 * 256;
-            }
+            //if(pos != -1)
+            //{
+            //    // there is processing status
+            //    QString working_name(v.mid(pos + 1).trimmed());
+            //    if(working_name.right(1) == ")")
+            //    {
+            //        working_name.remove(working_name.length() - 1, 1);
+            //    }
+            //    if(working_name == "0" || working_name == "unknown" || working_name == "unknown working")
+            //    {
+            //        cv |= 0 * 256;
+            //    }
+            //    else if(working_name == "1" || working_name == "not working")
+            //    {
+            //        cv |= 1 * 256;
+            //    }
+            //    else if(working_name == "2" || working_name == "creating")
+            //    {
+            //        cv |= 2 * 256;
+            //    }
+            //    else if(working_name == "3" || working_name == "cloning")
+            //    {
+            //        cv |= 3 * 256;
+            //    }
+            //    else if(working_name == "4" || working_name == "removing")
+            //    {
+            //        cv |= 4 * 256;
+            //    }
+            //    else if(working_name == "5" || working_name == "updating")
+            //    {
+            //        cv |= 5 * 256;
+            //    }
+            //}
+            //else
+            //{
+            //    // use not working by default
+            //    cv |= 1 * 256;
+            //}
             cvalue.setUInt32Value( cv );
         }
         break;
