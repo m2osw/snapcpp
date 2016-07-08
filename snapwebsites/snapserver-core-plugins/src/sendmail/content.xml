@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/email">
+  <content path="/admin/email" owner="output">
     <param name="content::title" revision="revision">e-Mail</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Different emails that different plugins send to users.</p>]]>
