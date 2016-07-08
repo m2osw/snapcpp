@@ -53,7 +53,8 @@ include_directories(
 
 add_library( ${PROJECT_NAME} SHARED
     manager.cpp                                 # Implements the core of the watchdog server
-    status_file.cpp                             # Load status file
+    server_status.cpp                           # Handle status data
+    status.cpp                                  # Hanele one specific status
 )
 
 target_link_libraries( ${PROJECT_NAME}

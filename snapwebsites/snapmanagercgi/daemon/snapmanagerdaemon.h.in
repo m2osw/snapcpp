@@ -75,7 +75,6 @@ public:
 
     void                        set_thread_b(manager_status * ms);
     void                        set_server_name(QString const & server_name);
-    QString const &             get_public_ip() const;
 
     // snap::snap_communicator::snap_pipe_message_connection implementation
     virtual void                process_message_a(snap::snap_communicator_message const & message) override;
@@ -95,28 +94,23 @@ class manager_status
 public:
     typedef void (manager_status::*status_function_t)();
 
-                                manager_status(status_connection::pointer_t sc);
+                                manager_status(manager_daemon *md, status_connection::pointer_t sc);
 
-    virtual void                run();
+    virtual void                run() override;
 
     void                        resend_status();
     void                        set_snapmanager_frontend(QString const & snapmanager_frontend);
     bool                        is_snapmanager_frontend(QString const & server_name) const;
+    bool                        has_snapmanager_frontend() const;
+    bool                        stop_now_prima() const;
 
     void                        process_message(snap::snap_communicator_message const & message);
 
-    // list of functions used to gather status information
-    void                        status_ip_address();
-    void                        status_check_running_services();
-    void                        status_has_list_of_frontend_computers();
-
 private:
-    typedef std::map<QString, QString>  status_t;
-
     int                         package_status(QString const & package_name, bool add_info_only_if_present);
 
+    manager_daemon *                f_manager_daemon = nullptr;
     status_connection::pointer_t    f_status_connection;
-    status_t                        f_server_status;
     bool                            f_running = true;
     bool                            f_resend_status = false;
     snap::snap_string_list          f_snapmanager_frontend;
@@ -132,14 +126,15 @@ public:
     typedef std::shared_ptr<manager_daemon> pointer_t;
 
                                 manager_daemon();
-    virtual                     ~manager_daemon();
+    virtual                     ~manager_daemon() override;
 
     void                        init(int argc, char * argv[]);
     int                         run();
     void                        process_message(snap::snap_communicator_message const & message);
     void                        forward_message(snap::snap_communicator_message const & message);
     void                        unreachable_message(snap::snap_communicator_message const & message);
-    QString const &             get_public_ip() const;
+    virtual bool                has_snapmanager_frontend() const override;
+    virtual bool                stop_now_prima() const override;
 
 private:
     static void                 sighandler( int sig );
@@ -151,17 +146,16 @@ private:
     void                            installer(snap::snap_communicator_message const & message);
     int                                 install(QString const & package_name);
 
-    QString                                     f_server_types;             // sent to use by snapcommunicator
-    int                                         f_communicator_port = -1;   // snap server port
-    QString                                     f_communicator_address;     // snap server address
+    //QString                                     f_server_types;                         // sent to use by snapcommunicator
+    int                                         f_communicator_port = 4040;             // snap server port
+    QString                                     f_communicator_address = "127.0.0.1";   // snap server address
     snap::snap_communicator::pointer_t          f_communicator;
     manager_messenger::pointer_t                f_messenger;
     status_connection::pointer_t                f_status_connection;
     manager_status                              f_status_runner;
     snap::snap_thread                           f_status_thread;
-    QString                                     f_status;           // our status
+    //server_status                               f_status;           // our status
     QString                                     f_output;           // commands output, to be sent to end user
-    QString                                     f_public_ip;        // this server public IP address (as far as snapcommunicator is concerned)
 };
 
 

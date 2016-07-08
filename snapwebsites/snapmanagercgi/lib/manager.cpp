@@ -116,6 +116,14 @@ advgetopt::getopt::option const g_manager_options[] =
     },
     {
         '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "debug",
+        nullptr,
+        "Start in debug mode.",
+        advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "log-config",
         "/etc/snapwebsites/snapmanager.properties",
@@ -192,23 +200,8 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_MANAGER_DATA_PATH:
-        return "data_path";
-
-    case name_t::SNAP_NAME_MANAGER_SERVER_NAME:
-        return "server_name";
-
-    case name_t::SNAP_NAME_MANAGER_SERVERSTATS:
-        return "serverstats";
-
-    case name_t::SNAP_NAME_MANAGER_STATISTICS_FREQUENCY:
-        return "statistics_frequency";
-
-    case name_t::SNAP_NAME_MANAGER_STATISTICS_PERIOD:
-        return "statistics_period";
-
-    case name_t::SNAP_NAME_MANAGER_STATISTICS_TTL:
-        return "statistics_ttl";
+    case name_t::SNAP_NAME_MANAGER_STATUS_FILE_HEADER:
+        return "header";
 
     default:
         // invalid index
@@ -291,14 +284,23 @@ void manager::init(int argc, char * argv[])
     // setup the logger
     // the definition in the configuration file has priority...
     //
-    if(f_config.contains("log_config"))
+    if(f_config.contains("log_server")
+    && snap::logging::is_loggingserver_available(f_config["log_server"]))
     {
-        // use .conf definition when available
-        f_log_conf = f_config["log_config"];
+        f_log_conf = f_config["log_server"];
     }
     else
     {
-        f_log_conf = QString::fromUtf8(f_opt->get_string("log-config").c_str());
+        QString log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
+        if(f_config.contains(log_config_filename))
+        {
+            // use .conf definition when available
+            f_log_conf = f_config[log_config_filename];
+        }
+        else
+        {
+            f_log_conf = QString::fromUtf8(f_opt->get_string("log-config").c_str());
+        }
     }
     snap::logging::configure_conffile( f_log_conf );
 
@@ -351,29 +353,6 @@ void manager::init(int argc, char * argv[])
     {
         f_plugins_path = f_config["plugins_path"];
     }
-
-    // get the user defined list of plugins if set
-    //
-    if(f_config.contains("plugins"))
-    {
-        // we allow for spaces and double commas (humans...)
-        //
-        snap::snap_string_list plugin_names(f_config["plugins"].split(',', QString::SkipEmptyParts));
-        for(auto const & n : plugin_names)
-        {
-            QString name(n.trimmed());
-            if(!name.isEmpty())
-            {
-                f_plugins << name;
-            }
-        }
-    }
-    else
-    {
-        // add the default plugins as defined by the snapmanagercgi project
-        //
-        f_plugins << "ip";
-    }
 }
 
 
@@ -415,10 +394,37 @@ void manager::bootstrap(snap_child * snap)
 
 void manager::load_plugins()
 {
-    if(!snap::plugins::load(f_plugins_path, this, std::static_pointer_cast<snap::plugins::plugin>(g_instance), f_plugins))
+    // we always want to load all the plugins
+    //
+    snap::snap_string_list all_plugins(snap::plugins::list_all(f_plugins_path));
+
+    // the list_all() includes "server", but we cannot load the server
+    // plugin
+    //
+    all_plugins.removeOne("server");
+
+    if(!snap::plugins::load(f_plugins_path, this, std::static_pointer_cast<snap::plugins::plugin>(g_instance), all_plugins))
     {
         throw snapmanager_exception_cannot_load_plugins("the snapmanager library could not load its plugins");
     }
+}
+
+
+QString manager::get_public_ip() const
+{
+    return f_public_ip;
+}
+
+
+bool manager::has_snapmanager_frontend() const
+{
+    return false;
+}
+
+
+bool manager::stop_now_prima() const
+{
+    return false;
 }
 
 

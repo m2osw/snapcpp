@@ -61,7 +61,12 @@ Important parts of Cassandra that we are using:
  * "Only columns are sorted." (rows are sorted, but using their MD5 sum
    so it is generally not viewed as a useful sort.) We created indexes
    using those columns in Cassandra.
-   
+
+      Note about MD5 -- Cassandra actually makes use of Murmur3 and not
+      MD5 for their partitioner...
+      https://en.wikipedia.org/wiki/MurmurHash
+      https://github.com/aappleby/smhasher
+
    Note that in our case we actually want to create actual indexes so
    that way we can index the same set or rows in many different ways
    without the need to handle that by hand each time. More or less,

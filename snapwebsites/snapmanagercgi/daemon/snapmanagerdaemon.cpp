@@ -40,21 +40,15 @@ namespace snap_manager
 {
 
 
-/** \brief Initialize the manager.
+/** \brief Initialize the manager daemon.
  *
- * The manager gets initialized with the argc and argv in case it
- * gets started from the command line. That way one can use --version
- * and --help, especially.
- *
- * \param[in] argc  The number of argiments defined in argv.
- * \param[in] argv  The array of arguments.
+ * Initialize the various variable members that need a dynamic
+ * initialization.
  */
-manager_daemon::manager_daemon(  )
+manager_daemon::manager_daemon()
     : manager(true)
-    , f_communicator_port(4040)
-    , f_communicator_address("127.0.0.1")
     , f_status_connection(new status_connection(this))
-    , f_status_runner(f_status_connection)
+    , f_status_runner(this, f_status_connection)
     , f_status_thread("status", &f_status_runner)
 {
 }
@@ -91,6 +85,10 @@ void manager_daemon::init(int argc, char * argv[])
     {
         f_status_runner.set_snapmanager_frontend(f_config["snapmanager_frontend"]);
     }
+
+    // now try to load all the plugins
+    //
+    load_plugins();
 }
 
 
@@ -215,7 +213,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERRESEND,MANAGERSTATUS,QUITTING,READY,STOP,UNKNOWN,UNREACHABLE");
+            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERRESEND,MANAGERSTATUS,QUITTING,READY,SERVER_PUBLIC_IP,STOP,UNKNOWN,UNREACHABLE");
 
             f_messenger->send_message(reply);
 
@@ -287,14 +285,6 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // we now are connected to the snapcommunicator
             //
 
-            // start the status thread, used to gather this computer's status
-            //
-            if(!f_status_thread.start())
-            {
-                SNAP_LOG_ERROR("snapmanagerdaemon could not start its helper thread. Quitting immediately.");
-                stop(false);
-            }
-
             // request a copy of our public IP address
             {
                 snap::snap_communicator_message public_ip;
@@ -311,6 +301,15 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // snapcommunicator replied
             //
             f_public_ip = message.get_parameter("public_ip");
+
+            // start the status thread, used to gather this computer's status
+            //
+            if(!f_status_thread.start())
+            {
+                SNAP_LOG_ERROR("snapmanagerdaemon could not start its helper thread. Quitting immediately.");
+                stop(false);
+            }
+            return;
         }
         else if(command == "STOP")
         {
@@ -506,22 +505,36 @@ void manager_daemon::forward_message(snap::snap_communicator_message const & mes
 }
 
 
-/** \brief Retrieve a copy of the public IP of this server.
+/** \brief Check whether the configuration file defined any front ends.
  *
- * This function returns the IP address of this server as defined in
- * the snapcommunicator.conf file ("listen" parameter.)
+ * Whenever a new status is found, it is sent to the front end computer.
+ * This is generally done by the manager_status thread.
  *
- * \note
- * This IP address is defined by sending a PUBLIC_IP message to
- * the running snapcommunicator which replies with a SERVER_PUBLIC_IP
- * message. This can take a little time and the IP address may not
- * be available immediately...
+ * This function allows the status check in the self plugin to know whether
+ * this parameter is defined without having to reload the file.
  *
- * \return A string with the public IP address of this server.
+ * \return true if there are snapmanager frontends defined.
  */
-QString const & manager_daemon::get_public_ip() const
+bool manager_daemon::has_snapmanager_frontend() const
 {
-    return f_public_ip;
+    return f_status_runner.has_snapmanager_frontend();
+}
+
+
+/** \brief Check whether the status runner thread is asking to stop ASAP.
+ *
+ * This function is expected to be called by plugins whenever their
+ * retrieve_status() signal implementation function gets called. It
+ * makes sure that the thread can quit quickly if asked to do so.
+ *
+ * This is important especially if some of your status gathering
+ * functions are slow (i.e. run a command such as dpkg-query)
+ *
+ * \return true if the thread was asked to quit as soon as possible.
+ */
+bool manager_daemon::stop_now_prima() const
+{
+    return f_status_runner.stop_now_prima();
 }
 
 

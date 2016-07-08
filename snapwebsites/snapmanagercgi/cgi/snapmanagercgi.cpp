@@ -28,7 +28,8 @@
 //
 
 #include "snapmanagercgi.h"
-#include "status_file.h"
+
+#include "server_status.h"
 
 // C lib
 //
@@ -475,8 +476,8 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 
     // create, open, read the file
     //
-    status_file file(filename.toUtf8().data());
-    if(!file.open())
+    server_status file(filename);
+    if(!file.read_all())
     {
         // TODO: add error info in output
         return;
@@ -510,11 +511,33 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     //
     QString name;
     QString value;
-    while(file.readvar(name, value))
+    snap_manager::status_t::map_t const & statuses(file.get_statuses());
+    for(auto const & s : statuses)
     {
+        if(s.second.get_plugin_name() == "header")
+        {
+            continue;
+        }
+
         // output/table/tr
         tr = doc.createElement("tr");
         table.appendChild(tr);
+
+        switch(s.second.get_state())
+        {
+        case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
+            tr.setAttribute("class", "warning");
+            break;
+
+        case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
+        case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
+            tr.setAttribute("class", "error");
+            break;
+
+        default:
+            // do nothing otherwise
+            break;
+        }
 
             // output/table/tr/td[1]
             QDomElement td(doc.createElement("td"));
@@ -538,14 +561,14 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 
                 //anchor.setAttribute("href", QString("?host=%1").arg(host));
 
-                text = doc.createTextNode(name);
+                text = doc.createTextNode(s.second.get_field_name());
                 td.appendChild(text);
 
             // output/table/tr/td[2]
             td = doc.createElement("td");
             tr.appendChild(td);
 
-                text = doc.createTextNode(value);
+                text = doc.createTextNode(s.second.get_value());
                 td.appendChild(text);
     }
 }
@@ -632,66 +655,74 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
     th = doc.createElement("th");
     tr.appendChild(th);
 
+        text = doc.createTextNode("IP");
+        th.appendChild(text);
+
+    // output/table/tr/th[3]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
         text = doc.createTextNode("Status");
         th.appendChild(text);
 
     bool has_error(false);
     for(size_t idx(0); idx < dir.gl_pathc; ++idx)
     {
-        status_file file(dir.gl_pathv[idx]);
-        if(file.open())
+        server_status file(dir.gl_pathv[idx]);
+        if(file.read_header())
         {
             // we got what looks like a valid status file
             //
-            QString name;
-            QString value;
-            while(file.readvar(name, value))
+            QString const status(file.get_field("header", "status"));
+            if(!status.isEmpty())
             {
-                if(name == "status")
-                {
-                    // output/table/tr
-                    tr = doc.createElement("tr");
-                    table.appendChild(tr);
+                // output/table/tr
+                tr = doc.createElement("tr");
+                table.appendChild(tr);
 
-                    // output/table/tr/td[1]
-                    QDomElement td(doc.createElement("td"));
-                    tr.appendChild(td);
+                // output/table/tr/td[1]
+                QDomElement td(doc.createElement("td"));
+                tr.appendChild(td);
 
-                        // output/table/tr/td[1]/a
-                        QDomElement anchor(doc.createElement("a"));
-                        td.appendChild(anchor);
+                    // output/table/tr/td[1]/a
+                    QDomElement anchor(doc.createElement("a"));
+                    td.appendChild(anchor);
 
-                        QString const path(dir.gl_pathv[idx]);
-                        int basename_pos(path.lastIndexOf('/'));
-                        if(basename_pos < 0)
-                        {
-                            // this should not happen, although it is perfectly
-                            // possible that the administrator used "" as the
-                            // path where statuses should be saved.
-                            //
-                            basename_pos = 0;
-                        }
-                        QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
+                    QString const path(dir.gl_pathv[idx]);
+                    int basename_pos(path.lastIndexOf('/'));
+                    // basename_pos will be -1 which is what you would
+                    // expect to get for the mid() call below!
+                    //if(basename_pos < 0)
+                    //{
+                    //    // this should not happen, although it is perfectly
+                    //    // possible that the administrator used "" as the
+                    //    // path where statuses should be saved.
+                    //    //
+                    //    basename_pos = 0;
+                    //}
+                    QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
 
-                        anchor.setAttribute("href", QString("?host=%1").arg(host));
+                    anchor.setAttribute("href", QString("?host=%1").arg(host));
 
-                            // output/table/tr/td[1]/<text>
-                            text = doc.createTextNode(host);
-                            anchor.appendChild(text);
+                        // output/table/tr/td[1]/<text>
+                        text = doc.createTextNode(host);
+                        anchor.appendChild(text);
 
-                    // output/table/tr/td[2]
-                    td = doc.createElement("td");
-                    tr.appendChild(td);
+                // output/table/tr/td[2]
+                td = doc.createElement("td");
+                tr.appendChild(td);
 
-                        // output/table/tr/td[2]/<text>
-                        text = doc.createTextNode(value);
-                        td.appendChild(text);
+                    // output/table/tr/td[2]/<text>
+                    text = doc.createTextNode(file.get_field("header", "ip"));
+                    td.appendChild(text);
 
-                    // there can be only one status; if we add other
-                    // variables, then remove that break!
-                    //
-                    break;
-                }
+                // output/table/tr/td[3]
+                td = doc.createElement("td");
+                tr.appendChild(td);
+
+                    // output/table/tr/td[3]/<text>
+                    text = doc.createTextNode(status);
+                    td.appendChild(text);
             }
 
             if(file.has_error())

@@ -1302,7 +1302,7 @@ private:
  *
  * \return The two types merged in an int32_t.
  */
-static constexpr int32_t merge_types(atomic_value_t::type_t a, atomic_value_t::type_t b)
+static constexpr int32_t merge_types(atomic_value_t::type_t a, atomic_value_t::type_t b) // we are inside a class, hence the 'static'
 {
     return static_cast<int32_t>(a)
         | (static_cast<int32_t>(b) << 16);

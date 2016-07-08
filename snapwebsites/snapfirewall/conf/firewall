@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# Until we get snapfirewall to dynamically setup all the rules, here we
+# have a simple script that pushes the ip?tables.rules files to the kernel.
+#
+#set -e
+
+# By default, make sure it does not run because the rules are likely wrong
+# for your computers. Just comment out the exit 1 once you fixed the rules
+# (see ip4tables.rules) and can start the firewall properly.
+#
+exit 1
+
+# Setup your public (Internet) IP address here
+PUBLIC_IP=your.public.ip.address
+PUBLIC_INTERFACE=eth0
+
+# Setup your private (Internet) IP address here
+PRIVATE_IP=your.private.ip.address
+PRIVATE_INTERFACE=eth1
+
+# Edit these files to change the firewalls setup
+IP4TABLES_CONFIG=/etc/network/ip4tables.rules
+IP4TABLES_CONFIG=snapfirewall/conf/ip4tables.rules
+IP6TABLES_CONFIG=/etc/network/ip6tables.rules
+
+# List of space separated IP addresses for your administrators
+ADMIN_IPS="x.x.x.1 x.x.x.2 x.x.x.3"
+
+# List of space separated IP addresses to other private network computers
+PRIVATE_NETWORK_IPS="y.y.y.1 y.y.y.2"
+
+
+
+#. /lib/lsb/init-functions
+
+#log_daemon_msg "Setting up the firewall" "$IP4TABLES_CONFIG"
+grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
+	| grep -v '^[[:space:]]*$' \
+	| sed -e "s/@PUBLIC_IP@/$PUBLIC_IP/" \
+	      -e "s/@LOCAL_IP@/$LOCAL_IP/" \
+	      -e "s/@PUBLIC_INTERFACE@/$PUBLIC_INTERFACE/" \
+	      -e "s/@PRIVATE_INTERFACE@/$PRIVATE_INTERFACE/" \
+	| awk -vADMIN_IPS="${ADMIN_IPS}" \
+		'BEGIN {
+			split(ADMIN_IPS, array);
+		}
+		{
+			if(/@ADMIN_IPS@/) {
+				copy=$0
+				for(i in array) {
+					gsub(/@ADMIN_IPS@/, array[i], copy)
+					print copy
+					copy=$0
+				}
+			}
+			else {
+				print;
+			}
+		}' \
+	| awk -vPRIVATE_NETWORK_IPS="${PRIVATE_NETWORK_IPS}" \
+		'BEGIN {
+			split(PRIVATE_NETWORK_IPS, array);
+		}
+		{
+			if(/@PRIVATE_NETWORK_IPS@/) {
+				copy=$0
+				for(i in array) {
+					gsub(/@PRIVATE_NETWORK_IPS@/, array[i], copy)
+					print copy
+					copy=$0
+				}
+			}
+			else {
+				print;
+			}
+		}'
+	| iptables-restore
+log_end_msg $?
+
+# Note: we do not run sed of the various variables against the IPv6
+#       rules because at this point this just blocks all IPv6 traffic.
+#
+log_daemon_msg "Setting up the firewall in ipv6" "$IP6TABLES_CONFIG"
+grep -v '^[[:space:]]*\(\#.*\)\?$' $IP6TABLES_CONFIG \
+	| grep -v '^[[:space:]]*$' | ip6tables-restore
+log_end_msg $?
+
+exit 0;
+# vim: ts=8

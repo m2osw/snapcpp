@@ -92,12 +92,6 @@ void status_connection::set_server_name(QString const & server_name)
 }
 
 
-QString const & status_connection::get_public_ip() const
-{
-    return f_manager_daemon->get_public_ip();
-}
-
-
 void status_connection::process_message_a(snap::snap_communicator_message const & message)
 {
     // here we just received a message from the thread...

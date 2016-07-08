@@ -39,7 +39,8 @@ snap_validate_xml( snapmanagercgi-parser.xsl simplified-xslt20.dtd )
 install(
     FILES 
         # log4cplus properties
-        snapmanager.properties
+        snapmanagercgi.properties
+        snapmanagerdaemon.properties
 
         # snap configuration files
         snapmanager.conf

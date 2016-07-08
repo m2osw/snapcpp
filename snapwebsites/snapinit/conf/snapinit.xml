@@ -41,7 +41,7 @@
 
                   We use a minimum of 1 to avoid problems with starting
                   too many executables all at once which often does not
-                  work that well on a small VPN server.
+                  work that well on a small VPS server.
 
       <service>
       <safe>      Define a name that will be sent to snapinit via Snap
@@ -263,7 +263,7 @@
     <group>snapwebsites</group>
   </service>
   <service name="snapmanagerdaemon" disabled="disabled">
-    <config>/etc/snapwebsites/snapmanagerdaemon.conf</config>
+    <config>/etc/snapwebsites/snapmanager.conf</config>
     <recovery>60</recovery>
   </service>
 </snapservices>

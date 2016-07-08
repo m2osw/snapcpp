@@ -29,7 +29,7 @@ The plugins are useful for three main tasks:
   . allow for tweaking the data
 
 The plugin implementation makes use of the libsnapwebsites library to
-handle the plugins. Note that the snapmanagercgi system always loads
+handle the loading. Note that the snapmanagercgi system always loads
 all the plugins available. We think this is important because it always
 installs and removes software and as it does so, adds and removes
 various plugins. For example, the snapwatchdog is an optional (although
@@ -39,4 +39,37 @@ installed by default.
 However, to know what is installable... at this point I have not
 real clue on how to get that attached to the system (i.e. if something
 is not yet installed, how could snapmanager know about it?!)
+
+Organization:
+
+  +-----------------------------+
+  |                             |
+  | libsnapmanagercgi           |
+  | (common code/functions)     |
+  |                             |
+  +-----------------------------+
+       ^
+       |
+       | linked
+       |
+       +-------------------------------------+------------------------+
+       |                                     |                        |
+  +-----------------------------+   +-----------------------------+   |
+  |                             |   |                             |   |
+  | snapmanager.cgi             |   | snapmanagerdaemon           |   |
+  |                             |   |                             |   |
+  +-----------------------------+   +-----------------------------+   |
+                           |                  |                       |
+                           +------------------+                       |
+			   |                                          |
+			   | load (dynamic link)                      |
+			   v                                          |
+                    +-----------------------------+                   |
+                    |                             |-------------------+
+                    | plugins                     |
+                    |                             |
+                    +-----------------------------+
+
+
+
 

@@ -2525,6 +2525,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     reply.add_parameter("public_ip", QString::fromUtf8(f_public_ip.c_str()));
                     verify_command(base, reply);
                     service_conn->send_message(reply);
+                    return;
                 }
                 else
                 {

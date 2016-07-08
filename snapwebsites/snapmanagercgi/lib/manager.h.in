@@ -16,35 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-//#include <snapwebsites/plugins.h>
-//#include <snapwebsites/snap_config.h>
-//#include <snapwebsites/snap_signals.h>
+#include "lib/server_status.h"
+
 #include <snapwebsites/snapwebsites.h>
-
-//#include <advgetopt/advgetopt.h>
-
-//#include <QDomDocument>
-
-
-//namespace snap
-//{
-//
-//
-///** \brief A fake child class to support plugins.
-// *
-// * We do not use children with our plugins like we do in snapserver
-// * and snapwatchdog. Here we just fake it.
-// *
-// * The manager itself derives from snap_child so we can use the manager
-// * as the object when a snap_child pointer is required.
-// */
-//class snap_child
-//{
-//public:
-//};
-//
-//
-//} // namespace snap
 
 
 
@@ -60,12 +34,7 @@ namespace snap_manager
 
 enum class name_t
 {
-    SNAP_NAME_MANAGER_DATA_PATH,
-    SNAP_NAME_MANAGER_SERVER_NAME,
-    SNAP_NAME_MANAGER_SERVERSTATS,
-    SNAP_NAME_MANAGER_STATISTICS_FREQUENCY,
-    SNAP_NAME_MANAGER_STATISTICS_PERIOD,
-    SNAP_NAME_MANAGER_STATISTICS_TTL
+    SNAP_NAME_MANAGER_STATUS_FILE_HEADER
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -96,6 +65,14 @@ public:
     snapmanager_exception_invalid_parameters(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
+class snapmanager_exception_undefined : public snapmanager_exception
+{
+public:
+    snapmanager_exception_undefined(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    snapmanager_exception_undefined(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    snapmanager_exception_undefined(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+};
+
 
 
 
@@ -120,8 +97,11 @@ public:
     virtual void        bootstrap(snap::snap_child * snap);
 
     void                load_plugins();
+    QString             get_public_ip() const;
+    virtual bool        has_snapmanager_frontend() const;
+    virtual bool        stop_now_prima() const;
 
-    SNAP_SIGNAL_WITH_MODE(retrieve_status, (QDomDocument doc), (doc), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
 
     static int          get_version_major() __attribute__ ((const));
     static int          get_version_minor() __attribute__ ((const));
@@ -135,14 +115,13 @@ protected:
     snap::snap_config                           f_config;
     QString                                     f_server_name;
     QString                                     f_data_path = "/var/lib/snapwebsites/cluster-status";
+    QString                                     f_public_ip;
 
 private:
     QString                                     f_log_conf = "/etc/snapwebsites/snapmanager.properties";
     QString                                     f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
-    snap::snap_string_list                      f_plugins;
 };
 
 
 } // snap_manager namespace
 // vim: ts=4 sw=4 et
-
