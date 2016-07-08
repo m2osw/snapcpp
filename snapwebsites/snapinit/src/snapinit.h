@@ -298,7 +298,7 @@ public:
     service::pointer_t          get_connection_service() const;
     service::pointer_t          get_snapdbproxy_service() const;
 
-    void                        get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const;
+    void                        get_depends_on_list( const QString& service_name, service::vector_t& ret_list ) const;
     service::pointer_t          get_service( const QString& service_name ) const;
 
     static void                 sighandler( int sig );

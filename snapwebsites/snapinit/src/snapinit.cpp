@@ -1349,40 +1349,33 @@ void snap_init::service_died()
     // not died and should not have to be restarted (i.e. all
     // services except CRON services for now)
     //
-    bool repeat(false);
-    do
+    auto if_may_have_died = [&]( const auto& svc )
     {
-        const auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
-            [&]( const auto& s )
-            {
-                return s->service_may_have_died();
-            });
+        return svc->service_may_have_died();
+    };
+    service::vector_t dead_services;
+    std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(dead_services), if_may_have_died );
 
-        repeat = false;
-        if( iter != f_service_list.end() )
+    for( const auto& svc : dead_services )
+    {
+        // if snapcommunicator already died, we cannot forward
+        // the DIED or any other message
+        //
+        if(f_listener_connection)
         {
-            repeat = true;
-
-            // if snapcommunicator already died, we cannot forward
-            // the DIED or any other message
-            //
-            if(f_listener_connection)
-            {
-                snap::snap_communicator_message register_snapinit;
-                register_snapinit.set_command("DIED");
-                register_snapinit.set_service(".");
-                register_snapinit.add_parameter("service", (*iter)->get_service_name());
-                register_snapinit.add_parameter("pid", (*iter)->get_old_pid());
-                f_listener_connection->send_message(register_snapinit);
-            }
-
-            // the service_may_have_died() can change the f_service_list
-            // map so we need to restart the loop otherwise we may crash
-            //
-            //break;
+            snap::snap_communicator_message register_snapinit;
+            register_snapinit.set_command("DIED");
+            register_snapinit.set_service(".");
+            register_snapinit.add_parameter("service", svc->get_service_name());
+            register_snapinit.add_parameter("pid", svc->get_old_pid());
+            f_listener_connection->send_message(register_snapinit);
         }
+
+        // This has a functional side effect of (possibly) removing the service from
+        // the f_service_list vector.
+        //
+        svc->mark_service_as_dead();
     }
-    while(repeat);
 
     // check whether a service failed and is marked as required
     // although if recovery is not zero we ignore the situation...
@@ -1466,27 +1459,42 @@ void snap_init::remove_terminated_services()
 {
     // remove services that were terminated
     //
+    auto if_stopped = [](service::pointer_t s)
     {
-        auto if_stopped = [](service::pointer_t s)
-        {
-            return s->has_stopped();
-        };
-        f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
+        return s->has_stopped();
+    };
+    service::vector_t stopped_services;
+    std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(stopped_services), if_stopped );
+    f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
 
-        if(f_service_list.empty())
+    // Go through each stopped service and make sure anything that depends on it also has stopped
+    //
+    for( const auto& svc : stopped_services )
+    {
+        service::vector_t depends_on_list;
+        get_depends_on_list( svc->get_service_name(), depends_on_list );
+        for( const auto& dep_svc : depends_on_list )
         {
-            // no more services, also remove our other connections so
-            // we exit the snapcommunicator loop
-            //
-            f_communicator->remove_connection(f_ping_server);
-            f_communicator->remove_connection(f_child_signal);
-            f_communicator->remove_connection(f_term_signal);
-            f_communicator->remove_connection(f_quit_signal);
-            f_communicator->remove_connection(f_int_signal);
-            if(f_listener_connection)
+            if( !dep_svc->has_stopped() )
             {
-                f_communicator->remove_connection(f_listener_connection);
+                dep_svc->set_stopping();
             }
+        }
+    }
+
+    if(f_service_list.empty())
+    {
+        // no more services, also remove our other connections so
+        // we exit the snapcommunicator loop
+        //
+        f_communicator->remove_connection(f_ping_server);
+        f_communicator->remove_connection(f_child_signal);
+        f_communicator->remove_connection(f_term_signal);
+        f_communicator->remove_connection(f_quit_signal);
+        f_communicator->remove_connection(f_int_signal);
+        if(f_listener_connection)
+        {
+            f_communicator->remove_connection(f_listener_connection);
         }
     }
 }
@@ -1661,14 +1669,14 @@ void snap_init::log_selected_servers() const
  *
  * \return list of services who depend on the named service
  */
-void snap_init::get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const
+void snap_init::get_depends_on_list( const QString& service_name, service::vector_t& ret_list ) const
 {
     ret_list.clear();
     for( auto service : f_service_list )
     {
         if( service->is_dependency_of( service_name ) )
         {
-            ret_list << service->get_service_name();
+            ret_list.push_back(service);
         }
     }
 }

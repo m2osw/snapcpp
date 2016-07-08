@@ -93,7 +93,8 @@ public:
     int                         get_wait_interval() const;
     int                         get_recovery() const;
     int                         get_priority() const;
-    bool                        service_may_have_died();
+    bool                        service_may_have_died() const;
+    void                        mark_service_as_dead();
     bool                        is_dependency_of( const QString& service_name );
 
     bool                        operator < (service const & rhs) const;
