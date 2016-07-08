@@ -237,6 +237,10 @@ bool snap_cassandra::is_connected() const
 QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString const & table_name, QString const & comment)
 {
     QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
+    if(!context)
+    {
+        throw snap_cassandra_not_available_exception("The snap_websites context is not available in this Cassandra database.");
+    }
 
     // does table exist?
     QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
