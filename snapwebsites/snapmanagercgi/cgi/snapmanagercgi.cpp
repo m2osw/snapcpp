@@ -387,7 +387,7 @@ int manager_cgi::process()
     snap::xslt x;
     x.set_xsl_from_file(f_config["stylesheet"]); // setup the .xsl file
     x.set_document(doc);
-    QString const body(x.evaluate_to_string());
+    QString const body("<!DOCTYPE html>" + x.evaluate_to_string());
 
     //std::string body("<html><head><title>Snap Manager</title></head><body><p>...TODO...</p></body></html>");
     std::cout   //<< "Status: 200 OK"                         << std::endl

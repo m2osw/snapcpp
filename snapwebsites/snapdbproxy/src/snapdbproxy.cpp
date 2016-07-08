@@ -512,17 +512,6 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
     {
         // Snap! Communicator received our REGISTER command
         //
-
-        // send a message to the snapinit service letting it know
-        // that it can now start processes that require the database
-        // to be accessible via proxy
-        //
-        snap::snap_communicator_message dbready_message;
-        dbready_message.set_command("SAFE");
-        dbready_message.set_service("snapinit");
-        dbready_message.add_parameter("name", "snapdbproxy");
-        f_messager->send_message(dbready_message);
-
         return;
     }
 

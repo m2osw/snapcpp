@@ -1017,7 +1017,7 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     save_current_cursor_index_t save_cursor_index(const_cast<QCassandraTable *>(this), const_cast<QCassandraTable *>(this)->f_cursor_index);
 
     // TODO: we should be able to do that without using the full fledge
-    //       readRows() with a cursor + fetch etc. since we just one to
+    //       readRows() with a cursor + fetch etc. since we just want to
     //       know whether at least one entry exists we could just do one
     //       SELECT and save its result; then we would avoid the
     //       "save_current_cursor_index_t" problem

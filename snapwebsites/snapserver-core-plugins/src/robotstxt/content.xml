@@ -78,6 +78,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Prevent caching even of the snippet (small description of the page shown by search engines.)</p>]]>
     </param>
   </content>
+  <content path="/types/taxonomy/system/robotstxt/noimageindex">
+    <param name="content::title" revision="revision">Robots: No Image Index</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Prevent images on that page from appearing in the Google image search index.</p>]]>
+    </param>
+  </content>
   <!-- the name of the meta tag can also be set to a specific robot:
             google, Slurp, msnbot
        yet there are the following special entries too -->

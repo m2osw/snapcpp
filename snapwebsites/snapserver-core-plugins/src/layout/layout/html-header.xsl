@@ -124,7 +124,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:template name="snap:html-header">
 		<xsl:param name="theme-css" select="''"/>
 
-		<!-- force UTF-8 encoding (at the very beginning to avoid an IE6 bug -->
+		<!-- correct charset in HTML5 -->
+		<meta charset="utf-8"/>
+		<!-- force UTF-8 encoding (at the very beginning to avoid an IE6 bug) -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
 		<!-- title is required, no need to test its presence -->
@@ -137,7 +139,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 		<!-- generator -->
 		<link rel="bookmark" type="text/html" title="Generator" href="http://snapwebsites.org/"/>
-		<meta name="generator" content="Snap! Websites"/>
+		<meta name="generator">
+			<xsl:attribute name="content">Snap! Websites v<xsl:value-of select="head/metadata/desc[@type='version']/version"/></xsl:attribute>
+		</meta>
+		<meta name="application-name" content="snapwebsites"/>
 
 		<!-- canonical (must be complete so we do not try to snap:prepend-base()) -->
 		<xsl:if test="$page_uri != ''">
@@ -374,6 +379,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:variable name="changefreq" select="page/body/robots/changefreq"/>
 			<meta name="revisit-after" content="{$changefreq}"/>
 		</xsl:if>
+		<meta name="msapplication-config" content="none"/>
 
 		<!-- medium -->
 		<xsl:if test="$use_dcterms = 'yes'">

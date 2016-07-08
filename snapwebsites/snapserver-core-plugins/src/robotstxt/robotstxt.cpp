@@ -52,8 +52,14 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_ROBOTSTXT_NOFOLLOW:
         return "robotstxt::nofollow";
 
+    case name_t::SNAP_NAME_ROBOTSTXT_NOIMAGEINDEX:
+        return "robotstxt::noimageindex";
+
     case name_t::SNAP_NAME_ROBOTSTXT_NOINDEX:
         return "robotstxt::noindex";
+
+    case name_t::SNAP_NAME_ROBOTSTXT_NOSNIPPET:
+        return "robotstxt::nosnippet";
 
     default:
         // invalid index
@@ -404,6 +410,10 @@ void robotstxt::add_robots_txt_field(QString const & value,
  * index,follow pr index,follow,archive since those represent the default
  * value of the robots meta tag.
  *
+ * See some documentation here:
+ *
+ * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
+ *
  * \todo
  * Pages that are forbidden (because it or one of its parents is forbidden)
  * should always return an empty list of robots in f_robots_cache. This is
@@ -426,7 +436,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
             {
-                robots += QString("noindex");
+                robots += QString("noindex");   // All
             }
         }
         {
@@ -436,7 +446,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
             {
-                robots += QString("nofollow");
+                robots += QString("nofollow");  // All
             }
         }
         {
@@ -446,7 +456,28 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             links::link_info robots_txt;
             if(link_ctxt->next_link(robots_txt))
             {
-                robots += QString("noarchive");
+                robots += QString("noarchive");  // Google, Yahoo!
+                robots += QString("nocache");    // Bing
+            }
+        }
+        {
+            links::link_info robots_info(get_name(name_t::SNAP_NAME_ROBOTSTXT_NOSNIPPET), true, ipath.get_key(), ipath.get_branch());
+            robots_info.set_branch(ipath.get_branch());
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
+            links::link_info robots_txt;
+            if(link_ctxt->next_link(robots_txt))
+            {
+                robots += QString("nosnippet");  // Google
+            }
+        }
+        {
+            links::link_info robots_info(get_name(name_t::SNAP_NAME_ROBOTSTXT_NOIMAGEINDEX), true, ipath.get_key(), ipath.get_branch());
+            robots_info.set_branch(ipath.get_branch());
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
+            links::link_info robots_txt;
+            if(link_ctxt->next_link(robots_txt))
+            {
+                robots += QString("noimageindex");  // Google
             }
         }
         // TODO: add the search engine specific tags

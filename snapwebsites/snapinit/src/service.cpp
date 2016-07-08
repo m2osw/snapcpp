@@ -413,6 +413,11 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
             {
                 SNAP_LOG_WARNING("the address to connect to snapcommunicator is always expected to be 127.0.0.1 and not ")(f_snapcommunicator_addr)(".");
             }
+
+            // at this time the snapcommunicator is immediately considered
+            // registered
+            //
+            f_registered = true;
         }
     }
 
@@ -1126,10 +1131,10 @@ bool service::run()
     //
     if( !f_dependsList.isEmpty() )
     {
-        const auto snap_init( f_snap_init.lock() );
-        for( const auto& service_name : f_dependsList )
+        auto const snap_init( f_snap_init.lock() );
+        for( auto const & service_name : f_dependsList )
         {
-            const auto svc( snap_init->get_service( service_name ) );
+            auto const svc( snap_init->get_service( service_name ) );
             if( !svc )
             {
                 SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
@@ -1744,7 +1749,7 @@ bool service::is_registered() const
 
 /** \brief sets the registration status with snapcommunicator
  */
-void service::set_registered( const bool val )
+void service::set_registered( bool const val )
 {
     f_registered = val;
 }

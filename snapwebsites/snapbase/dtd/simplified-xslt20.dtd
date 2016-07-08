@@ -252,8 +252,9 @@ DTD of the XSLT 2.0.
                title CDATA #IMPLIED
                type CDATA #REQUIRED>
 
-<!ELEMENT meta EMPTY>
-<!ATTLIST meta content CDATA #REQUIRED
+<!ELEMENT meta ANY>
+<!ATTLIST meta charset CDATA #IMPLIED
+               content CDATA #IMPLIED
                http-equiv CDATA #IMPLIED
                name CDATA #IMPLIED
                property CDATA #IMPLIED>

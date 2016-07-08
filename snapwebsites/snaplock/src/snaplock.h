@@ -229,7 +229,6 @@ private:
     void                        activate_first_lock(QString const & object_name);
     void                        ticket_list(snap::snap_communicator_message const & message);
     void                        cleanup();
-    void                        ready();
     void                        send_lockready();
 
     static pointer_t                            f_instance;

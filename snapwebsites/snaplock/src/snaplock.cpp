@@ -712,7 +712,6 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
     case 'R':
         if(command == "READY")
         {
-            ready();
             return;
         }
         break;
@@ -775,32 +774,6 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
     }
 
     return;
-}
-
-
-/** \brief We are now registered with snapcommunicator.
- *
- * This function let the local snapinit process know that we are
- * ready ("SAFE").
- *
- * Further, it broadcasts a LOCKREADY event to all the other snaplock
- * process (and "unfortunately" to self too.) This message allows us
- * to know how many snaplock processes are running as we register
- * each one of them while doing so.
- */
-void snaplock::ready()
-{
-    // Snap! Communicator received our REGISTER command
-    //
-
-    // send a message to the snapinit service letting it know
-    // that it can now start processes that require the snap lock
-    //
-    snap::snap_communicator_message dbready_message;
-    dbready_message.set_command("SAFE");
-    dbready_message.set_service("snapinit");
-    dbready_message.add_parameter("name", f_service_name);
-    f_messenger->send_message(dbready_message);
 }
 
 

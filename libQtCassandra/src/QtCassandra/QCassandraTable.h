@@ -3,7 +3,7 @@
  *      QtCassandraTable.h
  *
  * Description:
- *      Handling of the cassandra::CfDef.
+ *      Handling of Cassandra Tables.
  *
  * Documentation:
  *      See the corresponding .cpp file.
@@ -50,7 +50,6 @@
 namespace QtCassandra
 {
 
-class CfDef;
 class QCassandraContext;
 
 

@@ -1178,7 +1178,7 @@ void snap_init::init_message_functions()
         },
         {
             "READY",
-            [&]( snap::snap_communicator_message const& )
+            [&]( snap::snap_communicator_message const & )
             {
                 // now we can start all the other services (except CRON tasks)
                 //
@@ -1226,7 +1226,10 @@ void snap_init::init_message_functions()
                     return;
                 }
 
-                // wakeup other services
+                // wakeup other services (i.e. when SAFE is required
+                // the system does not start all the processes timers
+                // at once--now that we have dependencies we could
+                // change that though)
                 //
                 wakeup_services();
             }
@@ -1235,10 +1238,10 @@ void snap_init::init_message_functions()
             "STATUS",
             [&]( snap::snap_communicator_message const& message )
             {
-                const auto service_parm(message.get_parameter("service"));
-                const auto status_parm(message.get_parameter("status"));
+                auto const service_parm(message.get_parameter("service"));
+                auto const status_parm(message.get_parameter("status"));
                 //
-                const auto& iter = std::find_if( f_service_list.begin() , f_service_list.end(),
+                auto const & iter = std::find_if( f_service_list.begin() , f_service_list.end(),
                     [&](service::pointer_t const & s)
                     {
                         return s->get_service_name() == service_parm;
