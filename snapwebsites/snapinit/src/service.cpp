@@ -642,21 +642,18 @@ void service::process_timeout()
             // Make sure the services which depend on this have stopped first...
             //
             const auto snap_init( f_snap_init.lock() );
-            snap::snap_string_list depends_on_list;
+            vector_t depends_on_list;
             snap_init->get_depends_on_list( f_service_name, depends_on_list );
-            for( const auto& service_name : depends_on_list )
+            auto iter = std::find_if( depends_on_list.begin(), depends_on_list.end(),
+                [&]( const auto& svc )
+                {
+                    return !svc->has_stopped();
+                });
+            if( iter != depends_on_list.end() )
             {
-                const auto svc( snap_init->get_service( service_name ) );
-                if( !svc )
-                {
-                    SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
-                    return;
-                }
-                if( svc->has_stopped() )
-                {
-                    // Leave timer running and come back again.
-                    return;
-                }
+                SNAP_LOG_INFO("Dependency service '")((*iter)->get_service_name())("' has not yet stopped, checking again on the next timeout.");
+                // Leave timer running and come back again if any service has not yet stopped...
+                return;
             }
 
             // f_stopping is the signal we want to send to the service
@@ -809,7 +806,13 @@ void service::process_timeout()
 }
 
 
-bool service::service_may_have_died()
+/** \brief Check to see if the service has stopped running.
+ *
+ * \note if the service never started, this will return false.
+ *
+ * \sa mark_service_as_dead()
+ */
+bool service::service_may_have_died() const
 {
     // if this process was not even started, it could not have died
     //
@@ -826,6 +829,16 @@ bool service::service_may_have_died()
         return false;
     }
 
+    return true;
+}
+
+
+/** \brief Take a service out which is no longer running.
+ *
+ * \sa service_may_have_died()
+ */
+void service::mark_service_as_dead()
+{
     f_started = false;
 
     // if this was a service with a connection (snapcommunicator) then
@@ -836,16 +849,15 @@ bool service::service_may_have_died()
         snap_init::pointer_t si(f_snap_init.lock());
         if(!si)
         {
+            // Sanity check...TODO: perhaps this should throw?
             SNAP_LOG_ERROR("cron service \"")(f_service_name)("\" lost its parent snapinit object.");
-            return true;
+            return;
         }
 
         si->service_down(shared_from_this());
     }
 
     mark_process_as_dead();
-
-    return true;
 }
 
 
@@ -1635,17 +1647,14 @@ void service::set_stopping()
         // Now set stopping on all processes which depend on this service:
         //
         const auto snap_init( f_snap_init.lock() );
-        snap::snap_string_list depends_on_list;
+        vector_t depends_on_list;
         snap_init->get_depends_on_list( f_service_name, depends_on_list );
-        for( const auto& service_name : depends_on_list )
+        for( const auto& svc : depends_on_list )
         {
-            const auto svc( snap_init->get_service( service_name ) );
-            if( !svc )
+            if( !svc->has_stopped() )
             {
-                SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
-                return;
+                svc->set_stopping();
             }
-            svc->set_stopping();
         }
     }
     else
