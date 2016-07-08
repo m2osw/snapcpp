@@ -33,6 +33,7 @@
 #include <QFile>
 #include <QString>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -292,14 +293,13 @@ public:
     void                        remove_terminated_services();
     void                        user_signal_caught(int sig);
     bool                        is_running() const;
-    bool                        is_running( const QString& service_name ) const;
-    void                        set_stopping( const QString& service_name ) const;
-    void                        get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const;
-    bool                        get_service_has_stopped( const QString& service_name ) const;
     QString const &             get_spool_path() const;
     QString const &             get_server_name() const;
     service::pointer_t          get_connection_service() const;
     service::pointer_t          get_snapdbproxy_service() const;
+
+    void                        get_depends_on_list( const QString& service_name, snap::snap_string_list& ret_list ) const;
+    service::pointer_t          get_service( const QString& service_name ) const;
 
     static void                 sighandler( int sig );
 
@@ -321,7 +321,13 @@ private:
     void                        stop();
     void                        get_addr_port_for_snap_communicator(QString & udp_addr, int & udp_port, bool default_to_snap_init);
     void                        remove_lock(bool force = false) const;
+    void                        init_message_functions();
 
+    typedef std::function<void(snap::snap_communicator_message const&)> message_func_t;
+    typedef std::map<QString,message_func_t>   message_func_map_t;
+
+    message_func_map_t                  f_udp_message_map;
+    message_func_map_t                  f_tcp_message_map;
     static pointer_t                    f_instance;
     advgetopt::getopt                   f_opt;
     bool                                f_debug = false;

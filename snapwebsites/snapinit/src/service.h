@@ -79,6 +79,8 @@ public:
     bool                        has_stopped() const;
     bool                        is_connection_required() const;
     bool                        is_snapdbproxy() const;
+    bool                        is_registered() const;
+    void                        set_registered( const bool val );
     std::string                 get_connect_string() const;
     std::string                 get_snapdbproxy_string() const;
     bool                        is_safe_required() const;
@@ -131,6 +133,7 @@ private:
     int                         f_snapdbproxy_port = 4042;          // to connect with snapdbproxy
     int                         f_priority = DEFAULT_PRIORITY;
     int                         f_cron = 0;             // if 0, then off (i.e. not a cron task)
+    bool                        f_registered = false;               // set to true when service is registered with snapcomm
 };
 
 // vim: ts=4 sw=4 et
