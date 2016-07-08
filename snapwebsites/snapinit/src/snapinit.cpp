@@ -536,6 +536,7 @@ snap_init::snap_init( int argc, char * argv[] )
     //
     if( f_opt.is_defined( "nolog" ) )
     {
+        snap::logging::set_progname(argv[0]);
         snap::logging::configure_console();
     }
     else if( f_opt.is_defined("logfile") )
@@ -565,6 +566,8 @@ snap_init::snap_init( int argc, char * argv[] )
     // do not do too much in the constructor or we may get in
     // trouble (i.e. calling shared_from_this() from the
     // constructor fails)
+
+    init_message_functions();
 }
 
 
@@ -1108,6 +1111,163 @@ bool snap_init::connect_listener(QString const & service_name, QString const & h
 }
 
 
+/** \brief Initialize the lamba functions for each message we can recieve
+ */
+void snap_init::init_message_functions()
+{
+    // ******************* TCP and UDP messages
+
+    auto stop_func =
+            [&]( snap::snap_communicator_message const& )
+            {
+                // someone asking us to stop snap_init; this means we want to stop
+                // all the services that snap_init started; if we have a
+                // snapcommunicator, then we use that to send the STOP signal to
+                // all services at once
+                //
+                terminate_services();
+            };
+
+    // someone sent "snapinit/STOP" to snapcommunicator
+    // or "[whatever/]STOP" directly to snapinit (via UDP)
+    //
+    f_udp_message_map = {
+        {
+            "STOP",
+            stop_func
+        }
+    };
+
+    // ******************* TCP only messages
+    f_tcp_message_map = {
+        {
+            // all have to implement the HELP command
+            //
+            "HELP",
+            [&]( snap::snap_communicator_message const& )
+            {
+                snap::snap_communicator_message reply;
+                reply.set_command("COMMANDS");
+
+                // list of commands understood by snapinit
+                //
+                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STATUS,STOP,UNKNOWN");
+
+                f_listener_connection->send_message(reply);
+            }
+        },
+        {
+            "LOG",
+            [&]( snap::snap_communicator_message const& )
+            {
+                SNAP_LOG_INFO("Logging reconfiguration.");
+                snap::logging::reconfigure();
+            }
+        },
+        {
+            "QUITTING",
+            [&]( snap::snap_communicator_message const& )
+            {
+                // it looks like we sent a message after a STOP was received
+                // by snapcommunicator; this means we should receive a STOP
+                // shortly too, but we just react the same way to QUITTING
+                // than to STOP.
+                //
+                terminate_services();
+            }
+        },
+        {
+            "READY",
+            [&]( snap::snap_communicator_message const& )
+            {
+                // now we can start all the other services (except CRON tasks)
+                //
+                wakeup_services();
+
+                // send the list of local services to the snapcommunicator
+                //
+                snap::snap_communicator_message reply;
+                reply.set_command("SERVICES");
+
+                // generate the list of services as a string of comma names
+                //
+                snap::snap_string_list services;
+                services << "snapinit";
+                for(auto const & s : f_service_list)
+                {
+                    services << s->get_service_name();
+                }
+                reply.add_parameter("list", services.join(","));
+
+                f_listener_connection->send_message(reply);
+            }
+        },
+        {
+            "SAFE",
+            [&]( snap::snap_communicator_message const& message )
+            {
+                // we received a "we are safe" message so we can move on and
+                // start the next service
+                //
+                if(f_expected_safe_message != message.get_parameter("name"))
+                {
+                    // we need to terminate the existing services cleanly
+                    // so we do not use common::fatal_error() here
+                    //
+                    QString msg(QString("received wrong SAFE message. We expected \"%1\" but we received \"%2\".")
+                        .arg(f_expected_safe_message)
+                        .arg(message.get_parameter("name")));
+                    SNAP_LOG_FATAL(msg);
+                    syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
+
+                    // Simulate a STOP, we cannot continue safely
+                    //
+                    terminate_services();
+                    return;
+                }
+
+                // wakeup other services
+                //
+                wakeup_services();
+            }
+        },
+        {
+            "STATUS",
+            [&]( snap::snap_communicator_message const& message )
+            {
+                // Look at the return status and note that the service is registered.
+                QString msg( QString("command='%1'', to_message='%2'', from_server='%3'', from_service='%4', server='%5', service='%6'")
+                    .arg(message.get_command())
+                    .arg(message.to_message())
+                    .arg(message.get_sent_from_server())
+                    .arg(message.get_sent_from_service())
+                    .arg(message.get_server())
+                    .arg(message.get_service())
+                );
+                QStringList parms;
+                const auto& all_parms(message.get_all_parameters());
+                for( const auto& parm : all_parms.keys() )
+                {
+                    parms << QString("%1='%2'").arg(parm).arg(all_parms[parm]);
+                }
+                SNAP_LOG_INFO("received status from server: msg='")(msg)("', params={")(parms.join(' '))("}");
+            }
+        },
+        {
+            "STOP",
+            stop_func
+        },
+        {
+            "UNKNOWN",
+            [&]( snap::snap_communicator_message const& message )
+            {
+                SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            }
+        },
+    };
+}
+
+
 /** \brief Process a message.
  *
  * Once started, snapinit accepts messages on a UDP port. This is offered so
@@ -1127,157 +1287,40 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
 
     QString const command(message.get_command());
 
-// ******************* TCP and UDP messages
-
-    // someone sent "snapinit/STOP" to snapcommunicator
-    // or "[whatever/]STOP" directly to snapinit (via UDP)
-    //
-    if(command == "STOP")
-    {
-        // someone asking us to stop snap_init; this means we want to stop
-        // all the services that snap_init started; if we have a
-        // snapcommunicator, then we use that to send the STOP signal to
-        // all services at once
-        //
-        terminate_services();
-        return;
-    }
-
     // UDP messages that we accept are very limited...
     // (especially since we cannot send a reply)
     //
-    if(udp)
+    if( udp )
     {
-        SNAP_LOG_ERROR("command \"")(command)("\" is not supported on the UDP connection.");
+        const auto& udp_command( f_udp_message_map.find(command) );
+        if( udp_command == f_udp_message_map.end() )
+        {
+            SNAP_LOG_ERROR("command \"")(command)("\" is not supported on the UDP connection.");
+            return;
+        }
+
+        // Execute the command and exit
+        //
+        (udp_command->second)(message);
         return;
     }
 
-// ******************* TCP only messages
-
-    switch(command[0].unicode())
+    const auto& tcp_command( f_tcp_message_map.find(command) );
+    if( tcp_command == f_tcp_message_map.end() )
     {
-    case 'H':
-        // all have to implement the HELP command
+        // unknown command is reported and process goes on
         //
-        if(command == "HELP")
-        {
-            snap::snap_communicator_message reply;
-            reply.set_command("COMMANDS");
-
-            // list of commands understood by snapinit
-            //
-            reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STOP,UNKNOWN");
-
-            f_listener_connection->send_message(reply);
-            return;
-        }
-        break;
-
-    case 'L':
-        if(command == "LOG")
-        {
-            SNAP_LOG_INFO("Logging reconfiguration.");
-            snap::logging::reconfigure();
-            return;
-        }
-        break;
-
-    //case 'N':
-    //    if(command == "NEWSERVICE")
-    //    {
-    //    ... TODO: check whether we are waiting on the service to be started ...
-    //    }
-    //    break;
-
-    case 'Q':
-        if(command == "QUITTING")
-        {
-            // it looks like we sent a message after a STOP was received
-            // by snapcommunicator; this means we should receive a STOP
-            // shortly too, but we just react the same way to QUITTING
-            // than to STOP.
-            //
-            terminate_services();
-            return;
-        }
-        break;
-
-    case 'R':
-        if(command == "READY")
-        {
-            // now we can start all the other services (except CRON tasks)
-            //
-            wakeup_services();
-
-            // send the list of local services to the snapcommunicator
-            //
-            snap::snap_communicator_message reply;
-            reply.set_command("SERVICES");
-
-            // generate the list of services as a string of comma names
-            //
-            snap::snap_string_list services;
-            services << "snapinit";
-            for(auto const & s : f_service_list)
-            {
-                services << s->get_service_name();
-            }
-            reply.add_parameter("list", services.join(","));
-
-            f_listener_connection->send_message(reply);
-            return;
-        }
-        break;
-
-    case 'S':
-        if(command == "SAFE")
-        {
-            // we received a "we are safe" message so we can move on and
-            // start the next service
-            //
-            if(f_expected_safe_message != message.get_parameter("name"))
-            {
-                // we need to terminate the existing services cleanly
-                // so we do not use common::fatal_error() here
-                //
-                QString msg(QString("received wrong SAFE message. We expected \"%1\" but we received \"%2\".")
-                                    .arg(f_expected_safe_message)
-                                    .arg(message.get_parameter("name")));
-                SNAP_LOG_FATAL(msg);
-                syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
-
-                // Simulate a STOP, we cannot continue safely
-                //
-                terminate_services();
-                return;
-            }
-
-            // wakeup other services
-            //
-            wakeup_services();
-            return;
-        }
-        break;
-
-    case 'U':
-        if(command == "UNKNOWN")
-        {
-            SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
-            return;
-        }
-        break;
-
-    }
-
-    // unknown command is reported and process goes on
-    //
-    SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the TCP connection.");
-    {
+        SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the TCP connection.");
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
         f_listener_connection->send_message(reply);
+        return;
     }
+
+    // Execute the command
+    //
+    (tcp_command->second)(message);
 }
 
 
