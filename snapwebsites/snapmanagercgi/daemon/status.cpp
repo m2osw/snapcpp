@@ -96,6 +96,30 @@ void manager_daemon::set_manager_status(snap::snap_communicator_message const & 
     header_ip.set_plugin_name("header");
     s.set_field(header_ip);
 
+    {
+        size_t const count(s.count_errors());
+        if(count > 0)
+        {
+            snap_manager::status_t header_errors(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                                 "header",
+                                                 "errors",
+                                                 QString("%1").arg(count));
+            s.set_field(header_errors);
+        }
+    }
+
+    {
+        size_t const count(s.count_warnings());
+        if(count > 0)
+        {
+            snap_manager::status_t header_warnings(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                                   "header",
+                                                   "warnings",
+                                                   QString("%1").arg(count));
+            s.set_field(header_warnings);
+        }
+    }
+
     if(!s.write())
     {
         return;

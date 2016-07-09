@@ -29,11 +29,11 @@
 
 #include "snapmanagerdaemon.h"
 
+#include "addr.h"
 #include "mkdir_p.h"
+#include "not_used.h"
 
 #include <sstream>
-
-
 
 
 namespace snap_manager
@@ -505,19 +505,17 @@ void manager_daemon::forward_message(snap::snap_communicator_message const & mes
 }
 
 
-/** \brief Check whether the configuration file defined any front ends.
+/** \brief Get the list of frontend snapmanagerdaemons.
  *
- * Whenever a new status is found, it is sent to the front end computer.
- * This is generally done by the manager_status thread.
+ * This function returns a constant reference to the list of frontend
+ * snapmanagerdaemon running on frontends (computers that an administrator
+ * can access.)
  *
- * This function allows the status check in the self plugin to know whether
- * this parameter is defined without having to reload the file.
- *
- * \return true if there are snapmanager frontends defined.
+ * \return The list of snapmanager frontends IPs.
  */
-bool manager_daemon::has_snapmanager_frontend() const
+snap::snap_string_list const & manager_daemon::get_snapmanager_frontend() const
 {
-    return f_status_runner.has_snapmanager_frontend();
+    return f_status_runner.get_snapmanager_frontend();
 }
 
 
@@ -558,8 +556,71 @@ void manager_daemon::unreachable_message(snap::snap_communicator_message const &
     // the parameter "who" must exist and define the IP address of the
     // computer that could not connect
     //
-    QString const & addr(message.get_parameter("who"));
+    snap_addr::addr who_addr(snap_addr::addr((message.get_parameter("who") + ":123").toUtf8().data(), "tcp"));
 
+    // retreive the list of servers (data-path/*,db file names)
+    //
+    snap::snap_string_list const servers(list_of_servers());
+
+    for(auto const & s : servers)
+    {
+        server_status status_info(s);
+
+        if(!status_info.read_header())
+        {
+            // the read_header() and sub-functions already emit errors
+            // so we do not add any here
+            //
+            continue;
+        }
+
+        // TODO: the 'ip' and 'addr' parameters need to be canonicalized
+        //       with snap::addr 
+        //
+        QString const ip(status_info.get_field("header", "ip"));
+        if(ip.isEmpty())
+        {
+            continue;
+        }
+        snap_addr::addr server_addr(snap_addr::addr((ip + ":123").toUtf8().data(), "tcp"));
+
+        // is that the one that is down?
+        //
+        if(who_addr != server_addr)
+        {
+            continue;
+        }
+
+        // server already marked as down?
+        //
+        snap_manager::status_t status(status_info.get_field_status("header", "status"));
+        if(status.get_value() == "down")
+        {
+            continue;
+        }
+
+        // it is not yet marked Down, read the other fields before
+        // updating the file.
+        //
+        if(!status_info.read_all())
+        {
+            // the read_all() function (and sub-functions) will generate
+            // errors if such occur...
+            //
+            continue;
+        }
+
+        // okay! update the status now
+        //
+        status.set_value("down");
+        status_info.set_field(status);
+
+        // XXX: do we have to update the self::status field too?
+
+        // write the result back to the file
+        //
+        snap::NOTUSED(status_info.write());
+    }
 }
 
 

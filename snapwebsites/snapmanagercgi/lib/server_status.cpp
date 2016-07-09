@@ -449,12 +449,16 @@ bool server_status::read_header()
             {
                 return false;
             }
+            // whether it is a header field, we have to save it otherwise
+            // it would be load (even with a read_all() afterward!)
+            //
+            set_field(s);
             if(!r
             || s.get_plugin_name() != header)
             {
+                // EOF or not header anymore
                 return true;
             }
-            set_field(s);
         }
         else if(!r)
         {

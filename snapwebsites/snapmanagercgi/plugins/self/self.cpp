@@ -168,7 +168,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
     }
 
     {
-        snap_manager::status_t const up(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "status", "Up");
+        snap_manager::status_t const up(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "status", "up");
         server_status.set_field(up);
     }
 
@@ -177,10 +177,16 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(ip);
     }
 
-    if(!f_snap->has_snapmanager_frontend())
     {
-        snap_manager::status_t const no_frontend(snap_manager::status_t::state_t::STATUS_STATE_WARNING, get_plugin_name(), "no_frontend", "The snapmanager_frontend variable is empty. This is most likely not what you want.");
-        server_status.set_field(no_frontend);
+        snap::snap_string_list const & frontend_ips(f_snap->get_snapmanager_frontend());
+        snap_manager::status_t const frontend(
+                    frontend_ips.empty()
+                            ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                            : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                    get_plugin_name(),
+                    "snapmanager_frontend",
+                    frontend_ips.join(","));
+        server_status.set_field(frontend);
     }
 }
 

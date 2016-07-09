@@ -526,12 +526,12 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
         switch(s.second.get_state())
         {
         case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
-            tr.setAttribute("class", "warning");
+            tr.setAttribute("class", "warnings");
             break;
 
         case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
         case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
-            tr.setAttribute("class", "error");
+            tr.setAttribute("class", "errors");
             break;
 
         default:
@@ -576,6 +576,9 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 
 void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 {
+    // TODO: make use of the list_of_servers() function instead of having
+    //       our own copy of the glob() call
+    //
     struct err_callback
     {
         static int func(const char * epath, int eerrno)
@@ -606,7 +609,7 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
     int const r(glob(pattern.c_str(), GLOB_NOESCAPE, err_callback::func, &dir));
     if(r != 0)
     {
-        //globfree(&dir); -- needed in this case?
+        //globfree(&dir); -- needed on error?
 
         // do nothing when errors occur
         //
@@ -665,6 +668,13 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
         text = doc.createTextNode("Status");
         th.appendChild(text);
 
+    // output/table/tr/th[4]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+        text = doc.createTextNode("Err/War");
+        th.appendChild(text);
+
     bool has_error(false);
     for(size_t idx(0); idx < dir.gl_pathc; ++idx)
     {
@@ -676,9 +686,46 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
             QString const status(file.get_field("header", "status"));
             if(!status.isEmpty())
             {
+                // get number of errors
+                //
+                size_t error_count(0);
+                if(file.get_field_state("header", "errors") != snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+                {
+                    QString const errors(file.get_field("header", "errors"));
+                    error_count = errors.toLongLong();
+                }
+
+                // get number of warnings
+                //
+                size_t warning_count(0);
+                if(file.get_field_state("header", "warnings") != snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+                {
+                    QString const warnings(file.get_field("header", "warnings"));
+                    warning_count = warnings.toLongLong();
+                }
+
                 // output/table/tr
                 tr = doc.createElement("tr");
                 table.appendChild(tr);
+
+                snap::snap_string_list row_class;
+                if(error_count != 0)
+                {
+                    row_class << "errors";
+                }
+                if(warning_count != 0)
+                {
+                    row_class << "warnings";
+                }
+                if(status == "down")
+                {
+                    ++error_count;  // we consider this an error, so do +1 here
+                    row_class << "down";
+                }
+                if(!row_class.isEmpty())
+                {
+                    tr.setAttribute("class", row_class.join(" "));
+                }
 
                 // output/table/tr/td[1]
                 QDomElement td(doc.createElement("td"));
@@ -722,6 +769,14 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 
                     // output/table/tr/td[3]/<text>
                     text = doc.createTextNode(status);
+                    td.appendChild(text);
+
+                // output/table/tr/td[4]
+                td = doc.createElement("td");
+                tr.appendChild(td);
+
+                    // output/table/tr/td[4]/<text>
+                    text = doc.createTextNode(QString("%1/%2").arg(error_count).arg(warning_count));
                     td.appendChild(text);
             }
 

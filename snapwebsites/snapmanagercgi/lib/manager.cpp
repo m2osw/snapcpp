@@ -23,6 +23,8 @@
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qstring_stream.h>
 
+#include <glob.h>
+
 #include <sstream>
 
 #include "poison.h"
@@ -56,6 +58,12 @@ namespace
 {
 
 manager::pointer_t g_instance;
+
+
+void glob_deleter(glob_t * g)
+{
+    globfree(g);
+}
 
 
 /** \brief List of configuration files one can create to define parameters.
@@ -410,15 +418,80 @@ void manager::load_plugins()
 }
 
 
+snap::snap_string_list manager::list_of_servers()
+{
+    snap::snap_string_list result;
+
+    QString const pattern(QString("%1/*.db").arg(f_data_path));
+
+    glob_t dir = glob_t();
+    int const r(glob(
+            pattern.toUtf8().data(),
+            GLOB_NOESCAPE,
+            [](const char * epath, int eerrno)
+            {
+                SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                              (epath)
+                              ("\". Got error: ")
+                              (eerrno)
+                              (", ")
+                              (strerror(eerrno))
+                              (".");
+
+                // do not abort on a directory read error...
+                return 0;
+            },
+            &dir));
+    std::shared_ptr<glob_t> ai(&dir, glob_deleter);
+
+    if(r != 0)
+    {
+        // do nothing when errors occur
+        //
+        switch(r)
+        {
+        case GLOB_NOSPACE:
+            SNAP_LOG_ERROR("glob() did not have enough memory to alllocate its buffers.");
+            break;
+
+        case GLOB_ABORTED:
+            SNAP_LOG_ERROR("glob() was aborted after a read error.");
+            break;
+
+        case GLOB_NOMATCH:
+            SNAP_LOG_ERROR("glob() could not find any status information.");
+            break;
+
+        default:
+            SNAP_LOG_ERROR("unknown glob() error code: ")(r)(".");
+            break;
+
+        }
+    }
+    else
+    {
+        // copy the list from the output of glob()
+        //
+        for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+        {
+            result << QString::fromUtf8(dir.gl_pathv[idx]);
+        }
+    }
+
+    return result;
+}
+
+
 QString manager::get_public_ip() const
 {
     return f_public_ip;
 }
 
 
-bool manager::has_snapmanager_frontend() const
+snap::snap_string_list const & manager::get_snapmanager_frontend() const
 {
-    return false;
+    static snap::snap_string_list empty;
+    return empty;
 }
 
 

@@ -130,19 +130,21 @@ bool manager_status::is_snapmanager_frontend(QString const & server_name) const
 }
 
 
-/** \brief Check whether any frontend IPs were listed.
+/** \brief Return the list of frontend IPs.
  *
- * This function checks whether any frontend IPs were listed in
- * the configuration file.
+ * This function returns the list of frontend IP addresses as defined
+ * in the configuration file. These are the IP addresses of
+ * snapmanagerdaemon to contact whenever a new MANAGERSTATUS message
+ * is to be sent.
  *
- * \return true if frontend IPs are defined.
+ * \return The list of frontend IP addresses.
  */
-bool manager_status::has_snapmanager_frontend() const
+snap::snap_string_list const & manager_status::get_snapmanager_frontend() const
 {
     // guard is not needed because the frontend IPs are set once
     // before the thread starts
     //snap::snap_thread::snap_lock guard(f_mutex);
-    return !f_snapmanager_frontend.empty();
+    return f_snapmanager_frontend;
 }
 
 
