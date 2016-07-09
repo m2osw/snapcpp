@@ -1,7 +1,7 @@
 Source: controlledvars
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, snapcmakemodules (>= 1.0.25.171~xenial)
+Build-Depends: debhelper, cmake, snapcmakemodules (>= 1.0.25.172~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/controlled-vars
