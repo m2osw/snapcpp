@@ -41,6 +41,9 @@
 #include "log.h"
 #include "process.h"
 
+// C++
+//
+#include <algorithm>
 
 
 namespace snap_manager
@@ -100,10 +103,9 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
 
     f_snapmanager_frontend = snapmanager_frontend.split(",", QString::SkipEmptyParts);
 
-    for(auto & f : f_snapmanager_frontend)
-    {
-        f = f.trimmed();
-    }
+    std::for_each(f_snapmanager_frontend.begin(),
+                  f_snapmanager_frontend.end(),
+                  [](auto & f) { f = f.trimmed(); });
 }
 
 
@@ -113,9 +115,9 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
  * represents a front end computer, as far as snapmanager.cgi is
  * concerned, and if so, it returns true.
  *
- * Note that the snapmanagerdaemon status will verify that all the
- * snapmanagerdaemon frontend parameter is exactly the same on all
- * computers.
+ * \note
+ * At some point, snapmanagerdaemons will verify that all the servers
+ * have the same snapmanager_frontend parameter.
  *
  * \param[in] server_name  The name of the server being checked.
  *
@@ -123,25 +125,28 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
  */
 bool manager_status::is_snapmanager_frontend(QString const & server_name) const
 {
-    // guard is not needed because the frontend IPs are set once
+    // guard is not needed because the frontend names are set once
     // before the thread starts
     return f_snapmanager_frontend.empty()
         || f_snapmanager_frontend.contains(server_name);
 }
 
 
-/** \brief Return the list of frontend IPs.
+/** \brief Return the list of frontend server names.
  *
- * This function returns the list of frontend IP addresses as defined
- * in the configuration file. These are the IP addresses of
- * snapmanagerdaemon to contact whenever a new MANAGERSTATUS message
- * is to be sent.
+ * This function returns the list of frontend server names as defined
+ * in the configuration file. These are the names of computers running
+ * snapmanagerdaemon that get contacted whenever a new MANAGERSTATUS
+ * message is to be sent.
  *
- * \return The list of frontend IP addresses.
+ * If the list is empty, then snapmanagerdaemon broadcasts the message
+ * to all that are running in the cluster.
+ *
+ * \return The list of frontend server names.
  */
 snap::snap_string_list const & manager_status::get_snapmanager_frontend() const
 {
-    // guard is not needed because the frontend IPs are set once
+    // guard is not needed because the frontend names are set once
     // before the thread starts
     //snap::snap_thread::snap_lock guard(f_mutex);
     return f_snapmanager_frontend;

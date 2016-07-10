@@ -88,6 +88,7 @@ public:
     typedef std::shared_ptr<manager>         pointer_t;
 
                                     manager(bool daemon);
+    virtual                         ~manager() override;
 
     void                            init(int argc, char * argv[]);
 
@@ -117,10 +118,10 @@ protected:
     QString                         f_server_name;
     QString                         f_data_path = "/var/lib/snapwebsites/cluster-status";
     QString                         f_public_ip;
+    QString                         f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
 
 private:
-    QString                                     f_log_conf = "/etc/snapwebsites/snapmanager.properties";
-    QString                                     f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
+    QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";
 };
 
 

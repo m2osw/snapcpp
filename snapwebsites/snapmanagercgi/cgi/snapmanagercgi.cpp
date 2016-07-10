@@ -29,6 +29,7 @@
 
 #include "snapmanagercgi.h"
 
+#include "plugin_base.h"
 #include "server_status.h"
 
 // C lib
@@ -460,23 +461,9 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement root)
 
 void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const host)
 {
-    // define the path to the .db file
-    //
-    QString filename;
-    if(!f_config.contains("data_path"))
-    {
-        filename = host + ".db";
-    }
-    else
-    {
-        filename = QString("%1/%2.db")
-                    .arg(f_config["data_path"])
-                    .arg(host);
-    }
-
     // create, open, read the file
     //
-    server_status file(filename);
+    server_status file(f_data_path, host);
     if(!file.read_all())
     {
         // TODO: add error info in output
@@ -497,15 +484,26 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     QDomElement th(doc.createElement("th"));
     tr.appendChild(th);
 
-        QDomText text(doc.createTextNode("Name"));
+        QDomText text(doc.createTextNode(QString("Plugin")));
         th.appendChild(text);
 
     // output/table/tr/th[2]
     th = doc.createElement("th");
     tr.appendChild(th);
 
+        text = doc.createTextNode(QString("Name"));
+        th.appendChild(text);
+
+    // output/table/tr/th[3]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
         text = doc.createTextNode("Value");
         th.appendChild(text);
+
+    // we need the plugins for the following (non-raw) loop
+    //
+    load_plugins();
 
     // read each name/value pair
     //
@@ -514,62 +512,79 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     snap_manager::status_t::map_t const & statuses(file.get_statuses());
     for(auto const & s : statuses)
     {
-        if(s.second.get_plugin_name() == "header")
+        QString const & plugin_name(s.second.get_plugin_name());
+        if(plugin_name == "header")
         {
+            // ignore header fields because those are copies of other
+            // fields and no plugin can manage those anyway
             continue;
         }
+
+        snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
 
         // output/table/tr
         tr = doc.createElement("tr");
         table.appendChild(tr);
 
+        snap::snap_string_list tr_classes;
+        if(p == nullptr)
+        {
+            tr_classes << "missing-plugin";
+        }
+
         switch(s.second.get_state())
         {
         case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
-            tr.setAttribute("class", "warnings");
+            tr_classes << "warnings";
             break;
 
         case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
         case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
-            tr.setAttribute("class", "errors");
+            tr_classes << "errors";
             break;
 
         default:
             // do nothing otherwise
             break;
         }
+        if(!tr_classes.isEmpty())
+        {
+            tr.setAttribute("class", tr_classes.join(" "));
+        }
 
             // output/table/tr/td[1]
             QDomElement td(doc.createElement("td"));
             tr.appendChild(td);
 
-                //// output/table/td[1]/a
-                //QDomElement anchor(doc.createElement("a"));
-                //td.appendChild(anchor);
-
-                //QString const path(dir.gl_pathv[idx]);
-                //int basename_pos(path.lastIndexOf('/'));
-                //if(basename_pos < 0)
-                //{
-                //    // this should not happen, although it is perfectly
-                //    // possible that the administrator used "" as the
-                //    // path where statuses should be saved.
-                //    //
-                //    basename_pos = 0;
-                //}
-                //QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
-
-                //anchor.setAttribute("href", QString("?host=%1").arg(host));
-
-                text = doc.createTextNode(s.second.get_field_name());
+                text = doc.createTextNode(plugin_name);
                 td.appendChild(text);
 
             // output/table/tr/td[2]
             td = doc.createElement("td");
             tr.appendChild(td);
 
-                text = doc.createTextNode(s.second.get_value());
+                QString const & field_name(s.second.get_field_name());
+                text = doc.createTextNode(field_name);
                 td.appendChild(text);
+
+            // output/table/tr/td[3]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
+                bool managed(false);
+                plugin_base * pb(dynamic_cast<plugin_base *>(p));
+                if(pb != nullptr)
+                {
+                    // call that signal directly on that one plugin
+                    //
+                    managed = pb->display_value(td, s.second);
+                }
+
+                if(!managed)
+                {
+                    text = doc.createTextNode(s.second.get_value());
+                    td.appendChild(text);
+                }
     }
 }
 

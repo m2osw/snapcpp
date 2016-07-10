@@ -17,6 +17,7 @@
 #pragma once
 
 #include "lib/manager.h"
+#include "lib/plugin_base.h"
 
 #include <snapwebsites/plugins.h>
 
@@ -57,11 +58,11 @@ public:
 
 
 class self
-        : public plugins::plugin
+        : public snap_manager::plugin_base
 {
 public:
                             self();
-                            ~self();
+    virtual                 ~self() override;
 
     // plugins::plugin implementation
     static self *           instance();
@@ -69,6 +70,9 @@ public:
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
     virtual void            bootstrap(snap_child * snap);
+
+    // manager overload
+    virtual bool            display_value(QDomElement parent, snap_manager::status_t const & s) override;
 
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);

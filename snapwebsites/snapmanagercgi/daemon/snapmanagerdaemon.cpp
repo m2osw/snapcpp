@@ -78,7 +78,7 @@ void manager_daemon::init(int argc, char * argv[])
         throw std::runtime_error("fatal error: could not setup executable to run as group root.");
     }
 
-    // get the list of front end servers (i.e. list of computer(s)
+    // get the list of front end servers (i.e. list of computer names
     // accepting snapmanager.cgi requests)
     //
     if(f_config.contains("snapmanager_frontend"))
@@ -511,7 +511,7 @@ void manager_daemon::forward_message(snap::snap_communicator_message const & mes
  * snapmanagerdaemon running on frontends (computers that an administrator
  * can access.)
  *
- * \return The list of snapmanager frontends IPs.
+ * \return The list of snapmanager frontends server names.
  */
 snap::snap_string_list const & manager_daemon::get_snapmanager_frontend() const
 {

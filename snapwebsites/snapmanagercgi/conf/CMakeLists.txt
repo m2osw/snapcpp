@@ -47,6 +47,8 @@ install(
 
         # misc files -- TODO add a sample apache settings?
         snapmanagercgi-parser.xsl
+        snap-bundles-apache2.conf
+        snap-bundles-footer.html
 
     DESTINATION
         share/snapwebsites/conf

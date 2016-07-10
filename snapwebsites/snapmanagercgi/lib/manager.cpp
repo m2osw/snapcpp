@@ -230,6 +230,12 @@ manager::manager(bool daemon)
 
 
 
+manager::~manager()
+{
+}
+
+
+
 /** \brief Initialize the manager.
  *
  * The constructor parses the command ilne options in a symetrical way
