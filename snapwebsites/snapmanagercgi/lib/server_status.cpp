@@ -462,7 +462,7 @@ bool server_status::read_header()
         }
         else if(!r)
         {
-            return false;
+            return true;
         }
     }
     snap::NOTREACHED();

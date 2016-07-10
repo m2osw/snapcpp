@@ -717,7 +717,7 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
                 {
                     row_class << "warnings";
                 }
-                if(status == "down")
+                if(status == "down" || status == "unknown")
                 {
                     ++error_count;  // we consider this an error, so do +1 here
                     row_class << "down";
