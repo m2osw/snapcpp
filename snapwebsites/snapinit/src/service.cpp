@@ -874,6 +874,23 @@ bool service::is_dependency_of( const QString& service_name )
 
 void service::mark_process_as_dead()
 {
+    const auto snap_init( f_snap_init.lock() );
+    if(!snap_init)
+    {
+        common::fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
+        snap::NOTREACHED();
+    }
+
+    // First, if we are marking this process as dead, then those services which depend
+    // on this service running must be stopped.
+    //
+    vector_t depends_on_list;
+    snap_init->get_depends_on_list( f_service_name, depends_on_list );
+    for( auto const& dep : depends_on_list )
+    {
+        dep->set_stopping();
+    }
+
     // do we know we sent the STOP signal? if so, remove outselves
     // from snapcommunicator
     //
@@ -887,18 +904,7 @@ void service::mark_process_as_dead()
         // remove self (timer) from snapcommunicator
         //
         remove_from_communicator();
-
-        // we also must call the snapinit::()
-        // since we are stopping and that is the one function that
-        // detects whether all services died so far or not
-        //
-        std::shared_ptr<snap_init> si(f_snap_init.lock());
-        if(!si)
-        {
-            common::fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
-            snap::NOTREACHED();
-        }
-        si->remove_terminated_services();
+        snap_init->remove_terminated_services();
 
         return;
     }
@@ -1138,6 +1144,8 @@ bool service::run()
         return false;
     }
 
+    SNAP_LOG_TRACE("service::run() attempting to start service '")(f_service_name)("'.");
+
     // Check to make sure dependent processes have started first.
     // Defer if not.
     //
@@ -1157,6 +1165,7 @@ bool service::run()
                 // Return at this point, since dependent services are not
                 // started and registered yet...
                 //
+                SNAP_LOG_WARNING("Dependency service '")(service_name)("' has not yet started for parent service '")(f_service_name)("'. Deferring start.");
                 return false;
             }
         }

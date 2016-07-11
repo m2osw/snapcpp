@@ -1197,6 +1197,7 @@ void snap_init::init_message_functions()
                 {
                     services << s->get_service_name();
                 }
+                SNAP_LOG_TRACE("READY: list to send to server: [")(services.join(","))("].");
                 reply.add_parameter("list", services.join(","));
 
                 f_listener_connection->send_message(reply);
@@ -1324,6 +1325,24 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
 }
 
 
+/** \brief Tell snapcomm that the service has died
+ *
+ * This method will not do anything if f_listener_connection is nullptr.
+ */
+void snap_init::register_died_service( service::pointer_t svc )
+{
+    if(f_listener_connection)
+    {
+        snap::snap_communicator_message register_snapinit;
+        register_snapinit.set_command("DIED");
+        register_snapinit.set_service(".");
+        register_snapinit.add_parameter("service", svc->get_service_name());
+        register_snapinit.add_parameter("pid", svc->get_old_pid());
+        f_listener_connection->send_message(register_snapinit);
+    }
+}
+
+
 /** \brief This callback gets called on a SIGCHLD signal.
  *
  * Whenever a child dies, we receive a SIGCHLD. The snapcommunicator
@@ -1361,15 +1380,7 @@ void snap_init::service_died()
         // if snapcommunicator already died, we cannot forward
         // the DIED or any other message
         //
-        if(f_listener_connection)
-        {
-            snap::snap_communicator_message register_snapinit;
-            register_snapinit.set_command("DIED");
-            register_snapinit.set_service(".");
-            register_snapinit.add_parameter("service", svc->get_service_name());
-            register_snapinit.add_parameter("pid", svc->get_old_pid());
-            f_listener_connection->send_message(register_snapinit);
-        }
+        register_died_service( svc );
 
         // This has a functional side effect of (possibly) removing the service from
         // the f_service_list vector.
