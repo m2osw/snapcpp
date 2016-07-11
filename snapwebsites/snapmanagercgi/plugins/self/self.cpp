@@ -257,7 +257,14 @@ bool self::apply_setting(QString const & field_name, QString const & new_value, 
     if(field_name == "snapmanager_frontend")
     {
         affected_services.push_back("snapmanagerdaemon");
-        return f_snap->replace_configuration_value("/etc/snapwebsites/snapmanager.conf", field_name, new_value) == 0;
+
+        // TODO: the path to the snapmanager.conf is hard coded, it needs to
+        //       use the path of the file used to load the .conf in the
+        //       first place (I'm just not too sure how to get that right
+        //       now, probably from the "--config" parameter, but how do
+        //       we do that for each service?)
+        //
+        return f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, new_value) == 0;
     }
 
     return false;
