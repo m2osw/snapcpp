@@ -546,6 +546,11 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
         break;
 
     case 'H':
+        if(command == "HANGUP")
+        {
+            lockgone(message);
+            return;
+        }
         if(command == "HELP")
         {
             // Snap! Communicator is asking us about the commands that we support
@@ -557,7 +562,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "ADDTICKET,DISCONNECTED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
+            reply.add_parameter("list", "ADDTICKET,DISCONNECTED,DROPTICKET,GETMAXTICKET,HANGUP,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
 
             f_messenger->send_message(reply);
 
@@ -1262,7 +1267,7 @@ void snaplock::interpret_status(snap::snap_communicator_message const & message)
  * This function is used to know that a remote connection was
  * disconnected.
  *
- * We receive the DISCONNECTED whenever a remote connection hangs
+ * We receive the HANGUP whenever a remote connection hangs
  * up or snapcommunicator received a DISCONNECT message.
  *
  * This allows us to manage the f_computers list of computers running
@@ -1280,7 +1285,7 @@ void snaplock::lockgone(snap::snap_communicator_message const & message)
         return;
     }
 
-    auto it(f_computers.find(server_name));
+    auto const it(f_computers.find(server_name));
     if(it != f_computers.end())
     {
         f_computers.erase(it);

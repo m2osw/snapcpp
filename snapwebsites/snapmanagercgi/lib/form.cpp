@@ -102,23 +102,40 @@ form::form(QString const & plugin_name, QString const & field_name, button_t but
 }
 
 
-void form::generate(QDomElement parent)
+void form::generate(QDomElement parent, snap::snap_uri const & uri)
 {
     QDomDocument doc(parent.ownerDocument());
+
+    QString host("-undefined-");
+    if(uri.has_query_option("host"))
+    {
+        host = uri.query_option("host");
+    }
 
     // create the form tag
     //
     QDomElement form_tag(doc.createElement("form"));
+    form_tag.setAttribute("accept-charset", "UTF-8");
+    form_tag.setAttribute("action", "?" + uri.query_string());
+    form_tag.setAttribute("method", "POST");
     parent.appendChild(form_tag);
 
-    // add the plugin name and field name as hidden fields
+    // add the host, plugin name, and field name as hidden fields
     //
+    QDomElement host_name_tag(doc.createElement("input"));
+    host_name_tag.setAttribute("name", "hostname");
+    host_name_tag.setAttribute("type", "hidden");
+    host_name_tag.setAttribute("value", host);
+    form_tag.appendChild(host_name_tag);
+
     QDomElement plugin_name_tag(doc.createElement("input"));
+    plugin_name_tag.setAttribute("name", "plugin_name");
     plugin_name_tag.setAttribute("type", "hidden");
     plugin_name_tag.setAttribute("value", f_plugin_name);
     form_tag.appendChild(plugin_name_tag);
 
     QDomElement field_name_tag(doc.createElement("input"));
+    field_name_tag.setAttribute("name", "field_name");
     field_name_tag.setAttribute("type", "hidden");
     field_name_tag.setAttribute("value", f_field_name);
     form_tag.appendChild(field_name_tag);

@@ -34,7 +34,7 @@
 
 // ourselves
 //
-#include "snapmanagerdaemon.h"
+#include "manager.h"
 
 // our lib
 //
@@ -56,7 +56,7 @@ namespace snap_manager
  *
  * \return The exit code of the apt-get install command.
  */
-int manager_daemon::install(QString const & package_name)
+int manager::install(QString const & package_name)
 {
     snap::process p("install");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
@@ -75,7 +75,6 @@ int manager_daemon::install(QString const & package_name)
 
     // the output is saved so we can send it to the user and log it...
     QString const output(p.get_output(true));
-    f_output += output;
     SNAP_LOG_INFO("installation of package named \"")(package_name)("\" output:\n")(output);
 
     return r;
@@ -84,79 +83,97 @@ int manager_daemon::install(QString const & package_name)
 
 
 
-void manager_daemon::installer(snap::snap_communicator_message const & message)
+void manager::installer(QString const & bundle_name)
 {
-    snap::snap_communicator_message reply;
-    reply.reply_to(message);
+    SNAP_LOG_INFO("Installing bundle \"")(bundle_name)("\" on host \"")(f_server_name)("\"");
 
-    QString const system(message.get_parameter("system"));
-    if(system.isEmpty())
-    {
-        reply.set_command("INVALID");
-        reply.add_parameter("what", "command MANAGE/function=INSTALL must specify a \"system\" parameter.");
-        f_messenger->send_message(reply);
-        return;
-    }
 
-    int r(0);
-    bool installed(false);
-    f_output.clear();
+    //snap::snap_communicator_message reply;
+    //reply.reply_to(message);
 
-    switch(system[0].unicode())
-    {
-    case 'a':
-        if(system == "application")
-        {
-            // This is snapserver behind an apache proxy (working through snap.cgi)
-            //
-            r = install("snapserver");
-            installed = true;
-        }
-        break;
+    //QString const system(message.get_parameter("system"));
+    //if(system.isEmpty())
+    //{
+    //    reply.set_command("INVALID");
+    //    reply.add_parameter("what", "command MANAGE/function=INSTALL must specify a \"system\" parameter.");
+    //    f_messenger->send_message(reply);
+    //    return;
+    //}
 
-    case 'f':
-        if(system == "frontend")
-        {
-            // This is just snap.cgi
-            //
-            r = install("snapcgi");
-            installed = true;
-        }
-        else if(system == "firewall")
-        {
-            // This is just firewall
-            //
-            r = install("snapfirewall");
-            installed = true;
-        }
-        break;
+    //int r(0);
+    //bool installed(false);
+    //f_output.clear();
 
-    case 'm':
-        if(system == "mailserver")
-        {
-            // Install snapbounce which forces a postfix installation
-            // and allows us to send and receive emails as well as to
-            // know that some emails do not make it
-            //
-            install("snapbounce");
-            installed = true;
-        }
-        break;
+    //switch(system[0].unicode())
+    //{
+    //case 'a':
+    //    if(system == "application")
+    //    {
+    //        // This is snapserver behind an apache proxy (working through snap.cgi)
+    //        //
+    //        r = install("snapserver");
+    //        installed = true;
+    //    }
+    //    break;
 
-    }
+    //case 'f':
+    //    if(system == "frontend")
+    //    {
+    //        // This is just snap.cgi
+    //        //
+    //        r = install("snapcgi");
+    //        installed = true;
+    //    }
+    //    else if(system == "firewall")
+    //    {
+    //        // This is just firewall
+    //        //
+    //        r = install("snapfirewall");
+    //        installed = true;
+    //    }
+    //    break;
 
-    if(installed)
-    {
-        reply.set_command("RESULTS");
-        reply.add_parameter("exitcode", QString("%1").arg(r));
-        reply.add_parameter("output", f_output);
-        f_messenger->send_message(reply);
-        return;
-    }
+    //case 'm':
+    //    if(system == "mailserver")
+    //    {
+    //        // Install snapbounce which forces a postfix installation
+    //        // and allows us to send and receive emails as well as to
+    //        // know that some emails do not make it
+    //        //
+    //        install("snapbounce");
+    //        installed = true;
+    //    }
+    //    break;
 
-    reply.set_command("INVALID");
-    reply.add_parameter("what", "unknown system parameter \"" + system + "\" in command MANAGE/function=INSTALL.");
-    f_messenger->send_message(reply);
+    //}
+
+    //if(installed)
+    //{
+    //    reply.set_command("RESULTS");
+    //    reply.add_parameter("exitcode", QString("%1").arg(r));
+    //    reply.add_parameter("output", f_output);
+    //    f_messenger->send_message(reply);
+    //    return;
+    //}
+
+    //reply.set_command("INVALID");
+    //reply.add_parameter("what", "unknown system parameter \"" + system + "\" in command MANAGE/function=INSTALL.");
+    //f_messenger->send_message(reply);
+}
+
+
+
+bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value)
+{
+    snap::process p("replace_configuration_value");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+    p.set_command("sed");
+    p.add_argument("--in-place=.bak");
+    p.add_argument(QString("--expression='s/^%1=.*/%1=%2/'").arg(field_name).arg(new_value));
+    p.add_argument(filename);
+    int const r(p.run());
+
+    return r;
 }
 
 

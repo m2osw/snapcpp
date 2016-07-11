@@ -29,8 +29,14 @@
 
 #include "snapmanagercgi.h"
 
+// our lib
+//
 #include "plugin_base.h"
 #include "server_status.h"
+
+// snapwebsites lib
+//
+#include "qdomhelpers.h"
 
 // C lib
 //
@@ -377,11 +383,38 @@ int manager_cgi::process()
         f_uri.set_query_string(QString::fromUtf8(query_string));
     }
 
+    if(strcmp(request_method, "POST") == 0)
+    {
+        if(process_post() != 0)
+        {
+            // an error occurred, exit now
+            return 0;
+        }
+    }
+
     QDomDocument doc;
     QDomElement root(doc.createElement("manager"));
     doc.appendChild(root);
+    QDomElement output(doc.createElement("output"));
+    root.appendChild(output);
 
-    generate_content(doc, root);
+    {
+        char const * https(getenv("HTTPS"));
+        if(https == nullptr
+        || strcmp(https, "on") != 0)
+        {
+            QDomElement warning_div(doc.createElement("div"));
+            warning_div.setAttribute("class", "access-warning");
+            output.appendChild(warning_div);
+
+            // TODO: add a link to a help page on snapwebsites.org
+            snap::snap_dom::insert_html_string_to_xml_doc(warning_div,
+                    "<div class=\"access-title\">WARNING</div>"
+                    "<p>You are accessing this website without SSL. All the data transfers will be unencrypted.</p>");
+        }
+    }
+
+    generate_content(doc, output);
 
 //SNAP_LOG_WARNING("Doc = [")(doc.toString())("]");
 
@@ -404,16 +437,216 @@ int manager_cgi::process()
 }
 
 
+int manager_cgi::read_post_variables()
+{
+    char const * content_type(getenv("CONTENT_TYPE"));
+    if(content_type == nullptr)
+    {
+        return error("500 Internal Server Error", "the CONTENT_TYPE variable was not defined along a POST.", nullptr);
+    }
+    bool const is_multipart(QString(content_type).startsWith("multipart/form-data"));
+    int const break_char(is_multipart ? '\n' : '&');
+
+    std::string name;
+    std::string value;
+    bool found_name(false);
+    for(;;)
+    {
+        int const c(getchar());
+        if(c == break_char || c == EOF)
+        {
+            if(!name.empty())
+            {
+                f_post_variables[name] = value;
+#ifdef _DEBUG
+                SNAP_LOG_DEBUG("got ")(name)(" = ")(value);
+#endif
+            }
+            if(c == EOF)
+            {
+                // this was the last variable
+                return 0;
+            }
+            name.clear();
+            value.clear();
+            found_name = false;
+        }
+        else if(c == '=')
+        {
+            found_name = true;
+        }
+        else if(found_name)
+        {
+            value += c;
+        }
+        else
+        {
+            name += c;
+        }
+    }
+}
+
+
+int manager_cgi::process_post()
+{
+    SNAP_LOG_WARNING("processing POST now!");
+
+    // convert the POST variables in a map
+    //
+    if(read_post_variables() != 0)
+    {
+        return 1;
+    }
+
+    // check that the plugin name is defined
+    //
+    auto const & plugin_name_it(f_post_variables.find("plugin_name"));
+    if(plugin_name_it == f_post_variables.end())
+    {
+        return error("400 Bad Request", "The POST is expected to include a plugin_name variable.", nullptr);
+    }
+    QString const plugin_name(QString::fromUtf8(plugin_name_it->second.c_str()));
+
+    // we need the plugins for the following test
+    //
+    load_plugins();
+
+    // we should be able to find that plugin by name
+    //
+    snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
+    if(p == nullptr)
+    {
+        return error("404 Plugin Not Found", ("Plugin \"" + plugin_name_it->second + "\" was not found. We cannot process this request.").c_str(), nullptr);
+    }
+
+    // check that the field name is defined
+    //
+    auto const & field_name_it(f_post_variables.find("field_name"));
+    if(field_name_it == f_post_variables.end())
+    {
+        return error("400 Bad Request", "The POST is expected to include a field_name variable.", nullptr);
+    }
+    QString const field_name(field_name_it->second.c_str());
+
+    // check that we have a host variable
+    //
+    auto const & host_it(f_post_variables.find("hostname"));
+    if(host_it == f_post_variables.end())
+    {
+        return error("400 Bad Request", "The POST is expected to include a hostname variable.", nullptr);
+    }
+    QString const host(QString::fromUtf8(host_it->second.c_str()));
+
+    // got the host variable, make sure we can load a file from it
+    //
+    server_status status_file(f_data_path, host);
+    if(!status_file.read_all())
+    {
+        return error("404 Host Not Found", ("Host \"" + host_it->second + "\" is not known.").c_str(), nullptr);
+    }
+
+    // make sure that host is viewed as UP, otherwise we will not be
+    // able to send it a message
+    //
+    if(status_file.get_field_state("header", "status") == snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+    {
+        return error("500 Internal Server Error"
+                    , ("Host \""
+                      + host_it->second
+                      + "\" has not header::status field defined.").c_str()
+                    , nullptr);
+    }
+    QString const host_status(status_file.get_field("header", "status"));
+    if(host_status != "up")
+    {
+        return error("503 Service Unavailable"
+                    , ("Host \""
+                      + host_it->second
+                      + "\" is "
+                      + host_status.toUtf8().data()
+                      + ".").c_str()
+                    , nullptr);
+    }
+
+    // check that the field being updated exists on that host,
+    // otherwise the plugin cannot do anything with it
+    //
+    if(status_file.get_field_state(plugin_name, field_name) == snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+    {
+        return error("400 Bad Request"
+                    , ("Host \""
+                      + host_it->second
+                      + "\" has not \""
+                      + plugin_name_it->second
+                      + "::"
+                      + field_name_it->second
+                      + " field defined.").c_str()
+                    , nullptr);
+    }
+
+    // that very field should be defined in the POST variables
+    //
+    auto const & new_value_it(f_post_variables.find(field_name_it->second));
+    if(new_value_it == f_post_variables.end())
+    {
+        return error("400 Bad Request"
+                    , ("Variable \""
+                      + field_name_it->second
+                      + "\" was not found in this POST.").c_str()
+                    , nullptr);
+    }
+    QString const new_value(QString::fromUtf8(new_value_it->second.c_str()));
+
+    // get the old value
+    //
+    QString const old_value(status_file.get_field(plugin_name, field_name));
+
+    // although not 100% correct, we immediately update the field with
+    // the new value but mark it as MODIFIED, since we do that before we
+    // send the MODIFIYSETTINGS message, we at least know that another
+    // update should happen and "fix" the status back to something else
+    // than MODIFIED
+    //
+    snap_manager::status_t const modified(snap_manager::status_t::state_t::STATUS_STATE_MODIFIED, plugin_name, field_name, new_value);
+    status_file.set_field(modified);
+    status_file.write();
+
+    // we got all the elements, send a message because we may have to
+    // save that data on multiple computers and also it needs to be
+    // applied by snapmanagerdaemon and not us (i.e. snapmanagerdaemon
+    // runs as root:root and thus it can modify settings and install
+    // or remove software, whereas snapmanager.cgi runs as www-data...)
+    //
+    {
+        // setup the message to send to other snapmanagerdaemons
+        //
+        snap::snap_communicator_message modify_settings;
+        // TODO: destination depends on the Save button
+        modify_settings.set_service("*");
+        modify_settings.set_command("MODIFYSETTINGS");
+        modify_settings.add_parameter("plugin_name", plugin_name);
+        modify_settings.add_parameter("field_name", field_name);
+        modify_settings.add_parameter("old_value", old_value);
+        modify_settings.add_parameter("new_value", new_value);
+        //f_messenger->send_message(modify_settings);
+
+        // we need a connection for that too...
+        //
+        messenger msg(f_communicator_address, f_communicator_port, modify_settings);
+        msg.run();
+    }
+
+    return 0;
+}
+
+
 /** \brief Generate the body of the page.
  *
  * This function checks the various query strings passed to the manager_cgi
  * and depending on those, generates a page.
  */
-void manager_cgi::generate_content(QDomDocument doc, QDomElement root)
+void manager_cgi::generate_content(QDomDocument doc, QDomElement output)
 {
-    QDomElement output(doc.createElement("output"));
-    root.appendChild(output);
-
     QString const function(f_uri.query_option("function"));
 
     // is a host name specified?
@@ -498,6 +731,13 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     th = doc.createElement("th");
     tr.appendChild(th);
 
+        text = doc.createTextNode(QString("State"));
+        th.appendChild(text);
+
+    // output/table/tr/th[4]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
         text = doc.createTextNode("Value");
         th.appendChild(text);
 
@@ -532,8 +772,13 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
             tr_classes << "missing-plugin";
         }
 
-        switch(s.second.get_state())
+        snap_manager::status_t::state_t const state(s.second.get_state());
+        switch(state)
         {
+        case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
+            tr_classes << "modified";
+            break;
+
         case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
             tr_classes << "warnings";
             break;
@@ -546,6 +791,7 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
         default:
             // do nothing otherwise
             break;
+
         }
         if(!tr_classes.isEmpty())
         {
@@ -571,13 +817,53 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
             td = doc.createElement("td");
             tr.appendChild(td);
 
+                QString field_state("???");
+                switch(state)
+                {
+                case snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED:
+                    field_state = "undefined";
+                    break;
+
+                case snap_manager::status_t::state_t::STATUS_STATE_DEBUG:
+                    field_state = "debug";
+                    break;
+
+                case snap_manager::status_t::state_t::STATUS_STATE_INFO:
+                    field_state = "valid";
+                    break;
+
+                case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
+                    field_state = "modified";
+                    break;
+
+                case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
+                    field_state = "warning";
+                    break;
+
+                case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
+                    field_state = "error";
+                    break;
+
+                case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
+                    field_state = "fatal error";
+                    break;
+
+                }
+                text = doc.createTextNode(field_state);
+                td.appendChild(text);
+
+            // output/table/tr/td[4]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
                 bool managed(false);
                 plugin_base * pb(dynamic_cast<plugin_base *>(p));
-                if(pb != nullptr)
+                if(pb != nullptr
+                && state != snap_manager::status_t::state_t::STATUS_STATE_MODIFIED)
                 {
                     // call that signal directly on that one plugin
                     //
-                    managed = pb->display_value(td, s.second);
+                    managed = pb->display_value(td, s.second, f_uri);
                 }
 
                 if(!managed)

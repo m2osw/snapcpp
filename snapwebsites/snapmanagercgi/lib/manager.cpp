@@ -408,18 +408,23 @@ void manager::bootstrap(snap_child * snap)
 
 void manager::load_plugins()
 {
-    // we always want to load all the plugins
-    //
-    snap::snap_string_list all_plugins(snap::plugins::list_all(f_plugins_path));
-
-    // the list_all() includes "server", but we cannot load the server
-    // plugin
-    //
-    all_plugins.removeOne("server");
-
-    if(!snap::plugins::load(f_plugins_path, this, std::static_pointer_cast<snap::plugins::plugin>(g_instance), all_plugins))
+    if(!f_plugins_loaded)
     {
-        throw snapmanager_exception_cannot_load_plugins("the snapmanager library could not load its plugins");
+        f_plugins_loaded = true;
+
+        // we always want to load all the plugins
+        //
+        snap::snap_string_list all_plugins(snap::plugins::list_all(f_plugins_path));
+
+        // the list_all() includes "server", but we cannot load the server
+        // plugin
+        //
+        all_plugins.removeOne("server");
+
+        if(!snap::plugins::load(f_plugins_path, this, std::static_pointer_cast<snap::plugins::plugin>(g_instance), all_plugins))
+        {
+            throw snapmanager_exception_cannot_load_plugins("the snapmanager library could not load its plugins");
+        }
     }
 }
 

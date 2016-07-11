@@ -479,7 +479,12 @@ int snap_cgi::process()
         // by & and the variable names and content cannot include the & since
         // that would break the whole scheme so we can safely break (add \n)
         // at that location
-        bool const is_multipart(QString(getenv("CONTENT_TYPE")).startsWith("multipart/form-data"));
+        char const * content_type(getenv("CONTENT_TYPE"));
+        if(content_type == nullptr)
+        {
+            return error("500 Internal Server Error", "the CONTENT_TYPE variable was not defined along a POST.", nullptr);
+        }
+        bool const is_multipart(QString(content_type).startsWith("multipart/form-data"));
         int const break_char(is_multipart ? '\n' : '&');
         std::string var;
         for(;;)

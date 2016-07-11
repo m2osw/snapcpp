@@ -38,11 +38,17 @@
 
 // our lib
 //
+#include "lib/plugin_base.h"
+
+// snapwebsites lib
+//
+#include "chownnm.h"
 #include "log.h"
 
 // C lib
 //
 #include <sys/file.h>
+#include <sys/stat.h>
 
 
 namespace snap_manager
@@ -148,12 +154,90 @@ void manager_daemon::set_manager_status(snap::snap_communicator_message const & 
         return;
     }
 
+    // in this case we may have created the file so we need to make sure
+    // that the owner and group are correct
+    //
+    // Note: The mode should be correct from within the write(), although
+    //       it will depend on the umask as well. So to make sure, we
+    //       change it here to exactly what we expect.
+    //
+    QString const & filename(s.get_filename());
+    chmod(filename.toUtf8().data(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH); // make sure we have -rw-rw-r--
+
+    // TODO: move those hard coded user names to snapmanager.conf
+    QString const owner("snapwebsites");
+    QString const group("www-data");
+    if(snap::chownnm(filename, owner, group) != 0)
+    {
+        // let admin know that this is not working
+        SNAP_LOG_WARNING("could not change owner and group of \"")(filename)("\" to \"")(owner)(":")(group)("\".");
+    }
+
     // keep a copy of our own information
     //
     //if(server == f_server_name)
     //{
     //    f_status = s;
     //}
+}
+
+
+void manager_daemon::modify_settings(snap::snap_communicator_message const & message)
+{
+    // sender wants at least one snapmanagerdaemon to acknowledge so we
+    // have to send this reply
+    //
+    snap::snap_communicator_message acknowledge;
+    acknowledge.reply_to(message);
+    acknowledge.set_command("MANAGERACKNOWLEDGE");
+    acknowledge.add_parameter("who", f_server_name);
+    f_messenger->send_message(acknowledge);
+
+    // now call the plugin change settings function
+    //
+    QString const field_name(message.get_parameter("field_name"));
+    QString const new_value(message.get_parameter("new_value"));
+    QString const old_value(message.get_parameter("old_value"));
+    QString const plugin_name(message.get_parameter("plugin_name"));
+
+    snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
+    if(p == nullptr)
+    {
+        SNAP_LOG_WARNING("received message requiring to access plugin \"")(plugin_name)("\" which is not installed on this system. This is a normal warning when using the \"Save Everywhere\" button.");
+        return;
+    }
+    plugin_base * pb(dynamic_cast<plugin_base *>(p));
+    if(pb == nullptr)
+    {
+        // this shoud never happens!
+        SNAP_LOG_ERROR("plugin \"")(plugin_name)("\" is not a snapmanager base plugin.");
+        return;
+    }
+    std::vector<QString> affected_services;
+    if(pb->apply_setting(field_name, new_value, old_value, affected_services))
+    {
+        // TODO: when apply_setting() worked, we want to "PING" the status
+        //       thread to re-read the info and save that in the
+        //       <host>.db file ASAP
+        //
+        //...
+
+        // force a resend because otherwise it may not notice the difference
+        // and want to send the same status again, but we have to have the
+        // [modified] removed ASAP...
+        //
+        f_status_runner.resend_status();
+
+        std::for_each(affected_services.begin(), affected_services.end(),
+                [=](QString const & service_name)
+                {
+                    snap::snap_communicator_message reload_config;
+                    reload_config.set_service(service_name);
+                    reload_config.set_command("RELOADCONFIG");
+                    f_messenger->send_message(reload_config);
+                }
+            );
+    }
 }
 
 

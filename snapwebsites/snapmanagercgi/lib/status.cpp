@@ -153,6 +153,10 @@ QString status_t::to_string() const
         //result += "[info]";
         break;
 
+    case state_t::STATUS_STATE_MODIFIED:
+        result += "[modified]";
+        break;
+
     case state_t::STATUS_STATE_WARNING:
         result += "[warning]";
         break;
@@ -232,6 +236,10 @@ bool status_t::from_string(QString const & line)
         else if(state == "info")
         {
             f_state = state_t::STATUS_STATE_INFO;
+        }
+        else if(state == "modified")
+        {
+            f_state = state_t::STATUS_STATE_MODIFIED;
         }
         else if(state == "warning")
         {

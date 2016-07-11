@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include <snapwebsites/snap_uri.h>
+
 #include <QDomElement>
 #include <QString>
 
@@ -71,7 +73,7 @@ public:
 
                         form(QString const & plugin_name, QString const & field_name, button_t button);
 
-    void                generate(QDomElement parent);
+    void                generate(QDomElement parent, snap::snap_uri const & uri);
     void                add_widget(widget::pointer_t w);
 
 private:

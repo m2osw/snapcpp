@@ -45,6 +45,8 @@ public:
     QString                 to_string() const;
     bool                    from_string(QString const & status);
 
+    QString const &         get_filename() const;
+
     // whether the read or write generated an error
     bool                    has_error() const;
 
