@@ -32,16 +32,16 @@
  * information about all the command line arguments.
  */
 #include    "advgetopt.h"
-#include    <stdarg.h>
-#include    <stdlib.h>
-#include    <errno.h>
-#include    <string.h>
 
 #include    <fstream>
 #include    <iostream>
 #include    <iomanip>
 #include    <sstream>
 
+#include    <stdarg.h>
+#include    <stdlib.h>
+#include    <errno.h>
+#include    <string.h>
 
 /** \brief The advgetopt environment to parse command line options.
  *

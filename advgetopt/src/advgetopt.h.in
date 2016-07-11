@@ -120,12 +120,12 @@ public:
 
     struct option
     {
-        char                f_opt;      // letter option (or '\0')
-        unsigned char       f_flags;    // set of flags
-        const char *        f_name;     // name of the option (i.e. "test" for --test, or NULL)
-        const char *        f_default;  // a default value if not NULL
-        const char *        f_help;     // help for this option, if NULL it's a hidden option; if ALIAS then this is the actual alias
-        argument_mode_t     f_arg_mode;
+        char                f_opt = '\0';           // letter option (or '\0')
+        unsigned char       f_flags = 0;            // set of flags
+        const char *        f_name = nullptr;       // name of the option (i.e. "test" for --test, or NULL)
+        const char *        f_default = nullptr;    // a default value if not NULL
+        const char *        f_help = nullptr;       // help for this option, if NULL it's a hidden option; if ALIAS then this is the actual alias
+        argument_mode_t     f_arg_mode = no_argument;
     };
 
                         getopt(int argc, char * argv[], option const * opts, const std::vector<std::string> configuration_files, char const * environment_variable_name);
@@ -171,7 +171,7 @@ private:
     std::string         f_program_fullname;
     std::string         f_program_name;
     std::string         f_project_name;
-    option const *      f_options;
+    option const *      f_options = nullptr;
     optmap_t            f_map;
 };
 
