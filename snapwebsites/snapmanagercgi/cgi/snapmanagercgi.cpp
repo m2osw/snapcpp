@@ -29,6 +29,7 @@
 
 #include "snapmanagercgi.h"
 
+#include "plugin_base.h"
 #include "server_status.h"
 
 // C lib
@@ -460,23 +461,9 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement root)
 
 void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const host)
 {
-    // define the path to the .db file
-    //
-    QString filename;
-    if(!f_config.contains("data_path"))
-    {
-        filename = host + ".db";
-    }
-    else
-    {
-        filename = QString("%1/%2.db")
-                    .arg(f_config["data_path"])
-                    .arg(host);
-    }
-
     // create, open, read the file
     //
-    server_status file(filename);
+    server_status file(f_data_path, host);
     if(!file.read_all())
     {
         // TODO: add error info in output
@@ -497,15 +484,26 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     QDomElement th(doc.createElement("th"));
     tr.appendChild(th);
 
-        QDomText text(doc.createTextNode("Name"));
+        QDomText text(doc.createTextNode(QString("Plugin")));
         th.appendChild(text);
 
     // output/table/tr/th[2]
     th = doc.createElement("th");
     tr.appendChild(th);
 
+        text = doc.createTextNode(QString("Name"));
+        th.appendChild(text);
+
+    // output/table/tr/th[3]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
         text = doc.createTextNode("Value");
         th.appendChild(text);
+
+    // we need the plugins for the following (non-raw) loop
+    //
+    load_plugins();
 
     // read each name/value pair
     //
@@ -514,68 +512,88 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     snap_manager::status_t::map_t const & statuses(file.get_statuses());
     for(auto const & s : statuses)
     {
-        if(s.second.get_plugin_name() == "header")
+        QString const & plugin_name(s.second.get_plugin_name());
+        if(plugin_name == "header")
         {
+            // ignore header fields because those are copies of other
+            // fields and no plugin can manage those anyway
             continue;
         }
+
+        snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
 
         // output/table/tr
         tr = doc.createElement("tr");
         table.appendChild(tr);
 
+        snap::snap_string_list tr_classes;
+        if(p == nullptr)
+        {
+            tr_classes << "missing-plugin";
+        }
+
         switch(s.second.get_state())
         {
         case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
-            tr.setAttribute("class", "warning");
+            tr_classes << "warnings";
             break;
 
         case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
         case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
-            tr.setAttribute("class", "error");
+            tr_classes << "errors";
             break;
 
         default:
             // do nothing otherwise
             break;
         }
+        if(!tr_classes.isEmpty())
+        {
+            tr.setAttribute("class", tr_classes.join(" "));
+        }
 
             // output/table/tr/td[1]
             QDomElement td(doc.createElement("td"));
             tr.appendChild(td);
 
-                //// output/table/td[1]/a
-                //QDomElement anchor(doc.createElement("a"));
-                //td.appendChild(anchor);
-
-                //QString const path(dir.gl_pathv[idx]);
-                //int basename_pos(path.lastIndexOf('/'));
-                //if(basename_pos < 0)
-                //{
-                //    // this should not happen, although it is perfectly
-                //    // possible that the administrator used "" as the
-                //    // path where statuses should be saved.
-                //    //
-                //    basename_pos = 0;
-                //}
-                //QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
-
-                //anchor.setAttribute("href", QString("?host=%1").arg(host));
-
-                text = doc.createTextNode(s.second.get_field_name());
+                text = doc.createTextNode(plugin_name);
                 td.appendChild(text);
 
             // output/table/tr/td[2]
             td = doc.createElement("td");
             tr.appendChild(td);
 
-                text = doc.createTextNode(s.second.get_value());
+                QString const & field_name(s.second.get_field_name());
+                text = doc.createTextNode(field_name);
                 td.appendChild(text);
+
+            // output/table/tr/td[3]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
+                bool managed(false);
+                plugin_base * pb(dynamic_cast<plugin_base *>(p));
+                if(pb != nullptr)
+                {
+                    // call that signal directly on that one plugin
+                    //
+                    managed = pb->display_value(td, s.second);
+                }
+
+                if(!managed)
+                {
+                    text = doc.createTextNode(s.second.get_value());
+                    td.appendChild(text);
+                }
     }
 }
 
 
 void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 {
+    // TODO: make use of the list_of_servers() function instead of having
+    //       our own copy of the glob() call
+    //
     struct err_callback
     {
         static int func(const char * epath, int eerrno)
@@ -606,7 +624,7 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
     int const r(glob(pattern.c_str(), GLOB_NOESCAPE, err_callback::func, &dir));
     if(r != 0)
     {
-        //globfree(&dir); -- needed in this case?
+        //globfree(&dir); -- needed on error?
 
         // do nothing when errors occur
         //
@@ -665,6 +683,13 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
         text = doc.createTextNode("Status");
         th.appendChild(text);
 
+    // output/table/tr/th[4]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+        text = doc.createTextNode("Err/War");
+        th.appendChild(text);
+
     bool has_error(false);
     for(size_t idx(0); idx < dir.gl_pathc; ++idx)
     {
@@ -676,9 +701,46 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
             QString const status(file.get_field("header", "status"));
             if(!status.isEmpty())
             {
+                // get number of errors
+                //
+                size_t error_count(0);
+                if(file.get_field_state("header", "errors") != snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+                {
+                    QString const errors(file.get_field("header", "errors"));
+                    error_count = errors.toLongLong();
+                }
+
+                // get number of warnings
+                //
+                size_t warning_count(0);
+                if(file.get_field_state("header", "warnings") != snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+                {
+                    QString const warnings(file.get_field("header", "warnings"));
+                    warning_count = warnings.toLongLong();
+                }
+
                 // output/table/tr
                 tr = doc.createElement("tr");
                 table.appendChild(tr);
+
+                snap::snap_string_list row_class;
+                if(error_count != 0)
+                {
+                    row_class << "errors";
+                }
+                if(warning_count != 0)
+                {
+                    row_class << "warnings";
+                }
+                if(status == "down" || status == "unknown")
+                {
+                    ++error_count;  // we consider this an error, so do +1 here
+                    row_class << "down";
+                }
+                if(!row_class.isEmpty())
+                {
+                    tr.setAttribute("class", row_class.join(" "));
+                }
 
                 // output/table/tr/td[1]
                 QDomElement td(doc.createElement("td"));
@@ -722,6 +784,14 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 
                     // output/table/tr/td[3]/<text>
                     text = doc.createTextNode(status);
+                    td.appendChild(text);
+
+                // output/table/tr/td[4]
+                td = doc.createElement("td");
+                tr.appendChild(td);
+
+                    // output/table/tr/td[4]/<text>
+                    text = doc.createTextNode(QString("%1/%2").arg(error_count).arg(warning_count));
                     td.appendChild(text);
             }
 

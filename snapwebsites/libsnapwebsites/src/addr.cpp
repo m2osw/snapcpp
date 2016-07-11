@@ -708,6 +708,24 @@ bool addr::operator == (addr const & rhs) const
 }
 
 
+/** \brief Check whether two addresses are not equal.
+ *
+ * This function compares the left hand side (this) and the right
+ * hand side (rhs) for inequality. If both represent the same IP
+ * address, then the function returns false.
+ *
+ * \warning
+ * The function only compares the address itself. The family, port,
+ * flow info, scope identifier, protocol are all ignored.
+ *
+ * \return true if \p this is not equal to \p rhs.
+ */
+bool addr::operator != (addr const & rhs) const
+{
+    return memcmp(&f_address.sin6_addr, &rhs.f_address.sin6_addr, sizeof(f_address.sin6_addr)) != 0;
+}
+
+
 /** \brief Compare two addresses to know which one is smaller.
  *
  * This function compares the left hand side (this) and the right

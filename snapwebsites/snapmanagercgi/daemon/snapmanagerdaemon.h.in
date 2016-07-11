@@ -94,20 +94,20 @@ class manager_status
 public:
     typedef void (manager_status::*status_function_t)();
 
-                                manager_status(manager_daemon *md, status_connection::pointer_t sc);
+                                    manager_status(manager_daemon *md, status_connection::pointer_t sc);
 
-    virtual void                run() override;
+    virtual void                    run() override;
 
-    void                        resend_status();
-    void                        set_snapmanager_frontend(QString const & snapmanager_frontend);
-    bool                        is_snapmanager_frontend(QString const & server_name) const;
-    bool                        has_snapmanager_frontend() const;
-    bool                        stop_now_prima() const;
+    void                            resend_status();
+    void                            set_snapmanager_frontend(QString const & snapmanager_frontend);
+    bool                            is_snapmanager_frontend(QString const & server_name) const;
+    snap::snap_string_list const &  get_snapmanager_frontend() const;
+    bool                            stop_now_prima() const;
 
-    void                        process_message(snap::snap_communicator_message const & message);
+    void                            process_message(snap::snap_communicator_message const & message);
 
 private:
-    int                         package_status(QString const & package_name, bool add_info_only_if_present);
+    int                             package_status(QString const & package_name, bool add_info_only_if_present);
 
     manager_daemon *                f_manager_daemon = nullptr;
     status_connection::pointer_t    f_status_connection;
@@ -125,26 +125,26 @@ class manager_daemon
 public:
     typedef std::shared_ptr<manager_daemon> pointer_t;
 
-                                manager_daemon();
-    virtual                     ~manager_daemon() override;
+                                    manager_daemon();
+    virtual                         ~manager_daemon() override;
 
-    void                        init(int argc, char * argv[]);
-    int                         run();
-    void                        process_message(snap::snap_communicator_message const & message);
-    void                        forward_message(snap::snap_communicator_message const & message);
-    void                        unreachable_message(snap::snap_communicator_message const & message);
-    virtual bool                has_snapmanager_frontend() const override;
-    virtual bool                stop_now_prima() const override;
+    void                            init(int argc, char * argv[]);
+    int                             run();
+    void                            process_message(snap::snap_communicator_message const & message);
+    void                            forward_message(snap::snap_communicator_message const & message);
+    void                            unreachable_message(snap::snap_communicator_message const & message);
+    virtual snap::snap_string_list const & get_snapmanager_frontend() const override;
+    virtual bool                    stop_now_prima() const override;
 
 private:
-    static void                 sighandler( int sig );
-    void                        stop(bool quitting);
+    static void                     sighandler( int sig );
+    void                            stop(bool quitting);
 
     // the MANAGE command and all of its sub-functions
-    void                        manage(snap::snap_communicator_message const & message);
-    void                            set_manager_status(snap::snap_communicator_message const & message);
-    void                            installer(snap::snap_communicator_message const & message);
-    int                                 install(QString const & package_name);
+    void                            manage(snap::snap_communicator_message const & message);
+    void                                set_manager_status(snap::snap_communicator_message const & message);
+    void                                installer(snap::snap_communicator_message const & message);
+    int                                     install(QString const & package_name);
 
     //QString                                     f_server_types;                         // sent to use by snapcommunicator
     int                                         f_communicator_port = 4040;             // snap server port

@@ -3726,7 +3726,7 @@ void snap_communicator_server::shutdown(bool full)
                 // we will get a HUP and do not need to remove this
                 // connection from here now
                 //
-                verify_command(remote_communicator, reply);
+                //verify_command(remote_communicator, reply);--this is another snapcommunicator, we trust that it knows about DISCONNECT
                 remote_communicator->send_message(reply);
             }
 

@@ -52,7 +52,9 @@ include_directories(
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    form.cpp                                    # Helper classes to generate forms
     manager.cpp                                 # Implements the core of the watchdog server
+    plugin_base.cpp                             # Base for all plugins to add a few direct callbacks
     server_status.cpp                           # Handle status data
     status.cpp                                  # Hanele one specific status
 )

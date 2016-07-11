@@ -87,39 +87,41 @@ class manager
 public:
     typedef std::shared_ptr<manager>         pointer_t;
 
-                        manager(bool daemon);
+                                    manager(bool daemon);
+    virtual                         ~manager() override;
 
-    void                init(int argc, char * argv[]);
+    void                            init(int argc, char * argv[]);
 
-    static pointer_t    instance();
-    virtual QString     description() const override;
-    virtual QString     dependencies() const override;
-    virtual void        bootstrap(snap::snap_child * snap);
+    static pointer_t                instance();
+    virtual QString                 description() const override;
+    virtual QString                 dependencies() const override;
+    virtual void                    bootstrap(snap::snap_child * snap);
 
-    void                load_plugins();
-    QString             get_public_ip() const;
-    virtual bool        has_snapmanager_frontend() const;
-    virtual bool        stop_now_prima() const;
+    void                            load_plugins();
+    snap::snap_string_list          list_of_servers();
+    QString                         get_public_ip() const;
+    virtual snap::snap_string_list const & get_snapmanager_frontend() const;
+    virtual bool                    stop_now_prima() const;
 
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
 
-    static int          get_version_major() __attribute__ ((const));
-    static int          get_version_minor() __attribute__ ((const));
-    static int          get_version_patch() __attribute__ ((const));
-    static char const * get_version_string() __attribute__ ((const));
+    static int                      get_version_major() __attribute__ ((const));
+    static int                      get_version_minor() __attribute__ ((const));
+    static int                      get_version_patch() __attribute__ ((const));
+    static char const *             get_version_string() __attribute__ ((const));
 
 protected:
-    bool const                                  f_daemon = false;
-    bool                                        f_debug = false;
-    advgetopt::getopt::pointer_t                f_opt;
-    snap::snap_config                           f_config;
-    QString                                     f_server_name;
-    QString                                     f_data_path = "/var/lib/snapwebsites/cluster-status";
-    QString                                     f_public_ip;
+    bool const                      f_daemon = false;
+    bool                            f_debug = false;
+    advgetopt::getopt::pointer_t    f_opt;
+    snap::snap_config               f_config;
+    QString                         f_server_name;
+    QString                         f_data_path = "/var/lib/snapwebsites/cluster-status";
+    QString                         f_public_ip;
+    QString                         f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
 
 private:
-    QString                                     f_log_conf = "/etc/snapwebsites/snapmanager.properties";
-    QString                                     f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
+    QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";
 };
 
 

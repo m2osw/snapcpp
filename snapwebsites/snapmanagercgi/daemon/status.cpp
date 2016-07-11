@@ -84,17 +84,64 @@ void manager_daemon::set_manager_status(snap::snap_communicator_message const & 
         return;
     }
 
+    // count errors and warnings and save that to the header
+    // note: we do not count the potential errors that we will be adding
+    //       to the header (because those would certainly be counted twice)
+    //
+    {
+        size_t const count(s.count_errors());
+        if(count > 0)
+        {
+            snap_manager::status_t header_errors(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                                 "header",
+                                                 "errors",
+                                                 QString("%1").arg(count));
+            s.set_field(header_errors);
+        }
+    }
+
+    {
+        size_t const count(s.count_warnings());
+        if(count > 0)
+        {
+            snap_manager::status_t header_warnings(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                                   "header",
+                                                   "warnings",
+                                                   QString("%1").arg(count));
+            s.set_field(header_warnings);
+        }
+    }
+
     // convert a few parameter to header parameters so they can be loaded
     // first without having to load the entire file (which can become
     // really big with time and additional packages to manage)
     //
-    snap_manager::status_t header_status(s.get_field_status("self", "status"));
-    header_status.set_plugin_name("header");
-    s.set_field(header_status);
+    if(s.get_field_state("self", "status") != snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+    {
+        snap_manager::status_t header_status(s.get_field_status("self", "status"));
+        header_status.set_plugin_name("header");
+        s.set_field(header_status);
+    }
+    else
+    {
+        snap_manager::status_t const header_status(snap_manager::status_t::state_t::STATUS_STATE_ERROR, "header", "status", "unknown");
+        s.set_field(header_status);
+    }
 
-    snap_manager::status_t header_ip(s.get_field_status("self", "ip"));
-    header_ip.set_plugin_name("header");
-    s.set_field(header_ip);
+    if(s.get_field_state("self", "ip") != snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+    {
+        snap_manager::status_t header_ip(s.get_field_status("self", "ip"));
+        header_ip.set_plugin_name("header");
+        s.set_field(header_ip);
+    }
+    else
+    {
+        // use a "valid" IP address, but not a correct IP address...
+        // (because consumers won't expect an empty string here)
+        //
+        snap_manager::status_t const header_ip(snap_manager::status_t::state_t::STATUS_STATE_ERROR, "header", "ip", "127.0.0.1");
+        s.set_field(header_ip);
+    }
 
     if(!s.write())
     {
