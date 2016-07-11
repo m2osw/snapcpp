@@ -133,8 +133,9 @@ private:
     QString                     f_snapdbproxy_addr;                 // to connect with snapdbproxy
     int                         f_snapdbproxy_port = 4042;          // to connect with snapdbproxy
     int                         f_priority = DEFAULT_PRIORITY;
-    int                         f_cron = 0;             // if 0, then off (i.e. not a cron task)
+    int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
+    bool                        f_restart_deps = false;
 };
 
 // vim: ts=4 sw=4 et

@@ -892,6 +892,8 @@ void service::mark_process_as_dead()
     {
         dep->set_stopping();
     }
+    //
+    f_restart_deps = true;
 
     // do we know we sent the STOP signal? if so, remove outselves
     // from snapcommunicator
@@ -1464,6 +1466,20 @@ bool service::run()
     }
     else
     {
+        if( f_restart_deps )
+        {
+            auto const snap_init( f_snap_init.lock() );
+            vector_t depends_on_list;
+            snap_init->get_depends_on_list( f_service_name, depends_on_list );
+            for( auto const& dep : depends_on_list )
+            {
+                dep->f_stopping = 0;
+                dep->set_enable( true );
+            }
+            //
+            f_restart_deps = false;
+        }
+
         // here we are considered started and running
         //
         f_started = true;
