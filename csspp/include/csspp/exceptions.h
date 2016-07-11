@@ -72,7 +72,7 @@ public:
     int     exit_code() const { return f_exit_code; }
 
 private:
-    int     f_exit_code;
+    int     f_exit_code = 0;
 };
 
 } // namespace csspp

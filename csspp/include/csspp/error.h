@@ -88,8 +88,8 @@ public:
     ~safe_error_t();
 
 private:
-    error_count_t           f_error_count;
-    error_count_t           f_warning_count;
+    error_count_t           f_error_count = 0;
+    error_count_t           f_warning_count = 0;
 };
 
 class safe_error_stream_t
@@ -111,8 +111,8 @@ public:
     bool                    warning_happened() const;
 
 private:
-    error_count_t           f_error_count;
-    error_count_t           f_warning_count;
+    error_count_t           f_error_count = 0;
+    error_count_t           f_warning_count = 0;
 };
 
 } // namespace csspp
