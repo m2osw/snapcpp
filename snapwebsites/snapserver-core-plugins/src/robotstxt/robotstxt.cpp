@@ -17,6 +17,7 @@
 
 #include "robotstxt.h"
 
+#include "log.h"
 #include "not_used.h"
 
 #include <iostream>
@@ -421,7 +422,7 @@ void robotstxt::add_robots_txt_field(QString const & value,
  *
  * \param[in,out] ipath  The path of the page for which links are checked to determine the robots setup.
  */
-void robotstxt::define_robots(content::path_info_t& ipath)
+void robotstxt::define_robots(content::path_info_t & ipath)
 {
     if(ipath.get_key() != f_robots_path)
     {
@@ -524,12 +525,12 @@ void robotstxt::on_generate_header_content(content::path_info_t & ipath, QDomEle
  */
 void robotstxt::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    QDomDocument doc(page.ownerDocument());
-
     define_robots(ipath);
     if(!f_robots_cache.isEmpty())
     {
-        // /snap/body/robots/tracking/...(noindex,noarchive,etc.)...
+        QDomDocument doc(page.ownerDocument());
+
+        // /snap/body/robots/tracking/...(noindex noarchive etc.)...
         QDomElement created_root(doc.createElement("robots"));
         body.appendChild(created_root);
         QDomElement created(doc.createElement("tracking"));

@@ -105,6 +105,7 @@ public:
     int                             get_protocol() const;
 
     bool                            operator == (addr const & rhs) const;
+    bool                            operator != (addr const & rhs) const;
     bool                            operator < (addr const & rhs) const;
 
 private:

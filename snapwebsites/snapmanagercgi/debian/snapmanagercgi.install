@@ -2,3 +2,5 @@ usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
 conf/snapmanagercgi.properties conf/snapmanagerdaemon.properties conf/snapmanager.conf conf/snapmanagercgi-parser.xsl etc/snapwebsites/
+conf/snap-bundles-apache2.conf etc/apache2/sites-available
+conf/snap-bundles-footer.html var/www/bundles

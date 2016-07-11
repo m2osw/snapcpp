@@ -17,6 +17,8 @@
 
 #include "self.h"
 
+#include "lib/form.h"
+
 #include "not_reached.h"
 #include "not_used.h"
 
@@ -168,7 +170,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
     }
 
     {
-        snap_manager::status_t const up(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "status", "Up");
+        snap_manager::status_t const up(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "status", "up");
         server_status.set_field(up);
     }
 
@@ -177,11 +179,64 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(ip);
     }
 
-    if(!f_snap->has_snapmanager_frontend())
     {
-        snap_manager::status_t const no_frontend(snap_manager::status_t::state_t::STATUS_STATE_WARNING, get_plugin_name(), "no_frontend", "The snapmanager_frontend variable is empty. This is most likely not what you want.");
-        server_status.set_field(no_frontend);
+        snap::snap_string_list const & frontend_servers(f_snap->get_snapmanager_frontend());
+        snap_manager::status_t const frontend(
+                    frontend_servers.empty()
+                            ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                            : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                    get_plugin_name(),
+                    "snapmanager_frontend",
+                    frontend_servers.join(","));
+        server_status.set_field(frontend);
     }
+}
+
+
+/** \brief Transform a value to HTML for display.
+ *
+ * This function expects the name of a field and its value. It then adds
+ * the necessary HTML to the specified element to display that value.
+ *
+ * If the value is editable, then the function creates a form with the
+ * necessary information (hidden fields) to save the data as required
+ * by that field (i.e. update a .conf/.xml file, create a new file,
+ * remove a file, etc.)
+ *
+ * \param[in] server_status  The map of statuses.
+ * \param[in] s  The field being worked on.
+ *
+ * \return true if we handled this field.
+ */
+bool self::display_value(QDomElement parent, snap_manager::status_t const & s)
+{
+    QDomDocument doc(parent.ownerDocument());
+
+    if(s.get_field_name() == "snapmanager_frontend")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "List of Front End Servers"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , QString("This is a list of Front End servers that accept requests to snapmanager.cgi. Only the few computers that accept such request need to be named here. Names are expected to be comma separated.%1")
+                                .arg(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                    ? " <span style=\"color: red;\">The Warning Status is due to the fact that the list on this computer is currently empty. If it was not defined yet, add the value. If it is defined on other servers, you may want to go on that server page and click Save Everywhere from there.</span>"
+                                    : "")
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent);
+
+        return true;
+    }
+
+    return false;
 }
 
 

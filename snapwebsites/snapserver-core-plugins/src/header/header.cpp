@@ -59,7 +59,7 @@ const char * get_name(name_t name)
  * This function is used to initialize the header plugin object.
  */
 header::header()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -231,7 +231,7 @@ void header::on_generate_header_content(content::path_info_t & ipath, QDomElemen
 {
     QDomDocument doc(header_dom.ownerDocument());
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
 
     // TODO we actually most probably want a location where the user put that
     //      information in a unique place (i.e. the header settings, see the
@@ -248,6 +248,46 @@ void header::on_generate_header_content(content::path_info_t & ipath, QDomElemen
 
             QDomText text(doc.createTextNode(generator.stringValue()));
             created.appendChild(text);
+        }
+    }
+
+
+// WARNING WARNING WARNING
+// WARNING WARNING WARNING
+// WARNING WARNING WARNING
+//   at this time this is hard coded; instead, we want to allow the
+//   administrator to define the general refererrer policy and
+//   possibly set a different policy depending on the page the user
+//   accesses; and if at or under "/admin", then make sure that at
+//   most we have "origin" (i.e. "none", "origin-when-cross-origin",
+//   etc. have a higher priority and would be used instead)
+//
+//   TODO: write a class that searches for the referrer policy
+//         and keeps the most restrictive one then we always
+//         specify the policy as follow (unless the user choose
+//         "browser-default" which would mean sending "" and let
+//         the browser do whatever it wants, so we might as well
+//         not send it in that case.)
+//
+
+    {   // snap/head/metadata/desc[@type='user']/data/origin
+        snap_string_list const & segments(ipath.get_segments());
+        if(segments.size() > 0
+        && segments[0] == "admin")
+        {
+            QDomElement desc(doc.createElement("desc"));
+            desc.setAttribute("type", "user");
+            desc.setAttribute("name", "referrer");
+            metadata.appendChild(desc);
+
+            QDomElement data(doc.createElement("data"));
+            desc.appendChild(data);
+
+            QDomText referrer(doc.createTextNode("origin"));
+            data.appendChild(referrer);
+
+            // Set the HTTP header too
+            f_snap->set_header("Referrer-Policy", "origin");
         }
     }
 }
