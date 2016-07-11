@@ -1197,6 +1197,7 @@ void snap_init::init_message_functions()
                 {
                     services << s->get_service_name();
                 }
+                SNAP_LOG_TRACE("READY: list to send to server: [")(services.join(","))("].");
                 reply.add_parameter("list", services.join(","));
 
                 f_listener_connection->send_message(reply);

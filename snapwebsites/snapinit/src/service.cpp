@@ -637,6 +637,8 @@ done:;
  */
 void service::process_timeout()
 {
+    SNAP_LOG_TRACE("service::process_timeout() AT HEAD for service '")(f_service_name)("'");
+
     // if we are stopping we enter a completely different mode that
     // allows us to send SIGTERM and SIGKILL to the Unix process
     //
@@ -874,11 +876,15 @@ bool service::is_dependency_of( const QString& service_name )
 
 void service::mark_process_as_dead()
 {
+    SNAP_LOG_TRACE("service::mark_process_as_dead(), service='")(f_service_name)("'");
+
     // do we know we sent the STOP signal? if so, remove outselves
     // from snapcommunicator
     //
     if( f_stopping != 0 )
     {
+        SNAP_LOG_TRACE("service='")(f_service_name)("' has died, removing from communicator.");
+
         // clearly mark that the service is dead
         //
         f_stopping = SIGCHLD;
@@ -908,6 +914,7 @@ void service::mark_process_as_dead()
     //
     if( cron_task() )
     {
+        SNAP_LOG_TRACE("service='")(f_service_name)("' is a cron task. Ignoring.");
         return;
     }
 
@@ -941,9 +948,12 @@ void service::mark_process_as_dead()
     //
     if( failed() )
     {
+        SNAP_LOG_TRACE("service='")(f_service_name)("' has died too many times.");
         int64_t const recovery(get_recovery());
         if( recovery <= 0 )
         {
+            SNAP_LOG_TRACE("service='")(f_service_name)("' cannot recover! Removing from communicator.");
+
             // this service cannot recover...
 
             // make sure the timer is stopped
@@ -976,6 +986,8 @@ void service::mark_process_as_dead()
     }
     else
     {
+        SNAP_LOG_TRACE("setting big delay for service='")(f_service_name)("'.");
+
         // in this case we use a default delay of one second to
         // avoid swamping the CPU with many restart all at once
         //
@@ -1138,6 +1150,8 @@ bool service::run()
         return false;
     }
 
+    SNAP_LOG_TRACE("service::run() attempting to start service '")(f_service_name)("'.");
+
     // Check to make sure dependent processes have started first.
     // Defer if not.
     //
@@ -1157,6 +1171,7 @@ bool service::run()
                 // Return at this point, since dependent services are not
                 // started and registered yet...
                 //
+                SNAP_LOG_WARNING("Dependency service '")(service_name)("' has not yet started for parent service '")(f_service_name)("'. Deferring start.");
                 return false;
             }
         }
