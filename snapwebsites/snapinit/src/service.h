@@ -74,6 +74,7 @@ public:
     bool                        run();
     bool                        is_running() const;
     bool                        is_service_required();
+    void                        set_starting();
     void                        set_stopping();
     bool                        is_stopping() const;
     bool                        has_stopped() const;

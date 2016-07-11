@@ -1468,13 +1468,14 @@ bool service::run()
     {
         if( f_restart_deps )
         {
+            SNAP_LOG_TRACE("Restarting services that depend on '")(f_service_name)("'.");
+
             auto const snap_init( f_snap_init.lock() );
             vector_t depends_on_list;
             snap_init->get_depends_on_list( f_service_name, depends_on_list );
             for( auto const& dep : depends_on_list )
             {
-                dep->f_stopping = 0;
-                dep->set_enable( true );
+                dep->set_starting();
             }
             //
             f_restart_deps = false;
@@ -1639,6 +1640,43 @@ bool service::is_running() const
 bool service::is_service_required()
 {
     return f_required;
+}
+
+
+/** \brief Mark this service as starting.
+ *
+ * Mark a service as starting, and start the timer. Any processes that are
+ * dependent on this process running will likewise be marked as starting. They
+ * will not start until this process has fully started.
+ *
+ * \sa process_timeout()
+ */
+void service::set_starting()
+{
+    if(is_running())
+    {
+        return;
+    }
+
+    f_stopping = 0;
+
+    int64_t const SNAPINIT_STOP_DELAY = 1000000LL;
+    set_enable(true);
+    set_timeout_delay(SNAPINIT_STOP_DELAY);
+    set_timeout_date(-1); // ignore any date timeout
+
+    // Now set stopping on all processes which depend on this service:
+    //
+    const auto snap_init( f_snap_init.lock() );
+    vector_t depends_on_list;
+    snap_init->get_depends_on_list( f_service_name, depends_on_list );
+    for( const auto& svc : depends_on_list )
+    {
+        if( svc->has_stopped() )
+        {
+            svc->set_starting();
+        }
+    }
 }
 
 
