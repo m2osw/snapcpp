@@ -32,6 +32,7 @@
 
 #include <sys/resource.h>
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <vector>
@@ -139,6 +140,11 @@ private:
     int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
     bool                        f_restart_deps = false;
+
+    // For future refactoring. Not yet implemented.
+    //
+    typedef std::function<void(service*)> func_t;
+    typedef std::queue<func_t>            func_queue_t;
 };
 
 // vim: ts=4 sw=4 et
