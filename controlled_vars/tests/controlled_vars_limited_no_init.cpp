@@ -29,8 +29,12 @@
 //
 
 // make sure we compile in debug mode otherwise we don't get the throws.
+#ifndef CONTROLLED_VARS_DEBUG
 #define CONTROLLED_VARS_DEBUG
+#endif
+#ifndef CONTROLLED_VARS_LIMITED
 #define CONTROLLED_VARS_LIMITED
+#endif
 #include "controlled_vars_limited_no_init.h"
 #include <stdio.h>
 #include <stdlib.h>

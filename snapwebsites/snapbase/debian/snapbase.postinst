@@ -18,12 +18,11 @@ then
         adduser --quiet \
             --system \
             --ingroup snapwebsites \
-            --quiet \
             --disabled-login \
             --disabled-password \
             --home /var/lib/snapwebsites \
             --no-create-home \
-            -gecos "Snapwebsites installation" \
+            -gecos "Snapwebsites Daemons and Tools" \
             snapwebsites
     fi
 

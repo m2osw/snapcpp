@@ -90,7 +90,7 @@ server_status::server_status(QString const & filename)
  * \param[in] server  The server this data is linked to.
  */
 server_status::server_status(QString const & data_path, QString const & server)
-    : f_filename(QString("%1/%2.db").arg(data_path).arg(server).toUtf8().data())
+    : f_filename(QString("%1/%2.db").arg(data_path).arg(server))
 {
 }
 
@@ -331,6 +331,19 @@ bool server_status::from_string(QString const & status)
 }
 
 
+/** \brief Retrieve the filename of the host being managed.
+ *
+ * This function returns the filename as used by the read_all(),
+ * read_header(), and write() functions.
+ *
+ * \return The name of the status file.
+ */
+QString const & server_status::get_filename() const
+{
+    return f_filename;
+}
+
+
 /** \brief Check whether the file had errors.
  *
  * If an error occurs while reading a file, this flag will be set to
@@ -475,28 +488,53 @@ bool server_status::read_header()
  */
 bool server_status::write()
 {
-    // TODO: create a sub-class for RAII close() and f_has_error = true
-    //
+    class auto_close
+    {
+    public:
+        auto_close(server_status & s, bool & has_error)
+            : f_server_status_ref(s)
+            , f_has_error_ref(has_error)
+        {
+        }
+
+        ~auto_close()
+        {
+            if(!f_success)
+            {
+                f_server_status_ref.close();
+                f_has_error_ref = true;
+            }
+        }
+
+        void no_errors()
+        {
+            f_success = true;
+        }
+
+    private:
+        bool            f_success = false;
+        server_status & f_server_status_ref;
+        bool &          f_has_error_ref;
+    };
+    auto_close ensure_close(*this, f_has_error);
 
     close();
 
     if(f_filename.isEmpty())
     {
         SNAP_LOG_ERROR("no filename specified to save snapmanagerdamon status.");
-        f_has_error = true;
         return false;
     }
 
     // open the file
     //
-    f_fd = ::open(f_filename.toUtf8().data(), O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    f_fd = ::open(f_filename.toUtf8().data(), O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
     if(f_fd < 0)
     {
         f_fd = -1;
         SNAP_LOG_ERROR("could not open file \"")
                       (f_filename)
                       ("\" to save snapmanagerdamon status.");
-        f_has_error = true;
         return false;
     }
 
@@ -504,11 +542,9 @@ bool server_status::write()
     //
     if(::flock(f_fd, LOCK_EX) != 0)
     {
-        close();
         SNAP_LOG_ERROR("could not lock file \"")
                       (f_filename)
                       ("\" to write snapmanagerdamon status.");
-        f_has_error = true;
         return false;
     }
 
@@ -517,11 +553,9 @@ bool server_status::write()
     //
     if(ftruncate(f_fd, 0) != 0)
     {
-        close();
         SNAP_LOG_ERROR("could not truncate file \"")
                       (f_filename)
                       ("\" to write snapmanagerdamon status.");
-        f_has_error = true;
         return false;
     }
 
@@ -531,31 +565,25 @@ bool server_status::write()
     f_file = fdopen(f_fd, "wb");
     if(f_file == nullptr)
     {
-        close();
         SNAP_LOG_ERROR("could not allocate a FILE* for file \"")
                       (f_filename)
                       ("\" to write snapmanagerdamon status.");
-        f_has_error = true;
         return false;
     }
 
     // write the file magic
     if(fwrite(g_status_file_magic, sizeof g_status_file_magic - 1, 1, f_file) != 1)
     {
-        close();
         SNAP_LOG_ERROR("could not write magic to FILE* for file \"")
                       (f_filename)
                       ("\".");
-        f_has_error = true;
         return false;
     }
     if(fwrite("\n", 1, 1, f_file) != 1)
     {
-        close();
         SNAP_LOG_ERROR("could not write new line after magic in \"")
                       (f_filename)
                       ("\".");
-        f_has_error = true;
         return false;
     }
 
@@ -571,20 +599,16 @@ bool server_status::write()
             QByteArray const status_utf8(status.toUtf8());
             if(fwrite(status_utf8.data(), status_utf8.size(), 1, f_file) != 1)
             {
-                close();
                 SNAP_LOG_ERROR("could not write status data header to \"")
                               (f_filename)
                               ("\".");
-                f_has_error = true;
                 return false;
             }
             if(fwrite("\n", 1, 1, f_file) != 1)
             {
-                close();
                 SNAP_LOG_ERROR("could not write new line after status header in \"")
                               (f_filename)
                               ("\".");
-                f_has_error = true;
                 return false;
             }
         }
@@ -606,20 +630,16 @@ bool server_status::write()
             QByteArray const status_utf8(status.toUtf8());
             if(fwrite(status_utf8.data(), status_utf8.size(), 1, f_file) != 1)
             {
-                close();
                 SNAP_LOG_ERROR("could not write status data to \"")
                               (f_filename)
                               ("\".");
-                f_has_error = true;
                 return false;
             }
             if(fwrite("\n", 1, 1, f_file) != 1)
             {
-                close();
                 SNAP_LOG_ERROR("could not write new line after status in \"")
                               (f_filename)
                               ("\".");
-                f_has_error = true;
                 return false;
             }
         }
@@ -631,6 +651,11 @@ bool server_status::write()
     // actually get saved to the file and to free the memory.
     //
     close();
+
+    // we do not want the RAII close() because it also sets the
+    // f_has_error field to true!
+    //
+    ensure_close.no_errors();
 
     return true;
 }

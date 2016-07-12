@@ -32,16 +32,16 @@
  * information about all the command line arguments.
  */
 #include    "advgetopt.h"
-#include    <stdarg.h>
-#include    <stdlib.h>
-#include    <errno.h>
-#include    <string.h>
 
 #include    <fstream>
 #include    <iostream>
 #include    <iomanip>
 #include    <sstream>
 
+#include    <stdarg.h>
+#include    <stdlib.h>
+#include    <errno.h>
+#include    <string.h>
 
 /** \brief The advgetopt environment to parse command line options.
  *
@@ -317,7 +317,7 @@ void getopt::reset(int argc
     size_t count(0);
     std::map<char, int> opt_by_short_name;
     std::map<std::string, int> opt_by_long_name;
-    for(int opts_max(0); opts[opts_max].f_arg_mode != end_of_options; ++opts_max)
+    for(int opts_max(0); opts[opts_max].f_arg_mode != argument_mode_t::end_of_options; ++opts_max)
     {
         if(opts[opts_max].f_opt != '\0')
         {
@@ -332,25 +332,25 @@ void getopt::reset(int argc
         {
             switch(opts[opts_max].f_arg_mode)
             {
-            case required_argument:
-            case optional_argument:
-            case required_multiple_argument:
-            case optional_multiple_argument:
-            case required_long:
-            case optional_long:
-            case required_multiple_long:
-            case optional_multiple_long:
+            case argument_mode_t::required_argument:
+            case argument_mode_t::optional_argument:
+            case argument_mode_t::required_multiple_argument:
+            case argument_mode_t::optional_multiple_argument:
+            case argument_mode_t::required_long:
+            case argument_mode_t::optional_long:
+            case argument_mode_t::required_multiple_long:
+            case argument_mode_t::optional_multiple_long:
                 throw getopt_exception_invalid("an unnamed option is only valid with a no argument, default argument, help argument, and end of options");
 
-            case no_argument:
-            case default_argument:
-            case default_multiple_argument:
+            case argument_mode_t::no_argument:
+            case argument_mode_t::default_argument:
+            case argument_mode_t::default_multiple_argument:
                 opt_by_long_name["--"] = opts_max;
                 ++count;
                 break;
 
-            case help_argument:
-            case end_of_options:
+            case argument_mode_t::help_argument:
+            case argument_mode_t::end_of_options:
                 break;
 
             }
@@ -374,8 +374,8 @@ void getopt::reset(int argc
         }
         switch(opts[opts_max].f_arg_mode)
         {
-        case default_argument:
-        case default_multiple_argument: // this is contradictory with the if() below!
+        case argument_mode_t::default_argument:
+        case argument_mode_t::default_multiple_argument: // this is contradictory with the if() below!
             if(def_opt != NO_DEFAULT_OPT)
             {
                 // we cannot have more than one default option
@@ -478,7 +478,7 @@ void getopt::reset(int argc
                         }
                         if(*s != '\0' && *s != '=')
                         {
-                            usage(error, "option name from \"%s\" on line %d in configuration file \"%s\" cannot include a space, missing = sign?",
+                            usage(status_t::error, "option name from \"%s\" on line %d in configuration file \"%s\" cannot include a space, missing = sign?",
                                             str.c_str(), line, filename.c_str());
                             /*NOTREACHED*/
                         }
@@ -494,25 +494,25 @@ void getopt::reset(int argc
                 }
                 if(e - str_name == 0)
                 {
-                    usage(error, "no option name in \"%s\" on line %d from configuration file \"%s\", missing name before = sign?",
+                    usage(status_t::error, "no option name in \"%s\" on line %d from configuration file \"%s\", missing name before = sign?",
                                     str.c_str(), line, filename.c_str());
                     /*NOTREACHED*/
                 }
                 if(*str_name == '-')
                 {
-                    usage(error, "option names in configuration files cannot start with a dash in \"%s\" on line %d from configuration file \"%s\"",
+                    usage(status_t::error, "option names in configuration files cannot start with a dash in \"%s\" on line %d from configuration file \"%s\"",
                                     str.c_str(), line, filename.c_str());
                     /*NOTREACHED*/
                 }
                 std::string name(str_name, e - str_name);
                 if(opt_by_long_name.find(name) == opt_by_long_name.end())
                 {
-                    usage(error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), filename.c_str());
+                    usage(status_t::error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), filename.c_str());
                     /*NOTREACHED*/
                 }
                 if((opts[opt_by_long_name[name.c_str()]].f_flags & GETOPT_FLAG_CONFIGURATION_FILE) == 0)
                 {
-                    usage(error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
+                    usage(status_t::error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
                     /*NOTREACHED*/
                 }
                 if(*s == '=')
@@ -685,12 +685,12 @@ void getopt::parse_arguments(int argc, char * argv[], option const * opts, int d
                     // is taken as "filenames" (or whatever the tool expects)
                     if(def_opt == NO_DEFAULT_OPT)
                     {
-                        usage(error, "default options not defined; thus -- is not accepted by this program");
+                        usage(status_t::error, "default options not defined; thus -- is not accepted by this program");
                         /*NOTREACHED*/
                     }
                     if(only_environment_variable && (opts[def_opt].f_flags & GETOPT_FLAG_ENVIRONMENT_VARIABLE) == 0)
                     {
-                        usage(error, "option -- is not supported in the environment variable");
+                        usage(status_t::error, "option -- is not supported in the environment variable");
                         /*NOTREACHED*/
                     }
                     // in this case we do NOT test whether an argument uses
@@ -707,12 +707,12 @@ void getopt::parse_arguments(int argc, char * argv[], option const * opts, int d
                     // programmer defined options
                     if(opt_by_long_name.find(argv[i] + 2) == opt_by_long_name.end())
                     {
-                        usage(error, "option %s is not supported", argv[i]);
+                        usage(status_t::error, "option %s is not supported", argv[i]);
                         /*NOTREACHED*/
                     }
                     if(only_environment_variable && (opts[opt_by_long_name[argv[i] + 2]].f_flags & GETOPT_FLAG_ENVIRONMENT_VARIABLE) == 0)
                     {
-                        usage(error, "option %s is not supported in the environment variable", argv[i]);
+                        usage(status_t::error, "option %s is not supported in the environment variable", argv[i]);
                         /*NOTREACHED*/
                     }
                     add_options(opts + opt_by_long_name[argv[i] + 2], i, argc, argv);
@@ -725,12 +725,12 @@ void getopt::parse_arguments(int argc, char * argv[], option const * opts, int d
                     // stdin (a '-' by itself)
                     if(def_opt == NO_DEFAULT_OPT)
                     {
-                        usage(error, "no default options defined; thus - is not accepted by this tool");
+                        usage(status_t::error, "no default options defined; thus - is not accepted by this tool");
                         /*NOTREACHED*/
                     }
                     if(only_environment_variable && (opts[def_opt].f_flags & GETOPT_FLAG_ENVIRONMENT_VARIABLE) == 0)
                     {
-                        usage(error, "option - is not supported in the environment variable");
+                        usage(status_t::error, "option - is not supported in the environment variable");
                         /*NOTREACHED*/
                     }
                     // this is similar to a default option by itself
@@ -745,12 +745,12 @@ void getopt::parse_arguments(int argc, char * argv[], option const * opts, int d
                     {
                         if(opt_by_short_name.find(argv[k][j]) == opt_by_short_name.end())
                         {
-                            usage(error, "option -%c is not supported", argv[k][j]);
+                            usage(status_t::error, "option -%c is not supported", argv[k][j]);
                             /*NOTREACHED*/
                         }
                         if(only_environment_variable && (opts[opt_by_short_name[argv[k][j]]].f_flags & GETOPT_FLAG_ENVIRONMENT_VARIABLE) == 0)
                         {
-                            usage(error, "option -%c is not supported in the environment variable", argv[k][j]);
+                            usage(status_t::error, "option -%c is not supported in the environment variable", argv[k][j]);
                             /*NOTREACHED*/
                         }
                         add_options(opts + opt_by_short_name[argv[k][j]], i, argc, argv);
@@ -763,12 +763,12 @@ void getopt::parse_arguments(int argc, char * argv[], option const * opts, int d
             // direct entry (filename or whatever the tool expects as a default)
             if(def_opt == NO_DEFAULT_OPT)
             {
-                usage(error, "no default option defined; thus stand alone parameters are not accepted by this tool");
+                usage(status_t::error, "no default option defined; thus stand alone parameters are not accepted by this tool");
                 /*NOTREACHED*/
             }
             if(only_environment_variable && (opts[def_opt].f_flags & GETOPT_FLAG_ENVIRONMENT_VARIABLE) == 0)
             {
-                usage(error, "default options are not supported in the environment variable");
+                usage(status_t::error, "default options are not supported in the environment variable");
                 /*NOTREACHED*/
             }
             add_option(opts + def_opt, argv[i]);
@@ -877,7 +877,7 @@ char const * getopt::get_default(std::string const & name) const
     }
 
     int long_option(name.length() != 1);
-    for(int i(0); f_options[i].f_arg_mode != end_of_options; ++i)
+    for(int i(0); f_options[i].f_arg_mode != argument_mode_t::end_of_options; ++i)
     {
         if(long_option)
         {
@@ -887,9 +887,9 @@ char const * getopt::get_default(std::string const & name) const
                 {
                     switch(f_options[i].f_arg_mode)
                     {
-                    case no_argument:
-                    case default_argument:
-                    case default_multiple_argument:
+                    case argument_mode_t::no_argument:
+                    case argument_mode_t::default_argument:
+                    case argument_mode_t::default_multiple_argument:
                         if(name == "--")
                         {
                             return f_options[i].f_default;
@@ -1001,7 +1001,7 @@ long getopt::get_long(std::string const & name, int idx, long min, long max)
                 opt.f_int.push_back(strtol(s, &end, 10));
                 if(end != s + opt.f_val[i].size())
                 {
-                    usage(error, "invalid number (%s) in parameter --%s", s, name.c_str());
+                    usage(status_t::error, "invalid number (%s) in parameter --%s", s, name.c_str());
                     /*NOTREACHED*/
                 }
             }
@@ -1011,7 +1011,7 @@ long getopt::get_long(std::string const & name, int idx, long min, long max)
     }
     if(result < min || result > max)
     {
-        usage(error, "%ld is out of bounds (%ld..%ld inclusive) in parameter --%s", result, min, max, name.c_str());
+        usage(status_t::error, "%ld is out of bounds (%ld..%ld inclusive) in parameter --%s", result, min, max, name.c_str());
         /*NOTREACHED*/
     }
     return result;
@@ -1111,13 +1111,13 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
     std::stringstream ss;
 
     unsigned char errflag(0);
-    const bool no_error_status = status == no_error || status == no_error_nobr;
+    bool const no_error_status(status == status_t::no_error || status == status_t::no_error_nobr);
     if( !no_error_status )
     {
         errflag = GETOPT_FLAG_SHOW_USAGE_ON_ERROR;
     }
 
-    for( int i(0); f_options[i].f_arg_mode != end_of_options; ++i )
+    for( int i(0); f_options[i].f_arg_mode != argument_mode_t::end_of_options; ++i )
     {
         // ignore entries with a nullptr pointer
         // ignore entries representing an alias
@@ -1127,7 +1127,7 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
             && (opt.f_flags & advgetopt::getopt::GETOPT_FLAG_ALIAS) == 0
             && (((opt.f_flags & errflag) == 0) ^ !no_error_status))
         {
-            if( opt.f_arg_mode == help_argument )
+            if( opt.f_arg_mode == argument_mode_t::help_argument )
             {
                 ss << process_help_string(opt.f_help) << std::endl;
             }
@@ -1135,11 +1135,11 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
             {
                 std::stringstream opt_ss;
 
-                if( opt.f_arg_mode == default_argument )
+                if( opt.f_arg_mode == argument_mode_t::default_argument )
                 {
                     opt_ss << "[default argument]";
                 }
-                else if( opt.f_arg_mode == default_multiple_argument)
+                else if( opt.f_arg_mode == argument_mode_t::default_multiple_argument)
                 {
                     opt_ss << "[default arguments]";
                 }
@@ -1169,26 +1169,26 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
                     }
                     switch(opt.f_arg_mode)
                     {
-                        case no_argument:
+                        case argument_mode_t::no_argument:
                             break;
 
-                        case required_argument:
-                        case required_long:
+                        case argument_mode_t::required_argument:
+                        case argument_mode_t::required_long:
                             opt_ss << " <arg>";
                             break;
 
-                        case optional_argument:
-                        case optional_long:
+                        case argument_mode_t::optional_argument:
+                        case argument_mode_t::optional_long:
                             opt_ss << " [<arg>]";
                             break;
 
-                        case required_multiple_argument:
-                        case required_multiple_long:
+                        case argument_mode_t::required_multiple_argument:
+                        case argument_mode_t::required_multiple_long:
                             opt_ss << " <arg> {<arg>}";
                             break;
 
-                        case optional_multiple_argument:
-                        case optional_multiple_long:
+                        case argument_mode_t::optional_multiple_argument:
+                        case argument_mode_t::optional_multiple_long:
                             opt_ss << " {<arg>}";
                             break;
 
@@ -1238,7 +1238,7 @@ void getopt::usage(status_t status, char const * msg, ...)
     //std::string default_arg_help;
     std::string options( assemble_options( status /*, default_arg_help*/ ) );
 
-    bool const no_error_status(status == no_error || status == no_error_nobr);
+    bool const no_error_status(status == status_t::no_error || status == status_t::no_error_nobr);
     if( !no_error_status )
     {
         char const * errstr(nullptr);
@@ -1248,11 +1248,11 @@ void getopt::usage(status_t status, char const * msg, ...)
         //case no_error:
         //case no_error_nobr:
 
-        case warning:
+        case status_t::warning:
             errstr = "warning";
             break;
 
-        case fatal:
+        case status_t::fatal:
             errstr = "fatal error";
             break;
 
@@ -1398,22 +1398,22 @@ void getopt::add_options(option const * opt, int & i, int argc, char ** argv)
 {
     switch(opt->f_arg_mode)
     {
-    case no_argument:
+    case argument_mode_t::no_argument:
         // this value should not be taken in account
         add_option(opt, opt->f_default);
         break;
 
-    case required_argument:
-    case required_long:
+    case argument_mode_t::required_argument:
+    case argument_mode_t::required_long:
         if(i + 1 >= argc || is_arg(argv[i + 1]))
         {
             if(opt->f_name != nullptr)
             {
-                usage(error, "option --%s expects an argument", opt->f_name);
+                usage(status_t::error, "option --%s expects an argument", opt->f_name);
             }
             else
             {
-                usage(error, "option -%c expects an argument", opt->f_opt);
+                usage(status_t::error, "option -%c expects an argument", opt->f_opt);
             }
             /*NOTREACHED*/
         }
@@ -1421,9 +1421,9 @@ void getopt::add_options(option const * opt, int & i, int argc, char ** argv)
         add_option(opt, argv[i]);
         break;
 
-    case optional_argument:
-    case optional_long:
-    case default_argument:
+    case argument_mode_t::optional_argument:
+    case argument_mode_t::optional_long:
+    case argument_mode_t::default_argument:
         if(i + 1 < argc && !is_arg(argv[i + 1]))
         {
             ++i;
@@ -1434,17 +1434,17 @@ void getopt::add_options(option const * opt, int & i, int argc, char ** argv)
         }
         break;
 
-    case required_multiple_argument:
-    case required_multiple_long:
+    case argument_mode_t::required_multiple_argument:
+    case argument_mode_t::required_multiple_long:
         if(i + 1 >= argc || is_arg(argv[i + 1]))
         {
             if(opt->f_name != nullptr)
             {
-                usage(error, "option --%s requires at least one argument", opt->f_name);
+                usage(status_t::error, "option --%s requires at least one argument", opt->f_name);
             }
             else
             {
-                usage(error, "option -%c requires at least one argument", opt->f_opt);
+                usage(status_t::error, "option -%c requires at least one argument", opt->f_opt);
             }
             /*NOTREACHED*/
         }
@@ -1455,9 +1455,9 @@ void getopt::add_options(option const * opt, int & i, int argc, char ** argv)
         } while(i + 1 < argc && !is_arg(argv[i + 1]));
         break;
 
-    case optional_multiple_argument:
-    case optional_multiple_long:
-    case default_multiple_argument:
+    case argument_mode_t::optional_multiple_argument:
+    case argument_mode_t::optional_multiple_long:
+    case argument_mode_t::default_multiple_argument:
         {
             bool got_option = false;
             while(i + 1 < argc && !is_arg(argv[i + 1]))
@@ -1559,25 +1559,25 @@ void getopt::add_option(option const * opt, char const * value)
         //       a mistake by the end user (TBD)
         switch(opt->f_arg_mode)
         {
-        case no_argument:
+        case argument_mode_t::no_argument:
             // do not waste time, return immediately
             break;
 
-        case required_argument:
-        case required_long:
-        case optional_argument:
-        case optional_long:
-        case default_argument:
+        case argument_mode_t::required_argument:
+        case argument_mode_t::required_long:
+        case argument_mode_t::optional_argument:
+        case argument_mode_t::optional_long:
+        case argument_mode_t::default_argument:
             // we do not expect more than one, overwrite previous value
             // if necessary
             f_map[name].f_val[0] = value;
             break;
 
-        case required_multiple_argument:
-        case required_multiple_long:
-        case optional_multiple_argument:
-        case optional_multiple_long:
-        case default_multiple_argument:
+        case argument_mode_t::required_multiple_argument:
+        case argument_mode_t::required_multiple_long:
+        case argument_mode_t::optional_multiple_argument:
+        case argument_mode_t::optional_multiple_long:
+        case argument_mode_t::default_multiple_argument:
             f_map[name].f_val.push_back(value);
             break;
 

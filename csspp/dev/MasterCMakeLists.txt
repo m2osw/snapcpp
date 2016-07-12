@@ -55,25 +55,19 @@ find_package( SnapBuild        REQUIRED )
 ################################################################################
 # Snap libraries
 #
-ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
-
-ConfigureMakeProject( PROJECT_NAME controlled_vars
-    CONFIG_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS snapCMakeModules
-)
+ConfigureMakeProject( PROJECT_NAME cmake )
 
 ConfigureMakeProject( PROJECT_NAME advgetopt
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS snapCMakeModules controlled_vars
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME csspp
     CONFIG_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS snapCMakeModules advgetopt
+    DEPENDS cmake advgetopt
 )
 
 get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )

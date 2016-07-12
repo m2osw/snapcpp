@@ -73,7 +73,7 @@ int main(int argc, char **argv)
             nullptr,
             nullptr,
             "Usage: %p [--opt] [test-name]",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
             nullptr,
             nullptr,
             "with --opt being one or more of the following:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'h',
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
             "help",
             nullptr,
             "print out this help screen",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
             "license",
             nullptr,
             "prints out the license of the tests",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
             "licence",
             nullptr,
             nullptr, // hide this one from the help screen
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'o',
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
             "output",
             nullptr,
             "the output filename",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             'V',
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
             "version",
             nullptr,
             "print out the as2js project version these unit tests pertain to",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
             "filename",
             nullptr,
             nullptr, // hidden argument in --help screen
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
     if(opt.is_defined("help"))
     {
-        opt.usage(advgetopt::getopt::no_error, "Usage: json_to_string [--opt] [test-name]");
+        opt.usage(advgetopt::getopt::status_t::no_error, "Usage: json_to_string [--opt] [test-name]");
         /*NOTREACHED*/
     }
 

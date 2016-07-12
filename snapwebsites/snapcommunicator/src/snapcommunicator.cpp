@@ -1359,7 +1359,7 @@ public:
      * It is important for some processes to know when a remote connection
      * is lost (i.e. for dynamic QUORUM calculations in snaplock, for
      * example.) So we handle the process_hup() event and send a
-     * DISCONNECTED if this connection is a remote connection.
+     * HANGUP if this connection is a remote connection.
      */
     virtual void process_hup()
     {
@@ -1368,11 +1368,11 @@ public:
         if(is_remote()
         && !get_server_name().isEmpty())
         {
-            snap::snap_communicator_message disconnected;
-            disconnected.set_command("DISCONNECTED");
-            disconnected.set_service(".");
-            disconnected.add_parameter("server_name", get_server_name());
-            f_communicator_server->broadcast_message(disconnected);
+            snap::snap_communicator_message hangup;
+            hangup.set_command("HANGUP");
+            hangup.set_service(".");
+            hangup.add_parameter("server_name", get_server_name());
+            f_communicator_server->broadcast_message(hangup);
         }
     }
 
@@ -3000,7 +3000,8 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 || server_name == base_conn->get_server_name())
                 {
                     service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
-                    if(conn && conn->get_name() == service)
+                    if(conn
+                    && conn->get_name() == service)
                     {
                         // we have such a service, just forward to it now
                         //

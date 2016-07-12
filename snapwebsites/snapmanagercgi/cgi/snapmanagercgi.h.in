@@ -37,23 +37,23 @@ namespace snap_manager
 
 
 
-//class messenger
-//        : public snap::snap_communicator::snap_tcp_blocking_client_message_connection
-//{
-//public:
-//                            messenger(std::string const & address, int port, snap::snap_communicator_message const & message);
-//                            ~messenger();
-//
-//    QString const &         result();
-//
-//    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
-//    void                    process_timeout();
-//    void                    process_message(snap::snap_communicator_message const & message);
-//
-//private:
-//    snap::snap_communicator_message f_message;
-//    QString                         f_result;
-//};
+class messenger
+        : public snap::snap_communicator::snap_tcp_blocking_client_message_connection
+{
+public:
+                            messenger(std::string const & address, int port, snap::snap_communicator_message const & message);
+    virtual                 ~messenger() override;
+
+    QString const &         result();
+
+    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
+    void                    process_timeout();
+    void                    process_message(snap::snap_communicator_message const & message);
+
+private:
+    snap::snap_communicator_message f_message;
+    QString                         f_result;
+};
 
 
 
@@ -73,6 +73,10 @@ public:
     int                         process();
 
 private:
+    typedef std::map<std::string, std::string>      post_variables_t;
+
+    int                         read_post_variables();
+    int                         process_post();
     void                        generate_content(QDomDocument doc, QDomElement root);
     void                        get_host_status(QDomDocument doc, QDomElement output, QString const host);
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
@@ -80,6 +84,7 @@ private:
     snap::snap_uri              f_uri;
     int                         f_communicator_port = -1;    // snap server port
     std::string                 f_communicator_address;      // snap server address
+    post_variables_t            f_post_variables;
 };
 
 

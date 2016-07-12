@@ -63,7 +63,7 @@ ConfigureMakeProject( PROJECT_NAME zipios2
 
 ConfigureMakeProject( PROJECT_NAME log4cplus
     CONFIG_ARGS
-        -DCMAKE_CXX_FLAGS=-std=c++11
+        -DCMAKE_CXX_FLAGS=-std=c++14
         -DLOG4CPLUS_BUILD_TESTING=OFF
         -DLOG4CPLUS_SINGLE_THREADED=OFF
         -DLOG4CPLUS_QT4=OFF
@@ -85,7 +85,7 @@ ConfigureMakeProject( PROJECT_NAME libtld
 ConfigureMakeProject( PROJECT_NAME advgetopt
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS cmake controlled_vars
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME as2js

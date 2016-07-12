@@ -253,18 +253,18 @@ advgetopt::getopt::option const g_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "Usage: %p [-<opt>] [file.css ...] [-o out.css]",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'a',
@@ -272,7 +272,7 @@ advgetopt::getopt::option const g_options[] =
         "args",
         nullptr,
         "define values in the $_csspp_args variable map",
-        advgetopt::getopt::required_multiple_argument
+        advgetopt::getopt::argument_mode_t::required_multiple_argument
     },
     {
         'd',
@@ -280,7 +280,7 @@ advgetopt::getopt::option const g_options[] =
         "debug",
         nullptr,
         "show all messages, including @debug messages",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'h',
@@ -288,7 +288,7 @@ advgetopt::getopt::option const g_options[] =
         "help",
         nullptr,
         "display this help screen",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'I',
@@ -296,7 +296,7 @@ advgetopt::getopt::option const g_options[] =
         nullptr,
         nullptr,
         "specify a path to various user defined CSS files; \"-\" to clear the list (i.e. \"-I -\")",
-        advgetopt::getopt::required_multiple_argument
+        advgetopt::getopt::argument_mode_t::required_multiple_argument
     },
     {
         '\0',
@@ -304,7 +304,7 @@ advgetopt::getopt::option const g_options[] =
         "no-logo",
         nullptr,
         "prevent the \"logo\" from appearing in the output file",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'o',
@@ -312,7 +312,7 @@ advgetopt::getopt::option const g_options[] =
         "output",
         nullptr,
         "save the results in the specified file",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         'p',
@@ -320,7 +320,7 @@ advgetopt::getopt::option const g_options[] =
         "precision",
         nullptr,
         "define the number of digits to use after the decimal point, defaults to 3; note that for percent values, the precision is always 2.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'q',
@@ -328,7 +328,7 @@ advgetopt::getopt::option const g_options[] =
         "quiet",
         nullptr,
         "suppress @info and @warning messages",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         's',
@@ -336,7 +336,7 @@ advgetopt::getopt::option const g_options[] =
         "style",
         nullptr,
         "output style: compressed, tidy, compact, expanded",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -344,7 +344,7 @@ advgetopt::getopt::option const g_options[] =
         "version",
         nullptr,
         "show the version of the snapdb executable",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -352,23 +352,23 @@ advgetopt::getopt::option const g_options[] =
         "Werror",
         nullptr,
         "make warnings count as errors",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "[file.css ...]; use stdin if no filename specified",
-        advgetopt::getopt::default_multiple_argument
+        advgetopt::getopt::argument_mode_t::default_multiple_argument
     },
     {
         '\0',
         0,
-        NULL,
-        NULL,
-        NULL,
-        advgetopt::getopt::end_of_options
+        nullptr,
+        nullptr,
+        nullptr,
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -385,7 +385,7 @@ private:
 };
 
 pp::pp(int argc, char * argv[])
-    : f_opt(new advgetopt::getopt(argc, argv, g_options, g_configuration_files, NULL))
+    : f_opt(new advgetopt::getopt(argc, argv, g_options, g_configuration_files, nullptr))
 {
     if(f_opt->is_defined("version"))
     {
@@ -395,7 +395,7 @@ pp::pp(int argc, char * argv[])
 
     if(f_opt->is_defined("help"))
     {
-        f_opt->usage(advgetopt::getopt::no_error, "csspp");
+        f_opt->usage(advgetopt::getopt::status_t::no_error, "csspp");
         exit(0);
     }
 

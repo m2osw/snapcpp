@@ -275,7 +275,7 @@ namespace
             nullptr,
             nullptr,
             "Usage: %p [-<opt>]",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -283,7 +283,7 @@ namespace
             nullptr,
             nullptr,
             "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'a',
@@ -291,7 +291,7 @@ namespace
             "action",
             nullptr,
             "Specify a server action.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -299,7 +299,7 @@ namespace
             "add-host",
             nullptr,
             "Add a host to the lock table. Remember that you cannot safely do that while any one of the servers are running. This should not be used anymore since that feature was moved to the snapmanager instead.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'b',
@@ -307,7 +307,7 @@ namespace
             "background",
             nullptr,
             "Detaches the server to the background (default is stay in the foreground).",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'c',
@@ -315,7 +315,7 @@ namespace
             "config",
             nullptr,
             "Specify the configuration file to load at startup.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -323,7 +323,7 @@ namespace
             "connect",
             nullptr,
             "The address and port information to connect to snapcommunicator (defined in /etc/snapwebsites/snapinit.xml).",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -331,7 +331,7 @@ namespace
             "cron-action",
             nullptr,
             "Specify a server CRON action.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'd',
@@ -339,7 +339,7 @@ namespace
             "debug",
             nullptr,
             "Outputs debug logs. Perform additional checks in various places.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'f',
@@ -347,7 +347,7 @@ namespace
             "logfile",
             nullptr,
             "Output log file to write to. Overrides the setting in the configuration file.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
 #ifdef SNAP_NO_FORK
         {
@@ -356,7 +356,7 @@ namespace
             "nofork",
             nullptr,
             "If set, this switch causes the server not to fork when a child is launched. This should never be use for a production server!",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
 #endif
         {
@@ -365,7 +365,7 @@ namespace
             "logconf",
             nullptr,
             "Log configuration file to read from. Overrides log_server / log_config in the configuration file.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             'n',
@@ -373,7 +373,7 @@ namespace
             "no-log",
             nullptr,
             "Don't create a logfile, just output to the console.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'h',
@@ -381,7 +381,7 @@ namespace
             "help",
             nullptr,
             "Show usage and exit.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'p',
@@ -389,7 +389,7 @@ namespace
             "param",
             nullptr,
             "Define one or more server parameters on the command line (-p name=value).",
-            advgetopt::getopt::required_multiple_argument
+            advgetopt::getopt::argument_mode_t::required_multiple_argument
         },
         {
             '\0',
@@ -397,7 +397,7 @@ namespace
             "prepare-cassandra",
             nullptr,
             "Create the cassandra \"domains\" and \"websites\" tables and exit. This should not be used anymore since that feature was moved to the snapmanager instead.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -405,7 +405,7 @@ namespace
             "server-name",
             nullptr,
             "The name of the server that is going to run this instance of snapserver (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -413,7 +413,7 @@ namespace
             "snapdbproxy",
             nullptr,
             "The address and port information to connect to snapdbproxy (defined in /etc/snapwebsites/snapinit.xml).",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -421,7 +421,7 @@ namespace
             "version",
             nullptr,
             "Show the version of the server and exit.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -429,7 +429,7 @@ namespace
             "filename",
             nullptr,
             nullptr, // hidden argument in --help screen
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -437,7 +437,7 @@ namespace
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -803,7 +803,7 @@ void server::usage()
 
     std::cerr << "Configuration File: " << f_config_filename << std::endl << std::endl;
 
-    f_opt->usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", server_name.c_str());
+    f_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: %s -<arg> ...\n", server_name.c_str());
     NOTREACHED();
     exit(1);
 }

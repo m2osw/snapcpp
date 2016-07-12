@@ -52,7 +52,7 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         NULL,
         "Usage: %p -<opt> ...",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -60,7 +60,7 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         NULL,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'h',
@@ -68,7 +68,7 @@ advgetopt::getopt::option const g_options[] =
         "help",
         NULL,
         "Show usage and exit.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -76,7 +76,7 @@ advgetopt::getopt::option const g_options[] =
         "host",
         "localhost",
         "Specify the IP address to the Cassandra node.",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -84,7 +84,7 @@ advgetopt::getopt::option const g_options[] =
         "no-cassandra",
         NULL,
         "Prevent Cassandra's initialization. This allows for testing Cassandra related functions in the event the database was not setup.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'p',
@@ -92,7 +92,7 @@ advgetopt::getopt::option const g_options[] =
         "port",
         "9042",
         "Define the port used by the Cassandra node.",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         'q',
@@ -100,7 +100,7 @@ advgetopt::getopt::option const g_options[] =
         "quiet",
         NULL,
         "Print out the result quietly (without introducer)",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         's',
@@ -108,7 +108,7 @@ advgetopt::getopt::option const g_options[] =
         "serialize",
         NULL,
         "compile and then serialize the expressions and print out the result",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'v',
@@ -116,7 +116,7 @@ advgetopt::getopt::option const g_options[] =
         "verbose",
         NULL,
         "information about the task being performed",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'e',
@@ -124,7 +124,7 @@ advgetopt::getopt::option const g_options[] =
         "expression",
         NULL,
         "one or more C-like expressions to compile and execute",
-        advgetopt::getopt::default_multiple_argument
+        advgetopt::getopt::argument_mode_t::default_multiple_argument
     },
     {
         '\0',
@@ -132,7 +132,7 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         NULL,
         NULL,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 advgetopt::getopt *g_opt = NULL;
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
         g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
         if(g_opt->is_defined("help"))
         {
-            g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <expressions> ...\n", argv[0]);
+            g_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: %s [--<opts>] <expressions> ...\n", argv[0]);
             exit(1);
         }
         g_verbose = g_opt->is_defined("verbose");

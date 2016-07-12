@@ -80,7 +80,7 @@ namespace
             NULL,
             NULL,
             "Usage: %p [-<opt>] <filename>.as ...",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -88,7 +88,7 @@ namespace
             NULL,
             NULL,
             "Where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -96,7 +96,7 @@ namespace
             "licence",
             nullptr,
             nullptr, // hide from help output
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -104,7 +104,7 @@ namespace
             "license",
             nullptr,
             "Print out the license of this command line tool.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'h',
@@ -112,7 +112,7 @@ namespace
             "help",
             nullptr,
             "Show usage and exit.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -120,7 +120,7 @@ namespace
             "version",
             nullptr,
             "Show version and exit.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -128,7 +128,7 @@ namespace
             "filename",
             nullptr,
             nullptr, // hidden argument in --help screen
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -136,7 +136,7 @@ namespace
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 }
@@ -169,7 +169,7 @@ as2js_compiler::as2js_compiler(int argc, char *argv[])
 
     if(f_opt->is_defined("help"))
     {
-        f_opt->usage(advgetopt::getopt::no_error, "Usage: as2js [--opt] <source>.as");
+        f_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: as2js [--opt] <source>.as");
         /*NOTREACHED*/
     }
 

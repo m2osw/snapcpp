@@ -109,10 +109,18 @@ void status_connection::process_message_a(snap::snap_communicator_message const 
     if((message.get_server().isEmpty() || message.get_server() == f_server_name)
     && (message.get_service().isEmpty() || message.get_service() == "snapmanagerdaemon"))
     {
-        f_manager_daemon->process_message(message);
+        // in this case the message will not automatically get the
+        // sent from server and service parameters defined
+        //
+        snap::snap_communicator_message copy(message);
+        copy.set_sent_from_server(f_server_name);
+        copy.set_sent_from_service("snapmanagerdaemon");
+        f_manager_daemon->process_message(copy);
     }
     else
     {
+        // forward to snapcommunicator instead
+        //
         f_manager_daemon->forward_message(message);
     }
 }

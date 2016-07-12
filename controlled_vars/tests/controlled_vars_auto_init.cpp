@@ -29,7 +29,9 @@
 //
 
 // make sure we compile in debug mode otherwise we don't get the throws.
+#ifndef CONTROLLED_VARS_DEBUG
 #define CONTROLLED_VARS_DEBUG
+#endif
 #include "controlled_vars_auto_init.h"
 #include "controlled_vars_auto_enum_init.h"
 #include <stdio.h>

@@ -51,7 +51,7 @@
 
 #include "qstring_stream.h"
 
-using namespace QtCassandra;
+
 
 namespace
 {
@@ -78,7 +78,7 @@ namespace
             NULL,
             NULL,
             "Usage: %p [-<opt>] <start|restart|stop>",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -86,7 +86,7 @@ namespace
             NULL,
             NULL,
             "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'h',
@@ -94,7 +94,7 @@ namespace
             "help",
             nullptr,
             "[optional] Show usage and exit.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'n',
@@ -102,7 +102,7 @@ namespace
             "nolog",
             nullptr,
             "[optional] Only output to the console, not the syslog.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'c',
@@ -110,7 +110,7 @@ namespace
             "config",
             "/etc/snapwebsites/snapserver.conf",
             "[optional] Configuration file from which to get cassandra server details.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'v',
@@ -118,7 +118,7 @@ namespace
             "version",
             nullptr,
             "[optional] show the version of the snapbounce executable",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             's',
@@ -126,7 +126,7 @@ namespace
             "sender",
             nullptr,
             "[required] Sender of the email.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             'r',
@@ -134,7 +134,7 @@ namespace
             "recipient",
             nullptr,
             "[required] Intended recipient of the email.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -142,7 +142,7 @@ namespace
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 }
@@ -234,7 +234,7 @@ snap_bounce::pointer_t snap_bounce::instance()
 
 void snap_bounce::usage()
 {
-    f_opt.usage( advgetopt::getopt::no_error, "snapbounce" );
+    f_opt.usage( advgetopt::getopt::status_t::no_error, "snapbounce" );
     //throw std::invalid_argument( "usage" );
 }
 
@@ -278,20 +278,20 @@ void snap_bounce::store_email()
 
     // Send f_email_body's contents to cassandra, specifically in the "emails/bounced" table/row.
     //
-    QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
+    QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
 
-    QCassandraTable::pointer_t table(context->findTable("emails"));
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable("emails"));
     if(!table)
     {
-        // We don't want to bother with trying to create the "emails" table.
-        // If it isn't there, then we'll just have to lose this email for now.
+        // We do not want to bother with trying to create the "emails" table.
+        // If it is not there, then we will just have to lose this email for now.
         return;
     }
 
     QByteArray key;
     // get current time first so rows get sorted by date
     int64_t now(snap::snap_child::get_current_date());
-    appendInt64Value(key, now); // warning: use our append function so the int is inserted in big endian
+    QtCassandra::appendInt64Value(key, now); // warning: use our append function so the int is inserted in big endian
     // make sure it is unique
     uuid_t uuid;
     uuid_generate_random( uuid );

@@ -136,7 +136,7 @@ int unittest_main(int argc, char *argv[])
             nullptr,
             nullptr,
             "Usage: %p [--opt] [test-name]",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -144,7 +144,7 @@ int unittest_main(int argc, char *argv[])
             nullptr,
             nullptr,
             "with --opt being one or more of the following:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'a',
@@ -152,7 +152,7 @@ int unittest_main(int argc, char *argv[])
             "all",
             nullptr,
             "run all the tests in the console (default)",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -160,7 +160,7 @@ int unittest_main(int argc, char *argv[])
             "destructive",
             nullptr,
             "also run the stdout destructive test (otherwise skip the test so we do not lose stdout)",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'g',
@@ -172,7 +172,7 @@ int unittest_main(int argc, char *argv[])
 #else
             "GUI version not available; this option will fail",
 #endif
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'h',
@@ -180,7 +180,7 @@ int unittest_main(int argc, char *argv[])
             "help",
             nullptr,
             "print out this help screen",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -188,7 +188,7 @@ int unittest_main(int argc, char *argv[])
             "license",
             nullptr,
             "prints out the license of the tests",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -196,7 +196,7 @@ int unittest_main(int argc, char *argv[])
             "licence",
             nullptr,
             nullptr, // hide this one from the help screen
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'l',
@@ -204,7 +204,7 @@ int unittest_main(int argc, char *argv[])
             "list",
             nullptr,
             "list all the available tests",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'S',
@@ -212,7 +212,7 @@ int unittest_main(int argc, char *argv[])
             "seed",
             nullptr,
             "value to seed the randomizer",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -220,7 +220,7 @@ int unittest_main(int argc, char *argv[])
             "save-parser-tests",
             nullptr,
             "save the JSON used to test the parser",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             't',
@@ -228,7 +228,7 @@ int unittest_main(int argc, char *argv[])
             "tmp",
             nullptr,
             "path to a temporary directory",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -236,7 +236,7 @@ int unittest_main(int argc, char *argv[])
             "as2js",
             nullptr,
             "path to the as2js executable",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             'V',
@@ -244,7 +244,7 @@ int unittest_main(int argc, char *argv[])
             "version",
             nullptr,
             "print out the as2js project version these unit tests pertain to",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -252,7 +252,7 @@ int unittest_main(int argc, char *argv[])
             "filename",
             nullptr,
             nullptr, // hidden argument in --help screen
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -260,7 +260,7 @@ int unittest_main(int argc, char *argv[])
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -269,7 +269,7 @@ int unittest_main(int argc, char *argv[])
 
     if(opt.is_defined("help"))
     {
-        opt.usage(advgetopt::getopt::no_error, "Usage: test_as2js [--opt] [test-name]");
+        opt.usage(advgetopt::getopt::status_t::no_error, "Usage: test_as2js [--opt] [test-name]");
         /*NOTREACHED*/
     }
 

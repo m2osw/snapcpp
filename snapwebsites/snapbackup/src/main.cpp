@@ -60,7 +60,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         nullptr,
         nullptr,
         "Usage: %p [-<opt>]",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -68,7 +68,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         nullptr,
         nullptr,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '?',
@@ -76,7 +76,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "help",
         nullptr,
         "show this help output",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'n',
@@ -84,7 +84,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "context-name",
         "snap_websites",
         "name of the context (or keyspace) to dump/restore (defaults to 'snap_websites')",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'd',
@@ -92,7 +92,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "dump-context",
         nullptr,
         "dump the snapwebsites context to SQLite database",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         'T',
@@ -100,7 +100,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "tables",
         nullptr,
         "specify the list of tables to dump to SQLite database, or restore from SQLite to Cassandra",
-        advgetopt::getopt::required_multiple_argument
+        advgetopt::getopt::argument_mode_t::required_multiple_argument
     },
     {
         'r',
@@ -108,7 +108,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "restore-context",
         nullptr,
         "restore the snapwebsites context from SQLite database (requires confirmation)",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -116,7 +116,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "drop-context",
         nullptr,
         "drop the snap_websites keyspace",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'c',
@@ -124,7 +124,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "count",
         "100",
         "specify the page size in rows (default 100)",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'l',
@@ -132,7 +132,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "low-watermark",
         "0",
         "specify the low water mark bytes (default 0)",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         'm',
@@ -140,7 +140,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "high-watermark",
         "65536",
         "specify the high water mark bytes (default 0)",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -148,7 +148,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "yes-i-know-what-im-doing",
         nullptr,
         "Force the dropping of context and overwriting of database, without warning and stdin prompt. Only use this if you know what you're doing!",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'f',
@@ -156,7 +156,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "force-schema-creation",
         nullptr,
         "Force the creation of the context even if it already exists (default ignore)",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'h',
@@ -164,7 +164,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "host",
         "localhost",
         "host IP address or name (defaults to localhost)",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'p',
@@ -172,7 +172,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "port",
         "9042",
         "port on the host to connect to (defaults to 9042)",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'V',
@@ -180,7 +180,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "version",
         nullptr,
         "show the version of the snapdb executable",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -188,7 +188,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         nullptr,
         nullptr,
         nullptr,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
         }
         else if( opt->is_defined("help") )
         {
-            opt->usage( advgetopt::getopt::error, "snapbackup" );
+            opt->usage( advgetopt::getopt::status_t::error, "snapbackup" );
         }
         else
         {

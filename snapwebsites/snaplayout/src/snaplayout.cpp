@@ -86,7 +86,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         NULL,
         NULL,
         "Usage: %p [<options>] <layout filename(s)>",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -94,7 +94,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         NULL,
         NULL,
         "where options are one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '?',
@@ -102,7 +102,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "help",
         nullptr,
         "show this help output",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -110,7 +110,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "context",
         "snap_websites",
         "Specify the context (keyspace) to connect to.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'x',
@@ -118,7 +118,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "extract",
         nullptr,
         "extract a file from the specified layout and filename",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'h',
@@ -126,7 +126,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "host",
         "localhost",
         "host IP address or name [default=localhost]",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'p',
@@ -134,7 +134,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "port",
         "9042",
         "port on the host to which to connect [default=9042]",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -142,7 +142,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "remove-theme",
         nullptr,
         "remove the specified theme; this remove the entire row and can allow you to reinstall a theme that \"lost\" files",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     { // at least until we have a way to edit the theme from the website
         't',
@@ -150,7 +150,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "set-theme",
         nullptr,
         "usage: --set-theme URL [theme|layout] ['\"layout name\";']'",
-        advgetopt::getopt::no_argument // expect 3 params as filenames
+        advgetopt::getopt::argument_mode_t::no_argument // expect 3 params as filenames
     },
     {
         'v',
@@ -158,7 +158,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "verbose",
         nullptr,
         "show what snaplayout is doing",
-        advgetopt::getopt::no_argument // expect 3 params as filenames
+        advgetopt::getopt::argument_mode_t::no_argument // expect 3 params as filenames
     },
     {
         '\0',
@@ -166,7 +166,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "version",
         nullptr,
         "show the version of the server and exit",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -174,7 +174,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         nullptr,
         nullptr,
         "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl or layout.zip",
-        advgetopt::getopt::default_multiple_argument
+        advgetopt::getopt::argument_mode_t::default_multiple_argument
     },
     {
         '\0',
@@ -182,7 +182,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         nullptr,
         nullptr,
         nullptr,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -416,7 +416,7 @@ snap_layout::snap_layout(int argc, char * argv[])
 
 void snap_layout::usage()
 {
-    f_opt->usage( advgetopt::getopt::no_error, "snaplayout" );
+    f_opt->usage( advgetopt::getopt::status_t::no_error, "snaplayout" );
     exit(1);
     snap::NOTREACHED();
 }

@@ -213,7 +213,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERRESEND,MANAGERSTATUS,QUITTING,READY,SERVER_PUBLIC_IP,STOP,UNKNOWN,UNREACHABLE");
+            reply.add_parameter("list", "HELP,LOG,MANAGERINSTALL,MANAGERRESEND,MANAGERSTATUS,MODIFYSETTINGS,QUITTING,READY,RELOADCONFIG,SERVER_PUBLIC_IP,STOP,UNKNOWN,UNREACHABLE");
 
             f_messenger->send_message(reply);
 
@@ -245,11 +245,11 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
         break;
 
     case 'M':
-        if(command == "MANAGE")
+        if(command == "MANAGERINSTALL")
         {
-            // run the RPC call
+            // install a bundle
             //
-            manage(message);
+            manager_install(message);
             return;
         }
         else if(command == "MANAGERRESEND")
@@ -262,6 +262,13 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // record the status of this and other managers
             //
             set_manager_status(message);
+            return;
+        }
+        else if(command == "MODIFYSETTINGS")
+        {
+            // user just clicked "Save" from somewhere...
+            //
+            modify_settings(message);
             return;
         }
         break;
@@ -291,6 +298,19 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
                 public_ip.set_command("PUBLIC_IP");
                 f_messenger->send_message(public_ip);
             }
+            return;
+        }
+        else if(command == "RELOADCONFIG")
+        {
+            // at this time we do not know how to reload our configuration
+            // file without just restarting 100% (especially think of the
+            // problem of having connections to snapcommunicator and similar
+            // systems... if the configuration changes their IP address,
+            // what to do, really...)
+            //
+            // At this time this is 100% equivalent to STOP!
+            //
+            stop(false);
             return;
         }
         break;
@@ -425,55 +445,10 @@ void manager_daemon::stop(bool quitting)
  *
  * \param[in] message  The message being worked on.
  */
-void manager_daemon::manage(snap::snap_communicator_message const & message)
+void manager_daemon::manager_install(snap::snap_communicator_message const & message)
 {
-    // check that the service sending a MANAGE command is the one we
-    // expect (note that's not a very powerful security check, but overall
-    // it allows us to make sure that snap_child() and other such services
-    // do not contact us with a MANAGE command.)
-    //
-    QString const & service(message.get_sent_from_service());
-    if(service != "snapmanagercgi")
-    {
-        snap::snap_communicator_message reply;
-        reply.set_command("INVALID");
-        reply.add_parameter("what", "command MANAGE cannot be sent from service " + service);
-        f_messenger->send_message(reply);
-        return;
-    }
-
-    // check the command requested by the sender, this is found in
-    // the "function" parameter; functions must be specified in
-    // uppercase just like commands
-    //
-    QString const function(message.get_parameter("function"));
-    if(function.isEmpty())
-    {
-        snap::snap_communicator_message reply;
-        reply.set_command("INVALID");
-        reply.add_parameter("what", "command MANAGE must have a \"function\" parameter");
-        f_messenger->send_message(reply);
-        return;
-    }
-
-    switch(function[0].unicode())
-    {
-    case 'I':
-        if(function == "INSTALL")
-        {
-            installer(message);
-            return;
-        }
-        break;
-
-    }
-
-    {
-        snap::snap_communicator_message reply;
-        reply.set_command("INVALID");
-        reply.add_parameter("what", "command MANAGE did not understand function \"" + function + "\"");
-        f_messenger->send_message(reply);
-    }
+    snap::NOTUSED(message);
+    //installer(message);
 }
 
 
