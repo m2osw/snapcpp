@@ -105,6 +105,7 @@ protected:
 
 private:
     void                        compute_next_tick(bool just_ran);
+    void                        get_depends_on_list();
     void                        mark_process_as_dead();
 
     std::weak_ptr<snap_init>    f_snap_init;
@@ -116,6 +117,7 @@ private:
     QString                     f_user;
     QString                     f_group;
     snap::snap_string_list      f_dependsList;
+    service::vector_t           f_depends_on_list;
     pid_t                       f_pid = 0;
     pid_t                       f_old_pid = 0;
     int                         f_short_run_count = 0;
