@@ -84,7 +84,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (empty list)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -92,7 +92,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -108,7 +108,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (no name)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -116,7 +116,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             "we can have a default though",
             NULL,
-            advgetopt::getopt::required_long
+            advgetopt::getopt::argument_mode_t::required_long
         },
         {
             '\0',
@@ -124,7 +124,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -140,7 +140,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (2 chars minimum)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -148,7 +148,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "", // cannot be empty string (use NULL instead)
             NULL,
             "long option must be 2 characters long at least",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -156,7 +156,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -172,7 +172,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (2 chars minimum 2nd)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -180,7 +180,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "f", // cannot be 1 character
             NULL,
             "long option must be 2 characters long at least",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -188,7 +188,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -204,7 +204,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (long defined twice)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -212,7 +212,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "filename",
             NULL,
             "options must be unique",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -220,7 +220,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "filename", // copy/paste problem maybe?
             NULL,
             "options must be unique",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -228,7 +228,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -244,7 +244,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (short defined twice)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'f',
@@ -252,7 +252,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "options must be unique",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             'f',
@@ -260,7 +260,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "options must be unique",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -268,7 +268,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -284,7 +284,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (two defaults, multiple args)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -292,7 +292,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "filename",
             NULL,
             "other parameters are viewed as filenames",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -300,7 +300,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "more",
             NULL,
             "yet other parameters are view as \"more\" data--here it breaks, one default max.",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -308,7 +308,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -324,7 +324,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (two default args)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -332,7 +332,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "filename",
             NULL,
             "one other parameter is viewed as a filename",
-            advgetopt::getopt::default_argument
+            advgetopt::getopt::argument_mode_t::default_argument
         },
         {
             '\0',
@@ -340,7 +340,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "more",
             NULL,
             "yet other parameter viewed as \"more\" data--here it breaks, one default max.",
-            advgetopt::getopt::default_argument
+            advgetopt::getopt::argument_mode_t::default_argument
         },
         {
             '\0',
@@ -348,7 +348,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -364,7 +364,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (mix of defaults)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -372,7 +372,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "filename",
             NULL,
             "other parameters are viewed as filenames",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -380,7 +380,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "more",
             NULL,
             "yet other parameter viewed as \"more\" data--here it breaks, one default max.",
-            advgetopt::getopt::default_argument
+            advgetopt::getopt::argument_mode_t::default_argument
         },
         {
             '\0',
@@ -388,7 +388,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -405,7 +405,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             "Usage: try this one and we get a throw (no defaults)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -413,7 +413,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             "verbose",
             NULL,
             "just a flag to test.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -421,7 +421,7 @@ void AdvGetOptUnitTests::invalid_parameters()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -517,7 +517,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             "Usage: try this one and we get a throw (no defaults in envvar)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -525,7 +525,7 @@ std::cerr << "that returned?!\n";
             "verbose",
             NULL,
             "just a flag to test.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -533,7 +533,7 @@ std::cerr << "that returned?!\n";
             "filenames",
             NULL,
             "default multiple filenames",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -541,7 +541,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -612,7 +612,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             "Usage: try this one and we get a throw (unknown command line option)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -620,7 +620,7 @@ std::cerr << "that returned?!\n";
             "--command",
             NULL,
             "there is a command, but the user tries --verbose!",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -628,7 +628,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -655,7 +655,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             "Usage: try this one and we get a throw (illegal in variable)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'v',
@@ -663,7 +663,7 @@ std::cerr << "that returned?!\n";
             "verbose",
             NULL,
             "just a flag to test.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -671,7 +671,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -695,7 +695,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             "Usage: try this one and we get a throw (long name missing)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'c',
@@ -703,7 +703,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             "a valid option",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -711,7 +711,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     {
@@ -728,7 +728,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             "Usage: try this one and we get a throw (valid options!)",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -736,7 +736,7 @@ std::cerr << "that returned?!\n";
             "valid",
             NULL,
             "a valid option",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -744,7 +744,7 @@ std::cerr << "that returned?!\n";
             "command",
             NULL,
             "a valid command, but not a valid configuration option",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -752,7 +752,7 @@ std::cerr << "that returned?!\n";
             "filename",
             NULL,
             "other parameters are viewed as filenames",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -760,7 +760,7 @@ std::cerr << "that returned?!\n";
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
     std::string tmpdir(unittest::tmp_dir);
@@ -893,7 +893,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: one of the options has an invalid mode",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -901,7 +901,7 @@ std::cerr << "that returned?!\n";
                 "mode",
                 NULL,
                 "an argument with an invalid mode to see that we get an exception",
-                static_cast<advgetopt::getopt::argument_mode_t>(advgetopt::getopt::end_of_options + 1)
+                static_cast<advgetopt::getopt::argument_mode_t>(static_cast<int>(advgetopt::getopt::argument_mode_t::end_of_options) + 1)
             },
             {
                 '\0',
@@ -909,7 +909,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         {
@@ -942,7 +942,7 @@ std::cerr << "that returned?!\n";
             // throw when not used on the command line but then gets shown
             // in the usage() function
             advgetopt::getopt opt(argc2, argv2, options, confs, NULL);
-            for(int i(static_cast<int>(advgetopt::getopt::no_error)); i <= static_cast<int>(advgetopt::getopt::fatal); ++i)
+            for(int i(static_cast<int>(advgetopt::getopt::status_t::no_error)); i <= static_cast<int>(advgetopt::getopt::status_t::fatal); ++i)
             {
                 CATCH_REQUIRE_THROWS_AS( opt.usage(static_cast<advgetopt::getopt::status_t>(i), "test no error, warnings, errors..."), advgetopt::getopt_exception_invalid);
             }
@@ -959,7 +959,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (valid options, but not the calls after)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -967,7 +967,7 @@ std::cerr << "that returned?!\n";
                 "validate",
                 NULL,
                 "this is used to validate different things.",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 '\0',
@@ -975,7 +975,7 @@ std::cerr << "that returned?!\n";
                 "long",
                 NULL,
                 "used to validate that invalid numbers generate an error.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 'o',
@@ -983,7 +983,7 @@ std::cerr << "that returned?!\n";
                 "out-of-bounds",
                 NULL,
                 "valid values from 1 to 9.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -991,7 +991,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-and-no-default",
                 NULL,
                 "test long without having used the option and no default.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -999,7 +999,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-with-invalid-default",
                 "123abc",
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1007,7 +1007,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-string-without-default",
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1015,7 +1015,7 @@ std::cerr << "that returned?!\n";
                 "string",
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1023,7 +1023,7 @@ std::cerr << "that returned?!\n";
                 "filename",
                 NULL,
                 "other parameters are viewed as filenames",
-                advgetopt::getopt::default_multiple_argument
+                advgetopt::getopt::argument_mode_t::default_multiple_argument
             },
             {
                 '\0',
@@ -1031,7 +1031,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         char const * cargv2[] =
@@ -1099,7 +1099,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (valid options + usage calls)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -1107,7 +1107,7 @@ std::cerr << "that returned?!\n";
                 "validate",
                 NULL,
                 "this is used to validate different things.",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 '\0',
@@ -1115,7 +1115,7 @@ std::cerr << "that returned?!\n";
                 "long",
                 NULL,
                 "used to validate that invalid numbers generate an error.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 'o',
@@ -1123,7 +1123,7 @@ std::cerr << "that returned?!\n";
                 "out-of-bounds",
                 NULL,
                 "valid values from 1 to 9.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1131,7 +1131,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-and-no-default",
                 NULL,
                 "test long without having used the option and no default.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1139,7 +1139,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-with-invalid-default",
                 "123abc",
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_multiple_argument
+                advgetopt::getopt::argument_mode_t::required_multiple_argument
             },
             {
                 '\0',
@@ -1147,7 +1147,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-string-without-default",
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1155,7 +1155,7 @@ std::cerr << "that returned?!\n";
                 "string",
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 'u',
@@ -1163,7 +1163,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::optional_argument
+                advgetopt::getopt::argument_mode_t::optional_argument
             },
             {
                 'q',
@@ -1171,7 +1171,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::optional_multiple_argument
+                advgetopt::getopt::argument_mode_t::optional_multiple_argument
             },
             {
                 '\0',
@@ -1179,7 +1179,7 @@ std::cerr << "that returned?!\n";
                 "filename",
                 NULL,
                 "other parameters are viewed as filenames",
-                advgetopt::getopt::default_multiple_argument
+                advgetopt::getopt::argument_mode_t::default_multiple_argument
             },
             {
                 '\0',
@@ -1187,7 +1187,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         char const * cargv2[] =
@@ -1210,7 +1210,7 @@ std::cerr << "that returned?!\n";
 
         // all of the following have the exiting exception
 #ifdef ADVGETOPT_THROW_FOR_EXIT
-        for(int i(static_cast<int>(advgetopt::getopt::no_error)); i <= static_cast<int>(advgetopt::getopt::fatal); ++i)
+        for(int i(static_cast<int>(advgetopt::getopt::status_t::no_error)); i <= static_cast<int>(advgetopt::getopt::status_t::fatal); ++i)
         {
             CATCH_REQUIRE_THROWS_AS( opt.usage(static_cast<advgetopt::getopt::status_t>(i), "test no error, warnings, errors..."), advgetopt::getopt_exception_exiting);
         }
@@ -1227,7 +1227,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (valid options + usage calls bis)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -1235,7 +1235,7 @@ std::cerr << "that returned?!\n";
                 "validate",
                 NULL,
                 "this is used to validate different things.",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 '\0',
@@ -1243,7 +1243,7 @@ std::cerr << "that returned?!\n";
                 "long",
                 NULL,
                 "used to validate that invalid numbers generate an error.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 'o',
@@ -1251,7 +1251,7 @@ std::cerr << "that returned?!\n";
                 "out-of-bounds",
                 NULL,
                 "valid values from 1 to 9.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1259,7 +1259,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-and-no-default",
                 NULL,
                 "test long without having used the option and no default.",
-                advgetopt::getopt::required_long
+                advgetopt::getopt::argument_mode_t::required_long
             },
             {
                 '\0',
@@ -1267,7 +1267,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-with-invalid-default",
                 "123abc",
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_multiple_long
+                advgetopt::getopt::argument_mode_t::required_multiple_long
             },
             {
                 '\0',
@@ -1275,7 +1275,7 @@ std::cerr << "that returned?!\n";
                 "not-specified-string-without-default",
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 '\0',
@@ -1283,7 +1283,7 @@ std::cerr << "that returned?!\n";
                 "string",
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::required_argument
+                advgetopt::getopt::argument_mode_t::required_argument
             },
             {
                 'u',
@@ -1291,7 +1291,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::optional_argument
+                advgetopt::getopt::argument_mode_t::optional_argument
             },
             {
                 'q',
@@ -1299,7 +1299,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "test long with an invalid default value.",
-                advgetopt::getopt::optional_multiple_long
+                advgetopt::getopt::argument_mode_t::optional_multiple_long
             },
             {
                 'l',
@@ -1307,7 +1307,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "long with just a letter.",
-                advgetopt::getopt::required_long
+                advgetopt::getopt::argument_mode_t::required_long
             },
             {
                 '\0',
@@ -1315,7 +1315,7 @@ std::cerr << "that returned?!\n";
                 "filename",
                 NULL,
                 "other parameters are viewed as filenames; and we need at least one option with a very long help to check that it wraps perfectly (we'd really need to get the output of the command and check that against what is expected because at this time the test is rather blind in that respect!)",
-                advgetopt::getopt::default_argument
+                advgetopt::getopt::argument_mode_t::default_argument
             },
             {
                 '\0',
@@ -1323,7 +1323,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
 #ifdef ADVGETOPT_THROW_FOR_EXIT
@@ -1386,7 +1386,7 @@ std::cerr << "that returned?!\n";
 
             // all of the following have the exiting exception
 #ifdef ADVGETOPT_THROW_FOR_EXIT
-            for(int i(static_cast<int>(advgetopt::getopt::no_error)); i <= static_cast<int>(advgetopt::getopt::fatal); ++i)
+            for(int i(static_cast<int>(advgetopt::getopt::status_t::no_error)); i <= static_cast<int>(advgetopt::getopt::status_t::fatal); ++i)
             {
                 CATCH_REQUIRE_THROWS_AS( opt.usage(static_cast<advgetopt::getopt::status_t>(i), "test no error, warnings, errors..."), advgetopt::getopt_exception_exiting);
             }
@@ -1404,7 +1404,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (strange empty entry!)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -1412,7 +1412,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "this entry has help, but no valid name...",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 'v',
@@ -1420,7 +1420,7 @@ std::cerr << "that returned?!\n";
                 "verbose",
                 NULL,
                 "show more stuff when found on the command line.",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 '\0',
@@ -1428,7 +1428,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         {
@@ -1444,7 +1444,7 @@ std::cerr << "that returned?!\n";
             advgetopt::getopt opt(argc2, argv2, options, confs, "ADVGETOPT_TEST_OPTIONS");
 
             // all of the following have the exiting exception
-            for(int i(static_cast<int>(advgetopt::getopt::no_error)); i <= static_cast<int>(advgetopt::getopt::fatal); ++i)
+            for(int i(static_cast<int>(advgetopt::getopt::status_t::no_error)); i <= static_cast<int>(advgetopt::getopt::status_t::fatal); ++i)
             {
                 CATCH_REQUIRE_THROWS_AS( opt.usage(static_cast<advgetopt::getopt::status_t>(i), "test no error, warnings, errors..."), advgetopt::getopt_exception_invalid);
             }
@@ -1462,7 +1462,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (required multiple without args)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 'f',
@@ -1470,7 +1470,7 @@ std::cerr << "that returned?!\n";
                 "filenames",
                 NULL,
                 "test a required multiple without any arguments and fail.",
-                advgetopt::getopt::required_multiple_argument
+                advgetopt::getopt::argument_mode_t::required_multiple_argument
             },
             {
                 '\0',
@@ -1478,7 +1478,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         {
@@ -1521,7 +1521,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (required multiple without args + short name)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 'f',
@@ -1529,7 +1529,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 "test a required multiple without any arguments and fail.",
-                advgetopt::getopt::required_multiple_argument
+                advgetopt::getopt::argument_mode_t::required_multiple_argument
             },
             {
                 '\0',
@@ -1537,7 +1537,7 @@ std::cerr << "that returned?!\n";
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         {
@@ -1595,7 +1595,7 @@ void AdvGetOptUnitTests::valid_config_files()
             NULL,
             NULL,
             "Usage: test valid options",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -1603,7 +1603,7 @@ void AdvGetOptUnitTests::valid_config_files()
             "valid-parameter",
             NULL,
             "a valid option",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'v',
@@ -1611,7 +1611,7 @@ void AdvGetOptUnitTests::valid_config_files()
             "verbose",
             NULL,
             "a verbose like option, select it or not",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -1619,7 +1619,7 @@ void AdvGetOptUnitTests::valid_config_files()
             "not-specified",
             NULL,
             "a verbose like option, but never specified anywhere",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -1627,7 +1627,7 @@ void AdvGetOptUnitTests::valid_config_files()
             "number",
             "111",
             "expect a valid number",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -1635,7 +1635,7 @@ void AdvGetOptUnitTests::valid_config_files()
             "string",
             "the default string",
             "expect a valid string",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -1643,7 +1643,7 @@ void AdvGetOptUnitTests::valid_config_files()
             "filenames",
             "a.out",
             "expect multiple strings",
-            advgetopt::getopt::required_multiple_argument
+            advgetopt::getopt::argument_mode_t::required_multiple_argument
         },
         {
             '\0',
@@ -1651,7 +1651,7 @@ void AdvGetOptUnitTests::valid_config_files()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -2098,7 +2098,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             "Usage: test valid options",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -2106,7 +2106,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             "valid-parameter",
             NULL,
             "a valid option",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'v',
@@ -2114,7 +2114,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             "verbose",
             NULL,
             "a verbose like option, select it or not",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -2122,7 +2122,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             "not-specified",
             NULL,
             "a verbose like option, but never specified anywhere",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -2130,7 +2130,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             "number",
             "111",
             "expect a valid number",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -2138,7 +2138,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             "string",
             "the default string",
             "expect a valid string",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -2146,7 +2146,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             "filenames",
             "a.out",
             "expect multiple strings, may be used after the -- and - is added to it too",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -2154,7 +2154,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -2249,7 +2249,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             "Usage: test valid options",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'a',
@@ -2257,7 +2257,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             "letter option",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             'c',
@@ -2265,7 +2265,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             0,
             NULL,
             "letter option",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'd',
@@ -2273,7 +2273,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             0,
             NULL,
             "letter option",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'f',
@@ -2281,7 +2281,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             "another letter",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'r',
@@ -2289,7 +2289,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             "another letter",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -2297,7 +2297,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
             NULL,
             NULL,
             NULL,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -2371,7 +2371,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 NULL,
                 NULL,
                 "Usage: test valid options",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -2379,7 +2379,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 "valid-parameter",
                 NULL,
                 "a valid option",
-                advgetopt::getopt::optional_argument
+                advgetopt::getopt::argument_mode_t::optional_argument
             },
             {
                 'v',
@@ -2387,7 +2387,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 "verbose",
                 NULL,
                 "a verbose like option, select it or not",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 '\0',
@@ -2395,7 +2395,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 "filenames",
                 "a.out",
                 "expect multiple strings",
-                advgetopt::getopt::optional_multiple_argument
+                advgetopt::getopt::argument_mode_t::optional_multiple_argument
             },
             {
                 '\0',
@@ -2403,7 +2403,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
 
@@ -2487,7 +2487,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 NULL,
                 NULL,
                 "Usage: try this one and we get a throw (strange entry without a name)",
-                advgetopt::getopt::help_argument
+                advgetopt::getopt::argument_mode_t::help_argument
             },
             {
                 '\0',
@@ -2495,7 +2495,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 NULL, // no name
                 "README",
                 NULL, // no help
-                advgetopt::getopt::default_multiple_argument
+                advgetopt::getopt::argument_mode_t::default_multiple_argument
             },
             {
                 'v',
@@ -2503,7 +2503,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 "verbose",
                 NULL,
                 "show more stuff when found on the command line.",
-                advgetopt::getopt::no_argument
+                advgetopt::getopt::argument_mode_t::no_argument
             },
             {
                 '\0',
@@ -2511,7 +2511,7 @@ void AdvGetOptUnitTests::valid_config_files_extra()
                 NULL,
                 NULL,
                 NULL,
-                advgetopt::getopt::end_of_options
+                advgetopt::getopt::argument_mode_t::end_of_options
             }
         };
         {

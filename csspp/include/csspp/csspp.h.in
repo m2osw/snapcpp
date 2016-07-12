@@ -81,7 +81,7 @@ public:
 
 private:
     bool &      f_flag;
-    bool        f_old_value;
+    bool        f_old_value = false;
 };
 
 class safe_precision_t
@@ -104,7 +104,7 @@ public:
     }
 
 private:
-    int         f_precision;
+    int         f_precision = 0;
 };
 
 } // namespace csspp

@@ -63,6 +63,11 @@ namespace
  */
 struct identifier_characters_t
 {
+    bool operator < (identifier_characters_t const & rhs)
+    {
+        return f_min < rhs.f_min;
+    }
+
     as_char_t   f_min;
     as_char_t   f_max;
 };
@@ -977,6 +982,17 @@ Lexer::char_type_t Lexer::char_type(Input::char_t c)
         //          Connector punctuation (Pc)
         //          ZWNJ
         //          ZWJ
+        //
+        // TODO: test with std::lower_bound() instead...
+        //
+        //identifier_characters_t searched{c, 0};
+        //auto const & it(std::lower_bound(g_identifier_characters, g_identifier_characters + g_identifier_characters_size, searched);
+        //if(it != g_identifier_characters + g_identifier_characters_size
+        //&& c <= it->f_max) // make sure upper bound also matches
+        //{
+        //    return CHAR_LETTER;
+        //}
+
         {
             size_t i, j, p;
             int    r;

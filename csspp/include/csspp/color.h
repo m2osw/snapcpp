@@ -29,11 +29,11 @@ typedef uint32_t        rgba_color_t;
 
 struct color_table_t
 {
-    byte_component_t        f_red;
-    byte_component_t        f_green;
-    byte_component_t        f_blue;
-    byte_component_t        f_alpha;
-    char const *            f_name;
+    byte_component_t        f_red   = 0;
+    byte_component_t        f_green = 0;
+    byte_component_t        f_blue  = 0;
+    byte_component_t        f_alpha = 0;
+    char const *            f_name  = nullptr;
 };
 
 class color

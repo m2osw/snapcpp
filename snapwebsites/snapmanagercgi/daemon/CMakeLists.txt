@@ -57,7 +57,6 @@ add_executable( ${PROJECT_NAME}
     snapmanagerdaemon.cpp
     manager_messenger.cpp
     manager_status.cpp
-    installer.cpp
     status.cpp
     status_connection.cpp
 )

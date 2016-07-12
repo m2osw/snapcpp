@@ -200,7 +200,7 @@ namespace
 }
 //namespace
 
-using namespace QtCassandra;
+
 
 /** \brief A class for easy access to all resources.
  *

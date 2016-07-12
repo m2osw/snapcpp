@@ -72,7 +72,8 @@ public:
     virtual void            bootstrap(snap_child * snap);
 
     // manager overload
-    virtual bool            display_value(QDomElement parent, snap_manager::status_t const & s) override;
+    virtual bool            display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri) override;
+    virtual bool            apply_setting(QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & services) override;
 
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);

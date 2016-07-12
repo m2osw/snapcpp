@@ -41,131 +41,134 @@
 
 #include <poison.h>
 
+namespace
+{
 
+const std::vector<std::string> g_configuration_files; // Empty
 
-const advgetopt::getopt::option cxpath_options[] =
+advgetopt::getopt::option const g_cxpath_options[] =
 {
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
-        "Usage: cxpath --<command> [--<opt>] ['<xpath>'] [<filename>.xml] ...",
-        advgetopt::getopt::help_argument
+        nullptr,
+        nullptr,
+        "Usage: %p --<command> [--<opt>] ['<xpath>'] [<filename>.xml] ...",
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     // COMMANDS
     {
         '\0',
         0,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "commands:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'c',
         0,
         "compile",
-        NULL,
+        nullptr,
         "compile the specified XPath and save it to a .xpath file and optionally print out the compiled code",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'd',
         0,
         "disassemble",
-        NULL,
+        nullptr,
         "disassemble the specified .xpath file (if used with the -c, disassemble as we compile)",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'h',
         0,
         "help",
-        NULL,
+        nullptr,
         "display this help screen",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'x',
         0,
         "execute",
-        NULL,
+        nullptr,
         "execute an xpath (.xpath file or parsed on the fly XPath) against one or more .xml files",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     // OPTIONS
     {
         '\0',
         0,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "options:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'n',
         0,
         "namespace",
-        NULL,
+        nullptr,
         "if specified, the namespaces are taken in account, otherwise the DOM ignores them",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'o',
         0,
         "output",
-        NULL,
+        nullptr,
         "name of the output file (the .xpath filename)",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         'p',
         0,
         "xpath",
-        NULL,
+        nullptr,
         "an XPath",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         'r',
         0,
         "results",
-        NULL,
+        nullptr,
         "display the results of executing the XPath",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'v',
         0,
         "verbose",
-        NULL,
+        nullptr,
         "make the process verbose",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
         0,
         "version",
-        NULL,
+        nullptr,
         "print out the version",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
         0,
         "filename",
-        NULL,
-        NULL, // hidden argument in --help screen
-        advgetopt::getopt::default_multiple_argument
+        nullptr,
+        nullptr, // hidden argument in --help screen
+        advgetopt::getopt::argument_mode_t::default_multiple_argument
     },
     {
         '\0',
         0,
-        NULL,
-        NULL,
-        NULL,
-        advgetopt::getopt::end_of_options
+        nullptr,
+        nullptr,
+        nullptr,
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -174,6 +177,10 @@ const advgetopt::getopt::option cxpath_options[] =
 advgetopt::getopt * g_opt;
 bool                g_verbose;
 bool                g_results;
+
+
+
+} // no name namespace
 
 
 void display_node(int j, QDomNode node)
@@ -219,10 +226,10 @@ void cxpath_compile()
     if(g_opt->is_defined("output"))
     {
         QDomXPath::program_t program(dom_xpath.getProgram());
-        QDomXPath::instruction_t const *inst(program.data());
+        QDomXPath::instruction_t const * inst(program.data());
         std::string filename(g_opt->get_string("output"));
-        FILE *f(fopen(filename.c_str(), "w"));
-        if(f == NULL)
+        FILE * f(fopen(filename.c_str(), "w"));
+        if(f == nullptr)
         {
             std::cerr << "error: cannot open output file \"" << filename.c_str() << "\" for writing." << std::endl;
             exit(1);
@@ -246,8 +253,8 @@ void cxpath_compile()
 void cxpath_execute()
 {
     std::string program_filename(g_opt->get_string("execute"));
-    FILE *f(fopen(program_filename.c_str(), "r"));
-    if(f == NULL)
+    FILE * f(fopen(program_filename.c_str(), "r"));
+    if(f == nullptr)
     {
         std::cerr << "error: could not open program file \"" << program_filename.c_str() << "\" for reading." << std::endl;
         exit(1);
@@ -319,8 +326,8 @@ void cxpath_execute()
 void cxpath_disassemble()
 {
     std::string program_filename(g_opt->get_string("filename"));
-    FILE *f(fopen(program_filename.c_str(), "r"));
-    if(f == NULL)
+    FILE * f(fopen(program_filename.c_str(), "r"));
+    if(f == nullptr)
     {
         std::cerr << "error: could not open program file \"" << program_filename.c_str() << "\" for reading." << std::endl;
         exit(1);
@@ -355,8 +362,7 @@ int main(int argc, char *argv[])
 {
     try
     {
-        std::vector<std::string> empty_list;
-        g_opt = new advgetopt::getopt(argc, argv, cxpath_options, empty_list, NULL);
+        g_opt = new advgetopt::getopt(argc, argv, g_cxpath_options, g_configuration_files, nullptr);
         if(g_opt->is_defined("version"))
         {
             std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
@@ -364,7 +370,7 @@ int main(int argc, char *argv[])
         }
         if(g_opt->is_defined("help"))
         {
-            g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");
+            g_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");
             snap::NOTREACHED();
         }
         g_verbose = g_opt->is_defined("verbose");

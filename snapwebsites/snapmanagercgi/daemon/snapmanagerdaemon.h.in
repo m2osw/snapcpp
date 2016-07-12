@@ -141,10 +141,9 @@ private:
     void                            stop(bool quitting);
 
     // the MANAGE command and all of its sub-functions
-    void                            manage(snap::snap_communicator_message const & message);
-    void                                set_manager_status(snap::snap_communicator_message const & message);
-    void                                installer(snap::snap_communicator_message const & message);
-    int                                     install(QString const & package_name);
+    void                            manager_install(snap::snap_communicator_message const & message);
+    void                            set_manager_status(snap::snap_communicator_message const & message);
+    void                                modify_settings(snap::snap_communicator_message const & message);
 
     //QString                                     f_server_types;                         // sent to use by snapcommunicator
     int                                         f_communicator_port = 4040;             // snap server port

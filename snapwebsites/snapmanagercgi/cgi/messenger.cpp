@@ -48,8 +48,17 @@ namespace snap_manager
  * This function initializes a messenger that connects to the snapcommunicator
  * and then sends the specified \p message to snapmanagerdaemon.
  *
- * Then the system waits for a small while for answers from the
- * snapmanagerdaemon.
+ * Once you constructed this messenger, you can wait for the message to
+ * get sent by calling the run() function. Once the run() function returns,
+ * the message was sent.
+ *
+ * \code
+ * snap_communicator_message my_message;
+ * my_message.set_command("EXPLODE");
+ * ...
+ * messenger msg(f_communicator_address, f_communicator_port, my_message);
+ * msg.run();
+ * \endcode
  *
  * \param[in] address  The address of snapcommunicator.
  * \param[in] port  The port of snapcommunicator.
@@ -87,7 +96,9 @@ messenger::messenger(std::string const & address, int port, snap::snap_communica
     // now wait for the READY and HELP replies, send the message, and
     // then wait for a while
     //
-    run();
+    // it's not a good idea to have the run() loop in the constructor...
+    //
+    //run();
 }
 
 
@@ -151,7 +162,7 @@ void messenger::process_message(snap::snap_communicator_message const & message)
             //
             snap::snap_communicator_message commands_message;
             commands_message.set_command("COMMANDS");
-            commands_message.add_parameter("list", "HELP,INVALID,MANAGEREPLY,QUITTING,READY,SERVERSTATUS,STOP,UNKNOWN");
+            commands_message.add_parameter("list", "HELP,INVALID,MANAGERACKNOWLEDGE,QUITTING,READY,SERVERSTATUS,STOP,UNKNOWN");
             send_message(commands_message);
 
             // now that we are fully registered, send the user message
@@ -163,12 +174,17 @@ void messenger::process_message(snap::snap_communicator_message const & message)
         break;
 
     case 'M':
-        if(command == "MANAGEREPLY")
+        if(command == "MANAGERACKNOWLEDGE")
         {
-            SNAP_LOG_DEBUG("MANAGEREPLY received by CGI");
+            // the snapmanagerdaemon tells us his server name, but it is
+            // not really useful...
+            //
+            f_result = message.get_parameter("who");
 
-            f_result = message.get_parameter("result");
-
+            // we got at least one acknowledgement so the message was sent...
+            // whether it worked on all computers (if broadcast to all) is a
+            // different story!
+            //
             done();
             return;
         }

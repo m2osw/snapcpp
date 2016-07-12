@@ -51,7 +51,7 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         NULL,
         "Usage: %p [-<opt>] <filename> ...",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -59,7 +59,7 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         NULL,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'h',
@@ -67,7 +67,7 @@ advgetopt::getopt::option const g_options[] =
         "help",
         NULL,
         "Show usage and exit.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -75,7 +75,7 @@ advgetopt::getopt::option const g_options[] =
         "version",
         NULL,
         "print out the version",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -83,7 +83,7 @@ advgetopt::getopt::option const g_options[] =
         "filename",
         NULL,
         NULL, // hidden argument in --help screen
-        advgetopt::getopt::default_multiple_argument
+        advgetopt::getopt::argument_mode_t::default_multiple_argument
     },
     {
         '\0',
@@ -91,7 +91,7 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         NULL,
         NULL,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 advgetopt::getopt *g_opt = NULL;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
         }
         if(g_opt->is_defined("help"))
         {
-            g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <imagefile> ...\n", argv[0]);
+            g_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: %s [--<opts>] <imagefile> ...\n", argv[0]);
             exit(1);
         }
 

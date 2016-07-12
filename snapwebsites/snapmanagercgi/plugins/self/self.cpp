@@ -208,7 +208,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
  *
  * \return true if we handled this field.
  */
-bool self::display_value(QDomElement parent, snap_manager::status_t const & s)
+bool self::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
     QDomDocument doc(parent.ownerDocument());
 
@@ -231,7 +231,7 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s)
                         ));
         f.add_widget(field);
 
-        f.generate(parent);
+        f.generate(parent, uri);
 
         return true;
     }
@@ -240,6 +240,35 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s)
 }
 
 
+/** \brief Save 'new_value' in field 'field_name'.
+ *
+ * This function saves 'new_value' in 'field_name'.
+ *
+ * \param[in] field_name  The name of the field to update.
+ * \param[in] new_value  The new value to save in that field.
+ * \param[in] old_value  The old value, just in case (usually ignored.)
+ *
+ * \return true if the new_value was applied successfully.
+ */
+bool self::apply_setting(QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & affected_services)
+{
+    snap::NOTUSED(old_value);
+
+    if(field_name == "snapmanager_frontend")
+    {
+        affected_services.push_back("snapmanagerdaemon");
+
+        // TODO: the path to the snapmanager.conf is hard coded, it needs to
+        //       use the path of the file used to load the .conf in the
+        //       first place (I'm just not too sure how to get that right
+        //       now, probably from the "--config" parameter, but how do
+        //       we do that for each service?)
+        //
+        return f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, new_value) == 0;
+    }
+
+    return false;
+}
 
 
 

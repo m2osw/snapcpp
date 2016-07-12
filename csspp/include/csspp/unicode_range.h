@@ -40,7 +40,7 @@ public:
     std::string     to_string() const;
 
 private:
-    range_value_t   f_range;
+    range_value_t   f_range = 0;
 };
 
 } // namespace csspp

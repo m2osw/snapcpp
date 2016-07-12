@@ -102,6 +102,8 @@ public:
     QString                         get_public_ip() const;
     virtual snap::snap_string_list const & get_snapmanager_frontend() const;
     virtual bool                    stop_now_prima() const;
+    void                            installer(QString const & bundle_name);
+    bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value);
 
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
 
@@ -111,6 +113,8 @@ public:
     static char const *             get_version_string() __attribute__ ((const));
 
 protected:
+    int                             install(QString const & package_name);
+
     bool const                      f_daemon = false;
     bool                            f_debug = false;
     advgetopt::getopt::pointer_t    f_opt;
@@ -122,6 +126,7 @@ protected:
 
 private:
     QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";
+    bool                            f_plugins_loaded = false;
 };
 
 

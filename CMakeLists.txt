@@ -85,7 +85,7 @@ ConfigureMakeProject( PROJECT_NAME libtld
 ConfigureMakeProject( PROJECT_NAME advgetopt
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS cmake controlled_vars
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME as2js
