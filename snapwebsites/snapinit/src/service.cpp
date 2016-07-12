@@ -1658,6 +1658,8 @@ void service::set_starting()
         return;
     }
 
+    SNAP_LOG_TRACE("service::set_starting() for service '")(f_service_name)("'.");
+
     f_stopping = 0;
 
     int64_t const SNAPINIT_STOP_DELAY = 1000000LL;
