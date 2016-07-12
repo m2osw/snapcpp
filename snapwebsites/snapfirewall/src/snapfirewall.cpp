@@ -338,18 +338,18 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "Usage: %p [-<opt>]",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'c',
@@ -357,7 +357,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "config",
         "/etc/snapwebsites/snapfirewall.conf",
         "Configuration file to initialize snapfirewall.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -365,7 +365,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "connect",
         nullptr,
         "The address and port information to connect to snapcommunicator (defined in /etc/snapwebsites/snapinit.xml).",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -373,7 +373,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "debug",
         nullptr,
         "Start the snapfirewall in debug mode.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'h',
@@ -381,7 +381,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "help",
         nullptr,
         "Show usage and exit.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'l',
@@ -389,7 +389,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "logfile",
         nullptr,
         "Full path to the snapfirewall logfile.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'n',
@@ -397,7 +397,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "nolog",
         nullptr,
         "Only output to the console, not a log file.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -405,7 +405,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "server-name",
         nullptr,
         "The name of the server that is going to run this instance of snapfirewall (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -413,7 +413,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "snapdbproxy",
         nullptr,
         "The address and port information to connect to snapdbproxy (defined in /etc/snapwebsites/snapinit.xml).",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -421,7 +421,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         "version",
         nullptr,
         "show the version of the snapfirewall executable.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -429,7 +429,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         nullptr,
         nullptr,
         nullptr,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -531,7 +531,7 @@ snap_firewall::~snap_firewall()
  */
 void snap_firewall::usage()
 {
-    f_opt.usage( advgetopt::getopt::no_error, "snapfirewall" );
+    f_opt.usage( advgetopt::getopt::status_t::no_error, "snapfirewall" );
     snap::NOTREACHED();
 }
 

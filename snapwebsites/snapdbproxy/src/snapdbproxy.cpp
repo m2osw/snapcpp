@@ -73,7 +73,7 @@ namespace
             nullptr,
             nullptr,
             "Usage: %p [-<opt>]",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -81,7 +81,7 @@ namespace
             nullptr,
             nullptr,
             "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'c',
@@ -89,7 +89,7 @@ namespace
             "config",
             "/etc/snapwebsites/snapdbproxy.conf",
             "Configuration file to initialize snapdbproxy.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -97,7 +97,7 @@ namespace
             "connect",
             nullptr,
             "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -105,7 +105,7 @@ namespace
             "debug",
             nullptr,
             "Start the snapdbproxy in debug mode.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -113,7 +113,7 @@ namespace
             "help",
             nullptr,
             "show this help output",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             'l',
@@ -121,7 +121,7 @@ namespace
             "logfile",
             nullptr,
             "Full path to the snapdbproxy logfile.",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'n',
@@ -129,7 +129,7 @@ namespace
             "nolog",
             nullptr,
             "Only output to the console, not a log file.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -137,7 +137,7 @@ namespace
             "server-name",
             nullptr,
             "Define the name of the server this service is running on.",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -145,7 +145,7 @@ namespace
             "snapdbproxy",
             nullptr,
             "The address and port information to listen on (defined in /etc/snapwebsites/snapinit.xml).",
-            advgetopt::getopt::required_argument
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -153,7 +153,7 @@ namespace
             "version",
             nullptr,
             "show the version of the snapdb executable",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -161,7 +161,7 @@ namespace
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 
@@ -210,7 +210,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     // --help
     if( f_opt.is_defined( "help" ) )
     {
-        usage(advgetopt::getopt::no_error);
+        usage(advgetopt::getopt::status_t::no_error);
         snap::NOTREACHED();
     }
 
@@ -316,7 +316,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     if( f_opt.is_defined( "--" ) )
     {
         std::cerr << "error: unexpected parameter found on daemon command line." << std::endl;
-        usage(advgetopt::getopt::error);
+        usage(advgetopt::getopt::status_t::error);
         snap::NOTREACHED();
     }
 }

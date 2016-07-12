@@ -87,7 +87,7 @@ class getopt
 public:
     typedef std::shared_ptr<getopt>     pointer_t;
 
-    enum status_t
+    enum class status_t
     {
         no_error,
         no_error_nobr,	// What does this do?!
@@ -101,7 +101,7 @@ public:
     static const unsigned char GETOPT_FLAG_SHOW_USAGE_ON_ERROR  = 0x04;
     static const unsigned char GETOPT_FLAG_ALIAS                = 0x08;
 
-    enum argument_mode_t
+    enum class argument_mode_t
     {
         no_argument,
         required_argument,
@@ -122,10 +122,10 @@ public:
     {
         char                f_opt = '\0';           // letter option (or '\0')
         unsigned char       f_flags = 0;            // set of flags
-        const char *        f_name = nullptr;       // name of the option (i.e. "test" for --test, or NULL)
-        const char *        f_default = nullptr;    // a default value if not NULL
-        const char *        f_help = nullptr;       // help for this option, if NULL it's a hidden option; if ALIAS then this is the actual alias
-        argument_mode_t     f_arg_mode = no_argument;
+        char const *        f_name = nullptr;       // name of the option (i.e. "test" for --test, or NULL)
+        char const *        f_default = nullptr;    // a default value if not NULL
+        char const *        f_help = nullptr;       // help for this option, if NULL it's a hidden option; if ALIAS then this is the actual alias
+        argument_mode_t     f_arg_mode = argument_mode_t::no_argument;
     };
 
                         getopt(int argc, char * argv[], option const * opts, const std::vector<std::string> configuration_files, char const * environment_variable_name);

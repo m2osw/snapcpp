@@ -321,7 +321,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         nullptr,
         nullptr,
         "Usage: %p [-<opt>] <start|restart|stop>",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -329,7 +329,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         nullptr,
         nullptr,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         'b',
@@ -337,7 +337,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "binary-path",
         "/usr/bin",
         "Path where snap! binaries can be found (e.g. snapserver and snapbackend).",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'c',
@@ -345,7 +345,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "config",
         "/etc/snapwebsites/snapinit.conf",
         "Configuration file to initialize snapinit.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -353,7 +353,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "debug",
         nullptr,
         "Start the server and backend services in debug mode.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'd',
@@ -361,7 +361,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "detach",
         nullptr,
         "Background the snapinit server.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'h',
@@ -369,7 +369,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "help",
         nullptr,
         "Show usage and exit.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -377,7 +377,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "list",
         nullptr,
         "Display the list of services and exit.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'k',
@@ -385,7 +385,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "lockdir",
         "/run/lock/snapwebsites",
         "Full path to the snapinit lockdir.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'l',
@@ -393,7 +393,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "logfile",
         nullptr,
         "Full path to the snapinit logfile.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'n',
@@ -401,7 +401,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "nolog",
         nullptr,
         "Only output to the console, not the log file.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -409,7 +409,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "remove-lock",
         nullptr,
         "For the removal of an existing lock (useful if a spurious lock still exists).",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -417,7 +417,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "running",
         nullptr,
         "test whether snapinit is running; exit with 0 if so, 1 otherwise.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -425,7 +425,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         "version",
         nullptr,
         "show the version of the snapinit executable.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -433,7 +433,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         nullptr,
         nullptr,
         nullptr,
-        advgetopt::getopt::default_argument
+        advgetopt::getopt::argument_mode_t::default_argument
     },
     {
         '\0',
@@ -441,7 +441,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         nullptr,
         nullptr,
         nullptr,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -2210,7 +2210,7 @@ void snap_init::get_addr_port_for_snap_communicator(QString & udp_addr, int & ud
  */
 void snap_init::usage()
 {
-    f_opt.usage( advgetopt::getopt::no_error, "snapinit" );
+    f_opt.usage( advgetopt::getopt::status_t::no_error, "snapinit" );
     snap::NOTREACHED();
 }
 

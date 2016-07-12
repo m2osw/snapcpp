@@ -88,7 +88,7 @@ advgetopt::getopt::option const g_manager_options[] =
         nullptr,
         nullptr,
         "Usage: %p [-<opt>]",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -96,7 +96,7 @@ advgetopt::getopt::option const g_manager_options[] =
         nullptr,
         nullptr,
         "where -<opt> is one or more of:",
-        advgetopt::getopt::help_argument
+        advgetopt::getopt::argument_mode_t::help_argument
     },
     {
         '\0',
@@ -104,7 +104,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "config",
         "/etc/snapwebsites/snapmanager.conf",
         "Path and filename of the snapmanager.cgi and snapmanagerdaemon configuration file.",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -112,7 +112,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "connect",
         nullptr,
         "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -120,7 +120,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "data-path",
         "/var/lib/snapwebsites/cluster-status",
         "Path to this process data directory to save the cluster status.",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -128,7 +128,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "debug",
         nullptr,
         "Start in debug mode.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -136,7 +136,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "log-config",
         "/etc/snapwebsites/snapmanager.properties",
         "Full path of log configuration file.",
-        advgetopt::getopt::optional_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         'h',
@@ -144,7 +144,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "help",
         nullptr,
         "Show this help screen.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -152,7 +152,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "server-name",
         0,
         "Name of the server on which snapmanagerdaemon is running.",
-        advgetopt::getopt::optional_argument // required for snapmanagerdaemon, ignored by snapmanager.cgi
+        advgetopt::getopt::argument_mode_t::optional_argument // required for snapmanagerdaemon, ignored by snapmanager.cgi
     },
     {
         '\0',
@@ -160,7 +160,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "snapdbproxy",
         0,
         "The IP address and port of the snapdbproxy service.",
-        advgetopt::getopt::optional_argument // required for snapmanagerdaemon, ignored by snapmanager.cgi
+        advgetopt::getopt::argument_mode_t::optional_argument // required for snapmanagerdaemon, ignored by snapmanager.cgi
     },
     {
         '\0',
@@ -168,7 +168,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "stylesheet",
         "/etc/snapwebsites/snapmanagercgi-parser.xsl",
         "The stylesheet to use to transform the data before sending it to the client as HTML.",
-        advgetopt::getopt::required_argument
+        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -176,7 +176,7 @@ advgetopt::getopt::option const g_manager_options[] =
         "version",
         nullptr,
         "Show the version of the snapcgi executable.",
-        advgetopt::getopt::no_argument
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         '\0',
@@ -184,7 +184,7 @@ advgetopt::getopt::option const g_manager_options[] =
         nullptr,
         nullptr,
         nullptr,
-        advgetopt::getopt::end_of_options
+        advgetopt::getopt::argument_mode_t::end_of_options
     }
 };
 
@@ -257,7 +257,7 @@ void manager::init(int argc, char * argv[])
     //
     if(f_opt->is_defined("help"))
     {
-        f_opt->usage(f_opt->no_error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt->usage(f_opt->status_t::no_error, "Usage: %s -<arg> ...\n", argv[0]);
         exit(1);
     }
 
@@ -331,7 +331,7 @@ void manager::init(int argc, char * argv[])
     if( f_opt->is_defined( "--" ) )
     {
         std::cerr << "fatal error: unexpected parameter found on daemon command line." << std::endl;
-        f_opt->usage(f_opt->error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt->usage(f_opt->status_t::error, "Usage: %s -<arg> ...\n", argv[0]);
         snap::NOTREACHED();
     }
 

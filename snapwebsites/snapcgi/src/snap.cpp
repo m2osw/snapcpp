@@ -88,7 +88,7 @@ namespace
             nullptr,
             nullptr,
             "Usage: %p [-<opt>]",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -96,7 +96,7 @@ namespace
             nullptr,
             nullptr,
             "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -104,7 +104,7 @@ namespace
             "snapserver",
             nullptr,
             "IP address on which the snapserver is running, it may include a port (i.e. 192.168.0.1:4004)",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -112,7 +112,7 @@ namespace
             "log_config",
             "/etc/snapwebsites/snapcgilog.properties",
             "Full path of log configuration file",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             'h',
@@ -120,7 +120,7 @@ namespace
             "help",
             nullptr,
             "Show this help screen.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -128,7 +128,7 @@ namespace
             "version",
             nullptr,
             "Show the version of the snapcgi executable.",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -136,7 +136,7 @@ namespace
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 }
@@ -172,7 +172,7 @@ snap_cgi::snap_cgi( int argc, char * argv[] )
     }
     if(f_opt.is_defined("help"))
     {
-        f_opt.usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt.usage(advgetopt::getopt::status_t::no_error, "Usage: %s -<arg> ...\n", argv[0]);
         exit(1);
     }
 

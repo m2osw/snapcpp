@@ -53,7 +53,7 @@ namespace as2js
 //
 // You use like this:
 //
-//    using namespace sswf::as;
+//    using namespace sswf::as; // a using namespace is not recommended, though
 //    MyInput input;
 //    Parser *parser = Parser::CreateParser();
 //    parser->SetInput(input);

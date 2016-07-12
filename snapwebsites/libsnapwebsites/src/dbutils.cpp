@@ -32,7 +32,6 @@
 #include "poison.h"
 
 
-using namespace QtCassandra;
 
 namespace snap
 {
@@ -292,7 +291,7 @@ void dbutils::set_display_len( int const val )
 }
 
 
-QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
+QString dbutils::get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const
 {
     QByteArray key(p_r->rowKey());
     return get_row_name( key );
@@ -332,7 +331,7 @@ QByteArray dbutils::set_row_name( const QString& name, const QByteArray& orig_ke
 }
 
 
-QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
+QString dbutils::get_column_name( QtCassandra::QCassandraCell::pointer_t c ) const
 {
     return get_column_name( c->columnKey() );
 }
@@ -539,7 +538,7 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
 }
 
 
-dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) const
+dbutils::column_type_t dbutils::get_column_type( QtCassandra::QCassandraCell::pointer_t c ) const
 {
     return get_column_type( c->columnKey() );
 }
@@ -889,7 +888,7 @@ QString dbutils::get_column_type_name( const QByteArray& key ) const
 }
 
 
-QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const display_only ) const
+QString dbutils::get_column_value( QtCassandra::QCassandraCell::pointer_t c, bool const display_only ) const
 {
     return get_column_value( c->columnKey(), c->value().binaryValue(), display_only );
 }
@@ -897,11 +896,11 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const displ
 
 QString dbutils::get_column_value( const QByteArray& key, const QByteArray& value, bool const display_only ) const
 {
-    QCassandraValue cvalue(value);
+    QtCassandra::QCassandraValue cvalue(value);
     return get_column_value( key, cvalue, display_only );
 }
 
-QString dbutils::get_column_value( const QByteArray& key, const QCassandraValue& value, bool const display_only ) const
+QString dbutils::get_column_value( const QByteArray& key, const QtCassandra::QCassandraValue& value, bool const display_only ) const
 {
     QString v;
     try
@@ -1198,9 +1197,9 @@ QString dbutils::get_column_value( const QByteArray& key, const QCassandraValue&
 }
 
 
-void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v ) const
+void dbutils::set_column_value( QtCassandra::QCassandraCell::pointer_t c, QString const & v ) const
 {
-    QCassandraValue cvalue;
+    QtCassandra::QCassandraValue cvalue;
     set_column_value( c->columnKey(), cvalue, v );
     c->setValue( cvalue );
 }
@@ -1208,13 +1207,13 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
 
 void dbutils::set_column_value( const QByteArray& key, QByteArray& value, QString const & v ) const
 {
-    QCassandraValue cvalue;
+    QtCassandra::QCassandraValue cvalue;
     set_column_value( key, cvalue, v );
     value = cvalue.binaryValue();
 }
 
 
-void dbutils::set_column_value( const QByteArray& key, QCassandraValue& cvalue, QString const & v ) const
+void dbutils::set_column_value( const QByteArray& key, QtCassandra::QCassandraValue& cvalue, QString const & v ) const
 {
     switch( get_column_type( key ) )
     {
@@ -1322,8 +1321,8 @@ void dbutils::set_column_value( const QByteArray& key, QCassandraValue& cvalue, 
 
             // concatenate the result
             QByteArray tms;
-            appendInt64Value( tms, tt * 1000000 + ns );
-            appendStringValue( tms, str );
+            QtCassandra::appendInt64Value( tms, tt * 1000000 + ns );
+            QtCassandra::appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
         }
         break;
@@ -1375,9 +1374,9 @@ void dbutils::set_column_value( const QByteArray& key, QCassandraValue& cvalue, 
 
             // concatenate the result
             QByteArray tms;
-            appendUnsignedCharValue( tms, static_cast<unsigned char>(priority) );
-            appendInt64Value( tms, tt * 1000000 + ns );
-            appendStringValue( tms, str );
+            QtCassandra::appendUnsignedCharValue( tms, static_cast<unsigned char>(priority) );
+            QtCassandra::appendInt64Value( tms, tt * 1000000 + ns );
+            QtCassandra::appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
         }
         break;

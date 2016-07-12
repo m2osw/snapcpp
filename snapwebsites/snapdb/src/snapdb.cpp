@@ -73,7 +73,7 @@ namespace
             nullptr,
             nullptr,
             "Usage: %p [-<opt>] [table [row] [cell] [value]]",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             '\0',
@@ -81,7 +81,7 @@ namespace
             nullptr,
             nullptr,
             "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
+            advgetopt::getopt::argument_mode_t::help_argument
         },
         {
             'h',
@@ -89,7 +89,7 @@ namespace
             "help",
             nullptr,
             "show this help output",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -97,7 +97,7 @@ namespace
             "context",
             nullptr,
             "name of the context from which to read",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -105,7 +105,7 @@ namespace
             "count",
             nullptr,
             "specify the number of rows to display",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -113,7 +113,7 @@ namespace
             "create-row",
             nullptr,
             "allows the creation of a row when writing a value",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -121,7 +121,7 @@ namespace
             "drop-cell",
             nullptr,
             "drop the specified cell (specify row and cell)",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -129,7 +129,7 @@ namespace
             "drop-row",
             nullptr,
             "drop the specified row (specify row)",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -137,7 +137,7 @@ namespace
             "full-cell",
             nullptr,
             "show all the data from that cell, by default large binary cells get truncated for display",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -145,7 +145,7 @@ namespace
             "yes-i-know-what-im-doing",
             nullptr,
             "Force the dropping of tables, without warning and stdin prompt. Only use this if you know what you're doing!",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -153,7 +153,7 @@ namespace
             "host",
             nullptr,
             "host IP address or name (defaults to localhost)",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -161,7 +161,7 @@ namespace
             "port",
             nullptr,
             "port on the host to connect to (defaults to 9042)",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -169,7 +169,7 @@ namespace
             "info",
             nullptr,
             "print out the cluster name and protocol version",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -177,7 +177,7 @@ namespace
             "no-types",
             nullptr,
             "supress the output of the column type",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -185,7 +185,7 @@ namespace
             "version",
             nullptr,
             "show the version of the snapdb executable",
-            advgetopt::getopt::no_argument
+            advgetopt::getopt::argument_mode_t::no_argument
         },
         {
             '\0',
@@ -193,7 +193,7 @@ namespace
             nullptr,
             nullptr,
             "[table [row] [cell] [value]]",
-            advgetopt::getopt::default_multiple_argument
+            advgetopt::getopt::argument_mode_t::default_multiple_argument
         },
         {
             '\0',
@@ -201,17 +201,15 @@ namespace
             nullptr,
             nullptr,
             nullptr,
-            advgetopt::getopt::end_of_options
+            advgetopt::getopt::argument_mode_t::end_of_options
         }
     };
 }
 //namespace
 
-using namespace QtCassandra;
-using namespace QCassandraSchema;
 
 snapdb::snapdb(int argc, char * argv[])
-    : f_session( QCassandraSession::create() )
+    : f_session( QtCassandra::QCassandraSession::create() )
     , f_host("localhost") // default
     , f_port(9042) //default to connect to snapdbproxy
     , f_count(100)
@@ -247,7 +245,7 @@ snapdb::snapdb(int argc, char * argv[])
     // then check commands
     if( f_opt->is_defined( "help" ) )
     {
-        usage(advgetopt::getopt::no_error);
+        usage(advgetopt::getopt::status_t::no_error);
     }
 
     try
@@ -276,7 +274,7 @@ snapdb::snapdb(int argc, char * argv[])
         if( arg_count > 4 )
         {
             std::cerr << "error: only four parameters (table, row, cell and value) can be specified on the command line." << std::endl;
-            usage(advgetopt::getopt::error);
+            usage(advgetopt::getopt::status_t::error);
         }
         for( int idx = 0; idx < arg_count; ++idx )
         {
@@ -314,7 +312,7 @@ void snapdb::info()
         if(f_session->isConnected())
         {
             // read and display the Cassandra information
-            auto q = QCassandraQuery::create( f_session );
+            auto q = QtCassandra::QCassandraQuery::create( f_session );
             q->query( "SELECT cluster_name,native_protocol_version,partitioner FROM system.local" );
             q->start();
             std::cout << "Working on Cassandra Cluster Named \""    << q->getStringColumn("cluster_name")            << "\"." << std::endl;
@@ -353,7 +351,7 @@ void snapdb::drop_row() const
     {
         snap::dbutils du( f_table, f_row );
         const QByteArray row_key( du.get_row_key() );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("DELETE FROM %1.%2 WHERE key = ?;")
                     .arg(f_context)
                     .arg(f_table)
@@ -380,7 +378,7 @@ void snapdb::drop_cell() const
         const QByteArray row_key( du.get_row_key() );
         QByteArray col_key;
         du.set_column_name( col_key, f_cell );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("DELETE FROM %1.%2 WHERE key = ? and column1 = ?;")
             .arg(f_context)
             .arg(f_table)
@@ -406,7 +404,7 @@ bool snapdb::row_exists() const
     {
         snap::dbutils du( f_table, f_row );
         const QByteArray row_key( du.get_row_key() );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_context)
             .arg(f_table)
@@ -431,7 +429,7 @@ void snapdb::display_tables() const
 {
     try
     {
-        SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+        QtCassandra::QCassandraSchema::SessionMeta::pointer_t sm( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
         sm->loadSchema();
         const auto& keyspaces( sm->getKeyspaces() );
         auto snap_iter = keyspaces.find(f_context);
@@ -462,7 +460,7 @@ void snapdb::display_rows() const
     try
     {
         snap::dbutils du( f_table, f_row );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT DISTINCT key FROM %1.%2;")
                     .arg(f_context)
                     .arg(f_table)
@@ -496,7 +494,7 @@ void snapdb::display_rows_wildcard() const
         QString const row_start(f_row.left(f_row.length() - 1));
         std::stringstream ss;
 
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT DISTINCT key FROM %1.%2;")
                     .arg(f_context)
                     .arg(f_table)
@@ -542,7 +540,7 @@ void snapdb::display_columns() const
         snap::dbutils du( f_table, f_row );
         du.set_display_len( 24 );   // len for the elipsis for hex entries
 
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT column1, value FROM %1.%2 WHERE key = ?;")
                     .arg(f_context)
                     .arg(f_table)
@@ -632,7 +630,7 @@ void snapdb::display_cell() const
             const QByteArray row_key( du.get_row_key() );
             QByteArray col_key;
             du.set_column_name( col_key, f_cell );
-            auto q( QCassandraQuery::create(f_session) );
+            auto q( QtCassandra::QCassandraQuery::create(f_session) );
             q->query( QString("SELECT value FROM %1.%2 WHERE key = ? and column1 = ?;")
                     .arg(f_context)
                     .arg(f_table)
@@ -713,7 +711,7 @@ void snapdb::set_cell() const
         QByteArray value;
         du.set_column_value( f_cell.toUtf8(), value, f_value );
 
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("UPDATE %1.%2 SET value = ? WHERE key = ? and column1 = ?;")
                 .arg(f_context)
                 .arg(f_table)
