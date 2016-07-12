@@ -32,6 +32,7 @@
 
 #include <sys/resource.h>
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <vector>
@@ -74,6 +75,7 @@ public:
     bool                        run();
     bool                        is_running() const;
     bool                        is_service_required();
+    void                        set_starting();
     void                        set_stopping();
     bool                        is_stopping() const;
     bool                        has_stopped() const;
@@ -104,6 +106,7 @@ protected:
 
 private:
     void                        compute_next_tick(bool just_ran);
+    void                        get_depends_on_list();
     void                        mark_process_as_dead();
 
     std::weak_ptr<snap_init>    f_snap_init;
@@ -115,6 +118,7 @@ private:
     QString                     f_user;
     QString                     f_group;
     snap::snap_string_list      f_dependsList;
+    service::vector_t           f_depends_on_list;
     pid_t                       f_pid = 0;
     pid_t                       f_old_pid = 0;
     int                         f_short_run_count = 0;
@@ -133,8 +137,14 @@ private:
     QString                     f_snapdbproxy_addr;                 // to connect with snapdbproxy
     int                         f_snapdbproxy_port = 4042;          // to connect with snapdbproxy
     int                         f_priority = DEFAULT_PRIORITY;
-    int                         f_cron = 0;             // if 0, then off (i.e. not a cron task)
+    int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
+    bool                        f_restart_deps = false;
+
+    // For future refactoring. Not yet implemented.
+    //
+    typedef std::function<void(service*)> func_t;
+    typedef std::queue<func_t>            func_queue_t;
 };
 
 // vim: ts=4 sw=4 et

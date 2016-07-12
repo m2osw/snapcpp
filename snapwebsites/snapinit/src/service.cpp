@@ -601,6 +601,16 @@ done:;
 }
 
 
+void service::get_depends_on_list()
+{
+    if( f_depends_on_list.empty() )
+    {
+        const auto snap_init( f_snap_init.lock() );
+        snap_init->get_depends_on_list( f_service_name, f_depends_on_list );
+    }
+}
+
+
 /** \brief Process a timeout on a connection.
  *
  * This function should probably be cut into a few sub-functions. It
@@ -648,15 +658,13 @@ void service::process_timeout()
         {
             // Make sure the services which depend on this have stopped first...
             //
-            const auto snap_init( f_snap_init.lock() );
-            vector_t depends_on_list;
-            snap_init->get_depends_on_list( f_service_name, depends_on_list );
-            auto iter = std::find_if( depends_on_list.begin(), depends_on_list.end(),
+            get_depends_on_list();
+            auto iter = std::find_if( f_depends_on_list.begin(), f_depends_on_list.end(),
                 [&]( const auto& svc )
                 {
                     return !svc->has_stopped();
                 });
-            if( iter != depends_on_list.end() )
+            if( iter != f_depends_on_list.end() )
             {
                 SNAP_LOG_INFO("Dependency service '")((*iter)->get_service_name())("' has not yet stopped, checking again on the next timeout.");
                 // Leave timer running and come back again if any service has not yet stopped...
@@ -876,7 +884,14 @@ bool service::is_dependency_of( const QString& service_name )
 
 void service::mark_process_as_dead()
 {
-    SNAP_LOG_TRACE("service::mark_process_as_dead(), service='")(f_service_name)("'");
+    SNAP_LOG_TRACE("marking service '")(f_service_name)("' as dead.");
+
+    const auto snap_init( f_snap_init.lock() );
+    if(!snap_init)
+    {
+        common::fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
+        snap::NOTREACHED();
+    }
 
     // do we know we sent the STOP signal? if so, remove outselves
     // from snapcommunicator
@@ -893,18 +908,7 @@ void service::mark_process_as_dead()
         // remove self (timer) from snapcommunicator
         //
         remove_from_communicator();
-
-        // we also must call the snapinit::()
-        // since we are stopping and that is the one function that
-        // detects whether all services died so far or not
-        //
-        std::shared_ptr<snap_init> si(f_snap_init.lock());
-        if(!si)
-        {
-            common::fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
-            snap::NOTREACHED();
-        }
-        si->remove_terminated_services();
+        snap_init->remove_terminated_services();
 
         return;
     }
@@ -992,6 +996,17 @@ void service::mark_process_as_dead()
         // avoid swamping the CPU with many restart all at once
         //
         set_timeout_delay(1000000LL);
+
+        // Now, if we are marking this process as dead with a big wait, then those services which depend
+        // on this service running must be stopped as well.
+        //
+        get_depends_on_list();
+        for( auto const& dep : f_depends_on_list )
+        {
+            dep->set_stopping();
+        }
+        //
+        f_restart_deps = true;
     }
 
     set_enable(true);
@@ -1460,6 +1475,20 @@ bool service::run()
     }
     else
     {
+        if( f_restart_deps )
+        {
+            SNAP_LOG_TRACE("Restarting services that depend on '")(f_service_name)("'.");
+
+            get_depends_on_list();
+            for( auto const& dep : f_depends_on_list )
+            {
+                SNAP_LOG_TRACE("*** Starting dep '")(dep->get_service_name())("'.");
+                dep->set_starting();
+            }
+            //
+            f_restart_deps = false;
+        }
+
         // here we are considered started and running
         //
         f_started = true;
@@ -1622,6 +1651,43 @@ bool service::is_service_required()
 }
 
 
+/** \brief Mark this service as starting.
+ *
+ * Mark a service as starting, and start the timer. Any processes that are
+ * dependent on this process running will likewise be marked as starting. They
+ * will not start until this process has fully started.
+ *
+ * \sa process_timeout()
+ */
+void service::set_starting()
+{
+    if(is_running())
+    {
+        return;
+    }
+
+    SNAP_LOG_TRACE("service::set_starting() for service '")(f_service_name)("'.");
+
+    f_stopping = 0;
+
+    int64_t const SNAPINIT_STOP_DELAY = 1000000LL;
+    set_enable(true);
+    set_timeout_delay(SNAPINIT_STOP_DELAY);
+    set_timeout_date(-1); // ignore any date timeout
+
+    // Now set stopping on all processes which depend on this service:
+    //
+    get_depends_on_list();
+    for( const auto& svc : f_depends_on_list )
+    {
+        if( svc->has_stopped() )
+        {
+            svc->set_starting();
+        }
+    }
+}
+
+
 /** \brief Mark this service as stopping.
  *
  * This service is marked as being stopped. This happens when quitting
@@ -1641,6 +1707,8 @@ bool service::is_service_required()
  */
 void service::set_stopping()
 {
+    SNAP_LOG_TRACE("service::set_stopping() stopping service '")(f_service_name)("'");
+
     if(is_running())
     {
         // on the next timeout, use SIGTERM
@@ -1666,10 +1734,8 @@ void service::set_stopping()
 
         // Now set stopping on all processes which depend on this service:
         //
-        const auto snap_init( f_snap_init.lock() );
-        vector_t depends_on_list;
-        snap_init->get_depends_on_list( f_service_name, depends_on_list );
-        for( const auto& svc : depends_on_list )
+        get_depends_on_list();
+        for( const auto& svc : f_depends_on_list )
         {
             if( !svc->has_stopped() )
             {
