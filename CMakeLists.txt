@@ -63,7 +63,7 @@ ConfigureMakeProject( PROJECT_NAME zipios2
 
 ConfigureMakeProject( PROJECT_NAME log4cplus
     CONFIG_ARGS
-        -DCMAKE_CXX_FLAGS=-std=c++14
+        -DCMAKE_CXX_FLAGS=-std=c++11
         -DLOG4CPLUS_BUILD_TESTING=OFF
         -DLOG4CPLUS_SINGLE_THREADED=OFF
         -DLOG4CPLUS_QT4=OFF
