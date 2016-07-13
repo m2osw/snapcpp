@@ -101,6 +101,8 @@ public:
     snap::snap_string_list          list_of_servers();
     QString                         get_public_ip() const;
     virtual snap::snap_string_list const & get_snapmanager_frontend() const;
+    std::vector<std::string> const & get_bundle_uri() const;
+    QString const &                 get_bundles_path() const;
     virtual bool                    stop_now_prima() const;
     void                            installer(QString const & bundle_name);
     bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value);
@@ -120,9 +122,12 @@ protected:
     advgetopt::getopt::pointer_t    f_opt;
     snap::snap_config               f_config;
     QString                         f_server_name;
-    QString                         f_data_path = "/var/lib/snapwebsites/cluster-status";
+    QString                         f_data_path = "/var/lib/snapwebsites";
+    QString                         f_cluster_status_path = f_data_path + "/cluster-status";
+    QString                         f_bundles_path = f_data_path + "/bundles";
     QString                         f_public_ip;
     QString                         f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
+    std::vector<std::string>        f_bundle_uri;
 
 private:
     QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";

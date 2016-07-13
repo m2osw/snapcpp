@@ -81,7 +81,7 @@ void manager_daemon::set_manager_status(snap::snap_communicator_message const & 
     QString const server(message.get_sent_from_server());
     QString const status(message.get_parameter("status"));
 
-    server_status s(f_data_path, server);
+    server_status s(f_cluster_status_path, server);
 
     // get this snapcommunicator status in our server_status object
     //

@@ -79,6 +79,11 @@ manager_status::manager_status(manager_daemon * md, status_connection::pointer_t
 }
 
 
+manager_status::~manager_status()
+{
+}
+
+
 /** \brief Save the list of front end snapmanager.cgi computers.
  *
  * We really only need to forward the current status of the

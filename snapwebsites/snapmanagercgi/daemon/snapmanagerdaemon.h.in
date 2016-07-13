@@ -28,14 +28,14 @@
 #include <string>
 #include <iostream>
 
-namespace snap_manager
-{
-
 // WARNING: the daemon currently shares its version with the CGI tool
 #define SNAPMANAGERDAEMON_VERSION_MAJOR   @SNAPMANAGERCGI_VERSION_MAJOR@
 #define SNAPMANAGERDAEMON_VERSION_MINOR   @SNAPMANAGERCGI_VERSION_MINOR@
 #define SNAPMANAGERDAEMON_VERSION_PATCH   @SNAPMANAGERCGI_VERSION_PATCH@
 #define SNAPMANAGERDAEMON_VERSION_STRING  "@SNAPMANAGERCGI_VERSION_MAJOR@.@SNAPMANAGERCGI_VERSION_MINOR@.@SNAPMANAGERCGI_VERSION_PATCH@"
+
+namespace snap_manager
+{
 
 class manager_daemon;
 class manager_status;
@@ -92,9 +92,8 @@ class manager_status
     : public snap::snap_thread::snap_runner
 {
 public:
-    typedef void (manager_status::*status_function_t)();
-
                                     manager_status(manager_daemon *md, status_connection::pointer_t sc);
+    virtual                         ~manager_status();
 
     virtual void                    run() override;
 
@@ -114,6 +113,28 @@ private:
     bool                            f_running = true;
     bool                            f_resend_status = false;
     snap::snap_string_list          f_snapmanager_frontend;
+};
+
+
+
+
+class bundle_loader
+    : public snap::snap_thread::snap_runner
+{
+public:
+                                    bundle_loader();
+    virtual                         ~bundle_loader() override;
+
+    void                            set_bundle_uri(QString const & bundles_path, std::vector<std::string> const & bundle_uri);
+
+    virtual void                    run() override;
+
+private:
+    bool                            load(std::string const & uri);
+    bool                            wget(std::string const & uri, std::string const & filename);
+
+    QString                         f_bundles_path;
+    std::vector<std::string>        f_bundle_uri;
 };
 
 
@@ -153,6 +174,8 @@ private:
     status_connection::pointer_t                f_status_connection;
     manager_status                              f_status_runner;
     snap::snap_thread                           f_status_thread;
+    bundle_loader                               f_bundle_loader;
+    snap::snap_thread                           f_bundle_thread;
     //server_status                               f_status;           // our status
     QString                                     f_output;           // commands output, to be sent to end user
 };

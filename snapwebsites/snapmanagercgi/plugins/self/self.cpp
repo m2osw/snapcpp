@@ -19,10 +19,13 @@
 
 #include "lib/form.h"
 
+#include "join_strings.h"
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "qdomhelpers.h"
 
-#include <snapwebsites/qdomhelpers.h>
+#include <QFile>
 
 #include "poison.h"
 
@@ -190,6 +193,18 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                     frontend_servers.join(","));
         server_status.set_field(frontend);
     }
+
+    {
+        std::vector<std::string> const & bundle_uri(f_snap->get_bundle_uri());
+        snap_manager::status_t const bundle(
+                    bundle_uri.empty()
+                            ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                            : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                    get_plugin_name(),
+                    "bundle_uri",
+                    QString::fromUtf8(snap::join_strings(bundle_uri, ",").c_str()));
+        server_status.set_field(bundle);
+    }
 }
 
 
@@ -236,6 +251,30 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         return true;
     }
 
+    if(s.get_field_name() == "bundle_uri")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "List of URIs to Directories of Bundles"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , QString("This is a list of comma separated URIs specifying the location of Directory Bundles. Usually, this is just one URI.")
+                                .arg(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                    ? " <span style=\"color: red;\">The WARNING status signals that you have not specified any such URI. Also, to be able to install any bundle on any computer, you want to have the same list of URIs on all your computers.</span>"
+                                    : "")
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     return false;
 }
 
@@ -254,7 +293,24 @@ bool self::apply_setting(QString const & field_name, QString const & new_value, 
 {
     snap::NOTUSED(old_value);
 
-    if(field_name == "snapmanager_frontend")
+    bool const reset_bundle_uri(field_name == "bundle_uri");
+    if(reset_bundle_uri)
+    {
+        // if a failure happens, we do not create the last update time
+        // file, that means we will retry to read the bundles each time;
+        // so deleting that file is like requesting an immediate reload
+        // of the bundles
+        //
+        QString const reset_filename(QString("%1/bundles.reset").arg(f_snap->get_bundles_path()));
+        QFile reset_file(reset_filename);
+        if(!reset_file.open(QIODevice::WriteOnly))
+        {
+            SNAP_LOG_WARNING("failed to create the \"")(reset_filename)("\", changes to the bundles URI may not show up as expected.");
+        }
+    }
+
+    if(field_name == "snapmanager_frontend"
+    || reset_bundle_uri)
     {
         affected_services.push_back("snapmanagerdaemon");
 
@@ -264,7 +320,7 @@ bool self::apply_setting(QString const & field_name, QString const & new_value, 
         //       now, probably from the "--config" parameter, but how do
         //       we do that for each service?)
         //
-        return f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, new_value) == 0;
+        return f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, new_value);
     }
 
     return false;

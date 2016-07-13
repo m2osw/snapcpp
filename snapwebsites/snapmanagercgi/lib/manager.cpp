@@ -336,27 +336,36 @@ void manager::init(int argc, char * argv[])
     }
 
     // get the data path, we will be saving the status of each computer
-    // in the cluster using this path
+    // in the cluster-status sub-directory and the bundles will be saved
+    // under a sub-directory of that name.
     //
-    // Note: the user could change this path to use /run/snapwebsites/...
-    //       instead so that way it saves the data to RAM instead of disk;
-    //       however, by default we use the disk because it may end up being
-    //       rather large and we do not want to swarm the memory of small
-    //       VPSes; also that way snapmanager.cgi knows of all the statuses
-    //       immediately after a reboot
-    //
-    f_data_path = "/var/lib/snapwebsites/cluster-status";
+    f_data_path = "/var/lib/snapwebsites";
     if(f_config.contains("data_path"))
     {
         // use .conf definition when available
         f_data_path = f_config["data_path"];
     }
-    // make sure directory exists
-    if(snap::mkdir_p(f_data_path, false) != 0)
+
+    // create the cluster-status path
+    //
+    f_cluster_status_path = f_data_path + "/cluster-status";
+    if(snap::mkdir_p(f_cluster_status_path, false) != 0)
     {
         std::stringstream msg;
-        msg << "manager::init(): mkdir_p(...): process could not create cluster-status directory \""
-            << f_data_path
+        msg << "manager::init(): mkdir_p(...): process could not create cluster-status sub-directory \""
+            << f_cluster_status_path
+            << "\".";
+        throw std::runtime_error(msg.str());
+    }
+
+    // create the bundles path
+    //
+    f_bundles_path = f_data_path + "/bundles";
+    if(snap::mkdir_p(f_bundles_path, false) != 0)
+    {
+        std::stringstream msg;
+        msg << "manager::init(): mkdir_p(...): process could not create bundles sub-directory \""
+            << f_bundles_path
             << "\".";
         throw std::runtime_error(msg.str());
     }
@@ -433,7 +442,7 @@ snap::snap_string_list manager::list_of_servers()
 {
     snap::snap_string_list result;
 
-    QString const pattern(QString("%1/*.db").arg(f_data_path));
+    QString const pattern(QString("%1/*.db").arg(f_cluster_status_path));
 
     glob_t dir = glob_t();
     int const r(glob(
@@ -503,6 +512,18 @@ snap::snap_string_list const & manager::get_snapmanager_frontend() const
 {
     static snap::snap_string_list empty;
     return empty;
+}
+
+
+std::vector<std::string> const & manager::get_bundle_uri() const
+{
+    return f_bundle_uri;
+}
+
+
+QString const & manager::get_bundles_path() const
+{
+    return f_bundles_path;
 }
 
 

@@ -457,7 +457,7 @@ int manager_cgi::read_post_variables()
         {
             if(!name.empty())
             {
-                f_post_variables[name] = value;
+                f_post_variables[name] = snap::snap_uri::urldecode(value.c_str(), true).toUtf8().data();
 #ifdef _DEBUG
                 SNAP_LOG_DEBUG("got ")(name)(" = ")(value);
 #endif
@@ -539,7 +539,7 @@ int manager_cgi::process_post()
 
     // got the host variable, make sure we can load a file from it
     //
-    server_status status_file(f_data_path, host);
+    server_status status_file(f_cluster_status_path, host);
     if(!status_file.read_all())
     {
         return error("404 Host Not Found", ("Host \"" + host_it->second + "\" is not known.").c_str(), nullptr);
@@ -696,7 +696,7 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 {
     // create, open, read the file
     //
-    server_status file(f_data_path, host);
+    server_status file(f_cluster_status_path, host);
     if(!file.read_all())
     {
         // TODO: add error info in output
@@ -897,17 +897,8 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
         }
     };
 
-    std::string pattern;
-    if(!f_config.contains("data_path"))
-    {
-        pattern = "*.db";
-    }
-    else
-    {
-        pattern = (f_config["data_path"] + "/*.db").toUtf8().data();
-    }
     glob_t dir = glob_t();
-    int const r(glob(pattern.c_str(), GLOB_NOESCAPE, err_callback::func, &dir));
+    int const r(glob(QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data(), GLOB_NOESCAPE, err_callback::func, &dir));
     if(r != 0)
     {
         //globfree(&dir); -- needed on error?

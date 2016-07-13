@@ -83,14 +83,14 @@ server_status::server_status(QString const & filename)
 /** \brief Initialize the status with the data path and server name.
  *
  * In this case you do not have the exact file yet so you pass in the
- * \p data_path, which by default is /var/snapwebsites/cluster-status,
+ * \p cluster_status_path, which by default is /var/snapwebsites/cluster-status,
  * and the name of the server to which we add .db.
  *
- * \param[in] data_path  The path to the directory were server info is saved.
+ * \param[in] cluster_status_path  The path to the directory were server info is saved.
  * \param[in] server  The server this data is linked to.
  */
-server_status::server_status(QString const & data_path, QString const & server)
-    : f_filename(QString("%1/%2.db").arg(data_path).arg(server))
+server_status::server_status(QString const & cluster_status_path, QString const & server)
+    : f_filename(QString("%1/%2.db").arg(cluster_status_path).arg(server))
 {
 }
 
