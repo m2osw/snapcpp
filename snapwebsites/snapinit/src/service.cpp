@@ -943,13 +943,10 @@ void service::mark_process_as_dead()
         return;
     }
 
-    // if the service is not yet marked as failed, check whether
-    // we have to increase the short run count
-    //
-    if( !failed() )
+    auto not_failed_short_run = [&]()
     {
         int64_t const now(snap::snap_child::get_current_date());
-//std::cerr << "*** process " << f_service_name << " died, now/start " << now << "/" << f_start_date << ", time interval is " << (now - f_start_date) << ", counter: " << f_short_run_count << "\n";
+        //std::cerr << "*** process " << f_service_name << " died, now/start " << now << "/" << f_start_date << ", time interval is " << (now - f_start_date) << ", counter: " << f_short_run_count << "\n";
         if(now - f_start_date < MAX_START_INTERVAL)
         {
             ++f_short_run_count;
@@ -965,13 +962,18 @@ void service::mark_process_as_dead()
         {
             f_short_run_count = 0;
         }
-    }
 
-    // if the service died too many times then it is marked as
-    // a failed service; in that case we ignore the call unless the
-    // service has a recovery "plan"...
-    //
-    if( failed() )
+        if( failed() )
+        {
+            f_queue.push( failed_recovery );
+        }
+        else
+        {
+            f_queue.push( big_delay );
+        }
+    };
+
+    auto failed_recovery = [&]()
     {
         SNAP_LOG_TRACE("service='")(f_service_name)("' has died too many times.");
         int64_t const recovery(get_recovery());
@@ -1008,8 +1010,11 @@ void service::mark_process_as_dead()
         // this case)
         //
         set_timeout_delay(recovery * 1000000LL);
-    }
-    else
+
+        f_queue.push( not_failed_short_run );
+    };
+
+    auto big_delay = [&]()
     {
         SNAP_LOG_TRACE("setting big delay for service='")(f_service_name)("'.");
 
@@ -1026,11 +1031,39 @@ void service::mark_process_as_dead()
         {
             dep->set_stopping();
         }
-        //
-        f_restart_deps = true;
+
+        if( failed() )
+        {
+            f_queue.push( failed_recovery );
+        }
+        else
+        {
+            f_queue.push( big_delay );
+        }
+    };
+
+    // if the service is not yet marked as failed, check whether
+    // we have to increase the short run count
+    //
+    if( !failed() )
+    {
+        f_queue.push( not_failed_short_run );
     }
 
-    set_enable(true);
+    // if the service died too many times then it is marked as
+    // a failed service; in that case we ignore the call unless the
+    // service has a recovery "plan"...
+    //
+    if( failed() )
+    {
+        f_queue.push( failed_recovery );
+    }
+    else
+    {
+        f_queue.push( big_delay );
+    }
+
+    //set_enable(true);
 }
 
 
