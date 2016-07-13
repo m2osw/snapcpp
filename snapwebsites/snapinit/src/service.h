@@ -143,8 +143,9 @@ private:
 
     // For future refactoring. Not yet implemented.
     //
-    typedef std::function<void(service*)> func_t;
-    typedef std::queue<func_t>            func_queue_t;
+    typedef std::function<void()> func_t;
+    typedef std::queue<func_t>    func_queue_t;
+    func_queue_t                  f_queue;
 };
 
 // vim: ts=4 sw=4 et
