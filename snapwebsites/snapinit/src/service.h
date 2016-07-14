@@ -105,6 +105,7 @@ protected:
     pointer_t                   shared_from_this() const;
 
 private:
+    void                        init_functions();
     void                        compute_next_tick(bool just_ran);
     void                        get_depends_on_list();
     void                        mark_process_as_dead();
@@ -143,9 +144,12 @@ private:
 
     // For future refactoring. Not yet implemented.
     //
-    typedef std::function<void()> func_t;
-    typedef std::queue<func_t>    func_queue_t;
-    func_queue_t                  f_queue;
+    typedef std::function<void()>    func_t;
+    typedef std::queue<func_t>       func_queue_t;
+    typedef std::map<QString,func_t> func_map_t;
+
+    func_map_t                  f_func_map;
+    func_queue_t                f_queue;
 };
 
 // vim: ts=4 sw=4 et
