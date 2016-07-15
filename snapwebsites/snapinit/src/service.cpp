@@ -106,7 +106,7 @@ service::service( std::shared_ptr<snap_init> si )
 {
     // by default our timer is turned off
     //
-    set_enable(false);
+    //set_enable(false);
 
     // timer has a low priority (runs last)
     //
@@ -532,7 +532,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
     // Get the list of dependencies that must be started first.
     //
     {
-        f_dependsList.clear();
+        f_dep_name_list.clear();
         //
         QDomElement sub_element(e.firstChildElement("dependencies"));
         if( !sub_element.isNull() )
@@ -545,7 +545,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                     QDomElement subelm(n.toElement());
                     if( subelm.tagName() == "dependency" )
                     {
-                        f_dependsList << subelm.text();
+                        f_dep_name_list << subelm.text();
                     }
                 }
                 //
@@ -617,13 +617,45 @@ done:;
 }
 
 
-void service::get_depends_on_list()
+void service::get_prereqs_list()
 {
-    if( f_depends_on_list.empty() )
+    if( f_prereqs_list.empty() )
     {
         const auto snap_init( f_snap_init.lock() );
-        snap_init->get_depends_on_list( f_service_name, f_depends_on_list );
+        snap_init->get_prereqs_list( f_service_name, f_prereqs_list );
     }
+}
+
+
+void service::get_depends_list()
+{
+    if( f_dep_name_list.isEmpty() )
+    {
+        return;
+    }
+
+    if( f_depends_list.empty() )
+    {
+        auto const snap_init( f_snap_init.lock() );
+        for( auto const & service_name : f_dep_name_list )
+        {
+            auto const svc( snap_init->get_service( service_name ) );
+            if( !svc )
+            {
+                common::fatal_error( QString("Dependency service '%1' not found!").arg(service_name) );
+                snap::NOTREACHED();
+            }
+            f_depends_list.push_back( svc );
+        }
+    }
+}
+
+
+void service::push_state( const state_t state )
+{
+    f_previous_state = f_current_state;
+    f_current_state  = state;
+    f_queue.push( f_func_map[state] );
 }
 
 
@@ -663,186 +695,16 @@ void service::get_depends_on_list()
  */
 void service::process_timeout()
 {
-    if( !f_queue.empty() )
+    if( f_queue.empty() )
     {
-        SNAP_LOG_TRACE("service::process_timeout() queue non-empty for service '")(f_service_name)("'");
-
-        auto f( f_queue.front() );
-        f_queue.pop();
-        f();
-    }
-
-#if 0
-    // if we are stopping we enter a completely different mode that
-    // allows us to send SIGTERM and SIGKILL to the Unix process
-    //
-    if(f_stopping != 0)
-    {
-        if(is_running())
-        {
-            // Make sure the services which depend on this have stopped first...
-            //
-            get_depends_on_list();
-            auto iter = std::find_if( f_depends_on_list.begin(), f_depends_on_list.end(),
-                [&]( const auto& svc )
-                {
-                    return !svc->has_stopped();
-                });
-            if( iter != f_depends_on_list.end() )
-            {
-                SNAP_LOG_INFO("Dependency service '")((*iter)->get_service_name())("' has not yet stopped, checking again on the next timeout.");
-                // Leave timer running and come back again if any service has not yet stopped...
-                return;
-            }
-
-            // f_stopping is the signal we want to send to the service
-            //
-            SNAP_LOG_WARNING("service ")(f_service_name)(", pid=")(f_pid)(", failed to respond to ")(f_stopping == SIGTERM ? "STOP" : "SIGTERM")(" signal, using `kill -")(f_stopping)("`.");
-            int const retval(::kill( f_pid, f_stopping ));
-            if( retval == -1 )
-            {
-                // This is marked as FATAL because we are about to kill
-                // that service for good (i.e. we are going to disable
-                // it and never try to start it again); however snapinit
-                // itself will continue to run...
-                //
-                int const e(errno);
-                QString msg(QString("Unable to kill service \"%1\", pid=%2! errno=%3 -- %4")
-                            .arg(f_service_name)
-                            .arg(f_pid)
-                            .arg(e)
-                            .arg(strerror(e)));
-                SNAP_LOG_FATAL(msg);
-                syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
-
-                // I do not foresee retrying as a solution to this error...
-                // (it should not happen anyway...)
-                //
-                set_enable(false);
-                return;
-            }
-            if(f_stopping == SIGKILL)
-            {
-                // we send SIGKILL once and stop...
-                // then we should receive the SIGCHLD pretty quickly
-                //
-                set_enable(false);
-
-                // use SIGCHLD to show that we are done with signals
-                //
-                f_stopping = SIGCHLD;
-            }
-            else
-            {
-                f_stopping = SIGKILL;
-
-                // reduce the time for SIGTERM to act to half a second
-                // instead of 2 seconds
-                //
-                set_timeout_delay(500000LL);
-            }
-        }
-        else
-        {
-            // Unix process stopped, we are all good now
-            //
-            set_enable(false);
-
-            // use SIGCHLD to show that we are done with signals
-            // and also make sure we get removed from the main
-            // object otherwise the snap_communicator::run()
-            // function would block forever
-            //
-            mark_process_as_dead();
-        }
         return;
     }
 
-    if(is_connection_required())
-    {
-        // the connection is done in the snap_init class so
-        // we have to call a function there once the process
-        // is running
-        //
-        if(is_running())
-        {
-            std::shared_ptr<snap_init> si(f_snap_init.lock());
-            if(!si)
-            {
-                common::fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
-                snap::NOTREACHED();
-            }
+    SNAP_LOG_TRACE("service::process_timeout() queue non-empty for service '")(f_service_name)("'");
 
-            if(si->connect_listener(f_service_name, f_snapcommunicator_addr, f_snapcommunicator_port))
-            {
-                // TODO: later we may want to try the CONNECT event
-                //       more than once; although over TCP on the
-                //       local network it should not fail... but who
-                //       knows (note that if the snapcommunicator
-                //       crashes then we get a SIGCHLD and the
-                //       is_running() function returns false.)
-                //
-                set_enable(false);
-            }
-            // else -- keep the timer in place to try again a little later
-        }
-        else
-        {
-            // wait for a few seconds before attempting to connect
-            // with the snapcommunicator service
-            //
-            set_timeout_delay(std::max(get_wait_interval(), 3) * 1000000LL);
-
-            // start the process
-            //
-            // in this case we ignore the return value since the
-            // time is still in place and we will be called back
-            // and try again a few times
-            //
-            snap::NOTUSED( run() );
-        }
-    }
-    else if(is_running())
-    {
-        if(cron_task())
-        {
-            compute_next_tick(true);
-        }
-        else
-        {
-            // spurious timer?
-            //
-            SNAP_LOG_DEBUG("service::process_timeout() called when a regular process is still running.");
-
-            // now really turn it off!
-            //
-            set_enable(false);
-        }
-    }
-    else
-    {
-        // process needs to be started, do that now
-        //
-        if(run())
-        {
-            if(cron_task())
-            {
-                compute_next_tick(true);
-            }
-            else
-            {
-                set_enable(false);
-            }
-        }
-        else
-        {
-            // give the OS a little time to get its shit back together
-            // (we may have run out of memory for a little while)
-            //
-            set_timeout_delay(3 * 1000000LL);
-        }
-    }
-#endif
+    auto f( f_queue.front() );
+    f_queue.pop();
+    f();
 }
 
 
@@ -903,7 +765,7 @@ void service::mark_service_as_dead()
 
 bool service::is_dependency_of( const QString& service_name )
 {
-    return f_dependsList.contains(service_name);
+    return f_dep_name_list.contains(service_name);
 }
 
 
@@ -950,25 +812,7 @@ void service::mark_process_as_dead()
     // if the service is not yet marked as failed, check whether
     // we have to increase the short run count
     //
-    if( !failed() )
-    {
-        f_queue.push( f_func_map["not_failed_short_run"] );
-    }
-
-    // if the service died too many times then it is marked as
-    // a failed service; in that case we ignore the call unless the
-    // service has a recovery "plan"...
-    //
-    if( failed() )
-    {
-        f_queue.push( f_func_map["failed_recovery"] );
-    }
-    else
-    {
-        f_queue.push( f_func_map["big_delay"] );
-    }
-
-    //set_enable(true);
+    push_state( state_t::failing );
 }
 
 
@@ -995,7 +839,7 @@ void service::compute_next_tick(bool just_ran)
     // compute the tick exactly on 'now' or just before now
     //
     // current time
-    int64_t const now(snap::snap_child::get_current_date() / 1000000LL);
+    int64_t const now(snap::snap_child::get_current_date() / SNAPINIT_START_DELAY);
     // our hard coded start date
     int64_t const start_date(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0));
     // number of seconds from the start
@@ -1037,14 +881,14 @@ void service::compute_next_tick(bool just_ran)
             //    latest_tick + f_cron > now  (i.e. in the future)
             //
             latest_tick += f_cron;
-            set_timeout_date(latest_tick * 1000000LL);
+            set_timeout_date(latest_tick * SNAPINIT_START_DELAY);
         }
         else if(last_tick >= latest_tick)
         {
             // last_tick is now or in the future so we can keep it
             // as is (happen often when starting snapinit)
             //
-            set_timeout_date(last_tick * 1000000LL);
+            set_timeout_date(last_tick * SNAPINIT_START_DELAY);
             update = false;
         }
         else
@@ -1052,7 +896,7 @@ void service::compute_next_tick(bool just_ran)
             // this looks like we may have missed a tick or two
             // so this task already timed out...
             //
-            set_timeout_date(latest_tick * 1000000LL);
+            set_timeout_date(latest_tick * SNAPINIT_START_DELAY);
         }
     }
     else
@@ -1060,7 +904,7 @@ void service::compute_next_tick(bool just_ran)
         // never ran, use this latest tick so we run that process
         // once as soon as possible.
         //
-        set_timeout_date(latest_tick * 1000000LL);
+        set_timeout_date(latest_tick * SNAPINIT_START_DELAY);
     }
 
     if(update)
@@ -1129,23 +973,18 @@ bool service::run()
     // Check to make sure dependent processes have started first.
     // Defer if not.
     //
-    if( !f_dependsList.isEmpty() )
+    get_depends_list();
+    if( !f_depends_list.empty() )
     {
         auto const snap_init( f_snap_init.lock() );
-        for( auto const & service_name : f_dependsList )
+        for( auto const & svc : f_depends_list )
         {
-            auto const svc( snap_init->get_service( service_name ) );
-            if( !svc )
-            {
-                SNAP_LOG_ERROR("Dependency service '")(service_name)("' not found!");
-                return false;
-            }
             if( !svc->is_running() || !svc->is_registered() )
             {
                 // Return at this point, since dependent services are not
                 // started and registered yet...
                 //
-                SNAP_LOG_WARNING("Dependency service '")(service_name)("' has not yet started for parent service '")(f_service_name)("'. Deferring start.");
+                SNAP_LOG_WARNING("Dependency service '")(svc->get_service_name())("' has not yet started for parent service '")(f_service_name)("'. Deferring start.");
                 return false;
             }
         }
@@ -1436,20 +1275,6 @@ bool service::run()
     }
     else
     {
-        if( f_restart_deps )
-        {
-            SNAP_LOG_TRACE("Restarting services that depend on '")(f_service_name)("'.");
-
-            get_depends_on_list();
-            for( auto const& dep : f_depends_on_list )
-            {
-                SNAP_LOG_TRACE("*** Starting dep '")(dep->get_service_name())("'.");
-                dep->set_starting();
-            }
-            //
-            f_restart_deps = false;
-        }
-
         // here we are considered started and running
         //
         f_started = true;
@@ -1620,24 +1445,7 @@ void service::init_functions()
     f_func_map =
     {
         {
-            "start_child_deps",
-            [&]()
-            {
-                // Now set stopping on all processes which depend on this service,
-                // but only if they are stopped.
-                //
-                get_depends_on_list();
-                for( const auto& svc : f_depends_on_list )
-                {
-                    if( svc->has_stopped() )
-                    {
-                        svc->set_starting();
-                    }
-                }
-            }
-        },
-        {
-            "start_with_listener",
+            state_t::starting_with_listener,
             [&]()
             {
                 // the connection is done in the snap_init class so
@@ -1651,7 +1459,7 @@ void service::init_functions()
                     // wait for a few seconds before attempting to connect
                     // with the snapcommunicator service
                     //
-                    set_timeout_delay(std::max(get_wait_interval(), 3) * 1000000LL);
+                    set_timeout_delay(std::max(get_wait_interval(), 3) * SNAPINIT_START_DELAY);
 
                     // start the process
                     //
@@ -1660,7 +1468,7 @@ void service::init_functions()
                     // and try again a few times
                     //
                     snap::NOTUSED( run() );
-                    f_queue.push( f_func_map["start_with_listener"] );
+                    push_state( state_t::starting_with_listener );
                     return;
                 }
 
@@ -1673,7 +1481,7 @@ void service::init_functions()
 
                 if( !si->connect_listener(f_service_name, f_snapcommunicator_addr, f_snapcommunicator_port) )
                 {
-                    f_queue.push( f_func_map["start_with_listener"] );
+                    push_state( state_t::starting_with_listener );
                     return;
                 }
 
@@ -1684,11 +1492,10 @@ void service::init_functions()
                 //       crashes then we get a SIGCHLD and the
                 //       is_running() function returns false.)
                 //
-                f_queue.push( f_func_map["start_child_deps"] );
             }
         },
         {
-            "do_cron_task",
+            state_t::cron_running,
             [&]()
             {
                 if( !cron_task() ) return;
@@ -1698,7 +1505,6 @@ void service::init_functions()
                     // Run forever, or until process is terminated
                     //
                     compute_next_tick(true);
-                    f_queue.push( f_func_map["do_cron_task"] );
                 }
                 else
                 {
@@ -1707,42 +1513,78 @@ void service::init_functions()
                     if( run() )
                     {
                         compute_next_tick(true);
-                        f_queue.push( f_func_map["do_cron_task"] );
                     }
                     else
                     {
                         // give the OS a little time to get its shit back together
                         // (we may have run out of memory for a little while)
                         //
-                        set_timeout_delay(3 * 1000000LL);
-                        f_queue.push( f_func_map["do_cron_task"] );
+                        set_timeout_delay(3 * SNAPINIT_START_DELAY);
+                    }
+                }
+                //
+                push_state( state_t::cron_running );
+            }
+        },
+        {
+            state_t::starting_without_listener,
+            [&]()
+            {
+                if( is_running() ) return;
+
+                // Try running the process. On failure, try again.
+                if( run() ) return;
+
+                // give the OS a little time to get its shit back together
+                // (we may have run out of memory for a little while)
+                //
+                // Then...try again.
+                //
+                set_timeout_delay(3 * SNAPINIT_START_DELAY);
+                push_state( state_t::starting_without_listener );
+            }
+        },
+        {
+            state_t::starting,
+            [&]()
+            {
+                if( is_connection_required() )
+                {
+                    push_state( state_t::starting_with_listener );
+                }
+                else
+                {
+                    if( cron_task() )
+                    {
+                        push_state( state_t::cron_running );
+                    }
+                    else
+                    {
+                        push_state( state_t::starting_without_listener );
                     }
                 }
             }
         },
         {
-            "start_normal",
+            state_t::waiting_for_prereqs,
             [&]()
             {
-                if( !is_running() )
+                get_prereqs_list();
+                auto iter = std::find_if( std::begin(f_prereqs_list), std::end(f_prereqs_list),
+                [&]( const auto& svc )
                 {
-                    // Try running the process. On failure, try again.
-                    if( !run() )
-                    {
-                        // give the OS a little time to get its shit back together
-                        // (we may have run out of memory for a little while)
-                        //
-                        // Then...try again.
-                        //
-                        set_timeout_delay(3 * 1000000LL);
-                        f_queue.push( f_func_map["start_normal"] );
-                        return;
-                    }
+                    return svc->has_stopped() || !svc->is_running();
+                });
+                if( iter == std::end(f_prereqs_list) )
+                {
+                    push_state( state_t::starting );
                 }
-
-                // We are running, so launch the child deps
-                //
-                f_queue.push( f_func_map["start_child_deps"] );
+                else
+                {
+                    (*iter)->set_starting();
+                    set_timeout_delay( SNAPINIT_STOP_DELAY );
+                    push_state( state_t::waiting_for_prereqs );
+                }
             }
         },
 
@@ -1750,7 +1592,7 @@ void service::init_functions()
          * Stop service
          *********************************************************************/
         {
-            "kill_process",
+            state_t::stopping,
             [&]()
             {
                 if( !is_running() )
@@ -1795,7 +1637,7 @@ void service::init_functions()
                     // we send SIGKILL once and stop...
                     // then we should receive the SIGCHLD pretty quickly
                     //
-                    set_enable(false);
+                    //set_enable(false);
 
                     // use SIGCHLD to show that we are done with signals
                     //
@@ -1809,50 +1651,40 @@ void service::init_functions()
                     // instead of 2 seconds
                     //
                     set_timeout_delay(500000LL);
-                    f_queue.push( f_func_map["kill_process"] );
+                    push_state( state_t::stopping );
                 }
             }
         },
         {
-            "wait_for_deps_to_stop",
+            state_t::stopping_deps,
             [&]()
             {
                 // Make sure the services which depend on this have stopped first...
                 //
-                get_depends_on_list();
-                auto iter = std::find_if( f_depends_on_list.begin(), f_depends_on_list.end(),
+                get_prereqs_list();
+                auto iter = std::find_if( std::begin(f_prereqs_list), std::end(f_prereqs_list),
                 [&]( const auto& svc )
                 {
                     return !svc->has_stopped();
                 });
-                if( iter != f_depends_on_list.end() )
+                if( iter == std::end(f_prereqs_list) )
                 {
-                    SNAP_LOG_INFO("Dependency service '")((*iter)->get_service_name())("' has not yet stopped, checking again on the next timeout.");
-                    // Leave timer running and come back again if any service has not yet stopped...
-                    f_queue.push( f_func_map["wait_for_deps_to_stop"] );
+                    push_state( state_t::stopping );
                 }
                 else
                 {
-                    f_queue.push( f_func_map["kill_process"] );
+                    (*iter)->set_stopping();
+#if 0
+                    SNAP_LOG_INFO("Dependency service '")
+                        ((*iter)->get_service_name())
+                        ("' has not yet stopped, checking again on the next timeout.");
+#endif
+                    //
+                    // Leave timer running and come back again if any service has not yet stopped...
+                    //
+                    set_timeout_delay(SNAPINIT_STOP_DELAY);
+                    push_state( state_t::stopping_deps );
                 }
-            }
-        },
-        {
-            "stop_all_deps",
-            [&]()
-            {
-                // Now set stopping on all processes which depend on this service:
-                //
-                get_depends_on_list();
-                for( const auto& svc : f_depends_on_list )
-                {
-                    if( !svc->has_stopped() )
-                    {
-                        svc->set_stopping();
-                    }
-                }
-
-                f_queue.push( f_func_map["wait_for_deps_to_stop"] );
             }
         },
 
@@ -1860,39 +1692,7 @@ void service::init_functions()
          * Mark service as dead
          *********************************************************************/
         {
-            "not_failed_short_run",
-            [&]()
-            {
-                int64_t const now(snap::snap_child::get_current_date());
-                //std::cerr << "*** process " << f_service_name << " died, now/start " << now << "/" << f_start_date << ", time interval is " << (now - f_start_date) << ", counter: " << f_short_run_count << "\n";
-                if(now - f_start_date < MAX_START_INTERVAL)
-                {
-                    ++f_short_run_count;
-
-                    // too many short runs means this service failed
-                    //
-                #pragma GCC diagnostic push
-                #pragma GCC diagnostic ignored "-Wstrict-overflow"
-                    f_failed = f_short_run_count >= MAX_START_COUNT;
-                #pragma GCC diagnostic pop
-                }
-                else
-                {
-                    f_short_run_count = 0;
-                }
-
-                if( failed() )
-                {
-                    f_queue.push( f_func_map["failed_recovery"] );
-                }
-                else
-                {
-                    f_queue.push( f_func_map["big_delay"] );
-                }
-            }
-        },
-        {
-            "failed_recovery",
+            state_t::failed,
             [&]()
             {
                 SNAP_LOG_TRACE("service='")(f_service_name)("' has died too many times.");
@@ -1907,7 +1707,7 @@ void service::init_functions()
                     // (should not be required since we remove self from
                     // snapcommunicator anyway...)
                     //
-                    set_enable(false);
+                    //set_enable(false);
 
                     // remove self (timer) from snapcommunicator
                     //
@@ -1929,13 +1729,13 @@ void service::init_functions()
                 // the user in the XML file (at least 1 minute wait in
                 // this case)
                 //
-                set_timeout_delay(recovery * 1000000LL);
+                set_timeout_delay(recovery * SNAPINIT_STOP_DELAY);
 
-                f_queue.push( f_func_map["not_failed_short_run"] );
+                push_state( state_t::failing );
             }
         },
         {
-            "big_delay",
+            state_t::failing_wait,
             [&]()
             {
                 SNAP_LOG_TRACE("setting big delay for service='")(f_service_name)("'.");
@@ -1943,24 +1743,67 @@ void service::init_functions()
                 // in this case we use a default delay of one second to
                 // avoid swamping the CPU with many restart all at once
                 //
-                set_timeout_delay(1000000LL);
+                set_timeout_delay(SNAPINIT_STOP_DELAY);
 
-                // Now, if we are marking this process as dead with a big wait, then those services which depend
-                // on this service running must be stopped as well.
-                //
-                get_depends_on_list();
-                for( auto const& dep : f_depends_on_list )
+                if( failed() )
                 {
-                    dep->set_stopping();
+                    push_state( state_t::failed );
+                }
+                else
+                {
+                    push_state( state_t::failing_wait );
+                }
+            }
+        },
+        {
+            state_t::failing,
+            [&]()
+            {
+                // Stop all prereqs and dependencies
+                //
+                get_prereqs_list();
+                for( auto const& svc : f_prereqs_list )
+                {
+                    if( !svc->has_stopped() )
+                    {
+                        svc->set_stopping();
+                    }
+                }
+                //
+                get_depends_list();
+                for( auto const & svc : f_depends_list )
+                {
+                    if( !svc->has_stopped() )
+                    {
+                        svc->set_stopping();
+                    }
+                }
+
+                int64_t const now(snap::snap_child::get_current_date());
+                //std::cerr << "*** process " << f_service_name << " died, now/start " << now << "/" << f_start_date << ", time interval is " << (now - f_start_date) << ", counter: " << f_short_run_count << "\n";
+                if(now - f_start_date < MAX_START_INTERVAL)
+                {
+                    ++f_short_run_count;
+
+                    // too many short runs means this service failed
+                    //
+                #pragma GCC diagnostic push
+                #pragma GCC diagnostic ignored "-Wstrict-overflow"
+                    f_failed = f_short_run_count >= MAX_START_COUNT;
+                #pragma GCC diagnostic pop
+                }
+                else
+                {
+                    f_short_run_count = 0;
                 }
 
                 if( failed() )
                 {
-                    f_queue.push( f_func_map["failed_recovery"] );
+                    push_state( state_t::failed );
                 }
                 else
                 {
-                    f_queue.push( f_func_map["big_delay"] );
+                    push_state( state_t::failing_wait );
                 }
             }
         }
@@ -1983,29 +1826,21 @@ void service::set_starting()
         return;
     }
 
+    if( !has_stopped() )
+    {
+        //f_queue.push( f_func_map["wait_until_stopped"] );
+        return;
+    }
+
     SNAP_LOG_TRACE("service::set_starting() for service '")(f_service_name)("'.");
 
     f_stopping = 0;
 
     //set_enable(true);
-    set_timeout_delay(SNAPINIT_STOP_DELAY);
+    set_timeout_delay(SNAPINIT_START_DELAY);
     set_timeout_date(-1); // ignore any date timeout
 
-    if( is_connection_required() )
-    {
-        f_queue.push( f_func_map["start_with_listener"] );
-    }
-    else
-    {
-        if( cron_task() )
-        {
-            f_queue.push( f_func_map["do_cron_task"] );
-        }
-        else
-        {
-            f_queue.push( f_func_map["start_normal"] );
-        }
-    }
+    push_state( state_t::waiting_for_prereqs );
 }
 
 
@@ -2048,13 +1883,13 @@ void service::set_stopping()
         // the test before the set_enable() and set_timeout_delay()
         // is there because set_stopping() could be called multiple times.
         //
-        set_enable(true);
+        //set_enable(true);
         set_timeout_delay(SNAPINIT_LONG_STOP_DELAY);
         set_timeout_date(-1); // ignore any date timeout
 
         // Now set stopping on all processes which depend on this service:
         //
-        f_queue.push( f_func_map["stop_all_deps"] );
+        push_state( state_t::stopping_deps );
     }
     else
     {
@@ -2064,7 +1899,7 @@ void service::set_stopping()
 
         // no need to timeout anymore, this service will not be restarted
         //
-        set_enable(false);
+        //set_enable(false);
     }
 }
 

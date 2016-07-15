@@ -988,7 +988,8 @@ void snap_init::wakeup_services()
         // we can check whether the process is running and if not start
         // it as required by the current status
         //
-        s->set_enable(true);
+        //s->set_enable(true);
+        s->set_starting();
 
         // if we just started a service that has to send us a SAFE message
         // then we cannot start anything more at this point
@@ -1482,9 +1483,9 @@ void snap_init::remove_terminated_services()
     //
     for( const auto& svc : stopped_services )
     {
-        service::vector_t depends_on_list;
-        get_depends_on_list( svc->get_service_name(), depends_on_list );
-        for( const auto& dep_svc : depends_on_list )
+        service::vector_t prereqs_list;
+        get_prereqs_list( svc->get_service_name(), prereqs_list );
+        for( const auto& dep_svc : prereqs_list )
         {
             if( !dep_svc->has_stopped() )
             {
@@ -1680,7 +1681,7 @@ void snap_init::log_selected_servers() const
  *
  * \return list of services who depend on the named service
  */
-void snap_init::get_depends_on_list( const QString& service_name, service::vector_t& ret_list ) const
+void snap_init::get_prereqs_list( const QString& service_name, service::vector_t& ret_list ) const
 {
     ret_list.clear();
     for( auto service : f_service_list )
