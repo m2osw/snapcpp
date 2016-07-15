@@ -556,11 +556,11 @@ void manager_daemon::unreachable_message(snap::snap_communicator_message const &
 
     // retreive the list of servers (data-path/*,db file names)
     //
-    snap::snap_string_list const servers(list_of_servers());
+    std::vector<std::string> const servers(get_list_of_servers());
 
     for(auto const & s : servers)
     {
-        server_status status_info(s);
+        server_status status_info(s.c_str());
 
         if(!status_info.read_header())
         {

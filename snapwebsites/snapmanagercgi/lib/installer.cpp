@@ -41,6 +41,11 @@
 #include "log.h"
 #include "not_used.h"
 #include "process.h"
+#include "tokenize_string.h"
+
+// Qt lib
+//
+#include <QFile>
 
 // C lib
 //
@@ -66,34 +71,122 @@ void file_descriptor_deleter(int * fd)
 
 
 
+/** \brief Check whether a package is installed.
+ *
+ * This function runs a query to determine whether a named page
+ * is installed or not.
+ *
+ * The output of the dpkg-query command we expect includes the
+ * following four words:
+ *
+ * \code
+ *      <version> install ok installed
+ * \endcode
+ *
+ * The \<version> part will be the current version of that package.
+ * The "install ok installed" part is the current status dpkg considered
+ * the package in. When exactly that, it is considered that the package
+ * is properly installed.
+ *
+ * \param[in] package_name  The name of the package to install.
+ * \param[out] output  The output of the dpkg-query commmand.
+ *
+ * \return The exit code of the dpkg-query install command.
+ */
+int manager::package_status(std::string const & package_name, std::string & output)
+{
+    output.clear();
+
+    snap::process p("query package status");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p.set_command("dpkg-query");
+    p.add_argument("--showformat='${Version} ${Status}\\n'");
+    p.add_argument("--show");
+    p.add_argument(QString::fromUtf8(package_name.c_str()));
+    int const r(p.run());
+
+    // the output is saved so we can send it to the user and log it...
+    if(r == 0)
+    {
+        output = p.get_output(true).toUtf8().data();
+    }
+
+    return r;
+}
+
+
+/** \brief Update the OS packages.
+ *
+ * This function updates the database of the OS packages.
+ *
+ * Since snapmanager is already installed, we do not have to do any extra
+ * work to get that repository installed.
+ *
+ * \param[in] command  One of "update", "upgrade", "dist-upgrade", or
+ * "autoremove".
+ *
+ * \return The exit code of the apt-get update command.
+ */
+int manager::update_packages(std::string const & command)
+{
+#ifdef _DEBUG
+    std::vector<std::string> allowed_commands{"update", "upgrade", "dist-upgrade", "autoremove"};
+    if(std::find(allowed_commands.begin(), allowed_commands.end(), command) == allowed_commands.end())
+    {
+        throw std::logic_error("install_package was called with an invalid command.");
+    }
+#endif
+
+    snap::process p("update");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p.set_command("apt-get");
+    p.add_argument("--quiet");
+    p.add_argument("--assume-yes");
+    p.add_argument(QString::fromUtf8(command.c_str()));
+    p.add_environ("DEBIAN_FRONTEND", "noninteractive");
+    int r(p.run());
+
+    // the output is saved so we can send it to the user and log it...
+    QString const output(p.get_output(true));
+    SNAP_LOG_INFO(command)(" of packages returned:\n")(output);
+
+    return r;
+}
+
+
+
 /** \brief Installs one Debian package.
  *
  * This function installs ONE package as specified by \p package_name.
  *
  * \param[in] package_name  The name of the package to install.
+ * \param[in] command  One of "install", "remove", or "purge".
  *
  * \return The exit code of the apt-get install command.
  */
-int manager::install(QString const & package_name)
+int manager::install_package(std::string const & package_name, std::string const & command)
 {
+#ifdef _DEBUG
+    std::vector<std::string> allowed_commands{"install", "remove", "purge"};
+    if(std::find(allowed_commands.begin(), allowed_commands.end(), command) == allowed_commands.end())
+    {
+        throw std::logic_error("install_package was called with an invalid command.");
+    }
+#endif
+
     snap::process p("install");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
     p.set_command("apt-get");
-    p.add_argument("-y");
-    p.add_argument("install");
-    p.add_argument(package_name);
+    p.add_argument("--quiet");
+    p.add_argument("--assume-yes");
+    p.add_argument(QString::fromUtf8(command.c_str()));
+    p.add_argument(QString::fromUtf8(package_name.c_str()));
     p.add_environ("DEBIAN_FRONTEND", "noninteractive");
-    int r(-1);
-    {
-        // TODO: switch to "root" while doing the installation
-        //make_root root;
-
-        r = p.run();
-    }
+    int r(p.run());
 
     // the output is saved so we can send it to the user and log it...
     QString const output(p.get_output(true));
-    SNAP_LOG_INFO("installation of package named \"")(package_name)("\" output:\n")(output);
+    SNAP_LOG_INFO(command)(" of package named \"")(package_name)("\" output:\n")(output);
 
     return r;
 }
@@ -101,82 +194,63 @@ int manager::install(QString const & package_name)
 
 
 
-void manager::installer(QString const & bundle_name)
+bool manager::upgrader()
 {
+    return update_packages("update") == 0
+        && update_packages("upgrade") == 0
+        && update_packages("dist-upgrade") == 0
+        && update_packages("autoremove") == 0;
+}
+
+
+
+bool manager::installer(QString const & bundle_name, std::string const & command)
+{
+    bool success(true);
+
     SNAP_LOG_INFO("Installing bundle \"")(bundle_name)("\" on host \"")(f_server_name)("\"");
 
+    // for installation we first do an update of the packages,
+    // otherwise it could fail the installation because of
+    // outdated data
+    //
+    if(command == "install")
+    {
+        success = upgrader();
+    }
 
-    //snap::snap_communicator_message reply;
-    //reply.reply_to(message);
+    // load the XML file
+    //
+    QDomDocument bundle_xml;
+    QString const filename(QString("%1/bundle-%2.xml").arg(f_bundles_path).arg(bundle_name));
+    QFile input(filename);
+    if(!input.open(QIODevice::ReadOnly)
+    || !bundle_xml.setContent(&input, false))
+    {
+        SNAP_LOG_ERROR("bundle \"")(filename)("\" could not be opened or has invalid XML data. Skipping.");
+        return false;
+    }
 
-    //QString const system(message.get_parameter("system"));
-    //if(system.isEmpty())
-    //{
-    //    reply.set_command("INVALID");
-    //    reply.add_parameter("what", "command MANAGE/function=INSTALL must specify a \"system\" parameter.");
-    //    f_messenger->send_message(reply);
-    //    return;
-    //}
+    // get the list of expected packages, it may be empty/non-existant
+    //
+    QDomNodeList bundle_packages(bundle_xml.elementsByTagName("packages"));
+    if(bundle_packages.size() == 1)
+    {
+        QDomElement package_list(bundle_packages.at(0).toElement());
+        std::string const list_of_packages(package_list.text().toUtf8().data());
+        std::vector<std::string> packages;
+        snap::tokenize_string(packages, list_of_packages, ",", true, " ");
+        std::for_each(packages.begin(), packages.end(),
+                [=, &success](auto const & p)
+                {
+                    // we want to call all the install even if a
+                    // previous one (or the update) failed
+                    //
+                    success = this->install_package(p, command) && success;
+                });
+    }
 
-    //int r(0);
-    //bool installed(false);
-    //f_output.clear();
-
-    //switch(system[0].unicode())
-    //{
-    //case 'a':
-    //    if(system == "application")
-    //    {
-    //        // This is snapserver behind an apache proxy (working through snap.cgi)
-    //        //
-    //        r = install("snapserver");
-    //        installed = true;
-    //    }
-    //    break;
-
-    //case 'f':
-    //    if(system == "frontend")
-    //    {
-    //        // This is just snap.cgi
-    //        //
-    //        r = install("snapcgi");
-    //        installed = true;
-    //    }
-    //    else if(system == "firewall")
-    //    {
-    //        // This is just firewall
-    //        //
-    //        r = install("snapfirewall");
-    //        installed = true;
-    //    }
-    //    break;
-
-    //case 'm':
-    //    if(system == "mailserver")
-    //    {
-    //        // Install snapbounce which forces a postfix installation
-    //        // and allows us to send and receive emails as well as to
-    //        // know that some emails do not make it
-    //        //
-    //        install("snapbounce");
-    //        installed = true;
-    //    }
-    //    break;
-
-    //}
-
-    //if(installed)
-    //{
-    //    reply.set_command("RESULTS");
-    //    reply.add_parameter("exitcode", QString("%1").arg(r));
-    //    reply.add_parameter("output", f_output);
-    //    f_messenger->send_message(reply);
-    //    return;
-    //}
-
-    //reply.set_command("INVALID");
-    //reply.add_parameter("what", "unknown system parameter \"" + system + "\" in command MANAGE/function=INSTALL.");
-    //f_messenger->send_message(reply);
+    return success;
 }
 
 

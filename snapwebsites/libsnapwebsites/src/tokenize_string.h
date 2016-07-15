@@ -34,7 +34,11 @@ namespace snap
  * The trim_empty parameter can be used to avoid empty entries,
  * either at the start, middle, or end.
  *
- * \param[out] tokens  The container receivingthe resulting strings.
+ * \note
+ * If the tokens vector is not empty, the items of the string
+ * being tokenized will be appended to the existing vector.
+ *
+ * \param[in,out] tokens  The container receiving the resulting strings.
  * \param[in] str  The string to tokenize.
  * \param[in] delimiters  The list of character delimiters.
  * \param[in] trim_empty  Whether to keep empty entries or not.

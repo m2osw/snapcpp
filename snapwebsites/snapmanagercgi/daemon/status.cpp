@@ -55,17 +55,6 @@ namespace snap_manager
 {
 
 
-namespace
-{
-
-// TODO: make a common header file...
-char const status_file_magic[] = "Snap! Status v1\n";
-
-}
-// no name namespace
-
-
-
 
 
 
@@ -195,6 +184,7 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
 
     // now call the plugin change settings function
     //
+    QString const button_name(message.get_parameter("button_name"));
     QString const field_name(message.get_parameter("field_name"));
     QString const new_value(message.get_parameter("new_value"));
     QString const old_value(message.get_parameter("old_value"));
@@ -214,7 +204,7 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
         return;
     }
     std::vector<QString> affected_services;
-    if(pb->apply_setting(field_name, new_value, old_value, affected_services))
+    if(pb->apply_setting(button_name, field_name, new_value, old_value, affected_services))
     {
         // TODO: when apply_setting() worked, we want to "PING" the status
         //       thread to re-read the info and save that in the

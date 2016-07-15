@@ -31,7 +31,7 @@ public:
     virtual             ~plugin_base() override;
 
     virtual bool        display_value(QDomElement parent, status_t const & s, snap::snap_uri const & uri) = 0;
-    virtual bool        apply_setting(QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & services) = 0;
+    virtual bool        apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & services) = 0;
 };
 
 

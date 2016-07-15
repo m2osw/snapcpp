@@ -77,7 +77,7 @@ private:
 
     int                         read_post_variables();
     int                         process_post();
-    void                        generate_content(QDomDocument doc, QDomElement root);
+    void                        generate_content(QDomDocument doc, QDomElement root, QDomElement menu);
     void                        get_host_status(QDomDocument doc, QDomElement output, QString const host);
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
 

@@ -65,6 +65,19 @@ void glob_deleter(glob_t * g)
     globfree(g);
 }
 
+int glob_error_callback(const char * epath, int eerrno)
+{
+    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                  (epath)
+                  ("\". Got error: ")
+                  (eerrno)
+                  (", ")
+                  (strerror(eerrno))
+                  (".");
+
+    // do not abort on a directory read error...
+    return 0;
+}
 
 /** \brief List of configuration files one can create to define parameters.
  *
@@ -438,30 +451,16 @@ void manager::load_plugins()
 }
 
 
-snap::snap_string_list manager::list_of_servers()
+std::vector<std::string> manager::read_filenames(std::string const & pattern) const
 {
-    snap::snap_string_list result;
-
-    QString const pattern(QString("%1/*.db").arg(f_cluster_status_path));
+    std::vector<std::string> result;
 
     glob_t dir = glob_t();
     int const r(glob(
-            pattern.toUtf8().data(),
-            GLOB_NOESCAPE,
-            [](const char * epath, int eerrno)
-            {
-                SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-                              (epath)
-                              ("\". Got error: ")
-                              (eerrno)
-                              (", ")
-                              (strerror(eerrno))
-                              (".");
-
-                // do not abort on a directory read error...
-                return 0;
-            },
-            &dir));
+                  pattern.c_str()
+                , GLOB_NOESCAPE
+                , glob_error_callback
+                , &dir));
     std::shared_ptr<glob_t> ai(&dir, glob_deleter);
 
     if(r != 0)
@@ -494,7 +493,7 @@ snap::snap_string_list manager::list_of_servers()
         //
         for(size_t idx(0); idx < dir.gl_pathc; ++idx)
         {
-            result << QString::fromUtf8(dir.gl_pathv[idx]);
+            result.push_back(dir.gl_pathv[idx]);
         }
     }
 
@@ -502,7 +501,21 @@ snap::snap_string_list manager::list_of_servers()
 }
 
 
-QString manager::get_public_ip() const
+std::vector<std::string> manager::get_list_of_servers()
+{
+    std::string pattern(f_cluster_status_path.toUtf8().data());
+    pattern += "/*.db";
+    return read_filenames(pattern);
+}
+
+
+QString const & manager::get_server_name() const
+{
+    return f_server_name;
+}
+
+
+QString const & manager::get_public_ip() const
 {
     return f_public_ip;
 }
@@ -518,6 +531,14 @@ snap::snap_string_list const & manager::get_snapmanager_frontend() const
 std::vector<std::string> const & manager::get_bundle_uri() const
 {
     return f_bundle_uri;
+}
+
+
+std::vector<std::string> manager::get_list_of_bundles() const
+{
+    std::string pattern(f_bundles_path.toUtf8().data());
+    pattern += "/bundle-*.xml";
+    return read_filenames(pattern);
 }
 
 

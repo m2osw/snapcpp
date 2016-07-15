@@ -97,9 +97,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			</head>
 			<body>
 				<div>
-					<ul class="breadcrumbs">
-						<li><a href="/cgi-bin/snapmanager.cgi">Home</a></li>
+					<ul class="menu">
+						<li class="menu-item"><a href="/cgi-bin/snapmanager.cgi">Home</a></li>
 						<!-- more entries... -->
+						<xsl:for-each select="menu/item">
+							<li class="menu-item"><a href="{@href}"><xsl:copy-of select="."/></a></li>
+						</xsl:for-each>
 					</ul>
 				</div>
 				<h1>Snap! Manager</h1>

@@ -36,7 +36,12 @@
 
 // snapwebsites lib
 //
+#include "not_used.h"
 #include "qdomhelpers.h"
+
+// Qt lib
+//
+#include <QFile>
 
 // C lib
 //
@@ -48,6 +53,28 @@
 
 namespace snap_manager
 {
+
+
+namespace
+{
+
+
+int glob_err_callback(const char * epath, int eerrno)
+{
+    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                  (epath)
+                  ("\". Got error: ")
+                  (eerrno)
+                  (", ")
+                  (strerror(eerrno))
+                  (".");
+
+    // do not abort on a directory read error...
+    return 0;
+}
+
+
+} // no name namespace
 
 
 /** \brief Initialize the manager_cgi.
@@ -397,6 +424,8 @@ int manager_cgi::process()
     doc.appendChild(root);
     QDomElement output(doc.createElement("output"));
     root.appendChild(output);
+    QDomElement menu(doc.createElement("menu"));
+    root.appendChild(menu);
 
     {
         char const * https(getenv("HTTPS"));
@@ -414,7 +443,7 @@ int manager_cgi::process()
         }
     }
 
-    generate_content(doc, output);
+    generate_content(doc, output, menu);
 
 //SNAP_LOG_WARNING("Doc = [")(doc.toString())("]");
 
@@ -459,7 +488,7 @@ int manager_cgi::read_post_variables()
             {
                 f_post_variables[name] = snap::snap_uri::urldecode(value.c_str(), true).toUtf8().data();
 #ifdef _DEBUG
-                SNAP_LOG_DEBUG("got ")(name)(" = ")(value);
+                SNAP_LOG_DEBUG("got ")(name)(" = ")(f_post_variables[name]);
 #endif
             }
             if(c == EOF)
@@ -506,6 +535,26 @@ int manager_cgi::process_post()
         return error("400 Bad Request", "The POST is expected to include a plugin_name variable.", nullptr);
     }
     QString const plugin_name(QString::fromUtf8(plugin_name_it->second.c_str()));
+
+    // determine which button was clicked
+    //
+    std::vector<std::string> const button_names{"save", "save_everywhere", "restore_default", "install", "uninstall", "reboot"};
+    auto const & button_it(std::find_first_of(
+                f_post_variables.begin(), f_post_variables.end(),
+                button_names.begin(), button_names.end(),
+                [](auto const & a, auto const & b)
+                {
+                    // WARNING: the button is the variable name, the value
+                    //          for a button is "" anyway
+                    return a.first == b;
+                }));
+    if(button_it == f_post_variables.end())
+    {
+        return error("400 Bad Request", "The POST did not include a button as expected.", nullptr);
+    }
+    // WARNING: the button is the variable name, the value
+    //          for a button is "" anyway
+    QString const button_name(QString::fromUtf8(button_it->first.c_str()));
 
     // we need the plugins for the following test
     //
@@ -586,16 +635,25 @@ int manager_cgi::process_post()
 
     // that very field should be defined in the POST variables
     //
-    auto const & new_value_it(f_post_variables.find(field_name_it->second));
-    if(new_value_it == f_post_variables.end())
+    QString new_value;
+    if(button_name == "save"
+    || button_name == "save_everywhere")
     {
-        return error("400 Bad Request"
-                    , ("Variable \""
-                      + field_name_it->second
-                      + "\" was not found in this POST.").c_str()
-                    , nullptr);
+        auto const & new_value_it(f_post_variables.find(field_name_it->second));
+        if(new_value_it == f_post_variables.end())
+        {
+            return error("400 Bad Request"
+                        , ("Variable \""
+                          + field_name_it->second
+                          + "\" was not found in this POST.").c_str()
+                        , nullptr);
+        }
+        new_value = QString::fromUtf8(new_value_it->second.c_str());
     }
-    QString const new_value(QString::fromUtf8(new_value_it->second.c_str()));
+    // else -- install, the value is the field_name
+    //      -- uninstall, the value is the field_name
+    //      -- restore_default, the value is the default, whatever that might be
+    //      -- reboot, the value is the button and server name
 
     // get the old value
     //
@@ -621,16 +679,28 @@ int manager_cgi::process_post()
         // setup the message to send to other snapmanagerdaemons
         //
         snap::snap_communicator_message modify_settings;
-        // TODO: destination depends on the Save button
-        modify_settings.set_service("*");
+        if(button_name == "save_everywhere")
+        {
+            // save everywhere means sending to all snapmanagerdaemons
+            // anywhere in the cluster
+            //
+            modify_settings.set_service("*");
+        }
+        else
+        {
+            // our local snapmanagerdaemon only
+            //
+            modify_settings.set_server(f_server_name);
+            modify_settings.set_service("snapmanagerdaemon");
+        }
         modify_settings.set_command("MODIFYSETTINGS");
         modify_settings.add_parameter("plugin_name", plugin_name);
         modify_settings.add_parameter("field_name", field_name);
         modify_settings.add_parameter("old_value", old_value);
         modify_settings.add_parameter("new_value", new_value);
-        //f_messenger->send_message(modify_settings);
+        modify_settings.add_parameter("button_name", button_name);
 
-        // we need a connection for that too...
+        // we need to quickly create a connection for that one...
         //
         messenger msg(f_communicator_address, f_communicator_port, modify_settings);
         msg.run();
@@ -645,7 +715,7 @@ int manager_cgi::process_post()
  * This function checks the various query strings passed to the manager_cgi
  * and depending on those, generates a page.
  */
-void manager_cgi::generate_content(QDomDocument doc, QDomElement output)
+void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomElement menu)
 {
     QString const function(f_uri.query_option("function"));
 
@@ -654,9 +724,20 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output)
     //
     if(f_uri.has_query_option("host"))
     {
+        QString const host(f_uri.query_option("host"));
+
+        // either way, if we are here, we can show two additional menus:
+        //    host status
+        //    installation bundles
+        //
+        QDomElement item(doc.createElement("item"));
+        item.setAttribute("href", "?host=" + host);
+        menu.appendChild(item);
+        QDomText text(doc.createTextNode("Host Status"));
+        item.appendChild(text);
+
         // the function is to be applied to that specific host
         //
-        QString const host(f_uri.query_option("host"));
         if(!function.isEmpty())
         {
             // apply a function on that specific host
@@ -880,25 +961,8 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
     // TODO: make use of the list_of_servers() function instead of having
     //       our own copy of the glob() call
     //
-    struct err_callback
-    {
-        static int func(const char * epath, int eerrno)
-        {
-            SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-                          (epath)
-                          ("\". Got error: ")
-                          (eerrno)
-                          (", ")
-                          (strerror(eerrno))
-                          (".");
-
-            // do not abort on a directory read error...
-            return 0;
-        }
-    };
-
     glob_t dir = glob_t();
-    int const r(glob(QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data(), GLOB_NOESCAPE, err_callback::func, &dir));
+    int const r(glob(QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data(), GLOB_NOESCAPE, glob_err_callback, &dir));
     if(r != 0)
     {
         //globfree(&dir); -- needed on error?
