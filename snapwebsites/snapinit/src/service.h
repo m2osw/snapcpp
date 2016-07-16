@@ -67,9 +67,6 @@ public:
         cron_running,
         stopping,
         stopping_deps,
-        failing,
-        failing_wait,
-        failed,
         stopped
     };
 
@@ -118,6 +115,8 @@ public:
     bool                        is_dependency_of( const QString& service_name );
 
     bool                        operator < (service const & rhs) const;
+
+    static QString              state_to_string( state_t const state );
 
 protected:
     pointer_t                   shared_from_this() const;

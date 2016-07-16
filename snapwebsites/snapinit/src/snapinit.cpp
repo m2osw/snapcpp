@@ -988,7 +988,7 @@ void snap_init::wakeup_services()
         // we can check whether the process is running and if not start
         // it as required by the current status
         //
-        //s->set_enable(true);
+        s->set_enable(true);
         s->set_starting();
 
         // if we just started a service that has to send us a SAFE message
@@ -1477,7 +1477,6 @@ void snap_init::remove_terminated_services()
     };
     service::vector_t stopped_services;
     std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(stopped_services), if_stopped );
-    f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
 
     // Go through each stopped service and make sure anything that depends on it also has stopped
     //
@@ -1489,10 +1488,15 @@ void snap_init::remove_terminated_services()
         {
             if( !dep_svc->has_stopped() )
             {
+                SNAP_LOG_TRACE("snap_init::remove_terminated_services(): calling set_stopping for service '")(dep_svc->get_service_name())("'");
                 dep_svc->set_stopping();
             }
         }
     }
+
+    // Now remove the stopped services from the main list
+    //
+    f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
 
     if(f_service_list.empty())
     {
@@ -1684,9 +1688,10 @@ void snap_init::log_selected_servers() const
 void snap_init::get_prereqs_list( const QString& service_name, service::vector_t& ret_list ) const
 {
     ret_list.clear();
-    for( auto service : f_service_list )
+    auto const the_service( get_service(service_name) );
+    for( auto const service : f_service_list )
     {
-        if( service->is_dependency_of( service_name ) )
+        if( the_service->is_dependency_of( service->get_service_name() ) )
         {
             ret_list.push_back(service);
         }
@@ -1752,6 +1757,7 @@ void snap_init::terminate_services()
     //
     for( auto s : f_service_list )
     {
+        SNAP_LOG_TRACE("snap_init::terminate_services(): calling set_stopping for service '")(s->get_service_name())("'");
         s->set_stopping();
     }
 
@@ -1972,6 +1978,7 @@ void snap_init::start()
     {
         f_connection_service->set_timeout_date(snap::snap_child::get_current_date());
         f_connection_service->set_enable(true);
+        f_connection_service->set_starting();
     }
     else
     {
