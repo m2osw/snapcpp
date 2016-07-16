@@ -686,7 +686,7 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     //
     if(button_name == "reboot")
     {
-        SNAP_LOG_WARNING("A \"reboot\" was initiated on server \"")(f_snap->get_server_name())("\".");
+        f_snap->reboot();
         return true;
     }
 

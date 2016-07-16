@@ -690,7 +690,7 @@ int manager_cgi::process_post()
         {
             // our local snapmanagerdaemon only
             //
-            modify_settings.set_server(f_server_name);
+            modify_settings.set_server(host);
             modify_settings.set_service("snapmanagerdaemon");
         }
         modify_settings.set_command("MODIFYSETTINGS");

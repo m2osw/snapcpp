@@ -263,6 +263,7 @@ typedef std::shared_ptr<snap_communicator_server>           snap_communicator_se
 
 class base_connection;
 typedef std::shared_ptr<base_connection>                    base_connection_pointer_t;
+typedef std::vector<base_connection_pointer_t>              base_connection_vector_t;
 
 class service_connection;
 typedef std::shared_ptr<service_connection>                 service_connection_pointer_t;
@@ -1542,9 +1543,9 @@ class ping_impl
         : public snap::snap_communicator::snap_udp_server_message_connection
 {
 public:
-    /** \brief The messager initialization.
+    /** \brief The messenger initialization.
      *
-     * The messager receives UDP messages from various sources (mainly
+     * The messenger receives UDP messages from various sources (mainly
      * backends at this point.)
      *
      * \param[in] cs  The snap communicator server we are listening for.
@@ -1720,7 +1721,7 @@ void snap_communicator_server::init()
         tcp_client_server::get_addr_port(f_server->get_parameter("signal"), addr, port, "tcp");
 
         f_ping.reset(new ping_impl(shared_from_this(), addr.toUtf8().data(), port));
-        f_ping->set_name("snap communicator messager (UDP)");
+        f_ping->set_name("snap communicator messenger (UDP)");
         f_communicator->add_connection(f_ping);
     }
 
@@ -2950,7 +2951,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
         return;
     }
 
-    remote_snap_communicator_vector_t accepting_remote_connections;
+    base_connection_vector_t accepting_remote_connections;
     bool const all_servers(server_name.isEmpty() || server_name == "*");
     {
         // service is local, check whether the service is registered,
@@ -3000,34 +3001,40 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 || server_name == base_conn->get_server_name())
                 {
                     service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
-                    if(conn
-                    && conn->get_name() == service)
+                    if(conn)
                     {
-                        // we have such a service, just forward to it now
-                        //
-                        // TBD: should we remove the service name before forwarding?
-                        //
-                        try
+                        if(conn->get_name() == service)
                         {
-                            verify_command(conn, message);
-                            conn->send_message(message);
-                        }
-                        catch(std::runtime_error const & e)
-                        {
-                            // ignore the error because this can come from an
-                            // external source (i.e. snapsignal) where an end
-                            // user may try to break the whole system!
+                            // we have such a service, just forward to it now
                             //
-                            SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
-                                          (conn->get_name())
-                                          ("\" (error: ")
-                                          (e.what())
-                                          (")");
+                            // TBD: should we remove the service name before forwarding?
+                            //
+                            try
+                            {
+                                verify_command(conn, message);
+                                conn->send_message(message);
+                            }
+                            catch(std::runtime_error const & e)
+                            {
+                                // ignore the error because this can come from an
+                                // external source (i.e. snapsignal) where an end
+                                // user may try to break the whole system!
+                                //
+                                SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
+                                              (conn->get_name())
+                                              ("\" (error: ")
+                                              (e.what())
+                                              (")");
+                            }
+                            // we found a specific service to which we could
+                            // forward the message so we can stop here
+                            //
+                            return;
                         }
-                        // we found a specific service to which we could
-                        // forward the message so we can stop here
-                        //
-                        return;
+                        else // TBD -- need some if()? if(conn->get_name() == "remote connection")
+                        {
+                            accepting_remote_connections.push_back(conn);
+                        }
                     }
                     else
                     {
@@ -3042,6 +3049,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                         //       of that service, we need to check for those that heard
                         //       of that service, and if that is also empty, send to
                         //       all... for now we send to all anyway)
+                        //
                         if(remote_connection /*&& remote_connection->has_service(service)*/)
                         {
                             accepting_remote_connections.push_back(remote_connection);
@@ -3091,13 +3099,25 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             //
             try
             {
-                // This is being sent to a service on the remove connection
-                // so we cannot verify that it is know (i.e. only the remote
-                // connection has the list of commands of that service)
+                // This is being sent to a service on the remote connection
+                // so we cannot verify that it is known (i.e. only the remote
+                // connection has the list of commands of that service...)
                 //
                 //verify_command(remote_connection, message);
 
-                r->send_message(message);
+                service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(r));
+                if(conn)
+                {
+                    conn->send_message(message);
+                }
+                else
+                {
+                    remote_snap_communicator_pointer_t remote_connection(std::dynamic_pointer_cast<remote_snap_communicator>(r));
+                    if(remote_connection)
+                    {
+                        remote_connection->send_message(message);
+                    }
+                }
             }
             catch(std::runtime_error const & e)
             {
@@ -3105,8 +3125,8 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 // external source (i.e. snapsignal) where an end
                 // user may try to break the whole system!
                 //
-                SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
-                              (r->get_name())
+                SNAP_LOG_DEBUG("snapcommunicator failed to send a message to remote connection \"")
+                              //(r->get_name()) -- TODO get name somehow (r is a base_connection which does not have a get_name()!)
                               ("\" (error: ")
                               (e.what())
                               (")");

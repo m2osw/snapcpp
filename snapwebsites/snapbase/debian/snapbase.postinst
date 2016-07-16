@@ -43,6 +43,16 @@ then
     chown snapwebsites.www-data ${SECURELOGDIR}
     chmod 770 ${SECURELOGDIR}
 
+    # all.log will be own by root:root if we do not create it ahead of
+    # time with the correct ownership, this is because snapinit runs
+    # as root:root and it often is the very first process that creates
+    # that file...
+    #
+    ALLLOG=${SNAPLOGDIR}/all.log
+    touch ${ALLLOG}
+    chown snapwebsites.snapwebsites ${ALLLOG}
+    chmod 644 ${ALLLOG}
+
     # the cache directory is used by various daemons to save files that
     # can be lost over time, but allow for faster access when present;
     # at this time mainly snapcommunicator uses it to save messages it

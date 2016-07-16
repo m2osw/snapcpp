@@ -254,6 +254,50 @@ bool manager::installer(QString const & bundle_name, std::string const & command
 }
 
 
+/** \brief Reboot or shutdown a computer.
+ *
+ * This function sends the OS the necessary command(s) to reboot or
+ * shutdown a computer system.
+ *
+ * In some cases, the shutdown is to be done cleanly, meaning that
+ * the machine has to unregister itself first, making sure that all
+ * others know that the machine is going to go down. Once that
+ * disconnect was accomplished, then the shutdown happens.
+ *
+ * If the function is set to reboot, it will reconnect as expected
+ * once it comes back.
+ *
+ * Also, if multiple machines (all?) are asked to reboot, then it
+ * has to be done one after another and not all at once (all at
+ * once would kill the cluster!)
+ *
+ * \param[in] reboot  Whether to reboot (true) or just shutdown (false).
+ */
+void manager::reboot(bool reboot)
+{
+    // TODO: we need many different ways to reboot a machine cleanly;
+    //       especially front ends and database machines which need
+    //       to first be disconnected by all, then rebooted;
+    //       also shutdowns have to be coordinated between computers:
+    //       one computer cannot decide by itself whether to it can
+    //       go down or now...
+    //
+    snap::process p("shutdown");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p.set_command("shutdown");
+    if(reboot)
+    {
+        p.add_argument("--reboot");
+    }
+    else
+    {
+        p.add_argument("--poweroff");
+    }
+    p.add_argument("now");
+    p.add_argument("Shutdown initiated by Snap! Manager Daemon");
+    snap::NOTUSED(p.run());
+}
+
 
 bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value)
 {
