@@ -36,7 +36,7 @@
 //
 #include "manager.h"
 
-// our lib
+// snapwebsites lib
 //
 #include "log.h"
 #include "not_used.h"
@@ -112,6 +112,117 @@ int manager::package_status(std::string const & package_name, std::string & outp
     }
 
     return r;
+}
+
+
+QString manager::count_packages_that_can_be_updated()
+{
+    QString const cache_filename(QString("%1/apt-check.output").arg(f_cache_path));
+
+    // check whether we have a cached version of the data, if so, use
+    // the cache (which is dead fast in comparison to re-running the
+    // apt-check function)
+    //
+    {
+        QFile cache(cache_filename);
+        if(cache.open(QIODevice::ReadOnly))
+        {
+            QByteArray content_buffer(cache.readAll());
+            if(content_buffer.size() > 0)
+            {
+                if(content_buffer.at(content_buffer.size() - 1) == '\n')
+                {
+                    content_buffer.resize(content_buffer.size() - 1);
+                }
+            }
+            QString const content(QString::fromUtf8(content_buffer));
+            snap::snap_string_list counts(content.split(";"));
+            if(counts.size() == 1
+            && counts[0] == "-1")
+            {
+                // the function to check that information was not available
+                return QString();
+            }
+            if(counts.size() == 3)
+            {
+                time_t const now(time(nullptr));
+                time_t const cached_on(counts[0].toLongLong());
+                if(cached_on + 86400 >= now)
+                {
+                    // cache is still considered valid
+                    //
+                    if(counts[1] == "0")
+                    {
+                        // nothing needs to be upgraded
+                        return QString();
+                    }
+                    // counts[1] packages can be upgraded
+                    // counts[2] are security upgrades
+                    return QString("%1;%2").arg(counts[1]).arg(counts[2]);
+                }
+            }
+        }
+    }
+
+    // check whether we have an apt-check function were we expect it
+    //
+    QByteArray apt_check(f_apt_check.toUtf8());
+    struct stat st;
+    if(stat(apt_check.data(), &st) == 0
+    && S_ISREG(st.st_mode)
+    && (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0)  // make sure it is an executable
+    {
+        // apt-check is expected to be a python script and the output
+        // will be written in 'stderr'
+        //
+        snap::process p("apt-check");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command(f_apt_check);
+        p.add_argument("2>&1"); // python script sends output to STDERR
+        int const r(p.run());
+        if(r == 0)
+        {
+            QString const output(p.get_output(true).toUtf8().data());
+            if(!output.isEmpty())
+            {
+                QFile cache(cache_filename);
+                if(cache.open(QIODevice::WriteOnly))
+                {
+                    time_t const now(time(nullptr));
+                    QString const cache_string(QString("%1;%2").arg(now).arg(output));
+                    QByteArray const cache_utf8(cache_string.toUtf8());
+                    cache.write(cache_utf8.data(), cache_utf8.size());
+                    if(output == "0;0")
+                    {
+                        // again, if we have "0;0" there is nothing to upgrade
+                        //
+                        return QString();
+                    }
+                    return output;
+                }
+            }
+        }
+    }
+
+    SNAP_LOG_ERROR("the snapmanagercgi library could not run \"")(f_apt_check)("\" successfully or the output was invalid.");
+
+    {
+        QFile cache(cache_filename);
+        if(cache.open(QIODevice::WriteOnly))
+        {
+            // apt-check command is failing... do not try again
+            //
+            cache.write("-1", 2);
+        }
+        else
+        {
+            SNAP_LOG_ERROR("the snapmanagercgi library could not create \"")(cache_filename)("\".");
+        }
+    }
+
+    // pretend there is nothing to upgrade
+    //
+    return QString();
 }
 
 
@@ -192,6 +303,13 @@ int manager::install_package(std::string const & package_name, std::string const
 }
 
 
+
+void manager::reset_aptcheck()
+{
+    // cache is not unlikely wrong after that
+    QString const cache_filename(QString("%1/apt-check.output").arg(f_cache_path));
+    unlink(cache_filename.toUtf8().data());
+}
 
 
 bool manager::upgrader()
@@ -283,7 +401,7 @@ void manager::reboot(bool reboot)
     //       go down or now...
     //
     snap::process p("shutdown");
-    p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
     p.set_command("shutdown");
     if(reboot)
     {

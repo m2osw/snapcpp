@@ -89,6 +89,7 @@ public:
     static button_t const       FORM_BUTTON_INSTALL         = 0x00000010;
     static button_t const       FORM_BUTTON_UNINSTALL       = 0x00000020;
     static button_t const       FORM_BUTTON_REBOOT          = 0x00000040;
+    static button_t const       FORM_BUTTON_UPGRADE         = 0x00000080;
 
                         form(QString const & plugin_name, QString const & field_name, button_t button);
 

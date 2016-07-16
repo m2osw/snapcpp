@@ -538,7 +538,7 @@ int manager_cgi::process_post()
 
     // determine which button was clicked
     //
-    std::vector<std::string> const button_names{"save", "save_everywhere", "restore_default", "install", "uninstall", "reboot"};
+    std::vector<std::string> const button_names{"save", "save_everywhere", "restore_default", "install", "uninstall", "reboot", "upgrade"};
     auto const & button_it(std::find_first_of(
                 f_post_variables.begin(), f_post_variables.end(),
                 button_names.begin(), button_names.end(),

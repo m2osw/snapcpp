@@ -389,6 +389,27 @@ void manager::init(int argc, char * argv[])
     {
         f_plugins_path = f_config["plugins_path"];
     }
+
+    // get the user defined path to a folder used to cache data
+    //
+    if(f_config.contains("cache_path"))
+    {
+        f_cache_path = f_config["cache_path"];
+    }
+
+    // get the path and filename to the apt-check tool
+    //
+    if(f_config.contains("apt_check"))
+    {
+        f_apt_check = f_config["apt_check"];
+    }
+
+    // get the path and filename to the reboot-required flag
+    //
+    if(f_config.contains("reboot_required"))
+    {
+        f_reboot_required = f_config["reboot_required"];
+    }
 }
 
 
@@ -545,6 +566,12 @@ std::vector<std::string> manager::get_list_of_bundles() const
 QString const & manager::get_bundles_path() const
 {
     return f_bundles_path;
+}
+
+
+QString const & manager::get_reboot_required_path() const
+{
+    return f_reboot_required;
 }
 
 

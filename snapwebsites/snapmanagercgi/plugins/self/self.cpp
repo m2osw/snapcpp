@@ -40,7 +40,6 @@
 // C lib
 //
 #include <sys/file.h>
-#include <sys/stat.h>
 
 // last entry
 //
@@ -213,6 +212,19 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
     {
         snap_manager::status_t const ip(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "ip", f_snap->get_public_ip());
         server_status.set_field(ip);
+    }
+
+    {
+        QString const updates(f_snap->count_packages_that_can_be_updated());
+        if(!updates.isEmpty())
+        {
+            snap_manager::status_t const upgrade_required(
+                              snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                            , get_plugin_name()
+                            , "upgrade_required"
+                            , updates);
+            server_status.set_field(upgrade_required);
+        }
     }
 
     {
@@ -623,6 +635,40 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         return true;
     }
 
+    if(s.get_field_name() == "upgrade_required")
+    {
+        // the OS declared that a reboot was required, offer the option
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_UPGRADE
+                );
+
+        snap::snap_string_list counts(s.get_value().split(";"));
+        if(counts.size() < 2)
+        {
+            // put some defaults to avoid crashes
+            counts << "0";
+            counts << "0";
+        }
+
+        QString const description(QString("%1 packages can be updated.<br/>%2 updates are security updates.")
+                            .arg(counts[0])
+                            .arg(counts[1]));
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "Upgrade Required"
+                        , s.get_field_name()
+                        , description
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name().startsWith("bundle::"))
     {
         // offer the end user to install (not yet installed) or
@@ -679,7 +725,9 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
             SNAP_LOG_ERROR("install or uninstall with field_name \"")(field_name)("\" is invalid, we expected a name starting with \"bundle::\".");
             return false;
         }
-        return f_snap->installer(field_name.mid(8), install ? "install" : "purge");
+        bool const r(f_snap->installer(field_name.mid(8), install ? "install" : "purge"));
+        f_snap->reset_aptcheck();
+        return r;
     }
 
     // after installations and upgrades, a reboot may be required
@@ -688,6 +736,16 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     {
         f_snap->reboot();
         return true;
+    }
+
+    // once in a while packages get an update, the upgrade button appears
+    // and when clicked this funtion gets called
+    //
+    if(button_name == "upgrade")
+    {
+        bool const r(f_snap->upgrader());
+        f_snap->reset_aptcheck();
+        return r;
     }
 
     // restore defaults?

@@ -251,6 +251,16 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
         QDomText text(doc.createTextNode("Reboot"));
         button.appendChild(text);
     }
+    if((f_buttons & FORM_BUTTON_UPGRADE) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "upgrade");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Upgrade"));
+        button.appendChild(text);
+    }
 }
 
 

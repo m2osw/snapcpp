@@ -16,10 +16,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// ourselves
+//
 #include "lib/server_status.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/snapwebsites.h>
 
+// C lib
+//
+#include <sys/stat.h>
 
 
 #define    SNAPMANAGERCGI_VERSION_MAJOR   @SNAPMANAGERCGI_VERSION_MAJOR@
@@ -105,11 +112,14 @@ public:
     std::vector<std::string> const & get_bundle_uri() const;
     std::vector<std::string>        get_list_of_bundles() const;
     QString const &                 get_bundles_path() const;
+    QString const &                 get_reboot_required_path() const;
     virtual bool                    stop_now_prima() const;
     bool                            upgrader();
+    void                            reset_aptcheck();
     bool                            installer(QString const & bundle_name, std::string const & command);
     void                            reboot(bool reboot = true);
     int                             package_status(std::string const & package_name, std::string & output);
+    QString                         count_packages_that_can_be_updated();
     std::vector<std::string>        read_filenames(std::string const & pattern) const;
     bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value);
 
@@ -134,6 +144,9 @@ protected:
     QString                         f_bundles_path = f_data_path + "/bundles";
     QString                         f_public_ip;
     QString                         f_plugins_path = "/usr/lib/snapwebsites/manager_plugins";
+    QString                         f_cache_path = "/var/cache/snapwebsites";
+    QString                         f_apt_check = "/usr/lib/update-notifier/apt-check";
+    QString                         f_reboot_required = "/run/reboot-required";
     std::vector<std::string>        f_bundle_uri;
 
 private:
