@@ -1475,6 +1475,7 @@ void snap_init::remove_terminated_services()
     {
         return s->has_stopped();
     };
+#if 0
     service::vector_t stopped_services;
     std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(stopped_services), if_stopped );
 
@@ -1493,6 +1494,7 @@ void snap_init::remove_terminated_services()
             }
         }
     }
+#endif
 
     // Now remove the stopped services from the main list
     //
@@ -1691,8 +1693,11 @@ void snap_init::get_prereqs_list( const QString& service_name, service::vector_t
     auto const the_service( get_service(service_name) );
     for( auto const service : f_service_list )
     {
-        if( the_service->is_dependency_of( service->get_service_name() ) )
+        SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
+        //if( the_service->is_dependency_of( service->get_service_name() ) )
+        if( service->is_dependency_of( the_service->get_service_name() ) )
         {
+            SNAP_LOG_TRACE("   snap_init::get_prereqs_list(): adding service '")(service->get_service_name());
             ret_list.push_back(service);
         }
     }

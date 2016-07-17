@@ -62,12 +62,13 @@ public:
         starting,
         starting_without_listener,
         starting_with_listener,
-        waiting_for_prereqs,
+        waiting_for_deps,
         running,
         cron_running,
         stopping,
-        stopping_deps,
-        stopped
+        stopping_prereqs,
+        stopped//,
+        //waiting_stop_prereqs
     };
 
     typedef std::shared_ptr<service>        pointer_t;
@@ -91,6 +92,7 @@ public:
     bool                        is_running() const;
     bool                        is_service_required();
     void                        set_starting();
+    void                        set_restarting();
     void                        set_stopping();
     bool                        is_stopping() const;
     bool                        has_stopped() const;
@@ -127,6 +129,7 @@ private:
     void                        compute_next_tick(bool just_ran);
     void                        get_prereqs_list();
     void                        get_depends_list();
+    void                        mark_process_as_stopped( const bool from_set_stopping = true );
     void                        mark_process_as_dead();
 
     std::weak_ptr<snap_init>    f_snap_init;
@@ -160,12 +163,13 @@ private:
     int                         f_priority = DEFAULT_PRIORITY;
     int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
+    bool                        f_restart_requested = false;
 
     // For future refactoring. Not yet implemented.
     //
-    typedef std::function<void()>    func_t;
-    typedef std::queue<func_t>       func_queue_t;
-    typedef std::map<state_t,func_t> func_map_t;
+    typedef std::function<void()>                   func_t;
+    typedef std::map<state_t,func_t>                func_map_t;
+    typedef std::queue<std::pair<state_t,func_t>>   func_queue_t;
 
     func_map_t                  f_func_map;
     func_queue_t                f_queue;
