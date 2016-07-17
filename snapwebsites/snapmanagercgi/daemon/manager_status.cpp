@@ -380,12 +380,16 @@ void manager_status::resend_status()
 # | firewall      | snapfirewall + iplock (need overhaul)     | All   |
 # | frontend      | apache with snap.cgi                      | Front |
 # | mailserver    | postfix with snapbounce                   | Front |
-# | ntp           | time server                               | All   |
 # | vpn           | tinc / openvpn                            | All   |
 # | logserver     | loggingserver from log4cplus              | Back  |
 # | rkhunter      | check that no rootkit gets installed      | All   |
 # | tripwire      | check that no files gets changed          | All   |
 # +===============+===========================================+=======+
+#
+# For NTP, we currently just install it in snapbase and assume that you
+# always install at least snapbase (i.e. snapmanagercgi depends on it)
+# so there is no additional need for. The snapfirewall default tables
+# open that UDP port by default.
 #
 # Note that the snapserver plugins come with clamav.
 #
