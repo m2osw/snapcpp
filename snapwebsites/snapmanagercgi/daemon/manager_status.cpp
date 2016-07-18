@@ -373,7 +373,7 @@ void manager_status::resend_status()
 # |    Name       |              Description                  | Comp. |
 # +===============+===========================================+=======+
 # | anti-virus    | clamav along snapbackend                  | Back  |
-# | application   | snapserver and clamav                     | Back  |
+# | application   | snapserver                                | Back  |
 # | backend       | one or more snapbackend                   | Back  |
 # | base          | snamanager.cgi and dependencies           | All   |
 # | cassandra     | cassandra database                        | Back  |

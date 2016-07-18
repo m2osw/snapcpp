@@ -67,6 +67,10 @@ then
     #
     mkdir -p /var/lib/snapwebsites
     chown snapwebsites.snapwebsites /var/lib/snapwebsites
+
+    # make the snap-httpoxy.conf file active
+    #
+    a2enconf snap-httpoxy
 fi
 
 # vim: ts=4 sw=4 et nocindent

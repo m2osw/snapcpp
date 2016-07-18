@@ -643,10 +643,10 @@ int manager_cgi::process_post()
         if(new_value_it == f_post_variables.end())
         {
             return error("400 Bad Request"
-                        , ("Variable \""
-                          + field_name_it->second
-                          + "\" was not found in this POST.").c_str()
-                        , nullptr);
+                       , ("Variable \""
+                         + field_name_it->second
+                         + "\" was not found in this POST.").c_str()
+                       , nullptr);
         }
         new_value = QString::fromUtf8(new_value_it->second.c_str());
     }
@@ -668,6 +668,23 @@ int manager_cgi::process_post()
     snap_manager::status_t const modified(snap_manager::status_t::state_t::STATUS_STATE_MODIFIED, plugin_name, field_name, new_value);
     status_file.set_field(modified);
     status_file.write();
+
+    // retrieve installation variables which can be numerous
+    //
+    std::string install_variables;
+    std::for_each(
+            f_post_variables.begin(), f_post_variables.end(),
+            [&install_variables](auto const & it)
+            {
+                if(it.first.compare(0, 22, "bundle_install_field::") == 0)
+                {
+                    if(!install_variables.empty())
+                    {
+                        install_variables += '\n';
+                    }
+                    install_variables += it.first.substr(22);
+                }
+            });
 
     // we got all the elements, send a message because we may have to
     // save that data on multiple computers and also it needs to be
@@ -699,6 +716,10 @@ int manager_cgi::process_post()
         modify_settings.add_parameter("old_value", old_value);
         modify_settings.add_parameter("new_value", new_value);
         modify_settings.add_parameter("button_name", button_name);
+        if(!install_variables.empty())
+        {
+            modify_settings.add_parameter("install_values", QString::fromUtf8(install_variables.c_str()));
+        }
 
         // we need to quickly create a connection for that one...
         //

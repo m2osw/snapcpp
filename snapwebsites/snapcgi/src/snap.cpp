@@ -447,6 +447,32 @@ int snap_cgi::process()
     {
         std::string env(*e);
         int const len(static_cast<int>(env.size()));
+
+        // Prevent the HTTP_PROXY variable from going through, although
+        // apparently Apache2 prevents such on its own but at this point
+        // it is not clear to me whether it really does or not.
+        //
+        // (see https://httpoxy.org/)
+        //
+        if(len >= sizeof("HTTP_PROXY")) // sizeof() includes the '\0', we test he '=' below
+        {
+            // env.startsWith("HTTP_PROXY=")?
+            if(env[ 0] == 'H'
+            && env[ 1] == 'T'
+            && env[ 2] == 'T'
+            && env[ 3] == 'P'
+            && env[ 4] == '_'
+            && env[ 5] == 'P'
+            && env[ 6] == 'R'
+            && env[ 7] == 'O'
+            && env[ 8] == 'X'
+            && env[ 9] == 'Y'
+            && env[10] == '=')
+            {
+                continue;
+            }
+        }
+
         //
         // Replacing all '\n' in the env variables to '|'
         // to prevent snap_child from complaining and die.

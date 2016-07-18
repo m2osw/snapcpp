@@ -322,7 +322,7 @@ bool manager::upgrader()
 
 
 
-bool manager::installer(QString const & bundle_name, std::string const & command)
+bool manager::installer(QString const & bundle_name, std::string const & command, std::string const & install_values)
 {
     bool success(true);
 
@@ -349,6 +349,80 @@ bool manager::installer(QString const & bundle_name, std::string const & command
         return false;
     }
 
+    // install_values is a string of variables that come from the list
+    // of fields defined in the bundle file
+    //
+    std::vector<std::string> variables;
+    snap::NOTUSED(snap::tokenize_string(variables, install_values, "\n", true, " "));
+    std::string vars;
+    std::for_each(variables.begin(), variables.end(),
+                [&vars](auto const & v)
+                {
+                    vars += "BUNDLE_INSTALLATION_";
+                    bool found_equal(false);
+                    // make sure that double quotes get escaped within
+                    // the string
+                    //
+                    for(auto const c : v)
+                    //for(size_t p(0); p < v.length(); ++p)
+                    {
+                        if(c == '\r'
+                        || c == '\n')
+                        {
+                            // these characters should not happen in those
+                            // strings, but just in case...
+                            //
+                            continue;
+                        }
+
+                        if(found_equal)
+                        {
+                            if(c == '"')
+                            {
+                                vars += '\\';
+                            }
+                            vars += c;
+                        }
+                        else if(c == '=')
+                        {
+                            found_equal = true;
+                            vars += "=\"";
+                        }
+                        else
+                        {
+                            if(c >= 'a' && c <= 'z')
+                            {
+                                // force ASCII uppercase for the name
+                                //
+                                vars += c & 0x5f;
+                            }
+                            else
+                            {
+                                vars += c;
+                            }
+                        }
+                    }
+                    vars += "\" "; // always add a space at the end
+                });
+
+    // there may be some pre-installation instructions
+    //
+    QDomNodeList bundle_preinst(bundle_xml.elementsByTagName("preinst"));
+    if(bundle_preinst.size() == 1)
+    {
+        QDomElement preinst(bundle_preinst.at(0).toElement());
+        int const r(system((vars + preinst.text().toUtf8().data()).c_str()));
+        if(r != 0)
+        {
+            int const e(errno);
+            SNAP_LOG_ERROR("pre-installation script failed with ")(r)(" (errno: ")(e)(", ")(strerror(e));
+            // if the pre-installation script fails, we do not attempt to
+            // install the packages
+            //
+            return false;
+        }
+    }
+
     // get the list of expected packages, it may be empty/non-existant
     //
     QDomNodeList bundle_packages(bundle_xml.elementsByTagName("packages"));
@@ -357,7 +431,7 @@ bool manager::installer(QString const & bundle_name, std::string const & command
         QDomElement package_list(bundle_packages.at(0).toElement());
         std::string const list_of_packages(package_list.text().toUtf8().data());
         std::vector<std::string> packages;
-        snap::tokenize_string(packages, list_of_packages, ",", true, " ");
+        snap::NOTUSED(snap::tokenize_string(packages, list_of_packages, ",", true, " "));
         std::for_each(packages.begin(), packages.end(),
                 [=, &success](auto const & p)
                 {
@@ -367,6 +441,24 @@ bool manager::installer(QString const & bundle_name, std::string const & command
                     success = this->install_package(p, command) && success;
                 });
     }
+
+    // there may be some post installation instructions
+    //
+    QDomNodeList bundle_postinst(bundle_xml.elementsByTagName("postinst"));
+    if(bundle_postinst.size() == 1)
+    {
+        QDomElement postinst(bundle_postinst.at(0).toElement());
+        int const r(system((vars + postinst.text().toUtf8().data()).c_str()));
+        if(r != 0)
+        {
+            int const e(errno);
+            SNAP_LOG_ERROR("post installation script failed with ")(r)(" (errno: ")(e)(", ")(strerror(e));
+            // not much we can do if the post installation fails
+            // (we could remove the packages, but that could be dangerous too)
+            success = false;
+        }
+    }
+
 
     return success;
 }

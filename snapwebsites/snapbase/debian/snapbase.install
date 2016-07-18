@@ -1,2 +1,3 @@
 conf/loggingserver.properties conf/log.properties conf/logserver.properties etc/snapwebsites
 conf/README.txt etc/snapwebsites/snapwebsites.d
+conf/snap-httpoxy.cong etc/apache2/conf-available

@@ -300,6 +300,8 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
         }
 
         // the lock file is inactive, we are good
+        //
+        // (TBD: should we keep the lock active while running the next loop?)
     }
 
     // check whether we have a bundles status file, if so we may just use
@@ -419,18 +421,23 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
         QString description;
         std::string package_name_and_version;
 
+        // the Install form may include a few fields (values that are
+        // otherwise difficult to change once the package was installed)
+        //
+        QDomElement fields;
+
         QDomDocument bundle_xml;
         QFile input(filename);
         if(input.open(QIODevice::ReadOnly)
         && bundle_xml.setContent(&input, false))
         {
+            QDomElement root(bundle_xml.documentElement());
             // get the name, we show the name as part of the field name
             //
-            QDomNodeList bundle_name(bundle_xml.elementsByTagName("name"));
-            if(bundle_name.size() == 1)
+            QDomElement bundle_name(root.firstChildElement("name"));
+            if(!bundle_name.isNull())
             {
-                // TODO: add error in output
-                name = bundle_name.at(0).toElement().text();
+                name = bundle_name.text();
             }
             else
             {
@@ -443,16 +450,21 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
             // snapmanager.cgi binary could read that from the XML
             // file instead?)
             //
-            QDomNodeList bundle_description(bundle_xml.elementsByTagName("description"));
-            if(bundle_description.size() == 1)
+            QDomElement bundle_description(root.firstChildElement("description"));
+            if(!bundle_description.isNull())
             {
-                description = bundle_description.at(0).toElement().text();
+                description = snap_dom::xml_children_to_string(bundle_description);
             }
             else
             {
                 good_bundle = false;
                 has_error = true;
             }
+
+            // list of fields to capture and send along the installation
+            // processes
+            //
+            fields = root.firstChildElement("fields");
 
             // get the list of expected packages, it may be empty
             //
@@ -506,7 +518,8 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
             package_name_and_version = "<li>No package name and version available for this bundle.</li>";
         }
 
-        QString const status_info(QString("<p>%1</p><ul>%2</ul>")
+        QString const status_info(QString("%1<p>%2</p><ul>%3</ul>")
+                        .arg(snap_dom::xml_to_string(fields))
                         .arg(description)
                         .arg(QString::fromUtf8(package_name_and_version.c_str())));
 
@@ -682,12 +695,70 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
                         : snap_manager::form::FORM_BUTTON_UNINSTALL
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        // the value is the description, although it may include fields
+        // which we want to extract if they are present...
+        //
+        QString fields;
+        QString value(s.get_value());
+        if(value.startsWith("<fields>"))
+        {
+            int const pos(value.indexOf("</fields>"));
+            fields = value.mid(0, pos + 9);
+            value = value.mid(pos + 9);
+        }
+
+        snap_manager::widget_description::pointer_t description_field(std::make_shared<snap_manager::widget_description>(
                           "Bundle Details"
                         , s.get_field_name()
-                        , s.get_value()
-                        ));
-        f.add_widget(field);
+                        , value
+                    ));
+        f.add_widget(description_field);
+
+        if(!fields.isEmpty())
+        {
+            QDomDocument fields_doc;
+            fields_doc.setContent(fields, false);
+            QDomNodeList field_tags(fields_doc.elementsByTagName("field"));
+            int const max_fields(field_tags.size());
+            for(int idx(0); idx < max_fields; ++idx)
+            {
+                QDomElement field_tag(field_tags.at(idx).toElement());
+
+                QString const field_name(field_tag.attribute("name"));
+                //QString const field_type(f.attribute("type")); -- add this once we need it, right now it's all about input fields
+
+                QString label;
+                QString initial_value;
+                QString description;
+
+                QDomElement c(field_tag.firstChildElement());
+                while(!c.isNull())
+                {
+                    if(c.tagName() == "label")
+                    {
+                        label = c.text();
+                    }
+                    else if(c.tagName() == "description")
+                    {
+                        // description may include HTML tags
+                        description = snap_dom::xml_children_to_string(c);
+                    }
+                    else if(c.tagName() == "initial-value")
+                    {
+                        initial_value = c.text();
+                    }
+                    c = c.nextSiblingElement();
+                }
+
+                snap_manager::widget_input::pointer_t install_field(std::make_shared<snap_manager::widget_input>(
+                                  label
+                                , QString("bundle_install_field::%1").arg(field_name)
+                                , initial_value
+                                , description
+                            ));
+                f.add_widget(install_field);
+            }
+        }
 
         f.generate(parent, uri);
 
@@ -705,14 +776,14 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
  * \param[in] button_name  The name of the button the user clicked.
  * \param[in] field_name  The name of the field to update.
  * \param[in] new_value  The new value to save in that field.
- * \param[in] old_value  The old value, just in case (usually ignored.)
+ * \param[in] old_or_installation_value  The old value, just in case
+ *            (usually ignored,) or the installation values (only
+ *            for the self plugin that manages bundles.)
  *
  * \return true if the new_value was applied successfully.
  */
-bool self::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & affected_services)
+bool self::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::vector<QString> & affected_services)
 {
-    snap::NOTUSED(old_value);
-
     // installation is a special case in the "self" plugin only (or at least
     // it should most certainly only be specific to this plugin.)
     //
@@ -725,7 +796,7 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
             SNAP_LOG_ERROR("install or uninstall with field_name \"")(field_name)("\" is invalid, we expected a name starting with \"bundle::\".");
             return false;
         }
-        bool const r(f_snap->installer(field_name.mid(8), install ? "install" : "purge"));
+        bool const r(f_snap->installer(field_name.mid(8), install ? "install" : "purge", old_or_installation_value.toUtf8().data()));
         f_snap->reset_aptcheck();
         return r;
     }

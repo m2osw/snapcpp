@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<bundle>
+  <name>vpn_server</name>
+  <description>OpenVPN allows a network of computers to communicate through a safe, encrypted tunnel (Server Side).</description>
+  <fields>
+    <field name="organization">
+      <label>Organization</label>
+      <description>Name of your organization.</description>
+    </field>
+    <field name="organization_unit">
+      <label>Organization Unit</label>
+      <description>The unit of your organization responsible for your servers.</description>
+    </field>
+    <field name="city">
+      <label>City</label>
+      <description>Name of your city.</description>
+    </field>
+    <field name="province">
+      <label>Province or State</label>
+      <description>Name of your province.</description>
+    </field>
+    <field name="country" type="string">
+      <label>Country</label>
+      <description>Name of your country.</description>
+    </field>
+    <field name="email">
+      <label>Email</label>
+      <description>Contact email address.</description>
+    </field>
+  </fields>
+  <packages>openvpn, easy-rsa</packages>
+  <!--
+    The setup requires the user data entry for the IP addresses, but we
+    can at least copy and create some files as required.
+
+    Note: the easy-rsa cannot be run by postinst without already including
+          the correct KEY_... variables so we do not do it yet.
+  -->
+  <postinst>
+    cp -r /usr/share/easy-rsa /etc/openvpn/.
+  </postinst>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

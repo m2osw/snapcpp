@@ -187,8 +187,18 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
     QString const button_name(message.get_parameter("button_name"));
     QString const field_name(message.get_parameter("field_name"));
     QString const new_value(message.get_parameter("new_value"));
-    QString const old_value(message.get_parameter("old_value"));
     QString const plugin_name(message.get_parameter("plugin_name"));
+
+    // if we have installation parameters, then there is no old value
+    QString old_or_installation_value;
+    if(message.has_parameter("install_values"))
+    {
+        old_or_installation_value = message.get_parameter("install_values");
+    }
+    else
+    {
+        old_or_installation_value = message.get_parameter("old_value");
+    }
 
     snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
     if(p == nullptr)
@@ -204,7 +214,7 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
         return;
     }
     std::vector<QString> affected_services;
-    if(pb->apply_setting(button_name, field_name, new_value, old_value, affected_services))
+    if(pb->apply_setting(button_name, field_name, new_value, old_or_installation_value, affected_services))
     {
         // TODO: when apply_setting() worked, we want to "PING" the status
         //       thread to re-read the info and save that in the
