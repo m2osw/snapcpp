@@ -364,6 +364,15 @@ void snaplock::run()
     signal( SIGBUS,  snaplock::sighandler );
     signal( SIGFPE,  snaplock::sighandler );
     signal( SIGILL,  snaplock::sighandler );
+    signal( SIGTERM, snaplock::sighandler );
+    signal( SIGINT,  snaplock::sighandler );
+    signal( SIGQUIT, snaplock::sighandler );
+
+    // ignore console signals
+    //
+    signal( SIGTSTP,  SIG_IGN );
+    signal( SIGTTIN,  SIG_IGN );
+    signal( SIGTTOU,  SIG_IGN );
 
     // initialize the communicator and its connections
     //
@@ -410,6 +419,7 @@ void snaplock::run()
 void snaplock::sighandler( int sig )
 {
     QString signame;
+    bool show_stack(true);
     switch( sig )
     {
     case SIGSEGV:
@@ -428,16 +438,33 @@ void snaplock::sighandler( int sig )
         signame = "SIGILL";
         break;
 
+    case SIGTERM:
+        signame = "SIGTERM";
+        show_stack = false;
+        break;
+
+    case SIGINT:
+        signame = "SIGINT";
+        show_stack = false;
+        break;
+
+    case SIGQUIT:
+        signame = "SIGQUIT";
+        show_stack = false;
+        break;
+
     default:
         signame = "UNKNOWN";
         break;
 
     }
 
+    if(show_stack)
     {
         snap::snap_exception_base::output_stack_trace();
-        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
     }
+
+    SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
 
     // Exit with error status
     //

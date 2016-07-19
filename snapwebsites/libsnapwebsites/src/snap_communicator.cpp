@@ -5741,7 +5741,7 @@ bool snap_communicator::run()
             enabled.push_back(c->is_enabled());
             if(!enabled[idx])
             {
-                SNAP_LOG_TRACE("snap_communicator::run(): connection '")(c->get_name())("' has been disabled, so ignored.");
+                //SNAP_LOG_TRACE("snap_communicator::run(): connection '")(c->get_name())("' has been disabled, so ignored.");
                 continue;
             }
 
@@ -5876,7 +5876,7 @@ bool snap_communicator::run()
                 //
                 if(!enabled[idx])
                 {
-                    SNAP_LOG_TRACE("snap_communicator::run(): in loop, connection '")(c->get_name())("' has been disabled, so ignored!");
+                    //SNAP_LOG_TRACE("snap_communicator::run(): in loop, connection '")(c->get_name())("' has been disabled, so ignored!");
                     continue;
                 }
 

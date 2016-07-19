@@ -454,9 +454,7 @@ int snap_cgi::process()
         //
         // (see https://httpoxy.org/)
         //
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-compare"
-        if(len >= sizeof("HTTP_PROXY")) // sizeof() includes the '\0', we test he '=' below
+        if(static_cast<size_t>(len) >= sizeof("HTTP_PROXY")) // sizeof() includes the '\0', we test the '=' below
         {
             // env.startsWith("HTTP_PROXY=")?
             if(env[ 0] == 'H'
@@ -474,7 +472,6 @@ int snap_cgi::process()
                 continue;
             }
         }
-#pragma GCC diagnostic pop
 
         //
         // Replacing all '\n' in the env variables to '|'

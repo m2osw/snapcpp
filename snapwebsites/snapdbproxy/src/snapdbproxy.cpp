@@ -378,6 +378,15 @@ void snapdbproxy::run()
     signal( SIGBUS,  snapdbproxy::sighandler );
     signal( SIGFPE,  snapdbproxy::sighandler );
     signal( SIGILL,  snapdbproxy::sighandler );
+    signal( SIGTERM, snapdbproxy::sighandler );
+    signal( SIGINT,  snapdbproxy::sighandler );
+    signal( SIGQUIT, snapdbproxy::sighandler );
+
+    // ignore console signals
+    //
+    signal( SIGTSTP,  SIG_IGN );
+    signal( SIGTTIN,  SIG_IGN );
+    signal( SIGTTOU,  SIG_IGN );
 
     // connect to Cassandra ONCE
     //
@@ -429,6 +438,7 @@ void snapdbproxy::run()
 void snapdbproxy::sighandler( int sig )
 {
     QString signame;
+    bool show_stack_output(true);
     switch( sig )
     {
     case SIGSEGV:
@@ -447,16 +457,32 @@ void snapdbproxy::sighandler( int sig )
         signame = "SIGILL";
         break;
 
+    case SIGTERM:
+        signame = "SIGTERM";
+        show_stack_output = false;
+        break;
+
+    case SIGINT:
+        signame = "SIGINT";
+        show_stack_output = false;
+        break;
+
+    case SIGQUIT:
+        signame = "SIGQUIT";
+        show_stack_output = false;
+        break;
+
     default:
         signame = "UNKNOWN";
         break;
 
     }
 
+    if(show_stack_output)
     {
         snap::snap_exception_base::output_stack_trace();
-        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
     }
+    SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
 
     // Exit with error status
     //
