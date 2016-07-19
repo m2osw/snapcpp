@@ -1,3 +1,9 @@
+libqtserialization (0.1.16.684~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 19 Jul 2016 09:05:28 -0700
+
 libqtserialization (0.1.16.683~xenial) xenial; urgency=high
 
   * Nightly build.
