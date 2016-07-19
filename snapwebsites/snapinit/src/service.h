@@ -56,6 +56,21 @@ class service
         : public snap::snap_communicator::snap_timer
 {
 public:
+    enum class state_t
+    {
+        not_started,
+        starting,
+        starting_without_listener,
+        starting_with_listener,
+        waiting_for_deps,
+        running,
+        cron_running,
+        stopping,
+        stopping_prereqs,
+        stopped//,
+        //waiting_stop_prereqs
+    };
+
     typedef std::shared_ptr<service>        pointer_t;
     typedef std::vector<pointer_t>          vector_t;
     typedef std::map<QString, pointer_t>    map_t;
@@ -71,11 +86,13 @@ public:
     // snap::snap_communicator::snap_timer implementation
     virtual void                process_timeout() override;
 
+    state_t                     state() const;
     bool                        exists() const;
     bool                        run();
     bool                        is_running() const;
     bool                        is_service_required();
     void                        set_starting();
+    void                        set_restarting();
     void                        set_stopping();
     bool                        is_stopping() const;
     bool                        has_stopped() const;
@@ -98,15 +115,23 @@ public:
     bool                        service_may_have_died() const;
     void                        mark_service_as_dead();
     bool                        is_dependency_of( const QString& service_name );
+    void                        clear_queue();
 
     bool                        operator < (service const & rhs) const;
+
+    static QString              state_to_string( state_t const state );
 
 protected:
     pointer_t                   shared_from_this() const;
 
 private:
+    void                        init_functions();
+    void                        push_state( const state_t state );
+    bool                        has_cron_elapsed();
     void                        compute_next_tick(bool just_ran);
-    void                        get_depends_on_list();
+    void                        get_prereqs_list();
+    void                        get_depends_list();
+    void                        mark_process_as_stopped( const bool from_set_stopping = true );
     void                        mark_process_as_dead();
 
     std::weak_ptr<snap_init>    f_snap_init;
@@ -117,8 +142,9 @@ private:
     QString                     f_options;
     QString                     f_user;
     QString                     f_group;
-    snap::snap_string_list      f_dependsList;
-    service::vector_t           f_depends_on_list;
+    snap::snap_string_list      f_dep_name_list;
+    service::vector_t           f_prereqs_list;
+    service::vector_t           f_depends_list;
     pid_t                       f_pid = 0;
     pid_t                       f_old_pid = 0;
     int                         f_short_run_count = 0;
@@ -139,12 +165,19 @@ private:
     int                         f_priority = DEFAULT_PRIORITY;
     int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
-    bool                        f_restart_deps = false;
+    bool                        f_restart_requested = false;
+    int64_t                     f_timestamp = 0LL;
 
     // For future refactoring. Not yet implemented.
     //
-    typedef std::function<void(service*)> func_t;
-    typedef std::queue<func_t>            func_queue_t;
+    typedef std::function<void()>                   func_t;
+    typedef std::map<state_t,func_t>                func_map_t;
+    typedef std::queue<std::pair<state_t,func_t>>   func_queue_t;
+
+    func_map_t                  f_func_map;
+    func_queue_t                f_queue;
+    state_t                     f_current_state  = state_t::not_started;
+    state_t                     f_previous_state = state_t::not_started;
 };
 
 // vim: ts=4 sw=4 et

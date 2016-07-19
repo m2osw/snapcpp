@@ -989,6 +989,7 @@ void snap_init::wakeup_services()
         // it as required by the current status
         //
         s->set_enable(true);
+        s->set_starting();
 
         // if we just started a service that has to send us a SAFE message
         // then we cannot start anything more at this point
@@ -1474,24 +1475,30 @@ void snap_init::remove_terminated_services()
     {
         return s->has_stopped();
     };
+#if 0
     service::vector_t stopped_services;
     std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(stopped_services), if_stopped );
-    f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
 
     // Go through each stopped service and make sure anything that depends on it also has stopped
     //
     for( const auto& svc : stopped_services )
     {
-        service::vector_t depends_on_list;
-        get_depends_on_list( svc->get_service_name(), depends_on_list );
-        for( const auto& dep_svc : depends_on_list )
+        service::vector_t prereqs_list;
+        get_prereqs_list( svc->get_service_name(), prereqs_list );
+        for( const auto& dep_svc : prereqs_list )
         {
             if( !dep_svc->has_stopped() )
             {
+                SNAP_LOG_TRACE("snap_init::remove_terminated_services(): calling set_stopping for service '")(dep_svc->get_service_name())("'");
                 dep_svc->set_stopping();
             }
         }
     }
+#endif
+
+    // Now remove the stopped services from the main list
+    //
+    f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
 
     if(f_service_list.empty())
     {
@@ -1680,13 +1687,17 @@ void snap_init::log_selected_servers() const
  *
  * \return list of services who depend on the named service
  */
-void snap_init::get_depends_on_list( const QString& service_name, service::vector_t& ret_list ) const
+void snap_init::get_prereqs_list( const QString& service_name, service::vector_t& ret_list ) const
 {
     ret_list.clear();
-    for( auto service : f_service_list )
+    auto const the_service( get_service(service_name) );
+    for( auto const service : f_service_list )
     {
-        if( service->is_dependency_of( service_name ) )
+        SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
+        //if( the_service->is_dependency_of( service->get_service_name() ) )
+        if( service->is_dependency_of( the_service->get_service_name() ) )
         {
+            SNAP_LOG_TRACE("   snap_init::get_prereqs_list(): adding service '")(service->get_service_name());
             ret_list.push_back(service);
         }
     }
@@ -1751,6 +1762,7 @@ void snap_init::terminate_services()
     //
     for( auto s : f_service_list )
     {
+        SNAP_LOG_TRACE("snap_init::terminate_services(): calling set_stopping for service '")(s->get_service_name())("'");
         s->set_stopping();
     }
 
@@ -1971,6 +1983,7 @@ void snap_init::start()
     {
         f_connection_service->set_timeout_date(snap::snap_child::get_current_date());
         f_connection_service->set_enable(true);
+        f_connection_service->set_starting();
     }
     else
     {

@@ -5669,6 +5669,7 @@ bool snap_communicator::remove_connection(snap_connection::pointer_t connection)
         return false;
     }
 
+    SNAP_LOG_TRACE("snap_communicator::remove_connection(): name=")(connection->get_name());
     f_connections.erase(it);
 
     connection->connection_removed();
@@ -5740,6 +5741,7 @@ bool snap_communicator::run()
             enabled.push_back(c->is_enabled());
             if(!enabled[idx])
             {
+                SNAP_LOG_TRACE("snap_communicator::run(): connection '")(c->get_name())("' has been disabled, so ignored.");
                 continue;
             }
 
@@ -5835,6 +5837,8 @@ bool snap_communicator::run()
             return false;
         }
 //std::cerr << QString("%1: timeout %2 (next was: %3, current ~ %4)\n").arg(getpid()).arg(timeout).arg(next_timeout_timestamp).arg(get_current_date());
+        //SNAP_LOG_TRACE("snap_communicator::run(): ")
+            //(QString("timeout %2 (next was: %3, current ~ %4)").arg(timeout).arg(next_timeout_timestamp).arg(get_current_date()));
 
         // TODO: add support for ppoll() so we can support signals cleanly
         //       with nearly no additional work from us
@@ -5850,6 +5854,7 @@ bool snap_communicator::run()
                 throw snap_communicator_runtime_error("poll() returned a number larger than the input");
             }
 //std::cerr << getpid() << ": ------------------- new set of " << r << " events to handle\n";
+            //SNAP_LOG_TRACE("snap_communicator::run(): ------------------- new set of ")(r)(" events to handle");
 
             // check each connection one by one for:
             //
@@ -5871,6 +5876,7 @@ bool snap_communicator::run()
                 //
                 if(!enabled[idx])
                 {
+                    SNAP_LOG_TRACE("snap_communicator::run(): in loop, connection '")(c->get_name())("' has been disabled, so ignored!");
                     continue;
                 }
 
@@ -5939,6 +5945,10 @@ bool snap_communicator::run()
                     int64_t const now(get_current_date());
                     if(now >= timestamp)
                     {
+/*SNAP_LOG_TRACE("snap_communicator::run(): connection = '")(c->get_name())
+    ("', timestamp = ")(timestamp)
+    (", now = ")(now)
+    (", now >= timestamp --> ")(now >= timestamp);*/
                         // move the timeout as required first
                         // (because the callback may move it again)
                         //
