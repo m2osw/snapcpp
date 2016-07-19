@@ -781,6 +781,9 @@ void snap_init::init()
     signal( SIGBUS,  sighandler );
     signal( SIGFPE,  sighandler );
     signal( SIGILL,  sighandler );
+    //signal( SIGTERM, sighandler ); -- we capture those with connections
+    //signal( SIGINT,  sighandler );
+    //signal( SIGQUIT, sighandler );
 }
 
 

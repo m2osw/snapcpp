@@ -890,6 +890,13 @@ void server::config(int argc, char * argv[], uint32_t flags)
     signal( SIGILL,  sighandler );
     signal( SIGTERM, sighandler );
     signal( SIGINT,  sighandler );
+    signal( SIGQUIT, sighandler );
+
+    // ignore console signals
+    //
+    signal( SIGTSTP,  SIG_IGN );
+    signal( SIGTTIN,  SIG_IGN );
+    signal( SIGTTOU,  SIG_IGN );
 
     // Force timezone to UTC/GMT so it does not vary between installations
     // (i.e. you could have Snap servers all over the world!)
@@ -2479,6 +2486,7 @@ void server::sighandler( int sig )
         case SIGILL  : signame = "SIGILL";  break;
         case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
         case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
+        case SIGQUIT : signame = "SIGQUIT"; output_stack_trace = false; break;
         default      : signame = "UNKNOWN"; break;
     }
 

@@ -554,6 +554,15 @@ void snap_firewall::run()
     signal( SIGBUS,  snap_firewall::sighandler );
     signal( SIGFPE,  snap_firewall::sighandler );
     signal( SIGILL,  snap_firewall::sighandler );
+    signal( SIGTERM, snap_firewall::sighandler );
+    signal( SIGINT,  snap_firewall::sighandler );
+    signal( SIGQUIT, snap_firewall::sighandler );
+
+    // ignore console signals
+    //
+    signal( SIGTSTP,  SIG_IGN );
+    signal( SIGTTIN,  SIG_IGN );
+    signal( SIGTTOU,  SIG_IGN );
 
     // get the server name
     //
@@ -1067,6 +1076,7 @@ void snap_firewall::stop(bool quitting)
 void snap_firewall::sighandler( int sig )
 {
     QString signame;
+    bool show_stack(true);
     switch( sig )
     {
     case SIGSEGV:
@@ -1085,16 +1095,32 @@ void snap_firewall::sighandler( int sig )
         signame = "SIGILL";
         break;
 
+    case SIGTERM:
+        signame = "SIGTERM";
+        show_stack = false;
+        break;
+
+    case SIGINT:
+        signame = "SIGINT";
+        show_stack = false;
+        break;
+
+    case SIGQUIT:
+        signame = "SIGQUIT";
+        show_stack = false;
+        break;
+
     default:
         signame = "UNKNOWN";
         break;
 
     }
 
+    if(show_stack)
     {
         snap::snap_exception_base::output_stack_trace();
-        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
     }
+    SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
 
     // Exit with error status
     //

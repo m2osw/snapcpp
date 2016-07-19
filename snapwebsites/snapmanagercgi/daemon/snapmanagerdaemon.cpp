@@ -129,6 +129,15 @@ int manager_daemon::run()
     signal( SIGBUS,  manager_daemon::sighandler );
     signal( SIGFPE,  manager_daemon::sighandler );
     signal( SIGILL,  manager_daemon::sighandler );
+    signal( SIGTERM, manager_daemon::sighandler );
+    signal( SIGINT,  manager_daemon::sighandler );
+    signal( SIGQUIT, manager_daemon::sighandler );
+
+    // ignore console signals
+    //
+    signal( SIGTSTP,  SIG_IGN );
+    signal( SIGTTIN,  SIG_IGN );
+    signal( SIGTTOU,  SIG_IGN );
 
     SNAP_LOG_INFO("--------------------------------- snapmanagerdaemon started on ")(f_server_name);
 
@@ -171,6 +180,7 @@ int manager_daemon::run()
 void manager_daemon::sighandler( int sig )
 {
     QString signame;
+    bool output_stack_trace(true);
     switch( sig )
     {
     case SIGSEGV:
@@ -189,16 +199,32 @@ void manager_daemon::sighandler( int sig )
         signame = "SIGILL";
         break;
 
+    case SIGTERM:
+        signame = "SIGTERM";
+        output_stack_trace = false;
+        break;
+
+    case SIGINT:
+        signame = "SIGINT";
+        output_stack_trace = false;
+        break;
+
+    case SIGQUIT:
+        signame = "SIGQUIT";
+        output_stack_trace = false;
+        break;
+
     default:
         signame = "UNKNOWN";
         break;
 
     }
 
+    if(output_stack_trace)
     {
         snap::snap_exception_base::output_stack_trace();
-        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
     }
+    SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
 
     // Exit with error status
     //
