@@ -79,9 +79,7 @@ namespace common
 
 namespace
 {
-    int64_t const SNAPINIT_START_DELAY     = 1000000LL;
-    int64_t const SNAPINIT_STOP_DELAY      = 1000000LL;
-    int64_t const SNAPINIT_LONG_STOP_DELAY = 10LL * SNAPINIT_STOP_DELAY;
+    int64_t const SNAPINIT_DELAY = 1000000LL;    // 1 second timeout (microseconds)
 }
 
 
@@ -101,7 +99,7 @@ namespace
  * \param[in] si  The parent snap_init object.
  */
 service::service( std::shared_ptr<snap_init> si )
-    : snap_timer(SNAPINIT_START_DELAY) // wake up once per second by default
+    : snap_timer(SNAPINIT_DELAY) // wake up once per second by default
     , f_snap_init(si)
 {
     // by default our timer is turned off
@@ -653,11 +651,21 @@ void service::get_depends_list()
 
 void service::push_state( const state_t state )
 {
-    if( f_queue.front().first == state )
+    if( !f_queue.empty() )
     {
-        // No need to constantly queue states already queued...
-        return;
+        // Make sure it's non-empty before calling this!
+        //
+        if( f_queue.front().first == state )
+        {
+            // No need to constantly queue states already queued...
+            //
+            return;
+        }
     }
+
+    // Sanity check--make sure timer is on
+    //
+    set_timeout_delay( SNAPINIT_DELAY );
 
     SNAP_LOG_TRACE("service::push_state() state '")(state_to_string(state))("' for service: ")(f_service_name)(", queue size b4 push=")(f_queue.size());
     f_previous_state = f_current_state;
@@ -785,6 +793,7 @@ void service::mark_process_as_stopped( const bool from_set_stopping )
     // clearly mark that the service is dead
     //
     f_stopping = SIGCHLD;
+    set_timeout_delay( SNAPINIT_DELAY );
 
     // if we are not running anymore,
     // remove self (timer) from snapcommunicator
@@ -910,7 +919,7 @@ void service::mark_process_as_dead()
         // the user in the XML file (at least 1 minute wait in
         // this case)
         //
-        set_timeout_delay(recovery * 1000000LL);
+        set_timeout_delay(recovery * SNAPINIT_DELAY);
 
         // Make sure prereqs have stopped (except snapcommunicator)
         //
@@ -927,15 +936,25 @@ void service::mark_process_as_dead()
     }
     else
     {
-        SNAP_LOG_TRACE("setting big delay for service='")(f_service_name)("'.");
+        SNAP_LOG_TRACE("setting delay for service='")(f_service_name)("'.");
 
         // in this case we use a default delay of one second to
         // avoid swamping the CPU with many restart all at once
         //
-        set_timeout_delay(1000000LL);
+        set_timeout_delay(SNAPINIT_DELAY);
     }
     //
     push_state( state_t::waiting_for_deps );
+}
+
+
+bool service::has_cron_elapsed()
+{
+    int64_t const now(snap::snap_communicator::get_current_date());
+    int64_t const timeout = (now - f_timestamp) / SNAPINIT_DELAY;
+    SNAP_LOG_TRACE("service::has_cron_elapsed(), f_timestamp = ")(f_timestamp)(", now = ")(now)(", timeout = ")(timeout)(", f_cron = ")(f_cron)
+        (", timeout_delay = ")(get_timeout_delay());
+    return timeout >= f_cron;
 }
 
 
@@ -957,12 +976,12 @@ void service::compute_next_tick(bool just_ran)
     // when the cron task does not start properly, we set a timeout
     // delay of three seconds that needs to be reset
     //
-    set_timeout_delay(-1);
+    //set_timeout_delay(-1);
 
     // compute the tick exactly on 'now' or just before now
     //
     // current time
-    int64_t const now(snap::snap_child::get_current_date() / SNAPINIT_START_DELAY);
+    int64_t const now(snap::snap_child::get_current_date() / SNAPINIT_DELAY);
     // our hard coded start date
     int64_t const start_date(SNAP_UNIX_TIMESTAMP(2012, 1, 1, 0, 0, 0));
     // number of seconds from the start
@@ -1004,14 +1023,14 @@ void service::compute_next_tick(bool just_ran)
             //    latest_tick + f_cron > now  (i.e. in the future)
             //
             latest_tick += f_cron;
-            set_timeout_date(latest_tick * SNAPINIT_START_DELAY);
+            f_timestamp = latest_tick * SNAPINIT_DELAY;
         }
         else if(last_tick >= latest_tick)
         {
             // last_tick is now or in the future so we can keep it
             // as is (happen often when starting snapinit)
             //
-            set_timeout_date(last_tick * SNAPINIT_START_DELAY);
+            f_timestamp = last_tick * SNAPINIT_DELAY;
             update = false;
         }
         else
@@ -1019,7 +1038,7 @@ void service::compute_next_tick(bool just_ran)
             // this looks like we may have missed a tick or two
             // so this task already timed out...
             //
-            set_timeout_date(latest_tick * SNAPINIT_START_DELAY);
+            f_timestamp = latest_tick * SNAPINIT_DELAY;
         }
     }
     else
@@ -1027,8 +1046,10 @@ void service::compute_next_tick(bool just_ran)
         // never ran, use this latest tick so we run that process
         // once as soon as possible.
         //
-        set_timeout_date(latest_tick * SNAPINIT_START_DELAY);
+        f_timestamp = latest_tick * SNAPINIT_DELAY;
     }
+
+    SNAP_LOG_TRACE("service::compute_next_tick(): f_timestamp = ")(f_timestamp);
 
     if(update)
     {
@@ -1586,7 +1607,7 @@ void service::init_functions()
                     // wait for a few seconds before attempting to connect
                     // with the snapcommunicator service
                     //
-                    set_timeout_delay(std::max(get_wait_interval(), 3) * SNAPINIT_START_DELAY);
+                    //set_timeout_delay(std::max(get_wait_interval(), 3) * SNAPINIT_DELAY);
 
                     // start the process
                     //
@@ -1626,30 +1647,40 @@ void service::init_functions()
             state_t::cron_running,
             [&]()
             {
-                if( !cron_task() ) return;
-
-                SNAP_LOG_TRACE("state_t::cron_running() for service '")(f_service_name)("'.");
-
-                if( is_running() )
+                if( !cron_task() )
                 {
-                    // Run forever, or until process is terminated
-                    //
-                    compute_next_tick(true);
+                    SNAP_LOG_ERROR("**** state_t::cron_running() not a cron service '")(f_service_name)("'!");
+                    return;
                 }
-                else
+
+                if( failed() || is_stopping() )
                 {
-                    // Try the run the process...
+                    SNAP_LOG_TRACE("state_t::cron_running() STOPPING cron service '")(f_service_name)("'.");
+                    push_state( state_t::stopping_prereqs );
+                    return;
+                }
+
+                if( !has_cron_elapsed() )
+                {
+                    SNAP_LOG_TRACE("state_t::cron_running() WAITING for cron service '")(f_service_name)("'.");
+                    push_state( state_t::cron_running );
+                    return;
+                }
+
+                SNAP_LOG_TRACE("state_t::cron_running() RUNNING cron service '")(f_service_name);
+
+                compute_next_tick(true);
+
+                if( !is_running() )
+                {
+                    // Try running the process...
                     //
-                    if( run() )
-                    {
-                        compute_next_tick(true);
-                    }
-                    else
+                    if( !run() )
                     {
                         // give the OS a little time to get its shit back together
                         // (we may have run out of memory for a little while)
                         //
-                        set_timeout_delay(3 * SNAPINIT_START_DELAY);
+                        //set_timeout_delay(3 * SNAPINIT_DELAY);
                     }
                 }
                 //
@@ -1672,7 +1703,7 @@ void service::init_functions()
                 //
                 // Then...try again.
                 //
-                set_timeout_delay(3 * SNAPINIT_START_DELAY);
+                //set_timeout_delay(3 * SNAPINIT_DELAY);
                 push_state( state_t::starting_without_listener );
             }
         },
@@ -1702,6 +1733,8 @@ void service::init_functions()
             state_t::waiting_for_deps,
             [&]()
             {
+                set_timeout_delay( SNAPINIT_DELAY );
+
                 SNAP_LOG_TRACE("state_t::waiting_for_deps() for service '")(f_service_name)("'.");
                 get_depends_list();
                 auto iter = std::find_if( std::begin(f_depends_list), std::end(f_depends_list),
@@ -1723,7 +1756,7 @@ void service::init_functions()
                         return;
                     }
 
-                    set_timeout_delay( SNAPINIT_STOP_DELAY );
+                    //set_timeout_delay( SNAPINIT_STOP_DELAY );
                     push_state( state_t::waiting_for_deps );
                 }
             }
@@ -1802,7 +1835,7 @@ void service::init_functions()
                     // reduce the time for SIGTERM to act to half a second
                     // instead of 2 seconds
                     //
-                    set_timeout_delay(500000LL);
+                    //set_timeout_delay(500000LL);
                     push_state( state_t::stopping );
                 }
             }
@@ -1825,7 +1858,7 @@ void service::init_functions()
                 if( iter == std::end(f_prereqs_list) )
                 {
                     SNAP_LOG_TRACE("state_t::stopping_prereqs(): no prereqs left, stopping service.");
-                    set_timeout_delay(SNAPINIT_STOP_DELAY);
+                    //set_timeout_delay(SNAPINIT_STOP_DELAY);
                     push_state( state_t::stopping );
                 }
                 else
@@ -1834,7 +1867,7 @@ void service::init_functions()
                     //
                     // Leave timer running and come back again if any service has not yet stopped...
                     //
-                    set_timeout_delay(SNAPINIT_STOP_DELAY);
+                    //set_timeout_delay(SNAPINIT_STOP_DELAY);
                     push_state( state_t::stopping_prereqs );
                 }
             }
@@ -2038,8 +2071,8 @@ void service::set_starting()
 
     f_stopping = 0;
 
-    //set_enable(true);
-    set_timeout_delay(SNAPINIT_START_DELAY);
+    set_enable(true);
+    set_timeout_delay(SNAPINIT_DELAY);
     set_timeout_date(-1); // ignore any date timeout
 
 #if 0
@@ -2107,6 +2140,8 @@ void service::set_stopping()
 {
     SNAP_LOG_TRACE("service::set_stopping() stopping service '")(f_service_name)("'");
 
+    set_timeout_delay( SNAPINIT_DELAY );
+
     if(is_running())
     {
         // on the next timeout, use SIGTERM
@@ -2126,8 +2161,8 @@ void service::set_stopping()
         // is there because set_stopping() could be called multiple times.
         //
         //set_enable(true);
-        set_timeout_delay(SNAPINIT_LONG_STOP_DELAY);
-        set_timeout_date(-1); // ignore any date timeout
+        //set_timeout_delay(SNAPINIT_STOP_DELAY);
+        //set_timeout_date(-1); // ignore any date timeout
 
         // Stop prereqs
         //
@@ -2151,6 +2186,17 @@ void service::set_stopping()
         //
         //set_enable(false);
     }
+}
+
+
+void service::clear_queue()
+{
+    set_enable( false );
+    while( f_queue.size() > 0 )
+    {
+        f_queue.pop();
+    }
+    set_enable( true );
 }
 
 

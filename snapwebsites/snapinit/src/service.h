@@ -115,6 +115,7 @@ public:
     bool                        service_may_have_died() const;
     void                        mark_service_as_dead();
     bool                        is_dependency_of( const QString& service_name );
+    void                        clear_queue();
 
     bool                        operator < (service const & rhs) const;
 
@@ -126,6 +127,7 @@ protected:
 private:
     void                        init_functions();
     void                        push_state( const state_t state );
+    bool                        has_cron_elapsed();
     void                        compute_next_tick(bool just_ran);
     void                        get_prereqs_list();
     void                        get_depends_list();
@@ -164,6 +166,7 @@ private:
     int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
     bool                        f_restart_requested = false;
+    int64_t                     f_timestamp = 0LL;
 
     // For future refactoring. Not yet implemented.
     //
