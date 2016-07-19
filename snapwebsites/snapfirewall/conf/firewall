@@ -21,7 +21,6 @@ PRIVATE_INTERFACE=eth1
 
 # Edit these files to change the firewalls setup
 IP4TABLES_CONFIG=/etc/network/ip4tables.rules
-IP4TABLES_CONFIG=snapfirewall/conf/ip4tables.rules
 IP6TABLES_CONFIG=/etc/network/ip6tables.rules
 
 # List of space separated IP addresses for your administrators
@@ -38,7 +37,7 @@ PRIVATE_NETWORK_IPS="y.y.y.1 y.y.y.2"
 grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
 	| grep -v '^[[:space:]]*$' \
 	| sed -e "s/@PUBLIC_IP@/$PUBLIC_IP/" \
-	      -e "s/@LOCAL_IP@/$LOCAL_IP/" \
+	      -e "s/@PRIVATE_IP@/$PRIVATE_IP/" \
 	      -e "s/@PUBLIC_INTERFACE@/$PUBLIC_INTERFACE/" \
 	      -e "s/@PRIVATE_INTERFACE@/$PRIVATE_INTERFACE/" \
 	| awk -vADMIN_IPS="${ADMIN_IPS}" \

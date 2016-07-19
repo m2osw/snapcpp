@@ -1,3 +1,27 @@
+snapcmakemodules (1.0.25.180~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 18 Jul 2016 02:04:33 -0700
+
+snapcmakemodules (1.0.25.179~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 17 Jul 2016 02:02:43 -0700
+
+snapcmakemodules (1.0.25.178~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 16 Jul 2016 02:03:35 -0700
+
+snapcmakemodules (1.0.25.177~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 15 Jul 2016 08:28:43 -0700
+
 snapcmakemodules (1.0.25.176~xenial) xenial; urgency=high
 
   * Nightly build.

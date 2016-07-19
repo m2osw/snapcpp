@@ -29,7 +29,7 @@ class server_status
 {
 public:
                             server_status(QString const & filename);
-                            server_status(QString const & data_path, QString const & server);
+                            server_status(QString const & cluster_status_path, QString const & server);
                             ~server_status();
 
     // "vector access"

@@ -83,7 +83,7 @@ messenger::messenger(std::string const & address, int port, snap::snap_communica
     //
     snap::snap_communicator_message register_message;
     register_message.set_command("REGISTER");
-    register_message.add_parameter("service", "snapmanagercgi");
+    register_message.add_parameter("service", QString("snapmanagercgi%1").arg(getpid()));
     register_message.add_parameter("version", snap::snap_communicator::VERSION);
     if(!send_message(register_message))
     {

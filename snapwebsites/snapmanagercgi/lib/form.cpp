@@ -49,6 +49,42 @@ widget::widget(QString const & name)
 }
 
 
+widget_description::widget_description(QString const & label, QString const & name, QString const & description)
+    : widget(name)
+    , f_label(label)
+    , f_description(description)
+{
+}
+
+
+void widget_description::generate(QDomElement parent)
+{
+    QDomDocument doc(parent.ownerDocument());
+
+    if(!f_label.isEmpty())
+    {
+        QDomElement label(doc.createElement("label"));
+        label.setAttribute("for", f_name);
+        parent.appendChild(label);
+
+        //QDomText label_text(doc.createTextNode(f_label));
+        //label.appendChild(label_text);
+        snap::snap_dom::insert_html_string_to_xml_doc(label, f_label);
+    }
+
+    if(!f_description.isEmpty())
+    {
+        QDomElement p(doc.createElement("p"));
+        p.setAttribute("class", "description");
+        parent.appendChild(p);
+
+        //QDomText p_text(doc.createTextNode(f_description));
+        //p.appendChild(p_text);
+        snap::snap_dom::insert_html_string_to_xml_doc(p, f_description);
+    }
+}
+
+
 widget_input::widget_input(QString const & label, QString const & name, QString const & initial_value, QString const & description)
     : widget(name)
     , f_label(label)
@@ -183,6 +219,46 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
         form_tag.appendChild(button);
 
         QDomText text(doc.createTextNode("Restore Default"));
+        button.appendChild(text);
+    }
+    if((f_buttons & FORM_BUTTON_INSTALL) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "install");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Install"));
+        button.appendChild(text);
+    }
+    if((f_buttons & FORM_BUTTON_UNINSTALL) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "uninstall");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Uninstall"));
+        button.appendChild(text);
+    }
+    if((f_buttons & FORM_BUTTON_REBOOT) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "reboot");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Reboot"));
+        button.appendChild(text);
+    }
+    if((f_buttons & FORM_BUTTON_UPGRADE) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "upgrade");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Upgrade"));
         button.appendChild(text);
     }
 }

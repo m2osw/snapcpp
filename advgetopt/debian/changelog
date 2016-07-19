@@ -1,3 +1,27 @@
+advgetopt (1.1.0.56~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 18 Jul 2016 02:04:48 -0700
+
+advgetopt (1.1.0.55~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 17 Jul 2016 02:03:00 -0700
+
+advgetopt (1.1.0.54~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 16 Jul 2016 02:03:51 -0700
+
+advgetopt (1.1.0.53~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 15 Jul 2016 08:28:59 -0700
+
 advgetopt (1.1.0.52~xenial) xenial; urgency=high
 
   * Nightly build.

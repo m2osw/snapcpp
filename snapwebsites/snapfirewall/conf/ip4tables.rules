@@ -23,14 +23,14 @@
 
 # local network
 -A INPUT -i lo -s @PUBLIC_IP@ -j ACCEPT
--A INPUT -i lo -s @LOCAL_IP@ -j ACCEPT
+-A INPUT -i lo -s @PRIVATE_IP@ -j ACCEPT
 -A INPUT -i lo -s 127.0.0.1 -j ACCEPT
 -A INPUT -i lo -j LOG --log-prefix "reject_lo: " --log-uid
 -A INPUT -i lo -j REJECT
 
 # Accept all existing connections
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PUBLIC_IP@ -j ACCEPT
--A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @LOCAL_IP@ -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_IP@ -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
 
 # Very much limit port 22 (SSH)
@@ -58,8 +58,8 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ --syn -j ACCEPT
 
 # LAN (TCP/UDP)
--A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m tcp -s @PRIVATE_NETWORK_IPS@ -d @LOCAL_IP@ --syn -j ACCEPT
--A INPUT -i @PRIVATE_INTERFACE@ -p udp -m udp -s @PRIVATE_NETWORK_IPS@ -d @LOCAL_IP@ -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m tcp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ --syn -j ACCEPT
+-A INPUT -i @PRIVATE_INTERFACE@ -p udp -m udp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ -j ACCEPT
 
 # Allow pings
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
@@ -77,6 +77,10 @@
 ###################
 # Bad TCP packets (from the wrong addresses)
 # We just don't respond
+
+# Let out local network computers communicate via our VPN
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s @PRIVATE_NETWORK_IPS@ -j RETURN
+
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j DROP
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
@@ -91,10 +95,6 @@
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j DROP
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j DROP
-
-# Let out local network computers communicate via our VPN
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s @PRIVATE_NETWORK_IPS@ -j RETURN
-
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j DROP
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
@@ -124,7 +124,7 @@
 -A OUTPUT -o lo -d 127.0.0.1 -j ACCEPT
 #-A OUTPUT -o lo -d 10.0.0.1 -j ACCEPT
 -A OUTPUT -o lo -d @PUBLIC_IP@ -j ACCEPT
--A OUTPUT -o lo -d @LOCAL_IP@ -j ACCEPT
+-A OUTPUT -o lo -d @PRIVATE_IP@ -j ACCEPT
 -A OUTPUT -o lo -j REJECT
 
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p tcp -m tcp -s @PUBLIC_IP@ -j ACCEPT

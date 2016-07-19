@@ -12,7 +12,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapbase
 Section: admin
 Architecture: any
-Depends: adduser, ${shlibs:Depends}, ${misc:Depends}
+Depends: adduser, ntp, ${shlibs:Depends}, ${misc:Depends}
 Suggests: snapbase-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.

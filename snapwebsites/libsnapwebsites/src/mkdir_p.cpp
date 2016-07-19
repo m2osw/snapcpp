@@ -107,7 +107,7 @@ int mkdir_p(QString const & path, bool include_filename)
             }
             // not a directory, that is an error
             int const e(EEXIST);
-            SNAP_LOG_ERROR("snapinit could not create directory \"")(p)("\" since a file, which is not a directory, of the same name exists. (errno: ")(e)(" -- ")(strerror(e));
+            SNAP_LOG_ERROR("could not create directory \"")(p)("\" since a file, which is not a directory, of the same name exists. (errno: ")(e)(" -- ")(strerror(e));
             errno = e;
             return -1;
         }
@@ -116,7 +116,7 @@ int mkdir_p(QString const & path, bool include_filename)
         if(mkdir(p.toUtf8().data(), 0755) != 0)
         {
             int const e(errno);
-            SNAP_LOG_ERROR("snapinit could not create directory \"")(p)("\". (errno: ")(e)(" -- ")(strerror(e));
+            SNAP_LOG_ERROR("could not create directory \"")(p)("\". (errno: ")(e)(" -- ")(strerror(e));
             errno = e;
             return -1;
         }

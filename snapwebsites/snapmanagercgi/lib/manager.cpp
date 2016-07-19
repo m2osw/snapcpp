@@ -65,6 +65,19 @@ void glob_deleter(glob_t * g)
     globfree(g);
 }
 
+int glob_error_callback(const char * epath, int eerrno)
+{
+    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                  (epath)
+                  ("\". Got error: ")
+                  (eerrno)
+                  (", ")
+                  (strerror(eerrno))
+                  (".");
+
+    // do not abort on a directory read error...
+    return 0;
+}
 
 /** \brief List of configuration files one can create to define parameters.
  *
@@ -336,27 +349,36 @@ void manager::init(int argc, char * argv[])
     }
 
     // get the data path, we will be saving the status of each computer
-    // in the cluster using this path
+    // in the cluster-status sub-directory and the bundles will be saved
+    // under a sub-directory of that name.
     //
-    // Note: the user could change this path to use /run/snapwebsites/...
-    //       instead so that way it saves the data to RAM instead of disk;
-    //       however, by default we use the disk because it may end up being
-    //       rather large and we do not want to swarm the memory of small
-    //       VPSes; also that way snapmanager.cgi knows of all the statuses
-    //       immediately after a reboot
-    //
-    f_data_path = "/var/lib/snapwebsites/cluster-status";
+    f_data_path = "/var/lib/snapwebsites";
     if(f_config.contains("data_path"))
     {
         // use .conf definition when available
         f_data_path = f_config["data_path"];
     }
-    // make sure directory exists
-    if(snap::mkdir_p(f_data_path, false) != 0)
+
+    // create the cluster-status path
+    //
+    f_cluster_status_path = f_data_path + "/cluster-status";
+    if(snap::mkdir_p(f_cluster_status_path, false) != 0)
     {
         std::stringstream msg;
-        msg << "manager::init(): mkdir_p(...): process could not create cluster-status directory \""
-            << f_data_path
+        msg << "manager::init(): mkdir_p(...): process could not create cluster-status sub-directory \""
+            << f_cluster_status_path
+            << "\".";
+        throw std::runtime_error(msg.str());
+    }
+
+    // create the bundles path
+    //
+    f_bundles_path = f_data_path + "/bundles";
+    if(snap::mkdir_p(f_bundles_path, false) != 0)
+    {
+        std::stringstream msg;
+        msg << "manager::init(): mkdir_p(...): process could not create bundles sub-directory \""
+            << f_bundles_path
             << "\".";
         throw std::runtime_error(msg.str());
     }
@@ -366,6 +388,27 @@ void manager::init(int argc, char * argv[])
     if(f_config.contains("plugins_path"))
     {
         f_plugins_path = f_config["plugins_path"];
+    }
+
+    // get the user defined path to a folder used to cache data
+    //
+    if(f_config.contains("cache_path"))
+    {
+        f_cache_path = f_config["cache_path"];
+    }
+
+    // get the path and filename to the apt-check tool
+    //
+    if(f_config.contains("apt_check"))
+    {
+        f_apt_check = f_config["apt_check"];
+    }
+
+    // get the path and filename to the reboot-required flag
+    //
+    if(f_config.contains("reboot_required"))
+    {
+        f_reboot_required = f_config["reboot_required"];
     }
 }
 
@@ -429,30 +472,16 @@ void manager::load_plugins()
 }
 
 
-snap::snap_string_list manager::list_of_servers()
+std::vector<std::string> manager::read_filenames(std::string const & pattern) const
 {
-    snap::snap_string_list result;
-
-    QString const pattern(QString("%1/*.db").arg(f_data_path));
+    std::vector<std::string> result;
 
     glob_t dir = glob_t();
     int const r(glob(
-            pattern.toUtf8().data(),
-            GLOB_NOESCAPE,
-            [](const char * epath, int eerrno)
-            {
-                SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-                              (epath)
-                              ("\". Got error: ")
-                              (eerrno)
-                              (", ")
-                              (strerror(eerrno))
-                              (".");
-
-                // do not abort on a directory read error...
-                return 0;
-            },
-            &dir));
+                  pattern.c_str()
+                , GLOB_NOESCAPE
+                , glob_error_callback
+                , &dir));
     std::shared_ptr<glob_t> ai(&dir, glob_deleter);
 
     if(r != 0)
@@ -485,7 +514,7 @@ snap::snap_string_list manager::list_of_servers()
         //
         for(size_t idx(0); idx < dir.gl_pathc; ++idx)
         {
-            result << QString::fromUtf8(dir.gl_pathv[idx]);
+            result.push_back(dir.gl_pathv[idx]);
         }
     }
 
@@ -493,7 +522,21 @@ snap::snap_string_list manager::list_of_servers()
 }
 
 
-QString manager::get_public_ip() const
+std::vector<std::string> manager::get_list_of_servers()
+{
+    std::string pattern(f_cluster_status_path.toUtf8().data());
+    pattern += "/*.db";
+    return read_filenames(pattern);
+}
+
+
+QString const & manager::get_server_name() const
+{
+    return f_server_name;
+}
+
+
+QString const & manager::get_public_ip() const
 {
     return f_public_ip;
 }
@@ -503,6 +546,32 @@ snap::snap_string_list const & manager::get_snapmanager_frontend() const
 {
     static snap::snap_string_list empty;
     return empty;
+}
+
+
+std::vector<std::string> const & manager::get_bundle_uri() const
+{
+    return f_bundle_uri;
+}
+
+
+std::vector<std::string> manager::get_list_of_bundles() const
+{
+    std::string pattern(f_bundles_path.toUtf8().data());
+    pattern += "/bundle-*.xml";
+    return read_filenames(pattern);
+}
+
+
+QString const & manager::get_bundles_path() const
+{
+    return f_bundles_path;
+}
+
+
+QString const & manager::get_reboot_required_path() const
+{
+    return f_reboot_required;
 }
 
 

@@ -32,6 +32,7 @@
 #include "addr.h"
 #include "mkdir_p.h"
 #include "not_used.h"
+#include "tokenize_string.h"
 
 #include <sstream>
 
@@ -50,6 +51,8 @@ manager_daemon::manager_daemon()
     , f_status_connection(new status_connection(this))
     , f_status_runner(this, f_status_connection)
     , f_status_thread("status", &f_status_runner)
+    , f_bundle_loader()
+    , f_bundle_thread("bundle_loader", &f_bundle_loader)
 {
 }
 
@@ -89,6 +92,24 @@ void manager_daemon::init(int argc, char * argv[])
     // now try to load all the plugins
     //
     load_plugins();
+
+    // handle the bundle loading now
+    //
+    if(f_config.contains("bundle_uri"))
+    {
+        std::string const bundle_uri(f_config["bundle_uri"].toUtf8().data());
+        snap::tokenize_string(f_bundle_uri, bundle_uri, ",", true, " ");
+
+        if(!f_bundle_uri.empty())
+        {
+            f_bundle_loader.set_bundle_uri(f_bundles_path, f_bundle_uri);
+            if(!f_bundle_thread.start())
+            {
+                SNAP_LOG_ERROR("snapmanagerdaemon could not start the bundle loader thread.");
+                // we do not prevent continuing...
+            }
+        }
+    }
 }
 
 
@@ -535,11 +556,11 @@ void manager_daemon::unreachable_message(snap::snap_communicator_message const &
 
     // retreive the list of servers (data-path/*,db file names)
     //
-    snap::snap_string_list const servers(list_of_servers());
+    std::vector<std::string> const servers(get_list_of_servers());
 
     for(auto const & s : servers)
     {
-        server_status status_info(s);
+        server_status status_info(s.c_str());
 
         if(!status_info.read_header())
         {

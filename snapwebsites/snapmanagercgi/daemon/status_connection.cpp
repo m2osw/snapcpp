@@ -40,16 +40,7 @@
 // our lib
 //
 #include "log.h"
-//#include "process.h"
 
-// C++ lib
-//
-//#include <fstream>
-
-// C lib
-//
-//#include <fcntl.h>
-//#include <sys/file.h>
 
 
 namespace snap_manager

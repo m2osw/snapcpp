@@ -155,7 +155,7 @@ process::process(QString const & name)
     //, f_input() -- auto-init
     //, f_output() -- auto-init
     //, f_forced_environment("") -- auto-init
-    //, f_output_callback(NULL) -- auto-init
+    //, f_output_callback(nullptr) -- auto-init
     //, f_mutex() -- auto-init
 {
 }
@@ -433,7 +433,7 @@ int process::run()
         case mode_t::PROCESS_MODE_INPUT:
             {
                 FILE * f(rp.open_pipe(true));
-                if(f == NULL)
+                if(f == nullptr)
                 {
                     return -1;
                 }
@@ -448,7 +448,7 @@ int process::run()
         case mode_t::PROCESS_MODE_OUTPUT:
             {
                 FILE * f(rp.open_pipe(false));
-                if(f == NULL)
+                if(f == nullptr)
                 {
                     return -1;
                 }
@@ -612,7 +612,7 @@ int process::run()
             {
                 // since we do not limit the child to only the specified
                 // environment, add ours but do not overwrite anything
-                for(char ** env(environ); *env != NULL; ++env)
+                for(char ** env(environ); *env != nullptr; ++env)
                 {
                     char const * s(*env);
                     char const * n(s);
@@ -1388,8 +1388,8 @@ process_list::proc_info_pointer_t process_list::next()
         }
     }
 
-    // I tested and if readproc() is called again after returning NULL, it
-    // continues to return NULL so no need to do anything more
+    // I tested and if readproc() is called again after returning nullptr, it
+    // continues to return nullptr so no need to do anything more
     std::shared_ptr<proc_t> p(std::shared_ptr<proc_t>(readproc(f_proctab.get(), nullptr), deleters::delete_proc));
     if(p)
     {
