@@ -38,6 +38,7 @@
 
 // snapwebsites lib
 //
+#include "lockfile.h"
 #include "log.h"
 #include "not_used.h"
 #include "process.h"
@@ -115,7 +116,7 @@ int manager::package_status(std::string const & package_name, std::string & outp
 }
 
 
-QString manager::count_packages_that_can_be_updated()
+QString manager::count_packages_that_can_be_updated(bool check_cache)
 {
     QString const cache_filename(QString("%1/apt-check.output").arg(f_cache_path));
 
@@ -123,6 +124,7 @@ QString manager::count_packages_that_can_be_updated()
     // the cache (which is dead fast in comparison to re-running the
     // apt-check function)
     //
+    if(check_cache)
     {
         QFile cache(cache_filename);
         if(cache.open(QIODevice::ReadOnly))
@@ -314,12 +316,74 @@ void manager::reset_aptcheck()
 
 bool manager::upgrader()
 {
-    return update_packages("update") == 0
-        && update_packages("upgrade") == 0
-        && update_packages("dist-upgrade") == 0
-        && update_packages("autoremove") == 0;
+    // make sure we do not start an upgrade while an installation is
+    // still going (and vice versa)
+    //
+    snap::lockfile lf(lock_filename(), snap::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
+    if(!lf.try_lock())
+    {
+        return false;
+    }
+
+    // detach ourselves from our parent so the upgrader does not die
+    // even if it upgrades snapinit
+    //
+    pid_t const pid(fork());
+    if(pid != 0)
+    {
+        // we are the parent, just stay around as normal
+        //
+        return true;
+    }
+
+    // TODO: apply some fixes for the logger
+
+    // always reconfigure the logger in the child
+    snap::logging::reconfigure();
+
+    // if the parent dies, then we generally receive a SIGHUP which is
+    // a big problem if we want to go on with the update... so here I
+    // make sure we ignore the HUP signal.
+    //
+    // (this should really only happen if you have a terminal attached
+    // to the process, but just in case...)
+    //
+    signal(SIGHUP, SIG_IGN);
+
+    // setsid() moves us in the group instead of being viewed as a child
+    //
+    setsid();
+
+    //pid_t const sub_pid(fork());
+    //if(sub_pid != 0)
+    //{
+    //    // we are the sub-parent, by leaving now the child has
+    //    // a parent PID equal to 1 meaning that it cannot be
+    //    // killed just because snapmanagerdaemon gets killed
+    //    //
+    //    exit(0);
+    //}
+
+    bool const success(update_packages("update")       == 0
+                    && update_packages("upgrade")      == 0
+                    && update_packages("dist-upgrade") == 0
+                    && update_packages("autoremove")   == 0);
+
+    // we have to do this one here now
+    //
+    reset_aptcheck();
+
+    exit(success ? 0 : 1);
+
+    snap::NOTREACHED();
+    return true;
 }
 
+
+std::string manager::lock_filename() const
+{
+    return (f_lock_path + "/upgrading.lock").toUtf8().data();
+}
 
 
 bool manager::installer(QString const & bundle_name, std::string const & command, std::string const & install_values)
@@ -328,13 +392,39 @@ bool manager::installer(QString const & bundle_name, std::string const & command
 
     SNAP_LOG_INFO("Installing bundle \"")(bundle_name)("\" on host \"")(f_server_name)("\"");
 
+    // make sure we do not start an installation while an upgrade is
+    // still going (and vice versa)
+    //
+    snap::lockfile lf(lock_filename(), snap::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
+    if(!lf.try_lock())
+    {
+        return false;
+    }
+
     // for installation we first do an update of the packages,
     // otherwise it could fail the installation because of
     // outdated data
     //
     if(command == "install")
     {
-        success = upgrader();
+        // we cannot "just upgrade" now because the upgrader() function
+        // calls fork() and this the call would return early. Instead
+        // we check the number of packages that are left to upgrade
+        // and if not zero, emit an error and return...
+        //success = upgrader();
+
+        QString const count_packages(count_packages_that_can_be_updated(false));
+        if(!count_packages.isEmpty())
+        {
+            // TODO: how do we tell the end user about that one?
+            //
+            SNAP_LOG_ERROR("Installation of bundle \"")
+                          (bundle_name)
+                          ("\" on host \"")
+                          (f_server_name)
+                          ("\" did not proceed because some packages first need to be upgraded.");
+            return false;
+        }
     }
 
     // load the XML file
@@ -358,6 +448,8 @@ bool manager::installer(QString const & bundle_name, std::string const & command
     std::for_each(variables.begin(), variables.end(),
                 [&vars](auto const & v)
                 {
+                    // TODO: move to a function, this is just too long for a lambda
+                    //
                     vars += "BUNDLE_INSTALLATION_";
                     bool found_equal(false);
                     // make sure that double quotes get escaped within
@@ -492,6 +584,11 @@ void manager::reboot(bool reboot)
     //       one computer cannot decide by itself whether to it can
     //       go down or now...
     //
+
+    // TODO: we could test whether the installer is busy upgrading or
+    //       installing something at least (see lockfile() in those
+    //       functions.)
+
     snap::process p("shutdown");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
     p.set_command("shutdown");

@@ -78,7 +78,7 @@ public:
             QFile::close();
             return false;
         }
-        // this file is now open with an exclusive lock
+        // this file is now open with a lock
         return true;
     }
 };

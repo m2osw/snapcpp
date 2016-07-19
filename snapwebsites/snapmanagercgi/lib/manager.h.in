@@ -119,7 +119,7 @@ public:
     bool                            installer(QString const & bundle_name, std::string const & command, std::string const & install_values);
     void                            reboot(bool reboot = true);
     int                             package_status(std::string const & package_name, std::string & output);
-    QString                         count_packages_that_can_be_updated();
+    QString                         count_packages_that_can_be_updated(bool check_cache);
     std::vector<std::string>        read_filenames(std::string const & pattern) const;
     bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value);
 
@@ -133,6 +133,7 @@ public:
 protected:
     int                             update_packages(std::string const & command);
     int                             install_package(std::string const & package_name, std::string const & command);
+    std::string                     lock_filename() const;
 
     bool const                      f_daemon = false;
     bool                            f_debug = false;
@@ -147,6 +148,7 @@ protected:
     QString                         f_cache_path = "/var/cache/snapwebsites";
     QString                         f_apt_check = "/usr/lib/update-notifier/apt-check";
     QString                         f_reboot_required = "/run/reboot-required";
+    QString                         f_lock_path = "/run/lock/snapwebsites";
     std::vector<std::string>        f_bundle_uri;
 
 private:

@@ -410,6 +410,13 @@ void manager::init(int argc, char * argv[])
     {
         f_reboot_required = f_config["reboot_required"];
     }
+
+    // get the path to a directory where we can create lock files
+    //
+    if(f_config.contains("lock_path"))
+    {
+        f_lock_path = f_config["lock_path"];
+    }
 }
 
 

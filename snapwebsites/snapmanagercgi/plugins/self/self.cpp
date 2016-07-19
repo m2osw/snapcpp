@@ -214,8 +214,9 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(ip);
     }
 
+    bool no_installs(false);
     {
-        QString const updates(f_snap->count_packages_that_can_be_updated());
+        QString const updates(f_snap->count_packages_that_can_be_updated(true));
         if(!updates.isEmpty())
         {
             snap_manager::status_t const upgrade_required(
@@ -224,6 +225,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                             , "upgrade_required"
                             , updates);
             server_status.set_field(upgrade_required);
+            no_installs = true;
         }
     }
 
@@ -270,7 +272,15 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(bundle);
     }
 
-    retrieve_bundles_status(server_status);
+    // if an upgrade is required, avoid offering users a way to install
+    // something (this test is not rock solid, but we have another "instant"
+    // test in the installer anyway, still that way we will avoid many
+    // installation errors.)
+    //
+    if(!no_installs)
+    {
+        retrieve_bundles_status(server_status);
+    }
 }
 
 
@@ -815,7 +825,10 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     if(button_name == "upgrade")
     {
         bool const r(f_snap->upgrader());
-        f_snap->reset_aptcheck();
+        //f_snap->reset_aptcheck(); -- this is too soon, the upgrader() call
+        //                             now creates a child process with fork()
+        //                             to make sure we can go on even when
+        //                             snapinit gets upgraded
         return r;
     }
 
