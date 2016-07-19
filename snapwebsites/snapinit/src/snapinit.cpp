@@ -1170,15 +1170,7 @@ void snap_init::init_message_functions()
         },
         {
             "QUITTING",
-            [&]( snap::snap_communicator_message const& )
-            {
-                // it looks like we sent a message after a STOP was received
-                // by snapcommunicator; this means we should receive a STOP
-                // shortly too, but we just react the same way to QUITTING
-                // than to STOP.
-                //
-                terminate_services();
-            }
+            stop_func
         },
         {
             "READY",
@@ -1329,9 +1321,11 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
 }
 
 
-/** \brief Tell snapcomm that the service has died
+/** \brief Tell other services that a service has died.
  *
  * This method will not do anything if f_listener_connection is nullptr.
+ *
+ * \param[in] svc  The service that just died.
  */
 void snap_init::register_died_service( service::pointer_t svc )
 {
@@ -1368,9 +1362,8 @@ void snap_init::register_died_service( service::pointer_t svc )
  */
 void snap_init::service_died()
 {
-    // first go through the list and allow any service which is
-    // not died and should not have to be restarted (i.e. all
-    // services except CRON services for now)
+    // first go through the list and capture dead services
+    // (i.e. note that CRON services are treated specially)
     //
     auto if_may_have_died = [&]( const auto& svc )
     {
@@ -1379,15 +1372,15 @@ void snap_init::service_died()
     service::vector_t dead_services;
     std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(dead_services), if_may_have_died );
 
-    for( const auto& svc : dead_services )
+    for( auto const & svc : dead_services )
     {
         // if snapcommunicator already died, we cannot forward
         // the DIED or any other message
         //
         register_died_service( svc );
 
-        // This has a functional side effect of (possibly) removing the service from
-        // the f_service_list vector.
+        // This has a functional side effect of (possibly) removing the
+        // service from the f_service_list vector.
         //
         svc->mark_service_as_dead();
     }
