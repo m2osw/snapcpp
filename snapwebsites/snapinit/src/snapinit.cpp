@@ -1763,6 +1763,7 @@ void snap_init::terminate_services()
     for( auto s : f_service_list )
     {
         SNAP_LOG_TRACE("snap_init::terminate_services(): calling set_stopping for service '")(s->get_service_name())("'");
+        s->clear_queue();
         s->set_stopping();
     }
 

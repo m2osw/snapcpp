@@ -2191,12 +2191,13 @@ void service::set_stopping()
 
 void service::clear_queue()
 {
-    set_enable( false );
+    // for some reason, the standards committee chose not to provide a
+    // "clear()" method for std::queue (even though it's available in
+    // std::deque, the default container).
     while( f_queue.size() > 0 )
     {
         f_queue.pop();
     }
-    set_enable( true );
 }
 
 
