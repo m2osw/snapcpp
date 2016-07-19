@@ -174,35 +174,48 @@ QString manager::count_packages_that_can_be_updated(bool check_cache)
     && S_ISREG(st.st_mode)
     && (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0)  // make sure it is an executable
     {
-        // apt-check is expected to be a python script and the output
-        // will be written in 'stderr'
+        // without a quick apt-get update first the calculations from
+        // apt-check are going to be off...
         //
-        snap::process p("apt-check");
-        p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
-        p.set_command(f_apt_check);
-        p.add_argument("2>&1"); // python script sends output to STDERR
-        int const r(p.run());
-        if(r == 0)
+        if(update_packages("update") == 0)
         {
-            QString const output(p.get_output(true).toUtf8().data());
-            if(!output.isEmpty())
+            // apt-check is expected to be a python script and the output
+            // will be written in 'stderr'
+            //
+            snap::process p("apt-check");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command(f_apt_check);
+            p.add_argument("2>&1"); // python script sends output to STDERR
+            int const r(p.run());
+            if(r == 0)
             {
-                QFile cache(cache_filename);
-                if(cache.open(QIODevice::WriteOnly))
+                QString const output(p.get_output(true).toUtf8().data());
+                if(!output.isEmpty())
                 {
-                    time_t const now(time(nullptr));
-                    QString const cache_string(QString("%1;%2").arg(now).arg(output));
-                    QByteArray const cache_utf8(cache_string.toUtf8());
-                    cache.write(cache_utf8.data(), cache_utf8.size());
-                    if(output == "0;0")
+                    QFile cache(cache_filename);
+                    if(cache.open(QIODevice::WriteOnly))
                     {
-                        // again, if we have "0;0" there is nothing to upgrade
-                        //
-                        return QString();
+                        time_t const now(time(nullptr));
+                        QString const cache_string(QString("%1;%2").arg(now).arg(output));
+                        QByteArray const cache_utf8(cache_string.toUtf8());
+                        cache.write(cache_utf8.data(), cache_utf8.size());
+                        if(output == "0;0")
+                        {
+                            // again, if we have "0;0" there is nothing to upgrade
+                            //
+                            return QString();
+                        }
+                        return output;
                     }
-                    return output;
                 }
             }
+        }
+        else
+        {
+            // this should rarely happen (i.e. generally it would happen
+            // whenever the database is in an unknown state)
+            //
+            SNAP_LOG_ERROR("the \"apt-get update\" command, that we run prior to running the \"apt-check\" command, failed.");
         }
     }
 
@@ -316,31 +329,42 @@ void manager::reset_aptcheck()
 
 bool manager::upgrader()
 {
-    // make sure we do not start an upgrade while an installation is
-    // still going (and vice versa)
+    // TODO: add command path/name to the configuration file?
     //
-    snap::lockfile lf(lock_filename(), snap::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
-    if(!lf.try_lock())
+    snap::process p("upgrader");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+    p.set_command("snapupgrader");
+    p.add_argument("--config");
+    p.add_argument( QString::fromUtf8( f_opt->get_string("config").c_str() ) );
+    p.add_argument("--data-path");
+    p.add_argument(f_data_path);
+    if(f_debug)
     {
+        p.add_argument("--debug");
+    }
+    p.add_argument("--log-config");
+    p.add_argument(f_log_conf);
+    int const r(p.run());
+    if(r != 0)
+    {
+        // TODO: get errors to front end...
+        if(r < 0)
+        {
+            // could not even start the process
+            //
+            int const e(errno);
+            SNAP_LOG_ERROR("could not properly start snapupgrader (errno: ")(e)(", ")(strerror(e))(").");
+        }
+        else
+        {
+            // process started but returned with an error
+            //
+            SNAP_LOG_ERROR("could not properly start snapupgrader (return value: ")(r)(").");
+        }
         return false;
     }
 
-    // detach ourselves from our parent so the upgrader does not die
-    // even if it upgrades snapinit
-    //
-    pid_t const pid(fork());
-    if(pid != 0)
-    {
-        // we are the parent, just stay around as normal
-        //
-        return true;
-    }
-
-    // TODO: apply some fixes for the logger
-
-    // always reconfigure the logger in the child
-    snap::logging::reconfigure();
-
+#if 0
     // if the parent dies, then we generally receive a SIGHUP which is
     // a big problem if we want to go on with the update... so here I
     // make sure we ignore the HUP signal.
@@ -376,6 +400,8 @@ bool manager::upgrader()
     exit(success ? 0 : 1);
 
     snap::NOTREACHED();
+#endif
+
     return true;
 }
 

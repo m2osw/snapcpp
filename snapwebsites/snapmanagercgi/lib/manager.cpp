@@ -177,7 +177,7 @@ advgetopt::getopt::option const g_manager_options[] =
     },
     {
         '\0',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "stylesheet",
         "/etc/snapwebsites/snapmanagercgi-parser.xsl",
         "The stylesheet to use to transform the data before sending it to the client as HTML.",

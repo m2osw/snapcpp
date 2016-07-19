@@ -115,6 +115,8 @@ public:
     QString const &                 get_reboot_required_path() const;
     virtual bool                    stop_now_prima() const;
     bool                            upgrader();
+    std::string                     lock_filename() const;
+    int                             update_packages(std::string const & command);
     void                            reset_aptcheck();
     bool                            installer(QString const & bundle_name, std::string const & command, std::string const & install_values);
     void                            reboot(bool reboot = true);
@@ -131,15 +133,14 @@ public:
     static char const *             get_version_string() __attribute__ ((const));
 
 protected:
-    int                             update_packages(std::string const & command);
     int                             install_package(std::string const & package_name, std::string const & command);
-    std::string                     lock_filename() const;
 
     bool const                      f_daemon = false;
     bool                            f_debug = false;
     advgetopt::getopt::pointer_t    f_opt;
     snap::snap_config               f_config;
     QString                         f_server_name;
+    QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";
     QString                         f_data_path = "/var/lib/snapwebsites";
     QString                         f_cluster_status_path = f_data_path + "/cluster-status";
     QString                         f_bundles_path = f_data_path + "/bundles";
@@ -152,7 +153,6 @@ protected:
     std::vector<std::string>        f_bundle_uri;
 
 private:
-    QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";
     bool                            f_plugins_loaded = false;
 };
 
