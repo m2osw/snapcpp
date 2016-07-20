@@ -134,6 +134,10 @@ int main(int argc, char * argv[])
         //
         signal(SIGHUP, SIG_IGN);
 
+        // always reconfigure the logger in the child
+        //
+        logging::reconfigure();
+
         // make sure we do not start an upgrade while an installation is
         // still going (and vice versa)
         //
