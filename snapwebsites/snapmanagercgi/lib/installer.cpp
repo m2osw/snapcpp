@@ -344,6 +344,8 @@ bool manager::upgrader()
     }
     p.add_argument("--log-config");
     p.add_argument(f_log_conf);
+    p.add_argument("--server-name");
+    p.add_argument(f_server_name);
     int const r(p.run());
     if(r != 0)
     {

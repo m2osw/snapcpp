@@ -732,13 +732,23 @@ void snap_init::init()
     // if not --list we still write the list of services but in log file only
     log_selected_servers();
 
+    QString const user ( f_config.contains("user")  ? f_config["user"]  : "snapwebsites" );
+    QString const group( f_config.contains("group") ? f_config["group"] : "snapwebsites" );
+
     // make sure the path to the lock file exists
     //
-    if(snap::mkdir_p(f_lock_filename, true) != 0)
     {
-        common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\"; without the filename).")
-                            .arg(f_lock_filename));
-        snap::NOTREACHED();
+        if(snap::mkdir_p(f_lock_filename, true) != 0)
+        {
+            common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\"; without the filename).")
+                                .arg(f_lock_filename));
+            snap::NOTREACHED();
+        }
+
+        // for sub-processes to be able to access that folder we need to
+        // also setup the user and group as expected
+        //
+        snap::chownnm(f_lock_filename, user, group);
     }
 
     // create the run-time directory because other processes may not
@@ -763,9 +773,6 @@ void snap_init::init()
                                 .arg(runpath));
             snap::NOTREACHED();
         }
-
-        QString const user ( f_config.contains("user")  ? f_config["user"]  : "snapwebsites" );
-        QString const group( f_config.contains("group") ? f_config["group"] : "snapwebsites" );
 
         // for sub-processes to be able to access that folder we need to
         // also setup the user and group as expected
