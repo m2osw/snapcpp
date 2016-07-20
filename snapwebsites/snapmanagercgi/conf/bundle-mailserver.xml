@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>mailserver</name>
+  <description>
+    <p>Install postfix and snapbounce to make this computer a mail server.</p>
+
+    <p>The post installation script will then update the necessary setup
+    files in order to get the duo working.</p>
+  </description>
+  <fields>
+    <field name="domain" type="input">
+      <label>Domain</label>
+      <description>The name of the domain used for this mail server.</description>
+    </field>
+  </fields>
+  <packages>postfix, snapbounce</packages>
+  <postinst>
+    # setup the domain and a few other things
+  </postinst>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

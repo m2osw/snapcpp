@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>cassandra</name>
+  <description>
+    <p>Install the Cassandra bundle and initializes it appropriately for your cluster.</p>
+  </description>
+  <fields>
+    <field name="seeds" type="input">
+      <label>Seends</label>
+      <description>Indicate Cassandra seed nodes.</description>
+    </field>
+  </fields>
+  <packages>cassandra</packages>
+  <!--
+    The setup requires the user data entry for the IP addresses, but we
+    can at least copy and create some files as required.
+
+    Note: the easy-rsa cannot be run by postinst without already including
+          the correct KEY_... variables so we do not do it yet.
+  -->
+  <postinst>
+    # setup the seeds
+  </postinst>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>tripwire</name>
+  <description>
+    <p>Install tripwire, a tool used to detect unexpected changes to various
+    system files.</p>
+  </description>
+  <packages>tripwire</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>rkhunter</name>
+  <description>
+    <p>Install rkhunter, a tool used to verify that a certain number of
+    files do not get infected by a rootkit.</p>
+  </description>
+  <packages>rkhunter</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

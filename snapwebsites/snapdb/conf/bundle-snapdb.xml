@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>snapdb</name>
+  <description>
+    <p>The snapdb tools to manage your database cluster.</p>
+
+    <p>Some packages may depend on this one so as to be able to add
+    and remove fields in the database from a shell script.</p>
+  </description>
+  <packages>snapdb</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>backup</name>
+  <description>
+    <p>This bundles installs the snapbackup tool on a computer.
+    In most cases you want to install this tool on a computer
+    running Cassandra, especially if your network requires the
+    OpenVPN to create a secure LAN. However, watch out for disk
+    space if you save many backups on the same computer.</p>
+  </description>
+  <packages>snapbackup</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->
