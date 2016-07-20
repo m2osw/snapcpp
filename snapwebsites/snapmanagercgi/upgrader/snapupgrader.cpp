@@ -127,6 +127,10 @@ int main(int argc, char * argv[])
             return 0;
         }
 
+        // leave my parents session
+        //
+        setsid();
+
         // TODO: add support for handlers too
         //
 

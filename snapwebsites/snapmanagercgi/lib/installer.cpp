@@ -51,6 +51,7 @@
 // C lib
 //
 #include <fcntl.h>
+#include <sys/wait.h>
 
 namespace snap_manager
 {
@@ -350,6 +351,9 @@ bool manager::upgrader()
     if(r != 0)
     {
         // TODO: get errors to front end...
+        //
+        // TODO: move the error handling to the snap::process code instead?
+        //
         if(r < 0)
         {
             // could not even start the process
@@ -359,9 +363,37 @@ bool manager::upgrader()
         }
         else
         {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
             // process started but returned with an error
             //
-            SNAP_LOG_ERROR("could not properly start snapupgrader (return value: ")(r)(").");
+            if(WIFEXITED(r))
+            {
+                int const exit_code(WEXITSTATUS(r));
+                SNAP_LOG_ERROR("could not properly start snapupgrader (exit code: ")(exit_code)(").");
+            }
+            else if(WIFSIGNALED(r))
+            {
+                int const signal_code(WTERMSIG(r));
+                bool const has_code_dump(!!WCOREDUMP(r));
+
+                SNAP_LOG_ERROR("snapupgrader terminated because of OS signal \"")
+                              (strsignal(signal_code))
+                              ("\" (")
+                              (signal_code)
+                              (")")
+                              (has_code_dump ? " and a core dump was generated" : "")
+                              (".");
+            }
+            else
+            {
+                // I do not think we can reach here...
+                //
+                SNAP_LOG_ERROR("snapupgrader terminated abnormally in an unknown way.");
+            }
+#pragma GCC diagnostic pop
+
         }
         return false;
     }
