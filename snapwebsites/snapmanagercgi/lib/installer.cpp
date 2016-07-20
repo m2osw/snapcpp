@@ -269,6 +269,13 @@ int manager::update_packages(std::string const & command)
     p.set_command("apt-get");
     p.add_argument("--quiet");
     p.add_argument("--assume-yes");
+    if(command == "upgrade"
+    || command == "dist-upgrade")
+    {
+        // this may not work with autoremove so do not use it in that case
+        //
+        p.add_argument("--force-confold");
+    }
     p.add_argument(QString::fromUtf8(command.c_str()));
     p.add_environ("DEBIAN_FRONTEND", "noninteractive");
     int r(p.run());
@@ -306,6 +313,13 @@ int manager::install_package(std::string const & package_name, std::string const
     p.set_command("apt-get");
     p.add_argument("--quiet");
     p.add_argument("--assume-yes");
+    if(command == "install")
+    {
+        // on installation, do not ask about modify old configurations,
+        // just keep them
+        //
+        p.add_argument("--force-confold");
+    }
     p.add_argument(QString::fromUtf8(command.c_str()));
     p.add_argument(QString::fromUtf8(package_name.c_str()));
     p.add_environ("DEBIAN_FRONTEND", "noninteractive");

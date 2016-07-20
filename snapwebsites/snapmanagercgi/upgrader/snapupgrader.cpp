@@ -23,6 +23,7 @@
 //
 #include "log.h"
 #include "lockfile.h"
+#include "process.h"
 
 
 namespace snap
@@ -46,6 +47,32 @@ bool upgrade(snap_manager::manager::pointer_t upgrader)
 {
     SNAP_LOG_INFO("snapupgrader started the upgrade process.");
 
+    // TODO: move this command to the installer instead?
+    //
+    // make sure we are in a relatively sane state in case some
+    // configuration failed/did not occur on a prior upgrade
+    //
+    {
+        snap::process p("configure pending");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command("dpkg");
+        p.add_argument("--configure");
+        p.add_argument("--pending");
+        p.add_argument("--force-confold");
+        p.add_environ("DEBIAN_FRONTEND", "noninteractive");
+        int const r(p.run());
+
+        // the output is saved so we can send it to the user and log it...
+        QString const output(p.get_output(true));
+        SNAP_LOG_INFO("dpkg --configure --pending returned:\n")(output);
+
+        if(r != 0)
+        {
+            SNAP_LOG_ERROR("\"dpkg --configure --pending --force-confold\" failed.");
+            return false;
+        }
+    }
+
     if(upgrader->update_packages("update") != 0)
     {
         // at times, the update fails because some old configuration
@@ -53,13 +80,8 @@ bool upgrade(snap_manager::manager::pointer_t upgrader)
         // to fix most common problems and let us upgrade the computer;
         // if that fails, the user is on his own!
         //
-        int const r(system("dpkg --configure -a"));
-        if(r != 0)
-        {
-            SNAP_LOG_ERROR("\"apt-get update\" failed.");
-            return false;
-        }
-
+        // TODO: use a snap::process instead
+        //
         if(upgrader->update_packages("update") != 0)
         {
             SNAP_LOG_ERROR("\"apt-get update\" failed.");
