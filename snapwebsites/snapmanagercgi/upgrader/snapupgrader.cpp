@@ -170,7 +170,12 @@ int main(int argc, char * argv[])
         snap::lockfile lf(upgrader->lock_filename(), snap::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
         if(lf.try_lock())
         {
-            if(upgrade(upgrader))
+            bool const r(upgrade(upgrader));
+
+            // things are likely changed, make sure to reset the apt-check counters
+            upgrader->reset_aptcheck();
+
+            if(r)
             {
                 return 0;
             }
