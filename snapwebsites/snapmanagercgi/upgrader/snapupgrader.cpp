@@ -136,7 +136,7 @@ int main(int argc, char * argv[])
 
         // always reconfigure the logger in the child
         //
-        logging::reconfigure();
+        snap::logging::reconfigure();
 
         // make sure we do not start an upgrade while an installation is
         // still going (and vice versa)
