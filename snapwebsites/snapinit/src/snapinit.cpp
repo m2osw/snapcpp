@@ -586,7 +586,7 @@ void snap_init::init()
     }
     else
     {
-        SNAP_LOG_INFO("--------------------------------- snapinit manager started on ")(f_server_name);
+        SNAP_LOG_INFO("--------------------------------- snapinit v" SNAPINIT_VERSION_STRING " manager started on ")(f_server_name);
 
         if( f_opt.is_defined( "--" ) )
         {

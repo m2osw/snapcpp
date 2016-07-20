@@ -139,7 +139,7 @@ int manager_daemon::run()
     signal( SIGTTIN,  SIG_IGN );
     signal( SIGTTOU,  SIG_IGN );
 
-    SNAP_LOG_INFO("--------------------------------- snapmanagerdaemon started on ")(f_server_name);
+    SNAP_LOG_INFO("--------------------------------- snapmanagerdaemon v" SNAPMANAGERCGI_VERSION_STRING " started on ")(f_server_name);
 
     // initialize the communicator and its connections
     //

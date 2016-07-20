@@ -41,10 +41,79 @@ extern QString g_next_register_filename;
 } // snap namespace
 
 
+
+bool upgrade(snap_manager::manager::pointer_t upgrader)
+{
+    SNAP_LOG_INFO("snapupgrader started the upgrade process.");
+
+    if(upgrader->update_packages("update") != 0)
+    {
+        // at times, the update fails because some old configuration
+        // failed earlier, tries to fix the problem--this is likely
+        // to fix most common problems and let us upgrade the computer;
+        // if that fails, the user is on his own!
+        //
+        int const r(system("dpkg --configure -a"));
+        if(r != 0)
+        {
+            SNAP_LOG_ERROR("\"apt-get update\" failed.");
+            return false;
+        }
+
+        if(upgrader->update_packages("update") != 0)
+        {
+            SNAP_LOG_ERROR("\"apt-get update\" failed.");
+            return false;
+        }
+    }
+
+    if(upgrader->update_packages("upgrade") != 0)
+    {
+        SNAP_LOG_ERROR("\"apt-get upgrade\" failed.");
+        return false;
+    }
+
+    if(upgrader->update_packages("dist-upgrade") != 0)
+    {
+        SNAP_LOG_ERROR("\"apt-get dist-upgrade\" failed.");
+        return false;
+    }
+
+    if(upgrader->update_packages("autoremove") != 0)
+    {
+        SNAP_LOG_ERROR("\"apt-get autoremove\" failed.");
+        return false;
+    }
+
+    return true;
+}
+
+
 int main(int argc, char * argv[])
 {
     try
     {
+        // we need these globals to "properly" initializes the first
+        // "plugin" (the core system or server) even though the
+        // upgrader does not make use of them at all
+        //
+        snap::plugins::g_next_register_name = "server";
+        snap::plugins::g_next_register_filename = "snapmanagercgi.cpp";
+
+        snap_manager::manager::pointer_t upgrader(new snap_manager::manager(true));
+
+        snap::plugins::g_next_register_name.clear();
+        snap::plugins::g_next_register_filename.clear();
+
+        upgrader->init(argc, argv);
+
+        // mark that we started properly now that the logger is on
+        //
+        SNAP_LOG_INFO("--------------------------------- snapupgrader v" SNAPMANAGERCGI_VERSION_STRING " started on ")(upgrader->get_server_name());
+
+        // detach from the parent now, this allows for --version and
+        // --help to work as expected (i.e. before the detach)
+        //
         pid_t const child_pid(fork());
         if(child_pid != 0)
         {
@@ -65,43 +134,13 @@ int main(int argc, char * argv[])
         //
         signal(SIGHUP, SIG_IGN);
 
-        // we need these globals to "properly" initializes the first
-        // "plugin" (the core system or server) even though the
-        // upgrader does not make use of them at all
-        //
-        snap::plugins::g_next_register_name = "server";
-        snap::plugins::g_next_register_filename = "snapmanagercgi.cpp";
-
-        snap_manager::manager::pointer_t upgrader(new snap_manager::manager(true));
-
-        snap::plugins::g_next_register_name.clear();
-        snap::plugins::g_next_register_filename.clear();
-
-        upgrader->init(argc, argv);
-
         // make sure we do not start an upgrade while an installation is
         // still going (and vice versa)
         //
         snap::lockfile lf(upgrader->lock_filename(), snap::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
         if(lf.try_lock())
         {
-            if(upgrader->update_packages("update") != 0)
-            {
-                SNAP_LOG_ERROR("\"apt-get update\" failed.");
-            }
-            else if(upgrader->update_packages("upgrade") != 0)
-            {
-                SNAP_LOG_ERROR("\"apt-get upgrade\" failed.");
-            }
-            else if(upgrader->update_packages("dist-upgrade") != 0)
-            {
-                SNAP_LOG_ERROR("\"apt-get dist-upgrade\" failed.");
-            }
-            else if(upgrader->update_packages("autoremove") != 0)
-            {
-                SNAP_LOG_ERROR("\"apt-get autoremove\" failed.");
-            }
-            else
+            if(upgrade(upgrader))
             {
                 return 0;
             }

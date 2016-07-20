@@ -318,7 +318,7 @@ void manager::init(int argc, char * argv[])
     }
     else
     {
-        QString log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
+        QString const log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
         if(f_config.contains(log_config_filename))
         {
             // use .conf definition when available

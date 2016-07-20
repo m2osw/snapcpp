@@ -63,6 +63,10 @@ int main(int argc, char * argv[])
         {
             cgi->init(argc, argv);
 
+            // mark that we started properly now that the logger is on
+            //
+            SNAP_LOG_INFO("--------------------------------- snapmanager.cgi v" SNAPMANAGERCGI_VERSION_STRING " started on ")(cgi->get_server_name());
+
             if(!cgi->verify())
             {
                 // not acceptable, the verify() function already sent a
