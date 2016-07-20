@@ -269,6 +269,14 @@ int manager::update_packages(std::string const & command)
     p.set_command("apt-get");
     p.add_argument("--quiet");
     p.add_argument("--assume-yes");
+    if(command == "upgrade"
+    || command == "dist-upgrade")
+    {
+        p.add_argument("--option");
+        p.add_argument("Dpkg::Options::=\"--force-confdef\"");
+        p.add_argument("--option");
+        p.add_argument("Dpkg::Options::=\"--force-confold\"");
+    }
     p.add_argument(QString::fromUtf8(command.c_str()));
     p.add_environ("DEBIAN_FRONTEND", "noninteractive");
     int r(p.run());
@@ -306,6 +314,13 @@ int manager::install_package(std::string const & package_name, std::string const
     p.set_command("apt-get");
     p.add_argument("--quiet");
     p.add_argument("--assume-yes");
+    if(command == "install")
+    {
+        p.add_argument("--option");
+        p.add_argument("Dpkg::Options::=\"--force-confdef\"");
+        p.add_argument("--option");
+        p.add_argument("Dpkg::Options::=\"--force-confold\"");
+    }
     p.add_argument(QString::fromUtf8(command.c_str()));
     p.add_argument(QString::fromUtf8(package_name.c_str()));
     p.add_environ("DEBIAN_FRONTEND", "noninteractive");
