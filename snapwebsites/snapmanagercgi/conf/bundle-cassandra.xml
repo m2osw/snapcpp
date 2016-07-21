@@ -8,19 +8,25 @@
   <fields>
     <field name="seeds" type="input">
       <label>Seeds</label>
-      <description>Indicate Cassandra seed nodes IP addresses.</description>
+      <description>Indicate Cassandra seed nodes IP addresses separated by commas.</description>
     </field>
   </fields>
+  <preinst>
+    # Unfortunately, the add-apt-repository adds entries to sources.list by
+    # default and we want this one to be under sources.list.d instead
+    #add-apt-repository --yes --enable-source --update 'deb http://www.apache.org/dist/cassandra/debian 35x main'
+    echo "# Info from http://docs.datastax.com/en/cassandra/3.x/cassandra/install/installDeb.html" > /etc/apt/sources.list.d/cassandra.list
+    echo "#deb http://debian.datastax.com/datastax-ddc 3.5 main" >> /etc/apt/sources.list.d/cassandra.list
+    echo "deb http://www.apache.org/dist/cassandra/debian 35x main" >> /etc/apt/sources.list.d/cassandra.list
+    # After changing sources.list files we have to update the database at least once
+    apt-get update
+  </preinst>
   <packages>cassandra</packages>
-  <!--
-    The setup requires the user data entry for the IP addresses, but we
-    can at least copy and create some files as required.
-
-    Note: the easy-rsa cannot be run by postinst without already including
-          the correct KEY_... variables so we do not do it yet.
-  -->
   <postinst>
     # setup the seeds
+    sed -i.bak \
+      -e "s/- seeds: \".*\"/- seeds: \"$BUNDLE_INSTALLATION_SEEDS\"/" \
+            /etc/cassandra/cassandra.yaml
   </postinst>
 </bundle>
 <!--
