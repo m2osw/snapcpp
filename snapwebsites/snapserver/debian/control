@@ -20,7 +20,8 @@ Build-Depends: debhelper, cmake, libssl-dev, zip, uuid-dev, libicu-dev,
     csspp (>= 1.0.10.40~trusty),
     libsnapwebsites-dev (>= 1.0.0.9~xenial),
     snapserver-core-plugins-dev (>= 1.0.0),
-    snapbase-dev
+    snapbase-dev,
+    snapmanagercgi-dev (>= 0.0.1~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

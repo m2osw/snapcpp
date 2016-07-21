@@ -2,9 +2,16 @@ Source: snapbackend
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, qt5-default, libxml2-utils, zip,
-    snapcmakemodules (>= 1.0.23.231~trusty), snapbase-dev (>= 1.0.0.1~xenial),
-    libadvgetopt-dev, libtld-dev, liblog4cplus-dev, libqtcassandra-dev,
-    libqtserialization-dev, libsnapwebsites-dev, libzipios-dev
+    snapcmakemodules (>= 1.0.23.231~trusty),
+    snapbase-dev (>= 1.0.0.1~xenial),
+    libadvgetopt-dev (>= 0.0.1~xenial),
+    libtld-dev (>= 0.0.1~xenial),
+    liblog4cplus-dev (>= 0.0.1~xenial),
+    libqtcassandra-dev (>= 0.0.1~xenial),
+    libqtserialization-dev (>= 0.0.1~xenial),
+    libsnapwebsites-dev (>= 0.0.1~xenial),
+    libzipios-dev (>= 0.0.1~xenial),
+    snapmanagercgi-dev (>= 0.0.1~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

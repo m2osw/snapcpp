@@ -68,6 +68,9 @@ if( ${UUID} STREQUAL "UUID-NOTFOUND" )
     message( FATAL_ERROR "Cannot find uuid library!" )
 endif()
 
+add_subdirectory( conf  )
 add_subdirectory( src   )
+
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et
