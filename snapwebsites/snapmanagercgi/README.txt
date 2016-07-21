@@ -7,14 +7,18 @@ time of writing.)
 Install the following sources
 
    . /etc/apt/sources.list.d/doug.list -- to support the Cassandra C++ driver
+     (Note: libsnapwebsites depends on libqtcassandra, which depends on
+            cassandra-cpp-driver)
 
 # Cassandra Driver (2.x) and Cassandra itself (until "Depends: ..." gets fixed)
 deb [trusted=yes] http://apt.dooglio.net/xenial ./
 
 
+   . /etc/apt/sources.list.d/build-m2osw.list -- to include Snap! itself
 
-
-
+# We include a top secret password, which infortunately we do not release
+# (we will be looking at getting our sources on PPA again at some point, though.)
+deb [trusted=yes] https://user:password@build.m2osw.com/xenial ./
 
 
 
