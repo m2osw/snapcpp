@@ -23,7 +23,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapmanagercgi
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, snapbase
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapcommunicator
 Recommends: snapfirewall
 Suggests: snapserver (>= 0.1.72.113~trusty)
 Description: Fast Websites: powerful CMS for Apache written in C++.
