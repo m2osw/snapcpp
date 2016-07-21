@@ -90,7 +90,7 @@ ConfigureMakeProject( PROJECT_NAME snapdbproxy
 )
 
 ConfigureMakeProject( PROJECT_NAME snapfirewall
-    DEPENDS libsnapwebsites snapbase snapmanagercgi
+    DEPENDS libsnapwebsites snapbase snapmanagercgi snapdbproxy
 )
 
 ConfigureMakeProject( PROJECT_NAME snapinit

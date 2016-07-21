@@ -123,7 +123,7 @@ private:
  * #
  * c->b [label="snapfirewall/BLOCK ip=...;period=..."];
  * b->a [label="BLOCK ip=...;period=..."];
- * a->d [label="lock IP address with iptables"];
+ * a->d [label="block IP address with iptables"];
  *
  * #
  * # Wakeup timer
