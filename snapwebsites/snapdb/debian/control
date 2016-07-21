@@ -11,7 +11,7 @@ Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev, libxml2-utils,
     libqtcassandra-dev (>= 0.6.0.37~xenial),
     libqtserialization-dev (>= 0.0.1~xenial),
     libsnapwebsites-dev (>= 0.0.1~xenial),
-    snapmanagercgi-dev (>= 0.0.1~xenial)
+    snapmanagercgi (>= 0.0.1~xenial)
 Standards-Version: 3.9.4
 Section: admin
 Homepage: http://www.snapwebsites.org/
