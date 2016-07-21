@@ -7,8 +7,8 @@
   </description>
   <fields>
     <field name="seeds" type="input">
-      <label>Seends</label>
-      <description>Indicate Cassandra seed nodes.</description>
+      <label>Seeds</label>
+      <description>Indicate Cassandra seed nodes IP addresses.</description>
     </field>
   </fields>
   <packages>cassandra</packages>

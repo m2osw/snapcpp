@@ -32,24 +32,8 @@
 ##
 ## Initialization
 ##
-#set(SNAPBACKUP_VERSION_MAJOR  0)
-#set(SNAPBACKUP_VERSION_MINOR  1)
-#set(SNAPBACKUP_VERSION_PATCH  1)
 
 cmake_minimum_required(VERSION 3.5)
-
-# Reasons for warnings that are turned off:
-# * We use variadic macros for the signals, very useful to avoid otherwise
-#   quite complicated statements or many macro definitions (one per # of params).
-# * We use | in our parser grammar and we get many parenthesis warnings for those.
-# Final flags:
-#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
-# Development flags:
-#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
-
-# Other interesting warnings but that appear all over the place in other libraries
-#   -Wsign-conversion  -- unsigned int a; int b; a = b; or b = a;
-#   -Wmissing-declarations  -- we often create local functions without first declaring them
 
 project( snapbackup_project )
 
@@ -72,6 +56,7 @@ find_package( Qt5Network         REQUIRED )
 find_package( Qt5Sql             REQUIRED )
 find_package( QtCassandra        REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapWebsites       REQUIRED )
 
 SnapGetVersion( SNAPBACKUP ${CMAKE_CURRENT_SOURCE_DIR} )
 
@@ -93,6 +78,9 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-add_subdirectory(src)
+add_subdirectory( conf )
+add_subdirectory( src  )
+
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et nocindent

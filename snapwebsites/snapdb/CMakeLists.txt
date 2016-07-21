@@ -66,9 +66,12 @@ set( QT_LIBRARIES
 
 SnapGetVersion( SNAPDB ${CMAKE_CURRENT_SOURCE_DIR} )
 
+add_subdirectory( conf  )
 add_subdirectory( src   )
 #add_subdirectory( tests )
 
 install( FILES scripts/clear-cache.sh DESTINATION share/snapwebsites/snapdb )
+
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et

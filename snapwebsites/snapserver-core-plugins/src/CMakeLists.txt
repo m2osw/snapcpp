@@ -34,12 +34,6 @@ project( snapwebsites_plugins_src )
 
 set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 
-##
-## Include xmllint utilties
-##
-include( SnapCssLint )
-include( SnapJsLint  )
-include( SnapXmlLint )
 
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management

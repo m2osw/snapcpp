@@ -71,8 +71,6 @@ find_package( SnapCMakeModules  REQUIRED )
 find_package( SnapDoxygen       REQUIRED )
 find_package( SnapWebsites      REQUIRED )
 
-include( SnapXmlLint )
-
 ##
 ## Version
 ##

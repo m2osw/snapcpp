@@ -65,6 +65,9 @@ include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
+add_subdirectory( conf )
 add_subdirectory( src )
+
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et

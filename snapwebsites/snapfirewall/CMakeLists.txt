@@ -71,4 +71,6 @@ add_subdirectory( conf  )
 add_subdirectory( src   )
 add_subdirectory( doc   )
 
+snap_build_xml_targets()
+
 # vim: ts=4 sw=4 et

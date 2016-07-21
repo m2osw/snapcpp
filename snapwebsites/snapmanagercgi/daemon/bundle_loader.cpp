@@ -111,11 +111,13 @@ void bundle_loader::run()
         }
     }
 
+    bool done(true);
     for(auto const & u : f_bundle_uri)
     {
         if(!continue_running())
         {
-            return;
+            done = false;
+            break;
         }
 
         if(!load(u))
@@ -125,6 +127,7 @@ void bundle_loader::run()
         }
     }
 
+    if(done)
     {
         QFile last_update_file(date_filename);
         if(last_update_file.open(QIODevice::WriteOnly))
@@ -139,6 +142,13 @@ void bundle_loader::run()
         {
             SNAP_LOG_ERROR("the bundle_loader could not open the last time updated file \"")(date_filename)("\".");
         }
+    }
+
+    // delete the bundles.status or the front end will wait a day before it
+    // updates this information!
+    {
+        QString const bundles_status_filename(QString("%1/bundles.status").arg(f_bundles_path));
+        unlink(bundles_status_filename.toUtf8().data());
     }
 }
 

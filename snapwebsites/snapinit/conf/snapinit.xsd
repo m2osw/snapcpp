@@ -40,7 +40,7 @@
   <xs:simpleType name="name">
     <xs:annotation>
       <xs:documentation>
-        The value "required" if specified
+        A valid name composed of letters, digits and underscores.
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">

@@ -50,8 +50,6 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
-include( SnapXmlLint )
-
 SnapGetVersion( SNAPINIT ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
