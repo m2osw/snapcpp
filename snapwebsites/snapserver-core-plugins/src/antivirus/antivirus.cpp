@@ -27,6 +27,8 @@
 #include <QFile>
 #include <QDateTime>
 
+#include <sys/stat.h>
+
 #include "poison.h"
 
 
@@ -260,6 +262,13 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
     {
         return;
     }
+    if(!has_clamscan())
+    {
+        // TODO: signal the settings screen so the administrator can be in the known
+        //
+        SNAP_LOG_WARNING("the antivirus is enabled, but clamav is not installed.");
+        return;
+    }
 
     // slow test, here we check whether the file is a virus
     QString data_path(f_snap->get_server_parameter("data_path"));
@@ -360,16 +369,48 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
  */
 void antivirus::on_versions_tools(filter::filter::token_info_t & token)
 {
-    process p("antivirus::clamscan-version");
-    p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
-    p.set_command("clamscan");
-    p.add_argument("--version");
-    p.run();
-    QString const output(p.get_output(true));
+    QString output;
+
+    if(has_clamscan())
+    {
+        process p("antivirus::clamscan-version");
+        p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command("clamscan");
+        p.add_argument("--version");
+        p.run();
+        output = p.get_output(true);
+    }
+    else
+    {
+        // TODO: we actually need the backend to send a message with the
+        //       info to all the snapserver's which can save that
+        //       information and display it to the end user when requested
+        //       to do so here
+        //
+        output = "No version information for clamav available. In most cases that package only gets installed on the computer running the CRON backend.";
+    }
 
     token.f_replacement += "<li>";
     token.f_replacement += output;
     token.f_replacement += "</li>";
+}
+
+
+/** \brief Check whether clamscan is available.
+ *
+ * The antivirus may not be installed as there is no direct dependency
+ * on it in the package. This ensures that it is indeed available.
+ *
+ * \todo
+ * Display the information in the settings screen (i.e. that no antivirus
+ * is installed on the CRON backend.)
+ *
+ * \return true if the clamscan binary is available.
+ */
+bool antivirus::has_clamscan()
+{
+    struct stat st;
+    return stat("/usr/bin/clamscan", &st) == 0;
 }
 
 

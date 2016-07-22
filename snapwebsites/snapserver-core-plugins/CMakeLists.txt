@@ -135,8 +135,15 @@ include_directories(
     ${LIBTLD_INCLUDE_DIRS}
 )
 
+add_subdirectory( conf  )
 add_subdirectory( src   )
 add_subdirectory( doc   )
 
+##
+## Analyse xml and javascript
+##
+snap_build_css_targets()
+snap_build_js_targets()
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 nocindent

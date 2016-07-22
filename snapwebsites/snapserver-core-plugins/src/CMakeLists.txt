@@ -100,11 +100,4 @@ add_subdirectory(users_ui)
 add_subdirectory(versions)
 add_subdirectory(webform)
 
-##
-## Analyse xml and javascript
-##
-snap_build_css_targets()
-snap_build_js_targets()
-snap_build_xml_targets()
-
 # vim: ts=4 sw=4 nocindent

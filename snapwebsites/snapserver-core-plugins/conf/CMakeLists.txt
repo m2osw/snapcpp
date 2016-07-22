@@ -1,11 +1,9 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      conf/CMakeLists.txt
 #
 # Description:
-#      The Snap! Websites Server. The server is the main() of the Snap!
-#      environment. Most everything is however defined in the
-#      libsnapwebsites.so library (see lib/*).
+#      Install configuration files and samples.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -31,39 +29,19 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+snap_validate_xml( bundle-antivirus.xml bundles.xsd )
+
+
 #################################################################################
-## Snap firewall manager
+## Bundles are also saved under a bundle directory for reference
 ##
-project(snapfirewall)
-
-add_executable(${PROJECT_NAME}
-    snapfirewall.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-)
-
 install(
-    TARGETS
-        ${PROJECT_NAME}
-
-    RUNTIME DESTINATION
-        bin
-)
-
-install(
-    PROGRAMS
-        showfw
+    FILES
+        bundle-antivirus.xml
 
     DESTINATION
-        bin
+        share/snapwebsites/bundles
 )
+
 
 # vim: ts=4 sw=4 et

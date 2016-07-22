@@ -70,6 +70,7 @@ public:
 
 private:
     void                    content_update(int64_t variables_timestamp);
+    bool                    has_clamscan();
 
     zpsnap_child_t          f_snap;
 };

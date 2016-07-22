@@ -24,9 +24,15 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapserver-core-plugins
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, html2text, clamav,
+# The clamav was defined here before, which means it would get installed on
+# all computers that had the plugins when really it is only necessary on the
+# one computer running the CRON snapbackend processes; see the antivirus
+# bundle for more details; we suggest it in case a programmer installs the
+# package on his machine without using bundles...
+Depends: ${shlibs:Depends}, ${misc:Depends}, html2text,
     libqrencode3 (>= 3.4)
 Recommends: snapserver
+Suggests: clamav
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
