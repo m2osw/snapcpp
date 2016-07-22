@@ -1,7 +1,8 @@
 Source: snapbackup
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev, libxml2-utils,
+Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev,
+    libxml2-utils, zip,
     snapcmakemodules (>= 1.0.25.124~xenial),
     libadvgetopt-dev (>= 1.0.16.368~xenial),
     libcontrolledvars-dev (>= 1.4.15.231~trusty),
