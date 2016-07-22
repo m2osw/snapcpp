@@ -133,6 +133,7 @@ a server.
 # +===============+============================ Virtual ======+=======+
 # | base / "self" | snapmanager.cgi and dependencies          | All   |
 # +===============+============================ Created ======+=======+
+# | anti-virus    | clamav along snapbackend                  | Back  |
 # | backup        | snapbackup                                | Any   |
 # | cassandra     | cassandra database                        | Back  |
 # | firewall      | snapfirewall + iplock (need overhaul)     | All   |
@@ -147,7 +148,6 @@ a server.
 # | vpn_client    | tinc / openvpn                            | All   |
 # | vpn_server    | tinc / openvpn                            | All   |
 # +===============+============================ TODO =========+=======+
-# | anti-virus    | clamav along snapbackend                  | Back  |
 # +===============+===========================================+=======+
 #
 # For NTP, we currently just install it in snapbase and assume that you

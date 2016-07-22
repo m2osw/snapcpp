@@ -214,7 +214,7 @@ bool confirm_drop_check( const QString& msg )
 }
 
 }
-//namespace
+// no name namespace
 
 int main(int argc, char *argv[])
 {
@@ -228,9 +228,20 @@ int main(int argc, char *argv[])
 
     try
     {
-        snapTableList::initList();
-
         getopt_ptr_t opt( new advgetopt::getopt( argc, argv, g_snapbackup_options, g_configuration_files, nullptr ) );
+
+        if( opt->is_defined("help") )
+        {
+            opt->usage( advgetopt::getopt::status_t::error, "snapbackup" );
+            //snap::NOTREACHED();
+        }
+        else if( opt->is_defined("version") )
+        {
+            std::cerr << SNAPBACKUP_VERSION_STRING << std::endl;
+            exit(0);
+        }
+
+        snapTableList::initList();
 
         snapbackup  s(opt);
         s.connectToCassandra();
@@ -254,10 +265,6 @@ int main(int argc, char *argv[])
             {
                 s.restoreContext();
             }
-        }
-        else if( opt->is_defined("help") )
-        {
-            opt->usage( advgetopt::getopt::status_t::error, "snapbackup" );
         }
         else
         {
