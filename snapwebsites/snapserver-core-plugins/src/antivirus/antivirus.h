@@ -28,7 +28,8 @@ namespace antivirus
 enum class name_t
 {
     SNAP_NAME_ANTIVIRUS_ENABLE,
-    SNAP_NAME_ANTIVIRUS_SETTINGS_PATH
+    SNAP_NAME_ANTIVIRUS_SETTINGS_PATH,
+    SNAP_NAME_ANTIVIRUS_VERSION
 };
 char const * get_name(name_t name) __attribute__ ((const));
 

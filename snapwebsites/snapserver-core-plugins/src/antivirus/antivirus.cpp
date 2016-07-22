@@ -54,6 +54,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH:
         return "admin/settings/antivirus";
 
+    case name_t::SNAP_NAME_ANTIVIRUS_VERSION:
+        return "antivirus::version";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_ANTIVIRUS_...");
@@ -270,6 +273,27 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
         return;
     }
 
+    // retrieve the version only once, we do not need it reloaded for each
+    // file! although it will happen any time a new file is checked...
+    //
+    // TODO: if the cluster has more than one backend running clamav
+    //       we probably should make sure they all run the same version
+    //       (although with upgrades run together that should be the case)
+    //
+    static bool antivirus_version_retrieved(false);
+    if(!antivirus_version_retrieved)
+    {
+        antivirus_version_retrieved = true;
+
+        process v("antivirus::clamscan-version");
+        v.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+        v.set_command("clamscan");
+        v.add_argument("--version");
+        NOTUSED(v.run()); // result error info already printed by process class
+        QString const output(v.get_output(true));
+        revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_VERSION))->setValue(output);
+    }
+
     // slow test, here we check whether the file is a virus
     QString data_path(f_snap->get_server_parameter("data_path"));
     if(data_path.isEmpty())
@@ -373,6 +397,9 @@ void antivirus::on_versions_tools(filter::filter::token_info_t & token)
 
     if(has_clamscan())
     {
+        // if clamav is installed on this computer, dynamically check
+        // the version immediately
+        //
         process p("antivirus::clamscan-version");
         p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
         p.set_command("clamscan");
@@ -382,12 +409,28 @@ void antivirus::on_versions_tools(filter::filter::token_info_t & token)
     }
     else
     {
-        // TODO: we actually need the backend to send a message with the
-        //       info to all the snapserver's which can save that
-        //       information and display it to the end user when requested
-        //       to do so here
+        // if not on this computer, check whether we have the info in
+        // the database
         //
-        output = "No version information for clamav available. In most cases that package only gets installed on the computer running the CRON backend.";
+        content::content * content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        content::path_info_t settings_ipath;
+        settings_ipath.set_path(get_name(name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH));
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        QtCassandra::QCassandraValue const clamav_version(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_VERSION))->value());
+        if(!clamav_version.nullValue())
+        {
+            output = clamav_version.stringValue();
+        }
+        else
+        {
+            // We did not yet get information about the clamav version,
+            // post an explanation why we do not have it available...
+            //
+            output = "No version information for clamav available."
+                    " In most cases that package only gets installed on the computer running the CRON backend."
+                    " That computer is expected to transmit the information, but it looks like we did not yet receive such.";
+        }
     }
 
     token.f_replacement += "<li>";
@@ -400,10 +443,6 @@ void antivirus::on_versions_tools(filter::filter::token_info_t & token)
  *
  * The antivirus may not be installed as there is no direct dependency
  * on it in the package. This ensures that it is indeed available.
- *
- * \todo
- * Display the information in the settings screen (i.e. that no antivirus
- * is installed on the CRON backend.)
  *
  * \return true if the clamscan binary is available.
  */
