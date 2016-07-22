@@ -56,6 +56,7 @@ target_link_libraries(self
     snapmanager
     Qt5::Core
     Qt5::Xml
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
