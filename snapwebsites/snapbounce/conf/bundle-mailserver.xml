@@ -10,13 +10,58 @@
   </description>
   <fields>
     <field name="domain" type="input">
-      <label>Domain</label>
-      <description>The name of the domain used for this mail server.</description>
+      <label>Domain (myhostname)</label>
+      <description>
+        The name of the domain used for this mail server.
+        For example: mail.snapwebsites.net -- your DNS should define that
+        name as an MX record.
+      </description>
+    </field>
+    <field name="organization" type="input">
+      <label>Organization</label>
+      <description>
+        The name of your organization. It will be shown to people sending
+        emails manually. It may be used by various systems to help contacting
+        your organization. You may include a website URL although it is not
+        that costumary to do so.
+      </description>
     </field>
   </fields>
   <packages>postfix, snapbounce</packages>
   <postinst>
+    # Setup the transport.map file
+    #
+    # I'm not too sure why we would want these two lines:
+    #
+    #localhost bounces:
+    #mail.$BUNDLE_INSTALLATION_DOMAIN bounces:
+    #
+    # For now, I removed them from the file altogether.
+    #
+    cat &gt;/etc/postfix/transport.maps &lt;&lt;EOF
+# See SNAP-67
+# After changes, run postmap:
+#   postmap /etc/postfix/transport.maps
+#
+bounces@$BUNDLE_INSTALLATION_DOMAIN snapbounce:
+EOF
+    postmap /etc/postfix/transport.maps
+
     # setup the domain and a few other things
+    # the few entries at the bottom connects snapbounce to postfix
+    sed -i.bak \
+        -e "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" \
+        -e "s/^smtpd_banner = \(.*\) (.*)/smtpd_banner = \1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" \
+        -e "$ i \
+# `date` \
+# Tell postfix how we want to handle bounced emails (SNAP-67) \
+notify_classes = bounce \
+bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \
+transport_maps = hash:/etc/postfix/transport.maps" \
+              /etc/postfix/main.cf
+
+    # restart postfix with the correct parameters
+    systemclt restart postfix
   </postinst>
 </bundle>
 <!--

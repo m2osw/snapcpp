@@ -78,7 +78,7 @@ ConfigureMakeProject( PROJECT_NAME snapcgi
 )
 
 ConfigureMakeProject( PROJECT_NAME snapcommunicator
-    DEPENDS libsnapwebsites snapbase
+    DEPENDS libsnapwebsites snapinit
 )
 
 ConfigureMakeProject( PROJECT_NAME snapdb
