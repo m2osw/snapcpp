@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Run the snapbackup command to make sure we have copies of the database.
+# This is not recommended on large clusters, though (i.e. Cassandra should
+# properly do backups on its own with a good replication factor)
+#
+
+# make sure the output folder exists
+#
+mkdir -f /var/lib/snapwebsites/cassandra-backups
+
+# one backup per day of the week
+#
+DAY=`date +%w`
+
+# create the backup
+#
+snapbackup -d /var/lib/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
+
