@@ -586,7 +586,7 @@ void snap_init::init()
     }
     else
     {
-        SNAP_LOG_INFO("--------------------------------- snapinit manager started on ")(f_server_name);
+        SNAP_LOG_INFO("--------------------------------- snapinit v" SNAPINIT_VERSION_STRING " manager started on ")(f_server_name);
 
         if( f_opt.is_defined( "--" ) )
         {
@@ -732,13 +732,23 @@ void snap_init::init()
     // if not --list we still write the list of services but in log file only
     log_selected_servers();
 
+    QString const user ( f_config.contains("user")  ? f_config["user"]  : "snapwebsites" );
+    QString const group( f_config.contains("group") ? f_config["group"] : "snapwebsites" );
+
     // make sure the path to the lock file exists
     //
-    if(snap::mkdir_p(f_lock_filename, true) != 0)
     {
-        common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\"; without the filename).")
-                            .arg(f_lock_filename));
-        snap::NOTREACHED();
+        if(snap::mkdir_p(f_lock_filename, true) != 0)
+        {
+            common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\"; without the filename).")
+                                .arg(f_lock_filename));
+            snap::NOTREACHED();
+        }
+
+        // for sub-processes to be able to access that folder we need to
+        // also setup the user and group as expected
+        //
+        snap::chownnm(f_lock_filename, user, group);
     }
 
     // create the run-time directory because other processes may not
@@ -763,9 +773,6 @@ void snap_init::init()
                                 .arg(runpath));
             snap::NOTREACHED();
         }
-
-        QString const user ( f_config.contains("user")  ? f_config["user"]  : "snapwebsites" );
-        QString const group( f_config.contains("group") ? f_config["group"] : "snapwebsites" );
 
         // for sub-processes to be able to access that folder we need to
         // also setup the user and group as expected
@@ -1154,7 +1161,7 @@ void snap_init::init_message_functions()
 
                 // list of commands understood by snapinit
                 //
-                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STATUS,STOP,UNKNOWN");
+                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,RELOADCONFIG,SAFE,STATUS,STOP,UNKNOWN");
 
                 f_listener_connection->send_message(reply);
             }
@@ -1196,6 +1203,19 @@ void snap_init::init_message_functions()
                 reply.add_parameter("list", services.join(","));
 
                 f_listener_connection->send_message(reply);
+            }
+        },
+        {
+            "RELOADCONFIG",
+            [&]( snap::snap_communicator_message const& )
+            {
+                // we need a full restart in this case (because snapinit
+                // cannot restart itself!)
+                //
+                if(getuid() == 0)
+                {
+                    system("systemctl restart snapinit");
+                }
             }
         },
         {

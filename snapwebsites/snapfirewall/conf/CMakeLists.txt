@@ -29,6 +29,9 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+
+snap_validate_xml( bundle-firewall.xml bundles.xsd )
+
 #################################################################################
 ## Config files
 ##
@@ -44,9 +47,25 @@ install(
         share/snapwebsites/conf
 )
 
+
+#################################################################################
+## Database tables
+##
 install(
     FILES "snapfirewall-tables.xml"
     DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
+)
+
+
+#################################################################################
+## Bundles are also saved under a bundle directory for reference
+##
+install(
+    FILES
+        bundle-firewall.xml
+
+    DESTINATION
+        share/snapwebsites/bundles
 )
 
 

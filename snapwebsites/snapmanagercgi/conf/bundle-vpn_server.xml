@@ -1,29 +1,44 @@
 <?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
 <bundle>
   <name>vpn_server</name>
-  <description>OpenVPN allows a network of computers to communicate through a safe, encrypted tunnel (Server Side).</description>
+  <description>
+    <p>The OpenVPN bundle is used to secure public connections
+    between computers. If you have a secure LAN then you do not
+    need to install OpenVPN at all. (i.e. a secure LAN is a LAN
+    that only your computers have access to.)</p>
+
+    <p>The OpenVPN creates a network of computers to communicate
+    through a safe, encrypted tunnel (Server Side) rendering a
+    public LAN secure.</p>
+
+    <p>An OpenVPN server is used to setup a computer that allows
+    connections and accepts connections. Servers are a bottle
+    neck, however, you can install the server multiple times
+    and in effect make it work in a failsafe manner.</p>
+  </description>
   <fields>
-    <field name="organization">
+    <field name="organization" type="input">
       <label>Organization</label>
       <description>Name of your organization.</description>
     </field>
-    <field name="organization_unit">
+    <field name="organization_unit" type="input">
       <label>Organization Unit</label>
       <description>The unit of your organization responsible for your servers.</description>
     </field>
-    <field name="city">
+    <field name="city" type="input">
       <label>City</label>
       <description>Name of your city.</description>
     </field>
-    <field name="province">
+    <field name="province" type="input">
       <label>Province or State</label>
       <description>Name of your province.</description>
     </field>
-    <field name="country" type="string">
+    <field name="country" type="input">
       <label>Country</label>
       <description>Name of your country.</description>
     </field>
-    <field name="email">
+    <field name="email" type="input">
       <label>Email</label>
       <description>Contact email address.</description>
     </field>
@@ -37,7 +52,21 @@
           the correct KEY_... variables so we do not do it yet.
   -->
   <postinst>
+    # get the default RSA key data
     cp -r /usr/share/easy-rsa /etc/openvpn/.
+    # Setup the keys as defined by the user in the installation form
+    sed \
+      -e "s/KEY_ORG=\".*\"/KEY_ORG=\"$BUNDLE_INSTALLATION_ORGANIZATION\"/" \
+      -e "s/KEY_OU=\".*\"/KEY_OU=\"$BUNDLE_INSTALLATION_ORGANIZATION_UNIT\"/" \
+      -e "s/KEY_CITY=\".*\"/KEY_CITY=\"$BUNDLE_INSTALLATION_CITY\"/" \
+      -e "s/KEY_PROVINCE=\".*\"/KEY_PROVINCE=\"$BUNDLE_INSTALLATION_PROVINCE\"/" \
+      -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"$BUNDLE_INSTALLATION_COUNTRY\"/" \
+      -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"$BUNDLE_INSTALLATION_EMAIL\"/" \
+            /usr/share/easy-rsa/vars >/etc/openvpn/easy-rsa/vars
+    cd /etc/openvpn/easy-rsa
+    . ./vars
+    ./clean-all
+    ./build-ca
   </postinst>
 </bundle>
 <!--

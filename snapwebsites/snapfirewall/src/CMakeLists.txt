@@ -44,6 +44,7 @@ target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${AS2JS_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
     ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
@@ -51,7 +52,19 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+)
+
+install(
+    PROGRAMS
+        showfw
+
+    DESTINATION
+        bin
 )
 
 # vim: ts=4 sw=4 et

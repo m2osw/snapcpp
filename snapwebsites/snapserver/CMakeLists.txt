@@ -157,6 +157,8 @@ add_subdirectory( src   )           # Actual Snap! Websites server
 add_subdirectory( doc   )           # Generate the documentation
 add_subdirectory( tests )           # Tests to run against the server
 
+snap_build_xml_targets()
+
 ##
 ## Install run scripts
 ##

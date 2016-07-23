@@ -1199,19 +1199,46 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
 
                 // Output argument string with help
                 //
+                int const option_width(30); // <- this could be dynamically calculated (i.e. largest option) and capped instead of forced to 30
+                int const line_width(80);
                 ss << "   ";
                 std::string options( opt_ss.str() );
-                if( options.size() < 30 )
+                if( options.size() < option_width - 3 )
                 {
-                    ss << options << std::setw( 30 - options.size() ) << " ";
+                    ss << options << std::setw( option_width - 3 - options.size() ) << " ";
                 }
                 else
                 {
-                    options.resize(30);
-                    ss << options;
+                    // write help on following line since this line is too
+                    // short
+                    ss << options << std::endl << std::setw( option_width ) << " ";
                 }
                 //
-                ss << process_help_string(opt.f_help) << std::endl;
+                // break up the line if longer than line_width characters
+                //
+                std::string help(process_help_string(opt.f_help));
+                while(help.size() > line_width - option_width)
+                {
+                    if(std::isspace(help[line_width - option_width]))
+                    {
+                        ss << help.substr(0, line_width - option_width) << std::endl << std::setw( option_width ) << " ";
+                        help = help.substr(line_width - option_width + 1);
+                    }
+                    else
+                    {
+                        std::string::size_type const pos(help.find_last_of(' ', line_width - option_width));
+                        ss << help.substr(0, pos) << std::endl;
+                        help = help.substr(pos + 1);
+                    }
+                    if(!help.empty())
+                    {
+                        ss << std::setw( option_width ) << " ";
+                    }
+                }
+                if(!help.empty()) // this only happens if you end a help string with spaces
+                {
+                    ss << help << std::endl;
+                }
             }
         }
     }

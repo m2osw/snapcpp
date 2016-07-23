@@ -1,3 +1,33 @@
+snapmanagercgi (1.0.0.65~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 22 Jul 2016 14:44:28 -0700
+
+snapmanagercgi (1.0.0.64~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 20 Jul 2016 18:45:19 -0700
+
+snapmanagercgi (1.0.0.63~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 20 Jul 2016 02:05:20 -0700
+
+snapmanagercgi (1.0.0.62~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 19 Jul 2016 20:27:57 -0700
+
+snapmanagercgi (1.0.0.61~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 19 Jul 2016 15:44:23 -0700
+
 snapmanagercgi (1.0.0.60~xenial) xenial; urgency=high
 
   * Nightly build.

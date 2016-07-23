@@ -30,9 +30,10 @@ include( FindPackageHandleStandardArgs )
 # if all listed variables are TRUE
 find_package_handle_standard_args( SnapWebsites DEFAULT_MSG SNAPWEBSITES_INCLUDE_DIR SNAPWEBSITES_LIBRARY )
 
-# Make sure default DTD files are pointed to...
+# Make sure default DTD/XSD files are pointed to...
 #
 set( DTD_SOURCE_PATH /usr/share/snapwebsites/dtd CACHE PATH "Default DTD source files." )
+set( XSD_SOURCE_PATH /usr/share/snapwebsites/xsd CACHE PATH "Default XSD source files." )
 #
 set( CMAKE_MODULE_PATH ${SnapWebsites_DIR} ${CMAKE_MODULE_PATH} )
 include( SnapCssLint   )

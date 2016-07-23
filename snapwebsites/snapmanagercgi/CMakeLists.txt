@@ -71,8 +71,6 @@ find_package( SnapCMakeModules  REQUIRED )
 find_package( SnapDoxygen       REQUIRED )
 find_package( SnapWebsites      REQUIRED )
 
-include( SnapXmlLint )
-
 ##
 ## Version
 ##
@@ -94,12 +92,14 @@ include_directories(
 ##
 ## Compiling
 ##
-add_subdirectory( conf    )          # Configuration files and samples
-add_subdirectory( lib     )          # Common code to CGI, daemon, plugins
-add_subdirectory( cgi     )          # The snapmanager.cgi application
-add_subdirectory( daemon  )          # The snapmanagerdaemon to apply commands on any computer
-add_subdirectory( plugins )          # "Core" plugins used to gather and update the status
-add_subdirectory( doc     )          # Documentation generation
+add_subdirectory( conf     )          # Configuration files and samples
+add_subdirectory( cmake    )          # CMake helper files
+add_subdirectory( lib      )          # Common code to CGI, daemon, plugins
+add_subdirectory( cgi      )          # The snapmanager.cgi application
+add_subdirectory( daemon   )          # The snapmanagerdaemon to apply commands on any computer
+add_subdirectory( plugins  )          # "Core" plugins used to gather and update the status
+add_subdirectory( upgrader )          # "Core" plugins used to gather and update the status
+add_subdirectory( doc      )          # Documentation generation
 
 snap_build_xml_targets()
 

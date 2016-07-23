@@ -50,6 +50,7 @@ include_directories(
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/lib
 )
 
 add_executable( ${PROJECT_NAME}

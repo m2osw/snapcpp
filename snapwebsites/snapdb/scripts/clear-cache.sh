@@ -1,3 +1,14 @@
 #!/bin/sh
+#
+# A simple script one can use to delete the permissions::last_updated
+# field which should force all permission caches to be recalculated
 
-snapsiteinfo --drop-cell http://csnap.m2osw.com/ permissions::last_updated
+if test -z "$1" -o "$1" = "-h" -o "$1" = "--help"
+then
+	echo "Usage: clear-cache <domain name>"
+	echo "  Note: that the domain name must include a slash at the"
+	echo "        end as in:  http://snap.website/"
+	exit 0;
+fi
+
+snapdb --drop-cell sites "$1" permissions::last_updated

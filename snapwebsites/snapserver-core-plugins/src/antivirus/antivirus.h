@@ -28,7 +28,8 @@ namespace antivirus
 enum class name_t
 {
     SNAP_NAME_ANTIVIRUS_ENABLE,
-    SNAP_NAME_ANTIVIRUS_SETTINGS_PATH
+    SNAP_NAME_ANTIVIRUS_SETTINGS_PATH,
+    SNAP_NAME_ANTIVIRUS_VERSION
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -70,6 +71,7 @@ public:
 
 private:
     void                    content_update(int64_t variables_timestamp);
+    bool                    has_clamscan();
 
     zpsnap_child_t          f_snap;
 };

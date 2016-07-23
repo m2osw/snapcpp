@@ -4,7 +4,8 @@ Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, qt5-default, libxml2-utils, zip, uuid-dev,
     snapcmakemodules (>= 1.0.23.231~trusty), snapbase-dev (>= 1.0.0),
     libadvgetopt-dev, libtld-dev, liblog4cplus-dev, libqtcassandra-dev,
-    libqtserialization-dev, libsnapwebsites-dev, libzipios-dev
+    libqtserialization-dev, libsnapwebsites-dev, libzipios-dev,
+    snapmanagercgi (>= 0.0.1~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

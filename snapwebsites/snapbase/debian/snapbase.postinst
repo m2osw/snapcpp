@@ -68,9 +68,12 @@ then
     mkdir -p /var/lib/snapwebsites
     chown snapwebsites.snapwebsites /var/lib/snapwebsites
 
-    # make the snap-httpoxy.conf file active
+    # make the snap-httpoxy.conf file active if apache2 is installed
     #
-    a2enconf snap-httpoxy
+    if hash a2enconf 2>/dev/null
+    then
+        a2enconf snap-httpoxy
+    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent

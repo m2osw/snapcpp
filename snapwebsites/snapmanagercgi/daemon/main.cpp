@@ -37,11 +37,13 @@ namespace snap
 // the server plugin
 namespace plugins
 {
+
 extern QString g_next_register_name;
 extern QString g_next_register_filename;
-}
 
-} // no name namespace
+} // plugin namespace
+
+} // snap namespace
 
 
 int main(int argc, char * argv[])

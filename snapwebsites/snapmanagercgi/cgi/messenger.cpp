@@ -211,7 +211,7 @@ void messenger::process_message(snap::snap_communicator_message const & message)
     case 'S':
         if(command == "STOP")
         {
-            SNAP_LOG_WARNING("we received the STOP command while waiting for a lock.");
+            SNAP_LOG_WARNING("we received the STOP command while waiting for responses for snapmanager.cgi.");
 
             done();
             return;

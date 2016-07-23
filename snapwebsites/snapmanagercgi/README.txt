@@ -1,4 +1,32 @@
 
+* Installing an Instance
+
+Create a droplet, VPS, server, etc. and install the OS (Ubuntu 16.04 at the
+time of writing.)
+
+Install the following sources
+
+   . /etc/apt/sources.list.d/doug.list -- to support the Cassandra C++ driver
+     (Note: libsnapwebsites depends on libqtcassandra, which depends on
+            cassandra-cpp-driver)
+
+# Cassandra Driver (2.x) and Cassandra itself (until "Depends: ..." gets fixed)
+deb [trusted=yes] http://apt.dooglio.net/xenial ./
+
+
+   . /etc/apt/sources.list.d/build-m2osw.list -- to include Snap! itself
+
+# We include a top secret password, which infortunately we do not release
+# (we will be looking at getting our sources on PPA again at some point, though.)
+deb [trusted=yes] https://user:password@build.m2osw.com/xenial ./
+
+
+
+
+
+
+* About snapmanager.cgi
+
 The system functions using plugins in order to allow any number of
 features to be added to the manager. This is specifically important
 for some plugins may have some special needs that have to be in
@@ -11,6 +39,7 @@ The manager is composed of:
   . snapmanagercgi/cgi/* -- the snapmanager.cgi binary
   . snapmanagercgi/daemon/* -- the snapmanagerdaemon binary
   . snapmanagercgi/plugins/*/* -- a set of plugins
+  . snapmanagercgi/upgrader/* -- a separate tool to upgrade packages
 
 From the outside the user can access snapmanager.cgi which will run with
 the same user/group restrictions as Apache (www-data:www-data). It can
@@ -42,12 +71,12 @@ is not yet installed, how could snapmanager know about it?!)
 
 Organization:
 
-  +-----------------------------+
-  |                             |
-  | libsnapmanagercgi           |
-  | (common code/functions)     |
-  |                             |
-  +-----------------------------+
+  +-----------------------------+   +----------------+
+  |                             |   |                |
+  | libsnapmanagercgi           |   | Upgrader       |
+  | (common code/functions)     |   |                |
+  |                             |   |                |
+  +-----------------------------+   +----------------+
        ^
        |
        | linked

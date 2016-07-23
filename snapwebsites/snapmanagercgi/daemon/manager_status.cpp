@@ -354,51 +354,6 @@ void manager_status::resend_status()
 
 
 
-/*
- * This needs to be 100% dynamic
- *
-# server_types=<list of names>
-#
-# List what functionality this server offers as a list of names as defined
-# below.
-#
-# The "Comp." column (Computer) defines where such and such service should
-# be running. Each set of services can run on the same computer (often does
-# while doing development.) However, running everything on a single computer
-# is not how Snap! was designed. The idea is to be able to run the websites
-# on any number of computers in a cluster. This is why we have Cassandra,
-# but really all parts can be running on any number of computers.
-#
-# +===============+===========================================+=======+
-# |    Name       |              Description                  | Comp. |
-# +===============+===========================================+=======+
-# | anti-virus    | clamav along snapbackend                  | Back  |
-# | application   | snapserver                                | Back  |
-# | backend       | one or more snapbackend                   | Back  |
-# | base          | snamanager.cgi and dependencies           | All   |
-# | cassandra     | cassandra database                        | Back  |
-# | firewall      | snapfirewall + iplock (need overhaul)     | All   |
-# | frontend      | apache with snap.cgi                      | Front |
-# | mailserver    | postfix with snapbounce                   | Front |
-# | vpn           | tinc / openvpn                            | All   |
-# | logserver     | loggingserver from log4cplus              | Back  |
-# | rkhunter      | check that no rootkit gets installed      | All   |
-# | tripwire      | check that no files gets changed          | All   |
-# +===============+===========================================+=======+
-#
-# For NTP, we currently just install it in snapbase and assume that you
-# always install at least snapbase (i.e. snapmanagercgi depends on it)
-# so there is no additional need for. The snapfirewall default tables
-# open that UDP port by default.
-#
-# Note that the snapserver plugins come with clamav.
-#
-# Default: base
-server_types=base
-*/
-
-
-
 
 } // namespace snap_manager
 // vim: ts=4 sw=4 et

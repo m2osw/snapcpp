@@ -59,7 +59,9 @@ add_library(antivirus SHARED
     antivirus-logo-64x64.png
 )
 
-target_link_libraries( antivirus Qt5::Core )
+target_link_libraries(antivirus
+    Qt5::Core
+)
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

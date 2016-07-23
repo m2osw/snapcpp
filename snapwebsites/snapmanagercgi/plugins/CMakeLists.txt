@@ -47,9 +47,9 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/manager_plugins )
 ################################################################################
 # Allow for #include of other header files available to plugins
 #
-#include_directories(
-#    ${snapmanager_SOURCE_DIR}
-#)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/lib
+)
 
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management

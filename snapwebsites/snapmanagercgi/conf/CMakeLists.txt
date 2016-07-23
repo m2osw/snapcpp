@@ -33,6 +33,13 @@ project(snapmanagercgi_conf)
 
 snap_validate_xml( snapmanagercgi-parser.xsl simplified-xslt20.dtd )
 
+snap_validate_xml( bundle-cassandra.xml bundles.xsd )
+snap_validate_xml( bundle-logserver.xml bundles.xsd )
+snap_validate_xml( bundle-rkhunter.xml bundles.xsd )
+snap_validate_xml( bundle-tripwire.xml bundles.xsd )
+snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
+snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
+
 #################################################################################
 ## Config files
 ##
@@ -45,13 +52,40 @@ install(
         # snap configuration files
         snapmanager.conf
 
-        # misc files -- TODO add a sample apache settings?
+        # misc files -- TODO add a sample apache settings for snapmanager.cgi?
         snapmanagercgi-parser.xsl
         snap-bundles-apache2.conf
         snap-bundles-footer.html
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+#################################################################################
+## Save XSD files in their own directory
+##
+install(
+    FILES
+        bundles.xsd
+
+    DESTINATION
+        share/snapwebsites/xsd
+)
+
+#################################################################################
+## Bundles are also saved under a bundle directory for reference
+##
+install(
+    FILES
+        bundle-cassandra.xml
+        bundle-logserver.xml
+        bundle-rkhunter.xml
+        bundle-tripwire.xml
+        bundle-vpn_client.xml
+        bundle-vpn_server.xml
+
+    DESTINATION
+        share/snapwebsites/bundles
 )
 
 

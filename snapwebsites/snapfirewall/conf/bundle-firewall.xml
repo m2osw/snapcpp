@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>firewall</name>
+  <description>
+    <p>The snapfirewall daemon allows enforcing strong firewall
+    rules from any computer in your cluster.</p>
+
+    <p>It should be installed on all systems.</p>
+
+    <p>Note that the firewall requires the snapdbproxy package
+    since it makes use of the database to manage the list
+    of IP addresses to block.</p>
+  </description>
+  <packages>snapfirewall</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

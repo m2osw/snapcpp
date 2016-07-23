@@ -34,12 +34,6 @@ project( snapwebsites_plugins_src )
 
 set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 
-##
-## Include xmllint utilties
-##
-include( SnapCssLint )
-include( SnapJsLint  )
-include( SnapXmlLint )
 
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
@@ -105,12 +99,5 @@ add_subdirectory(users)
 add_subdirectory(users_ui)
 add_subdirectory(versions)
 add_subdirectory(webform)
-
-##
-## Analyse xml and javascript
-##
-snap_build_css_targets()
-snap_build_js_targets()
-snap_build_xml_targets()
 
 # vim: ts=4 sw=4 nocindent

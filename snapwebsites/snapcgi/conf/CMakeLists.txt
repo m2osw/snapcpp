@@ -29,6 +29,9 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+snap_validate_xml( bundle-frontend.xml bundles.xsd )
+
+
 #################################################################################
 ## Config files
 ##
@@ -45,6 +48,18 @@ install(
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Bundles are also saved under a bundle directory for reference
+##
+install(
+    FILES 
+        bundle-frontend.xml
+
+    DESTINATION
+        share/snapwebsites/bundles
 )
 
 

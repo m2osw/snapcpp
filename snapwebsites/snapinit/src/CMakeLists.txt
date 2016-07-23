@@ -32,6 +32,9 @@
 #
 project(snapinit)
 
+set( SNAPINIT_VERSION_STRING "${SNAPINIT_VERSION_MAJOR}.${SNAPINIT_VERSION_MINOR}.${SNAPINIT_VERSION_PATCH}" )
+add_definitions( -DSNAPINIT_VERSION_STRING="${SNAPINIT_VERSION_STRING}" )
+
 add_executable(${PROJECT_NAME}
     main.cpp
     service.h
