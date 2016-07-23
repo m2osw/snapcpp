@@ -720,10 +720,12 @@ void snap_init::init()
         //       the service name
         //
         std::cout << "List of services to start on this server:" << std::endl;
-        for(auto const & s : f_service_list)
+        auto output_service_name = [&]( auto const& s )
         {
             std::cout << s->get_service_name() << std::endl;
-        }
+        };
+        output_service_name( f_connection_service );
+        std::for_each( std::begin(f_service_list), std::end(f_service_list), output_service_name );
         // the --list command is over!
         exit(1);
         snap::NOTREACHED();
@@ -894,7 +896,13 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
                                   .arg(xml_services_filename));
                     snap::NOTREACHED();
                 }
+                //
                 f_connection_service = s;
+
+                // Don't add this to the main list, since it's special.
+                //
+                f_communicator->add_connection( s );
+                continue;
             }
 
             // we are starting the snapdbproxy system which offers an
@@ -926,15 +934,11 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
         }
     }
 
-    // make sure we have at least one service;
+    // We MUST have this service specified in the XML file, otherwise fail!
     //
-    // TODO: we may want to require certain services such as:
-    //       snapcommunicator and snapwatchdog?
-    //
-    if(f_service_list.empty())
+    if( !f_connection_service )
     {
-        common::fatal_error(QString("no services were specified in \"%1\" for snapinit to manage.")
-                      .arg(xml_services_filename));
+        common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
         snap::NOTREACHED();
     }
 
@@ -943,7 +947,7 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
     // unfortunately, the following will sort items by pointer if
     // we were not specifying our own sort function
     //
-    std::sort(f_service_list.begin(), f_service_list.end(), [](service::pointer_t const a, service::pointer_t const b){ return *a < *b; });
+    std::sort( std::begin(f_service_list), std::end(f_service_list), [](service::pointer_t const a, service::pointer_t const b){ return *a < *b; });
 }
 
 
@@ -980,8 +984,7 @@ void snap_init::wakeup_services()
         //       since the process could have died in between and thus
         //       we would get false when we would otherwise expect true.
         //
-        if(s->is_connection_required()
-        || s->is_running())
+        if(s->is_running())
         {
             continue;
         }
@@ -1195,10 +1198,14 @@ void snap_init::init_message_functions()
                 //
                 snap::snap_string_list services;
                 services << "snapinit";
-                for(auto const & s : f_service_list)
+                auto get_service_name = [&]( auto const& s )
                 {
                     services << s->get_service_name();
-                }
+                };
+                //
+                get_service_name( f_connection_service );
+                std::for_each( std::begin(f_service_list), std::end(f_service_list), get_service_name );
+                //
                 SNAP_LOG_TRACE("READY: list to send to server: [")(services.join(","))("].");
                 reply.add_parameter("list", services.join(","));
 
@@ -1257,12 +1264,17 @@ void snap_init::init_message_functions()
                 auto const service_parm(message.get_parameter("service"));
                 auto const status_parm(message.get_parameter("status"));
                 //
-                auto const & iter = std::find_if( f_service_list.begin() , f_service_list.end(),
-                    [&](service::pointer_t const & s)
-                    {
-                        return s->get_service_name() == service_parm;
-                    });
-                if( iter != f_service_list.end() )
+                service::vector_t all_services;
+                all_services.push_back( f_connection_service );
+                std::copy( std::begin(f_service_list), std::end(f_service_list), std::back_inserter(all_services) );
+                //
+                //
+                auto const & iter = std::find_if( all_services.begin(), all_services.end(), 
+                        [&](auto const & s)
+                        {
+                            return s->get_service_name() == service_parm;
+                        });
+                if( iter != std::end(all_services) )
                 {
                    (*iter)->set_registered( status_parm == "up" );
                 }
@@ -1382,6 +1394,8 @@ void snap_init::register_died_service( service::pointer_t svc )
  */
 void snap_init::service_died()
 {
+    SNAP_LOG_TRACE("snap_init::service_died()");
+
     // first go through the list and capture dead services
     // (i.e. note that CRON services are treated specially)
     //
@@ -1389,8 +1403,12 @@ void snap_init::service_died()
     {
         return svc->service_may_have_died();
     };
+    service::vector_t all_services;
+    all_services.push_back( f_connection_service );
+    std::copy( std::begin(f_service_list), std::end(f_service_list), std::back_inserter(all_services) );
+    //
     service::vector_t dead_services;
-    std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(dead_services), if_may_have_died );
+    std::copy_if( std::begin(all_services), std::end(all_services), std::back_inserter(dead_services), if_may_have_died );
 
     for( auto const & svc : dead_services )
     {
@@ -1416,8 +1434,9 @@ void snap_init::service_died()
             //
             return s->failed() && s->is_service_required();
         };
-        service::vector_t::const_iterator required_failed(std::find_if(f_service_list.begin(), f_service_list.end(), required_and_failed));
-        if(required_failed != f_service_list.end())
+        service::vector_t::const_iterator required_failed(std::find_if(std::begin(all_services), std::end(all_services), required_and_failed));
+        //
+        if(required_failed != all_services.end())
         {
             // we need to terminate the existing services cleanly
             // so we do not use common::fatal_error() here
@@ -1491,32 +1510,12 @@ void snap_init::remove_terminated_services()
     {
         return s->has_stopped();
     };
-#if 0
-    service::vector_t stopped_services;
-    std::copy_if( f_service_list.begin(), f_service_list.end(), std::back_inserter(stopped_services), if_stopped );
-
-    // Go through each stopped service and make sure anything that depends on it also has stopped
-    //
-    for( const auto& svc : stopped_services )
-    {
-        service::vector_t prereqs_list;
-        get_prereqs_list( svc->get_service_name(), prereqs_list );
-        for( const auto& dep_svc : prereqs_list )
-        {
-            if( !dep_svc->has_stopped() )
-            {
-                SNAP_LOG_TRACE("snap_init::remove_terminated_services(): calling set_stopping for service '")(dep_svc->get_service_name())("'");
-                dep_svc->set_stopping();
-            }
-        }
-    }
-#endif
 
     // Now remove the stopped services from the main list
     //
     f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
 
-    if(f_service_list.empty())
+    if( f_service_list.empty() && if_stopped(f_connection_service) )
     {
         SNAP_LOG_TRACE("snap_init::remove_terminated_services(): service list empty!");
         // no more services, also remove our other connections so
@@ -1532,6 +1531,7 @@ void snap_init::remove_terminated_services()
             f_communicator->remove_connection(f_listener_connection);
         }
     }
+#if 0
     else
     {
         SNAP_LOG_TRACE("**** snap_init::remove_terminated_services(): service list NOT empty:");
@@ -1540,6 +1540,7 @@ void snap_init::remove_terminated_services()
             SNAP_LOG_TRACE("******* service '")(svc->get_service_name())("' is still in the list!");
         }
     }
+#endif
 }
 
 
@@ -1697,12 +1698,15 @@ void snap_init::log_selected_servers() const
 {
     std::stringstream ss;
     ss << "Enabled servers:";
-    //
-    for( auto const & opt : f_service_list )
+
+    auto log_service_name = [&](auto const& opt)
     {
         ss << " [" << opt->get_service_name() << "]";
-    }
-    //
+    };
+
+    std::for_each( std::begin(f_service_list), std::end(f_service_list), log_service_name );
+    log_service_name( f_connection_service );
+
     SNAP_LOG_INFO(ss.str());
 }
 
@@ -1716,8 +1720,12 @@ void snap_init::get_prereqs_list( const QString& service_name, service::vector_t
 {
     ret_list.clear();
     auto const the_service( get_service(service_name) );
+    if( !the_service ) return;
+
     for( auto const service : f_service_list )
     {
+        if( !service ) continue;
+
         //SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
         //if( the_service->is_dependency_of( service->get_service_name() ) )
         if( service->is_dependency_of( the_service->get_service_name() ) )
@@ -1733,12 +1741,13 @@ void snap_init::get_prereqs_list( const QString& service_name, service::vector_t
  */
 service::pointer_t snap_init::get_service( const QString& service_name ) const
 {
-    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(),
-    [service_name]( const auto& svc )
+    auto get_service_name = [service_name]( const auto& svc )
     {
         return svc->get_service_name() == service_name;
-    });
-
+    };
+    //
+    auto iter = std::find_if( f_service_list.begin(), f_service_list.end(), get_service_name );
+    //
     if( iter == f_service_list.end() )
     {
         return service::pointer_t();
@@ -1785,12 +1794,15 @@ void snap_init::terminate_services()
     // make sure that any death from now on marks the services as
     // done
     //
-    for( auto s : f_service_list )
+    auto stop_service = [&]( auto const& s )
     {
         SNAP_LOG_TRACE("snap_init::terminate_services(): calling set_stopping for service '")(s->get_service_name())("'");
         s->clear_queue();
         s->set_stopping();
-    }
+    };
+
+    stop_service( f_connection_service );
+    std::for_each( std::begin(f_service_list), std::end(f_service_list), stop_service );
 
     // set_stopping() immediately marks certain services as dead
     // if they were not running, remove them immediately in case
@@ -1802,9 +1814,10 @@ void snap_init::terminate_services()
     // if we still have at least one service it has to be the
     // snapcommunicator service so we can send a STOP command
     //
-    if(!f_service_list.empty())
+    SNAP_LOG_TRACE( "snap_init::terminate_services(): f_service_list.size() = ")(f_service_list.size());
+    if( f_service_list.empty() )
     {
-        if(f_listener_connection)
+        if( f_listener_connection )
         {
             // by sending UNREGISTER to snapcommunicator, it will also
             // assume that a STOP message was sent and thus it will
@@ -1975,10 +1988,20 @@ void snap_init::start()
     f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
     f_lock_file.flush();
 
+    // We have a connection service, so we want to wake that
+    // service first and once that is dealt with, we wake up the
+    // other services (i.e. on the ACCEPT call)
+    //
+    if( !f_connection_service )
+    {
+        common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
+        snap::NOTREACHED();
+    }
+
     // check whether all executables are available
     //
     bool failed(false);
-    for( auto s : f_service_list )
+    auto check_exists = [&]( auto const& s )
     {
         if(!s->exists())
         {
@@ -1994,20 +2017,14 @@ void snap_init::start()
             SNAP_LOG_FATAL(msg);
             syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
         }
-    }
-    if(failed)
+    };
+    //
+    std::for_each( std::begin(f_service_list), std::end(f_service_list), check_exists );
+    check_exists( f_connection_service );
+    //
+    if( failed )
     {
         common::fatal_error(QString("Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location."));
-        snap::NOTREACHED();
-    }
-
-    // Assuming we have a connection service, we want to wake that
-    // service first and once that is dealt with, we wake up the
-    // other services (i.e. on the ACCEPT call)
-    //
-    if(!f_connection_service)
-    {
-        common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
         snap::NOTREACHED();
     }
 
@@ -2147,7 +2164,7 @@ void snap_init::stop()
 
     QString udp_addr;
     int udp_port;
-    get_addr_port_for_snap_communicator(udp_addr, udp_port, true);
+    get_addr_port_for_snap_communicator( udp_addr, udp_port );
 
     // send the UDP message now
     //
@@ -2196,52 +2213,27 @@ void snap_init::stop()
 }
 
 
-void snap_init::get_addr_port_for_snap_communicator(QString & udp_addr, int & udp_port, bool default_to_snap_init)
+void snap_init::get_addr_port_for_snap_communicator( QString & udp_addr, int & udp_port )
 {
-    // defaults UDP for direct snapinit STOP signal
-    //
-    if(default_to_snap_init)
+    if( !f_connection_service )
     {
-        // get default from the snapinit.conf file
-        //
-        udp_addr = f_udp_addr;
-        udp_port = f_udp_port;
-    }
-    else
-    {
-        // default for snapcommunicator
-        //
-        udp_addr = "127.0.0.1";
-        udp_port = 4041;
+        common::fatal_error("Connection service has not yet been initialized!");
+        snap::NOTREACHED();
     }
 
-    // if we have snapcommunicator in our services, then we can send
-    // a signal to that process, in which case we want to gather the
-    // IP and port from that configuration file
+    // we can send a UDP message to snapcommunicator, only we need
+    // the address and port and those are defined in the
+    // snapcommunicator settings
     //
-    service::vector_t::const_iterator snapcommunicator(std::find_if(
-            f_service_list.begin()
-          , f_service_list.end()
-          , [](service::pointer_t const & s)
-            {
-                return s->get_service_name() == "snapcommunicator";
-            }));
-    if(snapcommunicator != f_service_list.end())
+    QString snapcommunicator_config_filename(f_connection_service->get_config_filename());
+    if(snapcommunicator_config_filename.isEmpty())
     {
-        // we can send a UDP message to snapcommunicator, only we need
-        // the address and port and those are defined in the
-        // snapcommunicator settings
-        //
-        QString snapcommunicator_config_filename((*snapcommunicator)->get_config_filename());
-        if(snapcommunicator_config_filename.isEmpty())
-        {
-            // in case it was not defined, use the default
-            snapcommunicator_config_filename = "/etc/snapwebsites/snapcommunicator.conf";
-        }
-        snap::snap_config snapcommunicator_config;
-        snapcommunicator_config.read_config_file( snapcommunicator_config_filename.toUtf8().data() );
-        tcp_client_server::get_addr_port(snapcommunicator_config["signal"], udp_addr, udp_port, "udp");
+        // in case it was not defined, use the default
+        snapcommunicator_config_filename = "/etc/snapwebsites/snapcommunicator.conf";
     }
+    snap::snap_config snapcommunicator_config;
+    snapcommunicator_config.read_config_file( snapcommunicator_config_filename.toUtf8().data() );
+    tcp_client_server::get_addr_port(snapcommunicator_config["signal"], udp_addr, udp_port, "udp");
 }
 
 

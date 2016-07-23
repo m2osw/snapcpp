@@ -81,6 +81,7 @@ namespace
 {
     int64_t const SNAPINIT_DELAY = 1000000LL;    // 1 second timeout (microseconds)
     int const STARTING_TIMEOUT   = 30;           // Give it 30 seconds.
+    int const PAUSED_TIMEOUT     = 10;           // How long to wait before restarting
 }
 
 
@@ -632,16 +633,17 @@ void service::get_depends_list()
     if( f_depends_list.empty() )
     {
         auto const snap_init( f_snap_init.lock() );
-        for( auto const & service_name : f_dep_name_list )
-        {
-            auto const svc( snap_init->get_service( service_name ) );
-            if( !svc )
+        std::for_each( std::begin(f_dep_name_list), std::end(f_dep_name_list),
+            [&]( auto const& service_name )
             {
-                common::fatal_error( QString("Dependency service '%1' not found!").arg(service_name) );
-                snap::NOTREACHED();
-            }
-            f_depends_list.push_back( svc );
-        }
+                auto const svc( snap_init->get_service( service_name ) );
+                if( !svc )
+                {
+                    common::fatal_error( QString("Dependency service '%1' not found!").arg(service_name) );
+                    snap::NOTREACHED();
+                }
+                f_depends_list.push_back( svc );
+            });
     }
 }
 
@@ -664,7 +666,7 @@ void service::push_state( const state_t state )
     //
     set_timeout_delay( SNAPINIT_DELAY );
 
-    SNAP_LOG_TRACE("service::push_state() state '")(state_to_string(state))("' for service: ")(f_service_name)(", queue size b4 push=")(f_queue.size());
+    //SNAP_LOG_TRACE("service::push_state() state '")(state_to_string(state))("' for service: ")(f_service_name)(", queue size b4 push=")(f_queue.size());
     f_queue.emplace( *(f_func_map.find(state)) );
 }
 
@@ -712,7 +714,7 @@ void service::process_timeout()
     }
 
     auto f( f_queue.front() );
-    SNAP_LOG_TRACE("service::process_timeout() processing state '")(state_to_string(f.first))("' for service: ")(f_service_name)(", size=")(f_queue.size());
+    //SNAP_LOG_TRACE("service::process_timeout() processing state '")(state_to_string(f.first))("' for service: ")(f_service_name)(", size=")(f_queue.size());
     f_queue.pop();
 
     // Record where we are
@@ -734,14 +736,17 @@ void service::process_timeout()
  */
 bool service::service_may_have_died() const
 {
-#if 0
     // if this process was not even started, it could not have died
     //
-    if( f_current_state != state_t::running )
+    if( f_current_state == state_t::not_started )
     {
         return false;
     }
-#endif
+
+    if( paused() || is_pausing() )
+    {
+        return false;
+    }
 
     // no matter what, if we are still running, there is nothing
     // for us to do here
@@ -1326,7 +1331,6 @@ bool service::run()
     {
         // here we are considered started and running
         //
-        f_started = true;
         return true;
     }
 }
@@ -1410,9 +1414,6 @@ bool service::is_running() const
     }
 
     // process is not running anymore
-    //
-    // IMPORTANT NOTE: however, we keep f_started as true because the
-    //                 service_may_have_died() requires it that way
     //
     const_cast<service *>(this)->f_old_pid = f_pid;
     const_cast<service *>(this)->f_pid = 0;
@@ -1525,6 +1526,7 @@ void service::init_functions()
             [&]()
             {
                 SNAP_LOG_TRACE("state_t::started() service '")(f_service_name)("'.");
+                f_paused = false;
             }
         },
         {
@@ -1584,7 +1586,14 @@ void service::init_functions()
                 //       is_running() function returns false.)
                 //
                 SNAP_LOG_TRACE("Service '")(f_service_name)("' cannot be started, so failed.");
-                push_state( state_t::failing );
+                if( f_paused )
+                {
+                    push_state( state_t::paused );
+                }
+                else
+                {
+                    push_state( state_t::failing );
+                }
             }
         },
         {
@@ -1613,7 +1622,14 @@ void service::init_functions()
                 // Then...try again.
                 //
                 SNAP_LOG_TRACE("Service '")(f_service_name)("' cannot be started, so failed.");
-                push_state( state_t::failing );
+                if( f_paused )
+                {
+                    push_state( state_t::paused );
+                }
+                else
+                {
+                    push_state( state_t::failing );
+                }
             }
         },
         {
@@ -1704,6 +1720,59 @@ void service::init_functions()
         },
 
         /*********************************************************************
+         * Pause the service
+         *********************************************************************/
+        {
+            state_t::paused,
+            [&]()
+            {
+                SNAP_LOG_INFO("state_t::paused() service '")(f_service_name)("'.");
+                f_paused = true;
+                if( --f_timeout_count <= 0 )
+                {
+                    f_timeout_count = PAUSED_TIMEOUT;
+                    // Try running the process again.
+                    //
+                    push_state( state_t::starting );
+                }
+                else
+                {
+                    SNAP_LOG_TRACE("state_t::failed(): f_timeout_count=")(f_timeout_count);
+                    push_state( state_t::paused );
+                }
+            }
+        },
+        {
+            state_t::pausing,
+            [&]()
+            {
+                if( is_running() )
+                {
+                    if( f_stopping_signal == 0 || f_stopping_signal == SIGCHLD )
+                    {
+                        f_stopping_signal = SIGTERM;
+                    }
+                    else if( f_stopping_signal == SIGTERM )
+                    {
+                        f_stopping_signal = SIGKILL;
+                    }
+                    //
+                    if( !kill_process() )
+                    {
+                        push_state( state_t::dead );
+                        return;
+                    }
+                    //
+                    push_state( state_t::pausing );
+                    return;
+                }
+                //
+                f_timeout_count = PAUSED_TIMEOUT;
+                push_state( state_t::paused );
+            }
+        },
+
+        /*********************************************************************
          * Fail the service
          *********************************************************************/
         {
@@ -1735,6 +1804,8 @@ void service::init_functions()
                 //
                 if( --f_timeout_count <= 0 )
                 {
+                    f_timeout_count = -1;
+
                     // Try running the process again.
                     //
                     push_state( state_t::starting );
@@ -1752,26 +1823,6 @@ void service::init_functions()
             {
                 SNAP_LOG_TRACE("state_t::failing(): service '")(f_service_name)("' is marked failing.");
                 set_timeout_delay(SNAPINIT_DELAY);
-                if( is_running() )
-                {
-                    if( f_stopping_signal == 0 || f_stopping_signal == SIGCHLD )
-                    {
-                        f_stopping_signal = SIGTERM;
-                    }
-                    else if( f_stopping_signal == SIGTERM )
-                    {
-                        f_stopping_signal = SIGKILL;
-                    }
-                    //
-                    if( !kill_process() )
-                    {
-                        push_state( state_t::dead );
-                        return;
-                    }
-                    //
-                    push_state( state_t::failing );
-                    return;
-                }
                 //
                 if( has_failed() )
                 {
@@ -1861,6 +1912,12 @@ void service::set_starting()
         return;
     }
 
+    if( is_starting() )
+    {
+        SNAP_LOG_TRACE("service::set_starting() service '")(f_service_name)("' is starting, so returning.");
+        return;
+    }
+
     //SNAP_LOG_TRACE("service::set_starting() for service '")(f_service_name)("'.");
 
     f_stopping_signal = 0;
@@ -1870,6 +1927,12 @@ void service::set_starting()
     set_timeout_date(-1); // ignore any date timeout
 
     push_state( state_t::starting );
+}
+
+
+bool service::is_starting() const
+{
+    return f_current_state == state_t::starting;
 }
 
 
@@ -1885,6 +1948,8 @@ QString service::state_to_string( state_t const state )
         case state_t::starting_with_listener    : retval = "starting_with_listener";    break;
         case state_t::started                   : retval = "started";                   break;
         case state_t::running                   : retval = "running";                   break;
+        case state_t::paused                    : retval = "paused";                    break;
+        case state_t::pausing                   : retval = "pausing";                   break;
         case state_t::stopping                  : retval = "stopping";                  break;
         case state_t::stopped                   : retval = "stopped";                   break;
         case state_t::dead                      : retval = "dead";                      break;
@@ -1952,8 +2017,36 @@ void service::set_stopping()
 }
 
 
+void service::set_pausing()
+{
+    if( is_pausing() || paused() )
+    {
+        return;
+    }
+
+    push_state( state_t::pausing );
+}
+
+
+bool service::is_pausing() const
+{
+    return f_current_state == state_t::pausing;
+}
+
+
+bool service::paused() const
+{
+    return f_current_state == state_t::paused;
+}
+
+
 void service::set_failing()
 {
+    if( is_failing() || failed() || is_dead() || has_stopped() || is_stopping() )
+    {
+        return;
+    }
+
     SNAP_LOG_TRACE("service::set_failing() stopping service '")(f_service_name)("'");
 
     // Stop all prereqs
@@ -1963,7 +2056,7 @@ void service::set_failing()
     {
         if( !prereq->is_connection_required() )
         {
-            prereq->set_failing();
+            prereq->set_pausing();
         }
     }
 

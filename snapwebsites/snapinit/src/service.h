@@ -65,6 +65,8 @@ public:
         starting_with_listener,
         started,
         running,
+        paused,
+        pausing,
         stopping,
         stopped,
         dead,
@@ -94,11 +96,16 @@ public:
     state_t                     previous_state() const  { return f_previous_state; }
 
     void                        set_starting();
+    bool                        is_starting() const;
     bool                        is_running() const;
 
     void                        set_stopping();
     bool                        is_stopping() const;
     bool                        has_stopped() const;
+
+    void                        set_pausing();
+    bool                        is_pausing() const;
+    bool                        paused() const;
 
     void                        set_failing();
     bool                        is_failing() const;
@@ -168,8 +175,6 @@ private:
     int                         f_recovery = 0;         // in seconds
     QString                     f_safe_message;
     rlim_t                      f_coredump_limit = 0;   // avoid core dump files by default
-    bool                        f_started = false;
-    bool                        f_failed = false;
     bool                        f_debug = false;
     bool                        f_required = false;
     int                         f_stopping_signal = 0;
@@ -184,6 +189,7 @@ private:
     int64_t                     f_timestamp = 0LL;
 
     int                         f_timeout_count = 0;
+    bool                        f_paused = false;
 
     // For future refactoring. Not yet implemented.
     //
