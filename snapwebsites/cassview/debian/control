@@ -1,12 +1,22 @@
 Source: cassview
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, libadvgetopt-dev (>= 1.0.15.231~trusty),
-    qt5-default, libqtwebkit-dev, doxygen, graphviz, zip,
-    libxml2-utils, snapcmakemodules (>= 1.0.23.230~trusty),
-    libqtcassandra-dev (>= 0.5.7), libcontrolledvars-dev (>= 1.4.15.230~trusty),
-    libsnapwebsites-dev (>= 1.0.0.8~xenial), liblog4cplus-dev (>= 1.2.0),
-    libtld-dev (>= 1.4.21.92~trusty), libqtserialization-dev (>= 0.1.16.231~trusty)
+Build-Depends: debhelper,
+    cmake,
+    doxygen,
+    graphviz,
+    libxml2-utils,
+    libqtwebkit-dev,
+    qt5-default,
+    zip,
+    libadvgetopt-dev (>= 1.0.15.231~trusty),
+    libcontrolledvars-dev (>= 1.4.15.230~trusty),
+    liblog4cplus-dev (>= 1.2.0),
+    libqtcassandra-dev (>= 0.5.7),
+    libqtserialization-dev (>= 0.1.16.231~trusty),
+    libsnapwebsites-dev (>= 1.0.0.8~xenial),
+    libtld-dev (>= 1.4.21.92~trusty),
+    snapcmakemodules (>= 1.0.23.230~trusty)
 Standards-Version: 3.9.4
 Section: admin
 Homepage: http://www.snapwebsites.org/

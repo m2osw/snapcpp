@@ -147,6 +147,7 @@ a server.
 # | tripwire      | check that no files gets changed          | All   |
 # | vpn_client    | tinc / openvpn                            | All   |
 # | vpn_server    | tinc / openvpn                            | All   |
+# | watchdog      | snapwatchdog                              | All   |
 # +===============+============================ TODO =========+=======+
 # +===============+===========================================+=======+
 #

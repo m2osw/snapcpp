@@ -1,16 +1,24 @@
 Source: snapbackend
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, qt5-default, libxml2-utils, zip,
-    snapcmakemodules (>= 1.0.23.231~trusty),
-    snapbase-dev (>= 1.0.0.1~xenial),
+Build-Depends: debhelper,
+    cmake,
+    doxygen,
+    graphviz,
+    libxml2-utils,
+    qt5-default,
+    zip,
     libadvgetopt-dev (>= 0.0.1~xenial),
-    libtld-dev (>= 0.0.1~xenial),
+    libas2js-dev (>= 0.1.14.122~xenial),
     liblog4cplus-dev (>= 0.0.1~xenial),
     libqtcassandra-dev (>= 0.0.1~xenial),
     libqtserialization-dev (>= 0.0.1~xenial),
     libsnapwebsites-dev (>= 0.0.1~xenial),
+    libtld-dev (>= 0.0.1~xenial),
     libzipios-dev (>= 0.0.1~xenial),
+    snapbase-dev (>= 1.0.0.1~xenial),
+    snapcmakemodules (>= 1.0.23.231~trusty),
+    snapinit,
     snapmanagercgi (>= 0.0.1~xenial)
 Standards-Version: 3.9.4
 Section: libs
@@ -24,7 +32,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
     snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy
 Recommends: snapfirewall
-Suggests: snapserver, snapmanagercgi
+Suggests: snapbackend-doc, snapserver, snapmanagercgi
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -35,5 +43,19 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  .
  Package containing the backend server which runs cleanup and other important
  batch duties.
+
+Package: snapbackend-doc
+Section: admin
+Architecture: all
+Depends: ${misc:Depends}
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to use to
+ create their own extensions.
+ .
+ Documentation package.
 
 # vim: ts=4 sw=4 et

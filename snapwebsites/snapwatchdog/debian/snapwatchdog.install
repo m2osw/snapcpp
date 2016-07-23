@@ -1,4 +1,4 @@
 usr/bin/*
-conf/snapwatchdog.properties etc/snapwebsites/
-conf/snapwatchdog.conf etc/snapwebsites/
 usr/share/snapwebsites/*
+conf/snapwatchdog.properties conf/snapwatchdog.conf etc/snapwebsites/
+conf/service-watchdog.xml etc/snapwebsites/snapinit.d/

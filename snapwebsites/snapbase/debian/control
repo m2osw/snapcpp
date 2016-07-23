@@ -1,7 +1,10 @@
 Source: snapbase
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, doxygen, graphviz,
+Build-Depends: debhelper,
+    cmake,
+    doxygen,
+    graphviz,
     snapcmakemodules (>= 1.0.23.231~trusty)
 Standards-Version: 3.9.4
 Section: libs

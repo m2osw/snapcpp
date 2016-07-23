@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
+<service name="snapwatchdog" disabled="disabled">
+  <command>/usr/bin/snapwatchdogserver</command>
+  <priority>90</priority>
+  <config>/etc/snapwebsites/snapwatchdog.conf</config>
+  <recovery>600</recovery>
+  <user>snapwebsites</user>
+  <group>snapwebsites</group>
+  <dependencies>
+    <dependency>snapcommunicator</dependency>
+    <dependency>snapdbproxy</dependency>
+  </dependencies>
+</service>
+<!--
+vim: ts=2 sw=2 et
+-->

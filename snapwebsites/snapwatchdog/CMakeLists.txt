@@ -55,17 +55,17 @@ set( CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
 )
 
-find_package(  AdvGetOpt        REQUIRED )
-find_package(  LibTLD           REQUIRED )
-find_package(  log4cplus        REQUIRED )
-find_package(  Qt5Core          REQUIRED )
-find_package(  Qt5Network       REQUIRED )
-find_package(  Qt5Xml           REQUIRED )
-find_package(  Qt5XmlPatterns   REQUIRED )
-find_package(  QtCassandra      REQUIRED )
-find_package(  QtSerialization  REQUIRED )
-find_package(  SnapCMakeModules REQUIRED )
-find_package(  SnapWebsites     REQUIRED )
+find_package( AdvGetOpt        REQUIRED )
+find_package( LibTLD           REQUIRED )
+find_package( log4cplus        REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Network       REQUIRED )
+find_package( Qt5Xml           REQUIRED )
+find_package( Qt5XmlPatterns   REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( QtSerialization  REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapWebsites     REQUIRED )
 
 SnapGetVersion( SNAPWATCHDOG ${CMAKE_CURRENT_SOURCE_DIR} )
 
@@ -108,54 +108,6 @@ add_subdirectory(src)           # Actual Snap! Websites server
 ##
 ## Analyse xml and javascript
 ##
-#snap_build_xml_targets()
-#snap_build_js_targets()
-
-##
-## Install run script
-##
-#install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} )
-
-##
-## Code Analysis
-##
-## TODO:
-## Look into a way to compile everything using the -Weffc++ flag because that
-## gives us many interesting warnings;
-##
-#add_custom_target(snap_code_analysis
-#    COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
-#    # Count things and report potential problems with different classes
-#    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
-#    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
-#    # Boost inspect tool that reports different problems
-#    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
-#    COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
-#    # Static analysis of the code
-#    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
-#    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
-#    # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
-#    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
-#
-#    # All of these are expected to work on source code so make sure we're
-#    # in the source code top directory
-#    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#)
-
-#add_custom_target(snap_javascript_analysis
-#    # Compiler need to be scripts that get called on each compile
-#    # because otherwise errors will pile up! This will require us
-#    # to move to 14.10 so we get the latest working version of
-#    # javascript closure compiler.
-#
-#    # Lint the JavaScript code to find additional "errors"
-#    COMMAND sh tests/js-lint.sh "${PROJECT_BINARY_DIR}/analysis"
-#    # Compile the JavaScript code to verify most everything (strong typing, etc.)
-#    COMMAND sh tests/js-compile.sh "${PROJECT_BINARY_DIR}/analysis"
-#
-#    # All of these are expected to work on source code so make sure we're
-#    # in the source code top directory
-#    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#)
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et nocindent

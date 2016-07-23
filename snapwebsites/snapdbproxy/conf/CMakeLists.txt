@@ -29,6 +29,9 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+snap_validate_xml( service-snapdbproxy.xml snapinit.xsd )
+
+
 #################################################################################
 ## Config files
 ##
@@ -42,6 +45,18 @@ install(
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Service definitions
+##
+install(
+    FILES 
+        service-snapdbproxy.xml
+
+    DESTINATION
+        share/snapwebsites/conf/snapinit.d
 )
 
 

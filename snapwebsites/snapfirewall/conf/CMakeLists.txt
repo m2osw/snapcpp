@@ -32,6 +32,9 @@
 
 snap_validate_xml( bundle-firewall.xml bundles.xsd )
 
+snap_validate_xml( service-snapfirewall.xml snapinit.xsd )
+
+
 #################################################################################
 ## Config files
 ##
@@ -66,6 +69,18 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
+)
+
+
+#################################################################################
+## Service definitions
+##
+install(
+    FILES
+        service-snapfirewall.xml
+
+    DESTINATION
+        share/snapwebsites/conf/snapinit.d
 )
 
 

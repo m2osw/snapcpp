@@ -1,2 +1,3 @@
-debian/tmp/usr/bin/snapserver bin/cxpath debian/usr/bin/snapimg debian/usr/bin/snapexpr usr/bin
+usr/bin/*
 conf/snapserver.conf /etc/snapwebsites
+conf/service-snapserver.xml etc/snapwebsites/snapinit.d/

@@ -40,6 +40,8 @@ snap_validate_xml( bundle-tripwire.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
 
+snap_validate_xml( service-snapmanagerdaemon.xml snapinit.xsd )
+
 #################################################################################
 ## Config files
 ##
@@ -86,6 +88,18 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
+)
+
+
+#################################################################################
+## Service definitions
+##
+install(
+    FILES 
+        service-snapmanagerdaemon.xml
+
+    DESTINATION
+        share/snapwebsites/conf/snapinit.d
 )
 
 

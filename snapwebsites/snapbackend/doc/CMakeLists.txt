@@ -1,11 +1,9 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      CMakeLists.txt
 #
 # Description:
-#      The Snap! Websites Server. The server is the main() of the Snap!
-#      environment. Most everything is however defined in the
-#      libsnapwebsites.so library (see lib/*).
+#      Create the documentation of this package.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -31,27 +29,16 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(snapbackend)
 
-add_executable(${PROJECT_NAME}
-    snapbackend.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${AS2JS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    dl
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+##
+## Documentation
+##
+AddDoxygenTarget(
+    snapbackend
+    ${SNAPBACKEND_VERSION_MAJOR}
+    ${SNAPBACKEND_VERSION_MINOR}
+    ${SNAPBACKEND_VERSION_PATCH}
 )
 
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et nocindent

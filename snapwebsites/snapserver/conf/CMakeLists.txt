@@ -31,6 +31,8 @@
 
 snap_validate_xml( bundle-snapserver.xml bundles.xsd )
 
+snap_validate_xml( service-snapserver.xml snapinit.xsd )
+
 
 #################################################################################
 ## Config files
@@ -58,6 +60,18 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
+)
+
+
+#################################################################################
+## Service definitions
+##
+install(
+    FILES 
+        service-snapserver.xml
+
+    DESTINATION
+        share/snapwebsites/conf/snapinit.d
 )
 
 

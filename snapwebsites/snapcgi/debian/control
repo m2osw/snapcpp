@@ -1,17 +1,22 @@
 Source: snapcgi
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, qt5-default, libxml2-utils, zip, doxygen,
+Build-Depends: debhelper,
+    cmake,
+    doxygen,
     graphviz,
-    snapcmakemodules (>= 1.0.23.231~xenial),
-    snapbase-dev (>= 1.0.0~xenial),
+    libxml2-utils,
+    qt5-default,
+    zip,
     libadvgetopt-dev (>= 0.0.1~xenial),
-    libtld-dev (>= 0.0.1~xenial),
     liblog4cplus-dev (>= 0.0.1~xenial),
     libqtcassandra-dev (>= 0.0.1~xenial),
     libqtserialization-dev (>= 0.0.1~xenial),
     libsnapwebsites-dev (>= 0.0.1~xenial),
+    libtld-dev (>= 0.0.1~xenial),
     libzipios-dev (>= 0.0.1~xenial),
+    snapbase-dev (>= 1.0.0~xenial),
+    snapcmakemodules (>= 1.0.23.231~xenial),
     snapmanagercgi (>= 0.0.1~xenial)
 Standards-Version: 3.9.4
 Section: libs

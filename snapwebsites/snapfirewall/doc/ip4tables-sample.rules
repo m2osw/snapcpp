@@ -1,15 +1,3 @@
-#
-# tcp        0      0 127.0.0.1:4004          0.0.0.0:*               LISTEN      2555/snapserver
-# tcp        0      0 0.0.0.0:655             0.0.0.0:*               LISTEN      1306/tincd
-# tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      980/sshd
-# tcp        0      0 0.0.0.0:25              0.0.0.0:*               LISTEN      1265/master
-# tcp6       0      0 :::80                   :::*                    LISTEN      1396/apache2
-# tcp6       0      0 :::22                   :::*                    LISTEN      980/sshd
-# tcp6       0      0 :::25                   :::*                    LISTEN      1265/master
-# tcp6       0      0 :::443                  :::*                    LISTEN      1396/apache2
-# udp        0      0 0.0.0.0:655             0.0.0.0:*               LISTEN      1306/tincd
-#
-
 
 *filter
 :INPUT ACCEPT [0:0]

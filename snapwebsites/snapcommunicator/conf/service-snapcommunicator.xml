@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
+<service name="snapcommunicator" required="required" disabled="disabled">
+  <priority>-20</priority>
+  <config>/etc/snapwebsites/snapcommunicator.conf</config>
+  <connect>127.0.0.1:4040</connect>
+  <wait>1</wait>
+  <user>snapwebsites</user>
+  <group>snapwebsites</group>
+</service>
+<!--
+vim: ts=2 sw=2 et
+-->

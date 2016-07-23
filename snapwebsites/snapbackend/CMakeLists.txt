@@ -39,9 +39,7 @@ project(snapbackend_project)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
-set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
-
+find_package( AdvGetOpt        REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( Qt5Core          REQUIRED )
@@ -49,13 +47,16 @@ find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
+find_package( As2Js            REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
 SnapGetVersion( SNAPBACKEND ${CMAKE_CURRENT_SOURCE_DIR} )
 
-include_directories( SYSTEM
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Xml_INCLUDE_DIRS}
+include_directories(
+    SYSTEM
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Xml_INCLUDE_DIRS}
 )
 set( QT_LIBRARIES
     Qt5::Core
@@ -66,7 +67,8 @@ include_directories(
 )
 
 add_subdirectory( conf )
-add_subdirectory( src )
+add_subdirectory( src  )
+add_subdirectory( doc  )
 
 snap_build_xml_targets()
 
