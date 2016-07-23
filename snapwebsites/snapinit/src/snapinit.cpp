@@ -1214,7 +1214,7 @@ void snap_init::init_message_functions()
                 //
                 if(getuid() == 0)
                 {
-                    system("systemctl restart snapinit");
+                    snap::NOTUSED(system("systemctl restart snapinit"));
                 }
             }
         },
@@ -1350,6 +1350,7 @@ void snap_init::register_died_service( service::pointer_t svc )
 {
     if(f_listener_connection)
     {
+        SNAP_LOG_TRACE("snap_init::register_died_service(): service '")(svc->get_service_name())("' died.");
         snap::snap_communicator_message register_snapinit;
         register_snapinit.set_command("DIED");
         register_snapinit.set_service(".");

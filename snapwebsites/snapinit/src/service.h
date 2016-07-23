@@ -147,6 +147,7 @@ private:
     void                        mark_process_as_stopped( const bool from_set_stopping );
     void                        mark_process_as_dead();
     bool                        has_failed();
+    bool                        kill_process();
 
     std::weak_ptr<snap_init>    f_snap_init;
     QString                     f_full_path;

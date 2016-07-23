@@ -734,12 +734,14 @@ void service::process_timeout()
  */
 bool service::service_may_have_died() const
 {
+#if 0
     // if this process was not even started, it could not have died
     //
     if( f_current_state != state_t::running )
     {
         return false;
     }
+#endif
 
     // no matter what, if we are still running, there is nothing
     // for us to do here
@@ -759,7 +761,7 @@ bool service::service_may_have_died() const
  */
 void service::mark_service_as_dead()
 {
-    SNAP_LOG_TRACE("service::mark_service_as_stopped(): service='")(f_service_name)("'.");
+    SNAP_LOG_TRACE("service::mark_service_as_dead(): service='")(f_service_name)("'.");
 
     // if this was a service with a connection (snapcommunicator) then
     // we indicate that it died
@@ -836,7 +838,7 @@ void service::mark_process_as_dead()
 
     // Mark service as failing, and attempt to restart
     //
-    push_state( state_t::failing );
+    set_failing();
 }
 
 
@@ -1567,7 +1569,7 @@ void service::init_functions()
                     if( run() )
                     {
                         SNAP_LOG_TRACE("state_t::starting_with_listener() service '")(f_service_name)("' is running.");
-                        push_state( state_t::started );
+                        push_state( state_t::starting_with_listener );
                         return;
                     }
 
@@ -1682,22 +1684,8 @@ void service::init_functions()
                         (", failed to respond to ")(f_stopping_signal == SIGTERM ? "STOP" : "SIGTERM")
                         (" signal, using `kill -")(f_stopping_signal)("`.");
 
-                int const retval(::kill( f_pid, f_stopping_signal ));
-                if( retval == -1 )
+                if( !kill_process() )
                 {
-                    // This is marked as FATAL because we are about to kill
-                    // that service for good (i.e. we are going to disable
-                    // it and never try to start it again); however snapinit
-                    // itself will continue to run...
-                    //
-                    int const e(errno);
-                    QString msg(QString("Unable to kill service \"%1\", pid=%2! errno=%3 -- %4")
-                            .arg(f_service_name)
-                            .arg(f_pid)
-                            .arg(e)
-                            .arg(strerror(e)));
-                    SNAP_LOG_FATAL(msg);
-                    syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
                     push_state( state_t::dead );
                     return;
                 }
@@ -1733,7 +1721,8 @@ void service::init_functions()
                         return;
                     }
                     //
-                    f_timeout_count = recovery * SNAPINIT_DELAY;
+                    f_timeout_count = recovery; // * SNAPINIT_DELAY;
+                    SNAP_LOG_TRACE("recovery=")(recovery)(", f_timeout_count=")(f_timeout_count);
                 }
 
                 // starting recovery process so reset the failed status
@@ -1752,6 +1741,7 @@ void service::init_functions()
                 }
                 else
                 {
+                    SNAP_LOG_TRACE("state_t::failed(): f_timeout_count=")(f_timeout_count);
                     push_state( state_t::failed );
                 }
             }
@@ -1760,7 +1750,28 @@ void service::init_functions()
             state_t::failing,
             [&]()
             {
+                SNAP_LOG_TRACE("state_t::failing(): service '")(f_service_name)("' is marked failing.");
                 set_timeout_delay(SNAPINIT_DELAY);
+                if( is_running() )
+                {
+                    if( f_stopping_signal == 0 || f_stopping_signal == SIGCHLD )
+                    {
+                        f_stopping_signal = SIGTERM;
+                    }
+                    else if( f_stopping_signal == SIGTERM )
+                    {
+                        f_stopping_signal = SIGKILL;
+                    }
+                    //
+                    if( !kill_process() )
+                    {
+                        push_state( state_t::dead );
+                        return;
+                    }
+                    //
+                    push_state( state_t::failing );
+                    return;
+                }
                 //
                 if( has_failed() )
                 {
@@ -1774,6 +1785,32 @@ void service::init_functions()
             }
         },
     };
+}
+
+
+
+bool service::kill_process()
+{
+    int const retval(::kill( f_pid, f_stopping_signal ));
+    if( retval == -1 )
+    {
+        // This is marked as FATAL because we are about to kill
+        // that service for good (i.e. we are going to disable
+        // it and never try to start it again); however snapinit
+        // itself will continue to run...
+        //
+        int const e(errno);
+        QString msg(QString("Unable to kill service \"%1\", pid=%2! errno=%3 -- %4")
+                .arg(f_service_name)
+                .arg(f_pid)
+                .arg(e)
+                .arg(strerror(e)));
+        SNAP_LOG_FATAL(msg);
+        syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -1924,7 +1961,7 @@ void service::set_failing()
     get_prereqs_list();
     for( auto const & prereq : f_prereqs_list )
     {
-        if( !prereq->has_stopped() && !prereq->is_connection_required() )
+        if( !prereq->is_connection_required() )
         {
             prereq->set_failing();
         }
