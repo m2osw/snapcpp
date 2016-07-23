@@ -30,10 +30,7 @@
 #
 ################################################################################
 
-project( snapmanagercgi_plugins )
-
-# Find includes in corresponding build directories
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+project( manager_plugins )
 
 # Automatically run the moc compiler on qt files
 set( CMAKE_AUTOMOC TRUE )
@@ -47,18 +44,14 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/manager_plugins )
 ################################################################################
 # Allow for #include of other header files available to plugins
 #
-include_directories(
-    ${CMAKE_SOURCE_DIR}/lib
-)
+#include_directories(
+#    #${snapmanager_SOURCE_DIR}
+#)
 
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
 #
-#add_subdirectory(apache2)
-#add_subdirectory(postfix)
-add_subdirectory(self)
-#add_subdirectory(system)
-#add_subdirectory(vpn)
+add_subdirectory(firewall)
 
 
 # vim: ts=4 sw=4 nocindent et

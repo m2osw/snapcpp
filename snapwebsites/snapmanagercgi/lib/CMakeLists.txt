@@ -61,18 +61,8 @@ add_library( ${PROJECT_NAME} SHARED
 )
 
 target_link_libraries( ${PROJECT_NAME}
-    #${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
-    #${LIBTLD_LIBRARIES}
-    Qt5::Core
-    Qt5::Xml
-    Qt5::XmlPatterns
-    #${QTCASSANDRA_LIBRARIES}
-    #${QTSERIALIZATION_LIBRARIES}
-    #${MAGIC_LIBRARY}
-    #${LIBPROCPS_LIBRARIES}
-    #pthread
-    #dl
+    ${QT_LIBRARIES}
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES

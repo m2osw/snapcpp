@@ -1,15 +1,16 @@
 #
 # File:
-#      plugins/antivirus/CMakeLists.txt
+#      manager-plugins/firewall/CMakeLists.txt
 #
 # Description:
-#      Check uploaded files to determine whether they are viruses.
+#      Manage parameters from snapmanager.cgi and snapmanagerdaemon
+#      and their environment.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2014-2016 Made to Order Software Corp.
+#      Copyright (c) 2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -29,9 +30,10 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_antivirus)
+project(plugin_firewall)
 
 find_package( Qt5Core REQUIRED )
+find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39,42 +41,49 @@ include_directories(
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
-    antivirus.qrc
+    firewall.qrc
 )
 
-snap_validate_xml( content.xml                      content/content.dtd )
-
-snap_validate_xml( antivirus-settings-page.xml      editor/editor-form.dtd )
-
-snap_validate_xml( antivirus-settings-parser.xsl    simplified-xslt20.dtd )
 
 
-add_library(antivirus SHARED
-    antivirus.cpp
+add_library(firewall SHARED
+    firewall.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
-    antivirus-settings-page.xml
-    antivirus-settings-parser.xsl
-    antivirus-logo-64x64.png
 )
 
-target_link_libraries(antivirus
-    Qt5::Core
+message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+
+target_link_libraries(firewall
+    #${AS2JS_LIBRARIES}
+    #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
+    #${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    #${LOG4CPLUS_LIBRARY}
+    #${SNAPWEBSITES_LIBRARIES}
+    #${LIBTLD_LIBRARIES}
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( antivirus make_controlled_vars_headers )
+    add_dependencies( firewall make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS antivirus LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS
+        firewall
+
+    LIBRARY DESTINATION
+        ${PLUGIN_INSTALL_DIR}
 )
+file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+
 install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/antivirus
-    FILES_MATCHING PATTERN "*.h"
+    FILES
+        ${HEADER_FILES}
+
+    DESTINATION
+        include/snapmanager/plugins/firewall
 )
 
 # vim: ts=4 sw=4 et

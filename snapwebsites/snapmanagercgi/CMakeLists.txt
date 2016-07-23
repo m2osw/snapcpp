@@ -93,6 +93,7 @@ include_directories(
 ## Compiling
 ##
 add_subdirectory( conf     )          # Configuration files and samples
+add_subdirectory( cmake    )          # CMake helper files
 add_subdirectory( lib      )          # Common code to CGI, daemon, plugins
 add_subdirectory( cgi      )          # The snapmanager.cgi application
 add_subdirectory( daemon   )          # The snapmanagerdaemon to apply commands on any computer

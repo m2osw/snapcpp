@@ -320,6 +320,7 @@ int manager::install_package(std::string const & package_name, std::string const
         p.add_argument("Dpkg::Options::=\"--force-confdef\"");
         p.add_argument("--option");
         p.add_argument("Dpkg::Options::=\"--force-confold\"");
+        p.add_argument("--no-install-recommends");
     }
     p.add_argument(QString::fromUtf8(command.c_str()));
     p.add_argument(QString::fromUtf8(package_name.c_str()));

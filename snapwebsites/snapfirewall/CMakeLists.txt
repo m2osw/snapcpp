@@ -37,8 +37,6 @@ cmake_minimum_required(VERSION 3.5)
 ##
 project(snapfirewall_project)
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
-set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -48,15 +46,22 @@ find_package( AdvGetOpt        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )
+find_package( LibTLD           REQUIRED )
+find_package( log4cplus        REQUIRED )
+find_package( QtSerialization  REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( As2Js            REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
+find_package( SnapManager      REQUIRED )
 
 SnapGetVersion( SNAPFIREWALL ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories(
     ${QTCASSANDRA_INCLUDE_DIRS}
     ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${SNAPMANAGERCGI_INCLUDE_DIR}
 )
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
@@ -67,9 +72,10 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-add_subdirectory( conf  )
-add_subdirectory( src   )
-add_subdirectory( doc   )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
+add_subdirectory( doc             )
 
 snap_build_xml_targets()
 

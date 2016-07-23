@@ -18,7 +18,7 @@
 
 // ourselves
 //
-#include "lib/server_status.h"
+#include "server_status.h"
 
 // snapwebsites lib
 //

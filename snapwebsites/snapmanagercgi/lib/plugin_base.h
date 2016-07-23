@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "lib/server_status.h"
+#include "server_status.h"
 
 #include <snapwebsites/snapwebsites.h>
 

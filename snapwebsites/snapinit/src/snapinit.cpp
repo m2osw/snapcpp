@@ -1162,7 +1162,7 @@ void snap_init::init_message_functions()
 
                 // list of commands understood by snapinit
                 //
-                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STATUS,STOP,UNKNOWN");
+                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,RELOADCONFIG,SAFE,STATUS,STOP,UNKNOWN");
 
                 f_listener_connection->send_message(reply);
             }
@@ -1204,6 +1204,19 @@ void snap_init::init_message_functions()
                 reply.add_parameter("list", services.join(","));
 
                 f_listener_connection->send_message(reply);
+            }
+        },
+        {
+            "RELOADCONFIG",
+            [&]( snap::snap_communicator_message const& )
+            {
+                // we need a full restart in this case (because snapinit
+                // cannot restart itself!)
+                //
+                if(getuid() == 0)
+                {
+                    system("systemctl restart snapinit");
+                }
             }
         },
         {

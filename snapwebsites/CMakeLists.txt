@@ -90,6 +90,8 @@ ConfigureMakeProject( PROJECT_NAME snapdbproxy
 )
 
 ConfigureMakeProject( PROJECT_NAME snapfirewall
+    CONFIG_ARGS
+        -DSNAPMANAGERCGI_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
     DEPENDS libsnapwebsites snapbase snapmanagercgi snapdbproxy
 )
 

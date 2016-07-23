@@ -1,17 +1,15 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      cmake/CMakeLists.txt
 #
 # Description:
-#      The Snap! Websites Server. The server is the main() of the Snap!
-#      environment. Most everything is however defined in the
-#      libsnapwebsites.so library (see lib/*).
+#      Manage cmake modules.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2013-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -31,40 +29,18 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-#################################################################################
-## Snap firewall manager
-##
-project(snapfirewall)
+project(snapmanager_cmake)
 
-add_executable(${PROJECT_NAME}
-    snapfirewall.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${AS2JS_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
+set( INSTALL_FILES
+    SnapManagerConfig.cmake
 )
 
 install(
-    TARGETS
-        ${PROJECT_NAME}
-
-    RUNTIME DESTINATION
-        bin
-)
-
-install(
-    PROGRAMS
-        showfw
+    FILES
+        ${INSTALL_FILES}
 
     DESTINATION
-        bin
+        share/cmake/SnapManager
 )
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et nocindent
