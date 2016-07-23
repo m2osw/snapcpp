@@ -319,7 +319,7 @@ private:
     void                        start();
     void                        restart();
     void                        stop();
-    void                        get_addr_port_for_snap_communicator(QString & udp_addr, int & udp_port, bool default_to_snap_init);
+    void                        get_addr_port_for_snap_communicator( QString & udp_addr, int & udp_port );
     void                        remove_lock(bool force = false) const;
     void                        init_message_functions();
     void                        register_died_service( service::pointer_t svc );

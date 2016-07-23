@@ -59,16 +59,19 @@ public:
     enum class state_t
     {
         not_started,
+        cron_running,
         starting,
         starting_without_listener,
         starting_with_listener,
-        waiting_for_deps,
+        started,
         running,
-        cron_running,
+        paused,
+        pausing,
         stopping,
-        stopping_prereqs,
-        stopped//,
-        //waiting_stop_prereqs
+        stopped,
+        dead,
+        failing,
+        failed
     };
 
     typedef std::shared_ptr<service>        pointer_t;
@@ -86,34 +89,50 @@ public:
     // snap::snap_communicator::snap_timer implementation
     virtual void                process_timeout() override;
 
-    state_t                     state() const;
     bool                        exists() const;
-    bool                        run();
-    bool                        is_running() const;
     bool                        is_service_required();
+
+    state_t                     current_state() const   { return f_current_state;  }
+    state_t                     previous_state() const  { return f_previous_state; }
+
     void                        set_starting();
-    void                        set_restarting();
+    bool                        is_starting() const;
+    bool                        is_running() const;
+
     void                        set_stopping();
     bool                        is_stopping() const;
     bool                        has_stopped() const;
+
+    void                        set_pausing();
+    bool                        is_pausing() const;
+    bool                        paused() const;
+
+    void                        set_failing();
+    bool                        is_failing() const;
+    bool                        failed() const;
+
+    bool                        is_dead() const;
+
+    bool                        cron_task() const;
+
+    bool                        service_may_have_died() const;
+    void                        mark_service_as_dead();
+
     bool                        is_connection_required() const;
     bool                        is_snapdbproxy() const;
     bool                        is_registered() const;
     void                        set_registered( const bool val );
+
     std::string                 get_connect_string() const;
     std::string                 get_snapdbproxy_string() const;
     bool                        is_safe_required() const;
     QString const &             get_safe_message() const;
-    bool                        cron_task() const;
     QString const &             get_config_filename() const;
     QString const &             get_service_name() const;
     pid_t                       get_old_pid() const;
-    bool                        failed() const;
     int                         get_wait_interval() const;
     int                         get_recovery() const;
     int                         get_priority() const;
-    bool                        service_may_have_died() const;
-    void                        mark_service_as_dead();
     bool                        is_dependency_of( const QString& service_name );
     void                        clear_queue();
 
@@ -127,12 +146,15 @@ protected:
 private:
     void                        init_functions();
     void                        push_state( const state_t state );
+    bool                        run();
     bool                        has_cron_elapsed();
     void                        compute_next_tick(bool just_ran);
     void                        get_prereqs_list();
     void                        get_depends_list();
-    void                        mark_process_as_stopped( const bool from_set_stopping = true );
+    void                        mark_process_as_stopped( const bool from_set_stopping );
     void                        mark_process_as_dead();
+    bool                        has_failed();
+    bool                        kill_process();
 
     std::weak_ptr<snap_init>    f_snap_init;
     QString                     f_full_path;
@@ -153,11 +175,9 @@ private:
     int                         f_recovery = 0;         // in seconds
     QString                     f_safe_message;
     rlim_t                      f_coredump_limit = 0;   // avoid core dump files by default
-    bool                        f_started = false;
-    bool                        f_failed = false;
     bool                        f_debug = false;
     bool                        f_required = false;
-    int                         f_stopping = 0;
+    int                         f_stopping_signal = 0;
     QString                     f_snapcommunicator_addr;            // to connect with snapcommunicator
     int                         f_snapcommunicator_port = 4040;     // to connect with snapcommunicator
     QString                     f_snapdbproxy_addr;                 // to connect with snapdbproxy
@@ -167,6 +187,9 @@ private:
     bool                        f_registered = false;               // set to true when service is registered with snapcomm
     bool                        f_restart_requested = false;
     int64_t                     f_timestamp = 0LL;
+
+    int                         f_timeout_count = 0;
+    bool                        f_paused = false;
 
     // For future refactoring. Not yet implemented.
     //
