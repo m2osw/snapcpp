@@ -1498,6 +1498,7 @@ void snap_init::remove_terminated_services()
 
     if(f_service_list.empty())
     {
+        SNAP_LOG_TRACE("snap_init::remove_terminated_services(): service list empty!");
         // no more services, also remove our other connections so
         // we exit the snapcommunicator loop
         //
@@ -1509,6 +1510,14 @@ void snap_init::remove_terminated_services()
         if(f_listener_connection)
         {
             f_communicator->remove_connection(f_listener_connection);
+        }
+    }
+    else
+    {
+        SNAP_LOG_TRACE("**** snap_init::remove_terminated_services(): service list NOT empty:");
+        for( auto const& svc : f_service_list )
+        {
+            SNAP_LOG_TRACE("******* service '")(svc->get_service_name())("' is still in the list!");
         }
     }
 }
@@ -1689,11 +1698,11 @@ void snap_init::get_prereqs_list( const QString& service_name, service::vector_t
     auto const the_service( get_service(service_name) );
     for( auto const service : f_service_list )
     {
-        SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
+        //SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
         //if( the_service->is_dependency_of( service->get_service_name() ) )
         if( service->is_dependency_of( the_service->get_service_name() ) )
         {
-            SNAP_LOG_TRACE("   snap_init::get_prereqs_list(): adding service '")(service->get_service_name());
+            //SNAP_LOG_TRACE("   snap_init::get_prereqs_list(): adding service '")(service->get_service_name());
             ret_list.push_back(service);
         }
     }
@@ -1976,19 +1985,15 @@ void snap_init::start()
     // service first and once that is dealt with, we wake up the
     // other services (i.e. on the ACCEPT call)
     //
-    if(f_connection_service)
+    if(!f_connection_service)
     {
-        f_connection_service->set_timeout_date(snap::snap_child::get_current_date());
-        f_connection_service->set_enable(true);
-        f_connection_service->set_starting();
+        common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
+        snap::NOTREACHED();
     }
-    else
-    {
-        // this call wakes all the other services; it is also called
-        // whenever the connection to snapcommunicator is accepted
-        //
-        wakeup_services();
-    }
+
+    f_connection_service->set_timeout_date(snap::snap_child::get_current_date());
+    f_connection_service->set_enable(true);
+    f_connection_service->set_starting();
 
     // initialize a UDP server as a fallback in case you want to use
     // snapinit without a snapcommunicator server
