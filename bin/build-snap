@@ -18,6 +18,7 @@ TYPE=Debug
 cmake \
 	-DCMAKE_BUILD_TYPE=$TYPE \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
+	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
 	..
 
 make -j 4
