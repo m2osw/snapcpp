@@ -991,7 +991,6 @@ void snap_init::wakeup_services()
         // we can check whether the process is running and if not start
         // it as required by the current status
         //
-        s->set_enable(true);
         s->set_starting();
 
         // if we just started a service that has to send us a SAFE message
@@ -1992,7 +1991,6 @@ void snap_init::start()
     }
 
     f_connection_service->set_timeout_date(snap::snap_child::get_current_date());
-    f_connection_service->set_enable(true);
     f_connection_service->set_starting();
 
     // initialize a UDP server as a fallback in case you want to use
