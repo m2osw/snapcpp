@@ -16,12 +16,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <controlled_vars/controlled_vars_need_init.h>
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_need_enum_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-#include <controlled_vars/controlled_vars_ptr_need_init.h>
-
 #include <QString>
 
 namespace snap
@@ -79,18 +73,14 @@ public:
     logger &        operator () (bool const v);
 
 protected:
-    mutable controlled_vars::flbool_t   f_ignore;
+    mutable bool                        f_ignore = false;
 
 private:
-    typedef controlled_vars::limited_need_enum_init<log_security_t, log_security_t::LOG_SECURITY_NONE, log_security_t::LOG_SECURITY_SECURE> mlog_security_t;
-    typedef controlled_vars::limited_need_enum_init<log_level_t, log_level_t::LOG_LEVEL_OFF, log_level_t::LOG_LEVEL_TRACE> mlog_level_t;
-    typedef controlled_vars::ptr_need_init<char const> mpcchar_t;
-
-    mlog_level_t                        f_log_level;
-    mpcchar_t                           f_file;
-    mpcchar_t                           f_func;
-    controlled_vars::mint32_t           f_line;
-    mlog_security_t                     f_security;
+    log_level_t                         f_log_level = log_level_t::LOG_LEVEL_INFO;
+    char const *                        f_file = nullptr;
+    char const *                        f_func = nullptr;
+    int32_t                             f_line = 1;
+    log_security_t                      f_security = log_security_t::LOG_SECURITY_SECURE;
     QString                             f_message;
 };
 

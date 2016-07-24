@@ -1012,7 +1012,7 @@ private:
         return result;
     }
 
-    mutable controlled_vars::zint32_t   f_pos;
+    mutable int32_t   f_pos = 0;
 } g_tar; // declare statically
 
 

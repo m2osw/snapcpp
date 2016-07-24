@@ -950,7 +950,7 @@ logger::~logger()
             {
                 f_func = "unknown-func";
             }
-            syslog(sll, "%s (%s:%s: %d)", f_message.toUtf8().data(), f_file.get(), f_func.get(), static_cast<int32_t>(f_line));
+            syslog(sll, "%s (%s:%s: %d)", f_message.toUtf8().data(), f_file, f_func, static_cast<int32_t>(f_line));
         }
     }
     else
@@ -985,7 +985,7 @@ logger::~logger()
 
     if(console && isatty(STDERR_FILENO))
     {
-        std::cerr << level_str << ":" << f_file.get() << ":" << f_line << ": " << f_message.toUtf8().data() << std::endl;
+        std::cerr << level_str << ":" << f_file << ":" << f_line << ": " << f_message.toUtf8().data() << std::endl;
     }
 }
 
