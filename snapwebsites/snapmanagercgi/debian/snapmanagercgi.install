@@ -1,5 +1,6 @@
 usr/bin/*
 usr/lib/lib*.so.*
+usr/lib/snapwebsites/*
 usr/share/snapwebsites/*
 conf/snapmanagercgi.properties conf/snapmanagerdaemon.properties conf/snapmanager.conf conf/snapmanagercgi-parser.xsl etc/snapwebsites/
 conf/service-snapmanagerdaemon.xml etc/snapwebsites/snapinit.d/
