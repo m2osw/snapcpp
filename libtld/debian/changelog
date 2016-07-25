@@ -1,3 +1,9 @@
+libtld (1.5.1.379~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 25 Jul 2016 13:49:40 -0700
+
 libtld (1.5.1.378~xenial) xenial; urgency=high
 
   * Nightly build.
