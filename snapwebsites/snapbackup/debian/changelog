@@ -1,3 +1,9 @@
+snapbackup (0.1.1.66~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 24 Jul 2016 16:23:06 -0700
+
 snapbackup (0.1.1.65~xenial) xenial; urgency=high
 
   * Nightly build.
