@@ -530,6 +530,14 @@ void watchdog_server::process_sigchld()
 
         if( the_pid == -1 )
         {
+            // waitpid() may return with ECHILD and -1 instead of 0
+            // in the_pid variable when no children are available
+            //
+            if(errno == ECHILD)
+            {
+                break;
+            }
+
             // the waitpid() should never fail... we just generate a log and
             // go on
             //
