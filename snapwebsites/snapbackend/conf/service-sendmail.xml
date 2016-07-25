@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
-<service name="sendmail" disabled="disabled">
+<service name="sendmail">
   <command>/usr/bin/snapbackend</command>
   <!--
     sendmail can run only one single instance at a time within the
@@ -10,7 +10,6 @@
   <config>/etc/snapwebsites/snapserver.conf</config>
   <recovery>3600</recovery>
   <dependencies>
-    <dependency>snapcommunicator</dependency>
     <dependency>snapdbproxy</dependency>
   </dependencies>
 </service>

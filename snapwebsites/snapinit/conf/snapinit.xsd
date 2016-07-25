@@ -18,7 +18,7 @@
   <xs:simpleType name="disabled">
     <xs:annotation>
       <xs:documentation>
-        The value "disabled" if specified
+        The value "disabled" if specified.
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:token">
@@ -29,7 +29,7 @@
   <xs:simpleType name="required">
     <xs:annotation>
       <xs:documentation>
-        The value "required" if specified
+        The value "required" if specified.
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:token">
@@ -51,27 +51,28 @@
   <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
   <xs:annotation>
     <xs:documentation>
-      PART 2: elements
+      PART 2: elements and their types
     </xs:documentation>
   </xs:annotation>
 
+  <!-- root element -->
   <xs:element name="service">
     <xs:complexType>
           <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element ref="priority"/>
-            <xs:element ref="wait"/>
-            <xs:element ref="safe"/>
-            <xs:element ref="config"/>
-            <xs:element ref="connect"/>
-            <xs:element ref="snapdbproxy"/>
-            <xs:element ref="command"/>
-            <xs:element ref="options"/>
-            <xs:element ref="cron"/>
-            <xs:element ref="recovery"/>
-            <xs:element ref="coredump"/>
-            <xs:element ref="user"/>
-            <xs:element ref="group"/>
-            <xs:element ref="dependencies"/>
+            <xs:element name="priority" type="priorityType"/>
+            <xs:element name="wait" type="waitType"/>
+            <xs:element name="safe" type="xs:string"/>
+            <xs:element name="config" type="xs:string"/>
+            <xs:element name="connect" type="connectType"/>
+            <xs:element name="snapdbproxy" type="snapdbproxyType"/>
+            <xs:element name="command" type="xs:string"/>
+            <xs:element name="options" type="xs:string"/>
+            <xs:element name="cron" type="cronType"/>
+            <xs:element name="recovery" type="recoveryType"/>
+            <xs:element name="coredump" type="coredumpType"/>
+            <xs:element name="user" type="xs:string"/>
+            <xs:element name="group" type="xs:string"/>
+            <xs:element name="dependencies" type="dependenciesType"/>
           </xs:choice>
           <xs:attribute name="name" type="name" use="required"/>
           <xs:attribute name="disabled" type="disabled"/>
@@ -79,115 +80,80 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="priority">
-    <xs:simpleType>
-      <xs:restriction base="xs:integer">
-        <xs:minInclusive value="-100"/>
-        <xs:maxInclusive value="100"/>
-      </xs:restriction>
-    </xs:simpleType>
-  </xs:element>
+  <xs:simpleType name="priorityType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="-100"/>
+      <xs:maxInclusive value="100"/>
+    </xs:restriction>
+  </xs:simpleType>
 
-  <xs:element name="wait">
-    <xs:simpleType>
-      <xs:restriction base="xs:integer">
-        <xs:minInclusive value="0"/>
-        <xs:maxInclusive value="3600"/>
-      </xs:restriction>
-    </xs:simpleType>
-  </xs:element>
+  <xs:simpleType name="waitType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="3600"/>
+    </xs:restriction>
+  </xs:simpleType>
 
-  <xs:element name="safe" type="name"/>
+  <xs:simpleType name="connectType">
+    <xs:restriction base="xs:string">
+      <!-- TODO: create a simple type for IPv4/6 addresses with port -->
+      <xs:pattern value="[0-9:.]+"/>
+    </xs:restriction>
+  </xs:simpleType>
 
-  <xs:element name="config" type="xs:string"/>
+  <xs:simpleType name="snapdbproxyType">
+    <xs:restriction base="xs:string">
+      <!-- TODO: create a simple type for IPv4/6 addresses with port -->
+      <xs:pattern value="[0-9:.]+"/>
+    </xs:restriction>
+  </xs:simpleType>
 
-  <xs:element name="connect">
-    <xs:simpleType>
-      <xs:restriction base="xs:string">
-        <!-- TODO: create a simple type for IPv4/6 addresses with port -->
-        <xs:pattern value="[0-9:.]+"/>
-      </xs:restriction>
-    </xs:simpleType>
-  </xs:element>
+  <xs:simpleType name="cronType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="off"/>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:integer">
+          <xs:minInclusive value="60"/>
+          <xs:maxInclusive value="31708800"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
 
-  <xs:element name="snapdbproxy">
-    <xs:simpleType>
-      <xs:restriction base="xs:string">
-        <!-- TODO: create a simple type for IPv4/6 addresses with port -->
-        <xs:pattern value="[0-9:.]+"/>
-      </xs:restriction>
-    </xs:simpleType>
-  </xs:element>
+  <xs:simpleType name="recoveryType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="none"/>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:integer">
+          <xs:minInclusive value="60"/>
+          <xs:maxInclusive value="604800"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
 
-  <xs:element name="command" type="xs:string"/>
+  <xs:simpleType name="coredumpType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="none|infinity|([0-9]+(kb|mb|gb)?)"/>
+    </xs:restriction>
+  </xs:simpleType>
 
-  <xs:element name="options" type="xs:string"/>
-
-  <xs:element name="cron">
-    <xs:simpleType>
-      <xs:union>
-        <xs:simpleType>
-          <xs:restriction base="xs:string">
-            <xs:enumeration value="off"/>
-          </xs:restriction>
-        </xs:simpleType>
-        <xs:simpleType>
-          <xs:restriction base="xs:integer">
-            <xs:minInclusive value="60"/>
-            <xs:maxInclusive value="31708800"/>
-          </xs:restriction>
-        </xs:simpleType>
-      </xs:union>
-    </xs:simpleType>
-  </xs:element>
-
-  <xs:element name="recovery">
-    <xs:simpleType>
-      <xs:union>
-        <xs:simpleType>
-          <xs:restriction base="xs:string">
-            <xs:enumeration value="none"/>
-          </xs:restriction>
-        </xs:simpleType>
-        <xs:simpleType>
-          <xs:restriction base="xs:integer">
-            <xs:minInclusive value="60"/>
-            <xs:maxInclusive value="604800"/>
-          </xs:restriction>
-        </xs:simpleType>
-      </xs:union>
-    </xs:simpleType>
-  </xs:element>
-
-  <xs:element name="coredump">
-    <xs:simpleType>
-      <xs:restriction base="xs:string">
-        <xs:pattern value="none|infinity|([0-9]+(kb|mb|gb)?)"/>
-      </xs:restriction>
-    </xs:simpleType>
-  </xs:element>
-
-  <xs:element name="snapservices">
-    <xs:complexType>
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element ref="service"/>
-      </xs:choice>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="user" type="xs:string"/>
-  <xs:element name="group" type="xs:string"/>
-
-  <xs:group name="dependsGroup">
+  <xs:group name="dependenciesGroup">
     <xs:sequence>
       <xs:element name="dependency" type="xs:string"/>
     </xs:sequence>
   </xs:group>
 
-  <xs:element name="dependencies" type="dependsType"/>
-
-  <xs:complexType name="dependsType">
-    <xs:group ref="dependsGroup" minOccurs="1" maxOccurs="unbounded"/>
+  <xs:complexType name="dependenciesType">
+    <xs:group ref="dependenciesGroup" minOccurs="1" maxOccurs="unbounded"/>
   </xs:complexType>
 
 </xs:schema>

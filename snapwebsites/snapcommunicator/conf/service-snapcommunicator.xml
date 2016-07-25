@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
-<service name="snapcommunicator" required="required" disabled="disabled">
+<service name="snapcommunicator" required="required">
   <priority>-20</priority>
   <config>/etc/snapwebsites/snapcommunicator.conf</config>
   <connect>127.0.0.1:4040</connect>

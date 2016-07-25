@@ -1,11 +1,8 @@
 <?xml version="1.0"?>
 <!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
-<service name="snapmanagerdaemon" disabled="disabled">
+<service name="snapmanagerdaemon">
   <config>/etc/snapwebsites/snapmanager.conf</config>
   <recovery>60</recovery>
-  <dependencies>
-    <dependency>snapcommunicator</dependency>
-  </dependencies>
 </service>
 <!--
 vim: ts=2 sw=2 et

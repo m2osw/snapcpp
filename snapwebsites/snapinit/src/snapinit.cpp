@@ -42,6 +42,7 @@
 // c library
 //
 #include <fcntl.h>
+#include <glob.h>
 #include <proc/sysinfo.h>
 #include <syslog.h>
 #include <sys/prctl.h>
@@ -63,13 +64,23 @@
  *     (we will later make it compatible with the new boot system, though)
  * \li snapcommunicator -- the RPC system used by snap to communicate
  *     between all the servers used by snap.
+ * \li snaplock -- a fail safe multi-computer locking mechanism
+ * \li snapdbproxy -- a service that connects to Cassandra nodes and sits
+ *     around making it a lot faster to access the database and also make
+ *     sure that if any one node goes down, it continues to work smoothly
+ *     (and since the Cassandra C++ driver makes use of threads, it saves
+ *     us from having such in our main application!)
  * \li snapserver -- the actual snap server listening for incoming client
  *     connections (through Apache2 and snap.cgi for now)
  * \li snapbackend -- various backends to support working on slow tasks
  *     so front ends do not have to do those slow task and have the client
  *     wait for too long... (i.e. images, pagelist, sendmail, ...)
+ * \li snapmanagerdaemon -- a daemon used to run managerial commands on
+ *     any computer in a snap cluster
  * \li snapwatchdogserver -- a server which checks various things to
  *     determine the health of the server it is running on
+ * \li snapfirewall -- a service allowing any other process to block an IP
+ *     address with the iptables filtering system
  * \li "snapcron" -- this task actually makes use of snapbackend without
  *     the --action command line option; it runs tasks that are to be
  *     run once in a while (by default every 5 minutes) such as clean ups,
@@ -290,6 +301,39 @@
 
 namespace
 {
+
+
+/** \brief Capture the glob pointer in a shared pointer, this deletes it.
+ *
+ * This function is used to RAII the pointer returned by glob.
+ *
+ * \param[in] g  The glob pointer.
+ */
+void glob_deleter(glob_t * g)
+{
+    globfree(g);
+}
+
+
+/** \brief Capture errors happening while glob() is running.
+ *
+ * This function gets called whenever glob() encounters an I/O error.
+ *
+ * \return 0 asking for glob() to stop ASAP.
+ */
+int glob_error_callback(const char * epath, int eerrno)
+{
+    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                  (epath)
+                  ("\". Got error: ")
+                  (eerrno)
+                  (", ")
+                  (strerror(eerrno))
+                  (".");
+
+    // do not abort on a directory read error...
+    return 0;
+}
 
 
 /** \brief Define whether the logger was initialized.
@@ -638,46 +682,112 @@ void snap_init::init()
     // definitions
     //
     {
-        QString const xml_services_filename(f_config.contains("xml_services")
+        QString const xml_services_path(f_config.contains("xml_services")
                                         ? f_config["xml_services"]
-                                        : "/etc/snapwebsites/snapinit.xml");
-        if(xml_services_filename.isEmpty())
+                                        : "/etc/snapwebsites/snapinit.d");
+        if(xml_services_path.isEmpty())
         {
-            // the XML services is mandatory (it cannot be set to an empty string)
-            common::fatal_error("the xml_services parameter cannot be empty, it has to be a path to the snapinit.xml file.");
+            // the XML services are mandatory (it cannot be set to an empty string)
+            common::fatal_error("the xml_services parameter cannot be empty, it has to be a path to the services XML files.");
             snap::NOTREACHED();
         }
-        QFile xml_services_file(xml_services_filename);
-        if(!xml_services_file.open(QIODevice::ReadOnly))
+
+        QString const pattern(QString("%1/service-*.xml").arg(xml_services_path));
+        glob_t dir = glob_t();
+        int const r(glob(
+                      pattern.toUtf8().data()
+                    , GLOB_NOESCAPE
+                    , glob_error_callback
+                    , &dir));
+        std::shared_ptr<glob_t> ai(&dir, glob_deleter);
+
+        if(r != 0)
         {
-            // the XML services is a mandatory file we need to be able to read
-            int const e(errno);
-            common::fatal_error(QString("the XML file \"%1\" could not be opened (%2).")
-                            .arg(xml_services_filename)
-                            .arg(strerror(e)));
-            snap::NOTREACHED();
-        }
-        {
-            QString error_message;
-            int error_line;
-            int error_column;
-            QDomDocument doc;
-            if(!doc.setContent(&xml_services_file, false, &error_message, &error_line, &error_column))
+            // do nothing when errors occur
+            //
+            switch(r)
             {
-                // the XML is probably not valid, setContent() returned false...
-                // (it could also be that the file could not be read and we
-                // got some I/O error.)
-                //
-                common::fatal_error(QString("the XML file \"%1\" could not be parse as valid XML (%2:%3: %4; on column: %5).")
-                            .arg(xml_services_filename)
-                            .arg(xml_services_filename)
-                            .arg(error_line)
-                            .arg(error_message)
-                            .arg(error_column));
+            case GLOB_NOSPACE:
+                common::fatal_error("glob() did not have enough memory to alllocate its buffers.");
+                break;
+
+            case GLOB_ABORTED:
+                common::fatal_error("glob() was aborted after a read error.");
+                break;
+
+            case GLOB_NOMATCH:
+                common::fatal_error("glob() could not find any status information.");
+                break;
+
+            default:
+                common::fatal_error(QString("unknown glob() error code: %1.").arg(r));
+                break;
+
+            }
+            snap::NOTREACHED();
+        }
+
+        // load each service file
+        //
+        for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+        {
+            QString const xml_service_filename(QString::fromUtf8(dir.gl_pathv[idx]));
+
+            QFile xml_service_file(xml_service_filename);
+            if(!xml_service_file.open(QIODevice::ReadOnly))
+            {
+                // the XML services is a mandatory file we need to be able to read
+                int const e(errno);
+                common::fatal_error(QString("the XML file \"%1\" could not be opened (%2).")
+                                .arg(xml_service_filename)
+                                .arg(strerror(e)));
                 snap::NOTREACHED();
             }
-            xml_to_services(doc, xml_services_filename);
+
+            {
+                QString error_message;
+                int error_line;
+                int error_column;
+                QDomDocument doc;
+                if(!doc.setContent(&xml_service_file, false, &error_message, &error_line, &error_column))
+                {
+                    // the XML is probably not valid, setContent() returned false...
+                    // (it could also be that the file could not be read and we
+                    // got some I/O error.)
+                    //
+                    common::fatal_error(QString("the XML file \"%1\" could not be parse as valid XML (%2:%3: %4; on column: %5).")
+                                .arg(xml_service_filename)
+                                .arg(xml_service_filename)
+                                .arg(error_line)
+                                .arg(error_message)
+                                .arg(error_column));
+                    snap::NOTREACHED();
+                }
+                xml_to_service(doc, xml_service_filename);
+            }
         }
+
+        // In the end, we MUST have this service specified in the XML file,
+        // otherwise fail!
+        //
+        if( !f_connection_service )
+        {
+            common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
+            snap::NOTREACHED();
+        }
+
+        // sort those services by priority
+        //
+        // unfortunately, the following will sort items by pointer if
+        // we were not specifying our own sort function
+        //
+        std::sort(
+                std::begin(f_service_list),
+                std::end(f_service_list),
+                [](service::pointer_t const a, service::pointer_t const b)
+                {
+                    return *a < *b;
+                });
     }
 
     // retrieve the direct listen information for the UDP port
@@ -803,6 +913,12 @@ void snap_init::init()
  */
 snap_init::~snap_init()
 {
+
+// WARNING: Do not expect the destructor to ever be called, instead
+//          we call the snap_init::exit() which in most cases means
+//          that the destructor does not get called because it directly
+//          calls the C ::exit() function...
+
     remove_lock();
 }
 
@@ -848,20 +964,12 @@ snap_init::pointer_t snap_init::instance()
 }
 
 
-void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_filename)
+void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_filename)
 {
-    QDomNodeList services(doc.elementsByTagName("service"));
-
     QString const binary_path( QString::fromUtf8(f_opt.get_string("binary-path").c_str()) );
 
-    // use a map to make sure that each service has a distinct name
-    //
-    service::map_t service_list_by_name;
-
-    int const max_services(services.size());
-    for(int idx(0); idx < max_services; ++idx)
     {
-        QDomElement e(services.at( idx ).toElement());
+        QDomElement e(doc.documentElement());
         if(!e.isNull()      // it should always be an element
         && !e.attributes().contains("disabled"))
         {
@@ -870,7 +978,14 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
 
             // avoid two services with the same name
             //
-            if( service_list_by_name.find( s->get_service_name() ) != service_list_by_name.end() )
+            QString const new_service_name(s->get_service_name());
+            if(f_service_list.end() != std::find_if(
+                    f_service_list.begin(),
+                    f_service_list.end(),
+                    [&new_service_name](auto const & a)
+                    {
+                        return a->get_service_name() == new_service_name;
+                    }))
             {
                 common::fatal_error(QString("snapinit cannot start the same service more than once on \"%1\". It found \"%2\" twice in \"%3\".")
                               .arg(f_server_name)
@@ -878,7 +993,6 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
                               .arg(xml_services_filename));
                 snap::NOTREACHED();
             }
-            service_list_by_name[s->get_service_name()] = s;
 
             // we currently only support one snapcommunicator connection
             // mechanism, snapinit does not know anything about connecting
@@ -902,52 +1016,37 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
                 // Don't add this to the main list, since it's special.
                 //
                 f_communicator->add_connection( s );
-                continue;
             }
-
-            // we are starting the snapdbproxy system which offers an
-            // address and port to connect to (itself, it listens to
-            // those) and we have to send that information to all the
-            // children we start so we need to save that pointer
-            //
-            if(s->is_snapdbproxy())
+            else
             {
-                if(f_snapdbproxy_service)
+                // we are starting the snapdbproxy system which offers an
+                // address and port to connect to (itself, it listens to
+                // those) and we have to send that information to all the
+                // children we start so we need to save that pointer
+                //
+                if(s->is_snapdbproxy())
                 {
-                    common::fatal_error(QString("snapinit only supports one snapdbproxy service at this time on \"%1\". It found two: \"%2\" and \"%3\" in \"%4\".")
-                                  .arg(f_server_name)
-                                  .arg(s->get_service_name())
-                                  .arg(f_snapdbproxy_service->get_service_name())
-                                  .arg(xml_services_filename));
-                    snap::NOTREACHED();
+                    if(f_snapdbproxy_service)
+                    {
+                        common::fatal_error(QString("snapinit only supports one snapdbproxy service at this time on \"%1\". It found two: \"%2\" and \"%3\".")
+                                      .arg(f_server_name)
+                                      .arg(s->get_service_name())
+                                      .arg(f_snapdbproxy_service->get_service_name()));
+                        snap::NOTREACHED();
+                    }
+                    f_snapdbproxy_service = s;
                 }
-                f_snapdbproxy_service = s;
+
+                // make sure to add all services as a timer connection
+                // to the communicator so we can wake a service on its
+                // own (especially to support the <recovery> feature.)
+                //
+                f_communicator->add_connection( s );
+
+                f_service_list.push_back( s );
             }
-
-            // make sure to add all services as a timer connection
-            // to the communicator so we can wake a service on its
-            // own (especially to support the <recovery> feature.)
-            //
-            f_communicator->add_connection( s );
-
-            f_service_list.push_back( s );
         }
     }
-
-    // We MUST have this service specified in the XML file, otherwise fail!
-    //
-    if( !f_connection_service )
-    {
-        common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
-        snap::NOTREACHED();
-    }
-
-    // sort those services by priority
-    //
-    // unfortunately, the following will sort items by pointer if
-    // we were not specifying our own sort function
-    //
-    std::sort( std::begin(f_service_list), std::end(f_service_list), [](service::pointer_t const a, service::pointer_t const b){ return *a < *b; });
 }
 
 
@@ -1739,9 +1838,9 @@ void snap_init::get_prereqs_list( const QString& service_name, service::vector_t
 
 /** \brief Query a service by name
  */
-service::pointer_t snap_init::get_service( const QString& service_name ) const
+service::pointer_t snap_init::get_service( QString const & service_name ) const
 {
-    auto get_service_name = [service_name]( const auto& svc )
+    auto get_service_name = [service_name]( auto const & svc )
     {
         return svc->get_service_name() == service_name;
     };
@@ -2152,7 +2251,15 @@ void snap_init::stop()
             QString const pid_string(QString::fromUtf8(data).trimmed());
             bool ok(false);
             lock_file_pid = pid_string.toInt(&ok, 10);
-            if(!ok)
+            if(ok)
+            {
+                if(getpgid(lock_file_pid) < 0)
+                {
+                    common::fatal_error("'snapinit stop' called while snapinit is not running, although a lock file exists. Try snapinit --remove-lock.");
+                    snap::NOTREACHED();
+                }
+            }
+            else
             {
                 // just in case, make 100% sure that we have -1 as the PID
                 lock_file_pid = -1;
@@ -2160,7 +2267,16 @@ void snap_init::stop()
         }
     }
 
+    // if lock_file_pid is -1 then we consider that the snapinit instance
+    // may have already removed that file (before we had the chance to
+    // open it), so this is a valid case here.
+
     SNAP_LOG_INFO("Stop Snap! Websites services (pid = ")(lock_file_pid)(").");
+
+    // TODO: check whether the snapcommunicator is running or not
+    //       if not, we should look into sending the STOP message
+    //       directly to snapinit instead of through the
+    //       snapcommunicator
 
     QString udp_addr;
     int udp_port;

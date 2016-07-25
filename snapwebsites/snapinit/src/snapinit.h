@@ -310,7 +310,7 @@ private:
 
     void                        usage();
     void                        init();
-    void                        xml_to_services(QDomDocument doc, QString const & xml_services_filename);
+    void                        xml_to_service(QDomDocument doc, QString const & xml_services_filename);
     void                        wakeup_services();
     void                        log_selected_servers() const;
     service::pointer_t          get_process( QString const & name );

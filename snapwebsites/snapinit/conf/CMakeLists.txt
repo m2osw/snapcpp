@@ -31,8 +31,6 @@
 
 project( snapinit_conf )
 
-snap_validate_xml( snapinit.xml snapinit.xsd )
-
 #################################################################################
 ## Config files
 ##
@@ -43,9 +41,6 @@ install(
 
         # snap configuration files
         snapinit.conf
-
-        # various other files
-        snapinit.xml
 
     DESTINATION
         share/snapwebsites/conf

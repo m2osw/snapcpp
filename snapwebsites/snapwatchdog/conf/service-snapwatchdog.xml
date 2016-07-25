@@ -8,7 +8,6 @@
   <user>snapwebsites</user>
   <group>snapwebsites</group>
   <dependencies>
-    <dependency>snapcommunicator</dependency>
     <dependency>snapdbproxy</dependency>
   </dependencies>
 </service>

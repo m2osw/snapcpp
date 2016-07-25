@@ -1,13 +1,12 @@
 <?xml version="1.0"?>
 <!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
-<service name="snapbackend" disabled="disabled">
+<service name="snapbackend">
   <priority>75</priority>
   <config>/etc/snapwebsites/snapserver.conf</config>
   <cron>300</cron>
   <user>snapwebsites</user>
   <group>snapwebsites</group>
   <dependencies>
-    <dependency>snapcommunicator</dependency>
     <dependency>snapdbproxy</dependency>
   </dependencies>
 </service>

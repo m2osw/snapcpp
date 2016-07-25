@@ -21,13 +21,27 @@
 // When signaled, it will terminate those services cleanly.
 /////////////////////////////////////////////////////////////////////////////////
 
+// ourselves
+//
 #include "service.h"
 #include "snapinit.h"
 #include "log.h"
 #include "not_used.h"
 
+// Qt library
+//
 #include <QFile>
 
+// C++ library
+//
+#include <algorithm>
+#include <exception>
+#include <map>
+#include <sstream>
+#include <vector>
+
+// C library
+//
 #include <fcntl.h>
 #include <grp.h>
 #include <proc/sysinfo.h>
@@ -38,12 +52,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include <algorithm>
-#include <exception>
-#include <map>
-#include <sstream>
-#include <vector>
 
 
 namespace common
@@ -71,7 +79,15 @@ namespace common
         {
             std::cerr << "snapinit: fatal error: " << utf8.data() << std::endl;
         }
-        exit(1);
+        snap_init::pointer_t init( snap_init::instance() );
+        if(init)
+        {
+            init->exit(1);
+        }
+        else
+        {
+            exit(1);
+        }
         snap::NOTREACHED();
     }
 }
@@ -1812,7 +1828,7 @@ void service::init_functions()
                 }
                 else
                 {
-                    SNAP_LOG_TRACE("state_t::failed(): f_timeout_count=")(f_timeout_count);
+                    //SNAP_LOG_TRACE("state_t::failed(): f_timeout_count=")(f_timeout_count);
                     push_state( state_t::failed );
                 }
             }

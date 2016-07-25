@@ -53,6 +53,11 @@ SNAP_PLUGIN_START(firewall, 1, 0)
 namespace
 {
 
+// TODO: offer the user a way to change this path?
+char const * g_service_filename = "/etc/snapwebsites/snapinit.d/service-snapfirewall.xml";
+
+
+
 void file_descriptor_deleter(int * fd)
 {
     if(close(*fd) != 0)
@@ -61,6 +66,7 @@ void file_descriptor_deleter(int * fd)
         SNAP_LOG_WARNING("closing file descriptor failed (errno: ")(e)(", ")(strerror(e))(")");
     }
 }
+
 
 } // no name namespace
 
@@ -210,14 +216,16 @@ void firewall::on_retrieve_status(snap_manager::server_status & server_status)
     //       the file)
     //
     bool valid_xml(false);
-    QFile input("/etc/snapwebsites/snapinit.xml");
+    QFile input(g_service_filename);
     if(input.open(QIODevice::ReadOnly))
     {
         QDomDocument doc;
         doc.setContent(&input, false);
 
+        // TBD: do we need the search? We expect only one <service> root tag
+        //      with a name, we could just check the name?
         QDomXPath dom_xpath;
-        dom_xpath.setXPath("/snapservices/service[@name=\"snapfirewall\"]");
+        dom_xpath.setXPath("/service[@name=\"snapfirewall\"]");
         QDomXPath::node_vector_t result(dom_xpath.apply(doc));
         if(result.size() > 0)
         {
@@ -247,7 +255,8 @@ void firewall::on_retrieve_status(snap_manager::server_status & server_status)
         snap_manager::status_t const snapinit(snap_manager::status_t::state_t::STATUS_STATE_ERROR,
                                               get_plugin_name(),
                                               "snapinit",
-                                              "Could not read /etc/snapwebsites/snapinit.xml file or it was missing a snapfirewall service.");
+                                              QString("Could not read \"%1\" file or it was missing a snapfirewall service.")
+                                                    .arg(g_service_filename));
         server_status.set_field(snapinit);
     }
 }
@@ -351,14 +360,14 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "disabled")
     {
-        QFile file("/etc/snapwebsites/snapinit.xml");
+        QFile file(g_service_filename);
         if(file.open(QIODevice::ReadWrite))
         {
             QDomDocument doc;
             doc.setContent(&file, false);
 
             QDomXPath dom_xpath;
-            dom_xpath.setXPath("/snapservices/service[@name=\"snapfirewall\"]");
+            dom_xpath.setXPath("/service[@name=\"snapfirewall\"]");
             QDomXPath::node_vector_t result(dom_xpath.apply(doc));
             if(result.size() > 0)
             {
@@ -395,14 +404,14 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "recovery")
     {
-        QFile file("/etc/snapwebsites/snapinit.xml");
+        QFile file(g_service_filename);
         if(file.open(QIODevice::ReadWrite))
         {
             QDomDocument doc;
             doc.setContent(&file, false);
 
             QDomXPath dom_xpath;
-            dom_xpath.setXPath("/snapservices/service[@name=\"snapfirewall\"]/recovery");
+            dom_xpath.setXPath("/service[@name=\"snapfirewall\"]/recovery");
             QDomXPath::node_vector_t result(dom_xpath.apply(doc));
             if(result.size() > 0)
             {

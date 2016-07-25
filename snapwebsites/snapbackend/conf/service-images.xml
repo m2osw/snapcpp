@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
-<service name="images" disabled="disabled">
+<service name="images">
   <command>/usr/bin/snapbackend</command>
   <options>--cron-action images::images</options>
   <config>/etc/snapwebsites/snapserver.conf</config>
@@ -8,7 +8,6 @@
   <user>snapwebsites</user>
   <group>snapwebsites</group>
   <dependencies>
-    <dependency>snapcommunicator</dependency>
     <dependency>snapdbproxy</dependency>
   </dependencies>
 </service>
