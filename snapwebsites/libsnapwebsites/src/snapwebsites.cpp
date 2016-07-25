@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <syslog.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -1825,6 +1826,64 @@ void server::udp_ping_server( QString const & service, QString const & uri )
 }
 
 
+/** \brief Send message to snapcomminucator about usage statistics.
+ *
+ * When a process ends, you may call this function in order to send
+ * its own statistics to the snapcommunicator. Any service can
+ * listen for the message to react to it in various ways.
+ *
+ * \param[in] process_name  The name of the process dying.
+ */
+void server::udp_rusage(QString const & process_name)
+{
+    // retrieve the current usage information
+    //
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+
+    // log some basic information
+    //
+    SNAP_LOG_DEBUG("snap_child: used ")
+                  (usage.ru_maxrss)
+                  (" pages, ")
+                  (usage.ru_utime.tv_sec) // TODO: add ".xxx"
+                  (" seconds (user), and ")
+                  (usage.ru_stime.tv_sec) // TODO: add ".xxx"
+                  (" seconds (system).");
+
+    // prepare a message to send to the snapwatchdog (via the snapcommunicator)
+    //
+    // TODO: make sure we get actual values, it looks like linux may not be
+    //       defining much in the rusage structure... see:
+    //       http://stackoverflow.com/questions/669438/how-to-get-memory-usage-at-run-time-in-c
+    //
+    snap::snap_communicator_message rusage_message;
+    rusage_message.set_command("RUSAGE");
+    rusage_message.set_service("snapwatchdog");
+    rusage_message.add_parameter("process_name", process_name);
+    rusage_message.add_parameter("pid", getpid());
+    rusage_message.add_parameter("user_time", QString("%1.%2").arg(usage.ru_utime.tv_sec).arg(usage.ru_utime.tv_usec, 6, 10, QChar('0')));
+    rusage_message.add_parameter("system_time", QString("%1.%2").arg(usage.ru_stime.tv_sec).arg(usage.ru_stime.tv_usec, 6, 10, QChar('0')));
+    rusage_message.add_parameter("maxrss", QString("%1").arg(usage.ru_maxrss));
+    rusage_message.add_parameter("minor_page_fault", QString("%1").arg(usage.ru_minflt));
+    rusage_message.add_parameter("major_page_fault", QString("%1").arg(usage.ru_majflt));
+    rusage_message.add_parameter("in_block", QString("%1").arg(usage.ru_inblock));
+    rusage_message.add_parameter("out_block", QString("%1").arg(usage.ru_oublock));
+    rusage_message.add_parameter("volontary_context_switches", QString("%1").arg(usage.ru_nvcsw));
+    rusage_message.add_parameter("involontary_context_switches", QString("%1").arg(usage.ru_nivcsw));
+
+    // TBD: we may want to cache that information in case we call
+    //      this function more than once
+    //
+    QString addr("127.0.0.1");
+    int port(4041);
+    QString const communicator_addr_port( get_parameter("snapcommunicator_signal") );
+    tcp_client_server::get_addr_port(communicator_addr_port, addr, port, "udp");
+
+    snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, rusage_message);
+}
+
+
 /** \brief Block an IP address at the firewall level.
  *
  * This function sends a BLOCK message to the snapfirewall service in
@@ -1998,12 +2057,12 @@ void signal_child_death::process_signal()
  * snapcommunicator and also to send messages
  *
  * \note
- * At this time we do not really send anything to anyone... but we may
- * start doing so to snapwatchdog to have an overall count of the child
- * processes that we create and other similar statistics. (i.e. we have
- * to think about the time when we create listening children and in
- * that case we do not want to count those children until they get
- * a new connection; before that they do not count.)
+ * At this time we only send to snapwatchdog statistics at the time we die...
+ * but we may want to send more statistics about the children such as the
+ * count and other similar statistics. (i.e. we have to think about the time
+ * when we create listening children and in that case we do not want to
+ * count those children until they get a new connection; before that they
+ * do not count.)
  */
 class messager
         : public snap_communicator::snap_tcp_client_permanent_message_connection

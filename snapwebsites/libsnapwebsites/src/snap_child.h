@@ -299,7 +299,7 @@ public:
     typedef QVector<safe_compression_t> compression_vector_t;
 
                                 snap_child(server_pointer_t s);
-                                virtual ~snap_child();
+    virtual                     ~snap_child();
 
     bool                        process(int socket);
     pid_t                       get_child_pid() const;
@@ -313,7 +313,7 @@ public:
     void                        set_action(QString const & action);
     static void                 verify_email(QString const & email, size_t const max = 1);
 
-    void                        exit(int code);
+    virtual void                exit(int code);
     bool                        is_debug() const;
     bool                        is_ready() const;
     static char const *         get_running_server_version();

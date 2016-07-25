@@ -95,26 +95,33 @@ private:
     void                init_parameters();
     void                run_watchdog_process();
 
-    controlled_vars::zint64_t       f_statistics_frequency;
-    controlled_vars::zint64_t       f_statistics_period;
-    controlled_vars::zint64_t       f_statistics_ttl;
-    std::shared_ptr<watchdog_child> f_processes;
-    bool                            f_stopping = false;
+    int64_t                                         f_statistics_frequency = 0;
+    int64_t                                         f_statistics_period = 0;
+    int64_t                                         f_statistics_ttl = 0;
+    std::vector< std::shared_ptr<watchdog_child> >  f_processes;
+    bool                                            f_stopping = false;
 };
 
 
-class watchdog_child : public snap_child
+class watchdog_child
+        : public snap_child
 {
 public:
-                        watchdog_child(server_pointer_t s);
-    virtual             ~watchdog_child();
+    typedef std::shared_ptr<watchdog_child>     pointer_t;
 
+                        watchdog_child(server_pointer_t s, bool tick);
+    virtual             ~watchdog_child() override;
+
+    bool                is_tick() const;
     void                run_watchdog_plugins();
+    void                record_usage(snap::snap_communicator_message const & message);
+    virtual void        exit(int code) override;
 
     pid_t               get_child_pid() const;
 
 private:
     pid_t               f_child_pid = -1;
+    bool const          f_tick = true;
 };
 
 

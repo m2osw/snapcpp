@@ -48,6 +48,8 @@ public:
 class snap_cassandra
 {
 public:
+    typedef std::shared_ptr<snap_cassandra>     pointer_t;
+
                                                 snap_cassandra( snap_config const & parameters );
 
     void                                        connect();

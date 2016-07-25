@@ -2608,7 +2608,7 @@ pid_t snap_child::fork_child()
 #ifdef SNAP_NO_FORK
     if( server->nofork() )
     {
-        // simulate a working for, we return as the child
+        // simulate a working fork, we return as the child
         return 0;
     }
 #endif
@@ -5678,6 +5678,16 @@ void snap_child::exit(int code)
         close(f_socket);
         f_socket = -1;
     }
+
+    // after we close the socket the answer is sent to the client so
+    // we can take a little time to gather some statistics.
+    //
+    server::pointer_t server( f_server.lock() );
+    if(server)
+    {
+        server->udp_rusage("snap_child");
+    }
+
     server::exit(code);
     NOTREACHED();
 }

@@ -267,6 +267,7 @@ public:
     std::string         servername() const;
 
     void                udp_ping_server( QString const & service, QString const & uri );
+    void                udp_rusage(QString const & process_name);
     static void         block_ip( QString const & ip, QString const & period = "" );
 
 #ifdef SNAP_NO_FORK

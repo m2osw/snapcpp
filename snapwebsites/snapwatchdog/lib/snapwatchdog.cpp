@@ -21,6 +21,7 @@
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/qdomhelpers.h>
 
+#include <algorithm>
 #include <fstream>
 
 #include <sys/wait.h>
@@ -473,10 +474,30 @@ void watchdog_server::watchdog()
  */
 void watchdog_server::process_tick()
 {
-    if(!f_processes)
+    // make sure we do not start more than one tick process because that
+    // would cause horrible problems (i.e. many fork()'s, heavy memory
+    // usage, CPU usage, incredible I/O, etc.) although that should not
+    // happen because the tick happens only once per minute, you never
+    // know what can happen in advance...
+    //
+    if(f_processes.end() == std::find_if(
+                f_processes.begin(),
+                f_processes.end(),
+                [](auto const & child)
+                {
+                    return child->is_tick();
+                })
+    )
     {
-        f_processes.reset(new watchdog_child(instance()));
-        f_processes->run_watchdog_plugins();
+        // create a new child object
+        //
+        watchdog_child::pointer_t child(std::make_shared<watchdog_child>(instance(), true));
+        f_processes.push_back(child);
+
+        // start the watchdog plugins (it will fork() and return so we can
+        // continue to wait for signals in our run() function.)
+        //
+        child->run_watchdog_plugins();
     }
 }
 
@@ -492,68 +513,83 @@ void watchdog_server::process_tick()
  */
 void watchdog_server::process_sigchld()
 {
-    // block until child is done
+    // check for the children that are done, we cannot block here
+    // especially because a child may not always signal us properly
+    // (especially because we are using the signalfd capability...)
     //
-    // XXX should we have a way to break the wait after a "long"
-    //     while in the event the child locks up?
-    int status(0);
-    pid_t const the_pid(waitpid(f_processes->get_child_pid(), &status, 0));
-
-    if( the_pid == -1 )
+    for(;;)
     {
-        // the waitpid() should never fail... we just generate a log and
-        // go on
-        //
-        int const e(errno);
-        SNAP_LOG_ERROR("waitpid() returned an error (")(strerror(e))(").");
-    }
-    else
-    {
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-        if(WIFEXITED(status))
+        int status(0);
+        pid_t const the_pid(waitpid(-1, &status, WNOHANG));
+        if(the_pid == 0)
         {
-            int const exit_code(WEXITSTATUS(status));
-
-            if( exit_code == 0 )
-            {
-                // when this happens there is not really anything to tell about
-                SNAP_LOG_DEBUG("\"snapwatchdog\" statistics plugins terminated normally.");
-            }
-            else
-            {
-                SNAP_LOG_INFO("\"snapwatchdog\" statistics plugins terminated normally, but with exit code ")(exit_code);
-            }
+            // no more zombie, move on
+            //
+            break;
         }
-        else if(WIFSIGNALED(status))
-        {
-            int const signal_code(WTERMSIG(status));
-            bool const has_code_dump(!!WCOREDUMP(status));
 
-            SNAP_LOG_ERROR("\"snapwatchdog\" statistics plugins terminated because of OS signal \"")
-                          (strsignal(signal_code))
-                          ("\" (")
-                          (signal_code)
-                          (")")
-                          (has_code_dump ? " and a core dump was generated" : "")
-                          (".");
+        if( the_pid == -1 )
+        {
+            // the waitpid() should never fail... we just generate a log and
+            // go on
+            //
+            int const e(errno);
+            SNAP_LOG_ERROR("waitpid() returned an error (")(strerror(e))(").");
         }
         else
         {
-            // I do not think we can reach here...
-            //
-            SNAP_LOG_ERROR("\"snapwatchdog\" statistics plugins terminated abnormally in an unknown way.");
-        }
+            f_processes.erase(
+                    std::remove_if(
+                        f_processes.begin(),
+                        f_processes.end(),
+                        [&the_pid](watchdog_child::pointer_t child)
+                        {
+                            return child->get_child_pid() == the_pid;
+                        }),
+                    f_processes.end());
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            if(WIFEXITED(status))
+            {
+                int const exit_code(WEXITSTATUS(status));
+
+                if( exit_code == 0 )
+                {
+                    // when this happens there is not really anything to tell about
+                    SNAP_LOG_DEBUG("\"snapwatchdog\" statistics plugins terminated normally.");
+                }
+                else
+                {
+                    SNAP_LOG_INFO("\"snapwatchdog\" statistics plugins terminated normally, but with exit code ")(exit_code);
+                }
+            }
+            else if(WIFSIGNALED(status))
+            {
+                int const signal_code(WTERMSIG(status));
+                bool const has_code_dump(!!WCOREDUMP(status));
+
+                SNAP_LOG_ERROR("\"snapwatchdog\" statistics plugins terminated because of OS signal \"")
+                              (strsignal(signal_code))
+                              ("\" (")
+                              (signal_code)
+                              (")")
+                              (has_code_dump ? " and a core dump was generated" : "")
+                              (".");
+            }
+            else
+            {
+                // I do not think we can reach here...
+                //
+                SNAP_LOG_ERROR("\"snapwatchdog\" statistics plugins terminated abnormally in an unknown way.");
+            }
 #pragma GCC diagnostic pop
 
+        }
     }
 
-    // one with that child
-    //
-    f_processes.reset();
-
-    if(f_stopping)
+    if(f_stopping
+    && f_processes.empty())
     {
         g_communicator->remove_connection(g_sigchld_connection);
     }
@@ -586,14 +622,14 @@ void watchdog_server::check_cassandra()
 
     // create possibly missing tables
     //
-    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS),  "Statistics of all our servers.");
+    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS), "Statistics of all our servers.");
 
     // make sure it is synchronized
     //
     // TODO: fix that by using snap_cassandra all along (in the snapserver
     //       too actually...)
     //
-    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS),  "Statistics of all our servers.");
+    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS), "Statistics of all our servers.");
 }
 
 
@@ -714,7 +750,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         g_messager->send_message(unregister);
 
         g_communicator->remove_connection(g_tick_timer);
-        if(!f_processes)
+        if(f_processes.empty())
         {
             g_communicator->remove_connection(g_sigchld_connection);
         }
@@ -748,9 +784,25 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
 
         // list of commands understood by snapinit
         //
-        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,RUSAGE,STOP,UNKNOWN");
 
         g_messager->send_message(reply);
+        return;
+    }
+
+    if(command == "RUSAGE")
+    {
+        // a process just sent us its RUSAGE just before exiting
+        // (note that a PING is generally used to send that info
+        // so we are likely to miss some of those statistics)
+        //
+        watchdog_child::pointer_t child(std::make_shared<watchdog_child>(instance(), false));
+        f_processes.push_back(child);
+
+        // we use a child because we need to connect to the database
+        // so that call returns immediately after the fork() call
+        //
+        child->record_usage(message);
         return;
     }
 
@@ -782,9 +834,11 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
  * as we do in plugins with the f_snap pointer.
  *
  * \param[in] s  The server watchdog.
+ * \param[in] tick  Whether the child is used to work on a tick or not.
  */
-watchdog_child::watchdog_child(server_pointer_t s)
+watchdog_child::watchdog_child(server_pointer_t s, bool tick)
     : snap_child(s)
+    , f_tick(tick)
 {
 }
 
@@ -795,6 +849,23 @@ watchdog_child::watchdog_child(server_pointer_t s)
  */
 watchdog_child::~watchdog_child()
 {
+}
+
+
+/** \brief Check whether this child was created to process a tick.
+ *
+ * If this function returns true, then this indicates that the process
+ * was created to process a timer tick. This is run once per minute to
+ * generate a constant stream of statistic data.
+ *
+ * Other children may be created for other purposes in which case this
+ * function returns false (i.e. the RUSAGE implementation.)
+ *
+ * \return true if created to process the timer tick.
+ */
+bool watchdog_child::is_tick() const
+{
+    return f_tick;
 }
 
 
@@ -882,8 +953,10 @@ void watchdog_child::run_watchdog_plugins()
 
             // save the result in a file first
             QString data_path(server->get_parameter(watchdog::get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_DATA_PATH)));
-            data_path += QString("/%1.xml").arg(date);
+            if(!data_path.isEmpty())
             {
+                data_path += QString("/%1.xml").arg(date);
+
                 std::ofstream out;
                 out.open(data_path.toUtf8().data(), std::ios_base::binary);
                 if(out.is_open())
@@ -901,12 +974,108 @@ void watchdog_child::run_watchdog_plugins()
             QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
             QtCassandra::QCassandraValue value;
-            value.setStringValue(doc.toString(-1));
+            value.setStringValue(result);
             value.setTtl(server->get_statistics_ttl());
             QByteArray cell_key;
             QtCassandra::setInt64Value(cell_key, date);
-            table->row(server->get_server_name())->cell(cell_key)->setValue(result);
+            table->row(server->get_server_name() + "/system-statistics")->cell(cell_key)->setValue(value);
         }
+
+        // the child has to exit()
+        exit(0);
+        NOTREACHED();
+    }
+    catch(snap_exception const & e)
+    {
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what());
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+    }
+    catch(...)
+    {
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): unknown exception caught!");
+    }
+    exit(1);
+    NOTREACHED();
+}
+
+
+/** \brief Process a RUSAGE message.
+ *
+ * This function processes an RUSAGE message. Since it requires access to
+ * the database which the server does not have, we create a child process
+ * to do the work.
+ *
+ * \param[in] message  The message we just received.
+ */
+void watchdog_child::record_usage(snap::snap_communicator_message const & message)
+{
+    // create a child process so the data between sites does not get
+    // shared (also the Cassandra data would remain in memory increasing
+    // the foot print each time we run a new website,) but the worst
+    // are the plugins; we can request a plugin to be unloaded but
+    // frankly the system is not very well written to handle that case.
+    //
+    f_child_pid = fork_child();
+    if(f_child_pid != 0)
+    {
+        int const e(errno);
+
+        // parent process
+        if(f_child_pid == -1)
+        {
+            // we do not try again, we just abandon the whole process
+            //
+            SNAP_LOG_ERROR("watchdog_server::record_usage() could not create child process, fork() failed with errno: ")(e)(" -- ")(strerror(e))(".");
+        }
+        return;
+    }
+
+    // we are the child, run the watchdog_process() signal
+    try
+    {
+        f_ready = false;
+
+        // on fork() we lose the configuration so we have to reload it
+        logging::reconfigure();
+
+        connect_cassandra();
+
+        auto server(std::dynamic_pointer_cast<watchdog_server>(f_server.lock()));
+        if(!server)
+        {
+            throw snap_child_exception_no_server("watchdog_child::record_usage(): The p_server weak pointer could not be locked");
+        }
+
+        QDomDocument doc("watchdog");
+        QDomElement parent(snap_dom::create_element(doc, "watchdog"));
+        QDomElement e(snap_dom::create_element(parent, "rusage"));
+
+        QString const process_name(message.get_parameter("process_name"));
+        e.setAttribute("process_name",                  process_name);
+        e.setAttribute("pid",                           message.get_parameter("pid"));
+        e.setAttribute("user_time",                     message.get_parameter("user_time"));
+        e.setAttribute("system_time",                   message.get_parameter("system_time"));
+        e.setAttribute("maxrss",                        message.get_parameter("maxrss"));
+        e.setAttribute("minor_page_fault",              message.get_parameter("minor_page_fault"));
+        e.setAttribute("major_page_fault",              message.get_parameter("major_page_fault"));
+        e.setAttribute("in_block",                      message.get_parameter("in_block"));
+        e.setAttribute("out_block",                     message.get_parameter("out_block"));
+        e.setAttribute("volontary_context_switches",    message.get_parameter("volontary_context_switches"));
+        e.setAttribute("involontary_context_switches",  message.get_parameter("involontary_context_switches"));
+
+        int64_t const start_date(get_start_date());
+
+        QString const table_name(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
+        QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
+
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(doc.toString(-1));
+        value.setTtl(server->get_statistics_ttl());
+        QString const cell_key(QString("%1::%2").arg(process_name).arg(start_date));
+        table->row(server->get_server_name() + "/rusage")->cell(cell_key)->setValue(value);
 
         // the child has to exit()
         exit(0);
@@ -941,6 +1110,35 @@ void watchdog_child::run_watchdog_plugins()
 pid_t watchdog_child::get_child_pid() const
 {
     return f_child_pid;
+}
+
+
+/** \brief Make sure to clean up then exit the child process.
+ *
+ * This function cleans up the child and then calls the
+ * server::exit() function to give the server a chance to
+ * also clean up. Then it exists by calling the exit(3)
+ * function of the C library.
+ *
+ * \note
+ * We reimplement the snap_child::exit() function because
+ * the default function sends a message to the watchdog and
+ * that would create a loop. So to avoid that loop, we
+ * reimplement the function without sending the message.
+ *
+ * \param[in] code  The exit code, generally 0 or 1.
+ */
+void watchdog_child::exit(int code)
+{
+    // make sure the socket data is pushed to the caller
+    if(f_socket != -1)
+    {
+        close(f_socket);
+        f_socket = -1;
+    }
+
+    server::exit(code);
+    NOTREACHED();
 }
 
 
