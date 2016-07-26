@@ -67,9 +67,9 @@ while( <$input> )
 			my $evaluate_line = 0;
 			for my $name ( @package )
 			{
-				if( /$name \(>= [^\)]+\)/ )
+				if( /$name \(>=[^\)]+\)/ )
 				{
-					s/$name \(>= [^\)]+\)/$name \(>= $version\)/;
+					s/$name \(>=[^\)]+\)/$name \(>= $version\)/;
 				}
 				elsif( /$name,/ )
 				{
