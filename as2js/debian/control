@@ -2,8 +2,8 @@ Source: as2js
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
-    doxygen, graphviz, libicu-dev, snapcmakemodules (>= 1.0.25.125~xenial),
-    libcontrolledvars-dev (>= 1.4.16.369~xenial), libadvgetopt-dev (>= 1.1.0.1~xenial),
+    doxygen, graphviz, libicu-dev, snapcmakemodules (>= 1.0.25.191~xenial),
+    libcontrolledvars-dev (>= 1.4.16.435~xenial), libadvgetopt-dev (>= 1.1.0.67~xenial),
     libcppunit-dev (>= 1.13), libqxcppunit-dev (>= 0.9.2), qt5-default, libqt5webkit5-dev
 Standards-Version: 3.9.4
 Section: libs

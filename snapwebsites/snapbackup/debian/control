@@ -12,7 +12,7 @@ Build-Depends: debhelper,
     libqtcassandra-dev (>= 0.6.0.37~xenial),
     libsnapwebsites-dev (>= 1.0.0.10~xenial),
     snapcmakemodules (>= 1.0.25.124~xenial),
-    snapmanagercgi (>= 0.0.1~xenial)
+    snapmanagercgi (>= 1.0.0.70~xenial)
 Standards-Version: 3.9.4
 Section: admin
 Homepage: http://www.snapwebsites.org/

@@ -11,12 +11,12 @@ Build-Depends: debhelper,
     liblog4cplus-dev,
     libqtcassandra-dev,
     libqtserialization-dev,
-    libsnapwebsites-dev,
+    libsnapwebsites-dev (>= 1.0.0.75~xenial), 
     libtld-dev,
     libzipios-dev,
-    snapbase-dev (>= 1.0.0),
+    snapbase-dev (>= 1.0.0.67~xenial),
     snapcmakemodules (>= 1.0.23.231~trusty),
-    snapmanagercgi (>= 0.0.1~xenial)
+    snapmanagercgi (>= 1.0.0.70~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
