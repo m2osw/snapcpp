@@ -36,7 +36,7 @@ Build-Depends: debhelper,
     snapbase-dev,
     snapcmakemodules (>= 1.0.23.231~trusty),
     snapinit,
-    snapmanagercgi (>= 1.0.0.69~xenial),
+    snapmanagercgi (>= 1.0.0.70~xenial),
     snapserver-core-plugins-dev (>= 1.0.0)
 Standards-Version: 3.9.4
 Section: libs
