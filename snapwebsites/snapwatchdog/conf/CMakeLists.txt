@@ -31,7 +31,7 @@
 
 snap_validate_xml( bundle-watchdog.xml bundles.xsd )
 
-snap_validate_xml( service-snapwatchdog.xml snapinit.xsd )
+snap_validate_xml( service-snapwatchdog.xml service.xsd )
 
 
 #################################################################################

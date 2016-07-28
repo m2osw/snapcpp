@@ -29,7 +29,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-snap_validate_xml( service-snaplock.xml snapinit.xsd )
+snap_validate_xml( service-snaplock.xml service.xsd )
 
 
 #################################################################################

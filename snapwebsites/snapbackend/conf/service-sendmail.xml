@@ -7,10 +7,12 @@
     entire cluster at this point so it needs to use a global lock
   -->
   <options>--cron-action sendmail::sendmail --param GLOBAL_LOCK=1</options>
+  <nice>7</nice>
   <config>/etc/snapwebsites/snapserver.conf</config>
   <recovery>3600</recovery>
   <dependencies>
     <dependency>snapdbproxy</dependency>
+    <dependency>snaplock</dependency>
   </dependencies>
 </service>
 <!--

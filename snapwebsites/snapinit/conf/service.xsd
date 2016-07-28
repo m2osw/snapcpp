@@ -37,6 +37,19 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="weak">
+    <xs:annotation>
+      <xs:documentation>
+        The value "weak" if specified. A weak dependency is a dependency
+        that should be started before this system, but if not available
+        can safely be ignored.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="weak"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="name">
     <xs:annotation>
       <xs:documentation>
@@ -58,25 +71,27 @@
   <!-- root element -->
   <xs:element name="service">
     <xs:complexType>
-          <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="priority" type="priorityType"/>
-            <xs:element name="wait" type="waitType"/>
-            <xs:element name="safe" type="xs:string"/>
-            <xs:element name="config" type="xs:string"/>
-            <xs:element name="connect" type="connectType"/>
-            <xs:element name="snapdbproxy" type="snapdbproxyType"/>
-            <xs:element name="command" type="xs:string"/>
-            <xs:element name="options" type="xs:string"/>
-            <xs:element name="cron" type="cronType"/>
-            <xs:element name="recovery" type="recoveryType"/>
-            <xs:element name="coredump" type="coredumpType"/>
-            <xs:element name="user" type="xs:string"/>
-            <xs:element name="group" type="xs:string"/>
-            <xs:element name="dependencies" type="dependenciesType"/>
-          </xs:choice>
-          <xs:attribute name="name" type="name" use="required"/>
-          <xs:attribute name="disabled" type="disabled"/>
-          <xs:attribute name="required" type="required"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="priority" type="priorityType"/>
+        <xs:element name="nice" type="niceType"/>
+        <xs:element name="wait" type="waitType"/>
+        <xs:element name="safe" type="xs:string"/>
+        <xs:element name="config" type="xs:string"/>
+        <xs:element name="snapcommunicator" type="ipPortType"/>
+        <xs:element name="snapdbproxy" type="ipPortType"/>
+        <xs:element name="command" type="xs:string"/>
+        <xs:element name="options" type="xs:string"/>
+        <xs:element name="common-options" type="xs:string"/>
+        <xs:element name="cron" type="cronType"/>
+        <xs:element name="recovery" type="recoveryType"/>
+        <xs:element name="coredump" type="coredumpType"/>
+        <xs:element name="user" type="xs:string"/>
+        <xs:element name="group" type="xs:string"/>
+        <xs:element name="dependencies" type="dependenciesType"/>
+      </xs:choice>
+      <xs:attribute name="name" type="name" use="required"/>
+      <xs:attribute name="disabled" type="disabled"/>
+      <xs:attribute name="required" type="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -87,6 +102,13 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="niceType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="19"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="waitType">
     <xs:restriction base="xs:integer">
       <xs:minInclusive value="0"/>
@@ -94,17 +116,10 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="connectType">
+  <xs:simpleType name="ipPortType">
     <xs:restriction base="xs:string">
-      <!-- TODO: create a simple type for IPv4/6 addresses with port -->
-      <xs:pattern value="[0-9:.]+"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="snapdbproxyType">
-    <xs:restriction base="xs:string">
-      <!-- TODO: create a simple type for IPv4/6 addresses with port -->
-      <xs:pattern value="[0-9:.]+"/>
+      <!-- TODO: ameliorate the pattern to better capture IPv4/6 addresses -->
+      <xs:pattern value="([0-9.]+|\[([0-9a-fA-F:]+)\]):[0-9]+"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -148,7 +163,15 @@
 
   <xs:group name="dependenciesGroup">
     <xs:sequence>
-      <xs:element name="dependency" type="xs:string"/>
+      <xs:element name="dependency">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="name">
+              <xs:attribute name="weak" type="weak"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
     </xs:sequence>
   </xs:group>
 

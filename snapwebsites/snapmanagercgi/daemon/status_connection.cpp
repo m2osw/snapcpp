@@ -50,6 +50,7 @@ namespace snap_manager
 status_connection::status_connection(manager_daemon * md)
     : f_manager_daemon(md)
 {
+    set_name("snapmanagerdaemon status connection");
 }
 
 

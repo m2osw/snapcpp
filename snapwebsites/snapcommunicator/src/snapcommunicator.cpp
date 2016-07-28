@@ -1611,22 +1611,6 @@ void snap_communicator_server::init()
 
     f_debug_lock = !f_server->get_parameter("debug_lock_messages").isEmpty();
 
-    // change nice value of the Snap! Communicator process
-    {
-        QString const nice_str(f_server->get_parameter("nice"));
-        bool ok(false);
-        int const nice(nice_str.toInt(&ok));
-        if(!ok
-        || nice < 0
-        || nice > 19)
-        {
-            SNAP_LOG_FATAL("the nice parameter from the configuration file must be a valid number between 0 and 19. %1 is not valid.")(nice_str);
-            f_server->exit(1);
-        }
-        // process 0 represents 'self'
-        setpriority(PRIO_PROCESS, 0, nice);
-    }
-
     {
         f_explicit_neighbors = canonicalize_neighbors(f_server->get_parameter("neighbors"));
         add_neighbors(f_explicit_neighbors);
@@ -2639,15 +2623,6 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     else if(service_conn)
                     {
                         service_conn->send_message(reply);
-
-                        // tell about the new service to those listening
-                        //
-                        snap::snap_communicator_message new_service;
-                        new_service.set_service(".");
-                        new_service.set_command("NEWSERVICE");
-                        new_service.add_parameter("server", f_server_name);
-                        new_service.add_parameter("service", service_name);
-                        broadcast_message(new_service);
                     }
                     else
                     {

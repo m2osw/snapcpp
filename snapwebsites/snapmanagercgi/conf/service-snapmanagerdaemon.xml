@@ -3,6 +3,10 @@
 <service name="snapmanagerdaemon">
   <config>/etc/snapwebsites/snapmanager.conf</config>
   <recovery>60</recovery>
+  <dependencies>
+    <dependency>snapinit</dependency>
+    <dependency weak="weak">snapfirewall</dependency>
+  </dependencies>
 </service>
 <!--
 vim: ts=2 sw=2 et

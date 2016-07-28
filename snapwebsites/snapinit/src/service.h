@@ -23,29 +23,39 @@
 
 #pragma once
 
+// ourselves
+//
+#include "process.h"
+
+// snapwebsites lib
+//
 #include <snapwebsites/snap_communicator.h>
 #include <snapwebsites/snap_string_list.h>
 
+// Qt lib
+//
 #include <QDomElement>
 #include <QFile>
 #include <QString>
 
-#include <sys/resource.h>
-
+// C++ lib
+//
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
 
+// C lib
+//
+#include <sys/resource.h>
+
+
+namespace snapinit
+{
+
 // passed as the "parent" of each service
 class snap_init;
 
-
-namespace common
-{
-    bool is_a_tty();
-    void fatal_error(QString msg) __attribute__ ((noreturn));
-}
 
 
 /////////////////////////////////////////////////
@@ -56,151 +66,154 @@ class service
         : public snap::snap_communicator::snap_timer
 {
 public:
-    enum class state_t
-    {
-        not_started,
-        cron_running,
-        starting,
-        starting_without_listener,
-        starting_with_listener,
-        started,
-        running,
-        paused,
-        pausing,
-        stopping,
-        stopped,
-        dead,
-        failing,
-        failed
-    };
-
     typedef std::shared_ptr<service>        pointer_t;
     typedef std::vector<pointer_t>          vector_t;
+    typedef std::weak_ptr<service>          weak_pointer_t;
+    typedef std::vector<weak_pointer_t>     weak_vector_t;
     typedef std::map<QString, pointer_t>    map_t;
 
-    static int const            MAX_START_COUNT = 5;
-    static int64_t const        MAX_START_INTERVAL = 60LL * 1000000LL; // 1 minute in microseconds
+    static int64_t const        QUICK_RETRY_INTERVAL = 1000000LL;           // 1 second
+    static int64_t const        SERVICE_STOP_DELAY = 120 * 1000000LL;       // 2 minutes
+    static int64_t const        SERVICE_TERMINATE_DELAY = 30 * 1000000LL;   // 30 seconds
     static int const            DEFAULT_PRIORITY = 50;
 
                                 service( std::shared_ptr<snap_init> si );
+                                service() = delete;
+                                service(service const & rhs) = delete;
+    service &                   operator = (service const & rhs) = delete;
 
-    void                        configure(QDomElement e, QString const & binary_path, bool const debug, bool const ignore_path_check);
+
+    void                        configure_as_snapinit();
+    void                        configure(QDomElement e, QString const & binary_path, std::vector<QString> & common_options, bool const ignore_path_check);
+    void                        finish_configuration(std::vector<QString> & common_options);
 
     // snap::snap_communicator::snap_timer implementation
     virtual void                process_timeout() override;
 
-    bool                        exists() const;
-    bool                        is_service_required();
-
-    state_t                     current_state() const   { return f_current_state;  }
-    state_t                     previous_state() const  { return f_previous_state; }
-
-    void                        set_starting();
-    bool                        is_starting() const;
-    bool                        is_running() const;
-
-    void                        set_stopping();
-    bool                        is_stopping() const;
-    bool                        has_stopped() const;
-
-    void                        set_pausing();
-    bool                        is_pausing() const;
-    bool                        paused() const;
-
-    void                        set_failing();
-    bool                        is_failing() const;
-    bool                        failed() const;
-
-    bool                        is_dead() const;
-
-    bool                        cron_task() const;
-
-    bool                        service_may_have_died() const;
-    void                        mark_service_as_dead();
-
-    bool                        is_connection_required() const;
+    bool                        is_cron_task() const;
+    bool                        is_snapcommunicator() const;
     bool                        is_snapdbproxy() const;
+    bool                        is_dependency_of( QString const & service_name );
+    bool                        is_running() const;
     bool                        is_registered() const;
-    void                        set_registered( const bool val );
+    bool                        is_weak_dependency( QString const & service_name );
 
-    std::string                 get_connect_string() const;
-    std::string                 get_snapdbproxy_string() const;
-    bool                        is_safe_required() const;
-    QString const &             get_safe_message() const;
-    QString const &             get_config_filename() const;
     QString const &             get_service_name() const;
-    pid_t                       get_old_pid() const;
-    int                         get_wait_interval() const;
-    int                         get_recovery() const;
-    int                         get_priority() const;
-    bool                        is_dependency_of( const QString& service_name );
-    void                        clear_queue();
+    std::string                 get_snapcommunicator_string() const;
+    QString const &             get_snapcommunicator_addr() const;
+    int                         get_snapcommunicator_port() const;
+    std::string                 get_snapdbproxy_string() const;
+
+    process &                       get_process();
+    service::weak_vector_t const &  get_depends_list() const;
+
+    void                        action_ready();
+    void                        action_godown();
+    void                        action_stop();
+
+    void                        process_died();
+    void                        process_pause();
+    void                        process_status_changed();
+
+    void                        set_service_index(int index);
+    int                         get_service_index() const;
 
     bool                        operator < (service const & rhs) const;
-
-    static QString              state_to_string( state_t const state );
 
 protected:
     pointer_t                   shared_from_this() const;
 
 private:
-    void                        init_functions();
-    void                        push_state( const state_t state );
-    bool                        run();
-    bool                        has_cron_elapsed();
-    void                        compute_next_tick(bool just_ran);
-    void                        get_prereqs_list();
-    void                        get_depends_list();
-    void                        mark_process_as_stopped( const bool from_set_stopping );
-    void                        mark_process_as_dead();
-    bool                        has_failed();
-    bool                        kill_process();
+    // state of the service object
+    enum class service_state_t
+    {
+        SERVICE_STATE_DISABLED,         // disabled (usually not added if disabled)
+        SERVICE_STATE_READY,            // ready means that we want to get the process to run
+        SERVICE_STATE_PAUSED,           // paused means that we are not running but crashed too many times in a row
+        SERVICE_STATE_GOINGDOWN,        // goingdown means that we are trying to stop a pre-requirement which is still running
+        SERVICE_STATE_STOPPING          // snapinit received a STOP message or equivalent, try to stop ASAP
+    };
 
+    // state of the killing of the process of the service
+    enum class stopping_state_t
+    {
+        STOPPING_STATE_IDLE,            // we are not trying to stop (i.e. we are either running or stopped)
+        STOPPING_STATE_STOP,            // request to stop the process
+        STOPPING_STATE_TERMINATE,       // request to terminate the process (SIGTERM)
+        STOPPING_STATE_KILL             // request to kill the process (SIGKILL)
+    };
+
+    struct dependency_t
+    {
+        typedef std::vector<dependency_t>   vector_t;
+
+        enum class dependency_type_t
+        {
+            DEPENDENCY_TYPE_STRONG,         // a strong dependency must exist
+            DEPENDENCY_TYPE_WEAK            // a weak dependency does not need to exist, if not there, ignore it without errors
+        };
+
+                            dependency_t();
+                            dependency_t(QString const & service_name, dependency_type_t const type);
+
+        QString             f_service_name;
+        dependency_type_t   f_type = dependency_type_t::DEPENDENCY_TYPE_STRONG;
+    };
+
+    // state that can only be reached internally
+    void                        action_idle();
+
+    void                        process_ready();
+    void                        process_stop();                 // select process_stop_...() as expected
+    void                        process_stop_timeout();
+    void                        process_stop_initiate();        // send STOP if possible
+    void                        process_stop_terminate();       // send SIGTERM
+    void                        process_stop_kill();            // send SIGKILL
+    void                        process_wentdown();
+    void                        process_prereqs_down();
+
+    void                        init_prereqs_list();
+    void                        init_depends_list();
+    void                        start_pause_timer();
+    void                        compute_next_tick(bool just_ran);
+    std::shared_ptr<snap_init>  snap_init_ptr();
+
+    static char const *         state_to_string( service_state_t const state );
+
+    // parent object
+    //
     std::weak_ptr<snap_init>    f_snap_init;
-    QString                     f_full_path;
-    QString                     f_config_filename;
+
+    // current states (we have two in the services!)
+    //
+    service_state_t             f_service_state = service_state_t::SERVICE_STATE_DISABLED;
+    stopping_state_t            f_stopping_state = stopping_state_t::STOPPING_STATE_IDLE;
+
+    // data from XML files (some also goes in the f_process object)
+    //
     QString                     f_service_name;
-    QString                     f_command;
-    QString                     f_options;
-    QString                     f_user;
-    QString                     f_group;
-    snap::snap_string_list      f_dep_name_list;
-    service::vector_t           f_prereqs_list;
-    service::vector_t           f_depends_list;
-    pid_t                       f_pid = 0;
-    pid_t                       f_old_pid = 0;
-    int                         f_short_run_count = 0;
-    int64_t                     f_start_date = 0;       // in microseconds, to calculate an interval
-    int                         f_wait_interval = 0;    // in seconds
+    bool                        f_required = false;
+    int                         f_wait_interval = 1;    // in seconds
     int                         f_recovery = 0;         // in seconds
     QString                     f_safe_message;
-    rlim_t                      f_coredump_limit = 0;   // avoid core dump files by default
-    bool                        f_debug = false;
-    bool                        f_required = false;
-    int                         f_stopping_signal = 0;
+    int                         f_priority = DEFAULT_PRIORITY;
     QString                     f_snapcommunicator_addr;            // to connect with snapcommunicator
     int                         f_snapcommunicator_port = 4040;     // to connect with snapcommunicator
     QString                     f_snapdbproxy_addr;                 // to connect with snapdbproxy
     int                         f_snapdbproxy_port = 4042;          // to connect with snapdbproxy
-    int                         f_priority = DEFAULT_PRIORITY;
     int                         f_cron = 0;                         // if 0, then off (i.e. not a cron task)
-    bool                        f_registered = false;               // set to true when service is registered with snapcomm
-    bool                        f_restart_requested = false;
-    int64_t                     f_timestamp = 0LL;
+    dependency_t::vector_t      f_dep_name_list;
 
-    int                         f_timeout_count = 0;
-    bool                        f_paused = false;
-
-    // For future refactoring. Not yet implemented.
+    // computed data
     //
-    typedef std::function<void()>                   func_t;
-    typedef std::map<state_t,func_t>                func_map_t;
-    typedef std::queue<std::pair<state_t,func_t>>   func_queue_t;
+    process                     f_process;
+    service::weak_vector_t      f_prereqs_list;         // list of pre-required dependencies (they need us)
+    service::weak_vector_t      f_depends_list;         // list of dependencies (we need those)
 
-    func_map_t                  f_func_map;
-    func_queue_t                f_queue;
-    state_t                     f_current_state  = state_t::not_started;
-    state_t                     f_previous_state = state_t::not_started;
+    int                         f_service_index = -1;  // used to generate the snapinit.dot file
 };
 
+
+
+} // namespace snapinit
 // vim: ts=4 sw=4 et

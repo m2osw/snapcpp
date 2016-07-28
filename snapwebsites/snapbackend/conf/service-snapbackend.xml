@@ -2,12 +2,14 @@
 <!-- see /etc/snapwebsites/snapinit.d/services-README.txt -->
 <service name="snapbackend">
   <priority>75</priority>
+  <nice>5</nice>
   <config>/etc/snapwebsites/snapserver.conf</config>
   <cron>300</cron>
   <user>snapwebsites</user>
   <group>snapwebsites</group>
   <dependencies>
     <dependency>snapdbproxy</dependency>
+    <dependency>snaplock</dependency>
   </dependencies>
 </service>
 <!--

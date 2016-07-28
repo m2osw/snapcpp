@@ -7,7 +7,8 @@
   <group>snapwebsites</group>
   <dependencies>
     <dependency>snapdbproxy</dependency>
-    <dependency>snapfirewall</dependency>
+    <dependency weak="weak">snapfirewall</dependency>
+    <dependency>snaplock</dependency>
   </dependencies>
 </service>
 <!--

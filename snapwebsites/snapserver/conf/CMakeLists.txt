@@ -31,7 +31,7 @@
 
 snap_validate_xml( bundle-snapserver.xml bundles.xsd )
 
-snap_validate_xml( service-snapserver.xml snapinit.xsd )
+snap_validate_xml( service-snapserver.xml service.xsd )
 
 
 #################################################################################

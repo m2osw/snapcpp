@@ -36,10 +36,10 @@ set( SNAPINIT_VERSION_STRING "${SNAPINIT_VERSION_MAJOR}.${SNAPINIT_VERSION_MINOR
 add_definitions( -DSNAPINIT_VERSION_STRING="${SNAPINIT_VERSION_STRING}" )
 
 add_executable(${PROJECT_NAME}
+    common.cpp
     main.cpp
-    service.h
+    process.cpp
     service.cpp
-    snapinit.h
     snapinit.cpp
 )
 

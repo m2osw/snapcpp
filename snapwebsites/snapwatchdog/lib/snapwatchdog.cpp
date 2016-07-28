@@ -301,6 +301,7 @@ sigchld_connection::sigchld_connection(watchdog_server::pointer_t ws)
     : snap_signal(SIGCHLD)
     , f_watchdog_server(ws)
 {
+    set_name("snapwatchdog sigchld");
 }
 
 

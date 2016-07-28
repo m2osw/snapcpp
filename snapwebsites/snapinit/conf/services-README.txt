@@ -23,24 +23,48 @@
       <service>
       <dependencies>
                   Let snapinit know of dependencies to a service. For
-                  example, to start snapserver we need to have snaplock,
-                  snapdbproxy, and snapcommunicator running. We also want
-                  to have snapfirewall for security reasons.
+                  example, to start snapserver we need to have snaplock
+                  and snapdbproxy registered. We also want to have
+                  snapfirewall for security reasons.
 
-                  The tag defines a list of service names that have to be
-                  running before this very service gets started.
+                  The tag expects a list of service names that have to be
+                  registered (see definition of "registered" below) before
+                  this very service gets started.
 
       <service>
       <dependencies>
       <dependency>
-                  Define the name of a dependency that has to be running
+                  Define the name of a dependency that has to be registered
                   before this very service gets started.
 
-                  Note that "running" in our case means up and running
+                  Note that "registered" in our case means up and running
                   in terms of Unix process and REGISTERed with
                   snapcommunicator. Without that registration, the
                   process is considered to be in an intermediate state
                   which is not enough to satisfy the dependency.
+
+                  Also, if a service has a <safe> message defined, registered
+                  means:
+                  
+                  * Unix process running,
+                  * REGISTER message received, and
+                  * SAFE message received and matching the expected safe
+                    message.
+
+        attributes: weak      Mark that dependency as a weak dependency.
+                              If that service exists, then it has to be
+                              registered for this dependency to be
+                              satisfied. If the service is not installed
+                              on that machine, then to this service can
+                              be started even without that dependency.
+                              So a dependency such as:
+                              
+                       <dependency weak="weak">firewall</dependency>
+
+                              means that if the firewall is one of the
+                              services, we will wait on it before starting,
+                              otherwise we just start without it (since it
+                              will never appear if not installed.)
 
       <service>
       <priority>  Define a service priority; this parameter must be a
@@ -54,12 +78,8 @@
 
       <service>
       <wait>      Define the number of seconds to wait before
-                  attempting to start the next service. In case
-                  of a server with a <connect> tag, this
-                  wait is reused until a connection is made
-                  or the process ends. If not present, use
-                  the default of 1 (one second) or 3 when the service
-                  includes a <connect>.
+                  attempting to start the next service. If not present,
+                  use the default of 1 (one second).
 
                   We use a minimum of 1 to avoid problems with starting
                   too many executables all at once which often does not
@@ -85,15 +105,15 @@
                   you do not specify this tag.
 
       <service>
-      <connect>   Request that snapinit attempt a connection to this
+      <snapcommunicator>
+                  Request that snapinit attempts a connection to this
                   service once started. In this case snapinit blocks
                   until the connection happens. It is assumed that
                   without this connection, the start process fails.
                   The parameter is an IP address and port separated
-                  by a colon as in: 127.0.0.1:4040 (snapcommunicator).
-
-                  At this time snapinit only supports snapcommunicator
-                  in this way.
+                  by a colon as in:
+                  
+                      <snapcommunicator>127.0.0.1:4040</snapcommunicator>
 
       <service>
       <snapdbproxy>
@@ -163,6 +183,15 @@
                   then we will try yet again after that many
                   seconds. This is generally used for backends
                   with a value of about 60 seconds (1min.)
+
+      <service>
+      <nice>      Change the nice value of the specified process to
+                  this integer. The nice value must be between 0 and
+                  19 inclusive. Any other number will make the loading
+                  of snap fail. You may also use the special value
+                  "default", which at this time means do not change the
+                  nice value (i.e. the same as not specifying the
+                  <nice> tag.)
 
       <service>
       <user>      Define the name of the user the service should run as.

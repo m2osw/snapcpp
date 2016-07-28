@@ -51,7 +51,7 @@ install(
 ##
 install(
     FILES
-        snapinit.xsd
+        service.xsd
 
     DESTINATION
         share/snapwebsites/xsd

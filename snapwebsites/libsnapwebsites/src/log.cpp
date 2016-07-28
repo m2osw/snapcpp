@@ -155,7 +155,8 @@ logging_type_t      g_last_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
 
 
 
-class logger_stub : public logger
+class logger_stub
+        : public logger
 {
 public:
                     logger_stub(log_level_t const log_level, char const * file, char const * func, int const line)

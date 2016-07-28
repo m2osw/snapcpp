@@ -975,6 +975,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         safe_message.set_command("SAFE");
         safe_message.set_service("snapinit");
         safe_message.add_parameter("name", "firewall");
+        safe_message.add_parameter("pid", QString("%1").arg(getpid()));
         f_messager->send_message(safe_message);
 
         return;

@@ -32,10 +32,10 @@
 
 snap_validate_xml( bundle-snapbackend.xml bundles.xsd )
 
-snap_validate_xml( service-images.xml      snapinit.xsd )
-snap_validate_xml( service-pagelist.xml    snapinit.xsd )
-snap_validate_xml( service-sendmail.xml    snapinit.xsd )
-snap_validate_xml( service-snapbackend.xml snapinit.xsd )
+snap_validate_xml( service-images.xml      service.xsd )
+snap_validate_xml( service-pagelist.xml    service.xsd )
+snap_validate_xml( service-sendmail.xml    service.xsd )
+snap_validate_xml( service-snapbackend.xml service.xsd )
 
 
 #################################################################################

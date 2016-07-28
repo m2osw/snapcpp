@@ -518,7 +518,7 @@ child_connection::child_connection(snap_backend * sb, QtCassandra::QCassandraCon
     , f_context(context)
     //, f_lock(nullptr)
 {
-    set_name("child Unix connection");
+    set_name("child connection");
 }
 
 
@@ -1679,53 +1679,6 @@ bool snap_backend::process_backend_uri(QString const & uri)
         if(!p_server)
         {
             throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
-        }
-
-        QString const nice_value(p_server->get_parameter("backend_nice"));
-        if(!nice_value.isEmpty())
-        {
-            int nice(-1);
-            snap_string_list values(nice_value.split(','));
-            int const max_values(values.size());
-            for(int idx(0); idx < max_values; ++idx)
-            {
-                bool ok(false);
-                snap_string_list const named_value(values[idx].split('/'));
-                if(named_value.size() == 1)
-                {
-                    nice = named_value[0].toInt(&ok, 10);
-                    if(!ok || nice < 0 || nice > 19)
-                    {
-                        nice = -1;
-                        SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
-                    }
-                    break;
-                }
-                else if(named_value.size() == 2)
-                {
-                    if(named_value[0] == f_action)
-                    {
-                        nice = named_value[1].toInt(&ok, 10);
-                        if(!ok || nice < 0 || nice > 19)
-                        {
-                            nice = -1;
-                            SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])(":")(named_value[1])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
-                        }
-                        break;
-                    }
-                    // check name validity?
-                }
-                else
-                {
-                    SNAP_LOG_ERROR("the backend_nice value \"")(values[idx])("\" does not represent a valid entry. Ignoring.");
-                }
-            }
-            // got a specific nice value?
-            if(nice != -1)
-            {
-                // process 0 represents 'self'
-                setpriority(PRIO_PROCESS, 0, nice);
-            }
         }
 
         // set the URI; if user supplied it, then it can fail!

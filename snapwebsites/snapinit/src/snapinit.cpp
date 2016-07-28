@@ -24,32 +24,27 @@
 // snapinit
 //
 #include "snapinit.h"
-#include "service.h"
+#include "common.h"
 
-// our library
+// snapwebsites library
 //
 #include "chownnm.h"
 #include "log.h"
 #include "mkdir_p.h"
 #include "not_used.h"
 
-// c++ library
+// C++ library
 //
-#include <algorithm>
-#include <exception>
 #include <sstream>
+#include <fstream>
 
-// c library
+// C library
 //
 #include <fcntl.h>
 #include <glob.h>
-#include <proc/sysinfo.h>
 #include <syslog.h>
-#include <sys/prctl.h>
-#include <sys/resource.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
-#include <unistd.h>
+
 
 /** \file
  * \brief Initialize a Snap! server on your server.
@@ -94,56 +89,15 @@
  *
  * \code{.xml}
  *    <?xml version="1.0"?>
- *    <snapservices>
- *      <!-- Snap Communicator is started as a service -->
- *      <service name="snapcommunicator" required="required">
- *        <!-- we give this one a very low priority as it has to be started
- *             before anything else -->
- *        <priority>-10</priority>
- *        <config>/etc/snapwebsites/snapcommunicator.conf</config>
- *        <connect>127.0.0.1:4040</connect>
- *        <wait>10</wait>
- *      </service>
- *      <service name="snapserver" required="required">
- *        <!-- the server should be started before the other backend
- *             services because the first time it initializes things
- *             that other backends need to run as expected; although
- *             some of that will change -->
- *        <priority>0</priority>
- *        <config>/etc/snapwebsites/snapserver.conf</config>
- *      </service>
- *      <!-- various other services; these get a priority of 50 (default)
- *           and may use the same configuration file as the snapserver
- *           service -->
- *      <service name="sendmail">
- *        <command>/usr/bin/snapbackend</command>
- *        <config>/etc/snapwebsites/snapserver.conf</config>
- *      </service>
- *      <!-- you may use the disabled flag to prevent starting this
- *           service. -->
- *      <service name="pagelist" disabled="disabled">
- *        <!-- commands are generally defined using a full path, while
- *             doing development, though, you may use just the name of
- *             the binary and use the --binary-path <path> on the
- *             command line -->
- *        <command>/usr/bin/snapbackend</command>
- *        <config>/etc/snapwebsites/snapserver.conf</config>
- *      </service>
- *      <service name="images">
- *        <command>/usr/bin/snapbackend</command>
- *        <config>/etc/snapwebsites/snapserver.conf</config>
- *      </service>
- *      <service name="snapwatchdog">
- *        <command>/usr/bin/snapwatchdogserver</command>
- *        <priority>90</priority>
- *        <config>/etc/snapwebsites/snapwatchdog.conf</config>
- *      </service>
- *      <service name="backend">
- *        <priority>75</priority>
- *        <config>/etc/snapwebsites/snapserver.conf</config>
- *        <cron>300</cron>
- *      </service>
- *    </snapservices>
+ *    <!-- Snap Communicator is started as a service -->
+ *    <service name="snapcommunicator" required="required">
+ *      <!-- we give this one a very low priority as it has to be started
+ *           before anything else -->
+ *      <priority>-10</priority>
+ *      <config>/etc/snapwebsites/snapcommunicator.conf</config>
+ *      <connect>127.0.0.1:4040</connect>
+ *      <wait>10</wait>
+ *    </service>
  * \endcode
  *
  * TBD: since each backend service can be run only once, we may want to
@@ -155,8 +109,83 @@
  *      but then that would mean snapinit would have to know how to start
  *      snapcommunicator without the XML...
  *
+ * The snapinit object is also a state machine, albeit very simple. It has
+ * two states to speak of: Ready and Stopping. While Stopping we may not
+ * do certain things such as attempting to restart a process. Yet the
+ * services will know where they are at so it should not matter much at
+ * this level.
+ *
+ * \code
+ *                     O
+ *                     |
+ *                     | create snapinit
+ *                     |
+ *                     V
+ *              +-----------------+
+ *              |                 |
+ *              | Ready           |
+ *              |                 |
+ *              +------+----------+
+ *                     |
+ *                     | terminate [if STOP, QUIT, ... or services cannot run]
+ *                     |
+ *                     V
+ *              +-----------------+
+ *              |                 |
+ *              | Stopping        |
+ *              |                 |
+ *              +------+----------+
+ *                     |
+ *                     | exit snapinit
+ *                     |
+ *                     O
+ * \endcode
+ *
+ * Note that we moved the connecting to the snapcommunicator part to
+ * the permanent TCP connection type by deriving our class from such
+ * instead of having to reimplement a similar algorithm in snapinit.
+ * (see the snap_tcp_client_permanent_message_connection class)
+ *
+ * This means the following goes from the Ready state to the Connected
+ * state on its own once snapcommunicator is running. Note that their
+ * can be a delay of up to three seconds before the connection occurs.
+ *
+ * \code
+ *                       O
+ *                       |
+ *                       | create listener
+ *                       |
+ *                       V
+ *                +-----------------+
+ *                |                 |  timer
+ *  +------------>| Ready           |<----------[snap_communicator]
+ *  |             |                 |
+ *  |             |                 +----------+
+ *  |             |                 |          |
+ *  |             +------+----------+          |
+ *  ^                    |                     |
+ *  |                    | connected           |
+ *  |                    |                     |
+ *  |                    V                     |
+ *  | lost        +-----------------+          V
+ *  | connection  |                 |          |
+ *  +-------------+ Connected       |          |
+ *                |                 |          |
+ *                +------+----------+          |
+ *                       |                     |
+ *                       +---------------------+
+ *                       |
+ *                       | destroy listener
+ *                       |
+ *                       O
+ * \endcode
+ *
+ * Once connected we get the process_connected() callback and use it to
+ * send the REGISTER message to snapcommunicator.
+ *
  * The following is an attempt at describing the process messages used
- * to start everything and stop everything:
+ * to start everything and stop everything (that's an older version although
+ * the concept remains quite similar):
  *
  * \msc
  * hscale = "2";
@@ -299,6 +328,8 @@
  * \endmsc
  */
 
+namespace snapinit
+{
 namespace
 {
 
@@ -465,6 +496,14 @@ advgetopt::getopt::option const g_snapinit_options[] =
     },
     {
         '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "tree",
+        nullptr,
+        "Generate the tree of services in a dot file and then output an image.",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
+    {
+        '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "version",
         nullptr,
@@ -491,7 +530,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
 
 
 }
-//namespace
+// no name namespace
 
 
 
@@ -615,6 +654,242 @@ snap_init::snap_init( int argc, char * argv[] )
 }
 
 
+/** \brief Clean up the snap_init object.
+ *
+ * The destructor makes sure that the snapinit lock file gets removed
+ * before exiting the process.
+ */
+snap_init::~snap_init()
+{
+
+// WARNING: Do not expect the destructor to ever be called, instead
+//          we call the snap_init::exit() which in most cases means
+//          that the destructor does not get called because it directly
+//          calls the C ::exit() function...
+
+    remove_lock();
+}
+
+
+/** \brief Initialize the map of functions to handle message.
+ *
+ * This function creates a couple of function maps. One is for the
+ * UDP message and the other is for the TCP messages.
+ *
+ * See the process_message() function for their usage.
+ */
+void snap_init::init_message_functions()
+{
+    // ******************* TCP and UDP messages
+
+    auto stop_func =
+            [&]( snap::snap_communicator_message const& )
+            {
+                // someone asking us to stop snap_init; this means we want to stop
+                // all the services that snap_init started; if we have a
+                // snapcommunicator, then we use that to send the STOP signal to
+                // all services at once
+                //
+                terminate_services();
+            };
+
+    // someone sent "snapinit/STOP" to snapcommunicator
+    // or "[whatever/]STOP" directly to snapinit (via UDP)
+    //
+    f_udp_message_map = {
+        {
+            "STOP",
+            stop_func
+        }
+    };
+
+    // ******************* TCP only messages
+    f_tcp_message_map = {
+        {
+            // all have to implement the HELP command
+            //
+            "HELP",
+            [&]( snap::snap_communicator_message const & )
+            {
+                snap::snap_communicator_message reply;
+                reply.set_command("COMMANDS");
+
+                // list of commands understood by snapinit
+                //
+                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,RELOADCONFIG,SAFE,STATUS,STOP,UNKNOWN");
+
+                f_listener_connection->send_message(reply);
+            }
+        },
+        {
+            "LOG",
+            [&]( snap::snap_communicator_message const & )
+            {
+                SNAP_LOG_INFO("Logging reconfiguration.");
+                snap::logging::reconfigure();
+            }
+        },
+        {
+            "QUITTING",
+            stop_func
+        },
+        {
+            "READY",
+            [&]( snap::snap_communicator_message const & )
+            {
+                // mark the snapcommunicator and snapinit services
+                // as registered
+                //
+                // we do not receive the STATUS event for the snapinit
+                // service because it has to register itself before it
+                // can send the COMMNANDS message and therefore
+                // snapcommunicator does not yet know we are interested
+                // by that message.
+                //
+                f_snapcommunicator_service->get_process().action_process_registered();
+                f_snapinit_service->get_process().action_process_registered();
+
+                // send the list of local services to the snapcommunicator
+                //
+                snap::snap_communicator_message reply;
+                reply.set_command("SERVICES");
+
+                // generate the list of services as a string of
+                // comma separated names
+                //
+                snap::snap_string_list services;
+                auto get_service_name = [&services]( auto const & svc )
+                {
+                    services << svc->get_service_name();
+                };
+                //
+                std::for_each( std::begin(f_service_list), std::end(f_service_list), get_service_name );
+                //
+                SNAP_LOG_TRACE("READY: list to send to server: [")(services.join(","))("].");
+                reply.add_parameter("list", services.join(","));
+
+                f_listener_connection->send_message(reply);
+            }
+        },
+        {
+            "RELOADCONFIG",
+            [&]( snap::snap_communicator_message const& )
+            {
+                // we need a full restart in this case (because snapinit
+                // cannot restart itself!)
+                //
+                if(getuid() == 0)
+                {
+                    snap::NOTUSED(system("systemctl restart snapinit"));
+                }
+            }
+        },
+        {
+            "SAFE",
+            [&]( snap::snap_communicator_message const & message )
+            {
+                // we received a "we are safe" message so we can move on and
+                // start the next service(s)
+                //
+                bool ok(false);
+                QString const & pid_string(message.get_parameter("pid"));
+                pid_t const pid(pid_string.toInt(&ok, 10));
+                if(!ok)
+                {
+                    // we need to terminate the existing services cleanly
+                    // so we do not use common::fatal_error() here
+                    //
+                    common::fatal_message(QString("received SAFE message with an invalid \"pid\" parameter (\"%1\").")
+                                        .arg(pid_string));
+
+                    // Simulate a STOP, we cannot continue safely
+                    //
+                    terminate_services();
+                    return;
+                }
+
+                // search for the process by pid
+                //
+                auto const svc(std::find_if(
+                        f_service_list.begin(),
+                        f_service_list.end(),
+                        [&pid](auto const & s)
+                        {
+                            return s->get_process().get_pid() == pid;
+                        }));
+                if(svc == f_service_list.end()
+                || !*svc)
+                {
+                    // process not found
+                    //
+                    common::fatal_message(QString("received SAFE message with a \"pid\" parameter that does not match any of our services (\"%1\").")
+                                        .arg(pid_string));
+
+                    // Simulate a STOP, we cannot continue safely
+                    //
+                    terminate_services();
+                    return;
+                }
+
+                // if the safe message is valid, the following call will
+                // make things move forward as expected
+                //
+                (*svc)->get_process().action_safe_message(message.get_parameter("name"));
+
+                // // wakeup other services (i.e. when SAFE is required
+                // // the system does not start all the processes timers
+                // // at once--now that we have dependencies we could
+                // // change that though)
+                // //
+                // wakeup_services();
+            }
+        },
+        {
+            "STATUS",
+            [&]( snap::snap_communicator_message const & message )
+            {
+                auto const service_parm(message.get_parameter("service"));
+                auto const status_parm(message.get_parameter("status"));
+                //
+                auto const & iter(std::find_if(
+                        f_service_list.begin(),
+                        f_service_list.end(), 
+                        [service_parm](auto const & svc)
+                        {
+                            return svc->get_service_name() == service_parm;
+                        })
+                    );
+                if( iter != std::end(f_service_list) )
+                {
+                    if(status_parm == "up")
+                    {
+                        (*iter)->get_process().action_process_registered();
+                    }
+                    else
+                    {
+                        (*iter)->get_process().action_process_unregistered();
+                    }
+                    SNAP_LOG_TRACE("received status from server: service=")(service_parm)(", status=")(status_parm);
+                }
+                //else -- many services get started and are not children
+                //        of snapinit (i.e. locks, snap_child, ...)
+            }
+        },
+        {
+            "STOP",
+            stop_func
+        },
+        {
+            "UNKNOWN",
+            [&]( snap::snap_communicator_message const & message )
+            {
+                SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            }
+        },
+    };
+}
+
+
 /** \brief Actually initialize this snap_init object.
  *
  * This function checks all the parameters and services and initializes
@@ -624,9 +899,15 @@ void snap_init::init()
 {
     if( f_opt.is_defined( "list" ) )
     {
-        // use a default command name
+        // list services
         //
         f_command = command_t::COMMAND_LIST;
+    }
+    else if( f_opt.is_defined( "tree" ) )
+    {
+        // create a dot file with the service tree
+        //
+        f_command = command_t::COMMAND_TREE;
     }
     else
     {
@@ -727,6 +1008,21 @@ void snap_init::init()
             snap::NOTREACHED();
         }
 
+        std::vector<QString> common_options;
+
+        // create a service representing ourselves
+        //
+        f_snapinit_service = std::make_shared<service>(shared_from_this());
+        f_snapinit_service->configure_as_snapinit();
+        if(f_debug)
+        {
+            common_options.push_back("--debug");
+        }
+        common_options.push_back("--server-name");
+        common_options.push_back(f_server_name);
+        f_communicator->add_connection( f_snapinit_service );
+        f_service_list.push_back( f_snapinit_service );
+
         // load each service file
         //
         for(size_t idx(0); idx < dir.gl_pathc; ++idx)
@@ -763,23 +1059,35 @@ void snap_init::init()
                                 .arg(error_column));
                     snap::NOTREACHED();
                 }
-                xml_to_service(doc, xml_service_filename);
+                xml_to_service(doc, xml_service_filename, common_options);
             }
         }
 
         // In the end, we MUST have this service specified in the XML file,
         // otherwise fail!
         //
-        if( !f_connection_service )
+        if( !f_snapcommunicator_service )
         {
-            common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
+            common::fatal_error("You must have a snapcommunicator service specified in the XML file!");
             snap::NOTREACHED();
         }
 
+        // finish the initialization of the services now that we loaded them
+        // all (i.e. we cannot calculate the pre-requirements without having
+        // the complete list of services.)
+        //
+        std::for_each(
+                std::begin(f_service_list),
+                std::end(f_service_list),
+                [&common_options](service::pointer_t const s)
+                {
+                    s->finish_configuration(common_options);
+                });
+
         // sort those services by priority
         //
-        // unfortunately, the following will sort items by pointer if
-        // we were not specifying our own sort function
+        // unfortunately, the following would sort items by pointer were
+        // we to not specifying our own sort function
         //
         std::sort(
                 std::begin(f_service_list),
@@ -830,13 +1138,23 @@ void snap_init::init()
         //       the service name
         //
         std::cout << "List of services to start on this server:" << std::endl;
-        auto output_service_name = [&]( auto const& s )
+        auto output_service_name = []( auto const & s )
         {
             std::cout << s->get_service_name() << std::endl;
         };
-        output_service_name( f_connection_service );
         std::for_each( std::begin(f_service_list), std::end(f_service_list), output_service_name );
         // the --list command is over!
+        exit(1);
+        snap::NOTREACHED();
+    }
+
+    if(f_command == command_t::COMMAND_TREE)
+    {
+        // TODO: add support for --verbose and print much more than just
+        //       the service name
+        //
+        create_service_tree();
+        // the --tree command is over!
         exit(1);
         snap::NOTREACHED();
     }
@@ -906,20 +1224,72 @@ void snap_init::init()
 }
 
 
-/** \brief Clean up the snap_init object.
- *
- * The destructor makes sure that the snapinit lock file gets removed
- * before exiting the process.
- */
-snap_init::~snap_init()
+void snap_init::create_service_tree()
 {
+    // create the snapinit.dot file
+    std::ofstream dot_file;
+    dot_file.open("snapinit.dot");
+    if(!dot_file.is_open())
+    {
+        int const e(errno);
+        std::cerr << "error: could not create snapinit.dot file. (errno: " << e << ", " << strerror(e) << ")." << std::endl;
+        return;
+    }
 
-// WARNING: Do not expect the destructor to ever be called, instead
-//          we call the snap_init::exit() which in most cases means
-//          that the destructor does not get called because it directly
-//          calls the C ::exit() function...
+    dot_file << "// auto-generated snapinit.dot file -- by `snapinit --tree`" << std::endl;
+    dot_file << "strict digraph {" << std::endl
+             << "rankdir=BT;" << std::endl
+             << "label=\"snapinit service dependency graph\";" << std::endl;
 
-    remove_lock();
+    int node_count(0);
+    std::for_each(
+            std::begin(f_service_list),
+            std::end(f_service_list),
+            [&](auto const & s)
+            {
+                s->set_service_index(node_count);
+                dot_file << "n" << node_count
+                         << " [label=\"" << s->get_service_name()
+                         << "\",shape=box];" << std::endl;
+                ++node_count;
+            });
+
+    // edges font size to small
+    dot_file << "edge [fontsize=8,fontcolor=\"#990033\"];" << std::endl;
+
+    std::for_each(
+            std::begin(f_service_list),
+            std::end(f_service_list),
+            [&](auto const & svc)
+            {
+                int const service_index(svc->get_service_index());
+                service::weak_vector_t const & depends(svc->get_depends_list());
+                for(auto d : depends)
+                {
+                    auto const & dep(d.lock());
+                    if(dep)
+                    {
+                        if(svc->is_weak_dependency(dep->get_service_name()))
+                        {
+                            dot_file << "edge [style=dashed,color=\"#888888\"];" << std::endl;
+                        }
+                        else
+                        {
+                            dot_file << "edge [style=solid,color=\"#000000\"];" << std::endl;
+                        }
+                        dot_file << "n" << service_index
+                                 << " -> n" << dep->get_service_index()
+                                 << ";" << std::endl;
+                    }
+                }
+            });
+
+    dot_file << "}" << std::endl;
+    dot_file.close();
+
+    // create the final output
+    //
+    system("dot -Tsvg snapinit.dot >snapinit-graph.svg");
 }
 
 
@@ -964,162 +1334,79 @@ snap_init::pointer_t snap_init::instance()
 }
 
 
-void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_filename)
+void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_filename, std::vector<QString> & common_options)
 {
+    // make sure the root element is valid and not disabled
+    //
+    QDomElement e(doc.documentElement());
+    if(e.isNull())      // it should always be an element
+    {
+        return;
+    }
+
+    // if user wants to see a list of services, then we want to show them
+    // all, whether they are disabled or not
+    //
+    // otherwise, just skip (TODO: although if we want to ever support a
+    // runtime reload, this is not a good solution!)
+    //
+    if(f_command != command_t::COMMAND_LIST
+    && e.attributes().contains("disabled"))
+    {
+        return;
+    }
+
+    // create the service object and have it parse the XML data
+    //
+    service::pointer_t s(std::make_shared<service>(shared_from_this()));
     QString const binary_path( QString::fromUtf8(f_opt.get_string("binary-path").c_str()) );
+    s->configure( e, binary_path, common_options, f_command == command_t::COMMAND_LIST || f_command == command_t::COMMAND_TREE );
 
+    // avoid two services with the exact same name, we do not support such
+    //
+    QString const new_service_name(s->get_service_name());
+    if(f_service_list.end() != std::find_if(
+            f_service_list.begin(),
+            f_service_list.end(),
+            [new_service_name](auto const & svc)
+            {
+                return svc->get_service_name() == new_service_name;
+            }))
     {
-        QDomElement e(doc.documentElement());
-        if(!e.isNull()      // it should always be an element
-        && !e.attributes().contains("disabled"))
-        {
-            service::pointer_t s(std::make_shared<service>(shared_from_this()));
-            s->configure( e, binary_path, f_debug, f_command == command_t::COMMAND_LIST );
-
-            // avoid two services with the same name
-            //
-            QString const new_service_name(s->get_service_name());
-            if(f_service_list.end() != std::find_if(
-                    f_service_list.begin(),
-                    f_service_list.end(),
-                    [&new_service_name](auto const & a)
-                    {
-                        return a->get_service_name() == new_service_name;
-                    }))
-            {
-                common::fatal_error(QString("snapinit cannot start the same service more than once on \"%1\". It found \"%2\" twice in \"%3\".")
-                              .arg(f_server_name)
-                              .arg(s->get_service_name())
-                              .arg(xml_services_filename));
-                snap::NOTREACHED();
-            }
-
-            // we currently only support one snapcommunicator connection
-            // mechanism, snapinit does not know anything about connecting
-            // with any other service; so if we find more than one connection
-            // service, we fail early
-            //
-            if(s->is_connection_required())
-            {
-                if(f_connection_service)
-                {
-                    common::fatal_error(QString("snapinit only supports one connection service at this time on \"%1\". It found two: \"%2\" and \"%3\" in \"%4\".")
-                                  .arg(f_server_name)
-                                  .arg(s->get_service_name())
-                                  .arg(f_connection_service->get_service_name())
-                                  .arg(xml_services_filename));
-                    snap::NOTREACHED();
-                }
-                //
-                f_connection_service = s;
-
-                // Don't add this to the main list, since it's special.
-                //
-                f_communicator->add_connection( s );
-            }
-            else
-            {
-                // we are starting the snapdbproxy system which offers an
-                // address and port to connect to (itself, it listens to
-                // those) and we have to send that information to all the
-                // children we start so we need to save that pointer
-                //
-                if(s->is_snapdbproxy())
-                {
-                    if(f_snapdbproxy_service)
-                    {
-                        common::fatal_error(QString("snapinit only supports one snapdbproxy service at this time on \"%1\". It found two: \"%2\" and \"%3\".")
-                                      .arg(f_server_name)
-                                      .arg(s->get_service_name())
-                                      .arg(f_snapdbproxy_service->get_service_name()));
-                        snap::NOTREACHED();
-                    }
-                    f_snapdbproxy_service = s;
-                }
-
-                // make sure to add all services as a timer connection
-                // to the communicator so we can wake a service on its
-                // own (especially to support the <recovery> feature.)
-                //
-                f_communicator->add_connection( s );
-
-                f_service_list.push_back( s );
-            }
-        }
+        common::fatal_error(QString("snapinit cannot start the same service more than once on \"%1\". It found \"%2\" twice in \"%3\".")
+                      .arg(f_server_name)
+                      .arg(s->get_service_name())
+                      .arg(xml_services_filename));
+        snap::NOTREACHED();
     }
-}
 
-
-/** \brief Nuge services so they wake up.
- *
- * This function enables the timer of all the services that are
- * not requiring a connection (i.e. snapcommunicator.)
- *
- * The function also defines a timeout delay if some service
- * wants a bit of time to themselves to get started before
- * others (following) services get kicked in.
- *
- * Note that cron tasks do not get their tick date and time modified
- * here since it has to start exactly on their specific tick date
- * and time.
- *
- * \todo
- * Redesign the waking up to have a current state instead of having
- * special, rather complicated rules as we have now.
- */
-void snap_init::wakeup_services()
-{
-    SNAP_LOG_TRACE("Wake Up Services called. (Total number of services: ")(f_service_list.size())(")");
-
-    int64_t timeout_date(snap::snap_child::get_current_date());
-    for(auto const & s : f_service_list)
+    if(s->is_snapcommunicator())
     {
-        // ignore the connection service, it already got started when
-        // this function is called
+        // we currently only support one snapcommunicator connection
+        // mechanism, snapinit does not know anything about connecting
+        // with any other service; so if we find more than one connection
+        // service, we fail early
         //
-        // TODO: as noted in the documentation above, we need to redisign
-        //       this "wake up services" for several reasons, but here
-        //       the "is_running()" call is actually absolutely incorrect
-        //       since the process could have died in between and thus
-        //       we would get false when we would otherwise expect true.
-        //
-        if(s->is_running())
+        if(f_snapcommunicator_service)
         {
-            continue;
+            common::fatal_error(QString("snapinit only supports one connection service at this time on \"%1\". It found two: \"%2\" and \"%3\" in \"%4\".")
+                          .arg(f_server_name)
+                          .arg(s->get_service_name())
+                          .arg(f_snapcommunicator_service->get_service_name())
+                          .arg(xml_services_filename));
+            snap::NOTREACHED();
         }
-
-        // cron tasks handle their own timeout as a date to have ticks
-        // at a very specific date and time; avoid changing that timer!
         //
-        if(!s->cron_task())
-        {
-            s->set_timeout_date(timeout_date);
-        }
-
-        // now this task timer is enabled; when we receive that callback
-        // we can check whether the process is running and if not start
-        // it as required by the current status
-        //
-        s->set_starting();
-
-        // if we just started a service that has to send us a SAFE message
-        // then we cannot start anything more at this point
-        //
-        if(s->is_safe_required())
-        {
-            f_expected_safe_message = s->get_safe_message();
-            break;
-        }
-
-        // this service may want the next service to start later
-        // (notice how that will not affect a cron task...)
-        //
-        // we put a minimum of 1 second so that way we do not start
-        // many tasks all at once which the OS does not particularly
-        // like and it makes nearly no difference on our services
-        //
-        timeout_date += std::max(1, s->get_wait_interval()) * 1000000LL;
+        f_snapcommunicator_service = s;
     }
+
+    // make sure to add all services as timer connections
+    // to the communicator so we can wake a service on its
+    // own (especially to support the <recovery> feature.)
+    //
+    f_communicator->add_connection( s );
+
+    f_service_list.push_back( s );
 }
 
 
@@ -1160,241 +1447,6 @@ void snap_init::run_processes()
 }
 
 
-/** \brief Connect the listener to snapcommunicator.
- *
- * This function starts a connection with the snapcommunicator and
- * sends a CONNECT message.
- *
- * \note
- * The listener is created in the main thread, meaning that the thread
- * dies out until the connection either succeeds or fails. This is done
- * by design since at this point the only service running is expected
- * to be snapcommunicator and there is no other event we can receive
- * unless the connection fails (i.e. snapcommunicator can crash and
- * we want to know about that, but the connection will fail if the
- * snapcommunicator crashed.) Since this is local connection, it should
- * be really fast anyway.
- *
- * \param[in] service_name  Name of the service requesting a listener connection.
- * \param[in] host  The host to connect to.
- * \param[in] port  The port to use to connect to.
- *
- * \return true if the connection succeeded.
- */
-bool snap_init::connect_listener(QString const & service_name, QString const & host, int port)
-{
-    // TODO: count attempts and after X attempts, fail completely
-    try
-    {
-        // this is snapcommunicator, connect to it
-        //
-        f_listener_connection.reset(new listener_impl(shared_from_this(), host.toUtf8().data(), port));
-        f_listener_connection->set_name("snapinit listener");
-        f_listener_connection->set_priority(0);
-        f_communicator->add_connection(f_listener_connection);
-
-        // and now connect to it
-        //
-        snap::snap_communicator_message register_snapinit;
-        register_snapinit.set_command("REGISTER");
-        register_snapinit.add_parameter("service", "snapinit");
-        register_snapinit.add_parameter("version", snap::snap_communicator::VERSION);
-        f_listener_connection->send_message(register_snapinit);
-
-        return true;
-    }
-    catch(tcp_client_server::tcp_client_server_runtime_error const & e)
-    {
-        // this can happen if we try too soon and the snapconnection
-        // listening socket is not quite ready yet
-        //
-        SNAP_LOG_WARNING("connection to service \"")(service_name)("\" failed.");
-
-        // clean up the listener connection
-        //
-        if(f_listener_connection)
-        {
-            f_communicator->remove_connection(f_listener_connection);
-            f_listener_connection.reset();
-        }
-    }
-
-    return false;
-}
-
-
-/** \brief Initialize the lamba functions for each message we can recieve
- */
-void snap_init::init_message_functions()
-{
-    // ******************* TCP and UDP messages
-
-    auto stop_func =
-            [&]( snap::snap_communicator_message const& )
-            {
-                // someone asking us to stop snap_init; this means we want to stop
-                // all the services that snap_init started; if we have a
-                // snapcommunicator, then we use that to send the STOP signal to
-                // all services at once
-                //
-                terminate_services();
-            };
-
-    // someone sent "snapinit/STOP" to snapcommunicator
-    // or "[whatever/]STOP" directly to snapinit (via UDP)
-    //
-    f_udp_message_map = {
-        {
-            "STOP",
-            stop_func
-        }
-    };
-
-    // ******************* TCP only messages
-    f_tcp_message_map = {
-        {
-            // all have to implement the HELP command
-            //
-            "HELP",
-            [&]( snap::snap_communicator_message const& )
-            {
-                snap::snap_communicator_message reply;
-                reply.set_command("COMMANDS");
-
-                // list of commands understood by snapinit
-                //
-                reply.add_parameter("list", "HELP,LOG,QUITTING,READY,RELOADCONFIG,SAFE,STATUS,STOP,UNKNOWN");
-
-                f_listener_connection->send_message(reply);
-            }
-        },
-        {
-            "LOG",
-            [&]( snap::snap_communicator_message const& )
-            {
-                SNAP_LOG_INFO("Logging reconfiguration.");
-                snap::logging::reconfigure();
-            }
-        },
-        {
-            "QUITTING",
-            stop_func
-        },
-        {
-            "READY",
-            [&]( snap::snap_communicator_message const & )
-            {
-                // now we can start all the other services (except CRON tasks)
-                //
-                wakeup_services();
-
-                // send the list of local services to the snapcommunicator
-                //
-                snap::snap_communicator_message reply;
-                reply.set_command("SERVICES");
-
-                // generate the list of services as a string of comma names
-                //
-                snap::snap_string_list services;
-                services << "snapinit";
-                auto get_service_name = [&]( auto const& s )
-                {
-                    services << s->get_service_name();
-                };
-                //
-                get_service_name( f_connection_service );
-                std::for_each( std::begin(f_service_list), std::end(f_service_list), get_service_name );
-                //
-                SNAP_LOG_TRACE("READY: list to send to server: [")(services.join(","))("].");
-                reply.add_parameter("list", services.join(","));
-
-                f_listener_connection->send_message(reply);
-            }
-        },
-        {
-            "RELOADCONFIG",
-            [&]( snap::snap_communicator_message const& )
-            {
-                // we need a full restart in this case (because snapinit
-                // cannot restart itself!)
-                //
-                if(getuid() == 0)
-                {
-                    snap::NOTUSED(system("systemctl restart snapinit"));
-                }
-            }
-        },
-        {
-            "SAFE",
-            [&]( snap::snap_communicator_message const& message )
-            {
-                // we received a "we are safe" message so we can move on and
-                // start the next service
-                //
-                if(f_expected_safe_message != message.get_parameter("name"))
-                {
-                    // we need to terminate the existing services cleanly
-                    // so we do not use common::fatal_error() here
-                    //
-                    QString msg(QString("received wrong SAFE message. We expected \"%1\" but we received \"%2\".")
-                        .arg(f_expected_safe_message)
-                        .arg(message.get_parameter("name")));
-                    SNAP_LOG_FATAL(msg);
-                    syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
-
-                    // Simulate a STOP, we cannot continue safely
-                    //
-                    terminate_services();
-                    return;
-                }
-
-                // wakeup other services (i.e. when SAFE is required
-                // the system does not start all the processes timers
-                // at once--now that we have dependencies we could
-                // change that though)
-                //
-                wakeup_services();
-            }
-        },
-        {
-            "STATUS",
-            [&]( snap::snap_communicator_message const& message )
-            {
-                auto const service_parm(message.get_parameter("service"));
-                auto const status_parm(message.get_parameter("status"));
-                //
-                service::vector_t all_services;
-                all_services.push_back( f_connection_service );
-                std::copy( std::begin(f_service_list), std::end(f_service_list), std::back_inserter(all_services) );
-                //
-                //
-                auto const & iter = std::find_if( all_services.begin(), all_services.end(), 
-                        [&](auto const & s)
-                        {
-                            return s->get_service_name() == service_parm;
-                        });
-                if( iter != std::end(all_services) )
-                {
-                   (*iter)->set_registered( status_parm == "up" );
-                }
-                SNAP_LOG_TRACE("received status from server: service=")(service_parm)(", status=")(status_parm);
-            }
-        },
-        {
-            "STOP",
-            stop_func
-        },
-        {
-            "UNKNOWN",
-            [&]( snap::snap_communicator_message const& message )
-            {
-                SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
-            }
-        },
-    };
-}
-
-
 /** \brief Process a message.
  *
  * Once started, snapinit accepts messages on a UDP port. This is offered so
@@ -1419,7 +1471,7 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
     //
     if( udp )
     {
-        const auto& udp_command( f_udp_message_map.find(command) );
+        auto const & udp_command( f_udp_message_map.find(command) );
         if( udp_command == f_udp_message_map.end() )
         {
             SNAP_LOG_ERROR("command \"")(command)("\" is not supported on the UDP connection.");
@@ -1432,7 +1484,7 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
         return;
     }
 
-    const auto& tcp_command( f_tcp_message_map.find(command) );
+    auto const & tcp_command( f_tcp_message_map.find(command) );
     if( tcp_command == f_tcp_message_map.end() )
     {
         // unknown command is reported and process goes on
@@ -1448,27 +1500,6 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
     // Execute the command
     //
     (tcp_command->second)(message);
-}
-
-
-/** \brief Tell other services that a service has died.
- *
- * This method will not do anything if f_listener_connection is nullptr.
- *
- * \param[in] svc  The service that just died.
- */
-void snap_init::register_died_service( service::pointer_t svc )
-{
-    if(f_listener_connection)
-    {
-        SNAP_LOG_TRACE("snap_init::register_died_service(): service '")(svc->get_service_name())("' died.");
-        snap::snap_communicator_message register_snapinit;
-        register_snapinit.set_command("DIED");
-        register_snapinit.set_service(".");
-        register_snapinit.add_parameter("service", svc->get_service_name());
-        register_snapinit.add_parameter("pid", svc->get_old_pid());
-        f_listener_connection->send_message(register_snapinit);
-    }
 }
 
 
@@ -1495,128 +1526,193 @@ void snap_init::service_died()
 {
     SNAP_LOG_TRACE("snap_init::service_died()");
 
-    // first go through the list and capture dead services
-    // (i.e. note that CRON services are treated specially)
+    // this loop takes care of all the children that just sent us a SIGCHLD
     //
-    auto if_may_have_died = [&]( const auto& svc )
-    {
-        return svc->service_may_have_died();
-    };
-    service::vector_t all_services;
-    all_services.push_back( f_connection_service );
-    std::copy( std::begin(f_service_list), std::end(f_service_list), std::back_inserter(all_services) );
+    // IMPORTANT NOTE: although the pid is a process resource and we
+    //                 could think that it would be better/cleaner
+    //                 to call a 'did_process_died()' function, it
+    //                 would then mean we have to check ALL processes;
+    //                 so with 12 or so daemons, you'd call waitpid()
+    //                 12 times; this current loop calls waitpid()
+    //                 once per dead process + 1 only (so most often
+    //                 2 times); it can also become difficult to
+    //                 interpret the return type of a function such
+    //                 as 'did_process_died()' as it is likely to
+    //                 change over time to incorporate more things
+    //                 that have nothing to do with SIGCHLD...
     //
-    service::vector_t dead_services;
-    std::copy_if( std::begin(all_services), std::end(all_services), std::back_inserter(dead_services), if_may_have_died );
-
-    for( auto const & svc : dead_services )
+    for(;;)
     {
-        // if snapcommunicator already died, we cannot forward
-        // the DIED or any other message
-        //
-        register_died_service( svc );
-
-        // This has a functional side effect of (possibly) removing the
-        // service from the f_service_list vector.
-        //
-        svc->mark_service_as_dead();
-    }
-
-    // check whether a service failed and is marked as required
-    // although if recovery is not zero we ignore the situation...
-    //
-    {
-        auto required_and_failed = [](service::pointer_t s)
+        int status;
+        pid_t const died_pid(waitpid(-1, &status, WNOHANG));
+        if(died_pid == 0)
         {
-            // no need to test whether recovery == 0 since it would
-            // not be in the failed state if recovery != 0
+            // all children that died were checked, we are done
             //
-            return s->failed() && s->is_service_required();
-        };
-        service::vector_t::const_iterator required_failed(std::find_if(std::begin(all_services), std::end(all_services), required_and_failed));
-        //
-        if(required_failed != all_services.end())
-        {
-            // we need to terminate the existing services cleanly
-            // so we do not use common::fatal_error() here
-            //
-            QString msg(QString("service \"%1\" failed and since it is required, we are stopping snapinit now.")
-                        .arg((*required_failed)->get_service_name()));
-            SNAP_LOG_FATAL(msg);
-            syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
+            break;
+        }
 
-            // terminate snapinit
+        // waitpid() returned an error
+        //
+        if( died_pid == -1 )
+        {
+            // when using waitpid(-1, ...) we get here and not in the
+            // case where waitpid() returns zero!
             //
-            terminate_services();
-            return;
+            if(errno == ECHILD)
+            {
+                break;
+            }
+
+            // we probably do not want to continue on errors
+            // we may even need to call fatal_error() instead
+            //
+            int const e(errno);
+            SNAP_LOG_ERROR("waitpid() returned an error (")(strerror(e))(").");
+
+            // should we continue to waitpid()? I'm not too sure what that
+            // would give us outside of an infinite loop
+            //
+            break;
+        }
+
+        // we found a child, search for it
+        //
+        auto const dead_service_iter(std::find_if(
+                f_service_list.begin(),
+                f_service_list.end(),
+                [died_pid](auto const svc)
+                {
+                    return svc->get_process().get_pid() == died_pid;
+                }));
+        bool const found(dead_service_iter != f_service_list.end()
+                      && *dead_service_iter);
+
+        QString service_name(found ? (*dead_service_iter)->get_service_name() : "unknown_service");
+        if(!found)
+        {
+            SNAP_LOG_FATAL("waitpid() returned unknown PID ")(died_pid);
+        }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        if(WIFEXITED(status))
+        {
+            int const exit_code(WEXITSTATUS(status));
+
+            if( exit_code == 0 )
+            {
+                // when this happens there is not really anything to tell about
+                SNAP_LOG_DEBUG("Service \"")(service_name)("\" terminated normally.");
+            }
+            else
+            {
+                SNAP_LOG_INFO("Service \"")(service_name)("\" terminated normally, but with exit code ")(exit_code);
+            }
+        }
+        else if(WIFSIGNALED(status))
+        {
+            int const signal_code(WTERMSIG(status));
+            bool const has_code_dump(!!WCOREDUMP(status));
+
+            SNAP_LOG_ERROR("Service \"")
+                          (service_name)
+                          ("\" terminated because of OS signal \"")
+                          (strsignal(signal_code))
+                          ("\" (")
+                          (signal_code)
+                          (")")
+                          (has_code_dump ? " and a core dump was generated" : "")
+                          (".");
+        }
+        else
+        {
+            // I do not think we can reach here...
+            //
+            SNAP_LOG_ERROR("Service \"")(service_name)("\" terminated abnormally in an unknown way.");
+        }
+#pragma GCC diagnostic pop
+
+        if(dead_service_iter != f_service_list.end()
+        && *dead_service_iter)
+        {
+            // call this after we generated the error output so the logs
+            // appear in a sensible order
+            //
+            (*dead_service_iter)->get_process().action_died();
+        }
+        else
+        {
+            // making this a fatal issue, frankly there is no way we could
+            // lose the child before we tell it to get lost!
+            //
+            common::fatal_error("snapinit received the PID from an unknown process.");
+            snap::NOTREACHED();
         }
     }
+}
 
-    // completely forget about failed services with
-    // no possible recovery fallback
+
+/** \brief Remove a service from the list of services.
+ *
+ * This function searches for the specified service and removes it from
+ * the list of services managed by snapinit.
+ *
+ * snapinit also has copies of a few other services that it keeps around
+ * to help with calling various functions. These are resetted alongside.
+ * (i.e. since a find_if() of that service would return std::end() and
+ * we need to match that behavior either way.)
+ *
+ * A service can be removed once. After that it is gone for good.
+ *
+ * \param[in] service  The service being removed.
+ */
+void snap_init::remove_service(service::pointer_t service)
+{
+    SNAP_LOG_TRACE("request to remove service \"")
+                  (service->get_service_name())
+                  ("\".");
+
+    // remove the service from our main list
     //
+    f_service_list.erase(
+            std::remove_if(
+                    f_service_list.begin(),
+                    f_service_list.end(),
+                    [&service](auto const & svc)
+                    {
+                        return svc == service;
+                    })
+        );
+
+    // the service is also a timer that we need to remove from
+    // the snapcommunicator list
+    //
+    f_communicator->remove_connection(service);
+
+    // connection service gone?
+    //
+    if(service == f_snapcommunicator_service)
     {
-        auto if_failed = [](service::pointer_t s)
+        f_snapcommunicator_service.reset();
+
+        // if the snapcommunicator is no more so is its connection
+        //
+        if(f_listener_connection)
         {
-            return s->failed() && s->get_recovery() == 0;
-        };
-        f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_failed), f_service_list.end());
+            f_communicator->remove_connection(f_listener_connection);
+            f_listener_connection.reset();
+        }
+    }
+    else if(service == f_snapinit_service)
+    {
+        f_snapinit_service.reset();
     }
 
-    remove_terminated_services();
-}
-
-
-/** \brief Detected that a connection service dropped.
- *
- * This function is called whenever the listener connection service
- * is down. It is not unlikely that we already received a hang up
- * callback on that connection though.
- *
- * \param[in] s  The the service that just died.
- */
-void snap_init::service_down(service::pointer_t s)
-{
-    NOTUSED(s);
-
-    if(f_listener_connection)
+    if( f_service_list.empty() )
     {
-        f_communicator->remove_connection(f_listener_connection);
-        f_listener_connection.reset();
-    }
-}
+        SNAP_LOG_TRACE("snap_init::remove_service(): service list empty!");
 
-
-/** \brief Remove services that are marked as terminated.
- *
- * Whenever we receive the SIGCHLD, a service is to be removed. This
- * function is called last to then remove the service from the list
- * of services (f_service_list).
- *
- * In some cases the service is kept as we want to give it another
- * change to run (especially the CRON services.)
- *
- * If all services are removed from the f_service_list, the function
- * then removes all the other connections from the snap_communicator
- * object. As a result, the run() function will return and snapinit
- * will exit.
- */
-void snap_init::remove_terminated_services()
-{
-    // remove services that were terminated
-    //
-    auto if_stopped = [](service::pointer_t s)
-    {
-        return s->has_stopped();
-    };
-
-    // Now remove the stopped services from the main list
-    //
-    f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_stopped), f_service_list.end());
-
-    if( f_service_list.empty() && if_stopped(f_connection_service) )
-    {
-        SNAP_LOG_TRACE("snap_init::remove_terminated_services(): service list empty!");
         // no more services, also remove our other connections so
         // we exit the snapcommunicator loop
         //
@@ -1625,22 +1721,28 @@ void snap_init::remove_terminated_services()
         f_communicator->remove_connection(f_term_signal);
         f_communicator->remove_connection(f_quit_signal);
         f_communicator->remove_connection(f_int_signal);
+
         if(f_listener_connection)
         {
             f_communicator->remove_connection(f_listener_connection);
+            f_listener_connection.reset();
+
+            SNAP_LOG_FATAL("f_listener_connection was not properly removed when the f_connection_service was removed!");
         }
     }
 #if 0
     else
     {
-        SNAP_LOG_TRACE("**** snap_init::remove_terminated_services(): service list NOT empty:");
-        for( auto const& svc : f_service_list )
+        SNAP_LOG_TRACE("**** snap_init::remove_service(): service list NOT empty:");
+        for( auto const & svc : f_service_list )
         {
             SNAP_LOG_TRACE("******* service '")(svc->get_service_name())("' is still in the list!");
         }
     }
 #endif
 }
+
+
 
 
 /** \brief Process a user termination signal.
@@ -1650,16 +1752,12 @@ void snap_init::remove_terminated_services()
  * to stop the process cleanly in this case by calling the
  * terminate_services() function.
  *
- * \param[in] sig  The Unix signal that generated this call.
+ * \param[in] sig_name  The name of the Unix signal that generated this call.
  */
-void snap_init::user_signal_caught(int sig)
+void snap_init::user_signal_caught(char const * sig_name)
 {
     std::stringstream ss;
-    ss << "User signal caught: " << (sig == SIGINT
-                                         ? "SIGINT"
-                                         : (sig == SIGTERM
-                                                ? "SIGTERM"
-                                                : "SIGQUIT"));
+    ss << "User signal caught: " << sig_name;
     SNAP_LOG_INFO(ss.str());
     if(common::is_a_tty())
     {
@@ -1739,6 +1837,16 @@ QString const & snap_init::get_server_name() const
 }
 
 
+/** \brief Check whether we were started in debug mode.
+ *
+ * \return true if the --debug command line optionw as used.
+ */
+bool snap_init::get_debug() const
+{
+    return f_debug;
+}
+
+
 /** \brief Retrieve the service used to inter-connect services.
  *
  * This function returns the information about the server that is
@@ -1749,35 +1857,36 @@ QString const & snap_init::get_server_name() const
  * The function raises that exception if it gets called too soon
  * (i.e. before a connection service is found in the XML file.)
  *
- * \return A smart pointer to the connection service.
+ * \return A smart pointer to the snapcommunicator service.
  */
-service::pointer_t snap_init::get_connection_service() const
+service::pointer_t snap_init::get_snapcommunicator_service() const
 {
-    if(!f_connection_service)
+    if(!f_snapcommunicator_service)
     {
-        throw std::logic_error("connection service requested before it was defined.");
+        throw std::logic_error("snapcommunicator service requested before it was defined or after it was dropped.");
     }
 
-    return f_connection_service;
+    return f_snapcommunicator_service;
 }
 
 
-/** \brief Retrieve the service used to connect to the Cassandra cluster.
+/** \brief Send a message to snapcommunicator
  *
- * This function returns the information about the server that is
- * used to connect to the Cassandra cluster.
+ * This function sends a message to the snapcommunicator service.
  *
- * This should be the snapdbproxy service.
+ * \note
+ * If snapcommunicator is not yet connected or the connection was
+ * lost, the message will be stacked and sent as soon as the
+ * snapcommunicator comes back.
  *
- * Because a computer may not run snapdbproxy, this function may
- * return a null pointer. (i.e. although snapdbproxy is marked
- * as required, it can still be disabled.)
- *
- * \return A smart pointer to the snapdbproxy service.
+ * \param[in] message  The message to send.
  */
-service::pointer_t snap_init::get_snapdbproxy_service() const
+void snap_init::send_message(snap::snap_communicator_message const & message)
 {
-    return f_snapdbproxy_service;
+    if(f_listener_connection)
+    {
+        f_listener_connection->send_message(message);
+    }
 }
 
 
@@ -1798,45 +1907,70 @@ void snap_init::log_selected_servers() const
     std::stringstream ss;
     ss << "Enabled servers:";
 
-    auto log_service_name = [&](auto const& opt)
+    auto log_service_name = [&ss](auto const & opt)
     {
         ss << " [" << opt->get_service_name() << "]";
     };
 
     std::for_each( std::begin(f_service_list), std::end(f_service_list), log_service_name );
-    log_service_name( f_connection_service );
 
     SNAP_LOG_INFO(ss.str());
 }
 
 
 
-/** \brief Find who depends on the named service
+/** \brief Find who depends on the named service.
+ *
+ * \note
+ * This function is not recursive. It only returns the immediate
+ * pre-requirements and not the whole tree. This is generally enough
+ * since the other functions using the pre-requirements are recursive
+ * anyway.
+ *
+ * \param[in] service_name  The service for which pre-requirements are to be searched.
+ * \param[out] ret_list  The list of pre-requirements for this service.
  *
  * \return list of services who depend on the named service
  */
-void snap_init::get_prereqs_list( const QString& service_name, service::vector_t& ret_list ) const
+void snap_init::get_prereqs_list( QString const & service_name, service::weak_vector_t & ret_list ) const
 {
+    // clear the output by default
+    //
     ret_list.clear();
+
+    // make sure the service exists
+    //
     auto const the_service( get_service(service_name) );
-    if( !the_service ) return;
-
-    for( auto const service : f_service_list )
+    if( !the_service )
     {
-        if( !service ) continue;
-
-        //SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
-        //if( the_service->is_dependency_of( service->get_service_name() ) )
-        if( service->is_dependency_of( the_service->get_service_name() ) )
-        {
-            //SNAP_LOG_TRACE("   snap_init::get_prereqs_list(): adding service '")(service->get_service_name());
-            ret_list.push_back(service);
-        }
+        return;
     }
+
+    // check whether each 'service' is a dependency of 'service_name'
+    //
+    std::for_each(
+            f_service_list.begin(),
+            f_service_list.end(),
+            [&service_name, &ret_list](auto const & svc)
+            {
+                if(svc)
+                {
+                    //SNAP_LOG_TRACE( "snap_init::get_prereqs_list(): the_service='")(service_name)("', service='")(service->get_service_name());
+                    if( svc->is_dependency_of( service_name ) )
+                    {
+                        //SNAP_LOG_TRACE("   snap_init::get_prereqs_list(): adding service '")(service->get_service_name());
+                        ret_list.push_back(svc);
+                    }
+                }
+            });
 }
 
 
-/** \brief Query a service by name
+/** \brief Query a service by name.
+ *
+ * \param[in] service_name  The name of the service to be searched.
+ *
+ * \return The pointer to the service, may be a nullptr.
  */
 service::pointer_t snap_init::get_service( QString const & service_name ) const
 {
@@ -1856,11 +1990,16 @@ service::pointer_t snap_init::get_service( QString const & service_name ) const
 }
 
 
-/** \brief Ask all services to quit.
+/** \brief Ask all services to go down so snapinit can quit.
  *
  * In most cases, this function is called when the snapinit tool
- * receives the STOP signal. It, itself, propagates the STOP signal
- * to all the services it started.
+ * receives the STOP signal. It simple requests all services
+ * to quit as soon as possible by calling they action_stop()
+ * function.
+ *
+ * The STOP process is described in the service.cpp file (at
+ * the top, see the \@file definition). It involves sending
+ * a STOP message (if possible) or a SIGTERM/SIGKILL.
  *
  * This is done by marking all the services as stopping and then
  * sending the STOP signal to the snapcommunicator.
@@ -1890,62 +2029,19 @@ service::pointer_t snap_init::get_service( QString const & service_name ) const
  */
 void snap_init::terminate_services()
 {
-    // make sure that any death from now on marks the services as
-    // done
-    //
-    auto stop_service = [&]( auto const& s )
+    if(f_snapinit_state != snapinit_state_t::SNAPINIT_STATE_STOPPING)
     {
-        SNAP_LOG_TRACE("snap_init::terminate_services(): calling set_stopping for service '")(s->get_service_name())("'");
-        s->clear_queue();
-        s->set_stopping();
-    };
+        // change status to STOPPING
+        //
+        f_snapinit_state = snapinit_state_t::SNAPINIT_STATE_STOPPING;
 
-    stop_service( f_connection_service );
-    std::for_each( std::begin(f_service_list), std::end(f_service_list), stop_service );
-
-    // set_stopping() immediately marks certain services as dead
-    // if they were not running, remove them immediately in case
-    // that were all of them! the function then removes all the
-    // connections and the communicator will exit its run() loop.
-    //
-    remove_terminated_services();
-
-    // if we still have at least one service it has to be the
-    // snapcommunicator service so we can send a STOP command
-    //
-    SNAP_LOG_TRACE( "snap_init::terminate_services(): f_service_list.size() = ")(f_service_list.size());
-    if( f_service_list.empty() )
-    {
-        if( f_listener_connection )
-        {
-            // by sending UNREGISTER to snapcommunicator, it will also
-            // assume that a STOP message was sent and thus it will
-            // propagate STOP to all services, and a DISCONNECT is sent
-            // to all neighbors.
-            //
-            // The reason we do not send an UNREGISTER and a STOP from
-            // here is that once we sent an UNREGISTER, the line is
-            // cut and thus we cannot 100% guarantee that the STOP
-            // will make it. Also, we do not use the STOP because it
-            // is used by all services and overloading that command
-            // could be problematic in the future.
-            //
-            snap::snap_communicator_message unregister_self;
-            unregister_self.set_command("UNREGISTER");
-            unregister_self.add_parameter("service", "snapinit");
-            f_listener_connection->send_message(unregister_self);
-        }
-        else
-        {
-            // this can happen if we were trying to start snapcommunicator
-            // and it somehow failed too many times too quickly
-            //
-            SNAP_LOG_WARNING("snap_init::terminate_services() called without a f_listener_connection. STOP could not be propagated.");
-            if(common::is_a_tty())
-            {
-                std::cerr << "warning: snap_init::terminate_services() called without a f_listener_connection. STOP could not be propagated." << std::endl; 
-            }
-        }
+        std::for_each(
+                f_service_list.begin(),
+                f_service_list.end(),
+                [](auto const & svc)
+                {
+                    svc->action_stop();
+                });
     }
 }
 
@@ -2087,57 +2183,40 @@ void snap_init::start()
     f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
     f_lock_file.flush();
 
-    // We have a connection service, so we want to wake that
-    // service first and once that is dealt with, we wake up the
-    // other services (i.e. on the ACCEPT call)
+    // now we are ready to mark all the services as ready so they get
+    // started (by default they are in the DISABLED state)
     //
-    if( !f_connection_service )
+    std::for_each(
+            std::begin(f_service_list),
+            std::end(f_service_list),
+            [](auto const & s)
+            {
+                s->action_ready();
+            });
+
+    // this is to connect to the snapcommunicator
+    //
+    // here we make use of a permanent TCP connection so that way
+    // we auto-reconnect whenever necessary without having to have
+    // yet another state machine in the snapinit realm
+    //
     {
-        common::fatal_error("You must have a connection service [snapcommunicator] specified in the XML file!");
-        snap::NOTREACHED();
+        QString const host(f_snapcommunicator_service->get_snapcommunicator_addr());
+        int const port(f_snapcommunicator_service->get_snapcommunicator_port());
+        f_listener_connection = std::make_shared<listener_impl>(shared_from_this(), host.toUtf8().data(), port);
+        f_listener_connection->set_name("snapinit listener");
+        f_listener_connection->set_priority(0);
+        f_communicator->add_connection(f_listener_connection);
     }
-
-    // check whether all executables are available
-    //
-    bool failed(false);
-    auto check_exists = [&]( auto const& s )
-    {
-        if(!s->exists())
-        {
-            failed = true;
-
-            // This is a fatal error, but we want to give the user information
-            // about all the missing binary (this is not really true anymore
-            // because this check is done at the end of the service confiration
-            // function and generate a fatal error there already)
-            //
-            QString msg(QString("binary for service \"%1\" was not found or is not executable. snapinit will exit without starting anything.")
-                        .arg(s->get_service_name()));
-            SNAP_LOG_FATAL(msg);
-            syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
-        }
-    };
-    //
-    std::for_each( std::begin(f_service_list), std::end(f_service_list), check_exists );
-    check_exists( f_connection_service );
-    //
-    if( failed )
-    {
-        common::fatal_error(QString("Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location."));
-        snap::NOTREACHED();
-    }
-
-    f_connection_service->set_timeout_date(snap::snap_child::get_current_date());
-    f_connection_service->set_starting();
 
     // initialize a UDP server as a fallback in case you want to use
     // snapinit without a snapcommunicator server
     //
     {
         // just in case snapcommunicator does not get started, we still can
-        // receive messages over a UDP port (mainly a STOP message)
+        // receive messages over a UDP port (mainly the STOP message)
         //
-        f_ping_server.reset(new ping_impl(shared_from_this(), f_udp_addr.toUtf8().data(), f_udp_port));
+        f_ping_server = std::make_shared<ping_impl>(shared_from_this(), f_udp_addr.toUtf8().data(), f_udp_port);
         f_ping_server->set_name("snapinit UDP backup server");
         f_ping_server->set_priority(30);
         f_communicator->add_connection(f_ping_server);
@@ -2146,7 +2225,7 @@ void snap_init::start()
     // initialize the SIGCHLD signal
     //
     {
-        f_child_signal.reset(new sigchld_impl(shared_from_this()));
+        f_child_signal = std::make_shared<sigchld_impl>(shared_from_this());
         f_child_signal->set_name("snapinit SIGCHLD signal");
         f_child_signal->set_priority(55);
         f_communicator->add_connection(f_child_signal);
@@ -2155,7 +2234,7 @@ void snap_init::start()
     // initialize the SIGTERM signal
     //
     {
-        f_term_signal.reset(new sigterm_impl(shared_from_this()));
+        f_term_signal = std::make_shared<sigterm_impl>(shared_from_this());
         f_term_signal->set_name("snapinit SIGTERM signal");
         f_term_signal->set_priority(65);
         f_communicator->add_connection(f_term_signal);
@@ -2175,7 +2254,7 @@ void snap_init::start()
     {
         f_int_signal.reset(new sigint_impl(shared_from_this()));
         f_int_signal->set_name("snapinit SIGINT signal");
-        f_int_signal->set_priority(60);
+        f_int_signal->set_priority(65);
         f_communicator->add_connection(f_int_signal);
     }
 
@@ -2331,9 +2410,9 @@ void snap_init::stop()
 
 void snap_init::get_addr_port_for_snap_communicator( QString & udp_addr, int & udp_port )
 {
-    if( !f_connection_service )
+    if( !f_snapcommunicator_service )
     {
-        common::fatal_error("Connection service has not yet been initialized!");
+        common::fatal_error("somehow the snapcommunicator service has not yet been initialized!");
         snap::NOTREACHED();
     }
 
@@ -2341,7 +2420,7 @@ void snap_init::get_addr_port_for_snap_communicator( QString & udp_addr, int & u
     // the address and port and those are defined in the
     // snapcommunicator settings
     //
-    QString snapcommunicator_config_filename(f_connection_service->get_config_filename());
+    QString snapcommunicator_config_filename(f_snapcommunicator_service->get_process().get_config_filename());
     if(snapcommunicator_config_filename.isEmpty())
     {
         // in case it was not defined, use the default
@@ -2437,21 +2516,16 @@ void snap_init::sighandler( int sig )
 
     }
 
-    {
-        snap::snap_exception_base::output_stack_trace();
-        QString msg(QString("Fatal signal caught: %1").arg(signame));
-        SNAP_LOG_FATAL(msg);
-        syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
-        if(common::is_a_tty())
-        {
-            std::cerr << "snapinit: fatal: " << msg.toUtf8().data() << std::endl;
-        }
-    }
+    snap::snap_exception_base::output_stack_trace();
+    common::fatal_message(QString("Fatal signal caught: %1").arg(signame));
 
-    // Make sure the lock file has been removed
+    // Make sure the lock file gets removed
     //
     snap_init::pointer_t si( snap_init::instance() );
-    si->remove_lock();
+    if(si)
+    {
+        si->remove_lock();
+    }
 
     // Exit with error status
     //
@@ -2460,4 +2534,5 @@ void snap_init::sighandler( int sig )
 }
 
 
+} // snapinit namespace
 // vim: ts=4 sw=4 et

@@ -4217,15 +4217,15 @@ QString const & snap_communicator::snap_tcp_server_client_message_connection::ge
 class snap_tcp_client_permanent_message_connection_impl
 {
 public:
-    class messager
+    class messenger
         : public snap_communicator::snap_tcp_server_client_message_connection
     {
     public:
-        messager(snap_communicator::snap_tcp_client_permanent_message_connection * client, int socket)
+        messenger(snap_communicator::snap_tcp_client_permanent_message_connection * client, int socket)
             : snap_tcp_server_client_message_connection(socket)
             , f_client(client)
         {
-            set_name("snap_tcp_client_permanent_message_connection_impl::messager");
+            set_name("snap_tcp_client_permanent_message_connection_impl::messenger");
         }
 
         // snap_connection implementation
@@ -4496,11 +4496,11 @@ public:
 
     /** \brief Destroy the permanent message connection.
      *
-     * This function makes sure that the messager was lost.
+     * This function makes sure that the messenger was lost.
      */
     ~snap_tcp_client_permanent_message_connection_impl()
     {
-        // to make sure we can lose the messager, first we want to be sure
+        // to make sure we can lose the messenger, first we want to be sure
         // that we do not have a thread running
         //
         f_thread.stop();
@@ -4513,7 +4513,7 @@ public:
     }
 
 
-    /** \brief Direct connect to the messager.
+    /** \brief Direct connect to the messenger.
      *
      * In this case we try to connect without the thread. This allows
      * us to avoid the thread problems, but we are blocked until the
@@ -4533,7 +4533,7 @@ public:
 
     /** \brief Check whether the permanent connection is currently connected.
      *
-     * This function returns true if the messager exists, which means that
+     * This function returns true if the messenger exists, which means that
      * the connection is up.
      *
      * \return true if the connection is up.
@@ -4642,9 +4642,9 @@ public:
         }
         else
         {
-            f_messager.reset(new messager(f_client, f_thread_runner.get_socket()));
+            f_messager.reset(new messenger(f_client, f_thread_runner.get_socket()));
 
-            // add the messager to the communicator
+            // add the messenger to the communicator
             //
             snap_communicator::instance()->add_connection(f_messager);
 
@@ -4671,6 +4671,9 @@ public:
      * \param[in] message  The message to send.
      * \param[in] cache  Whether to cache the message if the connection is
      *                   currently down.
+     *
+     * \return true if the message was forwarded, false if the message
+     *         was ignored or cached.
      */
     bool send_message(snap_communicator_message const & message, bool cache)
     {
@@ -4689,13 +4692,13 @@ public:
     }
 
 
-    /** \brief Forget about the messager connect.
+    /** \brief Forget about the messenger connect.
      *
      * This function resets the f_messager pointer as an error occurred
      * on that connection.
      *
      * \note
-     * This is safe, even though it is called from the messager itself
+     * This is safe, even though it is called from the messenger itself
      * because it will not get deleted yet. This is because the run()
      * loop has a copy in its own temporary copy of the vector of
      * connections.
@@ -4707,7 +4710,7 @@ public:
             snap_communicator::instance()->remove_connection(f_messager);
             f_messager.reset();
 
-            // just the messager does not close the TCP connection because
+            // just the messenger does not close the TCP connection because
             // we have a copy in the thread runner
             f_thread_runner.close();
         }
@@ -4745,7 +4748,7 @@ private:
     thread_done_signal::pointer_t                                       f_thread_done;
     runner                                                              f_thread_runner;
     snap::snap_thread                                                   f_thread;
-    messager::pointer_t                                                 f_messager;
+    messenger::pointer_t                                                f_messager;
     snap_communicator_message::vector_t                                 f_message_cache;
 };
 
@@ -5046,9 +5049,9 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_in
 }
 
 
-/** \brief Make sure that the messager connection gets removed.
+/** \brief Make sure that the messenger connection gets removed.
  *
- * This function makes sure that the messager sub-connection also gets
+ * This function makes sure that the messenger sub-connection also gets
  * removed from the snap communicator. Otherwise it would lock the system
  * since connections are saved in the snap communicator object as shared
  * pointers.
