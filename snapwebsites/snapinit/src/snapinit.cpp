@@ -1289,7 +1289,7 @@ void snap_init::create_service_tree()
 
     // create the final output
     //
-    system("dot -Tsvg snapinit.dot >snapinit-graph.svg");
+    snap::NOTUSED(system("dot -Tsvg snapinit.dot >snapinit-graph.svg"));
 }
 
 
