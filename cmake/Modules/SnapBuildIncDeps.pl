@@ -47,33 +47,41 @@ die "Cannot open $output_file for writing!\n" unless open( my $output, ">", $out
 
 while( <$input> )
 {
-	for my $key ( keys %DEPHASH )
+	# Only evaluate the build-depends section
+	if( /^Build-Depends:/ )
 	{
-		my @package = @{$DEPHASH{$key}};
-		my $version = $package[0];
-		shift @package;
-		my $evaluate_line = 0;
-		for my $name ( @package )
-		{
-			# Only evaluate the build-depends section
-			if( /^Build-Depends:/ )
-			{
-				$evaluate_line = 1;
-			}
-			elsif( /^[A-Za-z-]+:/ )
-			{
-				$evaluate_line = 0;
-			}
+		$evaluate_line = 1;
+	}
+	elsif( /^[A-Za-z-]+:/ )
+	{
+		$evaluate_line = 0;
+	}
 
-			if( $evaluate_line == 1 )
+	if( $evaluate_line == 1 )
+	{
+		for my $key ( keys %DEPHASH )
+		{
+			my @package = @{$DEPHASH{$key}};
+			my $version = $package[0];
+			shift @package;
+			my $evaluate_line = 0;
+			for my $name ( @package )
 			{
-				if( /$name \(>= [^\)]+\)/ )
+				if( /$name \(>=[^\)]+\)/ )
 				{
-					s/$name \(>= [^\)]+\)/$name \(>= $version\)/;
+					s/$name \(>=[^\)]+\)/$name \(>= $version\)/;
 				}
-				else
+				elsif( /$name,/ )
 				{
-					s/$name/$name \(>= $version\)/;
+					s/$name,/$name \(>= $version\), /;
+				}
+				elsif( /$name / )
+				{
+					s/$name /$name \(>= $version\) /;
+				}
+				elsif( /$name$/ )
+				{
+					s/$name$/$name \(>= $version\)/;
 				}
 			}
 		}

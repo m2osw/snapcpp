@@ -17,7 +17,7 @@ Build-Depends: debhelper,
     libzipios-dev,
     snapbase-dev (>= 1.0.0.1~xenial),
     snapcmakemodules (>= 1.0.23.231~trusty),
-    snapinit
+    snapinit (>= 1.0.0.68~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
