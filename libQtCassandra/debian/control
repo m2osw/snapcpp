@@ -3,9 +3,9 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, doxygen, graphviz,
     libboost1.49-dev | libboost-dev, libssl-dev,
-    snapcmakemodules (>= 1.0.25.192~xenial), libcontrolledvars-dev (>= 1.4.16.436~xenial),
-    libadvgetopt-dev (>= 1.0.2), libqtserialization-dev, libtld-dev (>= 1.5.1.382~xenial), 
-    libas2js-dev (>= 0.1.14.189~xenial), cassandra-cpp-driver-dev (>= 2.2.2-1),
+    snapcmakemodules (>= 1.0.25.193~xenial), libcontrolledvars-dev (>= 1.4.16.437~xenial),
+    libadvgetopt-dev (>= 1.0.2), libqtserialization-dev, libtld-dev (>= 1.5.1.383~xenial), 
+    libas2js-dev (>= 0.1.14.190~xenial), cassandra-cpp-driver-dev (>= 2.2.2-1),
     qt5-default
 Standards-Version: 3.9.4
 Section: libs

@@ -36,7 +36,7 @@ Build-Depends: debhelper,
     libzipios-dev (>= 2.1.2.115~trusty),
     snapbase-dev,
     snapcmakemodules (>= 1.0.23.231~trusty),
-    snapmanagercgi (>= 1.0.0.70~xenial)
+    snapmanagercgi (>= 1.0.0.71~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

@@ -13,11 +13,11 @@ Build-Depends: debhelper,
     liblog4cplus-dev (>= 1.2.0.397~xenial),
     libqtcassandra-dev (>= 0.6.0.26~xenial),
     libqtserialization-dev (>= 0.1.16.618~xenial),
-    libsnapwebsites-dev (>= 1.0.0.77~xenial),
+    libsnapwebsites-dev (>= 1.0.0.78~xenial),
     libtld-dev (>= 1.5.1.314~xenial),
-    snapbase-dev (>= 1.0.0.68~xenial),
+    snapbase-dev (>= 1.0.0.69~xenial),
     snapcmakemodules (>= 1.0.23.231~trusty),
-    snapmanagercgi-dev (>= 1.0.0.71~xenial),
+    snapmanagercgi-dev (>= 1.0.0.72~xenial),
     snapinit
 Standards-Version: 3.9.4
 Section: libs
