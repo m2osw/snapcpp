@@ -5,6 +5,7 @@ then
 fi
 
 # We have many binary paths where we can find the executables
+HERE=`pwd`
 BUILD/snapwebsites/snapinit/src/snapinit --debug \
-	--binary-path `ls -dm BUILD/snapwebsites/*/src BUILD/snapwebsites/snapmanagercgi/daemon | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
+	--binary-path `ls -dm $HERE/BUILD/snapwebsites/*/src $HERE/BUILD/snapwebsites/snapmanagercgi/daemon | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
 	start

@@ -37,15 +37,17 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="weak">
+  <xs:simpleType name="dependencyType">
     <xs:annotation>
       <xs:documentation>
-        The value "weak" if specified. A weak dependency is a dependency
-        that should be started before this system, but if not available
+        Define the type of dependency. It can either be "strong" (the
+        default) or "weak". A weak dependency is a dependency that
+        should be started before this system, but if not available
         can safely be ignored.
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:token">
+      <xs:enumeration value="strong"/>
       <xs:enumeration value="weak"/>
     </xs:restriction>
   </xs:simpleType>
@@ -167,7 +169,7 @@
         <xs:complexType>
           <xs:simpleContent>
             <xs:extension base="name">
-              <xs:attribute name="weak" type="weak"/>
+              <xs:attribute name="type" type="dependencyType" default="strong"/>
             </xs:extension>
           </xs:simpleContent>
         </xs:complexType>

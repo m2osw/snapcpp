@@ -331,6 +331,7 @@ public:
     QString const &             get_spool_path() const;
     QString const &             get_server_name() const;
     bool                        get_debug() const;
+    QString const &             get_data_path() const;
     service::pointer_t          get_snapcommunicator_service() const;
     void                        send_message(snap::snap_communicator_message const & message);
 
@@ -378,13 +379,14 @@ private:
     //
     advgetopt::getopt                   f_opt;
     snap::snap_config                   f_config;
-    QString                             f_log_conf;
+    QString                             f_log_conf = "/etc/snapwebsites/snapinit.properties";
     command_t                           f_command = command_t::COMMAND_UNKNOWN;
     bool                                f_debug = false;
     QString                             f_server_name;
     QString                             f_lock_filename;
     QFile                               f_lock_file;
-    QString                             f_spool_path;
+    QString                             f_data_path = "/var/lib/snapwebsites";
+    QString                             f_spool_path = "/var/spool/snap/snapinit";
     mutable bool                        f_spool_directory_created = false;
     service::vector_t                   f_service_list;
     int                                 f_stop_max_wait = 60;

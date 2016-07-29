@@ -499,7 +499,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
         "tree",
         nullptr,
-        "Generate the tree of services in a dot file and then output an image.",
+        "Generate the tree of services in a dot file and then output an image in the snapinit data_path directory.",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {
@@ -545,12 +545,10 @@ snap_init::pointer_t snap_init::f_instance;
 
 snap_init::snap_init( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
-    , f_log_conf( "/etc/snapwebsites/snapinit.properties" )
     , f_lock_filename( QString("%1/snapinit-lock.pid")
                        .arg(f_opt.get_string("lockdir").c_str())
                      )
     , f_lock_file( f_lock_filename )
-    , f_spool_path( "/var/spool/snap/snapinit" )
     , f_communicator(snap::snap_communicator::instance())
 {
     // commands that return immediately
@@ -645,6 +643,22 @@ snap_init::snap_init( int argc, char * argv[] )
     }
 
     g_logger_ready = true;
+
+    // user can change the current directory to another directory
+    //
+    if(f_config.contains("data_path"))
+    {
+        f_data_path = f_config["data_path"];
+    }
+
+    // try to go to our home directory, warn if it fails, but go on
+    //
+    if(chdir(f_data_path.toUtf8().data()) != 0)
+    {
+        int const e(errno);
+        SNAP_LOG_WARNING("could not change to the snapinit home directory \"")(f_data_path)("\" (errno: ")(e)(", ")(strerror(e))(")");
+        // go on...
+    }
 
     // do not do too much in the constructor or we may get in
     // trouble (i.e. calling shared_from_this() from the
@@ -757,16 +771,20 @@ void snap_init::init_message_functions()
                 // generate the list of services as a string of
                 // comma separated names
                 //
-                snap::snap_string_list services;
-                auto get_service_name = [&services]( auto const & svc )
+                snap::snap_string_list service_list_name;
+                auto get_service_name = [&service_list_name]( auto const & svc )
                 {
-                    services << svc->get_service_name();
+                    if(svc)
+                    {
+                        service_list_name << svc->get_service_name();
+                    }
                 };
                 //
                 std::for_each( std::begin(f_service_list), std::end(f_service_list), get_service_name );
+                QString const services(service_list_name.join(","));
                 //
-                SNAP_LOG_TRACE("READY: list to send to server: [")(services.join(","))("].");
-                reply.add_parameter("list", services.join(","));
+                SNAP_LOG_TRACE("READY: list to send to server: [")(services)("].");
+                reply.add_parameter("list", services);
 
                 f_listener_connection->send_message(reply);
             }
@@ -810,15 +828,19 @@ void snap_init::init_message_functions()
 
                 // search for the process by pid
                 //
-                auto const svc(std::find_if(
+                auto const s(std::find_if(
                         f_service_list.begin(),
                         f_service_list.end(),
-                        [&pid](auto const & s)
+                        [&pid](auto const & svc)
                         {
-                            return s->get_process().get_pid() == pid;
+                            if(svc)
+                            {
+                                return svc->get_process().get_pid() == pid;
+                            }
+                            return false;
                         }));
-                if(svc == f_service_list.end()
-                || !*svc)
+                if(s == f_service_list.end()
+                || !*s)
                 {
                     // process not found
                     //
@@ -834,7 +856,7 @@ void snap_init::init_message_functions()
                 // if the safe message is valid, the following call will
                 // make things move forward as expected
                 //
-                (*svc)->get_process().action_safe_message(message.get_parameter("name"));
+                (*s)->get_process().action_safe_message(message.get_parameter("name"));
 
                 // // wakeup other services (i.e. when SAFE is required
                 // // the system does not start all the processes timers
@@ -856,7 +878,11 @@ void snap_init::init_message_functions()
                         f_service_list.end(), 
                         [service_parm](auto const & svc)
                         {
-                            return svc->get_service_name() == service_parm;
+                            if(svc)
+                            {
+                                return svc->get_service_name() == service_parm;
+                            }
+                            return false;
                         })
                     );
                 if( iter != std::end(f_service_list) )
@@ -954,6 +980,7 @@ void snap_init::init()
     }
 
     // user can change were the "cron" data managed by snapinit gets saved
+    //
     if(f_config.contains("spool_path"))
     {
         f_spool_path = f_config["spool_path"];
@@ -1079,9 +1106,12 @@ void snap_init::init()
         std::for_each(
                 std::begin(f_service_list),
                 std::end(f_service_list),
-                [&common_options](service::pointer_t const s)
+                [&common_options](service::pointer_t const svc)
                 {
-                    s->finish_configuration(common_options);
+                    if(svc)
+                    {
+                        svc->finish_configuration(common_options);
+                    }
                 });
 
         // sort those services by priority
@@ -1094,6 +1124,10 @@ void snap_init::init()
                 std::end(f_service_list),
                 [](service::pointer_t const a, service::pointer_t const b)
                 {
+                    if(!a || !b)
+                    {
+                        return false;
+                    }
                     return *a < *b;
                 });
     }
@@ -1137,10 +1171,22 @@ void snap_init::init()
         // TODO: add support for --verbose and print much more than just
         //       the service name
         //
-        std::cout << "List of services to start on this server:" << std::endl;
-        auto output_service_name = []( auto const & s )
+        std::cout << "List of services, sorted by priority, to start on this server:" << std::endl;
+        auto output_service_name = []( auto const & svc )
         {
-            std::cout << s->get_service_name() << std::endl;
+            if(svc)
+            {
+                std::cout << svc->get_service_name();
+                if(svc->is_cron_task())
+                {
+                    std::cout << " [CRON]";
+                }
+                if(svc->is_disabled())
+                {
+                    std::cout << " (disabled)";
+                }
+                std::cout << std::endl;
+            }
         };
         std::for_each( std::begin(f_service_list), std::end(f_service_list), output_service_name );
         // the --list command is over!
@@ -1245,13 +1291,31 @@ void snap_init::create_service_tree()
     std::for_each(
             std::begin(f_service_list),
             std::end(f_service_list),
-            [&](auto const & s)
+            [&](auto const & svc)
             {
-                s->set_service_index(node_count);
-                dot_file << "n" << node_count
-                         << " [label=\"" << s->get_service_name()
-                         << "\",shape=box];" << std::endl;
-                ++node_count;
+                if(svc)
+                {
+                    svc->set_service_index(node_count);
+                    std::string color("#000000");
+                    if(svc->is_disabled())
+                    {
+                        color = "#666666";
+                    }
+                    else if(svc->is_paused())
+                    {
+                        color = "#ff0000";
+                    }
+                    else if(svc->is_registered())
+                    {
+                        color = "#008800";
+                    }
+                    dot_file << "n" << node_count
+                             << " [label=\"" << svc->get_service_name()
+                             << "\",color=\"" << color
+                             << "\",fontcolor=\"" << color
+                             << "\",shape=box];" << std::endl;
+                    ++node_count;
+                }
             });
 
     // edges font size to small
@@ -1262,24 +1326,27 @@ void snap_init::create_service_tree()
             std::end(f_service_list),
             [&](auto const & svc)
             {
-                int const service_index(svc->get_service_index());
-                service::weak_vector_t const & depends(svc->get_depends_list());
-                for(auto d : depends)
+                if(svc)
                 {
-                    auto const & dep(d.lock());
-                    if(dep)
+                    int const service_index(svc->get_service_index());
+                    service::weak_vector_t const & depends(svc->get_depends_list());
+                    for(auto d : depends)
                     {
-                        if(svc->is_weak_dependency(dep->get_service_name()))
+                        auto const & dep(d.lock());
+                        if(dep)
                         {
-                            dot_file << "edge [style=dashed,color=\"#888888\"];" << std::endl;
+                            if(svc->is_weak_dependency(dep->get_service_name()))
+                            {
+                                dot_file << "edge [style=dashed,color=\"#888888\"];" << std::endl;
+                            }
+                            else
+                            {
+                                dot_file << "edge [style=solid,color=\"#000000\"];" << std::endl;
+                            }
+                            dot_file << "n" << service_index
+                                     << " -> n" << dep->get_service_index()
+                                     << ";" << std::endl;
                         }
-                        else
-                        {
-                            dot_file << "edge [style=solid,color=\"#000000\"];" << std::endl;
-                        }
-                        dot_file << "n" << service_index
-                                 << " -> n" << dep->get_service_index()
-                                 << ";" << std::endl;
                     }
                 }
             });
@@ -1350,7 +1417,7 @@ void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_fi
     // otherwise, just skip (TODO: although if we want to ever support a
     // runtime reload, this is not a good solution!)
     //
-    if(f_command != command_t::COMMAND_LIST
+    if((f_command != command_t::COMMAND_LIST && f_command != command_t::COMMAND_TREE)
     && e.attributes().contains("disabled"))
     {
         return;
@@ -1370,7 +1437,11 @@ void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_fi
             f_service_list.end(),
             [new_service_name](auto const & svc)
             {
-                return svc->get_service_name() == new_service_name;
+                if(svc)
+                {
+                    return svc->get_service_name() == new_service_name;
+                }
+                return false;
             }))
     {
         common::fatal_error(QString("snapinit cannot start the same service more than once on \"%1\". It found \"%2\" twice in \"%3\".")
@@ -1583,7 +1654,11 @@ void snap_init::service_died()
                 f_service_list.end(),
                 [died_pid](auto const svc)
                 {
-                    return svc->get_process().get_pid() == died_pid;
+                    if(svc)
+                    {
+                        return svc->get_process().get_pid() == died_pid;
+                    }
+                    return false;
                 }));
         bool const found(dead_service_iter != f_service_list.end()
                       && *dead_service_iter);
@@ -1675,15 +1750,18 @@ void snap_init::remove_service(service::pointer_t service)
 
     // remove the service from our main list
     //
-    f_service_list.erase(
-            std::remove_if(
-                    f_service_list.begin(),
-                    f_service_list.end(),
-                    [&service](auto const & svc)
-                    {
-                        return svc == service;
-                    })
-        );
+    snap::NOTUSED(std::find_if(
+            f_service_list.begin(),
+            f_service_list.end(),
+            [&service](auto & svc)
+            {
+                if(svc == service)
+                {
+                    svc.reset();
+                    return true;
+                }
+                return false;
+            }));
 
     // the service is also a timer that we need to remove from
     // the snapcommunicator list
@@ -1709,7 +1787,16 @@ void snap_init::remove_service(service::pointer_t service)
         f_snapinit_service.reset();
     }
 
-    if( f_service_list.empty() )
+    // the list does not get empty because we cannot remove pointers
+    // (we have recursive loops and that would crash with SEGV or such)
+    //
+    if( f_service_list.end() == std::find_if(
+                                    f_service_list.begin(),
+                                    f_service_list.end(),
+                                    [](auto const & svc)
+                                    {
+                                        return !!svc;
+                                    }))
     {
         SNAP_LOG_TRACE("snap_init::remove_service(): service list empty!");
 
@@ -1736,7 +1823,10 @@ void snap_init::remove_service(service::pointer_t service)
         SNAP_LOG_TRACE("**** snap_init::remove_service(): service list NOT empty:");
         for( auto const & svc : f_service_list )
         {
-            SNAP_LOG_TRACE("******* service '")(svc->get_service_name())("' is still in the list!");
+            if(svc)
+            {
+                SNAP_LOG_TRACE("******* service '")(svc->get_service_name())("' is still in the list!");
+            }
         }
     }
 #endif
@@ -1847,6 +1937,19 @@ bool snap_init::get_debug() const
 }
 
 
+/** \brief Retrieve a copy of the data path.
+ *
+ * This function returns the path to the snapinit home directory.
+ *
+ * \return The data_path parameter as defined in the snapinit.conf or the
+ *         default which is "/var/lib/snapwebsites".
+ */
+QString const & snap_init::get_data_path() const
+{
+    return f_data_path;
+}
+
+
 /** \brief Retrieve the service used to inter-connect services.
  *
  * This function returns the information about the server that is
@@ -1907,9 +2010,12 @@ void snap_init::log_selected_servers() const
     std::stringstream ss;
     ss << "Enabled servers:";
 
-    auto log_service_name = [&ss](auto const & opt)
+    auto log_service_name = [&ss](auto const & svc)
     {
-        ss << " [" << opt->get_service_name() << "]";
+        if(svc)
+        {
+            ss << " [" << svc->get_service_name() << "]";
+        }
     };
 
     std::for_each( std::begin(f_service_list), std::end(f_service_list), log_service_name );
@@ -1976,7 +2082,11 @@ service::pointer_t snap_init::get_service( QString const & service_name ) const
 {
     auto get_service_name = [service_name]( auto const & svc )
     {
-        return svc->get_service_name() == service_name;
+        if(svc)
+        {
+            return svc->get_service_name() == service_name;
+        }
+        return false;
     };
     //
     auto iter = std::find_if( f_service_list.begin(), f_service_list.end(), get_service_name );
@@ -2035,12 +2145,21 @@ void snap_init::terminate_services()
         //
         f_snapinit_state = snapinit_state_t::SNAPINIT_STATE_STOPPING;
 
+        // call action_stop() on each service in reverse order
+        //
+        // We have to do it in reverse order in case some processes
+        // are still or are already dead because they should be
+        // removed immediately
+        //
         std::for_each(
-                f_service_list.begin(),
-                f_service_list.end(),
+                f_service_list.rbegin(),
+                f_service_list.rend(),
                 [](auto const & svc)
                 {
-                    svc->action_stop();
+                    if(svc)
+                    {
+                        svc->action_stop();
+                    }
                 });
     }
 }
@@ -2189,9 +2308,12 @@ void snap_init::start()
     std::for_each(
             std::begin(f_service_list),
             std::end(f_service_list),
-            [](auto const & s)
+            [](auto const & svc)
             {
-                s->action_ready();
+                if(svc)
+                {
+                    svc->action_ready();
+                }
             });
 
     // this is to connect to the snapcommunicator

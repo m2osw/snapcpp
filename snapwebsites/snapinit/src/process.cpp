@@ -266,9 +266,11 @@ void process::set_command(QString const & binary_path, QString const & command, 
 
     if(!ignore_path_check)
     {
-        common::fatal_error(QString("could not find \"%1\" in any of the paths \"%2\".")
+        std::unique_ptr<char> cwd(get_current_dir_name());
+        common::fatal_error(QString("could not find \"%1\" in any of the paths \"%2\". Current working directory is: \"%3\".")
                       .arg(f_service->get_service_name())
-                      .arg(binary_path));
+                      .arg(binary_path)
+                      .arg(QString::fromUtf8(cwd.get())));
         snap::NOTREACHED();
     }
 
@@ -989,7 +991,12 @@ void process::exec_child(pid_t parent_pid)
 
     // the command did not start...
     //
-    common::fatal_error(QString("service::run() child: process \"%1\" failed to start!").arg(command_line.c_str()));
+    int const e(errno);
+    common::fatal_error(QString("service::run() child: process \"%1\" failed to start! (errno: %2, %3)")
+                    .arg(command_line.c_str())
+                    .arg(e)
+                    .arg(strerror(e))
+                    );
     snap::NOTREACHED();
 }
 

@@ -5,7 +5,7 @@
   <recovery>60</recovery>
   <dependencies>
     <dependency>snapinit</dependency>
-    <dependency weak="weak">snapfirewall</dependency>
+    <dependency type="weak">snapfirewall</dependency>
   </dependencies>
 </service>
 <!--

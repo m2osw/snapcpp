@@ -90,12 +90,14 @@ public:
     // snap::snap_communicator::snap_timer implementation
     virtual void                process_timeout() override;
 
+    bool                        is_disabled() const;
     bool                        is_cron_task() const;
     bool                        is_snapcommunicator() const;
     bool                        is_snapdbproxy() const;
     bool                        is_dependency_of( QString const & service_name );
     bool                        is_running() const;
     bool                        is_registered() const;
+    bool                        is_paused() const;
     bool                        is_weak_dependency( QString const & service_name );
 
     QString const &             get_service_name() const;
@@ -192,6 +194,7 @@ private:
     // data from XML files (some also goes in the f_process object)
     //
     QString                     f_service_name;
+    bool                        f_disabled = false;
     bool                        f_required = false;
     int                         f_wait_interval = 1;    // in seconds
     int                         f_recovery = 0;         // in seconds

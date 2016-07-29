@@ -362,6 +362,10 @@ void service::configure(QDomElement e, QString const & binary_path, std::vector<
         snap::NOTREACHED();
     }
 
+    // for the --list and --tree command options, save the disabled state
+    //
+    f_disabled = e.attributes().contains("disabled");
+
     // if a required service fails then snapinit fails as a whole
     //
     f_required = e.attributes().contains("required");
@@ -794,7 +798,7 @@ void service::configure(QDomElement e, QString const & binary_path, std::vector<
                     f_dep_name_list.push_back(
                             dependency_t(
                                 dep_name,
-                                n.attribute("weak") == "weak" ? dependency_t::dependency_type_t::DEPENDENCY_TYPE_WEAK
+                                n.attribute("type") == "weak" ? dependency_t::dependency_type_t::DEPENDENCY_TYPE_WEAK
                                                               : dependency_t::dependency_type_t::DEPENDENCY_TYPE_STRONG
                             )
                         );
@@ -974,11 +978,11 @@ void service::action_godown()
 {
     if(f_service_state == service_state_t::SERVICE_STATE_STOPPING)
     {
-        throw std::runtime_error("a service cannot go from STOPPING to GODOWN.");
+        throw std::runtime_error("a service cannot go from STOPPING to GOINGDOWN.");
     }
     if(f_service_state == service_state_t::SERVICE_STATE_PAUSED)
     {
-        throw std::runtime_error("a service cannot go from PAUSED to GODOWN.");
+        throw std::runtime_error("a service cannot go from PAUSED to GOINGDOWN.");
     }
 
     // if already going down, do nothing
@@ -1360,10 +1364,9 @@ void service::process_died()
         {
             // this is the normal way the cron process is expected to die
             //
-            // re-enable and wait for the next tick
-            // do not change the timeout delay so we always get the ticks
-            // at the same interval
+            // setup the next tick and re-enable the timer
             //
+            compute_next_tick(true);
             set_enable(true);
             return;
         }
@@ -1459,8 +1462,10 @@ void service::process_pause()
     {
         // first remove ourselves
         //
-        f_service_state = service_state_t::SERVICE_STATE_STOPPING;
-        snap_init_ptr()->remove_service(shared_from_this());
+        // TBD: it looks like this is not required and can actually
+        //      cause problems
+        //f_service_state = service_state_t::SERVICE_STATE_STOPPING;
+        //snap_init_ptr()->remove_service(shared_from_this());
 
         // then make sure to terminate snapinit
         //
@@ -1643,7 +1648,8 @@ void service::process_wentdown()
                 // start the pause timer if necessary
                 //
                 auto const & svc(s.lock());
-                if(svc->f_service_state == service_state_t::SERVICE_STATE_PAUSED)
+                if(svc
+                && svc->f_service_state == service_state_t::SERVICE_STATE_PAUSED)
                 {
                     svc->process_prereqs_down();
                 }
@@ -2105,6 +2111,42 @@ bool service::is_snapdbproxy() const
 bool service::is_registered() const
 {
     return f_process.is_registered();
+}
+
+
+/** \brief Check whether the process is currently paused.
+ *
+ * A process that failed too many times in a raw gets paused for
+ * a while. This function checks whether the srvice is in that
+ * state.
+ *
+ * It is current used by the tree generator to create a run time
+ * tree for snapmanager.cgi.
+ *
+ * \return true if the process is currently paused.
+ */
+bool service::is_paused() const
+{
+    return f_service_state == service_state_t::SERVICE_STATE_PAUSED;
+}
+
+
+/** \brief Let you know whether th service was marked as being disabled.
+ *
+ * At this time this flag is only available when the --list or --tree
+ * command line options are used. Later we may want to always load all
+ * the possible services and make the distinction at run time in order
+ * to allow runtime enabling services.
+ *
+ * \note
+ * It could be useful to show the current status and see that some
+ * services died. Yet again some features do not support that yet.
+ *
+ * \return true if the service was marked as disabled.
+ */
+bool service::is_disabled() const
+{
+    return f_disabled;
 }
 
 

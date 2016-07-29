@@ -221,7 +221,7 @@ void snap_thread::snap_mutex::lock()
     int const err(pthread_mutex_lock(&f_mutex));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex lock generated error #")(err);
+        SNAP_LOG_ERROR("a mutex lock generated error #")(err)(" -- ")(strerror(err));
         throw snap_thread_exception_invalid_error("pthread_mutex_lock() failed");
     }
 
@@ -260,7 +260,7 @@ bool snap_thread::snap_mutex::try_lock()
     }
 
     // another type of failure
-    SNAP_LOG_ERROR("a mutex try lock generated error #")(err);
+    SNAP_LOG_ERROR("a mutex try lock generated error #")(err)(" -- ")(strerror(err));
     throw snap_thread_exception_invalid_error("pthread_mutex_trylock() failed");
 }
 
@@ -296,7 +296,7 @@ void snap_thread::snap_mutex::unlock()
     int const err(pthread_mutex_unlock(&f_mutex));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex unlock generated error #")(err);
+        SNAP_LOG_ERROR("a mutex unlock generated error #")(err)(" -- ")(strerror(err));
         throw snap_thread_exception_invalid_error("pthread_mutex_unlock() failed");
     }
 }
@@ -340,7 +340,7 @@ void snap_thread::snap_mutex::wait()
     if(err != 0)
     {
         // an error occurred!
-        SNAP_LOG_ERROR("a mutex conditional wait generated error #")(err);
+        SNAP_LOG_ERROR("a mutex conditional wait generated error #")(err)(" -- ")(strerror(err));
         throw snap_thread_exception_mutex_failed_error("pthread_cond_wait() failed");
     }
 }
@@ -391,7 +391,7 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t const usecs)
     if(gettimeofday(&vtime, nullptr) != 0)
     {
         err = errno;
-        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err);
+        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err)(" -- ")(strerror(err));
         throw snap_thread_exception_system_error("gettimeofday() failed");
     }
 
@@ -415,7 +415,7 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t const usecs)
         }
 
         // an error occurred!
-        SNAP_LOG_ERROR("a mutex conditional timed wait generated error #")(err);
+        SNAP_LOG_ERROR("a mutex conditional timed wait generated error #")(err)(" -- ")(strerror(err));
         throw snap_thread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
@@ -469,7 +469,7 @@ bool snap_thread::snap_mutex::dated_wait(uint64_t usec)
         }
 
         // an error occurred!
-        SNAP_LOG_ERROR("a mutex conditional dated wait generated error #")(err);
+        SNAP_LOG_ERROR("a mutex conditional dated wait generated error #")(err)(" -- ")(strerror(err));
         throw snap_thread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
@@ -586,7 +586,7 @@ snap_thread::snap_lock::~snap_lock()
     }
     catch(const std::exception& e)
     {
-        // a log was already printed, we don't absolutely need another one
+        // a log was already printed, we do not absolutely need another one
         exit(1);
     }
 }
