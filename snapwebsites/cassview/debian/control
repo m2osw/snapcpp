@@ -14,7 +14,7 @@ Build-Depends: debhelper,
     liblog4cplus-dev (>= 1.2.0),
     libqtcassandra-dev (>= 0.5.7),
     libqtserialization-dev (>= 0.1.16.231~trusty),
-    libsnapwebsites-dev (>= 1.0.0.76~xenial),
+    libsnapwebsites-dev (>= 1.0.0.78~xenial),
     libtld-dev (>= 1.4.21.92~trusty),
     snapcmakemodules (>= 1.0.23.230~trusty)
 Standards-Version: 3.9.4
