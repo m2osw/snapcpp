@@ -42,6 +42,7 @@ set( MODULES_LIST
 	ICU
 	LibEvent
 	log4cplus
+	Magic
 	ProcPS
 	QREncode
 	QxCppUnit

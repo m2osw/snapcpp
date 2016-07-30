@@ -42,20 +42,10 @@ if( ${SNAP_NO_FORK} )
     add_definitions( -DSNAP_NO_FORK )
 endif()
 
-find_file( MAGIC magic.h )
-if( ${MAGIC} STREQUAL "MAGIC-NOTFOUND" )
-    message( FATAL_ERROR "Please install libmagic-dev!" )
-endif()
-get_filename_component( MAGIC_INCLUDE_PATH ${MAGIC} PATH )
-
-find_library( MAGIC_LIBRARY magic )
-if( ${MAGIC_LIBRARY} STREQUAL "MAGIC_LIBRARY-NOTFOUND" )
-    message( FATAL_ERROR "Please install libmagic-dev!" )
-endif()
 
 include_directories(
     SYSTEM
-        ${MAGIC_INCLUDE_PATH}
+        ${MAGIC_INCLUDE_DIRS}
         ${LOG4CPLUS_INCLUDE_DIRS}
         ${LIBPROCPS_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
@@ -131,7 +121,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${AS2JS_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${MAGIC_LIBRARY}
+    ${MAGIC_LIBRARIES}
     ${LIBPROCPS_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${UUID}
