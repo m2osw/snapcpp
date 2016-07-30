@@ -12,7 +12,6 @@
 apt-get install \
     closure-linter \
     cmake \
-    doxygen \
     dpkg-dev \
     gcc \
     g++ \
@@ -43,9 +42,10 @@ echo "  You have to get your own version compiled and packaged."
 if test "$1" = "--optional"
 then
     apt-get install \
-       graphviz \
-       libicu-dev \
-       libqxcppunit-dev
+        doxygen \
+        graphviz \
+        libicu-dev \
+        libqxcppunit-dev
 else
     echo
     echo "WARNING:"
