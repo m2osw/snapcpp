@@ -1,10 +1,18 @@
 Source: as2js
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake,
-    doxygen, graphviz, libicu-dev, snapcmakemodules (>= 1.0.25.193~xenial),
-    libcontrolledvars-dev (>= 1.4.16.437~xenial), libadvgetopt-dev (>= 1.1.0.69~xenial),
-    libcppunit-dev (>= 1.13), libqxcppunit-dev (>= 0.9.2), qt5-default, libqt5webkit5-dev
+Build-Depends: cmake,
+    debhelper,
+    doxygen,
+    graphviz,
+    libadvgetopt-dev (>= 1.1.0.70~xenial),
+    libcontrolledvars-dev (>= 1.4.16.438~xenial),
+    libcppunit-dev (>= 1.13),
+    libicu-dev,
+    libqt5webkit5-dev,
+    libqxcppunit-dev (>= 0.9.2),
+    qt5-default,
+    snapcmakemodules (>= 1.0.25.194~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

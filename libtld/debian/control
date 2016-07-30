@@ -1,9 +1,13 @@
 Source: libtld
 Priority: optional
 Maintainer: Alexis Wilke <alexis@m2osw.com>
-Build-Depends: debhelper, cmake, doxygen, graphviz,
-    snapcmakemodules (>= 1.0.25.192~xenial), libboost-dev | libboost1.49-dev,
-    qt5-default
+Build-Depends: cmake,
+    debhelper,
+    doxygen,
+    graphviz,
+    libboost-dev | libboost1.49-dev,
+    qt5-default,
+    snapcmakemodules (>= 1.0.25.193~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libtld

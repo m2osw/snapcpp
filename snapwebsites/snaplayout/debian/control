@@ -1,20 +1,20 @@
 Source: snaplayout
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper,
-    cmake,
-    qt5-default,
+Build-Depends: cmake,
+    debhelper,
+    libadvgetopt-dev (>= 1.1.0.70~xenial),
+    liblog4cplus-dev (>= 1.2.0.467~xenial),
+    libqtcassandra-dev (>= 0.6.0.107~xenial),
+    libqtserialization-dev (>= 0.1.16.697~xenial),
+    libsnapwebsites-dev (>= 1.0.0.78~xenial),
+    libtld-dev (>= 1.5.1.384~xenial),
     libxml2-utils,
-    zip,
-    libadvgetopt-dev,
-    liblog4cplus-dev,
-    libqtcassandra-dev,
-    libqtserialization-dev,
-    libsnapwebsites-dev (>= 1.0.0.77~xenial), 
-    libtld-dev,
-    libzipios-dev,
-    snapbase-dev (>= 1.0.0.68~xenial),
-    snapcmakemodules (>= 1.0.23.231~trusty)
+    libzipios-dev (>= 2.1.2.194~xenial),
+    qt5-default,
+    snapbase-dev (>= 1.0.0.69~xenial),
+    snapcmakemodules (>= 1.0.25.194~xenial),
+    zip
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

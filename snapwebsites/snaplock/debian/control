@@ -1,22 +1,22 @@
 Source: snaplock
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper,
+Build-Depends: catch (>= 1.0),
     cmake,
-    catch (>= 1.0),
+    debhelper,
     doxygen,
     graphviz,
+    libadvgetopt-dev (>= 1.1.0.70~xenial),
+    liblog4cplus-dev (>= 1.2.0.467~xenial),
+    libqtcassandra-dev (>= 0.6.0.107~xenial),
+    libqtserialization-dev (>= 0.1.16.697~xenial),
+    libsnapwebsites-dev (>= 1.0.0.78~xenial),
+    libtld-dev (>= 1.5.1.384~xenial),
     libxml2-utils,
     qt5-default,
-    zip,
-    libadvgetopt-dev (>= 1.0.16.368~xenial),
-    liblog4cplus-dev (>= 1.2.0.388~trusty),
-    libqtcassandra-dev (>= 0.6.0.26~trusty),
-    libqtserialization-dev (>= 0.1.16.618~xenial),
-    libsnapwebsites-dev (>= 1.0.0.9~xenial),
-    libtld-dev (>= 1.5.1.305~trusty),
-    snapcmakemodules (>= 1.0.23.231~trusty),
-    snapinit (>= 1.0.0.69~xenial)
+    snapcmakemodules (>= 1.0.25.194~xenial),
+    snapinit (>= 1.0.0.70~xenial),
+    zip
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
