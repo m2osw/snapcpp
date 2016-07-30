@@ -44,6 +44,22 @@ namespace common
 {
 
 
+/** \brief The PID of the main snapinit application.
+ *
+ * When in the fork()'ed process, we may end up calling the fatal_error()
+ * function, which is fatal for the child, but not for the snapinit process
+ * itself.
+ *
+ * However, as a result, we would delete the PID file which is also our
+ * file used to lock the snapinit process (prevent two instances from
+ * running simultaneously on the same computer.) So we have this PID
+ * to check and make sure we call the snapinit->exit() function only
+ * if we are in the main process, not a child.
+ */
+pid_t g_main_snapinit_pid = -1;
+
+
+
 /** \brief Check whether the standard output stream is a TTY.
  *
  * This function defines whether 'stderr' is a TTY or not. If not
@@ -108,16 +124,39 @@ void fatal_error(QString const & msg)
 {
     fatal_message(msg);
     snap_init::pointer_t si( snap_init::instance() );
-    if(si)
+    if(si && getpid() == g_main_snapinit_pid)
     {
+        // call this one only if we are the main snapinit process
+        // and an instance was created
+        //
         si->exit(1);
     }
     else
     {
+        // direct exit!
+        //
         exit(1);
     }
     snap::NOTREACHED();
 }
+
+
+/** \brief Called from the main() function to save the main snapinit PID.
+ *
+ * This function is called by the main() function. It saves the process
+ * PID in a variable which is reused by the fatal_error() function to
+ * make sure that the snapinit->exit() function gets called only by
+ * the snapinit process.
+ *
+ * That means a child process as created by the process.cpp implementation
+ * will not inadvertendly call that function which has the side effect
+ * of deleting the PID file used to lock the snapinit process.
+ */
+void setup_fatal_pid()
+{
+    g_main_snapinit_pid = getpid();
+}
+
 
 
 } // namespace common

@@ -1130,6 +1130,18 @@ void snap_init::init()
                     }
                     return *a < *b;
                 });
+
+        // sanity check, we MUST have snapcommunicator, snapinit, then other
+        // services, if another order is used, it is likely to not work
+        // quite right...
+        //
+        if(f_service_list.size() < 2
+        || !f_service_list[0] || f_service_list[0]->get_service_name() != "snapcommunicator"
+        || !f_service_list[1] || f_service_list[1]->get_service_name() != "snapinit")
+        {
+            common::fatal_error(QString("the system cannot run with at least snapcommunicator and snapinit, defined in that order."));
+            snap::NOTREACHED();
+        }
     }
 
     // retrieve the direct listen information for the UDP port
@@ -1425,9 +1437,19 @@ void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_fi
 
     // create the service object and have it parse the XML data
     //
+    // Note: not found processes generate a warning instead of an error
+    //       when the command is not --list, --tree, or --stop
+    //
     service::pointer_t s(std::make_shared<service>(shared_from_this()));
     QString const binary_path( QString::fromUtf8(f_opt.get_string("binary-path").c_str()) );
-    s->configure( e, binary_path, common_options, f_command == command_t::COMMAND_LIST || f_command == command_t::COMMAND_TREE );
+    s->configure(
+            e,
+            binary_path,
+            common_options,
+            f_command == command_t::COMMAND_LIST
+                || f_command == command_t::COMMAND_TREE
+                || f_command == command_t::COMMAND_STOP
+        );
 
     // avoid two services with the exact same name, we do not support such
     //
@@ -1669,6 +1691,8 @@ void snap_init::service_died()
             SNAP_LOG_FATAL("waitpid() returned unknown PID ")(died_pid);
         }
 
+        termination_t termination(termination_t::TERMINATION_ABORT);
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
         if(WIFEXITED(status))
@@ -1679,10 +1703,12 @@ void snap_init::service_died()
             {
                 // when this happens there is not really anything to tell about
                 SNAP_LOG_DEBUG("Service \"")(service_name)("\" terminated normally.");
+                termination = termination_t::TERMINATION_NORMAL;
             }
             else
             {
                 SNAP_LOG_INFO("Service \"")(service_name)("\" terminated normally, but with exit code ")(exit_code);
+                termination = termination_t::TERMINATION_ERROR;
             }
         }
         else if(WIFSIGNALED(status))
@@ -1714,7 +1740,7 @@ void snap_init::service_died()
             // call this after we generated the error output so the logs
             // appear in a sensible order
             //
-            (*dead_service_iter)->get_process().action_died();
+            (*dead_service_iter)->get_process().action_died(termination);
         }
         else
         {

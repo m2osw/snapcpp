@@ -40,6 +40,7 @@ int64_t const        SECONDS_TO_MICROSECONDS = 1000000LL;        // 1 second in 
 bool                is_a_tty();
 void                fatal_message(QString const & msg);
 [[noreturn]] void   fatal_error(QString const & msg);
+void                setup_fatal_pid();
 
 } // namespace common
 } // namespace snapinit

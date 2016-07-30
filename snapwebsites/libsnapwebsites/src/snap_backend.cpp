@@ -1396,6 +1396,11 @@ void snap_backend::capture_zombies(pid_t pid)
     }
     else
     {
+        // save PID and verify it here?
+        //if(p != f_child_pid)
+        //{
+        //}
+
 //SNAP_LOG_WARNING("child process (pid: ")(pid)(") for backend \"")(f_action)("\" returned.");
         if(WIFEXITED(status))
         {
@@ -1452,10 +1457,7 @@ void snap_backend::capture_zombies(pid_t pid)
         // this was a "run once and quit", so we want to remove all
         // the connections from the communicator and quit ourselves
         //
-        g_communicator->remove_connection(g_messager);
-        g_communicator->remove_connection(g_wakeup_timer);
-        g_communicator->remove_connection(g_tick_timer);
-        g_communicator->remove_connection(g_signal_child_death);
+        disconnect();
     }
 }
 
@@ -1528,23 +1530,50 @@ bool snap_backend::is_ready(QString const & uri)
     if(!f_cron_action)
     {
         SNAP_LOG_ERROR("website URI \"")(uri)("\" does not reference an existing website.");
-
-        // remove the connections so we end up quitting
-        //
-        // TODO: disconnecting these early generates errors we should try to fix:
-        //       (see also SNAP-305)
-        //
-        //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:2999:halk: error: an error occurred while writing to socket of "snap_tcp_client_permanent_message_connection_impl messager" (errno: 9 -- Bad file descriptor).
-        //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messager" was marked as erroneous by the kernel.
-        //
-        g_communicator->remove_connection(g_messager);
-        g_communicator->remove_connection(g_wakeup_timer);
-        g_communicator->remove_connection(g_tick_timer);
-        g_communicator->remove_connection(g_signal_child_death);
+        disconnect();
     }
 
     return false;
 }
+
+
+void snap_backend::disconnect()
+{
+    // remove the connections so we end up quitting
+    //
+    // TODO: disconnecting these early generates errors we should try to fix:
+    //       (see also SNAP-305)
+    //
+    //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:2999:halk: error: an error occurred while writing to socket of "snap_tcp_client_permanent_message_connection_impl messager" (errno: 9 -- Bad file descriptor).
+    //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messager" was marked as erroneous by the kernel.
+    //
+
+    if(g_messager && !f_cron_action && f_action != "list")
+    {
+        // this was the CRON action (which snapinit takes care of
+        // restarting once in a while)
+        //
+        QString action(f_action);
+        int const pos(action.indexOf(':'));
+        if(pos >= 0)
+        {
+            action = action.mid(pos + 2);
+        }
+
+        snap::snap_communicator_message cmd;
+        cmd.set_command("UNREGISTER");
+        cmd.add_parameter("service", action);
+        g_messager->send_message(cmd);
+    }
+
+    // now disconnect so we can quit
+    //
+    g_communicator->remove_connection(g_messager);
+    g_communicator->remove_connection(g_wakeup_timer);
+    g_communicator->remove_connection(g_tick_timer);
+    g_communicator->remove_connection(g_signal_child_death);
+}
+
 
 
 /** \brief Process a backend request on the specified URI.

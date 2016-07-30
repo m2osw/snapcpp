@@ -978,10 +978,12 @@ void service::action_godown()
 {
     if(f_service_state == service_state_t::SERVICE_STATE_STOPPING)
     {
+        SNAP_LOG_FATAL("service \"")(f_service_name)("\" cannot go from STOPPING to GOINGDOWN.");
         throw std::runtime_error("a service cannot go from STOPPING to GOINGDOWN.");
     }
     if(f_service_state == service_state_t::SERVICE_STATE_PAUSED)
     {
+        SNAP_LOG_FATAL("service \"")(f_service_name)("\" cannot go from PAUSED to GOINGDOWN.");
         throw std::runtime_error("a service cannot go from PAUSED to GOINGDOWN.");
     }
 
@@ -1158,9 +1160,18 @@ void service::process_stop()
 
                     case service_state_t::SERVICE_STATE_GOINGDOWN:
                     case service_state_t::SERVICE_STATE_STOPPING:
-                        // if still IDLE then we need to give it a kick
-                        //
-                        svc->process_stop();
+                        if(svc->f_service_state == service_state_t::SERVICE_STATE_STOPPING)
+                        {
+                            // if still IDLE then we need to give it a kick
+                            //
+                            svc->process_stop();
+                        }
+                        else
+                        {
+                            // not yet marked as stopping, make sure it is now
+                            //
+                            svc->action_stop();
+                        }
                         break;
 
                     }
@@ -1189,6 +1200,8 @@ void service::process_stop_initiate()
         // so instead we use our timer to return to the
         // snapcommunicator::run() function and get
         // called back through the process_timeout() function
+        // (and that better matches what happens with other
+        // processes.)
         //
         f_stopping_state = stopping_state_t::STOPPING_STATE_STOP;
 
@@ -1242,7 +1255,7 @@ void service::process_stop_timeout()
         // the snapinit service "dies" after a process_timeout()
         // which ends up calling this function
         //
-        f_process.action_died();
+        f_process.action_died(termination_t::TERMINATION_NORMAL);
         return;
     }
 
@@ -1409,7 +1422,18 @@ void service::process_died()
                     {
                         return;
                     }
-                    svc->process_stop();
+                    if(svc->f_service_state == service_state_t::SERVICE_STATE_STOPPING)
+                    {
+                        // if still IDLE then we need to give it a kick
+                        //
+                        svc->process_stop();
+                    }
+                    else
+                    {
+                        // not yet marked as stopping, make sure it is now
+                        //
+                        svc->action_stop();
+                    }
                 });
         break;
 
@@ -1462,10 +1486,8 @@ void service::process_pause()
     {
         // first remove ourselves
         //
-        // TBD: it looks like this is not required and can actually
-        //      cause problems
-        //f_service_state = service_state_t::SERVICE_STATE_STOPPING;
-        //snap_init_ptr()->remove_service(shared_from_this());
+        f_service_state = service_state_t::SERVICE_STATE_STOPPING;
+        snap_init_ptr()->remove_service(shared_from_this());
 
         // then make sure to terminate snapinit
         //
@@ -1519,6 +1541,9 @@ void service::process_pause()
         // services if we were the last process to die and pause
         //
         process_wentdown();
+
+        // so here we go on!
+        //
         break;
 
     case service_state_t::SERVICE_STATE_STOPPING:
@@ -1540,11 +1565,33 @@ void service::process_pause()
     // check whether we have pre-required servics still running
     //
     service::weak_vector_t running_prereqs;
+    auto is_process_running_and_has_a_strong_connection = [this](auto const & s)
+    {
+        auto const svc(s.lock());
+        if(!svc)
+        {
+            // no service at that index
+            return false;
+        }
+        if(!svc->is_running())
+        {
+            // service is not running, ignore
+            return false;
+        }
+
+        // service is running, we need to nkow whether it is a weak
+        // dependency because if so we can ignore it (i.e. return false)
+        //
+        // WARNING: we are testing prereqs, so the weak dependency test
+        //          looks "swapped" (i.e. 
+        //
+        return !svc->is_weak_dependency( this->get_service_name() );
+    };
     std::copy_if(
             f_prereqs_list.begin(),
             f_prereqs_list.end(),
             std::back_inserter(running_prereqs),
-            is_process_running);
+            is_process_running_and_has_a_strong_connection);
 
     if(running_prereqs.empty())
     {
@@ -1602,7 +1649,7 @@ void service::start_pause_timer()
 
 /** \brief Check whether all pre-required services are down.
  *
- * After a process_paused() callback is received, pre-requirements of
+ * After a process_pause() callback is received, pre-requirements of
  * that service are asked to go down. If all were already down, then
  * we do not reach here.
  *

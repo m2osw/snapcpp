@@ -34,6 +34,10 @@ int main(int argc, char *argv[])
 {
     int retval = 0;
 
+    // save the main process PID in case common::fatal_error() gets called.
+    //
+    snapinit::common::setup_fatal_pid();
+
     try
     {
         // First, create the static snap_init object

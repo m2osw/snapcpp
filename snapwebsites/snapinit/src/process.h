@@ -44,6 +44,14 @@ class snap_init;
 class service;
 
 
+enum class termination_t
+{
+    TERMINATION_NORMAL,     // exit code == 0
+    TERMINATION_ERROR,      // normal but exit code != 0
+    TERMINATION_ABORT       // signal, SEGV, etc.
+};
+
+
 class process
 {
 public:
@@ -63,7 +71,7 @@ public:
     void                    set_nice(int const nice);
 
     void                    action_start();
-    void                    action_died();
+    void                    action_died(termination_t termination);
     void                    action_process_registered();
     void                    action_process_unregistered();
     void                    action_safe_message(QString const & message);
@@ -86,7 +94,8 @@ private:
         PROCESS_STATE_ERROR
     };
 
-    // state that can only be reached internally
+    // states that can only be reached internally
+    void                        action_dead();
     void                        action_error(bool immediate_error);
 
     bool                        exists() const;

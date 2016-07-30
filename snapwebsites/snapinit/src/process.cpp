@@ -75,36 +75,36 @@
  *                                    |
  *                                    V
  *                                +---------------+
- *     +------------------------->|               |
- *     |                          | Stopped       |
- *     | process died             | Process       |
- *     | too many times           |               |
- *     |                          +---------------+
- *     |                              |
- *     |                              |
- *     |      restart process         | start process
- *     |    +-------------------------+
- *     |    |                         |
- *     |    |                         V
- *   +-----------+                +---------------+
- *   |           |  process died  |               |
- *   | Error     |<---------------+ Unregistered  |
- *   | State     |                | Process       |
- *   |           |            +-->|               |
- *   +---------- +            |   +---------------+
- *         ^                  |       |
- *         |                  |       | process registered [if safe message is empty]
- *         |                  |       |     or
- *         |                  |       | safe message received [if safe message is not empty and matches]
- *         |                  |       |
- *         |     process      |       V
- *         |     unregistered |   +---------------+
- *         |                  |   |               |
- *         |                  +---+ Registered    |
- *         |                      | Process       |
+ *     +------------------------->|               |<------------------+
+ *     |                          | Stopped       |                   |
+ *     | process stopped          | Process       |                   |
+ *     |                          |               |                   |
+ *     |                          +---+-----------+                   |
+ *     |                              |                               |
+ *     |                              | start process         +-------+-------+
+ *     |                              |                       |               |
+ *     |                              |                       | Dead          |
+ *     |                              |                       | Process       |<--------------------------+
+ *     |                              V                       |               |                           |
+ *   +-+---------+  process died  +---------------+           +---------------+                           |
+ *   |           |  [exit != 0]   |               |                   ^                                   |
+ *   | Error     |<---------------+ Unregistered  |                   |                                   |
+ *   | State     |                | Process       +-------------------+                                   |
+ *   |           |            +-->|               | process died [exit == 0]                              |
+ *   +---------- +            |   +---------------+                                                       |
+ *         ^                  |       |                                                                   |
+ *         |                  |       | process registered [if safe message is empty]                     |
+ *         |                  |       |     or                                                            |
+ *         |                  |       | safe message received [if safe message is not empty and matches]  |
+ *         |                  |       |                                                                   |
+ *         |     process      |       V                                                                   |
+ *         |     unregistered |   +---------------+                                                       |
+ *         |                  |   |               |                                                       |
+ *         |                  +---+ Registered    +-------------------------------------------------------+
+ *         |                      | Process       | process died [exit == 0]
  *         +----------------------+               |
  *           process died         |               |
- *                                +---------------+
+ *           [exit != 0]          +---------------+
  * \endcode
  */
 
@@ -431,8 +431,10 @@ void process::action_start()
  * As a side effect, the process_status_changed() function of the
  * corresponding service will be called. This may send a STOP signal
  * to other processes.
+ *
+ * \param[in] termination  How the process terminated.
  */
-void process::action_died()
+void process::action_died(termination_t termination)
 {
     if(f_state == process_state_t::PROCESS_STATE_STOPPED
     || f_state == process_state_t::PROCESS_STATE_ERROR)
@@ -454,7 +456,16 @@ void process::action_died()
         snap_init_ptr()->send_message(register_snapinit);
     }
 
-    action_error(false);
+    if(termination == termination_t::TERMINATION_NORMAL)
+    {
+        action_dead();
+    }
+    else
+    {
+        // process died with an error, reflect that by calling action_error()
+        //
+        action_error(false);
+    }
 
     f_service->process_status_changed();
 }
@@ -544,6 +555,37 @@ void process::action_safe_message(QString const & message)
 }
 
 
+/** \brief Called whenever the process dies without errors.
+ *
+ * In most cases a process dies with an exit code of zero. In that case,
+ * there is no error to manage and we want to reset the error counter.
+ *
+ * This action is called when the action_died() function go called with
+ * a NORMAL termination.
+ */
+void process::action_dead()
+{
+    f_state = process_state_t::PROCESS_STATE_STOPPED;
+    f_error_count = 0;
+
+    // let the service know that we died, allow for the service
+    // to start a timer to call action_start() soonish or if it is
+    // in its STOPPING state to ignore the event
+    //
+    f_service->process_died();
+
+    f_service->process_status_changed();
+}
+
+
+/** \brief Called whenever the process dies.
+ *
+ * This function gets called whenever a process dies with an error.
+ * (i.e. not with exit code of zero.)
+ *
+ * \param[in] immediate_error  The child could not be started (i.e. in most
+ * cases this means the fork() call itself failed.)
+ */
 void process::action_error(bool immediate_error)
 {
     f_state = process_state_t::PROCESS_STATE_ERROR;
@@ -595,8 +637,6 @@ void process::action_error(bool immediate_error)
 
     f_service->process_status_changed();
 }
-
-
 
 
 bool process::is_running() const
