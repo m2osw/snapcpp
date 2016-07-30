@@ -1,24 +1,24 @@
 Source: snapwatchdog
 Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
-Build-Depends: debhelper,
-    cmake,
+Build-Depends: cmake,
+    debhelper,
+    libadvgetopt-dev (>= 1.1.0.70~xenial),
     libboost-dev,
+    libcontrolledvars-dev (>= 1.4.16.438~xenial),
+    liblog4cplus-dev (>= 1.2.0.467~xenial),
     libprocps4-dev,
     libqt5xmlpatterns5-dev,
+    libqtcassandra-dev (>= 0.6.0.107~xenial),
+    libqtserialization-dev (>= 0.1.16.697~xenial),
+    libsnapwebsites-dev (>= 1.0.0.78~xenial),
+    libtld-dev (>= 1.5.1.384~xenial),
     libxml2-utils,
     qt5-default,
-    zip,
-    libadvgetopt-dev (>= 1.0.15.43~trusty),
-    libcontrolledvars-dev (>= 1.4.15.44~trusty),
-    liblog4cplus-dev (>= 1.2.0),
-    libqtserialization-dev (>= 0.1.16.43~trusty),
-    libqtcassandra-dev (>= 0.5.20.43~trusty),
-    libsnapwebsites-dev (>= 1.0.0.9~xenial),
-    libtld-dev (>= 1.4.21.92~trusty),
-    snapcmakemodules (>= 1.0.23.36~trusty),
-    snapmanagercgi-dev (>= 1.0.0.71~xenial), 
-    snapinit
+    snapcmakemodules (>= 1.0.25.194~xenial),
+    snapinit (>= 1.0.0.70~xenial),
+    snapmanagercgi-dev (>= 1.0.0.72~xenial),
+    zip
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

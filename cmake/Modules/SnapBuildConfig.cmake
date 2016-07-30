@@ -187,7 +187,7 @@ function( ConfigureMakeProjectInternal )
 		endforeach()
 		add_custom_target(
 			${ARG_TARGET_NAME}-incdeps
-			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_CURRENT_SOURCE_DIR} ${ARG_TARGET_NAME} ${ARG_DEPENDS}
+			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_TARGET_NAME}
 			WORKING_DIRECTORY ${SRC_DIR}
 			COMMENT "Incrementing dependencies for debian package ${ARG_TARGET_NAME}"
 			)
