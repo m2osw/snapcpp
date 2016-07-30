@@ -40,47 +40,27 @@
 ##
 project(documentation)
 
-set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
-
 AddDoxygenTarget( libtld
     ${LIBTLD_VERSION_MAJOR}
     ${LIBTLD_VERSION_MINOR}
     ${LIBTLD_VERSION_PATCH}
 )
 
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libtld-doc-${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}/.
-    DESTINATION share/doc/libtld/html
-    COMPONENT documentation
-)
-#install(
-#    FILES ${tld_library_SOURCE_DIR}/LICENSE.txt
-#    DESTINATION share/doc/libtld
-#    COMPONENT runtime
-#)
-#install(
-#    FILES ../debian/changelog.Debian.gz
-#    DESTINATION share/doc/libtld
-#    COMPONENT runtime
-#)
-#install(
-#    FILES ${tld_library_SOURCE_DIR}/debian/copyright
-#    DESTINATION share/doc/libtld
-#    COMPONENT runtime
-#)
-
 ##
 ## A Simple Working Example
 ##
+## Note: not installed, the source is used in the documentation, though.
+##
 project(example)
+
 include_directories(
     "${PROJECT_BINARY_DIR}/../include"
     "${PROJECT_SOURCE_DIR}/../include"
 )
-add_executable(example
+add_executable(${PROJECT_NAME}
     example.c
 )
-target_link_libraries(example
+target_link_libraries(${PROJECT_NAME}
     tld
 )
 

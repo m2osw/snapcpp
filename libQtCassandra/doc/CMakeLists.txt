@@ -34,8 +34,14 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-AddDoxygenTarget( libQtCassandra ${LIBQTCASSANDRA_VERSION_MAJOR}
-                                 ${LIBQTCASSANDRA_VERSION_MINOR}
-                                 ${LIBQTCASSANDRA_VERSION_PATCH} )
+
+##
+## Documentation
+##
+AddDoxygenTarget( libQtCassandra
+    ${LIBQTCASSANDRA_VERSION_MAJOR}
+    ${LIBQTCASSANDRA_VERSION_MINOR}
+    ${LIBQTCASSANDRA_VERSION_PATCH}
+)
 
 # vim: ts=4 sw=4 et

@@ -54,9 +54,9 @@ set( CMAKE_AUTOMOC TRUE )
 #    set( CMAKE_MODULE_PATH ${CMAKE_PREFIX_PATH}/share/cmake )
 #endif()
 
-find_package( SnapCMakeModules )
-find_package( SnapDoxygen      )
-find_package( Qt5Core REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( SnapDoxygen )
 
 include_directories(
     SYSTEM

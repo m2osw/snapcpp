@@ -54,7 +54,7 @@ include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 #endif()
 
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapDoxygen      REQUIRED )
+find_package( SnapDoxygen )
 
 
 # The documentation

@@ -44,6 +44,7 @@ project(advgetopt_library)
 #endif()
 #
 find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for advgetopt!")

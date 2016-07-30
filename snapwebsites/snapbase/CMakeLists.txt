@@ -36,7 +36,7 @@ cmake_minimum_required( VERSION 3.5 )
 project(snapbase_project)
 
 find_package( SnapCMakeModules  REQUIRED )
-find_package( SnapDoxygen       REQUIRED )
+find_package( SnapDoxygen )
 
 SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
 

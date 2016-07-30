@@ -65,8 +65,8 @@ find_package( Qt5Network 	   REQUIRED )
 find_package( Qt5Widgets 	   REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
-find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
+#find_package( SnapDoxygen )
 
 ##
 ## Version

@@ -51,9 +51,9 @@ find_package( As2Js              REQUIRED )
 find_package( CassandraCppDriver REQUIRED )
 find_package( ControlledVars     REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapDoxygen        REQUIRED )
 find_package( Qt5Core   	     REQUIRED )
 find_package( Qt5Xml    	     REQUIRED )
+find_package( SnapDoxygen )
 
 ## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 ##

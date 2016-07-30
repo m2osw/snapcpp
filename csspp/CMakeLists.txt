@@ -54,7 +54,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapDoxygen      REQUIRED )
+find_package( SnapDoxygen )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwebsites!")

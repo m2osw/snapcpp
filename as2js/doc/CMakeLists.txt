@@ -2,7 +2,7 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to generate the documentation of the as2js library
 #
-# Copyright:    Copyright (c) 2005-2015 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2005-2016 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/project/as2js
@@ -28,13 +28,13 @@
 #
 
 
-
 ##
 ## Documentation
 ##
-AddDoxygenTarget(
-	as2js
+AddDoxygenTarget( as2js
 	${AS2JS_VERSION_MAJOR}
 	${AS2JS_VERSION_MINOR}
 	${AS2JS_VERSION_PATCH}
 )
+
+# vim: ts=4 sw=4 et

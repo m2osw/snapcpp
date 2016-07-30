@@ -40,12 +40,5 @@ AddDoxygenTarget(
     ${SNAPFIREWALL_VERSION_PATCH}
 )
 
-# TBD: move this file to the conf directory?
-#      At this time I am thinking to not use this file but instead have
-#      XML files that I load and then generate the firewall
-install(
-    FILES ip4tables-sample.rules
-    DESTINATION share/snapwebsites/conf
-)
 
 # vim: ts=4 sw=4 et nocindent

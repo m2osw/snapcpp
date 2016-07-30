@@ -38,27 +38,10 @@
 ##
 ## Documentation
 ##
-project(documentation)
-
-find_package( SnapDoxygen )
-
-set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
-
 AddDoxygenTarget( advgetopt
     ${LIBADVGETOPT_VERSION_MAJOR}
     ${LIBADVGETOPT_VERSION_MINOR}
     ${LIBADVGETOPT_VERSION_PATCH}
-)
-
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/advgetopt-doc-${LIBADVGETOPT_VERSION_MAJOR}.${LIBADVGETOPT_VERSION_MINOR}/.
-    DESTINATION share/doc/libadvgetopt/html
-    COMPONENT documentation
-)
-install(
-    FILES ${advgetopt_library_SOURCE_DIR}/LICENSE.txt
-    DESTINATION share/doc/libadvgetopt
-    COMPONENT development
 )
 
 # vim: ts=4 sw=4 et

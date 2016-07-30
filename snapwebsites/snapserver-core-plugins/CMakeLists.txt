@@ -71,10 +71,10 @@ find_package( Qt5XmlPatterns     REQUIRED )
 find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapDoxygen        REQUIRED )
 find_package( SnapWebsites       REQUIRED )
 find_package( ZLIB               REQUIRED )
-find_package( ZipIos             REQUIRED 2.1      )
+find_package( ZipIos             REQUIRED 2.1 )
+find_package( SnapDoxygen )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}

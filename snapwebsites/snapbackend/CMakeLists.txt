@@ -48,8 +48,8 @@ find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( As2Js            REQUIRED )
-find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
+find_package( SnapDoxygen )
 
 SnapGetVersion( SNAPBACKEND ${CMAKE_CURRENT_SOURCE_DIR} )
 

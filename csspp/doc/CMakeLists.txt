@@ -43,20 +43,22 @@ AddDoxygenTarget(
 # At this point this may not work on all platform, so to make it easier
 # I specialize it to Linux only; that just means one doxygen \include
 # will fail.
-if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
-    add_dependencies(csspp_Documentation
-        sample.css
-    )
-
-    set( CSSPP_TOOL csspp-tool )
-
-    add_custom_target(sample.css
-        DEPENDS ${CSSPP_TOOL}
-        COMMAND ${CSSPP_TOOL}
-            -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts
-            --debug --style expanded --output sample.css
-            ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
-    )
+if( DOXYGEN_FOUND )
+    if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
+        add_dependencies(csspp_Documentation
+            sample.css
+        )
+    
+        set( CSSPP_TOOL csspp-tool )
+    
+        add_custom_target(sample.css
+            DEPENDS ${CSSPP_TOOL}
+            COMMAND ${CSSPP_TOOL}
+                -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts
+                --debug --style expanded --output sample.css
+                ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
+        )
+    endif()
 endif()
 
 ## Website front page is done manually here for now...
