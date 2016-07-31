@@ -15,7 +15,7 @@ Build-Depends: cmake,
     libzipios-dev (>= 2.1.2.195~xenial),
     qt5-default,
     snapcmakemodules (>= 1.0.25.195~xenial),
-    snapmanagercgi (>= 1.0.0.74~xenial),
+    libsnapmanager (>= 1.0.0.74~xenial),
     zip
 Standards-Version: 3.9.4
 Section: admin

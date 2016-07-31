@@ -14,7 +14,7 @@ Build-Depends: cmake,
     qt5-default,
     snapbase-dev (>= 1.0.0.71~xenial),
     snapcmakemodules (>= 1.0.25.195~xenial),
-    snapmanagercgi (>= 1.0.0.74~xenial),
+    libsnapmanager (>= 1.0.0.74~xenial),
     uuid-dev,
     zip
 Standards-Version: 3.9.4

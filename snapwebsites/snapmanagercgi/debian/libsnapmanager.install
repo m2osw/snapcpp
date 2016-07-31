@@ -1,0 +1,5 @@
+usr/lib/lib*.so.*
+usr/lib/snapmanager/*
+usr/share/snapwebsites/xsd/*
+conf/snapmanager.conf usr/share/snapwebsites/conf/
+conf/snapmanager.conf etc/snapwebsites/

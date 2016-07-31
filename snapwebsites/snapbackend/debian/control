@@ -18,7 +18,7 @@ Build-Depends: cmake,
     snapbase-dev (>= 1.0.0.71~xenial),
     snapcmakemodules (>= 1.0.25.195~xenial),
     snapinit (>= 1.0.0.72~xenial),
-    snapmanagercgi (>= 1.0.0.74~xenial),
+    libsnapmanager (>= 1.0.0.74~xenial),
     zip
 Standards-Version: 3.9.4
 Section: libs
@@ -32,7 +32,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
     snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy
 Recommends: snapfirewall
-Suggests: snapbackend-doc, snapserver, snapmanagercgi
+Suggests: snapbackend-doc, snapserver
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x

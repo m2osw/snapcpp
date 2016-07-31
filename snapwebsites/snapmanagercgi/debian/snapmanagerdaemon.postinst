@@ -1,0 +1,17 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "configure" ]
+then
+    # create the directory to be used to save the bundle files
+    # downloaded by snapmanagerdaemon
+    #
+    mkdir -p /var/lib/snapwebsites/bundles
+    chown snapwebsites.snapwebsites /var/lib/snapwebsites/bundles
+fi
+
+# vim: ts=4 sw=4 et nocindent

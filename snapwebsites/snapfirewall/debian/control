@@ -17,7 +17,7 @@ Build-Depends: cmake,
     snapbase-dev (>= 1.0.0.71~xenial),
     snapcmakemodules (>= 1.0.25.195~xenial),
     snapinit (>= 1.0.0.72~xenial),
-    snapmanagercgi-dev (>= 1.0.0.74~xenial),
+    libsnapmanager-dev (>= 1.0.0.74~xenial),
     zip
 Standards-Version: 3.9.4
 Section: libs

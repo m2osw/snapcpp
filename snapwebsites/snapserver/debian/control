@@ -33,7 +33,7 @@ Build-Depends: catch (>= 1.0),
     snapbase-dev (>= 1.0.0.70~xenial),
     snapcmakemodules (>= 1.0.25.195~xenial),
     snapinit (>= 1.0.0.71~xenial),
-    snapmanagercgi (>= 1.0.0.73~xenial),
+    libsnapmanager (>= 1.0.0.73~xenial),
     snapserver-core-plugins-dev (>= 1.0.0.71~xenial),
     uuid-dev,
     zip
