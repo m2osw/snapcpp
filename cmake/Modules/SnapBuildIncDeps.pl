@@ -1,6 +1,15 @@
 #!/usr/bin/perl -w
+
+################################################################################
+# SnapBuildIncDeps.pl
+# Author: R. Douglas Barbieri
 #
-die "usage: SnapBuildIncDeps.pl [root source directory] [project name]\n" unless $#ARGV == 1;
+# This perl script goes through the entire tree of projects, finds all of the
+# Debianized project (should be all of them), adds a new changelog record with
+# an incremented build number, then updates all control files which rely on
+# dependencies to require the new version.
+#
+die "usage: SnapBuildIncDeps.pl [dist] [root source directory]\n" unless $#ARGV == 1;
 
 use Cwd;
 use Dpkg::Changelog::Parse;
@@ -9,13 +18,21 @@ use Dpkg::Deps;
 use File::Find;
 
 my $dir          = shift;
-my $projectname  = shift;
+my $distribution = shift;
 
-my $projectdir;
-my @potential_dep_list;
+my %DEPHASH;
+my %DIRHASH;
+my %options;
 
-# search our folder for all debian projects. Make a special note of our project
-# file along the way
+my $DEBEMAIL = $ENV{"DEBEMAIL"};
+if( $DEBEMAIL eq "" )
+{
+    $ENV{"DEBEMAIL"} = "Build Server <build\@m2osw.com>";
+}
+
+
+################################################################################
+# Search our folder for all debian projects.
 #
 sub projects_wanted
 {
@@ -24,50 +41,114 @@ sub projects_wanted
         return;
     }
 
-    if( $_ eq $projectname )
-    {
-        $projectdir = $File::Find::name;
-    }
-    else
-    {
-        push( @potential_dep_list, $File::Find::name );
-    }
+    $DIRHASH{$_} = $File::Find::name;
 }
+
+
+################################################################################
+# Go through each project and update the dependencies according to the new
+# updated versions.
+#
+sub update_dependencies
+{
+    my ($project_name) = @_;
+    my $projectdir = $DIRHASH{$project_name};
+    my %project_dep_hash;
+    chdir( $projectdir );
+
+    my $control       = Dpkg::Control::Info->new();
+    my $fields        = $control->get_source();
+    my $build_depends = deps_parse($fields->{'Build-Depends'});
+
+    for my $dep ( $build_depends->get_deps() )
+    {
+        my $full_line = $dep;
+        $dep =~ s/([^ ]+) [^\$]+/$1/;
+        $project_dep_hash{$dep} = $full_line;
+    }
+
+    # Modify the list of dependencies if we find a match. Add the new version.
+    #
+    for my $key ( keys %DEPHASH )
+    {
+        my @package = @{$DEPHASH{$key}};
+        my $version = $package[0];
+        shift @package;
+        for my $name ( @package )
+        {
+            for my $dep (keys %project_dep_hash)
+            {
+                if( $name eq $dep )
+                {
+                    $project_dep_hash{$dep} = "$name (>= $version)";
+                }
+            }
+        }
+    }
+
+    # Now, open the control file of our project and modify the "Build-Depends" section.
+    #
+    chdir( $projectdir );
+
+    my $input_file  = "debian/control";
+    my $output_file = "debian/control.new";
+
+    die "Cannot open $input_file for reading!\n"  unless open( my $input,  "<", $input_file  );
+    die "Cannot open $output_file for writing!\n" unless open( my $output, ">", $output_file );
+
+    my $replace_lines = 0;
+    while( <$input> )
+    {
+        # Only evaluate the build-depends section
+        if( /^Build-Depends:/ )
+        {
+            $replace_lines = 1;
+
+            print $output "Build-Depends: ";
+            my $prefix = "";
+            my @sorted_keys = sort keys %project_dep_hash;
+            for my $name (@sorted_keys)
+            {
+                print $output $prefix . $project_dep_hash{$name};
+                $prefix = ",\n    ";
+            }
+            print $output "\n";
+        }
+        elsif( /^[A-Za-z-]+:/ )
+        {
+            $replace_lines = 0;
+        }
+
+        if( !$replace_lines )
+        {
+            print $output $_;
+        }
+    }
+
+    close( $input  );
+    close( $output );
+
+    rename "debian/control",     "debian/control.orig";
+    rename "debian/control.new", "debian/control";
+}
+
+
+################################################################################
+# First, find every debian project within the specified tree.
 #
 find( {wanted => \&projects_wanted, no_chdir => 0}, $dir );
 
 
-# now open up the project debian control file and read in the depends fields
+################################################################################
+# Next, go through all of the projects and bump the versions.
 #
-my %options;
-my %project_dep_hash;
-
-die "Project folder not found!" if not $projectdir;
-
-chdir( $projectdir );
-
-my $control       = Dpkg::Control::Info->new();
-my $fields        = $control->get_source();
-my @changelog     = changelog_parse(%options);
-my $build_depends = deps_parse($fields->{'Build-Depends'});
-
-for my $dep ( $build_depends->get_deps() )
+for my $project (keys %DIRHASH)
 {
-    my $full_line = $dep;
-    $dep =~ s/([^ ]+) [^\$]+/$1/;
-    $project_dep_hash{$dep} = $full_line;
-}
+    my $projectdir = $DIRHASH{$project};
+    chdir( $projectdir );
 
-
-# Now peruse the list of potential depedencies we gleaned
-# and alter any matches we find in the project hash.
-#
-my %DEPHASH;
-
-for my $depdir ( @potential_dep_list )
-{
-    chdir( $depdir );
-
+    # Get name and version from changelog
+    #
     my @fields = changelog_parse(%options);
     my $name;
     my $version;
@@ -77,6 +158,23 @@ for my $depdir ( @potential_dep_list )
         $version = $f->{"Version"} if exists $f->{"Version"};
     }
 
+    # Increment the version
+    #
+    if( $version =~ m/^(\d*).(\d+).(\d+)\$/ )
+    {
+        $version = "$1.$2.$3.1";
+    }
+    elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)\$/ )
+    {
+        $version = "$1.$2.$3." . $4+1;
+    }
+
+    # Write a new changelog entry with the new version
+    #
+    system "dch --newversion $version~$distribution --urgency high --distribution $distribution Nightly build.";
+
+    # Now add to the DEPHASH of all of the packages
+    #
     my @packages;
     push @packages, $version;
 
@@ -91,67 +189,12 @@ for my $depdir ( @potential_dep_list )
 }
 
 
-# Modify the list of dependencies if we find a match. Add the new version.
+################################################################################
+# Now update all of the dependencies for each project
 #
-for my $key ( keys %DEPHASH )
+for my $project (keys %DIRHASH)
 {
-	my @package = @{$DEPHASH{$key}};
-	my $version = $package[0];
-	shift @package;
-	for my $name ( @package )
-	{
-        for my $dep (keys %project_dep_hash)
-        {
-            if( $name eq $dep )
-            {
-                $project_dep_hash{$dep} = "$name (>= $version)";
-            }
-        }
-	}
+    update_dependencies( $project );
 }
 
-# Now, open the control file of our project and modify the "Build-Depends" section.
-#
-chdir( $projectdir );
-
-my $input_file  = "debian/control";
-my $output_file = "debian/control.new";
-
-die "Cannot open $input_file for reading!\n"  unless open( my $input,  "<", $input_file  );
-die "Cannot open $output_file for writing!\n" unless open( my $output, ">", $output_file );
-
-my $replace_lines = 0;
-while( <$input> )
-{
-	# Only evaluate the build-depends section
-	if( /^Build-Depends:/ )
-	{
-		$replace_lines = 1;
-
-        print $output "Build-Depends: ";
-        my $prefix = "";
-        my @sorted_keys = sort keys %project_dep_hash;
-        for my $name (@sorted_keys)
-        {
-            print $output $prefix . $project_dep_hash{$name};
-            $prefix = ",\n    ";
-        }
-        print $output "\n";
-	}
-	elsif( /^[A-Za-z-]+:/ )
-	{
-		$replace_lines = 0;
-	}
-
-    if( !$replace_lines )
-    {
-        print $output $_;
-    }
-}
-
-close( $input  );
-close( $output );
-
-rename "debian/control",     "debian/control.orig";
-rename "debian/control.new", "debian/control";
-
+# vim: ts=4 sw=4 et
