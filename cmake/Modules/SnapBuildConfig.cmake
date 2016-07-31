@@ -35,8 +35,18 @@ find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MOD
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
+set( DEBUILD_PLATFORM "xenial"                   CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
+set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}" CACHE STRING "Email address of the package signer."                 )
+
+add_custom_target(
+	snap-incdeps
+	COMMAND ${INC_DEPS_SCRIPT} ${DEBUILD_PLATFORM} ${CMAKE_SOURCE_DIR}
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	COMMENT "Incrementing dependencies for all debian packages."
+	)
+
 function( ConfigureMakeProjectInternal )
-	set( options        USE_CONFIGURE_SCRIPT NOINC_DEBVERS )
+	set( options        USE_CONFIGURE_SCRIPT )
 	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH )
 	set( multiValueArgs CONFIG_ARGS DEPENDS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -173,10 +183,6 @@ function( ConfigureMakeProjectInternal )
 	# RDB: Thu Jun 26 13:45:46 PDT 2014
 	# Adding "debuild" target.
 	#
-	set( DEBUILD_PLATFORM "xenial"                   CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
-	set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}" CACHE STRING "Email address of the package signer."                 )
-	set( EMAIL_ADDY       "${DEBUILD_EMAIL}" )
-	separate_arguments( EMAIL_ADDY )
 	#
 	unset( PBUILDER_DEPS )
 	unset( DPUT_DEPS     )
@@ -187,23 +193,15 @@ function( ConfigureMakeProjectInternal )
 		endforeach()
 	endif()
 	#
-	add_custom_target(
-		${ARG_TARGET_NAME}-incdeps
-		COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_TARGET_NAME}
-		WORKING_DIRECTORY ${SRC_DIR}
-		COMMENT "Incrementing dependencies for debian package ${ARG_TARGET_NAME}"
-		)
+	set( EMAIL_ADDY "${DEBUILD_EMAIL}" )
+	separate_arguments( EMAIL_ADDY )
 	#
-	unset( NOINC_DEBVERS )
-	if( ARG_NOINC_DEBVERS )
-		set( NOINC_DEBVERS "--noinc" )
-	endif()
 	add_custom_target(
 		${ARG_TARGET_NAME}-debuild
-		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${NOINC_DEBVERS} ${DEBUILD_PLATFORM}
+		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
 			1> ${BUILD_DIR}/debuild.log
 		WORKING_DIRECTORY ${SRC_DIR}
-		DEPENDS ${ARG_TARGET_NAME}-incdeps
+		DEPENDS snap-incdeps
 		COMMENT "Building debian source package for ${ARG_TARGET_NAME}"
 		)
 	add_custom_target(
@@ -237,7 +235,6 @@ endfunction()
 function( ConfigureMakeProject )
 	set( options
 		USE_CONFIGURE_SCRIPT
-		NOINC_DEBVERS
 	)
 	set( oneValueArgs
 		PROJECT_NAME
@@ -257,13 +254,9 @@ function( ConfigureMakeProject )
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONF_SCRIPT_OPTION "USE_CONFIGURE_SCRIPT" )
 	endif()
-	if( ARG_NOINC_DEBVERS )
-		set( CONF_NOINC_OPTION "NOINC_DEBVERS" )
-	endif()
 
 	ConfigureMakeProjectInternal(
 		${CONF_SCRIPT_OPTION}
-		${CONF_NOINC_OPTION}
 		PROJECT_NAME  ${ARG_PROJECT_NAME}
 		TARGET_NAME   ${ARG_PROJECT_NAME}
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
@@ -273,7 +266,6 @@ function( ConfigureMakeProject )
 
 	ConfigureMakeProjectInternal(
 		${CONF_SCRIPT_OPTION}
-		${CONF_NOINC_OPTION}
 		PROJECT_NAME  ${ARG_PROJECT_NAME}
 		TARGET_NAME   ${ARG_PROJECT_NAME}-nodeps
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}

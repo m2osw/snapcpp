@@ -11,13 +11,6 @@ set -e
 
 # Handle command line
 #
-unset NOINC_VERSION
-if [ "$1" == "--noinc" ]
-then
-    NOINC_VERSION=1
-    shift
-fi
-
 if [ -z "$1" ]
 then
 	DIST=saucy
@@ -45,33 +38,6 @@ VERSION=`dpkg-parsechangelog --show-field Version`
 FULLNAME=${NAME}_${VERSION}
 echo "Building source package for '${FULLNAME}'"
 rm -f ../${FULLNAME}.dsc ../${FULLNAME}_source.* ../${FULLNAME}.tar.gz
-VERSION_SCRIPT=$(cat<<EOF
-my \$version = <STDIN>;
-
-if( \$version =~ m/^(\d*).(\d+).(\d+)\$/ )
-{
-	print "\$1.\$2.\$3.1";
-}
-elsif( \$version =~ m/^(\d*).(\d+).(\d+).(\d+)\$/ )
-{
-	my \$inc = \$4+1;
-	print "\$1.\$2.\$3.\$inc";
-}
-EOF
-)
-
-if [ -z "$NOINC_VERSION" ]
-then
-    # Get the current version from the change log, get rid of everything past the tilde "~",
-    # and increment the version number.
-    #
-    CURVER=`dpkg-parsechangelog --show-field Version | sed 's/~.*$//'`
-    INCVER=`echo ${CURVER} | perl -e "$VERSION_SCRIPT"`
-
-    # Write a new changelog entry, but using "~dist".
-    #
-    dch --newversion ${INCVER}~${DIST} --urgency high --distribution ${DIST} Nightly build.
-fi
 
 # Build the source package itself. The output will be placed in the parent directory
 # of the CWD.
