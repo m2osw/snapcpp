@@ -1,3 +1,3 @@
-usr/lib/cgi-bin/*
-usr/share/snapwebsites/bundles/bundles-*.xml usr/share/snapwebsites/bundles/
+debian/tmp/usr/lib/cgi-bin/* usr/lib/cgi-bin
+debian/tmp/usr/share/snapwebsites/bundles/bundle-*.xml usr/share/snapwebsites/bundles/
 conf/snapmanagercgi.properties conf/snapmanagercgi-parser.xsl etc/snapwebsites/
