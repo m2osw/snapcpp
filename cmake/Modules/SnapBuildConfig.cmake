@@ -185,15 +185,15 @@ function( ConfigureMakeProjectInternal )
 			list( APPEND PBUILDER_DEPS ${DEP}-pbuilder )
 			list( APPEND DPUT_DEPS     ${DEP}-dput     )
 		endforeach()
-		add_custom_target(
-			${ARG_TARGET_NAME}-incdeps
-			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_TARGET_NAME}
-			WORKING_DIRECTORY ${SRC_DIR}
-			COMMENT "Incrementing dependencies for debian package ${ARG_TARGET_NAME}"
-			)
-	else()
-		add_custom_target( ${ARG_TARGET_NAME}-incdeps )
 	endif()
+	#
+	add_custom_target(
+		${ARG_TARGET_NAME}-incdeps
+		COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_TARGET_NAME}
+		WORKING_DIRECTORY ${SRC_DIR}
+		COMMENT "Incrementing dependencies for debian package ${ARG_TARGET_NAME}"
+		)
+	#
 	unset( NOINC_DEBVERS )
 	if( ARG_NOINC_DEBVERS )
 		set( NOINC_DEBVERS "--noinc" )
