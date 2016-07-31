@@ -160,13 +160,15 @@ for my $project (keys %DIRHASH)
 
     # Increment the version
     #
-    if( $version =~ m/^(\d*).(\d+).(\d+)\$/ )
+    $version =~ s/~.*$//;
+    if( $version =~ m/^(\d*).(\d+).(\d+)$/ )
     {
         $version = "$1.$2.$3.1";
     }
-    elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)\$/ )
+    elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)$/ )
     {
-        $version = "$1.$2.$3." . $4+1;
+        my $num = $4+1;
+        $version = "$1.$2.$3.$num";
     }
 
     # Write a new changelog entry with the new version
