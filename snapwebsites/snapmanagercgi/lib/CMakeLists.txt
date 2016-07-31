@@ -34,7 +34,8 @@ project(snapmanager)
 set( CMAKE_AUTOMOC TRUE )
 
 # Put the version in the header file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/manager.h.in ${CMAKE_CURRENT_BINARY_DIR}/manager.h )
+file( MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/snapmanager )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_BINARY_DIR}/snapmanager/version.h )
 
 #find_package( log4cplus REQUIRED )
 find_package( Qt5Core        REQUIRED )
@@ -49,9 +50,11 @@ include_directories(
 
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    version.h.in                                # snapmanager-wide version
     form.cpp                                    # Helper classes to generate forms
     installer.cpp                               # Code used to install bundles on a server
     manager.cpp                                 # Implements the core of the watchdog server
@@ -81,7 +84,7 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/manager.h
+    FILES ${CMAKE_BINARY_DIR}/snapmanager/version.h
     DESTINATION include/snapmanager
 )
 
