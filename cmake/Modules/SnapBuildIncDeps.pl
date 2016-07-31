@@ -178,7 +178,7 @@ for my $project (keys %DIRHASH)
     # Now add to the DEPHASH of all of the packages
     #
     my @packages;
-    push @packages, $version;
+    push @packages, "$version~$distribution";
 
     my $dep_ctl = Dpkg::Control::Info->new();
     my @control_pkgs = $dep_ctl->get_packages();
