@@ -30,7 +30,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: libsnapmanager
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libsnapwebsites-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsnapwebsites
 Suggests: snapmanagercgi, snapmanagerdaemon
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
