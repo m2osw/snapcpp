@@ -1,0 +1,6 @@
+usr/bin/snapmanagerdaemon
+usr/bin/snapupgrader
+conf/snapmanagerdaemon.properties usr/share/snapwebsites/conf
+conf/snapmanagerdaemon.properties etc/snapwebsites/
+conf/service-snapmanagerdaemon.xml usr/share/snapwebsites/conf
+conf/service-snapmanagerdaemon.xml etc/snapwebsites/snapinit.d/

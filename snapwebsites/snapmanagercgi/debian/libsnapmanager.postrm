@@ -5,8 +5,8 @@
 
 if [ "$1" = "purge" ]
 then
-    # delete the snapmanagercgi logs if any
-    rm -f /var/log/snapwebsites/snapmanagercgi.log*
+    # delete the data directories
+    rm -rf /var/lib/snapwebsites/cluster-status
 fi
 
 #DEBHELPER#
