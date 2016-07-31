@@ -7,6 +7,11 @@
 
 if [ "$1" = "configure" ]
 then
+    # create the directory to be used to save the status files
+    #
+    mkdir -p /var/lib/snapwebsites/cluster-status
+    chown snapwebsites.snapwebsites /var/lib/snapwebsites/cluster-status
+
     # create the directory to be used to save the bundle files
     # downloaded by snapmanagerdaemon
     #
