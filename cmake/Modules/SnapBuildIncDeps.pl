@@ -17,8 +17,8 @@ use Dpkg::Control::Info;
 use Dpkg::Deps;
 use File::Find;
 
-my $dir          = shift;
 my $distribution = shift;
+my $dir          = shift;
 
 my %DEPHASH;
 my %DIRHASH;
