@@ -6,7 +6,7 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    snapcmakemodules (>= 1.0.25.193~xenial)
+    snapcmakemodules (>= 1.0.25.194~xenial)
 Standards-Version: 3.9.4
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code

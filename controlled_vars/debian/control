@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: cmake,
     debhelper,
-    snapcmakemodules (>= 1.0.25.193~xenial)
+    snapcmakemodules (>= 1.0.25.194~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/controlled-vars
