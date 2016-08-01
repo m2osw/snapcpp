@@ -17,7 +17,7 @@ Build-Depends: cmake,
     qt5-default,
     snapcmakemodules (>= 1.0.25.196~xenial),
     snapinit (>= 1.0.0.72~xenial),
-    libsnapwebsites-dev (>= 1.0.0.79~xenial),
+    libsnapmanager-dev,
     zip
 Standards-Version: 3.9.4
 Section: libs
