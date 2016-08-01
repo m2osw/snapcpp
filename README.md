@@ -19,13 +19,30 @@ Each project has an Open Source license, however, it changes slightly
 depending on the project. Most of the projects use the GNU GPL or GNU LGPL.
 
 
-# Installation
+# Getting Started
 
 The whole environment is based on cmake and also matches pbuilder so we
-can create Ubuntu packages with ease. We do not yet release the Ubuntu
-packages publicly. We have a launchpad.net environment, but unfortunately,
-it is complicated to use when you manage a large project that includes
-many sub-projects.
+can create Ubuntu packages with ease (cmake even makes use of the control
+files to generate the inter project dependencies!) We do not yet release
+the Ubuntu packages publicly. We have a launchpad.net environment, but
+unfortunately, it is too complicated to use when you manage a large
+project that includes many sub-projects.
+
+To get started quickly, create a directory, clone the source, then run
+the build-snap script. (You may want to check it out once first to make
+sure it is satisfactory to you.) By default it build snaps in Debug mode.
+
+    apt-get install git cmake
+    mkdir snapwebsites
+    cd snapwebsites
+    git clone https://github.com/m2osw/snapcpp.git snapcpp
+    snapcpp/bin/snap-build
+
+After a while, you'll have all the built objects under a BUILD directory
+in your snapwebsites directory. The distribution being under the BUILD/dist
+directory (warning: executables under the distribuation will be stripped
+from their `RPATH` which means you cannot run them without some magic;
+namely changing your `PATH` and `LD_LIBRARY_PATH`)
 
 We support a few variables, although in most cases you will not have to
 setup anything to get started. You can find the main variables in our
@@ -38,6 +55,24 @@ The build type can either be Debug or Release.
         -DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
         -DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
         ..
+
+## Creating packags
+
+To build Ubuntu packages, you want to run the following commands,
+althouh this is currently incomplete! We will try to ameliorate that
+info with time. It currently takes 1h30 to rebuild everything as packages.
+
+    # get some extra development tools if you don't have them yet
+    apt-get install ubuntu-dev-tools eatmydata debhelper
+
+    # create the build environment (a chroot env.)
+    pbuilder-dist `lsb_release --codename --short` create
+
+    # Prepare source packages
+    make debuild
+
+    # Create packges
+    make pbuilder
 
 
 ## Linux

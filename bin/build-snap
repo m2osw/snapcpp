@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Full clean up
-rm -rf BUILD
+rm -rf BUILD /tmp/SnapFindDeps.pl.hash
 
 mkdir BUILD
 cd BUILD
@@ -14,11 +14,15 @@ cd BUILD
 #TYPE=Release
 TYPE=Debug
 
+#PROCESSORS=1
+PROCESSORS=4
+
 # Configure and generate (Debug or Release)
 cmake \
 	-DCMAKE_BUILD_TYPE=$TYPE \
+	-DMAKEFLAGS=-j$PROCESSORS \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
 	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
-	..
+	../snapcpp
 
-make -j 4
+make
