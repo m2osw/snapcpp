@@ -71,41 +71,33 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
 )
 
 ConfigureMakeProject( PROJECT_NAME iplock
-    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME controlled_vars
-    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME libtld
-    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME advgetopt
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME as2js
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS cmake controlled_vars advgetopt
 )
 
 ConfigureMakeProject( PROJECT_NAME csspp
-    DEPENDS cmake advgetopt
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS cmake controlled_vars as2js libtld
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
-    DEPENDS cmake
 )
 
 # Include snapwebsites projects next

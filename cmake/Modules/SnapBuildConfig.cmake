@@ -33,6 +33,7 @@ include( CMakeParseArguments )
 find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
 find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
+find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl           	   PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
 # RDB: Tue Jan 26 10:13:24 PST 2016
@@ -55,10 +56,12 @@ add_custom_target(
 	COMMENT "Incrementing dependencies for all debian packages."
 	)
 
+file( REMOVE "/tmp/SnapFindDeps.pl.hash" )
+
 function( ConfigureMakeProjectInternal )
 	set( options        USE_CONFIGURE_SCRIPT )
 	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH )
-	set( multiValueArgs CONFIG_ARGS DEPENDS )
+	set( multiValueArgs CONFIG_ARGS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 	#
 	if( NOT ARG_PROJECT_NAME )
@@ -106,9 +109,15 @@ function( ConfigureMakeProjectInternal )
 		endif()
 	endif()
 
-	#set_property( GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST ${ARG_DEPENDS} )
-	add_custom_target( ${ARG_TARGET_NAME}-depends DEPENDS ${ARG_DEPENDS} )
-
+	# RDB: Sun Jul 31 22:29:18 PDT 2016
+	#
+	# Now detect automatically all dependencies to the current project.
+	# This uses the information in each debian/control file to sort out the
+	# build dependencies.
+	#
+	get_property( DEPENDS_LIST
+		GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST
+		)
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
 		add_custom_command(
@@ -116,7 +125,7 @@ function( ConfigureMakeProjectInternal )
 			COMMAND ${BUILD_DIR}/configure --prefix=${SNAP_DIST_DIR} ${ARG_CONFIG_ARGS}
 				1> ${BUILD_DIR}/configure.log
 				2> ${BUILD_DIR}/configure.err
-			DEPENDS ${ARG_TARGET_NAME}-depends
+			DEPENDS ${DEPENDS_LIST}
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_TARGET_NAME} configure script..."
 			)
@@ -149,7 +158,7 @@ function( ConfigureMakeProjectInternal )
 			COMMAND ${COMMAND_LIST}
 				1> ${BUILD_DIR}/configure.log
 				2> ${BUILD_DIR}/configure.err
-			DEPENDS ${ARG_TARGET_NAME}-depends
+			DEPENDS ${DEPENDS_LIST}
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_TARGET_NAME} CMake configuration..."
 			)
@@ -182,14 +191,10 @@ function( ConfigureMakeProjectInternal )
 		COMMENT "Installing ${ARG_TARGET_NAME}"
 		)
 
-	# RDB: Thu Jun 26 13:45:46 PDT 2014
-	# Adding "debuild" target.
-	#
-	#
 	unset( PBUILDER_DEPS )
 	unset( DPUT_DEPS     )
-	if( ARG_DEPENDS )
-		foreach( DEP ${ARG_DEPENDS} )
+	if( DEPENDS_LIST )
+		foreach( DEP ${DEPENDS_LIST} )
 			list( APPEND PBUILDER_DEPS ${DEP}-pbuilder )
 			list( APPEND DPUT_DEPS     ${DEP}-dput     )
 		endforeach()
@@ -257,13 +262,24 @@ function( ConfigureMakeProject )
 		set( CONF_SCRIPT_OPTION "USE_CONFIGURE_SCRIPT" )
 	endif()
 
+	message( STATUS "Searching dependencies for project '${ARG_PROJECT_NAME}'")
+	execute_process( 
+		COMMAND ${FIND_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_PROJECT_NAME}
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		OUTPUT_VARIABLE DEPENDS_LIST
+		)
+	separate_arguments( DEPENDS_LIST )
+	set_property(
+		GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST
+		${DEPENDS_LIST}
+		)
+
 	ConfigureMakeProjectInternal(
 		${CONF_SCRIPT_OPTION}
 		PROJECT_NAME  ${ARG_PROJECT_NAME}
 		TARGET_NAME   ${ARG_PROJECT_NAME}
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
 		CONFIG_ARGS   ${ARG_CONFIG_ARGS}
-		DEPENDS       ${ARG_DEPENDS}
 	)
 
 	ConfigureMakeProjectInternal(
