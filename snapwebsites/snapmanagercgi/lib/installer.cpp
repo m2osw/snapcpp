@@ -273,9 +273,9 @@ int manager::update_packages(std::string const & command)
     || command == "dist-upgrade")
     {
         p.add_argument("--option");
-        p.add_argument("Dpkg::Options::=\"--force-confdef\"");
+        p.add_argument("Dpkg::Options::=--force-confdef");
         p.add_argument("--option");
-        p.add_argument("Dpkg::Options::=\"--force-confold\"");
+        p.add_argument("Dpkg::Options::=--force-confold");
     }
     p.add_argument(QString::fromUtf8(command.c_str()));
     p.add_environ("DEBIAN_FRONTEND", "noninteractive");
@@ -317,9 +317,9 @@ int manager::install_package(std::string const & package_name, std::string const
     if(command == "install")
     {
         p.add_argument("--option");
-        p.add_argument("Dpkg::Options::=\"--force-confdef\"");
+        p.add_argument("Dpkg::Options::=--force-confdef");
         p.add_argument("--option");
-        p.add_argument("Dpkg::Options::=\"--force-confold\"");
+        p.add_argument("Dpkg::Options::=--force-confold");
         p.add_argument("--no-install-recommends");
     }
     p.add_argument(QString::fromUtf8(command.c_str()));
