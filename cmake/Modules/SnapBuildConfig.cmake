@@ -35,6 +35,16 @@ find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MOD
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
+# RDB: Tue Jan 26 10:13:24 PST 2016
+# Adding ability to take the DEBUILD_EMAIL var from the environment as a default
+#
+# RDB: Sun Jul 31 18:44:37 PDT 2016
+# Moved this to the top of the file.
+#
+set( DEBUILD_EMAIL_DEFAULT "Build Server <build@m2osw.com>" )
+if( DEFINED ENV{DEBEMAIL} )
+	set( DEBUILD_EMAIL_DEFAULT $ENV{DEBEMAIL} )
+endif()
 set( DEBUILD_PLATFORM "xenial"                   CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
 set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}" CACHE STRING "Email address of the package signer."                 )
 
@@ -171,14 +181,6 @@ function( ConfigureMakeProjectInternal )
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Installing ${ARG_TARGET_NAME}"
 		)
-
-	# RDB: Tue Jan 26 10:13:24 PST 2016
-	# Adding ability to take the DEBUILD_EMAIL var from the environment as a default
-	#
-	set( DEBUILD_EMAIL_DEFAULT "Build Server <build@m2osw.com>" )
-	if( DEFINED ENV{DEBEMAIL} )
-		set( DEBUILD_EMAIL_DEFAULT $ENV{DEBEMAIL} )
-	endif()
 
 	# RDB: Thu Jun 26 13:45:46 PDT 2014
 	# Adding "debuild" target.
