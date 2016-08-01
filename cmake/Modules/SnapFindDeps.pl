@@ -77,30 +77,30 @@ for my $dep ( $build_depends->get_deps() )
 ################################################################################
 # Next, go through all of the projects and find a match
 #
-my %result_hash;
 for my $proj (keys %DIRHASH)
 {
-    if( not $proj eq $project )
+    if( $proj eq $project )
     {
-        my $projdir = $DIRHASH{$proj};
-        chdir( $projdir );
+        # Don't bother scanning this project, because it's the one we're
+        # analysing...
+        next;
+    }
 
-        my $dep_ctl = Dpkg::Control::Info->new();
-        my @control_pkgs = $dep_ctl->get_packages();
-        foreach my $p (@control_pkgs)
+    my $projdir = $DIRHASH{$proj};
+    chdir( $projdir );
+
+    my $dep_ctl = Dpkg::Control::Info->new();
+    my @control_pkgs = $dep_ctl->get_packages();
+    foreach my $p (@control_pkgs)
+    {
+        my $pkg = $p->{"Package"};
+        if( $dep_list{$pkg} )
         {
-            my $pkg = $p->{"Package"};
-            if( $dep_list{$pkg} )
-            {
-                $result_hash{$proj} = 1;
-            }
+            print "$proj ";
+            last; # We're done, so skip checking the other dependencies in the package
         }
     }
 }
 
-for my $proj (keys %result_hash)
-{
-    print "$proj ";
-}
 
 # vim: ts=4 sw=4 et
