@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.1.78~xenial) xenial; urgency=high
+
+  * SNAP-110: Removed the extra quotes for the Dpkg::Options::=...
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 01 Aug 2016 16:17:44 -0700
+
 snapmanagercgi (1.0.0.78~xenial) xenial; urgency=high
 
   * Nightly build.
