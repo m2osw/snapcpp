@@ -32,8 +32,9 @@ include( CMakeParseArguments )
 
 find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
 find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
-find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl          PATHS ${CMAKE_MODULE_PATH} )
 find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl           	   PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
 # RDB: Tue Jan 26 10:13:24 PST 2016
@@ -46,17 +47,21 @@ set( DEBUILD_EMAIL_DEFAULT "Build Server <build@m2osw.com>" )
 if( DEFINED ENV{DEBEMAIL} )
 	set( DEBUILD_EMAIL_DEFAULT $ENV{DEBEMAIL} )
 endif()
-set( DEBUILD_PLATFORM "xenial"                   CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
-set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}" CACHE STRING "Email address of the package signer."                 )
+set( DEBUILD_PLATFORM "xenial"                         CACHE STRING   "Name of the Debian/Ubuntu platform to build against." )
+set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}"       CACHE STRING   "Email address of the package signer."                 )
+set( DEP_CACHE_FILE   "${CMAKE_BINARY_DIR}/deps.cache" CACHE INTERNAL "Cache file for dependencies."                         )
+
+execute_process( 
+	COMMAND ${MAKE_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${DEP_CACHE_FILE}
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
 
 add_custom_target(
 	snap-incdeps
-	COMMAND ${INC_DEPS_SCRIPT} ${DEBUILD_PLATFORM} ${CMAKE_SOURCE_DIR}
+	COMMAND ${INC_DEPS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	COMMENT "Incrementing dependencies for all debian packages."
 	)
-
-file( REMOVE "/tmp/SnapFindDeps.pl.hash" )
 
 function( ConfigureMakeProjectInternal )
 	set( options        USE_CONFIGURE_SCRIPT IGNORE_DEPS )
@@ -268,7 +273,7 @@ function( ConfigureMakeProject )
 
 	message( STATUS "Searching dependencies for project '${ARG_PROJECT_NAME}'")
 	execute_process( 
-		COMMAND ${FIND_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_PROJECT_NAME}
+		COMMAND ${FIND_DEPS_SCRIPT} ${DEP_CACHE_FILE} ${ARG_PROJECT_NAME}
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		OUTPUT_VARIABLE DEPENDS_LIST
 		)

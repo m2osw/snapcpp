@@ -9,19 +9,18 @@
 # an incremented build number, then updates all control files which rely on
 # dependencies to require the new version.
 #
-die "usage: SnapBuildIncDeps.pl [dist] [root source directory]\n" unless $#ARGV == 1;
+die "usage: SnapBuildIncDeps.pl [cache filename] [dist]\n" unless $#ARGV == 1;
 
 use Cwd;
 use Dpkg::Changelog::Parse;
 use Dpkg::Control::Info;
 use Dpkg::Deps;
-use File::Find;
+use Storable;
 
+my $cache_file   = shift;
 my $distribution = shift;
-my $dir          = shift;
 
 my %DEPHASH;
-my %DIRHASH;
 my %options;
 
 if( not $ENV{"DEBEMAIL"} )
@@ -32,15 +31,10 @@ if( not $ENV{"DEBEMAIL"} )
 ################################################################################
 # Search our folder for all debian projects.
 #
-sub projects_wanted
-{
-    if( not stat($File::Find::name . "/debian/control") )
-    {
-        return;
-    }
+die unless stat( $cache_file );
 
-    $DIRHASH{$_} = $File::Find::name;
-}
+my $hashref = retrieve( $cache_file );
+my %DIRHASH = %$hashref;
 
 
 ################################################################################

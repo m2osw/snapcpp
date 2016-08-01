@@ -9,52 +9,28 @@
 # Debianized projects. It then emits a list of dependencies for the build
 # that are found within the archive.
 #
-die "usage: SnapFindDeps.pl [root source directory] [project]\n" unless $#ARGV == 1;
+die "usage: SnapFindDeps.pl [cache filename] [project]\n" unless $#ARGV == 1;
 
 use Cwd;
 use Dpkg::Changelog::Parse;
 use Dpkg::Control::Info;
 use Dpkg::Deps;
-use File::Find;
 use Storable;
 
-my $dir     = shift;
-my $project = shift;
+my $cache_file  = shift;
+my $project     = shift;
 
 my %DEPHASH;
-my %DIRHASH;
 my %options;
-
-
-################################################################################
-# Search our folder for all debian projects.
-#
-sub projects_wanted
-{
-    if( not stat($File::Find::name . "/debian/control") )
-    {
-        return;
-    }
-
-    $DIRHASH{$_} = $File::Find::name;
-}
 
 
 ################################################################################
 # First, find every debian project within the specified tree.
 #
-my $hashfile = "/tmp/SnapFindDeps.pl.hash";
-if( stat( $hashfile ) )
-{
-    my $hashref = retrieve( $hashfile );
-    %DIRHASH = %$hashref;
-}
-else
-{
-    find( {wanted => \&projects_wanted, no_chdir => 0}, $dir );
-    store \%DIRHASH, $hashfile;
-}
+die unless stat( $cache_file );
 
+my $hashref = retrieve( $cache_file );
+my %DIRHASH = %$hashref;
 
 ################################################################################
 # Next, read all of the dependencies in the specified project.
