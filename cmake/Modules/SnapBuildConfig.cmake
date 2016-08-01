@@ -212,12 +212,17 @@ function( ConfigureMakeProjectInternal )
 	set( EMAIL_ADDY "${DEBUILD_EMAIL}" )
 	separate_arguments( EMAIL_ADDY )
 	#
+    if( ARG_IGNORE_DEPS )
+        unset( SNAPINCDEPS )
+    else()
+        set( SNAPINCDEPS snap-incdeps )
+    endif()
 	add_custom_target(
 		${ARG_TARGET_NAME}-debuild
 		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
 			1> ${BUILD_DIR}/debuild.log
 		WORKING_DIRECTORY ${SRC_DIR}
-		DEPENDS snap-incdeps
+		DEPENDS ${SNAPINCDEPS}
 		COMMENT "Building debian source package for ${ARG_TARGET_NAME}"
 		)
 	add_custom_target(
