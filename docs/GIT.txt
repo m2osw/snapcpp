@@ -41,4 +41,8 @@ git commit --amend -c 123...123
 # Amending also involves merging, somehow.
 
 
+# changing the URL of the origin
+git remote set-url origin git@github.com:m2osw/snapcpp.git
+
+
 # vim: syntax=sh

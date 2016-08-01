@@ -34,10 +34,10 @@ There is an example of what you can do to generate the build environment.
 The build type can either be Debug or Release.
 
     cmake \
-	-DCMAKE_BUILD_TYPE=Release \
-	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
-	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
-	..
+        -DCMAKE_BUILD_TYPE=Release \
+        -DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
+        -DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
+        ..
 
 
 ## Linux
