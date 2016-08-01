@@ -48,12 +48,12 @@ changes are welcome if you would like to do so. However, as it stands,
 the project is not yet considered complete, so it would be quite premature
 to attempt to convert it.
 
-Note that the software makes heavy use of the fork() instruction. That means
-it will be prohibitive to use under MS-Windows unless, as I think I heard,
-they now do support the fork() functionality.
+Note that the software makes heavy use of the `fork()` instruction. That
+means it will be prohibitive to use under MS-Windows unless, as I think I
+heard, they now do support the `fork()` functionality.
 
 
 # Bugs
 
 Submit bug reports and patches on
-[github](https://github.com/m2osw/snapcpp/issues)
+[github](https://github.com/m2osw/snapcpp/issues).
