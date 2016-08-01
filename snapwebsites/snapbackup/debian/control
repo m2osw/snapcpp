@@ -3,15 +3,15 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: cmake,
     debhelper,
-    libadvgetopt-dev (>= 1.1.0.74~xenial),
-    libcontrolledvars-dev (>= 1.4.16.442~xenial),
+    libadvgetopt-dev (>= 1.1.0.75~xenial),
+    libcontrolledvars-dev (>= 1.4.16.443~xenial),
     libqt5webkit5-dev,
-    libqtcassandra-dev (>= 0.6.0.111~xenial),
-    libsnapmanager (>= 1.0.0.77~xenial),
-    libsnapwebsites-dev (>= 1.0.0.83~xenial),
+    libqtcassandra-dev (>= 0.6.0.112~xenial),
+    libsnapmanager (>= 1.0.0.78~xenial),
+    libsnapwebsites-dev (>= 1.0.0.84~xenial),
     libxml2-utils,
     qt5-default,
-    snapcmakemodules (>= 1.0.25.198~xenial),
+    snapcmakemodules (>= 1.0.25.199~xenial),
     zip
 Standards-Version: 3.9.4
 Section: admin
