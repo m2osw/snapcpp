@@ -126,12 +126,6 @@ sub update_dependencies
 
 
 ################################################################################
-# First, find every debian project within the specified tree.
-#
-find( {wanted => \&projects_wanted, no_chdir => 0}, $dir );
-
-
-################################################################################
 # Next, go through all of the projects and bump the versions.
 #
 for my $project (keys %DIRHASH)
