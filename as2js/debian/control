@@ -5,14 +5,14 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    libadvgetopt-dev (>= 1.1.0.73~xenial),
-    libcontrolledvars-dev (>= 1.4.16.441~xenial),
+    libadvgetopt-dev (>= 1.1.0.74~xenial),
+    libcontrolledvars-dev (>= 1.4.16.442~xenial),
     libcppunit-dev (>= 1.13),
     libicu-dev,
     libqt5webkit5-dev,
     libqxcppunit-dev (>= 0.9.2),
     qt5-default,
-    snapcmakemodules (>= 1.0.25.197~xenial)
+    snapcmakemodules (>= 1.0.25.198~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
