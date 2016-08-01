@@ -56,7 +56,7 @@ The build type can either be Debug or Release.
         -DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
         ..
 
-## Creating packags
+## Creating packages
 
 To build Ubuntu packages, you want to run the following commands,
 althouh this is currently incomplete! We will try to ameliorate that
