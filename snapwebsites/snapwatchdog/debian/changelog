@@ -1,3 +1,9 @@
+snapwatchdog (0.2.1.195~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 01 Aug 2016 10:07:47 -0700
+
 snapwatchdog (0.2.1.194~xenial) xenial; urgency=high
 
   * Nightly build.

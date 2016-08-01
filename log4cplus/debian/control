@@ -1,7 +1,11 @@
 Source: log4cplus
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, doxygen, graphviz, qt5-default
+Build-Depends: cmake,
+    debhelper,
+    doxygen,
+    graphviz,
+    qt5-default
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://sourceforge.net/p/log4cplus/wiki/Home/

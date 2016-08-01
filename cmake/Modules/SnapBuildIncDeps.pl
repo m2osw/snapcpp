@@ -24,12 +24,10 @@ my %DEPHASH;
 my %DIRHASH;
 my %options;
 
-my $DEBEMAIL = $ENV{"DEBEMAIL"};
-if( $DEBEMAIL eq "" )
+if( not $ENV{"DEBEMAIL"} )
 {
     $ENV{"DEBEMAIL"} = "Build Server <build\@m2osw.com>";
 }
-
 
 ################################################################################
 # Search our folder for all debian projects.
