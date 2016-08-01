@@ -59,7 +59,7 @@ add_custom_target(
 file( REMOVE "/tmp/SnapFindDeps.pl.hash" )
 
 function( ConfigureMakeProjectInternal )
-	set( options        USE_CONFIGURE_SCRIPT )
+	set( options        USE_CONFIGURE_SCRIPT IGNORE_DEPS )
 	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH )
 	set( multiValueArgs CONFIG_ARGS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -115,9 +115,13 @@ function( ConfigureMakeProjectInternal )
 	# This uses the information in each debian/control file to sort out the
 	# build dependencies.
 	#
-	get_property( DEPENDS_LIST
-		GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST
-		)
+	if( ARG_IGNORE_DEPS )
+		unset( DEPENDS_LIST )
+	else()
+		get_property( DEPENDS_LIST
+			GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST
+			)
+	endif()
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
 		add_custom_command(
@@ -288,6 +292,7 @@ function( ConfigureMakeProject )
 		TARGET_NAME   ${ARG_PROJECT_NAME}-nodeps
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
 		CONFIG_ARGS   ${ARG_CONFIG_ARGS}
+		IGNORE_DEPS
 	)
 
 	set_property( GLOBAL APPEND PROPERTY BUILD_TARGETS    ${ARG_PROJECT_NAME}          )

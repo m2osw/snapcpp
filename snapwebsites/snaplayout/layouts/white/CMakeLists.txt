@@ -31,10 +31,9 @@
 
 project(white_layout)
 
-snap_validate_xml( content.xml content/content.dtd )
-
-snap_validate_xml( theme-parser.xsl     layout/simplified-xslt20.dtd )
-snap_validate_xml( body-parser.xsl      layout/simplified-xslt20.dtd )
+snap_validate_xml( content.xml      content.dtd           )
+snap_validate_xml( theme-parser.xsl simplified-xslt20.dtd )
+snap_validate_xml( body-parser.xsl  simplified-xslt20.dtd )
 
 snap_zip_layout( LAYOUT_NAME white
     LAYOUT_FILES
