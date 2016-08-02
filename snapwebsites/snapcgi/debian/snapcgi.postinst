@@ -18,6 +18,17 @@ then
     touch ${SNAPSECURECGI_LOG}
     chown www-data.www-data ${SNAPSECURECGI_LOG}
     chmod u+rw ${SNAPSECURECGI_LOG}
+
+    # The snap-httpoxy is part of snapbase, but if apache2 was not yet
+    # installed when snapbase got installed, then this command did not
+    # run, so run it now to make sure it is effective
+    #
+    a2enmod headers
+    a2enconf snap-httpoxy
+
+    # restart apache2 to make sure everything is taken in account
+    #
+    systemctl restart apache2
 fi
 
 # vim: ts=4 sw=4 et nocindent

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- see bundles.xsd for details -->
+<bundle>
+  <name>ssh</name>
+  <description>
+    <p>Install the ssh server on this computer.</p>
+  </description>
+  <packages>ssh</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

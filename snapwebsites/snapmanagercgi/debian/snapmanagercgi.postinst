@@ -27,18 +27,21 @@ then
     mkdir -p /var/lib/snapwebsites/cluster-status
     chown snapwebsites.snapwebsites /var/lib/snapwebsites/cluster-status
 
-    # for the CGI to work, we need to make make that the cgi module
-    # is enabled
+    # The snap-httpoxy is part of snapbase, but if apache2 was not yet
+    # installed when snapbase got installed, then this command did not
+    # run, so run it now to make sure it is effective
     #
-    a2enmod cgi
+    a2enmod headers
+    a2enconf snap-httpoxy
 
-    # enable the snapmanager-apache2.conf
+    # enable the snapmanager-apache2.conf and make sure to remove the default
     #
+    a2dissite 000-default
     a2ensite snapmanager-apache2
 
-    # force a reload
+    # force a restart after all those changes
     #
-    systemctl reload apache2
+    systemctl restart apache2
 fi
 
 # vim: ts=4 sw=4 et nocindent

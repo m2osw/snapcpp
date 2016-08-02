@@ -1,28 +1,141 @@
 <html>
+<!--
+
+File:
+     conf/index.html
+
+Description:
+     Offer a default page to eventually make it easier to handle the
+     snapmanager.cgi installation.
+
+Documentation:
+     This page defines how you must edit the snapmanager.conf file
+     before you will be allowed to access the snapmanager.cgi page.
+     By default the page is "403 Forbidden" until you do the correct
+     edit to the snapmanager.conf.
+
+     This page appears immediately after installing the snapmanager.cgi
+     file. It will show up in your server. Just go to your server IP or
+     domain name without any other information.
+
+License:
+     Copyright (c) 2011-2016 Made to Order Software Corp.
+
+     http://snapwebsites.org/
+     contact@m2osw.com
+
+     This program is free software; you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation; either version 2 of the License, or
+     (at your option) any later version.
+    
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+    
+     You should have received a copy of the GNU General Public License
+     along with this program; if not, write to the Free Software
+     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
+-->
 <head>
 	<title>Snap Manager CGI</title>
+	<style>
+	body
+	{
+		background-color: #e0e0e0;
+		padding: 0;
+		margin: 0;
+		line-height: 150%;
+		font-family: sans-serif;
+	}
+	h1
+	{
+		text-align: center;
+	}
+	code
+	{
+		border: 1px solid #888888;
+		background-color: #e0e0e0;
+		padding: 3px;
+	}
+	pre
+	{
+		border: 1px solid black;
+		background-color: #f3e2ba;
+		padding: 10px;
+	}
+	.page
+	{
+		margin: 0 auto;
+		width: 800px;
+	}
+	.page .content
+	{
+		border: 1px solid #888888;
+		background-color: white;
+		padding: 20px;
+	}
+	a
+	{
+		text-decoration: none;
+	}
+	.footer
+	{
+		font-size: 80%;
+		text-align: center;
+		font-style: italic;
+	}
+	</style>
 </head>
 <body>
-<h1>Snap Manager CGI</h1>
-<p>It looks like Snap Manager CGI was installed properly. To access the
-actual CGI, go to:</p>
-<p>http://&lt;your domain name or IP address&gt;/cgi-bin/snapmanager.cgi</p>
-<p>For security reasons we prevent access from all by default. To
-allow yourselves, edit the <code>/etc/snapwebsites/snapmanager.conf</code>
-file and edit the variable named <code>clients</code>.</p>
-<blockquote>
-<pre>
-clients=192.168.0.3
-</pre>
-</blockquote>
-<p>If you have multiple administrators, enter the IP address of each one
-of them separated by commas.</p>
-<blockquote>
-<pre>
-clients=10.0.0.3,10.0.1.5,10.0.3.11
-</pre>
-</blockquote>
-<p>We, on purpose, do not support a mask because only a very computers
-should be used to manage your Snap! cluster.</p>
+<div class="page">
+	<div class="header">
+		<h1>Snap Manager CGI</h1>
+	</div>
+	<div class="content">
+		<h2>Installation Success</h2>
+		<p>It looks like Snap Manager CGI was installed properly since
+		you see this Apache2 webpage.</p>
+		<h2>Security (403 Forbidden&mdash;how to palliate)</h2>
+		<p>For security reasons, we prevent access to snapmanager.cgi
+		from all by default. To allow yourselves, edit the
+		<code>/etc/snapwebsites/snapmanager.conf</code>
+		file and put your IP address in the variable named
+		<code>clients</code>. For example:</p>
+		<blockquote>
+			<pre>clients=192.168.0.3</pre>
+		</blockquote>
+		<p>If you have multiple administrators, enter the IP address
+		of each one of them separated by commas, spaces are
+		allowed:</p>
+		<blockquote>
+			<pre>clients=10.0.0.3,10.0.1.5, 10.0.3.11</pre>
+		</blockquote>
+		<p>We, on purpose, do not support a mask because only a very
+		few computers should be used to manage your Snap! Websites
+		cluster.</p>
+		<h2>Administer</h2>
+		<p>Now you should be ready to administer your
+		<a href="http://snapwebsites.org/">Snap! Websites</a>
+		cluster.</p>
+		<p>Note that the <code>snapmanagercgi</code> package
+		is only required on one computer unless you need to use
+		OpenVPN, because until OpenVPN is properly installed, you
+		do not want to have <code>snapcommunicator</code> communicate
+		between various computers. You can install OpenVPN manually
+		or with <code>snapmanager.cgi</code> if you install it on
+		each one of your servers.</p>
+		<p>To access the actual online snapmanager, go to the
+		following address:</p>
+		<blockquote>
+			<pre><a href="/cgi-bin/snapmanager.cgi">http://&lt;your domain name or IP address&gt;/cgi-bin/snapmanager.cgi</a></pre>
+		</blockquote>
+	</div>
+	<div class="footer">Copyright
+	<a href="http://www.m2osw.com/">Made to Order Software Corporation</a>
+	&copy; 2016</div>
+</div>
 </body>
 </html>
