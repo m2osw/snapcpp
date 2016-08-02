@@ -6,15 +6,15 @@ Build-Depends: cassandra-cpp-driver-dev (>= 2.2.2-1),
     debhelper,
     doxygen,
     graphviz,
-    libadvgetopt-dev (>= 1.1.0.75~xenial),
-    libas2js-dev (>= 0.1.14.197~xenial),
+    libadvgetopt-dev (>= 1.1.0.76~xenial),
+    libas2js-dev (>= 0.1.14.198~xenial),
     libboost1.49-dev | libboost-dev,
-    libcontrolledvars-dev (>= 1.4.16.443~xenial),
-    libqtserialization-dev (>= 0.1.16.702~xenial),
+    libcontrolledvars-dev (>= 1.4.16.444~xenial),
+    libqtserialization-dev (>= 0.1.16.703~xenial),
     libssl-dev,
-    libtld-dev (>= 1.5.1.389~xenial),
+    libtld-dev (>= 1.5.1.390~xenial),
     qt5-default,
-    snapcmakemodules (>= 1.0.25.199~xenial)
+    snapcmakemodules (>= 1.0.25.200~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libqtcassandra

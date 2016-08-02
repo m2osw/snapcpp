@@ -51,6 +51,7 @@ set( DEBUILD_PLATFORM "xenial"                         CACHE STRING   "Name of t
 set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}"       CACHE STRING   "Email address of the package signer."                 )
 set( DEP_CACHE_FILE   "${CMAKE_BINARY_DIR}/deps.cache" CACHE INTERNAL "Cache file for dependencies."                         )
 
+message( STATUS "Scanning all projects..." )
 execute_process( 
 	COMMAND ${MAKE_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${DEP_CACHE_FILE}
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -79,11 +80,11 @@ function( ConfigureMakeProjectInternal )
 	set( SRC_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT_NAME} )
 	set( BUILD_DIR      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_TARGET_NAME}  )
 	set( SNAP_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Destination installation folder." )
-	if( ARG_DISTFILE_PATH )
-		set( RM_DIR ${SRC_DIR}   )
-	else()
-		set( RM_DIR ${BUILD_DIR} )
-	endif()
+	#if( ARG_DISTFILE_PATH )
+	#	set( RM_DIR ${SRC_DIR}   )
+	#else()
+	#	set( RM_DIR ${BUILD_DIR} )
+	#endif()
 
 	if( NOT EXISTS ${SRC_DIR} AND NOT ARG_DISTFILE_PATH )
 		message( FATAL_ERROR "No source directory '${SRC_DIR}'!" )
@@ -180,25 +181,34 @@ function( ConfigureMakeProjectInternal )
 			set( THE_CMAKE_BUILD_TOOL ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL} )
 		endif()
 	endif()
-	add_custom_target(
-		${ARG_TARGET_NAME}-make
+
+	add_custom_command(
+        OUTPUT ${BUILD_DIR}/make_completed.log
 		COMMAND ${THE_CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
+		COMMAND ${CMAKE_BUILD_TOOL} install
+			1>> ${BUILD_DIR}/make.log
+			2>> ${BUILD_DIR}/make.err
+		COMMAND echo > ${BUILD_DIR}/make_completed.log
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${ARG_TARGET_NAME}"
 		)
-
 	add_custom_target(
-		${ARG_TARGET_NAME}-install
-		COMMAND ${CMAKE_BUILD_TOOL} install
-			1>> ${BUILD_DIR}/make.log
-			2>> ${BUILD_DIR}/make.err
-		DEPENDS ${ARG_TARGET_NAME}-make
+		${ARG_TARGET_NAME}-make
+		DEPENDS ${BUILD_DIR}/make_completed.log
 		WORKING_DIRECTORY ${BUILD_DIR}
-		COMMENT "Installing ${ARG_TARGET_NAME}"
 		)
+
+    #set( MAKE_TARGET ${BUILD_DIR}/MAKE_BUILD_SUCCESSFUL  )
+    #add_custom_command(
+    #    OUTPUT ${MAKE_TARGET}
+    #    COMMAND echo > ${MAKE_TARGET}
+    #    DEPENDS ${ARG_TARGET_NAME}-make
+    #    WORKING_DIRECTORY ${BUILD_DIR}
+    #    COMMENT "Target ${ARG_TARGET_NAME} successfully built!" 
+    #    )
 
 	unset( PBUILDER_DEPS )
 	unset( DPUT_DEPS     )
@@ -233,23 +243,29 @@ function( ConfigureMakeProjectInternal )
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Dputting debian package ${ARG_TARGET_NAME} to launchpad."
 		)
-	add_custom_target(
-		${ARG_TARGET_NAME}-pbuilder
+	add_custom_command(
+        OUTPUT ${BUILD_DIR}/pbuild_completed.log
 		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
+		COMMAND echo > ${BUILD_DIR}/pbuild_completed.log
 		DEPENDS ${PBUILDER_DEPS}
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Building debian package ${ARG_TARGET_NAME} with pbuilder-dist."
 		)
+	add_custom_target(
+		${ARG_TARGET_NAME}-pbuilder
+		DEPENDS ${BUILD_DIR}/pbuild_completed.log
+		WORKING_DIRECTORY ${SRC_DIR}
+		)
 
 	add_custom_target(
 		${ARG_TARGET_NAME}-clean
-		COMMAND rm -rf ${RM_DIR}
+		COMMAND rm -rf ${BUILD_DIR}/*.log ${BUILD_DIR}/CMakeCache.txt
 		)
 
 	add_custom_target(
 		${ARG_TARGET_NAME}
-		DEPENDS ${ARG_TARGET_NAME}-install
+		DEPENDS ${ARG_TARGET_NAME}-make
 		)
 endfunction()
 

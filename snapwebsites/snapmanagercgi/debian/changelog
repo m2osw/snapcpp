@@ -1,3 +1,16 @@
+snapmanagercgi (1.0.2.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 02 Aug 2016 02:00:55 -0700
+
+snapmanagercgi (1.0.2.1~xenial) xenial; urgency=high
+
+  * SNAP-110: Delete the bundles.status whenever a bundle gets intalled/uninstalled.
+  * SNAP-110: Missed one 'e'.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 01 Aug 2016 18:06:07 -0700
+
 snapmanagercgi (1.0.1.78~xenial) xenial; urgency=high
 
   * SNAP-110: Removed the extra quotes for the Dpkg::Options::=...
