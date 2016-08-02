@@ -6,7 +6,7 @@ Build-Depends: cmake,
     doxygen,
     graphviz,
     qt5-default,
-    snapcmakemodules (>= 1.0.25.199~xenial)
+    snapcmakemodules (>= 1.0.25.200~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libqtserialization

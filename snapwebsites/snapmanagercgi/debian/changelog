@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.2.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 02 Aug 2016 02:00:55 -0700
+
 snapmanagercgi (1.0.2.1~xenial) xenial; urgency=high
 
   * SNAP-110: Delete the bundles.status whenever a bundle gets intalled/uninstalled.
