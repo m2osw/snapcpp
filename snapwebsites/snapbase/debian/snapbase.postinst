@@ -73,6 +73,10 @@ then
     if hash a2enconf 2>/dev/null
     then
         a2enconf snap-httpoxy
+
+        # make sure to force a reload or that's going to be useless
+        #
+        systemctl reload apache2
     fi
 fi
 

@@ -4,12 +4,20 @@
 
 if [ "$1" = "configure" ]
 then
-	SNAPLOGDIR=/var/log/snapwebsites
-	mkdir -p ${SNAPLOGDIR}
-	SNAPCGI_LOG=${SNAPLOGDIR}/snapcgi.log
-	touch ${SNAPCGI_LOG}
-	chown www-data.www-data ${SNAPCGI_LOG}
-	chmod ug+rw ${SNAPCGI_LOG}
+    # Create the snapcgi.log file because the www-data user may have
+    # difficulties with it otherwise
+    #
+    SNAPLOGDIR=/var/log/snapwebsites
+    SNAPCGI_LOG=${SNAPLOGDIR}/snapcgi.log
+    touch ${SNAPCGI_LOG}
+    chown www-data.www-data ${SNAPCGI_LOG}
+    chmod u+rw ${SNAPCGI_LOG}
+
+    SNAPSECURELOGDIR=/var/log/snapwebsites/secure
+    SNAPSECURECGI_LOG=${SNAPSECURELOGDIR}/snapcgi.log
+    touch ${SNAPSECURECGI_LOG}
+    chown www-data.www-data ${SNAPSECURECGI_LOG}
+    chmod u+rw ${SNAPSECURECGI_LOG}
 fi
 
 # vim: ts=4 sw=4 et nocindent

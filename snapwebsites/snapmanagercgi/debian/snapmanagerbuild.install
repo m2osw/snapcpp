@@ -1,3 +1,4 @@
+debian/tmp/usr/share/snapwebsites/html/snapmanager/snap-bundles-footer.html usr/share/snapwebsites/html/snapmanager/
 conf/snap-bundles-apache2.conf etc/apache2/sites-available/
 conf/snap-bundles-apache2.conf usr/share/snapwebsites/conf/
 conf/snap-bundles-footer.html var/www/bundles/

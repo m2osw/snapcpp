@@ -1,0 +1,28 @@
+<html>
+<head>
+	<title>Snap Manager CGI</title>
+</head>
+<body>
+<h1>Snap Manager CGI</h1>
+<p>It looks like Snap Manager CGI was installed properly. To access the
+actual CGI, go to:</p>
+<p>http://&lt;your domain name or IP address&gt;/cgi-bin/snapmanager.cgi</p>
+<p>For security reasons we prevent access from all by default. To
+allow yourselves, edit the <code>/etc/snapwebsites/snapmanager.conf</code>
+file and edit the variable named <code>clients</code>.</p>
+<blockquote>
+<pre>
+clients=192.168.0.3
+</pre>
+</blockquote>
+<p>If you have multiple administrators, enter the IP address of each one
+of them separated by commas.</p>
+<blockquote>
+<pre>
+clients=10.0.0.3,10.0.1.5,10.0.3.11
+</pre>
+</blockquote>
+<p>We, on purpose, do not support a mask because only a very computers
+should be used to manage your Snap! cluster.</p>
+</body>
+</html>

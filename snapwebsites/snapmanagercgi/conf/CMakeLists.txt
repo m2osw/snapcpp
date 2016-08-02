@@ -54,13 +54,26 @@ install(
         # snap configuration files
         snapmanager.conf
 
-        # misc files -- TODO add a sample apache settings for snapmanager.cgi?
+        # misc files
         snapmanagercgi-parser.xsl
+        snapmanager-apache2.conf
         snap-bundles-apache2.conf
-        snap-bundles-footer.html
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+#################################################################################
+## Save HTML files in their own directory
+##
+install(
+    FILES
+        # HTML files
+        index.html
+        snap-bundles-footer.html
+
+    DESTINATION
+        share/snapwebsites/html/snapmanager
 )
 
 #################################################################################

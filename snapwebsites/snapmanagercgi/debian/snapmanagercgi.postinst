@@ -7,10 +7,38 @@
 
 if [ "$1" = "configure" ]
 then
+    # Create the snapmanagercgi.log file because the www-data user may have
+    # difficulties with it otherwise
+    #
+    SNAPLOGDIR=/var/log/snapwebsites
+    SNAPMANAGERCGI_LOG=${SNAPLOGDIR}/snapmanagercgi.log
+    touch ${SNAPMANAGERCGI_LOG}
+    chown www-data.www-data ${SNAPMANAGERCGI_LOG}
+    chmod u+rw ${SNAPMANAGERCGI_LOG}
+    
+    SNAPSECURELOGDIR=/var/log/snapwebsites/secure
+    SNAPSECUREMANAGERCGI_LOG=${SNAPSECURELOGDIR}/snapmanagercgi.log
+    touch ${SNAPSECUREMANAGERCGI_LOG}
+    chown www-data.www-data ${SNAPSECUREMANAGERCGI_LOG}
+    chmod u+rw ${SNAPSECUREMANAGERCGI_LOG}
+
     # create the directory to be used to save the status files
     #
     mkdir -p /var/lib/snapwebsites/cluster-status
     chown snapwebsites.snapwebsites /var/lib/snapwebsites/cluster-status
+
+    # for the CGI to work, we need to make make that the cgi module
+    # is enabled
+    #
+    a2enmod cgi
+
+    # enable the snapmanager-apache2.conf
+    #
+    a2ensite snapmanager-apache2
+
+    # force a reload
+    #
+    systemctl reload apache2
 fi
 
 # vim: ts=4 sw=4 et nocindent
