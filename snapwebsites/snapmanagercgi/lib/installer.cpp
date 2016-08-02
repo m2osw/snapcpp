@@ -339,8 +339,15 @@ int manager::install_package(std::string const & package_name, std::string const
 void manager::reset_aptcheck()
 {
     // cache is not unlikely wrong after that
+    //
     QString const cache_filename(QString("%1/apt-check.output").arg(f_cache_path));
     unlink(cache_filename.toUtf8().data());
+
+    // also make sure that the bundles.status get regenerated (i.e. the
+    // dpkg-query calls)
+    //
+    QString const bundles_status_filename(QString("%1/bundles.status").arg(f_bundles_path));
+    unlink(bundles_status_filename.toUtf8().data());
 }
 
 
