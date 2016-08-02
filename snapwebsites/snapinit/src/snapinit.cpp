@@ -546,7 +546,7 @@ snap_init::pointer_t snap_init::f_instance;
 snap_init::snap_init( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
     , f_lock_filename( QString("%1/snapinit-lock.pid")
-                       .arg(f_opt.get_string("lockdir").c_str())
+                       .arg(QString::fromUtf8(f_opt.get_string("lockdir").c_str()))
                      )
     , f_lock_file( f_lock_filename )
     , f_communicator(snap::snap_communicator::instance())
@@ -1226,17 +1226,18 @@ void snap_init::init()
     // make sure the path to the lock file exists
     //
     {
-        if(snap::mkdir_p(f_lock_filename, true) != 0)
+        QString const lock_path(QString::fromUtf8(f_opt.get_string("lockdir").c_str()));
+        if(snap::mkdir_p(lock_path, false) != 0)
         {
-            common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\"; without the filename).")
-                                .arg(f_lock_filename));
+            common::fatal_error(QString("the path to the lock filename could not be created (mkdir -p \"%1\").")
+                                .arg(lock_path));
             snap::NOTREACHED();
         }
 
         // for sub-processes to be able to access that folder we need to
         // also setup the user and group as expected
         //
-        snap::chownnm(f_lock_filename, user, group);
+        snap::chownnm(lock_path, user, group);
     }
 
     // create the run-time directory because other processes may not
@@ -1254,7 +1255,7 @@ void snap_init::init()
         // get passed down at this point... so each tool has to be properly
         // adjusted if modified here.)
         //
-        QString const runpath(f_config.contains("runpath") ? f_config["runpath"] : "/var/run/snapwebsites");
+        QString const runpath(f_config.contains("runpath") ? f_config["runpath"] : "/run/snapwebsites");
         if(snap::mkdir_p(runpath, false) != 0)
         {
             common::fatal_error(QString("the path to runtime data could not be created (mkdir -p \"%1\").")
