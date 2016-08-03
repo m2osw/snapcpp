@@ -2305,6 +2305,22 @@ void snap_init::start()
                 snap::NOTREACHED();
             }
 
+            // save our (child) PID in the lock file (useful for the stop() processus)
+            // the correct Debian format is the PID followed by '\n'
+            //
+            // WARNING: This is done by the parent because at the time the parent
+            //          returns the systemctl environment expects the PID to be
+            //          valid (otherwise we get a "Failed to read PID from file ...".
+            //
+            // FHS Version 2.1+:
+            //   > The file should consist of the process identifier in ASCII-encoded
+            //   > decimal, followed by a newline character. For example, if crond was
+            //   > process number 25, /var/run/crond.pid would contain three characters:
+            //   > two, five, and newline.
+            //
+            f_lock_file.write(QString("%1\n").arg(pid).toUtf8());
+            f_lock_file.flush();
+
             // in this case we MUST keep the lock in place,
             // which is done by closing that file; if the file
             // is closed whenever we hit the remove_lock()
@@ -2316,18 +2332,14 @@ void snap_init::start()
 
         // the child goes on
     }
-
-    // save our (child) PID in the lock file (useful for the stop() processus)
-    // the correct Debian format is the PID followed by '\n'
-    //
-    // FHS Version 2.1+:
-    //   > The file should consist of the process identifier in ASCII-encoded
-    //   > decimal, followed by a newline character. For example, if crond was
-    //   > process number 25, /var/run/crond.pid would contain three characters:
-    //   > two, five, and newline.
-    //
-    f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
-    f_lock_file.flush();
+    else
+    {
+        // if not detaching, we have to save the PID ourselves
+        // (for more see details, see the previous write() comment)
+        //
+        f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
+        f_lock_file.flush();
+    }
 
     // now we are ready to mark all the services as ready so they get
     // started (by default they are in the DISABLED state)
