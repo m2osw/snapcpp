@@ -49,8 +49,10 @@ cd in the folder to run `apt-ftparchive` like so:
 
     cd /var/www/debian/xenial
     apt-ftparchive packages . > Packages
+    gzip -f9c Packages > Packages.gz
     # And if you included the sources:
     apt-ftparchive sources . > Sources
+    gzip -f9c Sources > Sources.gz
 
 To get the `Packages` and `Sources` files, which apt-get requires to
 find all the packages. Then create a "deb ..." entry that matches your

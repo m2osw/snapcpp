@@ -31,6 +31,9 @@ then
     # installed when snapbase got installed, then this command did not
     # run, so run it now to make sure it is effective
     #
+    # Also turn on cgi and headers modules
+    #
+    a2enmod cgi
     a2enmod headers
     a2enconf snap-httpoxy
 
