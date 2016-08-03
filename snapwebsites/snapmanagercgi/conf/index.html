@@ -9,14 +9,28 @@ Description:
      snapmanager.cgi installation.
 
 Documentation:
-     This page defines how you must edit the snapmanager.conf file
-     before you will be allowed to access the snapmanager.cgi page.
+     This page defines how you must edit the snapmanager.conf and
+     the snapcommunicator.conf files before you will be allowed to
+     access a valid snapmanager.cgi page.
+
      By default the page is "403 Forbidden" until you do the correct
      edit to the snapmanager.conf.
 
-     This page appears immediately after installing the snapmanager.cgi
-     file. It will show up in your server. Just go to your server IP or
-     domain name without any other information.
+     By default the my_address variable is set to a "random" IP address
+     which is not likely the IP address of your computer. We do not
+     want to automated this one because it needs to use a secure
+     private network and some computers have public IP addresses,
+     private address which are not secure, and private addresses
+     that are secure. Our installation script could not easily decide
+     which one to use. You want to use the secure one, obviously.
+
+     This page appears immediately after installing the snapmanagercgi
+     package. It will show up in your server. Just go to your server IP or
+     domain name without any other information. If you already had Apache2
+     installed with other parameters, then you may need to also edit the
+     snapmanager-apache2.conf file and change the ServerName parameter
+     to your domain or may it appear first in the direct so it is taken
+     as the default by Apache2.
 
 License:
      Copyright (c) 2011-2016 Made to Order Software Corp.
@@ -99,23 +113,46 @@ License:
 		<p>It looks like Snap Manager CGI was installed properly since
 		you see this Apache2 webpage.</p>
 		<h2>Security (403 Forbidden&mdash;how to palliate)</h2>
-		<p>For security reasons, we prevent access to snapmanager.cgi
-		from all by default. To allow yourselves, edit the
-		<code>/etc/snapwebsites/snapmanager.conf</code>
-		file and put your IP address in the variable named
-		<code>clients</code>. For example:</p>
-		<blockquote>
-			<pre>clients=192.168.0.3</pre>
-		</blockquote>
-		<p>If you have multiple administrators, enter the IP address
-		of each one of them separated by commas, spaces are
-		allowed:</p>
-		<blockquote>
-			<pre>clients=10.0.0.3,10.0.1.5, 10.0.3.11</pre>
-		</blockquote>
-		<p>We, on purpose, do not support a mask because only a very
-		few computers should be used to manage your Snap! Websites
-		cluster.</p>
+			<h3>Snap Manager CGI</h3>
+				<p>For security reasons, we prevent access to snapmanager.cgi
+				from all by default. To allow yourselves, edit the
+				<code>/etc/snapwebsites/snapmanager.conf</code>
+				file and put your IP address in the variable named
+				<code>clients</code>. For example:</p>
+				<blockquote>
+					<pre>clients=192.168.0.3</pre>
+				</blockquote>
+				<p>If you have multiple administrators, enter the IP address
+				of each one of them separated by commas, spaces are
+				allowed:</p>
+				<blockquote>
+					<pre>clients=10.0.0.3,10.0.1.5, 10.0.3.11</pre>
+				</blockquote>
+				<p>We, on purpose, do not support a mask because only a very
+				few computers should be used to manage your Snap! Websites
+				cluster.</p>
+			<h3>Snap Communicator</h3>
+				<p>The Snap Communicator wants to listen to a private
+				network IP address. By default we put 127.0.0.1 as
+				that IP address, although in most cases that's most
+				certainly wrong (i.e. if you have at least 2 computers
+				in your cluster, then it is wrong.)</p>
+				<p>You must edit the file and change the
+				<code>my_address</code> variable with the
+				correct IP adress.</p>
+				<blockquote>
+					<pre>my_address=192.168.10.11</pre>
+				</blockquote>
+				<p>Make sure to use a private network IP address
+				which is secure. This means if you need to create
+				a tunnelled network with a VPN, make sure to do
+				that first and then setup the secure IP address.</p>
+				<p><strong>Note:</strong> It will be possible to edit
+				that IP address with snapmanager.cgi (once implemented...)
+				but that will not be very practical unless you install
+				snapmanager.cgi on all your computers, which we do
+				not recommend unless you need to do so to install
+				OpenVPN.</p>
 		<h2>Administer</h2>
 		<p>Now you should be ready to administer your
 		<a href="http://snapwebsites.org/">Snap! Websites</a>
