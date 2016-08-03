@@ -239,6 +239,7 @@ bool manager_cgi::verify()
         }
     }
 
+#if 0
     {
         // WARNING: do not use std::string because nullptr will crash
         //
@@ -274,6 +275,7 @@ bool manager_cgi::verify()
             return false;
         }
     }
+#endif
 
     {
         // WARNING: do not use std::string because nullptr will crash
