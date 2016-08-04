@@ -172,7 +172,8 @@ void fd_deleter(int * fd)
  * The value of a parameter gets quoted when it includes a ';'. Within
  * the quotes, a Double Quote can be escaped inside by adding a backslash
  * in front of it (\"). Newline characters (as well as return carriage)
- * are also escaped using \n and \r respectively.
+ * are also escaped using \n and \r respectively. Finally, we have to
+ * escape backslashes themselves by doubling them, so \ becomes \\.
  *
  * Note that only parameter values support absolutely any character.
  * All the other parameters are limited to the latin alphabet, digits,
@@ -376,9 +377,10 @@ bool snap_communicator_message::from_message(QString const & message)
                 ++m;
             }
 
-            // also restore new lines if any
+            // also restore new lines and blackslashes if any
             param_value.replace("\\n", "\n")
-                       .replace("\\r", "\r");
+                       .replace("\\r", "\r")
+                       .replace("\\\\", "\\");
 
             // we got a valid parameter, add it
             parameters[param_name] = param_value;
@@ -474,7 +476,8 @@ QString snap_communicator_message::to_message() const
         {
             f_cached_message += QString("%1%2=").arg(first ? " " : ";").arg(p.key());
             QString param(p.value());
-            param.replace("\n", "\\n")   // newline needs to be escaped
+            param.replace("\\", "\\\\")  // existing backslashes need to be escaped
+                 .replace("\n", "\\n")   // newline needs to be escaped
                  .replace("\r", "\\r");  // this one is not important, but for completeness
             if(param.indexOf(";") >= 0
             || (!param.isEmpty() && param[0] == '\"'))

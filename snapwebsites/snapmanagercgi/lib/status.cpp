@@ -177,7 +177,7 @@ QString status_t::to_string() const
     // reader, so we have to escape those
     //
     QString value(f_value);
-    value.replace("\n", "\\n").replace("\r", "\\r");
+    value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r");
     result += value;
 
     return result;
@@ -277,7 +277,7 @@ bool status_t::from_string(QString const & line)
     f_value = line.mid(s - line.data());
 
     // restore special characters
-    f_value.replace("\\n", "\n").replace("\\r", "\r");
+    f_value.replace("\\n", "\n").replace("\\r", "\r").replace("\\\\", "\\");
 
     return true;
 }
