@@ -380,9 +380,9 @@ bool snap_communicator_message::from_message(QString const & message)
             }
 
             // also restore new lines and blackslashes if any
-            param_value.replace("\\\\", "\\");
+            param_value.replace("\\\\", "\\")
                        .replace("\\n", "\n")
-                       .replace("\\r", "\r")
+                       .replace("\\r", "\r");
 
             // we got a valid parameter, add it
             parameters[param_name] = param_value;

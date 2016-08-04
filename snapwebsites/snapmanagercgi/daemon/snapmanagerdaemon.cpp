@@ -260,7 +260,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,MANAGERINSTALL,MANAGERRESEND,MANAGERSTATUS,MODIFYSETTINGS,QUITTING,READY,RELOADCONFIG,SERVER_PUBLIC_IP,STOP,UNKNOWN,UNREACHABLE");
+            reply.add_parameter("list", "HELP,LOG,MANAGERINSTALL,MANAGERRESEND,MANAGERSTATUS,MODIFYSETTINGS,NEWREMOTECONNECTION,QUITTING,READY,RELOADCONFIG,SERVER_PUBLIC_IP,STOP,UNKNOWN,UNREACHABLE");
 
             f_messenger->send_message(reply);
 
@@ -316,6 +316,18 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // user just clicked "Save" from somewhere...
             //
             modify_settings(message);
+            return;
+        }
+        break;
+
+    case 'N':
+        if(command == "NEWREMOTECONNECTION")
+        {
+            snap::snap_communicator_message resend;
+            resend.set_server(message.get_parameter("server_name"));
+            resend.set_service("snapmanagerdaemon");
+            resend.set_command("MANAGERRESEND");
+            f_messenger->send_message(resend);
             return;
         }
         break;

@@ -2078,9 +2078,11 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         return;
                     }
 
-                    base->set_server_name(message.get_parameter("server_name"));
+                    QString const remote_server_name(message.get_parameter("server_name"));
+                    base->set_server_name(remote_server_name);
 
                     snap::snap_communicator_message reply;
+                    snap::snap_communicator_message new_remote_connection;
 
                     // add neighbors with which the guys asking to
                     // connect can attempt to connect with...
@@ -2183,6 +2185,18 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             //       message after a "GOSSIP"
                             //
                             f_remote_snapcommunicators->gossip_received(his_address);
+
+                            // now let local services know that we have a new
+                            // remote connections (which may be of interest
+                            // for that service--see snapmanagerdaemon)
+                            //
+                            // TODO: to be symmetrical, we should also have
+                            //       a message telling us when a remote
+                            //       connection goes down...
+                            //
+                            new_remote_connection.set_command("NEWREMOTECONNECTION");
+                            new_remote_connection.set_service(".");
+                            new_remote_connection.add_parameter("server_name", remote_server_name);
                         }
                     }
 
@@ -2200,6 +2214,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         if(!refuse)
                         {
                             remote_communicator->send_message(help);
+                            broadcast_message(new_remote_connection);
                         }
                     }
                     else if(service_conn)
@@ -2208,6 +2223,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         if(!refuse)
                         {
                             service_conn->send_message(help);
+                            broadcast_message(new_remote_connection);
                         }
                     }
                     else
