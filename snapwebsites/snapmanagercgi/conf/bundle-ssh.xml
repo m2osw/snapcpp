@@ -5,7 +5,7 @@
   <description>
     <p>Install the ssh server on this computer.</p>
   </description>
-  <packages>ssh</packages>
+  <packages>openssh-server</packages>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
