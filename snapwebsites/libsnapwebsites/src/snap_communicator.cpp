@@ -335,6 +335,8 @@ bool snap_communicator_message::from_message(QString const & message)
                 for(++m; !m->isNull() && m->unicode() != '"'; ++m)
                 {
                     // restored escaped double quotes
+                    // (note that we do not yet restore other backslashed
+                    // characters, that's done below)
                     if(m->unicode() == '\\' && !m[1].isNull() && m[1].unicode() == '"')
                     {
                         ++m;
@@ -378,9 +380,9 @@ bool snap_communicator_message::from_message(QString const & message)
             }
 
             // also restore new lines and blackslashes if any
-            param_value.replace("\\n", "\n")
+            param_value.replace("\\\\", "\\");
+                       .replace("\\n", "\n")
                        .replace("\\r", "\r")
-                       .replace("\\\\", "\\");
 
             // we got a valid parameter, add it
             parameters[param_name] = param_value;

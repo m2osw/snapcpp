@@ -277,7 +277,7 @@ bool status_t::from_string(QString const & line)
     f_value = line.mid(s - line.data());
 
     // restore special characters
-    f_value.replace("\\n", "\n").replace("\\r", "\r").replace("\\\\", "\\");
+    f_value.replace("\\\\", "\\").replace("\\n", "\n").replace("\\r", "\r");
 
     return true;
 }
