@@ -7,5 +7,5 @@
 # it somewhere else and run these commands against that copy. This way
 # you can avoid having to re-run this script every single time.
 #
-sudo chown root ../BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon
-sudo chmod 4775 ../BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon
+sudo chown root ../../BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon
+sudo chmod 4775 ../../BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon

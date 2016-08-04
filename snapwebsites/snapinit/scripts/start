@@ -1,11 +1,15 @@
 #!/bin/sh
+
+HERE=`pwd`
+
 if test "$1" = "-r"
 then
 	BUILD/snapwebsites/snapinit/src/snapinit --remove-lock
 fi
 
+PATH=${HERE}/BUILD/snapwebsites/snapmanagercgi/upgrader:${PATH}
+
 # We have many binary paths where we can find the executables
-HERE=`pwd`
 BUILD/snapwebsites/snapinit/src/snapinit --debug \
 	--binary-path `ls -dm $HERE/BUILD/snapwebsites/*/src $HERE/BUILD/snapwebsites/snapmanagercgi/daemon | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
 	start
