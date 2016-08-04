@@ -64,13 +64,13 @@
  * |  |  Communicator  |  (TCP/IP)|  |  Communicator  |        | images     |
  * |  +----------------+    |     |  +----------------+        |  PING      |
  * |      ^                 |     |      ^                     |  (UDP)     |
- * |      | Connect         |     |      | Connect      +----------------+  |
+ * |      | Connect         |     |      | Connect      +------+---------+  |
  * |      | (TCP/IP)        |     |      | (TCP/IP)     |   Snap Child   |  |
  * |      |                 |     |      |              |    Process     |  |
- * |      v                 |     |      |              +----------------+  |
+ * |      v                 |     |      v              +----------------+  |
  * |  +----------------+    |     |  +----------------+        ^            |
  * |  |     Images     |    |     |  |     Snap!      |        |            |
- * |  |    Backend     |    |     |  |    Server      |--------+            |
+ * |  |    Backend     |    |     |  |    Server      +--------+            |
  * |  +----------------+    |     |  +----------------+  fork()             |
  * |                        |     |                                         |
  * +------------------------+     +-----------------------------------------+
@@ -3050,7 +3050,8 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             }
         }
 
-        if(all_servers && f_local_services_list.contains(service))
+        if((all_servers || server_name == f_server_name)
+        && f_local_services_list.contains(service))
         {
             // its a service that is expected on this computer, but it is not
             // running right now... so cache the message
