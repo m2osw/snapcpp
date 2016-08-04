@@ -712,8 +712,15 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         QString value(s.get_value());
         if(value.startsWith("<fields>"))
         {
+            // make sure to at least remove the fields from the value,
+            // but if we are in the Uninstall mode, then ignore the
+            // fields entirely
+            //
             int const pos(value.indexOf("</fields>"));
-            fields = value.mid(0, pos + 9);
+            if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING)
+            {
+                fields = value.mid(0, pos + 9);
+            }
             value = value.mid(pos + 9);
         }
 

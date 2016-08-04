@@ -796,9 +796,16 @@ void snap_init::init_message_functions()
                 // we need a full restart in this case (because snapinit
                 // cannot restart itself!)
                 //
+                // also if you are a programmer we cannot do a systemctl
+                // restart so we just skip the feature...
+                //
                 if(getuid() == 0)
                 {
                     snap::NOTUSED(system("systemctl restart snapinit"));
+                }
+                else
+                {
+                    SNAP_LOG_WARNING("You are not running snapinit as root (because you are running as a programmer?) so the RELOADCONFIG will be ignored.");
                 }
             }
         },
