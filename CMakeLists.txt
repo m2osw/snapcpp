@@ -114,7 +114,7 @@ add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
     )
 add_custom_target( clean-all
-    COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+    #COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
     )
 add_custom_target( debuild

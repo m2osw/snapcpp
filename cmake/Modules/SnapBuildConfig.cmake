@@ -216,7 +216,7 @@ function( ConfigureMakeProjectInternal )
 		COMMAND ${CMAKE_BUILD_TOOL} install
 			1>> ${BUILD_DIR}/make.log
 			2>> ${BUILD_DIR}/make.err
-		COMMAND echo > ${BUILD_DIR}/make_completed.log
+		COMMAND echo > ${BUILD_DIR}/make.completed
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${ARG_TARGET_NAME}"
@@ -280,13 +280,13 @@ function( ConfigureMakeProjectInternal )
 		)
 	add_custom_target(
 		${ARG_TARGET_NAME}-pbuilder
-		DEPENDS ${BUILD_DIR}/pbuild_completed.log
+		DEPENDS ${BUILD_DIR}/pbuild.completed
 		WORKING_DIRECTORY ${SRC_DIR}
 		)
 
 	add_custom_target(
 		${ARG_TARGET_NAME}-clean
-		COMMAND rm -rf ${BUILD_DIR}/*.log ${BUILD_DIR}/CMakeCache.txt
+		COMMAND rm -f ${BUILD_DIR}/*.completed
 		)
 
 	add_custom_target(
