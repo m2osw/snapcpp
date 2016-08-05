@@ -58,12 +58,20 @@ execute_process(
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 
-add_custom_target(
-	snap-incvers
-	COMMAND ${INC_VERS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	COMMENT "Incrementing build version for all debian packages."
-	)
+option( INCREMENT_BUILD_NUMBERS "Increment the build number in the version of all debian/changelog files." OFF )
+if( ${INCREMENT_BUILD_NUMBERS} )
+	add_custom_target(
+		snap-incvers
+		COMMAND ${INC_VERS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		COMMENT "Incrementing build version for all debian packages."
+		)
+else()
+	add_custom_target(
+		snap-incvers
+		COMMENT "Incrementing build version number skipped."
+		)
+endif()
 
 option( INCREMENT_DEPENDENCIES "Increment ALL dependencies in all packages." OFF )
 if( ${INCREMENT_DEPENDENCIES} )
