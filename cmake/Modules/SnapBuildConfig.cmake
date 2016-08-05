@@ -209,7 +209,7 @@ function( ConfigureMakeProjectInternal )
 	endif()
 
 	add_custom_command(
-        OUTPUT ${BUILD_DIR}/make_completed.log
+        OUTPUT ${BUILD_DIR}/make.completed
 		COMMAND ${THE_CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
@@ -270,7 +270,7 @@ function( ConfigureMakeProjectInternal )
 		COMMENT "Dputting debian package ${ARG_TARGET_NAME} to launchpad."
 		)
 	add_custom_command(
-        OUTPUT ${BUILD_DIR}/pbuild_completed.log
+        OUTPUT ${BUILD_DIR}/pbuild.completed
 		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
 		COMMAND echo > ${BUILD_DIR}/pbuild.completed
