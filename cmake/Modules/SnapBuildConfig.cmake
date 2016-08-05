@@ -223,7 +223,7 @@ function( ConfigureMakeProjectInternal )
 		)
 	add_custom_target(
 		${ARG_TARGET_NAME}-make
-		DEPENDS ${BUILD_DIR}/make_completed.log
+		DEPENDS ${BUILD_DIR}/make.completed
 		WORKING_DIRECTORY ${BUILD_DIR}
 		)
 
@@ -273,7 +273,7 @@ function( ConfigureMakeProjectInternal )
         OUTPUT ${BUILD_DIR}/pbuild_completed.log
 		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
-		COMMAND echo > ${BUILD_DIR}/pbuild_completed.log
+		COMMAND echo > ${BUILD_DIR}/pbuild.completed
 		DEPENDS ${PBUILDER_DEPS}
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Building debian package ${ARG_TARGET_NAME} with pbuilder-dist."
