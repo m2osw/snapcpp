@@ -34,6 +34,7 @@ find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MOD
 find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
 find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl          PATHS ${CMAKE_MODULE_PATH} )
 find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl           	   PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
@@ -58,11 +59,28 @@ execute_process(
 	)
 
 add_custom_target(
-	snap-incdeps
-	COMMAND ${INC_DEPS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
+	snap-incvers
+	COMMAND ${INC_VERS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	COMMENT "Incrementing dependencies for all debian packages."
+	COMMENT "Incrementing build version for all debian packages."
 	)
+
+option( INCREMENT_DEPENDENCIES "Increment ALL dependencies in all packages." OFF )
+if( ${INCREMENT_DEPENDENCIES} )
+	add_custom_target(
+		snap-incdeps
+		COMMAND ${INC_DEPS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		DEPENDS snap-incvers
+		COMMENT "Incrementing dependencies for all debian packages."
+		)
+else()
+	add_custom_target(
+		snap-incdeps
+		DEPENDS snap-incvers
+		COMMENT "Incrementing dependencies skipped."
+		)
+endif()
 
 function( ConfigureMakeProjectInternal )
 	set( options        USE_CONFIGURE_SCRIPT IGNORE_DEPS )

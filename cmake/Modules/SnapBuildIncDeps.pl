@@ -5,11 +5,10 @@
 # Author: R. Douglas Barbieri
 #
 # This perl script goes through the entire tree of projects, finds all of the
-# Debianized project (should be all of them), adds a new changelog record with
-# an incremented build number, then updates all control files which rely on
-# dependencies to require the new version.
+# Debianized project (should be all of them), and then updates all control files
+# which rely on dependencies to require the new version.
 #
-die "usage: SnapBuildIncDeps.pl [cache filename] [dist]\n" unless $#ARGV == 1;
+die "usage: SnapBuildIncDeps.pl [cache filename]\n" unless $#ARGV == 1;
 
 use Cwd;
 use Dpkg::Changelog::Parse;
@@ -17,16 +16,10 @@ use Dpkg::Control::Info;
 use Dpkg::Deps;
 use Storable;
 
-my $cache_file   = shift;
-my $distribution = shift;
+my $cache_file  = shift;
 
 my %DEPHASH;
 my %options;
-
-if( not $ENV{"DEBEMAIL"} )
-{
-    $ENV{"DEBEMAIL"} = "Build Server <build\@m2osw.com>";
-}
 
 ################################################################################
 # Search our folder for all debian projects.
@@ -126,7 +119,8 @@ sub update_dependencies
 
 
 ################################################################################
-# Next, go through all of the projects and bump the versions.
+# Next, go through all of the projects and get the name and version from the
+# changelog. This assumes that the build version has been incremented already.
 #
 for my $project (keys %DIRHASH)
 {
@@ -144,27 +138,10 @@ for my $project (keys %DIRHASH)
         $version = $f->{"Version"} if exists $f->{"Version"};
     }
 
-    # Increment the version
-    #
-    $version =~ s/~.*$//;
-    if( $version =~ m/^(\d*).(\d+).(\d+)$/ )
-    {
-        $version = "$1.$2.$3.1";
-    }
-    elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)$/ )
-    {
-        my $num = $4+1;
-        $version = "$1.$2.$3.$num";
-    }
-
-    # Write a new changelog entry with the new version
-    #
-    system "dch --newversion $version~$distribution --urgency high --distribution $distribution Nightly build.";
-
     # Now add to the DEPHASH of all of the packages
     #
     my @packages;
-    push @packages, "$version~$distribution";
+    push @packages, $version;
 
     my $dep_ctl = Dpkg::Control::Info->new();
     my @control_pkgs = $dep_ctl->get_packages();
