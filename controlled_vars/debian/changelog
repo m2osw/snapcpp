@@ -1,3 +1,9 @@
+controlledvars (1.4.16.448~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 05 Aug 2016 12:04:10 -0700
+
 controlledvars (1.4.16.447~xenial) xenial; urgency=high
 
   * Nightly build.
