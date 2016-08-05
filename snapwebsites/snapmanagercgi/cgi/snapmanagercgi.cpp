@@ -488,7 +488,9 @@ int manager_cgi::read_post_variables()
         {
             if(!name.empty())
             {
-                f_post_variables[name] = snap::snap_uri::urldecode(value.c_str(), true).toUtf8().data();
+                name = snap::snap_uri::urldecode(name.c_str(), true).toUtf8().data();
+                value = snap::snap_uri::urldecode(value.c_str(), true).toUtf8().data();
+                f_post_variables[name] = value;
 #ifdef _DEBUG
                 SNAP_LOG_DEBUG("got ")(name)(" = ")(f_post_variables[name]);
 #endif
@@ -627,11 +629,11 @@ int manager_cgi::process_post()
         return error("400 Bad Request"
                     , ("Host \""
                       + host_it->second
-                      + "\" has not \""
+                      + "\" has no \""
                       + plugin_name_it->second
                       + "::"
                       + field_name_it->second
-                      + " field defined.").c_str()
+                      + "\" field defined.").c_str()
                     , nullptr);
     }
 

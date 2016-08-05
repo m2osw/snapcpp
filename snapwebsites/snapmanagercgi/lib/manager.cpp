@@ -467,7 +467,7 @@ void manager::load_plugins()
         snap::snap_string_list all_plugins(snap::plugins::list_all(f_plugins_path));
 
         // the list_all() includes "server", but we cannot load the server
-        // plugin
+        // plugin (it's ourselves)
         //
         all_plugins.removeOne("server");
 
