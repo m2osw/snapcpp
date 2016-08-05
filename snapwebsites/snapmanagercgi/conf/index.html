@@ -18,11 +18,11 @@ Documentation:
 
      By default the my_address variable is set to a "random" IP address
      which is not likely the IP address of your computer. We do not
-     want to automated this one because it needs to use a secure
+     want to automate this one because it needs to use a secure
      private network and some computers have public IP addresses,
      private address which are not secure, and private addresses
      that are secure. Our installation script could not easily decide
-     which one to use. You want to use the secure one, obviously.
+     which one to use. You want to use the private secure one, obviously.
 
      This page appears immediately after installing the snapmanagercgi
      package. It will show up in your server. Just go to your server IP or
@@ -116,7 +116,7 @@ License:
 			<h3>Snap Manager CGI</h3>
 				<p>For security reasons, we prevent access to snapmanager.cgi
 				from all by default. To allow yourselves, edit the
-				<code>/etc/snapwebsites/snapmanager.conf</code>
+				<code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code>
 				file and put your IP address in the variable named
 				<code>clients</code>. For example:</p>
 				<blockquote>

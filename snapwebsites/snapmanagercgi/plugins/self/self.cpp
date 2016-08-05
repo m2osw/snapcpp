@@ -599,7 +599,7 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
                         , s.get_value()
                         , QString("This is a list of Front End servers that accept requests to snapmanager.cgi. Only the few computers that accept such request need to be named here. Names are expected to be comma separated.%1")
                                 .arg(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                                    ? " <span style=\"color: red;\">The Warning Status is due to the fact that the list on this computer is currently empty. If it was not defined yet, add the value. If it is defined on other servers, you may want to go on that server page and click Save Everywhere from there.</span>"
+                                    ? " <span style=\"color: red;\">The Warning Status is due to the fact that the list on this computer is currently empty. If it was not defined yet, add the value. If it is defined on other servers, you may want to go on one of those servers page and click Save Everywhere from there.</span>"
                                     : "")
                         ));
         f.add_widget(field);
