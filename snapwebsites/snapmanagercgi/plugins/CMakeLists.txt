@@ -55,8 +55,8 @@ include_directories(
 # Keep the plugins in alphabetical order for ease of management
 #
 #add_subdirectory(apache2)
-#add_subdirectory(postfix)
 add_subdirectory(self)
+add_subdirectory(ssh)
 #add_subdirectory(system)
 #add_subdirectory(vpn)
 
