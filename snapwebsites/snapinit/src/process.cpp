@@ -475,7 +475,7 @@ void process::action_process_registered()
 {
     if(f_state != process_state_t::PROCESS_STATE_UNREGISTERED)
     {
-        throw std::runtime_error(std::string("only an UNREGISTERED process can become REGISTERED, right now process is state is ") + state_to_string(f_state) + ".");
+        throw std::runtime_error(std::string("only an UNREGISTERED process can become REGISTERED, right now process state is ") + state_to_string(f_state) + ".");
     }
     if(f_safe_message.isEmpty())
     {
