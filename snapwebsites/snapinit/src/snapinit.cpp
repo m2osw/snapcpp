@@ -602,8 +602,13 @@ snap_init::snap_init( int argc, char * argv[] )
         if(gethostname(host, sizeof(host)) != 0
         || strlen(host) == 0)
         {
-            common::fatal_error("server_name is not defined in your configuration file and hostname is not available as the server name,"
+            common::fatal_message("server_name is not defined in your configuration file and hostname is not available as the server name,"
                             " snapinit not started. (in snapinit.cpp/snap_init::snap_init())");
+
+            // we MUST exit with zero or systemctl will restart us in an
+            // infinite loop!
+            //
+            exit(0);
             snap::NOTREACHED();
         }
         // TODO: add code to verify that we like that name (i.e. if the
@@ -611,6 +616,89 @@ snap_init::snap_init( int argc, char * argv[] )
         //       messages to/from snapcommunicator)
         //
         f_server_name = host;
+    }
+    {
+        QString name;
+        bool found_dot(false);
+        for(QChar *s(f_server_name.data()); !s->isNull() && !found_dot; ++s)
+        {
+            switch(s->unicode())
+            {
+            case '-':
+                // the dash is not acceptable in our server name
+                // replace it with an underscore
+                //
+                SNAP_LOG_WARNING("Hostname \"")(f_server_name)("\" includes a dash character (-) which is not supported by snap. Replacing with an underscore (_). If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+                name += QChar('_');
+                break;
+
+            case '.':
+                // according to the hostname documentation, the FQDN is
+                // the name before the first dot; this means if you have
+                // more than two dots, the sub-sub-sub...sub-domain is
+                // the FQDN
+                //
+                SNAP_LOG_WARNING("Hostname \"")(f_server_name)("\" includes a dot character (.) which is not supported by snap. We assume that indicates the end of the name. If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+                found_dot = true;
+                break;
+
+            default:
+                // force lowercase -- hostnames are expected to be in
+                // lowercase although they are case insensitive so we
+                // certainly want them to be in lowercase anyway
+                //
+                name += s->toLower();
+                break;
+
+            }
+        }
+
+        // TBD: We could further prevent the name from starting/ending with '_'?
+        //
+        if(name != f_server_name)
+        {
+            // warning about changing the name (not that in the above loop
+            // we do not warn about changing the name to lowercase)
+            //
+            SNAP_LOG_WARNING("Your server_name parameter \"")(f_server_name)("\" was transformed to \"")(name)("\" to be compatible with Snap!");
+            f_server_name = name;
+        }
+
+        // make sure the computer name is no more than 63 characters
+        //
+        if(f_server_name.isEmpty()
+        || f_server_name.length() > 63)
+        {
+            QString const msg(QString("Server name \"%1\" is too long. The maximum length allowed is 63 characters.")
+                                .arg(f_server_name));
+            common::fatal_message(msg);
+
+            // we MUST exit with zero or systemctl will restart us in an
+            // infinite loop!
+            //
+            exit(0);
+            snap::NOTREACHED();
+        }
+
+        // make sure we can use that name to send messages between computers
+        //
+        try
+        {
+            snap::snap_communicator_message::verify_name(f_server_name, false, true);
+        }
+        catch(snap::snap_communicator_invalid_message & e)
+        {
+            QString const msg(QString("even with possible corrections, snap does not like your server name \"%1\". Error: %2")
+                                .arg(f_server_name)
+                                .arg(e.what()));
+            common::fatal_message(msg);
+
+            // we MUST exit with zero or systemctl will restart us in an
+            // infinite loop!
+            //
+            exit(0);
+            snap::NOTREACHED();
+        }
     }
 
     // setup the logger

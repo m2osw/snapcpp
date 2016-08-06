@@ -994,7 +994,7 @@ snap_communicator_message::parameters_t const & snap_communicator_message::get_a
  * \param[in] can_be_empty  Whether the name can be empty.
  * \param[in] can_be_lowercase  Whether the name can include lowercase letters.
  */
-void snap_communicator_message::verify_name(QString const & name, bool can_be_empty, bool can_be_lowercase) const
+void snap_communicator_message::verify_name(QString const & name, bool can_be_empty, bool can_be_lowercase)
 {
     if(!can_be_empty
     && name.isEmpty())

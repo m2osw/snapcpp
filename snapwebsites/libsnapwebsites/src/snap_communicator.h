@@ -99,9 +99,9 @@ public:
     int64_t                 get_integer_parameter(QString const & name) const;
     parameters_t const &    get_all_parameters() const;
 
-private:
-    void                    verify_name(QString const & name, bool can_be_empty = false, bool can_be_lowercase = true) const;
+    static void             verify_name(QString const & name, bool can_be_empty = false, bool can_be_lowercase = true);
 
+private:
     QString                 f_sent_from_server;
     QString                 f_sent_from_service;
     QString                 f_server;

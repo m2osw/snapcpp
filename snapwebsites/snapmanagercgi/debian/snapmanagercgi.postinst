@@ -19,7 +19,7 @@ then
         echo "# for more info and details about the variables defined here, check" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
         echo "# the file of the same name on directory up" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
         echo "#" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
-        echo "clients=" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
+        echo "#clients=" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
     fi
 
     # Create the snapmanagercgi.log file because the www-data user may have
