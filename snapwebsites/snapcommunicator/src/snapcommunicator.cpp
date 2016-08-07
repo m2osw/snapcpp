@@ -1475,6 +1475,9 @@ public:
 
         // TBD: is that a really weak test?
         //
+        // TODO: use the snap::addr class and use the type of IP address
+        //       instead of what we have here
+        //
         // XXX: add support for IPv6
         //
         std::string const addr(connection->get_client_addr());
@@ -1504,9 +1507,13 @@ public:
 
             // set a name for remote connections
             //
-            // these names are not changed, if we want to do so, we could
-            // whenever we receive the CONNECT message and use the name of
-            // the server that connected
+            // the following name includes a space which prevents someone
+            // from send to such a connection, which is certainly a good
+            // thing since there can be duplicate and that name is not
+            // sensible as a destination
+            //
+            // we will change the name once we receive the CONNECT message
+            // and as we send the ACCEPT message
             //
             connection->set_name("remote connection"); // remote host connected to us
             connection->mark_as_remote();
@@ -2078,125 +2085,159 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         return;
                     }
 
-                    QString const remote_server_name(message.get_parameter("server_name"));
-                    base->set_server_name(remote_server_name);
-
                     snap::snap_communicator_message reply;
                     snap::snap_communicator_message new_remote_connection;
 
-                    // add neighbors with which the guys asking to
-                    // connect can attempt to connect with...
-                    //
-                    if(!f_explicit_neighbors.isEmpty())
-                    {
-                        reply.add_parameter("neighbors", f_explicit_neighbors);
-                    }
+                    QString const remote_server_name(message.get_parameter("server_name"));
+                    snap::snap_communicator::snap_connection::vector_t const all_connections(f_communicator->get_connections());
+                    snap::snap_communicator::snap_connection::pointer_t snap_conn(std::dynamic_pointer_cast<snap::snap_communicator::snap_connection>(base));
+                    auto const & name_match(std::find_if(
+                            all_connections.begin(),
+                            all_connections.end(),
+                            [remote_server_name, snap_conn](auto const & it)
+                            {
+                                // ignore ourselves
+                                //
+                                if(it == snap_conn)
+                                {
+                                    return false;
+                                }
+                                return remote_server_name == std::dynamic_pointer_cast<base_connection>(it)->get_server_name();
+                            }));
 
-                    bool refuse(f_shutdown);
+                    bool refuse(name_match != all_connections.end());
                     if(refuse)
                     {
-                        // okay, this guy wants to connect we us but we
-                        // are shutting down, so refuse and put the shutdown
-                        // flag to true
-                        //
+                        SNAP_LOG_ERROR("CONNECT from \"")(remote_server_name)("\" but we already have another computer using that same name.");
+
                         reply.set_command("REFUSE");
-                        reply.add_parameter("shutdown", "true");
+                        reply.add_parameter("conflict", "name");
+
+                        // we may also be shutting down
+                        //
+                        if(f_shutdown)
+                        {
+                            reply.add_parameter("shutdown", "true");
+                        }
                     }
                     else
                     {
-                        // cool, a remote snapcommunicator wants to connect
-                        // with us, make sure we did not reach the maximum
-                        // number of connections though...
+                        base->set_server_name(remote_server_name);
+
+                        // add neighbors with which the guys asking to
+                        // connect can attempt to connect with...
                         //
-                        refuse = f_communicator->get_connections().size() >= f_max_connections;
+                        if(!f_explicit_neighbors.isEmpty())
+                        {
+                            reply.add_parameter("neighbors", f_explicit_neighbors);
+                        }
+
+                        refuse = f_shutdown;
                         if(refuse)
                         {
-                            // too many connections already, refuse this new
-                            // one from a remove system
+                            // okay, this guy wants to connect we us but we
+                            // are shutting down, so refuse and put the shutdown
+                            // flag to true
                             //
                             reply.set_command("REFUSE");
+                            reply.add_parameter("shutdown", "true");
                         }
                         else
                         {
-                            // set the connection type if we are not refusing it
+                            // cool, a remote snapcommunicator wants to connect
+                            // with us, make sure we did not reach the maximum
+                            // number of connections though...
                             //
-                            base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_REMOTE);
-
-                            // same as ACCEPT (see above) -- maybe we could have
-                            // a sub-function...
-                            //
-                            base->connection_started();
-
-                            if(message.has_parameter("services"))
+                            refuse = f_communicator->get_connections().size() >= f_max_connections;
+                            if(refuse)
                             {
-                                base->set_services(message.get_parameter("services"));
+                                // too many connections already, refuse this new
+                                // one from a remove system
+                                //
+                                reply.set_command("REFUSE");
                             }
-                            if(message.has_parameter("heard_of"))
+                            else
                             {
-                                base->set_services_heard_of(message.get_parameter("heard_of"));
+                                // set the connection type if we are not refusing it
+                                //
+                                base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_REMOTE);
+
+                                // same as ACCEPT (see above) -- maybe we could have
+                                // a sub-function...
+                                //
+                                base->connection_started();
+
+                                if(message.has_parameter("services"))
+                                {
+                                    base->set_services(message.get_parameter("services"));
+                                }
+                                if(message.has_parameter("heard_of"))
+                                {
+                                    base->set_services_heard_of(message.get_parameter("heard_of"));
+                                }
+                                if(message.has_parameter("neighbors"))
+                                {
+                                    add_neighbors(message.get_parameter("neighbors"));
+                                }
+
+                                // we just got some new services information,
+                                // refresh our cache
+                                //
+                                refresh_heard_of();
+
+                                // the message expects the ACCEPT reply
+                                //
+                                reply.set_command("ACCEPT");
+                                reply.add_parameter("server_name", f_server_name);
+
+                                // services
+                                if(!f_local_services.isEmpty())
+                                {
+                                    reply.add_parameter("services", f_local_services);
+                                }
+
+                                // heard of
+                                if(!f_services_heard_of.isEmpty())
+                                {
+                                    reply.add_parameter("heard_of", f_services_heard_of);
+                                }
+
+                                QString const his_address(message.get_parameter("my_address"));
+
+                                // he is a neighbor too, make sure to add it
+                                // in our list of neighbors (useful on a restart
+                                // to connect quickly)
+                                //
+                                add_neighbors(his_address);
+
+                                // since we are accepting a CONNECT we have to make
+                                // sure we cancel the GOSSIP events to that remote
+                                // connection; it won't hurt, but it is a waste if
+                                // we do not need it
+                                //
+                                // Note: the name of the function is "GOSSIP"
+                                //       received because if the "RECEIVED"
+                                //       message was sent back from that remote
+                                //       snapcommunicator then it means that
+                                //       remote daemon received our GOSSIP message
+                                //       and receiving the "CONNECT" message is
+                                //       very similar to receiving the "RECEIVED"
+                                //       message after a "GOSSIP"
+                                //
+                                f_remote_snapcommunicators->gossip_received(his_address);
+
+                                // now let local services know that we have a new
+                                // remote connections (which may be of interest
+                                // for that service--see snapmanagerdaemon)
+                                //
+                                // TODO: to be symmetrical, we should also have
+                                //       a message telling us when a remote
+                                //       connection goes down...
+                                //
+                                new_remote_connection.set_command("NEWREMOTECONNECTION");
+                                new_remote_connection.set_service(".");
+                                new_remote_connection.add_parameter("server_name", remote_server_name);
                             }
-                            if(message.has_parameter("neighbors"))
-                            {
-                                add_neighbors(message.get_parameter("neighbors"));
-                            }
-
-                            // we just got some new services information,
-                            // refresh our cache
-                            //
-                            refresh_heard_of();
-
-                            // the message expects the ACCEPT reply
-                            //
-                            reply.set_command("ACCEPT");
-                            reply.add_parameter("server_name", f_server_name);
-
-                            // services
-                            if(!f_local_services.isEmpty())
-                            {
-                                reply.add_parameter("services", f_local_services);
-                            }
-
-                            // heard of
-                            if(!f_services_heard_of.isEmpty())
-                            {
-                                reply.add_parameter("heard_of", f_services_heard_of);
-                            }
-
-                            QString const his_address(message.get_parameter("my_address"));
-
-                            // he is a neighbor too, make sure to add it
-                            // in our list of neighbors (useful on a restart
-                            // to connect quickly)
-                            //
-                            add_neighbors(his_address);
-
-                            // since we are accepting a CONNECT we have to make
-                            // sure we cancel the GOSSIP events to that remote
-                            // connection; it won't hurt, but it is a waste if
-                            // we do not need it
-                            //
-                            // Note: the name of the function is "GOSSIP"
-                            //       received because if the "RECEIVED"
-                            //       message was sent back from that remote
-                            //       snapcommunicator then it means that
-                            //       remote daemon received our GOSSIP message
-                            //       and receiving the "CONNECT" message is
-                            //       very similar to receiving the "RECEIVED"
-                            //       message after a "GOSSIP"
-                            //
-                            f_remote_snapcommunicators->gossip_received(his_address);
-
-                            // now let local services know that we have a new
-                            // remote connections (which may be of interest
-                            // for that service--see snapmanagerdaemon)
-                            //
-                            // TODO: to be symmetrical, we should also have
-                            //       a message telling us when a remote
-                            //       connection goes down...
-                            //
-                            new_remote_connection.set_command("NEWREMOTECONNECTION");
-                            new_remote_connection.set_service(".");
-                            new_remote_connection.add_parameter("server_name", remote_server_name);
                         }
                     }
 

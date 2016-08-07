@@ -26,6 +26,7 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "qstring_stream.h"
+#include "string_replace.h"
 
 #include <sstream>
 #include <limits>
@@ -380,12 +381,20 @@ bool snap_communicator_message::from_message(QString const & message)
             }
 
             // also restore new lines and blackslashes if any
-            param_value.replace("\\\\", "\\")
-                       .replace("\\n", "\n")
-                       .replace("\\r", "\r");
+            std::string const str_value(param_value.toUtf8().data());
+            std::string const unsafe_value(string_replace_many(
+                    str_value,
+                    {
+                        { "\\\\", "\\" },
+                        { "\\n", "\n" },
+                        { "\\r", "\r" }
+                    }));
+            //param_value.replace("\\\\", "\\")
+            //           .replace("\\n", "\n")
+            //           .replace("\\r", "\r");
 
             // we got a valid parameter, add it
-            parameters[param_name] = param_value;
+            parameters[param_name] = QString::fromUtf8(unsafe_value.c_str());
         }
     }
 
@@ -477,10 +486,19 @@ QString snap_communicator_message::to_message() const
                  ++p, first = false)
         {
             f_cached_message += QString("%1%2=").arg(first ? " " : ";").arg(p.key());
-            QString param(p.value());
-            param.replace("\\", "\\\\")  // existing backslashes need to be escaped
-                 .replace("\n", "\\n")   // newline needs to be escaped
-                 .replace("\r", "\\r");  // this one is not important, but for completeness
+            std::string const str_value(p.value().toUtf8().data());
+            std::string const safe_value(string_replace_many(
+                    str_value,
+                    {
+                        { "\\", "\\\\" },
+                        { "\n", "\\n" },
+                        { "\r", "\\r" }
+                    }));
+            //QString param(p.value());
+            //param.replace("\\", "\\\\")  // existing backslashes need to be escaped
+            //     .replace("\n", "\\n")   // newline needs to be escaped
+            //     .replace("\r", "\\r");  // this one is not important, but for completeness
+            QString param(QString::fromUtf8(safe_value.c_str()));
             if(param.indexOf(";") >= 0
             || (!param.isEmpty() && param[0] == '\"'))
             {

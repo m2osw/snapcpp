@@ -33,6 +33,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "string_replace.h"
 
 #include "poison.h"
 
@@ -176,9 +177,18 @@ QString status_t::to_string() const
     // values may include \r or \n and that's not compatible with the
     // reader, so we have to escape those
     //
-    QString value(f_value);
-    value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r");
-    result += value;
+    //QString value(f_value);
+
+    std::string value(f_value.toUtf8().data());
+    std::string const safe_value(snap::string_replace_many(
+            value,
+            {
+                { "\\", "\\\\" },
+                { "\n", "\\n" },
+                { "\r", "\\r" }
+            }));
+
+    result += QString::fromUtf8(safe_value.c_str());
 
     return result;
 }
@@ -274,10 +284,21 @@ bool status_t::from_string(QString const & line)
     ++s;
 
     // the rest of the string is the value
-    f_value = line.mid(s - line.data());
+    //f_value = line.mid(s - line.data());
 
     // restore special characters
-    f_value.replace("\\\\", "\\").replace("\\n", "\n").replace("\\r", "\r");
+    //f_value.replace("\\\\", "\\").replace("\\n", "\n").replace("\\r", "\r");
+
+    std::string value(line.mid(s - line.data()).toUtf8().data());
+    std::string const unsafe_value(snap::string_replace_many(
+            value,
+            {
+                { "\\\\", "\\" },
+                { "\\n", "\n" },
+                { "\\r", "\r" }
+            }));
+
+    f_value = QString::fromUtf8(unsafe_value.c_str());
 
     return true;
 }

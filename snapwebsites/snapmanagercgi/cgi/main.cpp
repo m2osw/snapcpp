@@ -29,6 +29,8 @@
 
 #include "snapmanagercgi.h"
 
+#include <QCoreApplication>
+
 
 namespace snap
 {
@@ -48,6 +50,11 @@ int main(int argc, char * argv[])
 {
     try
     {
+        // Qt wants an application, we do not care too much ourselves,
+        // we create it on the stack so it gets destroyed automatically
+        //
+        QCoreApplication app(argc, argv);
+
         // we need these globals to "properly" initializes the first
         // "plugin" (the core system or server)
         //
