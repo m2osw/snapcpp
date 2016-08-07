@@ -1,3 +1,9 @@
+snaplock (1.0.0.82~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 07 Aug 2016 02:00:50 -0700
+
 snaplock (1.0.0.81~xenial) xenial; urgency=high
 
   * Nightly build.
