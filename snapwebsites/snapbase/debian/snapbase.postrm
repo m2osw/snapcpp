@@ -8,10 +8,14 @@ GROUP=snapwebsites
 
 if [ "$1" = "purge" ]
 then
-    # delete the data directory
-    rm -rf /var/lib/snapwebsites /var/log/snapwebsites
+    # delete various data directories we use in Snap!
+    #
+    rm -rf /var/lib/snapwebsites
+    rm -rf /var/log/snapwebsites
+    rm -rf /var/cache/snapwebsites
 
     # delete snapwebsites daemon user, if it exists
+    #
     if getent passwd ${USER} > /dev/null
     then
         if pgrep -u ${USER} > /dev/null
@@ -24,6 +28,7 @@ then
     fi
 
     # delete snapwebsites daemon group, if it exists
+    #
     if getent group ${GROUP} > /dev/null
     then
         if pgrep -G ${GROUP} > /dev/null
@@ -36,7 +41,25 @@ then
     fi
 
     # delete the settings dir, but leave it if non-empty
+    #
     rmdir --ignore-fail-on-non-empty /etc/snapwebsites
+
+    # if apache is still installed and since we just removed the
+    # snap-httpoxy configuration file, want to restart it
+    #
+    if hash a2enconf 2>/dev/null
+    then
+        a2disconf snap-httpoxy
+
+        # make sure to force a reload or that's going to be useless
+        #
+        systemctl restart apache2
+    else
+        # this may have removed the last bits we added here
+        #
+        rmdir --ignore-fail-on-non-empty /etc/apache2/conf-available
+        rmdir --ignore-fail-on-non-empty /etc/apache2
+    fi
 fi
 
 #DEBHELPER#

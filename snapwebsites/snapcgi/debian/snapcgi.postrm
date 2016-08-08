@@ -4,9 +4,9 @@
 . /usr/share/debconf/confmodule
 
 
-# If snapcgi is not installed, restore the 000-default site
+# If snapmanagercgi is not installed, restore the 000-default site
 #
-if test ! -f /etc/apache2/sites-available/000-snap-apache2-default.conf
+if test ! -f /etc/apache2/sites-available/snapmanager-apache2.conf
 then
     a2ensite 000-default
 fi
@@ -19,9 +19,9 @@ systemctl restart apache2
 
 if [ "$1" = "purge" ]
 then
-    # delete the snapmanagercgi logs if any
-    rm -f /var/log/snapwebsites/snapmanagercgi.log*
-    rm -f /var/log/snapwebsites/secure/snapmanagercgi.log*
+    # delete the snapcgi logs if any
+    rm -f /var/log/snapwebsites/snapcgi.log*
+    rm -f /var/log/snapwebsites/secure/snapcgi.log*
 fi
 
 #DEBHELPER#

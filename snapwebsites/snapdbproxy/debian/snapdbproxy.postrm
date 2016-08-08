@@ -6,8 +6,9 @@
 
 if [ "$1" = "purge" ]
 then
-    # delete the data directories
-    rm -rf /var/lib/snapwebsites/cluster-status
+    # delete the snapdbproxy logs
+    rm -f /var/log/snapwebsites/snapdbproxy.log*
+    rm -f /var/log/snapwebsites/secure/snapdbproxy.log*
 fi
 
 #DEBHELPER#

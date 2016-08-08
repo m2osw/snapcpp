@@ -1,0 +1,18 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+
+if [ "$1" = "purge" ]
+then
+    # delete the snapfirewall logs
+    rm -f /var/log/snapwebsites/snapfirewall.log*
+    rm -f /var/log/snapwebsites/secure/snapfirewall.log*
+
+    # TBD: reset the firewall to empty? It does not seem wise to me.
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 et nocindent

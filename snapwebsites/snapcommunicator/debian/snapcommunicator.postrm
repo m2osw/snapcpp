@@ -1,0 +1,19 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+
+if [ "$1" = "purge" ]
+then
+    # delete a cache file
+    rm -f /var/cache/snapwebsites/neighbors.txt
+
+    # delete the snapcommunicator logs
+    rm -f /var/log/snapwebsites/snapcommunicator.log*
+    rm -f /var/log/snapwebsites/secure/snapcommunicator.log*
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 et nocindent

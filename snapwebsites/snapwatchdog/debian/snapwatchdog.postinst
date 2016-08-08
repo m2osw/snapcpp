@@ -5,13 +5,14 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+
 if [ "$1" = "configure" ]
 then
-	# make the snapwatchdog lib folder
-	#
-	SNAPWATCHDOG_LIB_DIR=/var/lib/snapwebsites/snapwatchdog
-	mkdir -p ${SNAPWATCHDOG_LIB_DIR}
-	chown snapwebsites.snapwebsites ${SNAPWATCHDOG_LIB_DIR}
+    # make the snapwatchdog lib folder
+    #
+    SNAPWATCHDOG_LIB_DIR=/var/lib/snapwebsites/snapwatchdog
+    mkdir -p ${SNAPWATCHDOG_LIB_DIR}
+    chown snapwebsites.snapwebsites ${SNAPWATCHDOG_LIB_DIR}
 fi
 
 # vim: ts=4 sw=4 et nocindent

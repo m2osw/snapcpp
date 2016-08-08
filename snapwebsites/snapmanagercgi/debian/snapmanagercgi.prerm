@@ -3,11 +3,9 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-
-if [ "$1" = "purge" ]
+if [ "$1" = "remove" ]
 then
-    # delete the data directories
-    rm -rf /var/lib/snapwebsites/cluster-status
+    a2dissite snapmanager-apache2
 fi
 
 #DEBHELPER#

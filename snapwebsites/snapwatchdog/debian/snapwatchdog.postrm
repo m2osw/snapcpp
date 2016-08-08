@@ -5,7 +5,14 @@
 
 if [ "$1" = "purge" ]
 then
-	rm -rf /var/lib/snapwebsites/snapwatchdog
+    # Remove snapwatchdog data directory
+    #
+    rm -rf /var/lib/snapwebsites/snapwatchdog
+
+    # Remove all logs
+    #
+    rm -f /var/log/snapwebsites/snapwatchdog.log*
+    rm -f /var/log/snapwebsites/secure/snapwatchdog.log*
 fi
 
 #DEBHELPER#

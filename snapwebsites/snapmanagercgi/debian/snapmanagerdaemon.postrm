@@ -5,11 +5,13 @@
 
 if [ "$1" = "purge" ]
 then
-    # delete the data directories
+    # delete the data directory and a cache file
     rm -rf /var/lib/snapwebsites/bundles
+    rm -f /var/cache/snapwebsites/apt-check.output
 
     # delete the snapmanagerdaemon logs if any
     rm -f /var/log/snapwebsites/snapmanagerdaemon.log*
+    rm -f /var/log/snapwebsites/secure/snapmanagerdaemon.log*
 fi
 
 #DEBHELPER#
