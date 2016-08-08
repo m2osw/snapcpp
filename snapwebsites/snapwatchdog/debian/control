@@ -17,13 +17,24 @@ Build-Depends: cmake,
     libxml2-utils,
     qt5-default,
     snapcmakemodules (>= 1.0.25.203~xenial),
-    snapinit (>= 1.0.0.80~xenial),
+    snapbase-dev (>= 1.0.3.1~xenial),
     zip
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
+
+Package: libsnapwatchdog
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapinit
+Description: Track status and health of any number of servers.
+ Snap! Watchdog is a tool that works on any number of servers to
+ gather various information that let you know how your server is
+ doing.
+ .
+ This is the base library binary package.
 
 Package: libsnapwatchdog-dev
 Section: libdevel
@@ -37,17 +48,6 @@ Description: Track status and health of any number of servers.
  doing.
  .
  This is the developer package.
-
-Package: libsnapwatchdog
-Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Track status and health of any number of servers.
- Snap! Watchdog is a tool that works on any number of servers to
- gather various information that let you know how your server is
- doing.
- .
- This is the base library binary package.
 
 Package: snapwatchdog
 Section: utils

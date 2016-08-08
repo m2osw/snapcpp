@@ -33,7 +33,6 @@ Build-Depends: catch (>= 1.0),
     qtscript5-dev,
     snapbase-dev (>= 1.0.0.79~xenial),
     snapcmakemodules (>= 1.0.25.203~xenial),
-    snapinit (>= 1.0.0.80~xenial),
     snapserver-core-plugins-dev (>= 1.0.0.79~xenial),
     uuid-dev,
     zip
@@ -47,7 +46,7 @@ Package: snapserver
 Section: web
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy
+    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy, snapinit
 Recommends: snapdb
 Suggests: cassandra (>= 3.5.0), snapcgi, snapbounce, snapserver-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
