@@ -3,13 +3,13 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-USER=snapwebsites
-GROUP=snapwebsites
-
 if [ "$1" = "purge" ]
 then
+    USER=snapwebsites
+    GROUP=snapwebsites
+
     # delete the data directory
-    rm -rf /var/lib/snapwebsites /var/log/snapwebsites
+    rm -rf /var/lib/snapwebsites /var/log/snapwebsites /var/cache/snapwebsites
 
     # delete snapwebsites daemon user, if it exists
     if getent passwd ${USER} > /dev/null
