@@ -3,10 +3,17 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+a2disconf snap-httpoxy
+a2ensite  000-default
+a2dissite snapmanager-apache2
+
+systemctl restart apache2
+
 if [ "$1" = "purge" ]
 then
     # delete the snapmanagercgi logs if any
     rm -f /var/log/snapwebsites/snapmanagercgi.log*
+    rm -f /var/log/snapwebsites/secure/snapmanagercgi.log*
 fi
 
 #DEBHELPER#
