@@ -28,8 +28,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapinit
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, snapbase
-Recommends: snapcommunicator
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapcommunicator
 Suggests: snapinit-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.

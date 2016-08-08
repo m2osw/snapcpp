@@ -3,9 +3,6 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-USER=snapwebsites
-GROUP=snapwebsites
-
 if [ "$1" = "purge" ]
 then
     # delete various data directories we use in Snap!
@@ -13,6 +10,9 @@ then
     rm -rf /var/lib/snapwebsites
     rm -rf /var/log/snapwebsites
     rm -rf /var/cache/snapwebsites
+
+    USER=snapwebsites
+    GROUP=snapwebsites
 
     # delete snapwebsites daemon user, if it exists
     #
