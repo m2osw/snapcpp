@@ -55,8 +55,13 @@ then
         #
         systemctl restart apache2
     else
-        # this may have removed the last bits we added here
+        # here we may still have the soft-link since we did not have
+        # a changes to call a2disconf on it... so we remove it by
+        # hand and then remove all the directories which should now
+        # be empty
         #
+        rm -f /etc/apache2/conf-enabled/snap-httpoxy.conf
+        rmdir --ignore-fail-on-non-empty /etc/apache2/conf-enabled
         rmdir --ignore-fail-on-non-empty /etc/apache2/conf-available
         rmdir --ignore-fail-on-non-empty /etc/apache2
     fi
