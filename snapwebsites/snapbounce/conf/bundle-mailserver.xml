@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
-<!-- see bundles.xsd for details -->
+<!--
+  see /usr/share/snapwebsites/xsd/bundles.xsd for details
+  to verify your changes (change the == with two dashes):
+    xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-mailserver.xml
+-->
 <bundle>
   <name>mailserver</name>
   <description>

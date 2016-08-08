@@ -80,7 +80,7 @@ install(
         service-snapfirewall.xml
 
     DESTINATION
-        share/snapwebsites/conf/snapinit.d
+        share/snapwebsites/conf/services.d
 )
 
 
