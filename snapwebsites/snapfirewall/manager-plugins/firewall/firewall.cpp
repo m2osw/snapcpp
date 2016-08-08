@@ -350,7 +350,7 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
  *
  * \return true if the new_value was applied successfully.
  */
-bool firewall::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::vector<QString> & affected_services)
+bool firewall::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
     NOTUSED(old_or_installation_value);
 
@@ -377,7 +377,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
                     // restart the snapinit process if we want the change to
                     // be taken in account
                     //
-                    affected_services.push_back("snapinit");
+                    affected_services.insert("snapinit");
 
                     QDomElement service(result[0].toElement());
                     if(use_default_value
@@ -421,7 +421,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
                     // restart the snapinit process if we want the change to
                     // be taken in account
                     //
-                    affected_services.push_back("snapinit");
+                    affected_services.insert("snapinit");
 
                     QDomElement recovery(result[0].toElement());
                     // remove existing children
