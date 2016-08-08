@@ -18,6 +18,7 @@ Build-Depends: cmake,
     qt5-default,
     snapbase-dev (>= 1.0.0.79~xenial),
     snapcmakemodules (>= 1.0.25.203~xenial),
+    snapcommunicator (>= 1.0.1.1~xenial),
     zip
 Standards-Version: 3.9.4
 Section: libs
