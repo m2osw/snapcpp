@@ -46,15 +46,4 @@ install(
         share/snapwebsites/conf
 )
 
-#################################################################################
-## Save XSD files in their own directory
-##
-install(
-    FILES
-        service.xsd
-
-    DESTINATION
-        share/snapwebsites/xsd
-)
-
 # vim: ts=4 sw=4 et
