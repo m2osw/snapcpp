@@ -3,25 +3,40 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+USER=snapwebsites
+GROUP=snapwebsites
+
 if [ "$1" = "purge" ]
 then
     # delete the data directory
     rm -rf /var/lib/snapwebsites /var/log/snapwebsites
 
     # delete snapwebsites daemon user, if it exists
-    if getent passwd snapwebsites > /dev/null ; then
-        echo "Deleting snapwebsites user"
-        deluser --quiet snapwebsites > /dev/null || true
+    if getent passwd ${USER} > /dev/null
+    then
+        if pgrep -u ${USER} > /dev/null
+        then
+            echo "Cannot delete user '${USER}' because there are processes running owned by this user!"
+        else
+            echo "Deleting ${USER} user"
+            deluser --quiet ${USER} > /dev/null || true
+        fi
     fi
 
     # delete snapwebsites daemon group, if it exists
-    if getent group snapwebsites > /dev/null ; then
-        echo "Deleting snapwebsites group"
-        delgroup --quiet snapwebsites > /dev/null || true
+    if getent group ${GROUP} > /dev/null
+    then
+        if pgrep -G ${GROUP} > /dev/null
+        then
+            echo "Cannot delete group '${GROUP}' because there are processes running owned by this group!"
+        else
+            echo "Deleting ${GROUP} group"
+            delgroup --quiet ${GROUP} > /dev/null || true
+        fi
     fi
 
-    # delete the settings
-    rmdir /etc/snapwebsites
+    # delete the settings dir, but leave it if non-empty
+    rmdir --ignore-fail-on-non-empty /etc/snapwebsites
 fi
 
 #DEBHELPER#

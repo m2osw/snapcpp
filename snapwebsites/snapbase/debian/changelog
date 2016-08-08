@@ -1,3 +1,15 @@
+snapbase (1.0.1.1~xenial) xenial; urgency=high
+
+  * Added guards around the deletion of user/group 'snapwebsites' and protecting /etc/snapwebsites
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 07 Aug 2016 17:25:00 -0700
+
+snapbase (1.0.0.83~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 07 Aug 2016 10:23:14 -0700
+
 snapbase (1.0.0.82~xenial) xenial; urgency=high
 
   * Nightly build.
