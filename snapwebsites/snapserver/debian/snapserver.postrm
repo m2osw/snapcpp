@@ -7,15 +7,8 @@
 # delete the service files because otherwise snapinit will still
 # attempt to start those services even though the binary is gone
 #
-rm -f /etc/snapwebsites/snapinit.d/service-snapdbproxy.xml
+rm -f /etc/snapwebsites/services.d/service-snapserver.xml
 
-
-if [ "$1" = "purge" ]
-then
-    # delete the snapdbproxy logs
-    rm -f /var/log/snapwebsites/snapdbproxy.log*
-    rm -f /var/log/snapwebsites/secure/snapdbproxy.log*
-fi
 
 #DEBHELPER#
 

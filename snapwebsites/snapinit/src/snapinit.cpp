@@ -1087,7 +1087,7 @@ void snap_init::init()
     {
         QString const xml_services_path(f_config.contains("xml_services")
                                         ? f_config["xml_services"]
-                                        : "/etc/snapwebsites/snapinit.d");
+                                        : "/etc/snapwebsites/services.d");
         if(xml_services_path.isEmpty())
         {
             // the XML services are mandatory (it cannot be set to an empty string)
