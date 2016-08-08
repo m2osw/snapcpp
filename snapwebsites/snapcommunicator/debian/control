@@ -14,7 +14,6 @@ Build-Depends: cmake,
     libxml2-utils,
     libzipios-dev (>= 2.1.2.203~xenial),
     qt5-default,
-    snapbase (>= 1.0.3.1~xenial),
     snapbase-dev (>= 1.0.3.1~xenial),
     snapcmakemodules (>= 1.0.25.203~xenial),
     zip
