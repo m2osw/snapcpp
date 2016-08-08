@@ -2,7 +2,7 @@
 <!--
   see /usr/share/snapwebsites/xsd/bundles.xsd for details
   to verify your changes (change the == with two dashes):
-    xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/snapinit.d/bundle-logserver.xml
+    xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-logserver.xml
 -->
 <bundle>
   <name>logserver</name>

@@ -54,7 +54,7 @@ namespace
 {
 
 // TODO: offer the user a way to change this path?
-char const * g_service_filename = "/etc/snapwebsites/snapinit.d/service-snapfirewall.xml";
+char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapfirewall.xml";
 
 
 

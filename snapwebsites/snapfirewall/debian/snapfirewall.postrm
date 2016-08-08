@@ -7,7 +7,7 @@
 # delete the service files because otherwise snapinit will still
 # attempt to start those services even though the binary is gone
 #
-rm -f /etc/snapwebsites/snapinit.d/service-snapfirewall.xml
+rm -f /etc/snapwebsites/services.d/service-snapfirewall.xml
 
 
 if [ "$1" = "purge" ]
