@@ -822,5 +822,48 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
 }
 
 
+/** \brief Search for a parameter in a string.
+ *
+ * This function searches for a named parameter in a string representing
+ * a text file.
+ *
+ * The search is very lose. The parameter does not have to start in the
+ * first column, the line may be commented, the case can be ignored.
+ *
+ * \param[in] configuration  The file to be searched.
+ * \param[in] parameter_name  The name of the parameter to search.
+ * \param[in] start_pos  The starting position of the search.
+ * \param[in] ignore_case  Whether to ignore (true) case or not (false.)
+ *
+ * \return The position of the parameter in the string.
+ */
+std::string::size_type manager::search_parameter(std::string const & configuration, std::string const & parameter_name, std::string::size_type const start_pos, bool const ignore_case)
+{
+    if(start_pos >= configuration.length())
+    {
+        return std::string::size_type(-1);
+    }
+
+    // search for a string that matches, we use this search mechanism
+    // so we can support case sensitive or insensitive
+    //
+    auto const it(std::search(
+            configuration.begin() + start_pos,
+            configuration.end(),
+            parameter_name.begin(),
+            parameter_name.end(),
+            [ignore_case](char c1, char c2)
+            {
+                return ignore_case ? std::tolower(c1) == std::tolower(c2)
+                                   : c1 == c2;
+            }));
+
+    // return the position if found and -1 otherwise
+    //
+    return it == configuration.end() ? std::string::size_type(-1) : it - configuration.begin();
+}
+
+
+
 } // namespace snap_manager
 // vim: ts=4 sw=4 et

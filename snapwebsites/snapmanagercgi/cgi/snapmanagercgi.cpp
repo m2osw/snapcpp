@@ -38,6 +38,7 @@
 //
 #include "not_used.h"
 #include "qdomhelpers.h"
+#include "snap_communicator.h"
 
 // Qt lib
 //
@@ -85,8 +86,8 @@ int glob_err_callback(const char * epath, int eerrno)
  */
 manager_cgi::manager_cgi()
     : manager(false)
-    , f_communicator_port(4040)
     , f_communicator_address("127.0.0.1")
+    , f_communicator_port(4040)
 {
 }
 
@@ -143,6 +144,7 @@ bool manager_cgi::verify()
     }
 
     // If not defined, keep the default of localhost:4040
+    // TODO: make these "just in time" parameters, we nearly never need them
     if(f_config.contains("snapcommunicator"))
     {
         snap_addr::addr const a(f_config["snapcommunicator"].toUtf8().data(), "127.0.0.1", 4040, "tcp");
@@ -315,7 +317,7 @@ bool manager_cgi::verify()
             return false;
         }
 
-		// TODO: move to snapserver because this could be the name of a legal page...
+        // TODO: move to snapserver because this could be the name of a legal page...
         if(strcasestr(request_uri, "phpmyadmin") != nullptr)
         {
             // block myPhpAdmin accessors
@@ -542,7 +544,16 @@ int manager_cgi::process_post()
 
     // determine which button was clicked
     //
-    std::vector<std::string> const button_names{"save", "save_everywhere", "restore_default", "install", "uninstall", "reboot", "upgrade"};
+    std::vector<std::string> const button_names{
+                "save",
+                "save_everywhere",
+                "restore_default",
+                "install",
+                "uninstall",
+                "reboot",
+                "upgrade",
+                "refresh"
+            };
     auto const & button_it(std::find_first_of(
                 f_post_variables.begin(), f_post_variables.end(),
                 button_names.begin(), button_names.end(),
@@ -850,6 +861,54 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     // we need the plugins for the following (non-raw) loop
     //
     load_plugins();
+
+    // add a "special" field so one can do a Refresh
+    //
+    {
+        snap::plugins::plugin * p(snap::plugins::get_plugin("self"));
+
+        // output/table/tr
+        tr = doc.createElement("tr");
+        table.appendChild(tr);
+
+            // output/table/tr/td[1]
+            QDomElement td(doc.createElement("td"));
+            tr.appendChild(td);
+
+                text = doc.createTextNode("self");
+                td.appendChild(text);
+
+            // output/table/tr/td[2]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
+                text = doc.createTextNode("refresh");
+                td.appendChild(text);
+
+            // output/table/tr/td[3]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
+                text = doc.createTextNode("valid");
+                td.appendChild(text);
+
+            // output/table/tr/td[4]
+            td = doc.createElement("td");
+            tr.appendChild(td);
+
+                plugin_base * pb(dynamic_cast<plugin_base *>(p));
+                if(pb != nullptr)
+                {
+                    // call that signal directly on that one plugin
+                    //
+                    snap_manager::status_t const refresh_status(
+                                snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                "self",
+                                "refresh",
+                                "");
+                    pb->display_value(td, refresh_status, f_uri);
+                }
+    }
 
     // read each name/value pair
     //

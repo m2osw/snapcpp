@@ -77,6 +77,23 @@ private:
 };
 
 
+class widget_text
+        : public widget
+{
+public:
+    typedef std::shared_ptr<widget_text> pointer_t;
+
+                        widget_text(QString const & label, QString const & name, QString const & initial_value, QString const & description);
+
+    virtual void        generate(QDomElement parent) override;
+
+private:
+    QString             f_label;
+    QString             f_value;
+    QString             f_description;
+};
+
+
 class form
 {
 public:
@@ -90,6 +107,7 @@ public:
     static button_t const       FORM_BUTTON_UNINSTALL       = 0x00000020;
     static button_t const       FORM_BUTTON_REBOOT          = 0x00000040;
     static button_t const       FORM_BUTTON_UPGRADE         = 0x00000080;
+    static button_t const       FORM_BUTTON_REFRESH         = 0x00000100;
 
                         form(QString const & plugin_name, QString const & field_name, button_t button);
 

@@ -16,9 +16,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// ourselves
+//
 #include "server_status.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/snapwebsites.h>
+
+// C++ lib
+//
+#include <set>
+
 
 namespace snap_manager
 {
@@ -31,7 +40,7 @@ public:
     virtual             ~plugin_base() override;
 
     virtual bool        display_value(QDomElement parent, status_t const & s, snap::snap_uri const & uri) = 0;
-    virtual bool        apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & services) = 0;
+    virtual bool        apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::set<QString> & services) = 0;
 };
 
 

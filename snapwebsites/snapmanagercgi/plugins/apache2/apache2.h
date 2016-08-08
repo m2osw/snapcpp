@@ -73,14 +73,16 @@ public:
 
     // manager overload
     virtual bool            display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri) override;
-    virtual bool            apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::vector<QString> & services) override;
+    virtual bool            apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::set<QString> & affected_services) override;
 
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);
+    void                    on_handle_affected_services(std::set<QString> & affected_services);
 
 private:
-    void                    retrieve_status_of_snapmanagercgi_conf(snap_manager::server_status & server_status);
-    void                    retrieve_status_of_snapcgi_conf(snap_manager::server_status & server_status);
+    void                    retrieve_status_of_conf(snap_manager::server_status & server_status,
+                                                    std::string const & conf_namespace,
+                                                    std::string const & conf_filename);
 
     snap_manager::manager * f_snap = nullptr;
 };

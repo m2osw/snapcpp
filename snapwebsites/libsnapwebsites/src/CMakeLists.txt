@@ -65,6 +65,7 @@ add_library( ${PROJECT_NAME} SHARED
     chownnm.cpp                                 # chown using user and group names instead of uid/gid
     compression.cpp                             # compress/decompress data
     dbutils.cpp                                 # utilities to help convert coded table and row names and column data. (see snap_tables.cpp too!)
+    file_content.cpp                            # load / save whole files in one go
     floats.cpp                                  # Floats helper functions
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
     http_client_server.cpp                      # implementation of the HTTP protocol

@@ -97,7 +97,7 @@ public:
 
     virtual void                    run() override;
 
-    void                            resend_status();
+    void                            resend_status(bool const kick_now);
     void                            set_snapmanager_frontend(QString const & snapmanager_frontend);
     bool                            is_snapmanager_frontend(QString const & server_name) const;
     snap::snap_string_list const &  get_snapmanager_frontend() const;

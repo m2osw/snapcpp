@@ -301,7 +301,9 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
         }
         else if(command == "MANAGERRESEND")
         {
-            f_status_runner.resend_status();
+            bool const kick_now(message.has_parameter("kick")
+                             && message.get_parameter("kick") == "now");
+            f_status_runner.resend_status(kick_now);
             return;
         }
         else if(command == "MANAGERSTATUS")

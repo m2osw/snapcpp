@@ -130,6 +130,57 @@ void widget_input::generate(QDomElement parent)
 }
 
 
+widget_text::widget_text(QString const & label, QString const & name, QString const & initial_value, QString const & description)
+    : widget(name)
+    , f_label(label)
+    , f_value(initial_value)
+    , f_description(description)
+{
+}
+
+
+void widget_text::generate(QDomElement parent)
+{
+    QDomDocument doc(parent.ownerDocument());
+
+    if(!f_label.isEmpty())
+    {
+        QDomElement label(doc.createElement("label"));
+        label.setAttribute("for", f_name);
+        parent.appendChild(label);
+
+        //QDomText label_text(doc.createTextNode(f_label));
+        //label.appendChild(label_text);
+        snap::snap_dom::insert_html_string_to_xml_doc(label, f_label);
+    }
+
+    QDomElement edit_text(doc.createElement("textarea"));
+    edit_text.setAttribute("name", f_name);
+    edit_text.setAttribute("autocomplete", "off");
+    edit_text.setAttribute("cols", "100");
+    edit_text.setAttribute("rows", "10");
+    edit_text.setAttribute("wrap", "soft");
+    edit_text.setAttribute("style", "white-space: pre; overflow-wrap: normal; overflow: auto;");
+    edit_text.setAttribute("id", f_name); // names have to be unique so this is enough for id
+    parent.appendChild(edit_text);
+
+    QDomText text(doc.createTextNode(f_value));
+    edit_text.appendChild(text);
+
+    if(!f_description.isEmpty())
+    {
+        QDomElement p(doc.createElement("p"));
+        p.setAttribute("class", "description");
+        parent.appendChild(p);
+
+        //QDomText p_text(doc.createTextNode(f_description));
+        //p.appendChild(p_text);
+        snap::snap_dom::insert_html_string_to_xml_doc(p, f_description);
+    }
+
+}
+
+
 form::form(QString const & plugin_name, QString const & field_name, button_t buttons)
     : f_plugin_name(plugin_name)
     , f_field_name(field_name)
@@ -259,6 +310,16 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
         form_tag.appendChild(button);
 
         QDomText text(doc.createTextNode("Upgrade"));
+        button.appendChild(text);
+    }
+    if((f_buttons & FORM_BUTTON_REFRESH) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "refresh");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Refresh"));
         button.appendChild(text);
     }
 }

@@ -54,7 +54,7 @@ include_directories(
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
 #
-#add_subdirectory(apache2)
+add_subdirectory(apache2)
 add_subdirectory(self)
 add_subdirectory(ssh)
 #add_subdirectory(system)

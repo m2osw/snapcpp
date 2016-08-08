@@ -213,9 +213,11 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
         SNAP_LOG_ERROR("plugin \"")(plugin_name)("\" is not a snapmanager base plugin.");
         return;
     }
-    std::vector<QString> affected_services;
+    std::set<QString> affected_services;
     if(pb->apply_setting(button_name, field_name, new_value, old_or_installation_value, affected_services))
     {
+        handle_affected_services(affected_services);
+
         // TODO: when apply_setting() worked, we want to "PING" the status
         //       thread to re-read the info and save that in the
         //       <host>.db file ASAP
@@ -226,9 +228,11 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
         // and want to send the same status again, but we have to have the
         // [modified] removed ASAP...
         //
-        f_status_runner.resend_status();
+        f_status_runner.resend_status(true);
 
-        std::for_each(affected_services.begin(), affected_services.end(),
+        std::for_each(
+                affected_services.begin(),
+                affected_services.end(),
                 [=](QString const & service_name)
                 {
                     snap::snap_communicator_message reload_config;

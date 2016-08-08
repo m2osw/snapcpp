@@ -82,8 +82,8 @@ private:
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
 
     snap::snap_uri              f_uri;
-    int                         f_communicator_port = -1;    // snap server port
-    std::string                 f_communicator_address;      // snap server address
+    std::string                 f_communicator_address;
+    int                         f_communicator_port = -1;
     post_variables_t            f_post_variables;
 };
 

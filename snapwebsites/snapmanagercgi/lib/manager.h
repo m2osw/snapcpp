@@ -29,6 +29,10 @@
 //
 #include <sys/stat.h>
 
+// C++ lib
+//
+#include <set>
+
 
 namespace snap_manager
 {
@@ -103,6 +107,8 @@ public:
     std::vector<std::string>        get_list_of_servers();
     QString const &                 get_server_name() const;
     QString const &                 get_public_ip() const;
+    std::string const &             get_signal_address() const;
+    int                             get_signal_port() const;
     virtual snap::snap_string_list const & get_snapmanager_frontend() const;
     std::vector<std::string> const & get_bundle_uri() const;
     std::vector<std::string>        get_list_of_bundles() const;
@@ -121,11 +127,13 @@ public:
     bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value);
 
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(handle_affected_services, (std::set<QString> & affected_services), (affected_services), NEITHER);
 
     static int                      get_version_major() __attribute__ ((const));
     static int                      get_version_minor() __attribute__ ((const));
     static int                      get_version_patch() __attribute__ ((const));
     static char const *             get_version_string() __attribute__ ((const));
+    static std::string::size_type   search_parameter(std::string const & configuration, std::string const & parameter_name, std::string::size_type const start_pos, bool const ignore_case);
 
 protected:
     int                             install_package(std::string const & package_name, std::string const & command);
@@ -145,6 +153,8 @@ protected:
     QString                         f_apt_check = "/usr/lib/update-notifier/apt-check";
     QString                         f_reboot_required = "/run/reboot-required";
     QString                         f_lock_path = "/run/lock/snapwebsites";
+    std::string                     f_signal_address = "127.0.0.1";
+    int                             f_signal_port = 4041;
     std::vector<std::string>        f_bundle_uri;
 
 private:

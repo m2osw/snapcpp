@@ -333,6 +333,15 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
         }
         break;
 
+    case 'W':
+        if(command == "WAKEUP")
+        {
+            // wakeup now, nothing special to do in the message handling
+            // itself
+            //
+        }
+        break;
+
     }
 }
 
@@ -340,12 +349,25 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
 /** \brief Request for the status to be resent.
  *
  * This function clears the last status information so that way we can
- * make sure it gets resent to all the other snapmanagerdaemons running.
+ * make sure it gets resent to all the other snapmanagerdaemons currently
+ * running (and possibly a few that are not even running yet.)
+ *
+ * \param[in] kick_now  Try to wake the status thread immediately.
  */
-void manager_status::resend_status()
+void manager_status::resend_status(bool const kick_now)
 {
     snap::snap_thread::snap_lock guard(f_mutex);
     f_resend_status = true;
+
+    if(kick_now)
+    {
+        // by sending a message, we will wake up the sleeping beauty
+        // at the time the message arrives (which is very fast)
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("WAKEUP");
+        f_status_connection->send_message(cmd);
+    }
 }
 
 

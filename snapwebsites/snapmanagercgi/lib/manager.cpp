@@ -17,14 +17,21 @@
 
 #include "manager.h"
 
+// snapwebsites lib
+//
+#include <snapwebsites/addr.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/mkdir_p.h>
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qstring_stream.h>
 
+// C lib
+//
 #include <glob.h>
 
+// C++ lib
+//
 #include <sstream>
 
 #include "poison.h"
@@ -417,6 +424,16 @@ void manager::init(int argc, char * argv[])
     {
         f_lock_path = f_config["lock_path"];
     }
+
+    // If not defined, keep the default of localhost:4041
+    // TODO: make these "just in time" parameters, we nearly never need them
+    //
+    if(f_config.contains("snapcommunicator_signal"))
+    {
+        snap_addr::addr const a(f_config["snapcommunicator_signal"].toUtf8().data(), f_signal_address, f_signal_port, "udp");
+        f_signal_address = a.get_ipv4or6_string(false, false);
+        f_signal_port = a.get_port();
+    }
 }
 
 
@@ -546,6 +563,18 @@ QString const & manager::get_server_name() const
 QString const & manager::get_public_ip() const
 {
     return f_public_ip;
+}
+
+
+std::string const & manager::get_signal_address() const
+{
+    return f_signal_address;
+}
+
+
+int manager::get_signal_port() const
+{
+    return f_signal_port;
 }
 
 

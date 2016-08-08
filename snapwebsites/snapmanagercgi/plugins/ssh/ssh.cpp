@@ -1,4 +1,4 @@
-// Snap Websites Server -- handle user SSH id_rsa.pub key
+// Snap Websites Server -- handle user SSH authorized_keys key
 // Copyright (C) 2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -278,53 +278,55 @@ void ssh::on_retrieve_status(snap_manager::server_status & server_status)
     //
     for(size_t idx(0); idx < dir.gl_pathc; ++idx)
     {
+        // TODO: replace the direct handling of the file with a file_content object
+        //
         std::string const home_path(dir.gl_pathv[idx]);
         std::string const user_name(home_path.substr(6));
-        std::string const id_rsa_path(home_path + "/.ssh/id_rsa.pub");
-        std::ifstream id_rsa_in;
-        id_rsa_in.open(id_rsa_path);
-        if(id_rsa_in.is_open())
+        std::string const authorized_keys_path(home_path + "/.ssh/authorized_keys");
+        std::ifstream authorized_keys_in;
+        authorized_keys_in.open(authorized_keys_path, std::ios::in | std::ios::binary);
+        if(authorized_keys_in.is_open())
         {
-            id_rsa_in.seekg(0, std::ios::end);
-            std::ifstream::pos_type const size(id_rsa_in.tellg());
-            id_rsa_in.seekg(0, std::ios::beg);
+            authorized_keys_in.seekg(0, std::ios::end);
+            std::ifstream::pos_type const size(authorized_keys_in.tellg());
+            authorized_keys_in.seekg(0, std::ios::beg);
             std::string key;
             key.resize(size, '?');
-            id_rsa_in.read(&key[0], size);
-            if(!id_rsa_in.fail()) // note: eof() will be true so good() will return false
+            authorized_keys_in.read(&key[0], size);
+            if(!authorized_keys_in.fail()) // note: eof() will be true so good() will return false
             {
                 // create a field for this one, it worked
                 //
                 snap_manager::status_t const rsa_key(
                                   snap_manager::status_t::state_t::STATUS_STATE_INFO
                                 , get_plugin_name()
-                                , QString::fromUtf8(("id_rsa::" + user_name).c_str())
+                                , QString::fromUtf8(("authorized_keys::" + user_name).c_str())
                                 , QString::fromUtf8(key.c_str()));
                 server_status.set_field(rsa_key);
             }
             else
             {
-                SNAP_LOG_DEBUG("could not read \"")(id_rsa_path)("\" file for user \"")(user_name)("\".");
+                SNAP_LOG_DEBUG("could not read \"")(authorized_keys_path)("\" file for user \"")(user_name)("\".");
 
                 // create an error field which is not editable
                 //
                 snap_manager::status_t const rsa_key(
                                   snap_manager::status_t::state_t::STATUS_STATE_ERROR
                                 , get_plugin_name()
-                                , QString::fromUtf8(("id_rsa::" + user_name).c_str())
+                                , QString::fromUtf8(("authorized_keys::" + user_name).c_str())
                                 , QString());
                 server_status.set_field(rsa_key);
             }
         }
         else
         {
-            // no id_rsa.pub file for that user
+            // no authorized_keys file for that user
             // create an empty field so one can add that file
             //
             snap_manager::status_t const rsa_key(
                               snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
-                            , QString::fromUtf8(("id_rsa::" + user_name).c_str())
+                            , QString::fromUtf8(("authorized_keys::" + user_name).c_str())
                             , QString());
             server_status.set_field(rsa_key);
         }
@@ -337,8 +339,8 @@ bool ssh::is_installed()
     // for now we just check whether the executable is here, this is
     // faster than checking whether the package is installed and
     // should be enough proof that the server is installed and
-    // running... and thus offer the editing of /home/*/.ssh/id_rsa.pub
-    // files
+    // running... and thus offer the editing of
+    // /home/*/.ssh/authorized_keys files
     //
     return access("/usr/sbin/sshd", R_OK | X_OK) == 0;
 }
@@ -364,7 +366,7 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
 {
     QDomDocument doc(parent.ownerDocument());
 
-    if(s.get_field_name().startsWith("id_rsa::"))
+    if(s.get_field_name().startsWith("authorized_keys::"))
     {
         // in case of an error, we do not let the user do anything
         // so let the default behavior do its thing, it will show the
@@ -375,7 +377,7 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
             return false;
         }
 
-        // the list of id_rsa.pub files
+        // the list of authorized_keys files
         //
         snap_manager::form f(
                   get_plugin_name()
@@ -385,12 +387,14 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "RSA file for \"" + user_name + "\""
+        QString const user_name(s.get_field_name().mid(17));
+        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                          "Authorized keys for \"" + user_name + "\""
                         , s.get_field_name()
                         , s.get_value()
-                        , "Enter your id_rsa.pub file in this field and click Save. Then you will have access to this server via ssh. Use the Reset button to remove the file from this server."
+                        , "Enter your authorized_keys file in this field and click Save."
+                          " Then you will have access to this server via ssh. Use the"
+                          " \"Restore Default\" button to remove the file from this server."
                         ));
         f.add_widget(field);
 
@@ -416,21 +420,21 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
  *
  * \return true if the new_value was applied successfully.
  */
-bool ssh::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::vector<QString> & affected_services)
+bool ssh::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
     NOTUSED(old_or_installation_value);
     NOTUSED(affected_services);
 
-    // we support Save and Restore Default of the id_rsa.pub file
+    // we support Save and Restore Default of the authorized_keys file
     //
-    if(field_name.startsWith("id_rsa::"))
+    if(field_name.startsWith("authorized_keys::"))
     {
-        // generate the path to the id_rsa file
-        QString const user_name(field_name.mid(8));
-        std::string id_rsa_path("/home/");
-        id_rsa_path += user_name.toUtf8().data();
-        std::string const ssh_path(id_rsa_path + "/.ssh");
-        id_rsa_path += "/.ssh/id_rsa.pub";
+        // generate the path to the authorized_keys file
+        QString const user_name(field_name.mid(17));
+        std::string authorized_keys_path("/home/");
+        authorized_keys_path += user_name.toUtf8().data();
+        std::string const ssh_path(authorized_keys_path + "/.ssh");
+        authorized_keys_path += "/.ssh/authorized_keys";
 
         // first check whether the user asked to restore the defaults
         //
@@ -440,7 +444,7 @@ bool ssh::apply_setting(QString const & button_name, QString const & field_name,
             // access although we do not yet break existing connection which
             // we certainly should do too...)
             //
-            unlink(id_rsa_path.c_str());
+            unlink(authorized_keys_path.c_str());
             return true;
         }
 
@@ -462,22 +466,24 @@ bool ssh::apply_setting(QString const & button_name, QString const & field_name,
 
         if(button_name == "save")
         {
-            std::ofstream id_rsa_out;
-            id_rsa_out.open(id_rsa_path);
-            if(id_rsa_out.is_open())
+            // TODO: replace the direct handling of the file with a file_content object
+            //
+            std::ofstream authorized_keys_out;
+            authorized_keys_out.open(authorized_keys_path, std::ios::out | std::ios::trunc | std::ios::binary);
+            if(authorized_keys_out.is_open())
             {
-                id_rsa_out << new_value.trimmed().toUtf8().data() << std::endl;
+                authorized_keys_out << new_value.trimmed().toUtf8().data() << std::endl;
 
-                chmod(id_rsa_path.c_str(), S_IRUSR | S_IWUSR);
+                chmod(authorized_keys_path.c_str(), S_IRUSR | S_IWUSR);
 
                 // WARNING: we would need to get the default name of the
                 // user main group instead of assuming it is his name
                 //
-                chownnm(QString::fromUtf8(id_rsa_path.c_str()), user_name, user_name);
+                chownnm(QString::fromUtf8(authorized_keys_path.c_str()), user_name, user_name);
                 return true;
             }
 
-            SNAP_LOG_ERROR("we could not open id_rsa file \"")(id_rsa_path)("\"");
+            SNAP_LOG_ERROR("we could not open authorized_keys file \"")(authorized_keys_path)("\"");
         }
     }
 

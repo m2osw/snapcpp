@@ -543,6 +543,7 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
             bundles_status_file.putChar(has_error ? 'E' : good_bundle ? 'I' : 'W');
             bundles_status_file.putChar(':');
             QByteArray status_info_utf8(status_info.toUtf8());
+            // TODO: we probably want to also escape \\ here?
             status_info_utf8.replace("\n", "\\n")
                             .replace("\r", "\\r");
             bundles_status_file.write(status_info_utf8.data(), status_info_utf8.size());
@@ -580,6 +581,30 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
 bool self::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
     QDomDocument doc(parent.ownerDocument());
+
+    if(s.get_field_name() == "refresh")
+    {
+        // create a form with one Refresh button
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_REFRESH
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "Click Refresh to request a new status from all the snapcommunicators, including this one."
+                        , s.get_field_name()
+                        , "This button makes sure that all snapcommunicators resend their status data so that way you get the latest."
+                          " Note that the resending is not immediate. The thread handling the status wakes up once every minute or so,"
+                          " therefore you will get new data for snapmanager.cgi within 1 or 2 minutes."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
 
     if(s.get_field_name() == "snapmanager_frontend")
     {
@@ -799,8 +824,30 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
  *
  * \return true if the new_value was applied successfully.
  */
-bool self::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::vector<QString> & affected_services)
+bool self::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
+    // refresh is a special case in the "self" plugin only
+    //
+    if(button_name == "refresh")
+    {
+        // setup the message to send to other snapmanagerdaemons
+        //
+        snap::snap_communicator_message resend;
+        resend.set_service("*");
+        resend.set_command("MANAGERRESEND");
+        resend.add_parameter("kick", "now");
+
+        // we just send a UDP message in this case, no acknowledgement
+        //
+        snap::snap_communicator::snap_udp_server_message_connection::send_message(f_snap->get_signal_address()
+                                                                                , f_snap->get_signal_port()
+                                                                                , resend);
+
+        // it worked (maybe)
+        //
+        return 0;
+    }
+
     // installation is a special case in the "self" plugin only (or at least
     // it should most certainly only be specific to this plugin.)
     //
@@ -862,7 +909,7 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     if(field_name == "snapmanager_frontend"
     || reset_bundle_uri)
     {
-        affected_services.push_back("snapmanagerdaemon");
+        affected_services.insert("snapmanagerdaemon");
 
         QString value(new_value);
         if(use_default_value)

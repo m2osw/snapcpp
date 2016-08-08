@@ -25,19 +25,15 @@
 
 // snapwebsites lib
 //
-// #include "chownnm.h"
+#include "file_content.h"
 #include "log.h"
-// #include "mkdir_p.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "process.h"
 
 // C++ lib
 //
 #include <fstream>
-
-// // C lib
-// //
-// #include <glob.h>
 
 // last entry
 //
@@ -50,35 +46,6 @@ SNAP_PLUGIN_START(apache2, 1, 0)
 namespace
 {
 
-//void file_descriptor_deleter(int * fd)
-//{
-//    if(close(*fd) != 0)
-//    {
-//        int const e(errno);
-//        SNAP_LOG_WARNING("closing file descriptor failed (errno: ")(e)(", ")(strerror(e))(")");
-//    }
-//}
-
-
-
-//void glob_deleter(glob_t * g)
-//{
-//    globfree(g);
-//}
-//
-//int glob_error_callback(const char * epath, int eerrno)
-//{
-//    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-//                  (epath)
-//                  ("\". Got error: ")
-//                  (eerrno)
-//                  (", ")
-//                  (strerror(eerrno))
-//                  (".");
-//
-//    // do not abort on a directory read error...
-//    return 0;
-//}
 
 } // no name namespace
 
@@ -207,6 +174,7 @@ void apache2::bootstrap(snap_child * snap)
     }
 
     SNAP_LISTEN(apache2, "server", snap_manager::manager, retrieve_status, _1);
+    SNAP_LISTEN(apache2, "server", snap_manager::manager, handle_affected_services, _1);
 }
 
 
@@ -225,80 +193,94 @@ void apache2::on_retrieve_status(snap_manager::server_status & server_status)
 
     // retrieve the two status
     //
-    retrieve_status_of_snapmanagercgi_conf(server_status);
-    retrieve_status_of_snapcgi_conf(server_status);
+    retrieve_status_of_conf(server_status, "snapmanager", "/etc/apache2/sites-available/snapmanager-apache2.conf");
+    retrieve_status_of_conf(server_status, "snapcgi", "/etc/apache2/sites-available/snapcgi-apache2.conf");
 }
 
 
-void apache2::retrieve_status_of_snapmanagercgi_conf(snap_manager::server_status & server_status)
+void apache2::retrieve_status_of_conf(snap_manager::server_status & server_status,
+                                      std::string const & conf_namespace,
+                                      std::string const & conf_filename)
 {
-    std::string const conf_filename("/etc/apache2/sites-available/snapmanager-apache2.conf");
-
-    std::ifstream conf_in;
-    conf_in.open(conf_filename);
-    if(conf_in.is_open())
+    // get the data
+    //
+    file_content fc(conf_filename);
+    if(fc.read_all())
     {
-        conf_in.seekg(0, std::ios::end);
-        std::ifstream::pos_type const size(conf_in.tellg());
-        conf_in.seekg(0, std::ios::beg);
-
-        std::string conf;
-        conf.resize(size, '#');
-        conf_in.read(&conf[0], size);
-        if(!conf_in.fail()) // note: eof() will be true so good() will return false
+        // could read the file, go on
+        //
+        bool found(false);
+        std::string const content(fc.get_content());
+        std::string::size_type const pos(snap_manager::manager::search_parameter(content, "servername", 0, true));
+        if(pos != std::string::size_type(-1))
         {
-            std::string const server_name("servername");
-            auto const it(std::search(
-                    conf.begin(),
-                    conf.end(),
-                    server_name.begin(),
-                    server_name.end(),
-                    [](char c1, char c2)
-                    {
-                        return std::tolower(c1) == std::tolower(c2);
-                    }));
-            if(it != conf.end())
+            if((pos == 0 || content[pos - 1] != '#'))
             {
-                it += server_name.length();
-                if(it != conf.end()
-                && std::isspace(*it))
+                // found one, get the name
+                //
+                std::string::size_type const p1(content.find_first_of(" \t", pos));
+                if(p1 != std::string::size_type(-1))
                 {
-                    do
+                    std::string::size_type const p2(content.find_first_not_of(" \t", p1));
+                    if(p2 != std::string::size_type(-1))
                     {
-                        ++it; // skip spaces
-                    }
-                    while(it != conf.end() && std::isspace(*it));
+                        std::string::size_type const p3(content.find_first_of(" \t\r\n", p2));
+                        if(p3 != std::string::size_type(-1))
+                        {
+                            std::string const name(content.substr(p2, p3 - p2));
 
-                    if(it != conf.end() && *it != '\n' && *it != '\r')
-                    {
-                        // create a field for this one, it worked
-                        //
-                        snap_manager::status_t const conf_field(
-                                          snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                        , get_plugin_name()
-                                        , "snapmanager_apache2_conf"
-                                        , QString::fromUtf8(key.c_str()));
-                        server_status.set_field(conf_field);
+                            snap_manager::status_t const conf_field(
+                                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                            , get_plugin_name()
+                                            , QString::fromUtf8((conf_namespace + "::server_name").c_str())
+                                            , QString::fromUtf8(name.c_str()));
+                            server_status.set_field(conf_field);
+
+                            found = true;
+                        }
                     }
                 }
             }
-            // else -- no ServerName field, ignore
-        }
-        else
-        {
-            SNAP_LOG_DEBUG("could not read \"")(conf_filename)("\" file.");
+            else
+            {
+                // we found a ServerName but it is "immediately" commented
+                // out (immediately preceeded by a '#') so here we see
+                // such as ""
+                //
+                snap_manager::status_t const conf_field(
+                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                , get_plugin_name()
+                                , QString::fromUtf8((conf_namespace + "::server_name").c_str())
+                                , QString());
+                server_status.set_field(conf_field);
 
-            // create an error field which is not editable
+                found = true;
+            }
+        }
+        if(!found)
+        {
+            // we got the file, but could not find the field as expected
             //
             snap_manager::status_t const conf_field(
                               snap_manager::status_t::state_t::STATUS_STATE_WARNING
                             , get_plugin_name()
-                            , "snapmanager_apache2_conf"
-                            , QString());
+                            , QString::fromUtf8((conf_namespace + "::server_name").c_str())
+                            , ("\"" + conf_filename + "\" is not editable at the moment.").c_str());
             server_status.set_field(conf_field);
         }
     }
-    // else -- cannot find that .conf, ignore
+    else if(fc.exists())
+    {
+        // create an error field which is not editable
+        //
+        snap_manager::status_t const conf_field(
+                          snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                        , get_plugin_name()
+                        , QString::fromUtf8((conf_namespace + "::server_name").c_str())
+                        , ("\"" + conf_filename + "\" is not editable at the moment.").c_str());
+        server_status.set_field(conf_field);
+    }
+    // else -- file does not exist
 }
 
 
@@ -323,13 +305,12 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
 {
     QDomDocument doc(parent.ownerDocument());
 
-    if(s.get_field_name().startsWith("id_rsa::"))
+    if(s.get_field_name().endsWith("::server_name"))
     {
-        // in case of an error, we do not let the user do anything
-        // so let the default behavior do its thing, it will show the
-        // field in a non-editable manner
+        // in case it is not marked as INFO, it is "not editable" (we are
+        // unsure of the current file format)
         //
-        if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_ERROR)
+        if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING)
         {
             return false;
         }
@@ -346,10 +327,10 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
 
         QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "RSA file for \"" + user_name + "\""
+                          "Apache2 'ServerName'"
                         , s.get_field_name()
                         , s.get_value()
-                        , "Enter your id_rsa.pub file in this field and click Save. Then you will have access to this server via apache2. Use the Reset button to remove the file from this server."
+                        , "Enter the name of the server. This name becomes mandatory for snapmanager.cgi if you intend to install the snapfront bundle. For snap.cgi, it is a good idea to put your main website name so Apache2 gets a form of fallback."
                         ));
         f.add_widget(field);
 
@@ -375,75 +356,177 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
  *
  * \return true if the new_value was applied successfully.
  */
-bool apache2::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::vector<QString> & affected_services)
+bool apache2::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
     NOTUSED(old_or_installation_value);
-    NOTUSED(affected_services);
 
     // we support Save and Restore Default of the id_rsa.pub file
     //
-    if(field_name.startsWith("id_rsa::"))
+    if(field_name.endsWith("::server_name"))
     {
-        // generate the path to the id_rsa file
-        QString const user_name(field_name.mid(8));
-        std::string id_rsa_path("/home/");
-        id_rsa_path += user_name.toUtf8().data();
-        std::string const ssh_path(id_rsa_path + "/.ssh");
-        id_rsa_path += "/.ssh/id_rsa.pub";
-
-        // first check whether the user asked to restore the defaults
+        // if the user was asking to restore the default, the default is
+        // to have the ServerName parameter commented out
         //
-        if(button_name == "restore_default")
+        bool const comment(button_name == "restore_default");
+
+        // make sure that we received a valid button click
+        //
+        if(!comment
+        && button_name != "save")
         {
-            // "Restore Default" means deleting the file (i.e. no more SSH
-            // access although we do not yet break existing connection which
-            // we certainly should do too...)
+            return false;
+        }
+
+        // generate the path to the id_rsa file
+        //
+        std::string const conf_filename(field_name.startsWith("snapmanager::")
+                                            ? "/etc/apache2/sites-available/snapmanager-apache2.conf"
+                                            : "/etc/apache2/sites-available/snapcgi-apache2.conf");
+
+        // get the current data
+        //
+        file_content fc(conf_filename);
+        bool success(fc.read_all());
+        if(!success)
+        {
+            return false;
+        }
+
+        // make a backup
+        //
+        if(!fc.write_all(conf_filename + ".bak"))
+        {
+            return false;
+        }
+
+        // retrieve the current content
+        //
+        std::string content(fc.get_content());
+
+        // compute the new ServerName line(s)
+        //
+        std::string const new_name(std::string(comment ? "#" : "")
+                                 + "ServerName "
+                                 + (comment ? "snap.example.com" : new_value.toUtf8().data())
+                             );
+
+        // search each ServerName line and replace it
+        //
+        for(std::string::size_type pos(0); pos < content.length(); pos += new_name.length())
+        {
+            // search for the ServerName parameter
             //
-            unlink(id_rsa_path.c_str());
+            pos = snap_manager::manager::search_parameter(content, "servername", pos, true);
+            if(pos == std::string::size_type(-1))
+            {
+                // we are done, there are no more ServerName entries
+                // (or there were none at all?!)
+                //
+                break;
+            }
+
+            // include the '#' if present immediately before the
+            // parameter name
+            //
+            if(pos > 0 && content[pos - 1] == '#')
+            {
+                --pos;
+            }
+
+            // search the end of the line so that way we can cut the
+            // parameter in three
+            //
+            std::string::size_type eol(content.find_first_of("\r\n", pos));
+            if(eol == std::string::size_type(-1))
+            {
+                // something went wrong (i.e. the ServerName should not
+                // be the very last thing in the file)
+                //
+                return false;
+            }
+
+            // we have the start and the end so we can now cut the
+            // string and save the new parameters
+            //
+            content = content.substr(0, pos)
+                    + new_name
+                    + content.substr(eol);
+        }
+
+        // it worked, let's save the result
+        //
+        fc.set_content(content);
+        if(fc.write_all())
+        {
+            // it worked, make sure apache2 gets restarted
+            //
+            affected_services.insert("apache2-restart");
             return true;
         }
 
-        // next make sure the .ssh directory exists, if not create it
-        // as expected by ssh
+        // the write back to disk failed
         //
-        struct stat s;
-        if(stat(ssh_path.c_str(), &s) != 0)
-        {
-            QString const q_ssh_path(QString::fromUtf8(ssh_path.c_str()));
-            if(mkdir_p(q_ssh_path, false) != 0)
-            {
-                SNAP_LOG_ERROR("we could not create the .ssh directory \"")(ssh_path)("\"");
-                return false;
-            }
-            chmod(ssh_path.c_str(), S_IRWXU); // 0700
-            chownnm(q_ssh_path, user_name, user_name);
-        }
-
-        if(button_name == "save")
-        {
-            std::ofstream id_rsa_out;
-            id_rsa_out.open(id_rsa_path);
-            if(id_rsa_out.is_open())
-            {
-                id_rsa_out << new_value.trimmed().toUtf8().data() << std::endl;
-
-                chmod(id_rsa_path.c_str(), S_IRUSR | S_IWUSR);
-
-                // WARNING: we would need to get the default name of the
-                // user main group instead of assuming it is his name
-                //
-                chownnm(QString::fromUtf8(id_rsa_path.c_str()), user_name, user_name);
-                return true;
-            }
-
-            SNAP_LOG_ERROR("we could not open id_rsa file \"")(id_rsa_path)("\"");
-        }
+        return false;
     }
 
     return false;
 }
 
 
+
+void apache2::on_handle_affected_services(std::set<QString> & affected_services)
+{
+    bool restarted(false);
+
+    auto const & it_restart(std::find(affected_services.begin(), affected_services.end(), QString("apache2-restart")));
+    if(it_restart != affected_services.end())
+    {
+        // remove since we are handling that one here
+        //
+        affected_services.erase(it_restart);
+
+        // super ugly hack! if this is the current system being updated,
+        // then snapmanager.cgi needs a bit of time to finish up... with
+        // a small sleep we at least do not get an immediate error (you
+        // can if you try to load another right afterward, though...)
+        //
+        sleep(2);
+
+        // restart apache2
+        //
+        snap::process p("restart apache2");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("systemctl");
+        p.add_argument("restart");
+        p.add_argument("apache2");
+        NOTUSED(p.run());           // errors are automatically logged by snap::process
+
+        restarted = true;
+    }
+
+    auto const & it_reload(std::find(affected_services.begin(), affected_services.end(), QString("apache2-reload")));
+    if(it_reload != affected_services.end())
+    {
+        // remove since we are handling that one here
+        //
+        affected_services.erase(it_reload);
+
+        // do the reload only if we did not already do a restart (otherwise
+        // it is going to be useless)
+        //
+        if(!restarted)
+        {
+            // restart apache2
+            //
+            snap::process p("restart apache2");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+            p.set_command("systemctl");
+            p.add_argument("restart");
+            p.add_argument("apache2");
+            NOTUSED(p.run());           // errors are automatically logged by snap::process
+        }
+    }
+}
 
 
 
