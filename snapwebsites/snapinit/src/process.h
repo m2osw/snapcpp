@@ -63,7 +63,7 @@ public:
     void                    set_user(QString const & user);
     void                    set_group(QString const & groupd);
     void                    set_coredump_limit(rlim_t coredump_limit);
-    void                    set_command(QString const & binary_path, QString const & command, bool const ignore_path_check);
+    bool                    set_command(QString const & binary_path, QString const & command);
     void                    set_config_filename(QString const & config_filename);
     void                    set_options(QString const & options);
     void                    set_common_options(std::vector<QString> const & options);

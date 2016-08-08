@@ -38,13 +38,9 @@
       </description>
     </field>
   </fields>
-  <packages>apache2, snapcgi</packages>
+  <packages>snapcgi</packages>
   <postinst>
     systemctl stop apache2
-
-    # enable our SSL log extension (i.e. showing SSL protocol and cipher)
-    #
-    a2enconf snap-apache2-ssl-log
 
     # setup the default apache2 configuration file
     #
@@ -52,11 +48,6 @@
         -e "s/snap.example.com/$BUNDLE_INSTALLATION_DOMAIN_NAME/" \
         -e "s/webmaster@example.com/$BUNDLE_INSTALLATION_WEBMASTER_EMAIL/" \
               /etc/apache2/sites-available/snap-apache2-default.conf
-
-    # enable this configuration as the default
-    #
-    a2dissite 000-default
-    a2ensite 000-snap-apache2-default
 
     systemctl start apache2
   </postinst>

@@ -305,7 +305,7 @@ void service::configure_as_snapinit()
     f_service_name = "snapinit";
     f_required = true;
     QString const ignored_binary_path;
-    f_process.set_command(ignored_binary_path, "snapinit", true);
+    snap::NOTUSED(f_process.set_command(ignored_binary_path, "snapinit"));
     //f_wait_interval = 1;
     //f_recovery = 0;
     //f_process.set_safe_message("");
@@ -348,10 +348,8 @@ void service::configure_as_snapinit()
  *
  * \param[in] e  The element with configuration information for this service.
  * \param[in] binary_path  The path to your binaries (practical for developers).
- * \param[in] ignore_path_check  Whether the path check generate a fatal
- *            error (false) or just a warning (true)
  */
-void service::configure(QDomElement e, QString const & binary_path, std::vector<QString> & common_options, bool const ignore_path_check)
+void service::configure(QDomElement e, QString const & binary_path, std::vector<QString> & common_options)
 {
     // first make sure we have a name for this service
     //
@@ -389,7 +387,12 @@ void service::configure(QDomElement e, QString const & binary_path, std::vector<
             }
         }
 
-        f_process.set_command(binary_path, command, ignore_path_check);
+        if(!f_process.set_command(binary_path, command))
+        {
+            // we could not find the command, mark it as if it were disabled
+            //
+            f_disabled = true;
+        }
     }
 
     // user may specify a wait to use before moving forward with the next

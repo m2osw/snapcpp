@@ -201,11 +201,8 @@ void process::set_coredump_limit(rlim_t coredump_limit)
  * \param[in] binary_path  A list of paths to use to search for the command.
  * \param[in] command  The command as defined by the \<command> tag, or use
  *                     the name of the service.
- * \param[in] ignore_path_check  In a few cases, we do not want to die just
- *                               because some of the services cannot be
- *                               found (i.e. --list and --tree.)
  */
-void process::set_command(QString const & binary_path, QString const & command, bool const ignore_path_check)
+bool process::set_command(QString const & binary_path, QString const & command)
 {
     if(command.isEmpty())
     {
@@ -223,7 +220,7 @@ void process::set_command(QString const & binary_path, QString const & command, 
     if(f_command == "snapinit")
     {
         f_full_path = f_command;
-        return;
+        return true;
     }
 
     // compute the full path to the binary
@@ -242,7 +239,7 @@ void process::set_command(QString const & binary_path, QString const & command, 
                 f_full_path = QString("%1/%2/%3").arg(p).arg(command).arg(command);
                 if(exists())
                 {
-                    return;
+                    return true;
                 }
             }
             // direct
@@ -250,7 +247,7 @@ void process::set_command(QString const & binary_path, QString const & command, 
                 f_full_path = QString("%1/%2").arg(p).arg(command);
                 if(exists())
                 {
-                    return;
+                    return true;
                 }
             }
         }
@@ -260,18 +257,8 @@ void process::set_command(QString const & binary_path, QString const & command, 
         f_full_path = command;
         if(exists())
         {
-            return;
+            return true;
         }
-    }
-
-    if(!ignore_path_check)
-    {
-        std::unique_ptr<char> cwd(get_current_dir_name());
-        common::fatal_error(QString("could not find \"%1\" in any of the paths \"%2\". Current working directory is: \"%3\".")
-                      .arg(f_service->get_service_name())
-                      .arg(binary_path)
-                      .arg(QString::fromUtf8(cwd.get())));
-        snap::NOTREACHED();
     }
 
     // okay, we do not completely ignore the fact that we could
@@ -282,6 +269,8 @@ void process::set_command(QString const & binary_path, QString const & command, 
                     ("\" in any of the paths \"")
                     (binary_path)
                     ("\".");
+
+    return false;
 }
 
 

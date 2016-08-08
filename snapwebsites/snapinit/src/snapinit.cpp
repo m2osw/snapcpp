@@ -1525,7 +1525,8 @@ void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_fi
     // otherwise, just skip (TODO: although if we want to ever support a
     // runtime reload, this is not a good solution!)
     //
-    if((f_command != command_t::COMMAND_LIST && f_command != command_t::COMMAND_TREE)
+    bool const server_mode(f_command != command_t::COMMAND_LIST && f_command != command_t::COMMAND_TREE);
+    if(server_mode
     && e.attributes().contains("disabled"))
     {
         return;
@@ -1541,11 +1542,18 @@ void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_fi
     s->configure(
             e,
             binary_path,
-            common_options,
-            f_command == command_t::COMMAND_LIST
-                || f_command == command_t::COMMAND_TREE
-                || f_command == command_t::COMMAND_STOP
+            common_options
         );
+
+    // a missing binary file is equivalent to having the service disabled
+    // and thus we want to return early and not add the file if it cannot
+    // anyway be started as a service
+    //
+    if(s->is_disabled()
+    && !server_mode)
+    {
+        return;
+    }
 
     // avoid two services with the exact same name, we do not support such
     //

@@ -31,7 +31,7 @@
       </description>
     </field>
   </fields>
-  <packages>postfix, snapbounce</packages>
+  <packages>snapbounce</packages>
   <postinst>
     # Setup the transport.map file
     #
@@ -41,6 +41,9 @@
     #mail.$BUNDLE_INSTALLATION_DOMAIN bounces:
     #
     # For now, I removed them from the file altogether.
+    #
+    # TODO: we need the following cat to first remove the bounces
+    #       entry so we do not get a duplicate...
     #
     cat &gt;/etc/postfix/transport.maps &lt;&lt;EOF
 # See SNAP-67
@@ -53,16 +56,19 @@ EOF
 
     # setup the domain and a few other things
     # the few entries at the bottom connects snapbounce to postfix
-    sed -i.bak \
-        -e "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" \
-        -e "s/^smtpd_banner = \(.*\) (.*)/smtpd_banner = \1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" \
-        -e "$ i \
-# `date` \
-# Tell postfix how we want to handle bounced emails (SNAP-67) \
-notify_classes = bounce \
-bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \
-transport_maps = hash:/etc/postfix/transport.maps" \
-              /etc/postfix/main.cf
+    #
+    # TODO: the .sed will re-add the notify_classes, bounce_notice_recipient
+    #       and transport_maps each time we run this script...
+    #
+    echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" >/tmp/bundle-mailserver.sed
+    echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" >>/tmp/bundle-mailserver.sed
+    echo "$ i \\" >>/tmp/bundle-mailserver.sed
+    echo "# `date` \\" >>/tmp/bundle-mailserver.sed
+    echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\" >>/tmp/bundle-mailserver.sed
+    echo "notify_classes = bounce \\" >>/tmp/bundle-mailserver.sed
+    echo "bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \\" >>/tmp/bundle-mailserver.sed
+    echo "transport_maps = hash:/etc/postfix/transport.maps" >>/tmp/bundle-mailserver.sed
+    sed -i.bak -f /tmp/bundle-mailserver.sed /etc/postfix/main.cf
 
     # restart postfix with the correct parameters
     #
@@ -72,6 +78,8 @@ transport_maps = hash:/etc/postfix/transport.maps" \
     systemctl enable postfix
     systemctl restart postfix
   </postinst>
+  <!-- TODO: add a postrm which at least removes the 3 variables we added
+             at the end, because wihout snapbounce it won't work... -->
 </bundle>
 <!--
   vim: ts=2 sw=2 et

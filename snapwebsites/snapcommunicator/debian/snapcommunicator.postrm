@@ -4,12 +4,6 @@
 . /usr/share/debconf/confmodule
 
 
-# delete the service files because otherwise snapinit will still
-# attempt to start those services even though the binary is gone
-#
-rm -f /etc/snapwebsites/services.d/service-snapcommunicator.xml
-
-
 if [ "$1" = "purge" ]
 then
     # delete a cache file

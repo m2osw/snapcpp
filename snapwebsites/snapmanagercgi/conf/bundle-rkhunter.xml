@@ -63,8 +63,13 @@ ALLOWHIDDENDIR=/etc/.java
 #ALLOWDEVFILE=/dev/shm/sem.ADBE_WritePrefs_*
 
 # Allow Cassandra which uses port 7000 often detected as a rogue IRC port
-#PORT_PATH_WHITELIST=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java:TCP:7000
+# TODO: add support to turn this on only on Cassandra nodes
+PORT_PATH_WHITELIST=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java:TCP:7000
 EOF
+
+    # do a refresh now otherwise we are likely to have errors up front
+    #
+    rkhunter --propupd
   </postinst>
 </bundle>
 <!--

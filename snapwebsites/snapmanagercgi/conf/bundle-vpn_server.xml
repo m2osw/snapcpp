@@ -51,9 +51,6 @@
   <!--
     The setup requires the user data entry for the IP addresses, but we
     can at least copy and create some files as required.
-
-    Note: the easy-rsa cannot be run by postinst without already including
-          the correct KEY_... variables so we do not do it yet.
   -->
   <postinst>
     # get the default RSA key data

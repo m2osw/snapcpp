@@ -29,8 +29,9 @@ then
     a2enmod cgi
     a2enmod headers
     a2enconf snap-httpoxy
-    a2ensite 000-snap-apache2-default
+    a2enconf snap-apache2-ssl-log
     a2dissite 000-default
+    a2ensite 000-snap-apache2-default
 
     # restart apache2 to make sure everything is taken in account
     #

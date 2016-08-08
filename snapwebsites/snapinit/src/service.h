@@ -84,7 +84,7 @@ public:
 
 
     void                        configure_as_snapinit();
-    void                        configure(QDomElement e, QString const & binary_path, std::vector<QString> & common_options, bool const ignore_path_check);
+    void                        configure(QDomElement e, QString const & binary_path, std::vector<QString> & common_options);
     void                        finish_configuration(std::vector<QString> & common_options);
 
     // snap::snap_communicator::snap_timer implementation
