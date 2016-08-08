@@ -1,3 +1,9 @@
+iplock (2.1.2.243~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 08 Aug 2016 10:59:10 -0700
+
 iplock (2.1.2.242~xenial) xenial; urgency=high
 
   * Nightly build.

@@ -203,22 +203,28 @@ function( ConfigureMakeProjectInternal )
 		endif()
 	endif()
 
+	set( MAKE_OUTPUT ${BUILD_DIR}/make.completed )
+	option( BUILD_ONCE "Build projects once depending on 'make.completed' file" ON )
+	unset( MAKE_OUTPUT_COMMAND )
+	if( ${BUILD_ONCE} )
+		set( MAKE_OUTPUT_COMMAND COMMAND echo > ${MAKE_OUTPUT} )
+	endif()
 	add_custom_command(
-        OUTPUT ${BUILD_DIR}/make.completed
+        OUTPUT ${MAKE_OUTPUT}
 		COMMAND ${THE_CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
 		COMMAND ${CMAKE_BUILD_TOOL} install
 			1>> ${BUILD_DIR}/make.log
 			2>> ${BUILD_DIR}/make.err
-		COMMAND echo > ${BUILD_DIR}/make.completed
+		${MAKE_OUTPUT_COMMAND}
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${ARG_TARGET_NAME}"
 		)
 	add_custom_target(
 		${ARG_TARGET_NAME}-make
-		DEPENDS ${BUILD_DIR}/make.completed
+		DEPENDS ${MAKE_OUTPUT}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		)
 
@@ -264,18 +270,19 @@ function( ConfigureMakeProjectInternal )
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Dputting debian package ${ARG_TARGET_NAME} to launchpad."
 		)
+	set( PBUILD_OUTPUT ${BUILD_DIR}/pbuild.completed )
 	add_custom_command(
-        OUTPUT ${BUILD_DIR}/pbuild.completed
+        OUTPUT ${PBUILD_OUTPUT}
 		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
-		COMMAND echo > ${BUILD_DIR}/pbuild.completed
+		COMMAND echo > ${PBUILD_OUTPUT}
 		DEPENDS ${PBUILDER_DEPS}
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Building debian package ${ARG_TARGET_NAME} with pbuilder-dist."
 		)
 	add_custom_target(
 		${ARG_TARGET_NAME}-pbuilder
-		DEPENDS ${BUILD_DIR}/pbuild.completed
+		DEPENDS ${PBUILD_OUTPUT}
 		WORKING_DIRECTORY ${SRC_DIR}
 		)
 
