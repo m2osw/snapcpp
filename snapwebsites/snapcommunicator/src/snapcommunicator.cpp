@@ -15,19 +15,33 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
 #include "snap_communicator.h"
 
+// our lib
+//
 #include "addr.h"
+#include "file_content.h"
 #include "log.h"
 #include "mkdir_p.h"
 #include "not_used.h"
 #include "snapwebsites.h"
+#include "tokenize_string.h"
 
+// Qt lib
+//
 #include <QFile>
 
+// C lib
+//
 #include <sys/resource.h>
 
+// C++ lib
+//
 #include <atomic>
+#include <thread>
+
 
 /** \file
  * \brief Implementation of the snap inter-process communication.
@@ -341,6 +355,7 @@ public:
     inline void                 verify_command(base_connection_pointer_t connection, snap::snap_communicator_message const & message);
     void                        process_connected(snap::snap_communicator::snap_connection::pointer_t connection);
     void                        broadcast_message(snap::snap_communicator_message const & message);
+    void                        process_load_balancing();
 
 private:
     void                        refresh_heard_of();
@@ -349,12 +364,14 @@ private:
     snap::server::pointer_t                             f_server;
 
     QString                                             f_server_name;
+    int                                                 f_number_of_processors = 1;
     QString                                             f_neighbors_cache_filename;
     std::string                                         f_public_ip;        // f_listener IP address
     snap::snap_communicator::pointer_t                  f_communicator;
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_ping;             // UDP/IP
+    snap::snap_communicator::snap_connection::pointer_t f_timer;            // a 1 second timer to calculate load (used to load balance)
     snap_addr::addr                                     f_my_address;
     QString                                             f_local_services;
     sorted_list_of_strings_t                            f_local_services_list;
@@ -1582,6 +1599,44 @@ private:
 
 
 
+/** \brief Provide a tick to offer load balancing information.
+ *
+ * This class is an implementation of a timer to offer load balancing
+ * information between various front and backend computers in the cluster.
+ */
+class timer_impl
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    /** \brief The timer initialization.
+     *
+     * The timer ticks once per second to retrieve the current load of the
+     * system and forward it to whichever computer that requested the
+     * information.
+     *
+     * \param[in] cs  The snap communicator server we are listening for.
+     */
+    timer_impl(snap_communicator_server::pointer_t cs)
+        : snap_timer(1000000LL)  // 1 second in microseconds
+        , f_communicator_server(cs)
+    {
+    }
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void process_timeout() override
+    {
+        f_communicator_server->process_load_balancing();
+    }
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    snap_communicator_server::pointer_t f_communicator_server;
+};
+
+
+
+
+
 
 
 
@@ -1615,6 +1670,8 @@ void snap_communicator_server::init()
 {
     // keep a copy of the server name handy
     f_server_name = f_server->get_parameter("server_name");
+
+    f_number_of_processors = std::thread::hardware_concurrency();
 
     f_debug_lock = !f_server->get_parameter("debug_lock_messages").isEmpty();
 
@@ -1714,6 +1771,12 @@ void snap_communicator_server::init()
         f_ping.reset(new ping_impl(shared_from_this(), addr.toUtf8().data(), port));
         f_ping->set_name("snap communicator messenger (UDP)");
         f_communicator->add_connection(f_ping);
+    }
+
+    {
+        f_timer.reset(new timer_impl(shared_from_this()));
+        f_timer->set_name("snap communicator load balancer timer");
+        f_communicator->add_connection(f_timer);
     }
 
     // transform the my_address to a snap_addr::addr object
@@ -3498,6 +3561,39 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
 }
 
 
+void snap_communicator_server::process_load_balancing()
+{
+    snap::file_content in("/proc/loadavg");
+    if(in.read_all())
+    {
+        std::string const & load(in.get_content());
+
+        std::vector<std::string> values;
+        snap::NOTUSED(snap::tokenize_string(values, load, " "));
+        if(values.size() >= 3)
+        {
+            // we really only need the first number, we would not know what
+            // to do with the following ones at this time...
+            // (although that could help know whether the load average is
+            // going up or down, but it's not that easy, really.)
+            //
+            // we divide by the number of processors because each computer
+            // could have a different number of processors and a load
+            // average of 1 on a computer with 16 processors really
+            // represents 1/16th of the machine capacity.
+            //
+            float const avg(QString(values[0].c_str()).toFloat() / f_number_of_processors);
+
+            snap::snap_communicator_message load_avg;
+            load_avg.set_command("LOADAVG");
+            load_avg.add_parameter("avg", QString("%1").arg(avg));
+
+            //remote_communicator->send_message(load_avg);
+        }
+    }
+}
+
+
 /** \brief Return the list of services offered on this computer.
  */
 QString snap_communicator_server::get_local_services() const
@@ -3855,6 +3951,7 @@ void snap_communicator_server::shutdown(bool full)
     f_communicator->remove_connection(f_local_listener);    // TCP/IP
     f_communicator->remove_connection(f_listener);          // TCP/IP
     f_communicator->remove_connection(f_ping);              // UDP/IP
+    f_communicator->remove_connection(f_timer);             // load balancer timer
 }
 
 

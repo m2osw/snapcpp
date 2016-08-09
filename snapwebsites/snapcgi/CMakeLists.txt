@@ -37,10 +37,10 @@ cmake_minimum_required(VERSION 3.5)
 ##
 project(snapcgi_project)
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set( CMAKE_INCLUDE_CURRENT_DIR ON )
 
 find_package( AdvGetOpt         REQUIRED )
 find_package( Qt5Core           REQUIRED )
@@ -63,10 +63,11 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-add_subdirectory( conf  )
-add_subdirectory( src   )
-add_subdirectory( doc   )
-add_subdirectory( tests )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
+add_subdirectory( doc             )
+add_subdirectory( tests           )
 
 snap_build_xml_targets()
 

@@ -1550,7 +1550,7 @@ void snap_init::xml_to_service(QDomDocument doc, QString const & xml_services_fi
     // anyway be started as a service
     //
     if(s->is_disabled()
-    && !server_mode)
+    && server_mode)
     {
         return;
     }

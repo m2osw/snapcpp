@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapwebsites/snapbackend/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. The server is the main() of the Snap!
@@ -66,9 +66,10 @@ include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
-add_subdirectory( conf )
-add_subdirectory( src  )
-add_subdirectory( doc  )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
+add_subdirectory( doc             )
 
 snap_build_xml_targets()
 
