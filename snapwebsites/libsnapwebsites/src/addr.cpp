@@ -323,6 +323,27 @@ void addr::set_ipv4(struct sockaddr_in const & in)
 }
 
 
+/** \brief Set the port of this address.
+ *
+ * This function changes the port of this address to \p port.
+ *
+ * \exception addr_invalid_argument_exception
+ * This exception is raised whenever the \p port parameter is set to
+ * an invalid number (negative or larger than 65535.)
+ *
+ * \param[in] port  The new port to save in this address.
+ */
+void addr::set_port(int port)
+{
+    if(port > 65535 
+    || port < 0)
+    {
+        throw addr_invalid_argument_exception("port to set_port() cannot be out of the allowed range [0..65535].");
+    }
+    f_address.sin6_port = htons(port);
+}
+
+
 /** \brief Change the protocol.
  *
  * This function is used to change the current protocol defined in
@@ -704,7 +725,7 @@ int addr::get_protocol() const
  */
 bool addr::operator == (addr const & rhs) const
 {
-    return memcmp(&f_address.sin6_addr, &rhs.f_address.sin6_addr, sizeof(f_address.sin6_addr)) == 0;
+    return f_address.sin6_addr == rhs.f_address.sin6_addr;
 }
 
 
@@ -722,7 +743,7 @@ bool addr::operator == (addr const & rhs) const
  */
 bool addr::operator != (addr const & rhs) const
 {
-    return memcmp(&f_address.sin6_addr, &rhs.f_address.sin6_addr, sizeof(f_address.sin6_addr)) != 0;
+    return f_address.sin6_addr != rhs.f_address.sin6_addr;
 }
 
 
@@ -741,7 +762,7 @@ bool addr::operator != (addr const & rhs) const
  */
 bool addr::operator < (addr const & rhs) const
 {
-    return memcmp(&f_address.sin6_addr, &rhs.f_address.sin6_addr, sizeof(f_address.sin6_addr)) < 0;
+    return f_address.sin6_addr < rhs.f_address.sin6_addr;
 }
 
 

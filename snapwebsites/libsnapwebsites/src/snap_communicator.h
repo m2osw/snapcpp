@@ -211,6 +211,12 @@ public:
         : public snap_connection
     {
     public:
+        // timer is implemented using the timeout value on poll().
+        // we could have another implementation that makes use of
+        // the timerfd_create() function (in which case we'd be
+        // limited to a date timeout, although an interval would
+        // work too but require a little bit of work.)
+        //
         typedef std::shared_ptr<snap_timer>    pointer_t;
 
                                     snap_timer(int64_t timeout_us);
