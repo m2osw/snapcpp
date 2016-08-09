@@ -1,3 +1,9 @@
+snapbase (1.0.3.5~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 09 Aug 2016 02:00:49 -0700
+
 snapbase (1.0.3.4~xenial) xenial; urgency=high
 
   * Nightly build.
