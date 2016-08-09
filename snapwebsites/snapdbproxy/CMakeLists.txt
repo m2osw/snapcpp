@@ -1,6 +1,6 @@
 #
 # File:
-#      src/snapdbproxy/CMakeLists.txt
+#      snapwebsites/snapdbproxy/CMakeLists.txt
 #
 # Description:
 #      A proxy to access the Cassandra database cluster without having to
@@ -65,9 +65,10 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-add_subdirectory( conf )
-add_subdirectory( src  )
-add_subdirectory( doc  )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
+add_subdirectory( doc             )
 
 ##
 ## Analyse xml and javascript

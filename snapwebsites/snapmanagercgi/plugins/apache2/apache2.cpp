@@ -51,9 +51,9 @@ namespace
 
 
 
-/** \brief Get a fixed cpu plugin name.
+/** \brief Get a fixed apache2 plugin name.
  *
- * The cpu plugin makes use of different fixed names. This function
+ * The apache2 plugin makes use of different fixed names. This function
  * ensures that you always get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.

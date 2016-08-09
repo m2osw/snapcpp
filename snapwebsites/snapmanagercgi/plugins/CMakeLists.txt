@@ -1,6 +1,6 @@
 ################################################################################
 # File:
-#      plugins/CMakeLists.txt
+#      snapwebsites/snapmanagercgi/plugins/CMakeLists.txt
 #
 # Description:
 #      Set of extensions used by the Snap! Manager CGI and daemon.

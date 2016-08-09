@@ -37,7 +37,7 @@ project(snapcommunicator_project)
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set( CMAKE_INCLUDE_CURRENT_DIR ON )
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( LibTLD           REQUIRED )
@@ -64,10 +64,11 @@ set( QT_LIBRARIES
 
 SnapGetVersion( SNAPCOMMUNICATOR ${CMAKE_CURRENT_SOURCE_DIR} )
 
-add_subdirectory( conf  )
-add_subdirectory( src   )
-add_subdirectory( doc   )
-add_subdirectory( tests )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
+add_subdirectory( doc             )
+add_subdirectory( tests           )
 
 ##
 ## Analyse xml and javascript

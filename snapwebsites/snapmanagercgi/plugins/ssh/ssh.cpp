@@ -84,9 +84,9 @@ int glob_error_callback(const char * epath, int eerrno)
 
 
 
-/** \brief Get a fixed cpu plugin name.
+/** \brief Get a fixed ssh plugin name.
  *
- * The cpu plugin makes use of different fixed names. This function
+ * The ssh plugin makes use of different fixed names. This function
  * ensures that you always get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.

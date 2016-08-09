@@ -65,9 +65,9 @@ void file_descriptor_deleter(int * fd)
 
 
 
-/** \brief Get a fixed cpu plugin name.
+/** \brief Get a fixed self plugin name.
  *
- * The cpu plugin makes use of different fixed names. This function
+ * The self plugin makes use of different fixed names. This function
  * ensures that you always get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.

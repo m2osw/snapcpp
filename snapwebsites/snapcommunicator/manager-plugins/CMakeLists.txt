@@ -1,6 +1,6 @@
 ################################################################################
 # File:
-#      snapwebsites/snapfirewall/manager-plugins/CMakeLists.txt
+#      snapwebsites/snapcommunicator/manager-plugins/CMakeLists.txt
 #
 # Description:
 #      Set of extensions used by the Snap! Manager CGI and daemon.
@@ -51,7 +51,7 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/manager_plugins )
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
 #
-add_subdirectory(firewall)
+add_subdirectory(communicator)
 
 
 # vim: ts=4 sw=4 nocindent et
