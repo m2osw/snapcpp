@@ -1,3 +1,15 @@
+snapbackup (0.1.1.91~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 09 Aug 2016 12:19:16 -0700
+
+snapbackup (0.1.1.90~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 09 Aug 2016 02:00:52 -0700
+
 snapbackup (0.1.1.89~xenial) xenial; urgency=high
 
   * Nightly build.
