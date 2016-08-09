@@ -21,6 +21,7 @@ PROCESSORS=4
 cmake \
 	-DCMAKE_BUILD_TYPE=$TYPE \
 	-DMAKEFLAGS=-j$PROCESSORS \
+	-DBUILD_ONCE=OFF \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
 	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
 	../snapcpp
