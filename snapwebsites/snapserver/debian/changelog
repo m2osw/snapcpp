@@ -1,3 +1,9 @@
+snapserver (1.0.0.85~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 08 Aug 2016 14:00:56 -0700
+
 snapserver (1.0.0.84~xenial) xenial; urgency=high
 
   * Nightly build.
