@@ -12,6 +12,11 @@
     running Cassandra, especially if your network requires the
     OpenVPN to create a secure LAN. However, watch out for disk
     space if you save many backups on the same computer!</p>
+    <p><strong>WARNING:</strong> By default the installation
+    uses <code>127.0.0.1</code> as a Cassandra node IP address.
+    If you are not installing snapbackup on a Cassandra node,
+    then make sure to change that IP address or you will not
+    get any backups.</p>
   </description>
   <packages>snapbackup</packages>
 </bundle>

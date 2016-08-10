@@ -1,6 +1,6 @@
 #
 # File:
-#      snapwebsites/firewall/manager-plugins/firewall/CMakeLists.txt
+#      snapwebsites/snapbackup/manager-plugins/backup/CMakeLists.txt
 #
 # Description:
 #      Manage parameters from snapmanager.cgi and snapmanagerdaemon
@@ -30,7 +30,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_firewall)
+project(plugin_backup)
 
 find_package( Qt5Core REQUIRED )
 find_package( Qt5Xml  REQUIRED )
@@ -38,23 +38,29 @@ find_package( Qt5Xml  REQUIRED )
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
+include_directories(
+    SYSTEM
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Xml_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
-    firewall.qrc
+    backup.qrc
 )
 
 
 
-add_library(firewall SHARED
-    firewall.cpp
+add_library(backup SHARED
+    backup.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
 message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
-target_link_libraries(firewall
+target_link_libraries(backup
     #${AS2JS_LIBRARIES}
     #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
     #${QTCASSANDRA_LIBRARIES}
@@ -66,12 +72,12 @@ target_link_libraries(firewall
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( firewall make_controlled_vars_headers )
+    add_dependencies( backup make_controlled_vars_headers )
 endif()
 
 install(
     TARGETS
-        firewall
+        backup
 
     LIBRARY DESTINATION
         ${PLUGIN_INSTALL_DIR}
@@ -83,7 +89,7 @@ install(
         ${HEADER_FILES}
 
     DESTINATION
-        include/snapmanager/plugins/firewall
+        include/snapmanager/plugins/backup
 )
 
 # vim: ts=4 sw=4 et

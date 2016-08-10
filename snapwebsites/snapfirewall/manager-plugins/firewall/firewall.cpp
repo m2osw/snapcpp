@@ -58,23 +58,23 @@ char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapfire
 
 
 
-void file_descriptor_deleter(int * fd)
-{
-    if(close(*fd) != 0)
-    {
-        int const e(errno);
-        SNAP_LOG_WARNING("closing file descriptor failed (errno: ")(e)(", ")(strerror(e))(")");
-    }
-}
+//void file_descriptor_deleter(int * fd)
+//{
+//    if(close(*fd) != 0)
+//    {
+//        int const e(errno);
+//        SNAP_LOG_WARNING("closing file descriptor failed (errno: ")(e)(", ")(strerror(e))(")");
+//    }
+//}
 
 
 } // no name namespace
 
 
 
-/** \brief Get a fixed cpu plugin name.
+/** \brief Get a fixed firewall plugin name.
  *
- * The cpu plugin makes use of different fixed names. This function
+ * The firewall plugin makes use of different fixed names. This function
  * ensures that you always get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.

@@ -11,6 +11,13 @@ then
     rm -f /var/log/snapwebsites/secure/snapfirewall.log*
 
     # TBD: reset the firewall to empty? It does not seem wise to me.
+
+    # if snapinit is running, we need to give it a kick
+    #
+    if systemctl is-active snapinit
+    then
+        systemctl restart snapinit
+    fi
 fi
 
 #DEBHELPER#

@@ -4,10 +4,19 @@
 # This is not recommended on large clusters, though (i.e. Cassandra should
 # properly do backups on its own with a good replication factor)
 #
+# Important note: we are in cron.daily which means we run as root:root
+#
+
+# one of the hosts running Cassandra
+#
+HOST=127.0.0.1
 
 # make sure the output folder exists
 #
-mkdir -f /var/lib/snapwebsites/cassandra-backups
+# TODO: should change the ownership? Right now this will all be root which
+#       should be just fine.
+#
+mkdir -p /var/backups/snapwebsites/cassandra-backups
 
 # one backup per day of the week
 #
@@ -15,5 +24,10 @@ DAY=`date +%w`
 
 # create the backup
 #
-snapbackup -d /var/lib/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
+snapbackup --host ${HOST} --dump-context /var/backups/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
+
+# make sure only root can read it (it includes all the secure data from the
+# database!)
+#
+chmod 600 /var/backups/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
 
