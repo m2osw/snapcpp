@@ -114,14 +114,17 @@ License:
 		you see this Apache2 webpage.</p>
 		<h2>Security (403 Forbidden&mdash;how to fix)</h2>
 			<h3>Snap Manager CGI</h3>
-				<p>For security reasons, we prevent access to snapmanager.cgi
-				from all by default. To allow yourself, edit the
+				<p>For security reasons, we prevent access to
+				snapmanager.cgi from all by default. To allow
+				yourself, edit the
 				<code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code>
-				file and put your IP address which the browser connects <i>from</i>
-				into the variable named <code>clients</code>. Do not put in the IP address
-				which the webserver runs on, unless that is also a desktop system with a browser
-				which will access the fronend machine.
-				For example:</p>
+				file and put your IP address which the browser
+				connects <i>from</i> into the variable named
+				<code>clients</code>. Do not put in the IP address
+				which the webserver runs on, unless that is also
+				a desktop system with a browser which will access
+				the frontend machine.</p>
+				<p>For example:</p>
 				<blockquote>
 					<pre>clients=192.168.0.3</pre>
 				</blockquote>
@@ -134,23 +137,36 @@ License:
 				<p>We, on purpose, do not support a mask because only a very
 				few computers should be used to manage your Snap! Websites
 				cluster.</p>
-				<p><b>NOTE</b> It is not recommended that you edit the <code>/etc/snapwebsites/snapmanager.conf</code> file.
-				Please only make changes in the <code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code> file. In fact,
-				this is recommended for any <i>Snap!</i> service in general.
+				<p><b>NOTE</b> It is not recommended that you edit the
+				<code>/etc/snapwebsites/snapmanager.conf</code> file.
+				Please only make changes in the
+				<code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code>
+				file. In fact, this is recommended for any
+				<i>Snap!</i> service in general (<i>.conf</i> files).
 			<h3>Snap Init</h3>
-				Make sure that you set the server_name variable in
-				<code>/etc/snapwebsites/snapwebsites.d/snapinit.conf</code>. For example:
+				<p>Make sure that you set the <code>server_name</code> variable in
+				<code>/etc/snapwebsites/snapwebsites.d/snapinit.conf</code> if you
+				want full control of the computer name. By default the hostname of the
+				server is used, but that hostname may not always be what you want
+				Snap! to use.</p>
+				<p>For example:</p>
 				<blockquote>
 					<pre>server_name=halk</pre>
 				</blockquote>
+				<p>This may be required if your host name is not compatible
+				with the Snap! environment. (includes characters other
+				than a-z, 0-9, and underscores, or starts with a digit.
+				Note that snapinit knows to change '-' characters into
+				'_', although that may generate other problems.)</p>
 			<h3>Snap Communicator</h3>
 				<p>The Snap Communicator wants to listen to a private
 				network IP address. By default we put 127.0.0.1 as
 				that IP address, although in most cases that's most
 				certainly wrong (i.e. if you have at least 2 computers
 				in your cluster, then it is wrong.)</p>
-				<p>You must edit the <code>/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf</code> file
-				and change the <code>my_address</code> variable to the
+				<p>You must edit the
+				<code>/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf</code>
+				file and change the <code>my_address</code> variable to the
 				correct IP adress.</p>
 				<blockquote>
 					<pre>my_address=192.168.10.11</pre>
@@ -159,33 +175,48 @@ License:
 				which is secure. This means if you need to create
 				a tunnelled network with a VPN, make sure to do
 				that first and then setup the secure IP address.</p>
-				<p><strong>Note:</strong> It will be possible to edit
-				that IP address with snapmanager.cgi (once implemented...)
-				but that will not be very practical unless you install
+				<p><strong>Note:</strong> It is possible to edit
+				that IP address with snapmanager.cgi
+				but that is not very practical unless you install
 				snapmanager.cgi on all your computers, which we do
-				not recommend unless you need to do so to install
-				OpenVPN.</p>
+				not recommend unless you want to do so to install
+				OpenVPN automatically.</p>
 			<h3>Restart Snapinit</h3>
-				Make sure you restart the <code>snapinit</code> service. Use the command:
+				<p>Make sure you restart the <code>snapinit</code>
+				service. Use the command:</p>
 				<blockquote>
-					# systemctl restart snapinit
+					<pre># systemctl restart snapinit</pre>
 				</blockquote>
+				<p>Assuming everything goes well, you should see
+				<code>snapinit</code>, <code>snapcommunicator</code>,
+				and <code>snapmanagerdaemon</code> running on that
+				computer. You can verify such using the <code>ps</code>
+				command like so:</p>
+				<blockquote>
+					<pre>ps -ef | grep snap</pre>
+				</blockquote>
+				<p><strong>Note:</strong> You are likely to see a
+				<code>snapd</code> daemon in the list. This is not
+				from the Snap! Websites environment and it can be
+				ignored. Also, if you are running Cassandra on that
+				computer, it will appear since the command line
+				includes a reference to <code>snappy</code>.</p>
 		<h2>Administer</h2>
-		<p>Now you should be ready to administer your
-		<a href="http://snapwebsites.org/">Snap! Websites</a>
-		cluster.</p>
-		<p>Note that the <code>snapmanagercgi</code> package
-		is only required on one computer unless you need to use
-		OpenVPN, because until OpenVPN is properly installed, you
-		do not want to have <code>snapcommunicator</code> communicate
-		between various computers. You can install OpenVPN manually
-		or with <code>snapmanager.cgi</code> if you install it on
-		each one of your servers.</p>
-		<p>To access the actual online snapmanager, go to the
-		following address:</p>
-		<blockquote>
-			<pre><a href="/cgi-bin/snapmanager.cgi">http://&lt;your domain name or IP address&gt;/cgi-bin/snapmanager.cgi</a></pre>
-		</blockquote>
+			<p>Now you should be ready to administer your
+			<a href="http://snapwebsites.org/">Snap! Websites</a>
+			cluster.</p>
+			<p>Note that the <code>snapmanagercgi</code> package
+			is only required on one computer unless you need to use
+			OpenVPN, because until OpenVPN is properly installed, you
+			do not want to have <code>snapcommunicator</code> communicate
+			between various computers. You can install OpenVPN manually
+			or with <code>snapmanager.cgi</code> if you install it on
+			each one of your servers.</p>
+			<p>To access the actual online snapmanager, go to the
+			following address:</p>
+			<blockquote>
+				<pre><a href="/cgi-bin/snapmanager.cgi">http://&lt;your domain name or IP address&gt;/cgi-bin/snapmanager.cgi</a></pre>
+			</blockquote>
 	</div>
 	<div class="footer">Copyright
 	<a href="http://www.m2osw.com/">Made to Order Software Corporation</a>

@@ -32,7 +32,7 @@ then
     #
     SNAPLOGDIR=/var/log/snapwebsites
     mkdir -p ${SNAPLOGDIR}
-    chown snapwebsites.www-data ${SNAPLOGDIR}
+    chown snapwebsites:www-data ${SNAPLOGDIR}
     chmod 775 ${SNAPLOGDIR}
 
     # the secure log directory must be writable by www-data for snapcgi.log
@@ -40,7 +40,7 @@ then
     #
     SECURELOGDIR=/var/log/snapwebsites/secure
     mkdir -p ${SECURELOGDIR}
-    chown snapwebsites.www-data ${SECURELOGDIR}
+    chown snapwebsites:www-data ${SECURELOGDIR}
     chmod 770 ${SECURELOGDIR}
 
     # all.log will be own by root:root if we do not create it ahead of
@@ -50,8 +50,8 @@ then
     #
     ALLLOG=${SNAPLOGDIR}/all.log
     touch ${ALLLOG}
-    chown snapwebsites.snapwebsites ${ALLLOG}
-    chmod 644 ${ALLLOG}
+    chown snapwebsites:snapwebsites ${ALLLOG}
+    chmod 640 ${ALLLOG}
 
     # the cache directory is used by various daemons to save files that
     # can be lost over time, but allow for faster access when present;
@@ -60,13 +60,13 @@ then
     #
     CACHEDIR=/var/cache/snapwebsites
     mkdir -p ${CACHEDIR}
-    chown snapwebsites.snapwebsites ${CACHEDIR}
+    chown snapwebsites:snapwebsites ${CACHEDIR}
     chmod 770 ${CACHEDIR}
 
     # we need a place to write data not directly stored in the cassandra db
     #
     mkdir -p /var/lib/snapwebsites
-    chown snapwebsites.snapwebsites /var/lib/snapwebsites
+    chown snapwebsites:snapwebsites /var/lib/snapwebsites
 
     # make the snap-httpoxy.conf file active if apache2 is installed
     #

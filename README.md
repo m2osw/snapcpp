@@ -28,6 +28,13 @@ the Ubuntu packages publicly. We have a launchpad.net environment, but
 unfortunately, it is too complicated to use when you manage a large
 project that includes many sub-projects.
 
+To compile everything you have one dependency on the C++ Cassandra Driver.
+This can be obtained from the following PPA:
+
+    sudo add-apt-repository ppa:tcpcloud/extra
+    sudo apt-get update
+    sudo apt-get install cassandra-cpp-driver-dev
+
 To get started quickly, create a directory, clone the source, then run
 the build-snap script. (You may want to check it out once first to make
 sure it is satisfactory to you.) By default it build snaps in Debug mode.

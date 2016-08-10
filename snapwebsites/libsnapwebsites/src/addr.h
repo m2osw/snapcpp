@@ -89,6 +89,7 @@ public:
     void                            set_from_socket(int s);
     void                            set_ipv4(struct sockaddr_in const & in);
     void                            set_ipv6(struct sockaddr_in6 const & in6);
+    void                            set_port(int port);
     void                            set_protocol(char const * protocol);
 
     bool                            is_ipv4() const;
@@ -118,6 +119,43 @@ private:
 };
 
 
+} // snap_addr namespace
+
+
+inline bool operator == (struct sockaddr_in6 const & a, struct sockaddr_in6 const & b)
+{
+    return memcmp(&a, &b, sizeof(struct sockaddr_in6)) == 0;
 }
-// snap_addr namespace
+
+
+inline bool operator != (struct sockaddr_in6 const & a, struct sockaddr_in6 const & b)
+{
+    return memcmp(&a, &b, sizeof(struct sockaddr_in6)) != 0;
+}
+
+
+inline bool operator < (struct sockaddr_in6 const & a, struct sockaddr_in6 const & b)
+{
+    return memcmp(&a, &b, sizeof(struct sockaddr_in6)) < 0;
+}
+
+
+inline bool operator == (in6_addr const & a, in6_addr const & b)
+{
+    return memcmp(&a, &b, sizeof(in6_addr)) == 0;
+}
+
+
+inline bool operator != (in6_addr const & a, in6_addr const & b)
+{
+    return memcmp(&a, &b, sizeof(in6_addr)) != 0;
+}
+
+
+inline bool operator < (in6_addr const & a, in6_addr const & b)
+{
+    return memcmp(&a, &b, sizeof(in6_addr)) < 0;
+}
+
+
 // vim: ts=4 sw=4 et

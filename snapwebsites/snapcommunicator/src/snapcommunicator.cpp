@@ -22,7 +22,7 @@
 // our lib
 //
 #include "addr.h"
-#include "file_content.h"
+#include "loadavg.h"
 #include "log.h"
 #include "mkdir_p.h"
 #include "not_used.h"
@@ -40,6 +40,7 @@
 // C++ lib
 //
 #include <atomic>
+#include <fstream>
 #include <thread>
 
 
@@ -360,6 +361,9 @@ public:
 private:
     void                        refresh_heard_of();
     void                        shutdown(bool full);
+    void                        listen_loadavg(snap::snap_communicator_message const & message);
+    void                        save_loadavg(snap::snap_communicator_message const & message);
+    void                        register_for_loadavg(QString const & ip);
 
     snap::server::pointer_t                             f_server;
 
@@ -371,7 +375,7 @@ private:
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_ping;             // UDP/IP
-    snap::snap_communicator::snap_connection::pointer_t f_timer;            // a 1 second timer to calculate load (used to load balance)
+    snap::snap_communicator::snap_connection::pointer_t f_loadavg_timer;    // a 1 second timer to calculate load (used to load balance)
     snap_addr::addr                                     f_my_address;
     QString                                             f_local_services;
     sorted_list_of_strings_t                            f_local_services_list;
@@ -379,6 +383,7 @@ private:
     sorted_list_of_strings_t                            f_services_heard_of_list;
     QString                                             f_explicit_neighbors;
     sorted_list_of_strings_t                            f_all_neighbors;
+    sorted_list_of_strings_t                            f_registered_neighbors_for_loadavg;
     remote_communicator_connections::pointer_t          f_remote_snapcommunicators;
     size_t                                              f_max_connections = SNAP_COMMUNICATOR_MAX_CONNECTIONS;
     bool                                                f_shutdown = false;
@@ -506,12 +511,40 @@ public:
 
     /** \brief Get the name of the server.
      *
-     * \param[in] server_name  The name of the server that is on the other
-     *                         side of this connection.
+     * \return The name of the server that is on the other
+     *         side of this connection.
      */
     QString get_server_name() const
     {
         return f_server_name;
+    }
+
+
+    /** \brief Save the address of that connection.
+     *
+     * This is only used for remote connections on either the CONNECT
+     * or ACCEPT message.
+     *
+     * \param[in] my_address  The address of the server that is on the
+     *                        other side of this connection.
+     */
+    void set_my_address(QString const & my_address)
+    {
+        f_my_address = my_address;
+    }
+
+
+    /** \brief Get the address of that connection.
+     *
+     * This function returns a valid address only after the CONNECT
+     * or ACCEPT message were received for this connection.
+     *
+     * \return The address of the server that is on the
+     *         other side of this connection.
+     */
+    QString get_my_address() const
+    {
+        return f_my_address;
     }
 
 
@@ -735,6 +768,36 @@ public:
     }
 
 
+    /** \brief Set whether this connection wants to receive LOADAVG messages.
+     *
+     * Whenever a frontend wants to know which backend to use for its
+     * current client request, it can check a set of IP addresses for
+     * the least loaded computer. Then it can use that IP address to
+     * process the request.
+     *
+     * \param[in] wants_loadavg  Whether this connection wants
+     *    (REGISTERFORLOADAVG) or does not want (UNREGISTERFORLOADAVG)
+     *    to receive LOADAVG messages from this snapcommunicator.
+     */
+    void set_wants_loadavg(bool wants_loadavg)
+    {
+        f_wants_loadavg = wants_loadavg;
+    }
+
+
+    /** \brief Check whether this connection wants LOADAVG messages.
+     *
+     * This function returns true if the connection last sent us a
+     * REGISTERFORLOADAVG message.
+     *
+     * \return true if the LOADAVG should be sent to this connection.
+     */
+    bool wants_loadavg() const
+    {
+        return f_wants_loadavg;
+    }
+
+
 protected:
     snap_communicator_server::pointer_t     f_communicator_server;
 
@@ -744,9 +807,11 @@ private:
     int64_t                                 f_ended_on = -1;
     connection_type_t                       f_type = connection_type_t::CONNECTION_TYPE_DOWN;
     QString                                 f_server_name;
+    QString                                 f_my_address;
     sorted_list_of_strings_t                f_services;
     sorted_list_of_strings_t                f_services_heard_of;
     bool                                    f_remote_connection = false;
+    bool                                    f_wants_loadavg = false;
 };
 
 
@@ -1620,6 +1685,7 @@ public:
         : snap_timer(1000000LL)  // 1 second in microseconds
         , f_communicator_server(cs)
     {
+        set_enable(false);
     }
 
     // snap::snap_communicator::snap_timer implementation
@@ -1671,7 +1737,7 @@ void snap_communicator_server::init()
     // keep a copy of the server name handy
     f_server_name = f_server->get_parameter("server_name");
 
-    f_number_of_processors = std::thread::hardware_concurrency();
+    f_number_of_processors = std::max(1U, std::thread::hardware_concurrency());
 
     f_debug_lock = !f_server->get_parameter("debug_lock_messages").isEmpty();
 
@@ -1774,9 +1840,9 @@ void snap_communicator_server::init()
     }
 
     {
-        f_timer.reset(new timer_impl(shared_from_this()));
-        f_timer->set_name("snap communicator load balancer timer");
-        f_communicator->add_connection(f_timer);
+        f_loadavg_timer.reset(new timer_impl(shared_from_this()));
+        f_loadavg_timer->set_name("snap communicator load balancer timer");
+        f_communicator->add_connection(f_loadavg_timer);
     }
 
     // transform the my_address to a snap_addr::addr object
@@ -1987,7 +2053,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                 {
                     // the type is mandatory in an ACCEPT message
                     //
-                    if(!message.has_parameter("server_name"))
+                    if(!message.has_parameter("server_name")
+                    || !message.has_parameter("my_address"))
                     {
                         SNAP_LOG_ERROR("ACCEPT was received without a \"server_name\" parameter, which is mandatory.");
                         return;
@@ -2000,6 +2067,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // data from that remote computer
                     //
                     base->connection_started();
+                    QString const his_address(message.get_parameter("my_address"));
+                    base->set_my_address(his_address);
 
                     if(message.has_parameter("services"))
                     {
@@ -2038,6 +2107,13 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         //
                         throw snap::snap_exception(QString("message \"%1\" sent on a \"weird\" connection.").arg(command));
                     }
+
+                    // if a local service was interested in this specific
+                    // computer, then we have to start receiving LOADAVG
+                    // messages from it
+                    //
+                    register_for_loadavg(his_address);
+
                     return;
                 }
             }
@@ -2252,6 +2328,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 //
                                 reply.set_command("ACCEPT");
                                 reply.add_parameter("server_name", f_server_name);
+                                reply.add_parameter("my_address", QString::fromUtf8(f_my_address.get_ipv4or6_string(true).c_str()));
 
                                 // services
                                 if(!f_local_services.isEmpty())
@@ -2266,6 +2343,13 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 }
 
                                 QString const his_address(message.get_parameter("my_address"));
+                                base->set_my_address(his_address);
+
+                                // if a local service was interested in this specific
+                                // computer, then we have to start receiving LOADAVG
+                                // messages from it
+                                //
+                                register_for_loadavg(his_address);
 
                                 // he is a neighbor too, make sure to add it
                                 // in our list of neighbors (useful on a restart
@@ -2589,7 +2673,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     reply.set_command("COMMANDS");
 
                     // list of commands understood by snapcommunicator
-                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LOG,PUBLIC_IP,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER");
+                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LISTENLOADAVG,LOADAVG,LOG,PUBLIC_IP,QUITTING,REFUSE,REGISTER,REGISTERFORLOADAVG,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER,UNREGISTERFORLOADAVG");
 
                     //verify_command(base, reply); -- this verification does not work with remote snap communicator connections
                     if(remote_communicator)
@@ -2612,7 +2696,17 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             break;
 
         case 'L':
-            if(command == "LOG")
+            if(command == "LOADAVG")
+            {
+                save_loadavg(message);
+                return;
+            }
+            else if(command == "LISTENLOADAVG")
+            {
+                listen_loadavg(message);
+                return;
+            }
+            else if(command == "LOG")
             {
                 SNAP_LOG_INFO("Logging reconfiguration.");
                 snap::logging::reconfigure();
@@ -2822,6 +2916,21 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     return;
                 }
             }
+            else if(command == "REGISTERFORLOADAVG")
+            {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("REGISTERFORLOADAVG is only accepted over a TCP connection.");
+                    break;
+                }
+
+                if(base)
+                {
+                    base->set_wants_loadavg(true);
+                    f_loadavg_timer->set_enable(true);
+                    return;
+                }
+            }
             break;
 
         case 'S':
@@ -2962,6 +3071,35 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     {
                         // "false" like a STOP
                         shutdown(false);
+                    }
+                    return;
+                }
+            }
+            else if(command == "UNREGISTERFORLOADAVG")
+            {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("UNREGISTERFORLOADAVG is only accepted over a TCP connection.");
+                    break;
+                }
+
+                if(base)
+                {
+                    base->set_wants_loadavg(false);
+                    snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
+                    if(all_connections.end() == std::find_if(
+                            all_connections.begin(),
+                            all_connections.end(),
+                            [](auto const & c)
+                            {
+                                base_connection::pointer_t b(std::dynamic_pointer_cast<base_connection>(c));
+                                return b->wants_loadavg();
+                            }))
+                    {
+                        // no more connection requiring LOADAVG messages
+                        // so stop the timer
+                        //
+                        f_loadavg_timer->set_enable(false);
                     }
                     return;
                 }
@@ -3561,35 +3699,195 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
 }
 
 
+/** \brief Request LOADAVG messages from a snapcommunicator.
+ *
+ * This function gets called whenever a local service sends us a
+ * request to listen to the LOADAVG messages of a specific
+ * snapcommunicator.
+ *
+ * \param[in] message  The LISTENLOADAVG message.
+ */
+void snap_communicator_server::listen_loadavg(snap::snap_communicator_message const & message)
+{
+    QString const ips(message.get_parameter("ips"));
+
+    snap::snap_string_list ip_list(ips.split(","));
+
+    // we have to save those as IP addresses since the remote
+    // snapcommunicators come and go and we have to make sure
+    // that all get our REGISERFORLOADAVG message when they
+    // come back after a broken link
+    //
+    for(auto const & ip : ip_list)
+    {
+        if(!f_registered_neighbors_for_loadavg.contains(ip))
+        {
+            // add this one, it was not there yet
+            //
+            f_registered_neighbors_for_loadavg[ip] = true;
+
+            register_for_loadavg(ip);
+        }
+    }
+}
+
+
+void snap_communicator_server::register_for_loadavg(QString const & ip)
+{
+    snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
+    auto const & it(std::find_if(
+            all_connections.begin(),
+            all_connections.end(),
+            [ip](auto const & connection)
+            {
+                remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(connection));
+                if(remote_communicator)
+                {
+                    return remote_communicator->get_my_address() == ip;
+                }
+                else
+                {
+                    service_connection::pointer_t service_conn(std::dynamic_pointer_cast<service_connection>(connection));
+                    if(service_conn)
+                    {
+                        return service_conn->get_my_address() == ip;
+                    }
+                }
+
+                return false;
+            }));
+
+    if(it != all_connections.end())
+    {
+        // there is such a connection, send it a request for
+        // LOADAVG message
+        //
+        snap::snap_communicator_message register_message;
+        register_message.set_command("REGISTERFORLOADAVG");
+
+        remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(*it));
+        if(remote_communicator)
+        {
+            remote_communicator->send_message(register_message);
+        }
+        else
+        {
+            service_connection::pointer_t service_conn(std::dynamic_pointer_cast<service_connection>(*it));
+            if(service_conn)
+            {
+                service_conn->send_message(register_message);
+            }
+        }
+    }
+}
+
+
+void snap_communicator_server::save_loadavg(snap::snap_communicator_message const & message)
+{
+    QString const avg_str(message.get_parameter("avg"));
+    QString const my_address(message.get_parameter("my_address"));
+    QString const timestamp_str(message.get_parameter("timestamp"));
+
+    snap::loadavg_item item;
+
+    // Note: we do not use the port so whatever number here is fine
+    snap_addr::addr a(snap_addr::addr(my_address.toUtf8().data(), "127.0.0.1", 4040, "tcp"));
+    a.set_port(4040); // actually force the port so in effect it is ignored
+    a.get_ipv6(item.f_address);
+
+    bool ok(false);
+    item.f_avg = avg_str.toFloat(&ok);
+    if(!ok
+    || item.f_avg < 0.0)
+    {
+        return;
+    }
+
+    item.f_timestamp = timestamp_str.toLongLong(&ok, 10);
+    if(!ok
+    || item.f_timestamp < SNAP_UNIX_TIMESTAMP(2016, 1, 1, 0, 0, 0))
+    {
+        return;
+    }
+
+    snap::loadavg_file file;
+    file.load();
+    file.add(item);
+    file.save();
+}
+
+
 void snap_communicator_server::process_load_balancing()
 {
-    snap::file_content in("/proc/loadavg");
-    if(in.read_all())
+    std::ifstream in;
+    in.open("/proc/loadavg", std::ios::in | std::ios::binary);
+    if(in.is_open())
     {
-        std::string const & load(in.get_content());
-
-        std::vector<std::string> values;
-        snap::NOTUSED(snap::tokenize_string(values, load, " "));
-        if(values.size() >= 3)
+        std::string avg_str;
+        for(;;)
         {
-            // we really only need the first number, we would not know what
-            // to do with the following ones at this time...
-            // (although that could help know whether the load average is
-            // going up or down, but it's not that easy, really.)
-            //
-            // we divide by the number of processors because each computer
-            // could have a different number of processors and a load
-            // average of 1 on a computer with 16 processors really
-            // represents 1/16th of the machine capacity.
-            //
-            float const avg(QString(values[0].c_str()).toFloat() / f_number_of_processors);
-
-            snap::snap_communicator_message load_avg;
-            load_avg.set_command("LOADAVG");
-            load_avg.add_parameter("avg", QString("%1").arg(avg));
-
-            //remote_communicator->send_message(load_avg);
+            char c;
+            in.read(&c, 1);
+            if(in.fail())
+            {
+                SNAP_LOG_ERROR("error reading the /proc/loadavg data.");
+                return;
+            }
+            if(std::isspace(c))
+            {
+                // we only read the first number (1 min. load avg.)
+                break;
+            }
+            avg_str += c;
         }
+
+        // we really only need the first number, we would not know what
+        // to do with the following ones at this time...
+        // (although that could help know whether the load average is
+        // going up or down, but it's not that easy, really.)
+        //
+        // we divide by the number of processors because each computer
+        // could have a different number of processors and a load
+        // average of 1 on a computer with 16 processors really
+        // represents 1/16th of the machine capacity.
+        //
+        float const avg(std::stof(avg_str) / f_number_of_processors);
+
+        snap::snap_communicator_message load_avg;
+        load_avg.set_command("LOADAVG");
+        load_avg.add_parameter("avg", QString("%1").arg(avg));
+        load_avg.add_parameter("my_address", QString::fromUtf8(f_my_address.get_ipv4or6_string(true).c_str()));
+        load_avg.add_parameter("timestamp", QString("%1").arg(time(nullptr)));
+
+        snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
+        std::for_each(
+                all_connections.begin(),
+                all_connections.end(),
+                [load_avg](auto const & connection)
+                {
+                    base_connection::pointer_t base(std::dynamic_pointer_cast<base_connection>(connection));
+                    if(base
+                    && base->wants_loadavg())
+                    {
+                        remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(connection));
+                        if(remote_communicator)
+                        {
+                            remote_communicator->send_message(load_avg);
+                        }
+                        else
+                        {
+                            service_connection::pointer_t service_conn(std::dynamic_pointer_cast<service_connection>(connection));
+                            if(service_conn)
+                            {
+                                service_conn->send_message(load_avg);
+                            }
+                        }
+                    }
+                });
+    }
+    else
+    {
+        SNAP_LOG_ERROR("error opening file \"/proc/loadavg\".");
     }
 }
 
@@ -3951,7 +4249,7 @@ void snap_communicator_server::shutdown(bool full)
     f_communicator->remove_connection(f_local_listener);    // TCP/IP
     f_communicator->remove_connection(f_listener);          // TCP/IP
     f_communicator->remove_connection(f_ping);              // UDP/IP
-    f_communicator->remove_connection(f_timer);             // load balancer timer
+    f_communicator->remove_connection(f_loadavg_timer);     // load balancer timer
 }
 
 
