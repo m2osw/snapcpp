@@ -1,9 +1,0 @@
-Document: iplock
-Title: iplock tool
-Author: Alexis Wilke
-Abstract: This is the reference manual for the iplock tool.
-Section: net
-
-Format: HTML
-Index: /usr/share/doc/iplock/html/index.html
-Files: /usr/share/doc/iplock/html/*

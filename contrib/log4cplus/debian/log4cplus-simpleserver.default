@@ -1,0 +1,13 @@
+# Defaults for log4cplus initscript
+# sourced by /etc/init.d/log4cplus
+# installed at /etc/default/log4cplus by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Set to "yes" to enable the daemon, "no" to disable it
+LOG4CPLUS_ENABLED="yes"
+
+# Additional options passed to log4cplus.
+INIT_OPTS="9998 /etc/log4cplus/simpleserver.properties"

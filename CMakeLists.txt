@@ -52,58 +52,16 @@ find_package( SnapBuild REQUIRED )
 
 
 ################################################################################
-# Snap libraries
 #
 ConfigureMakeProject( PROJECT_NAME cmake )
-
-ConfigureMakeProject( PROJECT_NAME zipios2
-    CONFIG_ARGS
-        -DBUILD_ZIPIOS_TESTS:BOOL=OFF
-)
-
-ConfigureMakeProject( PROJECT_NAME log4cplus
-    CONFIG_ARGS
-        -DCMAKE_CXX_FLAGS=-std=c++14
-        -DLOG4CPLUS_BUILD_TESTING=OFF
-        -DLOG4CPLUS_SINGLE_THREADED=OFF
-        -DLOG4CPLUS_QT4=OFF
-        -DLOG4CPLUS_QT5=OFF
-)
-
-ConfigureMakeProject( PROJECT_NAME iplock
-)
-
-ConfigureMakeProject( PROJECT_NAME controlled_vars
-)
-
-ConfigureMakeProject( PROJECT_NAME libtld
-)
-
-ConfigureMakeProject( PROJECT_NAME advgetopt
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-)
-
-ConfigureMakeProject( PROJECT_NAME as2js
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-)
-
-ConfigureMakeProject( PROJECT_NAME csspp
-)
-
-ConfigureMakeProject( PROJECT_NAME libQtCassandra
-        CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-)
-
-ConfigureMakeProject( PROJECT_NAME libQtSerialization
-)
-
+#
 # Include snapwebsites projects next
+#
+add_subdirectory( contrib      )
 add_subdirectory( snapwebsites )
 
 
+################################################################################
 get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
 get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
 get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
@@ -114,7 +72,6 @@ add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
     )
 add_custom_target( clean-all
-    #COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
     )
 add_custom_target( debuild

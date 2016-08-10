@@ -1,0 +1,92 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          logginserver
+# Required-Start:    $network $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Logging server compatible with the log4cplus library.
+# Description:       log4cplus is a simple to use C++ logging API providing
+#                    thread-safe, flexible, and arbitrarily granular control
+#                    over log management and configuration. It is modelled
+#                    after the Java log4j API. The logging server offers
+#                    support for the socket appender.
+### END INIT INFO
+
+# Author: Alexis Wilke <alexis@m2osw.com>
+
+# PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC=log4cplus-simpleserver
+NAME=simpleserver
+USER=log4cplus
+LOGGINGSERVER=/usr/bin/loggingserver
+PIDFILE="/var/run/$NAME.pid"
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+if [ "${LOG4CPLUS_ENABLED}" != "yes" ]
+then
+        echo "logginserver service disabled. Modify your config files in /etc/log4cplus, and then enable the service in /etc/default/log4cplus"
+        exit 0
+fi
+
+INIT_ARGS="${INIT_OPTS}"    					 # INIT_OPTS  comes from /etc/default/log4cplus
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+start_server() {
+	start-stop-daemon --start --pidfile $PIDFILE --make-pidfile \
+		--exec $LOGGINGSERVER --user $USER --chuid $USER:$USER \
+		--oknodo --background \
+		-- $INIT_ARGS
+}
+
+stop_server() {
+	# The start-stop-daemon makes use of a SIGTERM which the simpleserver
+	# does not support; at this point, send the stop command instead
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	$LOGGINGSERVER stop
+	case "$?" in
+		0|1) log_end_msg 0 ;;
+		2)   log_end_msg 1 ;;
+	esac
+}
+
+case "$1" in
+  start)
+	start_server
+    ;;
+  stop)
+	stop_server
+	;;
+  status)
+	start-stop-daemon --status --pidfile $PIDFILE
+    ;;
+  restart|force-reload)
+	#
+	# If the "reload" option is implemented then remove the
+	# 'force-reload' alias
+	#
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	start_server
+	case "$?" in
+		0|1) log_end_msg 0 ;;
+		2)   log_end_msg 1 ;;
+	esac
+	;;
+  *)
+	echo "Usage: /etc/init.d/snapinit {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+exit 0
+
+# vim: ts=4 sw=4 noexpandtab syntax=sh nocindent
