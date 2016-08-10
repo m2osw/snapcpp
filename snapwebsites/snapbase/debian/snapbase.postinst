@@ -5,11 +5,13 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+
 if [ "$1" = "configure" ]
 then
     # add snapwebsites user and group if not there already
     #
-    if ! getent group snapwebsites >/dev/null; then
+    if ! getent group snapwebsites >/dev/null
+    then
         addgroup --system snapwebsites
     fi
     #
