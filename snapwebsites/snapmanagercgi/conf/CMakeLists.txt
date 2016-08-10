@@ -36,6 +36,7 @@ snap_validate_xml( snapmanagercgi-parser.xsl simplified-xslt20.dtd )
 snap_validate_xml( bundle-cassandra.xml bundles.xsd )
 snap_validate_xml( bundle-logserver.xml bundles.xsd )
 snap_validate_xml( bundle-rkhunter.xml bundles.xsd )
+snap_validate_xml( bundle-tools.xml bundles.xsd )
 snap_validate_xml( bundle-tripwire.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
@@ -95,6 +96,7 @@ install(
         bundle-cassandra.xml
         bundle-logserver.xml
         bundle-rkhunter.xml
+        bundle-tools.xml
         bundle-tripwire.xml
         bundle-vpn_client.xml
         bundle-vpn_server.xml
