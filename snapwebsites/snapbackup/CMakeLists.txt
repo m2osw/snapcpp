@@ -1,6 +1,6 @@
 #
 # File:
-#      CMakeLists.txt
+#      snapwebsites/snapbackup/CMakeLists.txt
 #
 # Description:
 #      Definitions to create the build environment with cmake
@@ -78,8 +78,9 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-add_subdirectory( conf )
-add_subdirectory( src  )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
 
 snap_build_xml_targets()
 

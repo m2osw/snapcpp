@@ -200,6 +200,7 @@ a server.
       <xs:element ref="u"/>
       <xs:element ref="p"/>
       <xs:element ref="div"/>
+      <xs:element ref="code"/>
     </xs:choice>
   </xs:complexType>
 
@@ -223,6 +224,7 @@ a server.
   <xs:element name="u" type="html"/>
   <xs:element name="p" type="html"/>
   <xs:element name="div" type="html"/>
+  <xs:element name="code" type="html"/>
 
   <xs:annotation>
     <xs:documentation>

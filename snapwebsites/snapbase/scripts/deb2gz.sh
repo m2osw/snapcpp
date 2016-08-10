@@ -30,7 +30,7 @@ done
 if test -x /home/alexis/m2osw/unigw/BUILD/wpkg/tools/deb2graph
 then
 	# remove the -doc files, not really useful here
-	rm /tmp/gzdebs/*-doc*
+	rm -f /tmp/gzdebs/*-doc*
 
 	# output will be in current directory as deb2graph.dot and deb2graph.svg...
 	/home/alexis/m2osw/unigw/BUILD/wpkg/tools/deb2graph /tmp/gzdebs/*.deb
