@@ -39,10 +39,19 @@ To get started quickly, create a directory, clone the source, then run
 the build-snap script. (You may want to check it out once first to make
 sure it is satisfactory to you.) By default it build snaps in Debug mode.
 
-    apt-get install git cmake
+The command `snap-ubuntu-packages` installs many packages that the build
+requires. This is done automatically in the build system using the control
+file information. For a developer, that's not automatic. So the easiest
+is to run that command. Although we try to keep it up to date, if something
+is missing, cmake should tell you. Worst case scenario, the compiler stops
+with an error. We recommend the --optional packages so you get full
+documentation and some extras for tests.
+
+    apt-get install git
     mkdir snapwebsites
     cd snapwebsites
     git clone https://github.com/m2osw/snapcpp.git snapcpp
+    snapcpp/bin/snap-ubuntu-packages --optional
     snapcpp/bin/snap-build
 
 After a while, you'll have all the built objects under a BUILD directory
@@ -62,6 +71,24 @@ The build type can either be Debug or Release.
         -DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
         -DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
         ..
+
+
+## Setting up a development environment
+
+TODO: need to complete this one...
+
+Once you compiled everything, you will have an environment that can be
+used to run Snap! Only, it won't work as is. You first have to setup a
+certain number of parts: /etc/snapwebsites, /var/lib/snapwebistes,
+/var/log/snapwebsites, /var/cache/snapwebsites, and make sure
+snapmanagerdaemon starts as root.
+
+Although these things do get installed automatically when you install
+the Snap! packages, doing so with the packages will install these files
+as `snapwebsites:snapwebsites` (user/group) and that is not practical
+when trying to debug Snap!, since you'll want to quickly edit these
+files.
+
 
 ## Creating packages
 
