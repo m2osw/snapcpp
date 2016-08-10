@@ -28,20 +28,20 @@ then
     SNAPLOGDIR=/var/log/snapwebsites
     SNAPMANAGERCGI_LOG=${SNAPLOGDIR}/snapmanagercgi.log
     touch ${SNAPMANAGERCGI_LOG}
-    chown www-data.www-data ${SNAPMANAGERCGI_LOG}
-    chmod u+rw ${SNAPMANAGERCGI_LOG}
+    chown www-data:www-data ${SNAPMANAGERCGI_LOG}
+    chmod 640 ${SNAPMANAGERCGI_LOG}
     
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
     SNAPSECUREMANAGERCGI_LOG=${SNAPSECURELOGDIR}/snapmanagercgi.log
     touch ${SNAPSECUREMANAGERCGI_LOG}
-    chown www-data.www-data ${SNAPSECUREMANAGERCGI_LOG}
-    chmod u+rw ${SNAPSECUREMANAGERCGI_LOG}
+    chown www-data:www-data ${SNAPSECUREMANAGERCGI_LOG}
+    chmod 640 ${SNAPSECUREMANAGERCGI_LOG}
 
     # create the directory to be used to save the status files
     #
     mkdir -p /var/lib/snapwebsites/cluster-status
     chmod 775 /var/lib/snapwebsites/cluster-status
-    chown snapwebsites.www-data /var/lib/snapwebsites/cluster-status
+    chown snapwebsites:www-data /var/lib/snapwebsites/cluster-status
 
     # The snap-httpoxy is part of snapbase, but if apache2 was not yet
     # installed when snapbase got installed, then this command did not

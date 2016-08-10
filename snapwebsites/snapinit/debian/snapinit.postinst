@@ -1,0 +1,26 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "configure" ]
+then
+    # Create the snapmanagercgi.log file because the www-data user may have
+    # difficulties with it otherwise
+    #
+    SNAPLOGDIR=/var/log/snapwebsites
+    SNAPINIT_LOG=${SNAPLOGDIR}/snapinit.log
+    touch ${SNAPINIT_LOG}
+    chown snapwebsites:snapwebsites ${SNAPINIT_LOG}
+    chmod 640 ${SNAPINIT_LOG}
+
+    SNAPSECURELOGDIR=/var/log/snapwebsites/secure
+    SNAPSECUREINIT_LOG=${SNAPSECURELOGDIR}/snapinit.log
+    touch ${SNAPSECUREINIT_LOG}
+    chown snapwebsites:snapwebsites ${SNAPSECUREINIT_LOG}
+    chmod 640 ${SNAPSECUREINIT_LOG}
+fi
+
+# vim: ts=4 sw=4 et nocindent

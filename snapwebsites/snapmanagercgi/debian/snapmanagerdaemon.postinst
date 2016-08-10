@@ -11,13 +11,13 @@ then
     #
     mkdir -p /var/lib/snapwebsites/cluster-status
     chmod 775 /var/lib/snapwebsites/cluster-status
-    chown snapwebsites.www-data /var/lib/snapwebsites/cluster-status
+    chown snapwebsites:www-data /var/lib/snapwebsites/cluster-status
 
     # create the directory to be used to save the bundle files
     # downloaded by snapmanagerdaemon
     #
     mkdir -p /var/lib/snapwebsites/bundles
-    chown snapwebsites.snapwebsites /var/lib/snapwebsites/bundles
+    chown snapwebsites:snapwebsites /var/lib/snapwebsites/bundles
 fi
 
 # vim: ts=4 sw=4 et nocindent
