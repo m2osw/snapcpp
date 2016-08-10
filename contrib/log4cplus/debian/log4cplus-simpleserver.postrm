@@ -1,0 +1,19 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "purge" ]
+then
+    # delete the home directory and logs
+    rm -rf /var/lib/log4cplus /var/log/log4cplus
+    # delete log4cplus daemon user, if it exists
+    if getent passwd log4cplus > /dev/null ; then
+        echo "Deleting log4cplus user"
+        deluser --quiet log4cplus > /dev/null || true
+    fi
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 et nocindent
