@@ -577,7 +577,7 @@ bool manager::installer(QString const & bundle_name, std::string const & command
                             }
                         }
                     }
-                    vars += "\" "; // always add a space at the end
+                    vars += "\"\n"; // always add a new line at the end
                 });
 
     // there may be some pre-installation instructions
