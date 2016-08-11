@@ -1,3 +1,9 @@
+snapbackend (1.0.0.92~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 11 Aug 2016 09:07:08 -0700
+
 snapbackend (1.0.0.91~xenial) xenial; urgency=high
 
   * Nightly build.
