@@ -1,3 +1,9 @@
+snapcommunicator (1.0.1.9~xenial) xenial; urgency=high
+
+  * SEGFAULT fix by Alexis.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 10 Aug 2016 17:48:40 -0700
+
 snapcommunicator (1.0.1.8~xenial) xenial; urgency=high
 
   * Nightly build.
