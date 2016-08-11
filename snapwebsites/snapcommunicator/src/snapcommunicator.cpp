@@ -2241,7 +2241,12 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 {
                                     return false;
                                 }
-                                return remote_server_name == std::dynamic_pointer_cast<base_connection>(it)->get_server_name();
+                                base_connection::pointer_t b(std::dynamic_pointer_cast<base_connection>(it));
+                                if(!b)
+                                {
+                                    return false;
+                                }
+                                return remote_server_name == b->get_server_name();
                             }));
 
                     bool refuse(name_match != all_connections.end());
