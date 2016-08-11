@@ -1,8 +1,11 @@
-snapmanagercgi (1.0.4.1~xenial) xenial; urgency=high
+snapmanagercgi (1.0.5~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the snapmanagercgi so it sends the bundle variables
+    name and value instead of just the name of the variable.
+  * SNAP-110: Also applied a fix in the event a variable entry is just a
+    name so it works as expected in the installer.
 
- -- Build Server <build@m2osw.com>  Thu, 11 Aug 2016 09:07:09 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 11 Aug 2016 09:07:09 -0700
 
 snapmanagercgi (1.0.4~xenial) xenial; urgency=high
 
