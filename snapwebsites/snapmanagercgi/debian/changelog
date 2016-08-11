@@ -1,98 +1,15 @@
-snapmanagercgi (1.0.3.8~xenial) xenial; urgency=high
+snapmanagercgi (1.0.4~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Change the scheme to make use of a preinst/postinst script
+    file instead of calling system() with that one long script.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 10 Aug 2016 12:25:49 -0700
-
-snapmanagercgi (1.0.3.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 10 Aug 2016 02:00:53 -0700
-
-snapmanagercgi (1.0.3.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Tue, 09 Aug 2016 12:19:17 -0700
-
-snapmanagercgi (1.0.3.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 09 Aug 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.3.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 08 Aug 2016 19:02:19 -0700
-
-snapmanagercgi (1.0.3.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Mon, 08 Aug 2016 14:00:58 -0700
-
-snapmanagercgi (1.0.3.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Mon, 08 Aug 2016 10:59:10 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 10 Aug 2016 12:25:49 -0700
 
 snapmanagercgi (1.0.3.1~xenial) xenial; urgency=high
 
   * Taking back out apache confs and sites we put in.
 
  -- Doug Barbieri <doug@dooglio.net>  Sun, 07 Aug 2016 17:47:52 -0700
-
-snapmanagercgi (1.0.2.9~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 07 Aug 2016 10:23:16 -0700
-
-snapmanagercgi (1.0.2.8~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 07 Aug 2016 02:00:50 -0700
-
-snapmanagercgi (1.0.2.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 06 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.2.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 05 Aug 2016 12:04:11 -0700
-
-snapmanagercgi (1.0.2.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 05 Aug 2016 02:01:08 -0700
-
-snapmanagercgi (1.0.2.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 04 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.2.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Wed, 03 Aug 2016 11:02:37 -0700
-
-snapmanagercgi (1.0.2.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 02 Aug 2016 02:00:55 -0700
 
 snapmanagercgi (1.0.2.1~xenial) xenial; urgency=high
 
