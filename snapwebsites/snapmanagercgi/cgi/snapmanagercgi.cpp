@@ -688,7 +688,8 @@ int manager_cgi::process_post()
     //
     std::string install_variables;
     std::for_each(
-            f_post_variables.begin(), f_post_variables.end(),
+            f_post_variables.begin(),
+            f_post_variables.end(),
             [&install_variables](auto const & it)
             {
                 if(it.first.compare(0, 22, "bundle_install_field::") == 0)
@@ -697,7 +698,7 @@ int manager_cgi::process_post()
                     {
                         install_variables += '\n';
                     }
-                    install_variables += it.first.substr(22);
+                    install_variables += it.first.substr(22) + "=" + it.second;
                 }
             });
 

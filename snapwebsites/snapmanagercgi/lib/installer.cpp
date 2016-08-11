@@ -527,7 +527,7 @@ bool manager::installer(QString const & bundle_name, std::string const & command
     // of fields defined in the bundle file
     //
     std::vector<std::string> variables;
-    snap::NOTUSED(snap::tokenize_string(variables, install_values, "\n", true, " "));
+    snap::NOTUSED(snap::tokenize_string(variables, install_values, "\r\n", true, " "));
     std::string vars;
     std::for_each(variables.begin(), variables.end(),
                 [&vars](auto const & v)
@@ -578,7 +578,14 @@ bool manager::installer(QString const & bundle_name, std::string const & command
                             }
                         }
                     }
-                    vars += "\"\n"; // always add a new line at the end
+                    if(!found_equal)
+                    {
+                        vars += "=\"\"\n";
+                    }
+                    else
+                    {
+                        vars += "\"\n"; // always add a new line at the end
+                    }
                 });
 
     // there may be some pre-installation instructions
