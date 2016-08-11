@@ -64,13 +64,56 @@
 class snapdbproxy;
 
 
-class snapdbproxy_messager
+/** \brief Provide a tick in can we cannot immediately connect to Cassandra.
+ *
+ * The snapdbproxy tries to connect to Cassandra on startup. It is part
+ * of its initialization procedure.
+ *
+ * If that fails, it needs to try again later. This timer is used for
+ * that purpose.
+ */
+class snapdbproxy_timer
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<snapdbproxy_timer>    pointer_t;
+
+    /** \brief The timer initialization.
+     *
+     * The timer ticks once per second to retrieve the current load of the
+     * system and forward it to whichever computer that requested the
+     * information.
+     *
+     * \todo
+     * For now we try once per second until it works. We should extend
+     * the delay between failures after a little while and up to a
+     * long delay such as once every 10 or even 15 minutes.
+     *
+     * \param[in] cs  The snap communicator server we are listening for.
+     */
+    snapdbproxy_timer(snapdbproxy * proxy)
+        : snap_timer(0)  // run immediately
+        , f_snapdbproxy(proxy)
+    {
+    }
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void process_timeout() override;
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    snapdbproxy *               f_snapdbproxy = nullptr;
+};
+
+
+
+class snapdbproxy_messenger
         : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<snapdbproxy_messager>    pointer_t;
+    typedef std::shared_ptr<snapdbproxy_messenger>    pointer_t;
 
-                                snapdbproxy_messager(snapdbproxy * proxy, std::string const & addr, int port);
+                                snapdbproxy_messenger(snapdbproxy * proxy, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void                process_message(snap::snap_communicator_message const & message);
@@ -80,7 +123,7 @@ public:
 private:
     // this is owned by a snapdbproxy function so no need for a smart pointer
     // (and it would create a loop)
-    snapdbproxy *               f_snapdbproxy;
+    snapdbproxy *               f_snapdbproxy = nullptr;
 };
 
 
@@ -98,7 +141,7 @@ public:
 private:
     // this is owned by a snapdbproxy function so no need for a smart pointer
     // (and it would create a loop)
-    snapdbproxy *            	f_snapdbproxy;
+    snapdbproxy *            	f_snapdbproxy = nullptr;
 };
 
 
@@ -124,7 +167,7 @@ private:
     struct cursor_t
     {
         QtCassandra::QCassandraQuery::pointer_t f_query;
-        int                                     f_column_count;
+        int                                     f_column_count = 0;
     };
 
     void                        send_order(QtCassandra::QCassandraQuery::pointer_t q, QtCassandra::QCassandraOrder const & order);
@@ -139,9 +182,9 @@ private:
     QtCassandra::QCassandraProxy                f_proxy;
     QtCassandra::QCassandraSession::pointer_t   f_session;
     std::vector<cursor_t>                       f_cursors;
-    int                                         f_socket;
-    QString                                     f_cassandra_host_list;
-    int                                         f_cassandra_port;
+    int                                         f_socket = -1;
+    QString                                     f_cassandra_host_list = "localhost";
+    int                                         f_cassandra_port = 9042;
 };
 
 
@@ -158,7 +201,7 @@ public:
 private:
     snapdbproxy_connection  f_connection;
     snap::snap_thread       f_thread;
-    int                     f_socket;
+    int                     f_socket = 0;
 };
 
 
@@ -177,6 +220,7 @@ public:
     void                        run();
     void                        process_message(snap::snap_communicator_message const & message);
     void                        process_connection(int const s);
+    void                        process_timeout();
 
     static void                 sighandler( int sig );
 
@@ -188,6 +232,8 @@ private:
     void                        setup_dbproxy();
     void                        next_wakeup();
     void                        stop(bool quitting);
+    void                        no_cassandra();
+    void                        cassandra_ready();
 
     static pointer_t                            g_instance;
 
@@ -202,11 +248,14 @@ private:
     snap::snap_communicator::pointer_t          f_communicator;
     QString                                     f_cassandra_host_list = "localhost";
     int                                         f_cassandra_port = 9042;
-    snapdbproxy_messager::pointer_t             f_messager;
+    snapdbproxy_messenger::pointer_t            f_messenger;
     snapdbproxy_listener::pointer_t             f_listener;
+    snapdbproxy_timer::pointer_t                f_timer;
     int                                         f_max_pending_connections = -1;
+    bool                                        f_ready = false;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
+    bool                                        f_no_cassandra_sent = false;
     QtCassandra::QCassandraSession::pointer_t   f_session;
 
     std::vector<snapdbproxy_thread::pointer_t>  f_connections;

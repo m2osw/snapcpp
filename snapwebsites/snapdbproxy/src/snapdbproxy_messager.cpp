@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapdbproxy_messager.cpp
+ *      snapdbproxy_messenger.cpp
  *
  * Description:
  *      Messager Class implementation. The messager is used to send/receive
@@ -44,7 +44,7 @@
 
 
 
-/** \class snapdbproxy_messager
+/** \class snapdbproxy_messenger
  * \brief Handle messages from the Snap Communicator server.
  *
  * This class is an implementation of the TCP client message connection
@@ -73,7 +73,7 @@
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on (4040).
  */
-snapdbproxy_messager::snapdbproxy_messager(snapdbproxy * proxy, std::string const & addr, int port)
+snapdbproxy_messenger::snapdbproxy_messenger(snapdbproxy * proxy, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(addr, port)
     , f_snapdbproxy(proxy)
 {
@@ -90,7 +90,7 @@ snapdbproxy_messager::snapdbproxy_messager(snapdbproxy * proxy, std::string cons
  *
  * \param[in] message  The message we just received.
  */
-void snapdbproxy_messager::process_message(snap::snap_communicator_message const & message)
+void snapdbproxy_messenger::process_message(snap::snap_communicator_message const & message)
 {
     f_snapdbproxy->process_message(message);
 }
@@ -109,7 +109,7 @@ void snapdbproxy_messager::process_message(snap::snap_communicator_message const
  *
  * \param[in] error_message  An error message.
  */
-void snapdbproxy_messager::process_connection_failed(std::string const & error_message)
+void snapdbproxy_messenger::process_connection_failed(std::string const & error_message)
 {
     SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
 
@@ -126,7 +126,7 @@ void snapdbproxy_messager::process_connection_failed(std::string const & error_m
  * The messager reacts by REGISTERing the snapdbproxy with the Snap!
  * Communicator.
  */
-void snapdbproxy_messager::process_connected()
+void snapdbproxy_messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
