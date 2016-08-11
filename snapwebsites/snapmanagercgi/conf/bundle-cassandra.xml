@@ -33,10 +33,11 @@
       # Java on Launchpad from Oracle
       # (It is assumed that we will get Oracle installed and not any other
       # Java environment)
-      echo "# Info from https://launchpad.net/~webupd8team/+archive/ubuntu/java" > webupd8team-ubuntu-java-oracle.list
-      echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" >> webupd8team-ubuntu-java-oracle.list
-      echo "#deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" >> webupd8team-ubuntu-java-oracle.list
-      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+#      echo "# Info from https://launchpad.net/~webupd8team/+archive/ubuntu/java" > webupd8team-ubuntu-java-oracle.list
+#      echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" >> webupd8team-ubuntu-java-oracle.list
+#      echo "#deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" >> webupd8team-ubuntu-java-oracle.list
+#      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+      apt-add-repository -y ppa:webupd8team/java
       echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
 
       # Cassandra from Apache2
