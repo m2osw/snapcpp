@@ -20,7 +20,7 @@
     </field>
     <field name="listen_address" type="input">
       <label>Listen Address</label>
-      <description>Indicate the local IP address (ifconfig for eth0 or equivalent).</description>
+      <description>Indicate the private IP address of this node (ifconfig for eth0 or equivalent).</description>
     </field>
   </fields>
   <preinst>

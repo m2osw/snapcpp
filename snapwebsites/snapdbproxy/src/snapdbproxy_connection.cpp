@@ -140,7 +140,8 @@ void snapdbproxy_connection::run()
             // wait for an order
             //
             QtCassandra::QCassandraOrder order(f_proxy.receiveOrder(*this));
-            if(order.validOrder())
+            if(order.validOrder()
+            && f_session->isConnected())
             // && !thread->is_stopping()) -- we do not have access to the thread
             //                               and the pthread_kill() should be more
             //                               than enough at this point
@@ -392,7 +393,7 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
 void snapdbproxy_connection::kill()
 {
     // parent thread wants to quit, tell the child to exit ASAP
-    // by shutting down the socket
+    // by partially shutting down the socket
     //
     snap::NOTUSED(::shutdown(f_socket, SHUT_RD));
 }

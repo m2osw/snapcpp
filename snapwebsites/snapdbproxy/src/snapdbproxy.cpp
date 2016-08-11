@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapdbproxy.cpp
+ *      snapwebsites/snapdbproxy/snapdbproxy.cpp
  *
  * Description:
  *      Proxy database access for two main reasons:
@@ -168,6 +168,13 @@ namespace
 
 }
 //namespace
+
+
+void snapdbproxy_timer::process_timeout()
+{
+    f_snapdbproxy->process_timeout();
+}
+
 
 
 
@@ -388,14 +395,6 @@ void snapdbproxy::run()
     signal( SIGTTIN,  SIG_IGN );
     signal( SIGTTOU,  SIG_IGN );
 
-    // connect to Cassandra ONCE
-    //
-    // The Cassandra C/C++ driver is responsible to actually create
-    // "physical" connections to any number of nodes so we do not
-    // need to monitor those connections.
-    //
-    f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
-
     // initialize the communicator and its connections
     //
     f_communicator = snap::snap_communicator::instance();
@@ -412,8 +411,14 @@ void snapdbproxy::run()
     // create a messager to communicate with the Snap Communicator process
     // and snapinit as required
     //
-    f_messager = std::make_shared<snapdbproxy_messager>(this, f_communicator_addr.toUtf8().data(), f_communicator_port);
-    f_communicator->add_connection(f_messager);
+    f_messenger = std::make_shared<snapdbproxy_messenger>(this, f_communicator_addr.toUtf8().data(), f_communicator_port);
+    f_communicator->add_connection(f_messenger);
+
+    // create a timer, it will immediately kick in and attempt a connection
+    // to Cassandra; if it fails, it will continue to tick until it works.
+    //
+    f_timer = std::make_shared<snapdbproxy_timer>(this);
+    f_communicator->add_connection(f_timer);
 
     // now run our listening loop
     //
@@ -507,6 +512,15 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
 // TODO: use a switch statement
 
+    if(command == "CASSANDRASTATUS")
+    {
+        snap::snap_communicator_message reply;
+        reply.reply_to(message);
+        reply.set_command(f_session->isConnected() ? "CASSANDRAREADY" : "NOCASSANDRA");
+        f_messenger->send_message(reply);
+        return;
+    }
+
     if(command == "LOG")
     {
         // logrotate just rotated the logs, we have to reconfigure
@@ -536,8 +550,14 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
     if(command == "READY")
     {
+        f_ready = true;
+
         // Snap! Communicator received our REGISTER command
         //
+        if(f_session->isConnected())
+        {
+            cassandra_ready();
+        }
         return;
     }
 
@@ -550,9 +570,9 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRASTATUS,HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
 
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
         return;
     }
 
@@ -571,7 +591,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
     }
 }
 
@@ -604,6 +624,11 @@ void snapdbproxy::process_connection(int const s)
         }
     }
 
+    if(!f_session->isConnected())
+    {
+        no_cassandra();
+    }
+
     // create one thread per connection
     //
     // TODO: look into having either worker threads, or at least a pool
@@ -619,6 +644,94 @@ void snapdbproxy::process_connection(int const s)
     if(thread && thread->is_running())
     {
         f_connections.push_back(thread);
+    }
+}
+
+
+/** \brief Attempt to connect to the Cassandra cluster.
+ *
+ * This function calls connect() in order to create a network connection
+ * between this computer and a Cassandra node. Later the driver may
+ * connect to additional nodes to better balance work load.
+ *
+ * \note
+ * Since attempts to connect to Cassandra are blocking, we probably want
+ * to move this timer processing to a thread instead.
+ */
+void snapdbproxy::process_timeout()
+{
+    try
+    {
+        // connect to Cassandra
+        //
+        // The Cassandra C/C++ driver is responsible to actually create
+        // "physical" connections to any number of nodes so we do not
+        // need to monitor those connections.
+        //
+        f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
+
+        // the connection succeeded, turn off the timer we do not need
+        // it for now...
+        //
+        f_timer->set_enable(false);
+
+        // reset that flag!
+        //
+        f_no_cassandra_sent = false;
+
+        cassandra_ready();
+    }
+    catch(std::runtime_error const &)
+    {
+        // the connection failed, keep the timeout enabled and try again
+        // on the next tick
+        //
+        // TODO: increase the timeout delay so we do not swamp the
+        //       network with useless attempts
+
+        no_cassandra();
+    }
+}
+
+
+/** \brief Send a NOCASSANDRA message.
+ *
+ * Let snapcommunicator and other services know that we do not
+ * have a connection to Cassandra. Computers running snap.cgi should
+ * react by not connecting to this computer since snapserver will not
+ * work in that case.
+ *
+ * Obviously, if we cannot find a Cassandra node, we probably
+ * have another bigger problem and snapcommunicator is probably
+ * not connected to anyone else either...
+ */
+void snapdbproxy::no_cassandra()
+{
+    if(!f_no_cassandra_sent)
+    {
+        f_no_cassandra_sent = true;
+        snap::snap_communicator_message cmd;
+        cmd.set_command("NOCASSANDRA");
+        cmd.set_service(".");
+        f_messenger->send_message(cmd);
+    }
+
+    // make sure the timer is on when we do not have a Cassandra connection
+    //
+    f_timer->set_enable(true);
+}
+
+
+void snapdbproxy::cassandra_ready()
+{
+    if(f_ready)
+    {
+        // let other services know when cassandra is (finally) ready
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRAREADY");
+        cmd.set_service(".");
+        f_messenger->send_message(cmd);
     }
 }
 
@@ -645,9 +758,9 @@ void snapdbproxy::stop(bool quitting)
 {
     SNAP_LOG_INFO("Stopping server.");
 
-    if(f_messager)
+    if(f_messenger)
     {
-        f_messager->mark_done();
+        f_messenger->mark_done();
 
         // unregister if we are still connected to the messager
         // and Snap! Communicator is not already quitting
@@ -657,7 +770,7 @@ void snapdbproxy::stop(bool quitting)
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapdbproxy");
-            f_messager->send_message(cmd);
+            f_messenger->send_message(cmd);
         }
     }
 
