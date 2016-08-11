@@ -9,15 +9,25 @@ if [ "$1" = "configure" ]
 then
     # create the directory to be used to save the status files
     #
-    mkdir -p /var/lib/snapwebsites/cluster-status
-    chmod 775 /var/lib/snapwebsites/cluster-status
-    chown snapwebsites:www-data /var/lib/snapwebsites/cluster-status
+    CLUSTER_STATUS=/var/lib/snapwebsites/cluster-status
+    mkdir -p ${CLUSTER_STATUS}
+    chmod 775 ${CLUSTER_STATUS}
+    chown snapwebsites:www-data ${CLUSTER_STATUS}
 
     # create the directory to be used to save the bundle files
     # downloaded by snapmanagerdaemon
     #
-    mkdir -p /var/lib/snapwebsites/bundles
-    chown snapwebsites:snapwebsites /var/lib/snapwebsites/bundles
+    BUNDLES=/var/lib/snapwebsites/bundles
+    mkdir -p ${BUNDLES}
+    chmod 755 ${BUNDLES}
+    chown snapwebsites:snapwebsites ${BUNDLES}
+
+    # create the directory used to save bundle pre/post scripts
+    #
+    BUNDLE_SCRIPTS=/var/lib/snapwebsites/bundle-scripts
+    mkdir -p ${BUNDLE_SCRIPTS}
+    chmod 755 ${BUNDLE_SCRIPTS}
+    chown snapwebsites:www-data ${BUNDLE_SCRIPTS}
 fi
 
 # vim: ts=4 sw=4 et nocindent
