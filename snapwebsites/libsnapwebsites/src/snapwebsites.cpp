@@ -1859,6 +1859,7 @@ void server::udp_rusage(QString const & process_name)
     //
     snap::snap_communicator_message rusage_message;
     rusage_message.set_command("RUSAGE");
+    rusage_message.set_server(f_parameters["server_name"]);
     rusage_message.set_service("snapwatchdog");
     rusage_message.add_parameter("process_name", process_name);
     rusage_message.add_parameter("pid", getpid());
