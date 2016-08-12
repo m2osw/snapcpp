@@ -1,8 +1,8 @@
-snapmanagercgi (1.0.5.1~xenial) xenial; urgency=high
+snapmanagercgi (1.0.6~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Also make the script executable (755).
 
- -- Build Server <build@m2osw.com>  Thu, 11 Aug 2016 16:03:24 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 11 Aug 2016 16:03:24 -0700
 
 snapmanagercgi (1.0.5~xenial) xenial; urgency=high
 
