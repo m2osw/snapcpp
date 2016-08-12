@@ -181,6 +181,40 @@ License:
 				snapmanager.cgi on all your computers, which we do
 				not recommend unless you want to do so to install
 				OpenVPN automatically.</p>
+			<h3>Snap Communicator &amp; Snap Front Apache Conflict</h3>
+				<p>Although it is possible (I have done it) to
+				run both, <code>snapmanager.cgi</code> and
+				<code>snap.cgi</code> with the exact same apache
+				<code>VirtualHost</code> entry, we use two separate
+				configuration files to make sure that one does not
+				conflict with the other (i.e. you may want to
+				add directives to the <code>snapmanager.cgi</code>
+				that should not apply to <code>snap.cgi</code>
+				and vice versa.)</p>
+				<p>However, the fact that we offer two files
+				with two distinct <code>VirtualHost</code> means
+				that Apache2 will not see the <code>snapmanager.cgi</code>
+				settings once both are installed unless you make sure to
+				define its <code>ServerName</code> parameter first.</p>
+				<p>So... once you access your <code>snapmanager.cgi</code>
+				server the first time, we suggest you first
+				look for the <code>snapmanager::server_name</code>
+				and enter a name there. For example, you may
+				want to call it <code>snapmanager</code>.</p>
+				<p>Next, edit your administrator's computer
+				<code>/etc/hosts</code> file and place the
+				information in there as in:</p>
+				<blockquote>
+				<pre>192.168.55.31    snapmanager</pre>
+				</blockquote>
+				<p>(*) please define your private network
+				IP address instead of the one shown in the
+				example.</p>
+				<p>Now you can access your <code>snapmanager.cgi</code>
+				by entering <code>http://snapmanager/</code>
+				in your browser location bar. This means you
+				are ready to install the <code>frontend</code>
+				bundle.</p>
 			<h3>Restart Snapinit</h3>
 				<p>Make sure you restart the <code>snapinit</code>
 				service. Use the command:</p>
