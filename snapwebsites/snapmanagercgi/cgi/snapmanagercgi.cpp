@@ -635,17 +635,24 @@ int manager_cgi::process_post()
     // check that the field being updated exists on that host,
     // otherwise the plugin cannot do anything with it
     //
-    if(status_file.get_field_state(plugin_name, field_name) == snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+    // Note: "self::refresh" is a special case and no field actually
+    //       exists in the status file for that one
+    //
+    if(plugin_name != "self"
+    || field_name != "refresh")
     {
-        return error("400 Bad Request"
-                    , ("Host \""
-                      + host_it->second
-                      + "\" has no \""
-                      + plugin_name_it->second
-                      + "::"
-                      + field_name_it->second
-                      + "\" field defined.").c_str()
-                    , nullptr);
+        if(status_file.get_field_state(plugin_name, field_name) == snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED)
+        {
+            return error("400 Bad Request"
+                        , ("Host \""
+                          + host_it->second
+                          + "\" has no \""
+                          + plugin_name_it->second
+                          + "::"
+                          + field_name_it->second
+                          + "\" field defined.").c_str()
+                        , nullptr);
+        }
     }
 
     // that very field should be defined in the POST variables
