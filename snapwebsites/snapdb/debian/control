@@ -36,7 +36,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  extensible as it offers a plug-in mechanism that everyone is welcome to use to
  create their own extensions.
  .
- This package contains a command-line utility that allows the user to query the snap_websites
- context. This version requires snapdbproxy for now, but a later port will take away that dependency.
+ This package contains a command-line utility that allows the user to query
+ the Cassandra snap_websites context.
 
 # vim: ts=4 sw=4 et
