@@ -599,6 +599,12 @@ std::vector<std::string> manager::get_list_of_bundles() const
 }
 
 
+QString const & manager::get_data_path() const
+{
+    return f_data_path;
+}
+
+
 QString const & manager::get_bundles_path() const
 {
     return f_bundles_path;

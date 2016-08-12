@@ -80,7 +80,7 @@
         -e "s/- seeds: \".*\"/- seeds: \"$BUNDLE_INSTALLATION_SEEDS\"/" \
         -e "s/^listen_address: .*/listen_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^rpc_address: .*/rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
-        -e "s/^broadcast_rpc_address: .*/broadcast_rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
+        -e "s/broadcast_rpc_address: .*/broadcast_rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^endpoint_snitch: .*/endpoint_snitch: GossipingPropertyFileSnitch/" \
               /etc/cassandra/cassandra.yaml
 

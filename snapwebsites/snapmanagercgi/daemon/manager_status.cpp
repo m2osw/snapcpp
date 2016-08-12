@@ -343,6 +343,9 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
         break;
 
     }
+
+    // this is an internal message pipe for STOP and WAKEUP and that's
+    // it so do not deal with UNKNOWN and the other default messages
 }
 
 
