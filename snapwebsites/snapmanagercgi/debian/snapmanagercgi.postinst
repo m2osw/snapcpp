@@ -25,14 +25,15 @@ then
     # Create the snapmanagercgi.log file because the www-data user may have
     # difficulties with it otherwise
     #
+    PKGNAME=snapmanagercgi
     SNAPLOGDIR=/var/log/snapwebsites
-    SNAPMANAGERCGI_LOG=${SNAPLOGDIR}/snapmanagercgi.log
+    SNAPMANAGERCGI_LOG=${SNAPLOGDIR}/${PKGNAME}.log
     touch ${SNAPMANAGERCGI_LOG}
     chown www-data:www-data ${SNAPMANAGERCGI_LOG}
     chmod 640 ${SNAPMANAGERCGI_LOG}
     
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SNAPSECUREMANAGERCGI_LOG=${SNAPSECURELOGDIR}/snapmanagercgi.log
+    SNAPSECUREMANAGERCGI_LOG=${SNAPSECURELOGDIR}/${PKGNAME}.log
     touch ${SNAPSECUREMANAGERCGI_LOG}
     chown www-data:www-data ${SNAPSECUREMANAGERCGI_LOG}
     chmod 640 ${SNAPSECUREMANAGERCGI_LOG}

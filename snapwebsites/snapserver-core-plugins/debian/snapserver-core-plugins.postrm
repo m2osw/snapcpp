@@ -6,9 +6,12 @@
 
 if [ "$1" = "purge" ]
 then
-    PKGNAME=snapserver
-    rm -f /var/log/snapwebsites/${PKGNAME}.log
-    rm -f /var/log/snapwebsites/secure/${PKGNAME}.log
+    # delete the antivirus logs
+    PKGNAME=antivirus
+    rm -f /var/log/snapwebsites/${PKGNAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PKGNAME}.log*
+
+    # TBD: reset the firewall to empty? It does not seem wise to me.
 
     # if snapinit is running, we need to give it a kick
     #

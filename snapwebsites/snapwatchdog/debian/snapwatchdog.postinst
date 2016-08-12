@@ -10,9 +10,25 @@ if [ "$1" = "configure" ]
 then
     # make the snapwatchdog lib folder
     #
-    SNAPWATCHDOG_LIB_DIR=/var/lib/snapwebsites/snapwatchdog
+    PKGNAME=snapwatchdog
+    SNAPWATCHDOG_LIB_DIR=/var/lib/snapwebsites/${PKGNAME}
     mkdir -p ${SNAPWATCHDOG_LIB_DIR}
     chown snapwebsites:snapwebsites ${SNAPWATCHDOG_LIB_DIR}
+
+    # Create the logfile because the snapwebsites user may have
+    # difficulties with it otherwise during logrotate.
+    #
+    SNAPLOGDIR=/var/log/snapwebsites
+    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    touch ${LOGFILE}
+    chown snapwebsites:snapwebsites ${LOGFILE}
+    chmod 640 ${LOGFILE}
+
+    SNAPSECURELOGDIR=/var/log/snapwebsites/secure
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    touch ${SECURELOGFILE}
+    chown snapwebsites:snapwebsites ${SECURELOGFILE}
+    chmod 640 ${SECURELOGFILE}
 
     # if snapinit is running, we need to give it a kick
     #
