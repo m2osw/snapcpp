@@ -60,9 +60,10 @@
     cp -r /usr/share/easy-rsa /etc/openvpn/.
 
     # Generate the Diffie-Hellman parameters
-    if [ ! -f /etc/openssl/dh2048.pem ]
+    DH2048=/etc/openvpn/dh2048.pem
+    if [ ! -f ${DH2048} ]
     then
-      openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+      openssl dhparam -out ${DH2048} 2048
     fi
 
     # Create server.conf file
