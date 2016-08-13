@@ -1473,13 +1473,24 @@ void service::process_pause()
     //
     action_idle();
 
-    // whatever the state, it is never legal to get a pause on the CRON
-    // service (it should have died first and not get restarted so quickly)
+    // if the CRON service always dies with an error (i.e. it crashes before
+    // it is done) then we will end up here with that task, only it requires
+    // special handling compare to others and it is considered bad enough
+    // that we should tell an administrator about it.
     //
     if(is_cron_task())
     {
-        common::fatal_error( QString("service::process_pause() was called with the CRON task (\"%1\").").arg(f_service_name) );
-        snap::NOTREACHED();
+        // TODO: somehow tell an administrator (i.e. send a message such
+        //       as an email or something of the sort.)
+        //
+        SNAP_LOG_ERROR("service::process_pause() was called with the CRON task (\"")(f_service_name)("\").");
+
+        // make sure the system goes on even though the CRON task is
+        // probably in a pitiful state.
+        //
+        compute_next_tick(true);
+        set_enable(true);
+        return;
     }
 
     // whatever the state, required services cannot be paused for

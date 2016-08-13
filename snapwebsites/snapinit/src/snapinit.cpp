@@ -1474,13 +1474,48 @@ void snap_init::create_service_tree()
  * a direct exit() we do not get the destructor called and thus that
  * means the lock file does not get deleted.
  *
- * We over load the exit() command so that way we can make sure that
+ * We overload the exit() command so that way we can make sure that
  * at least the lock gets destroyed.
  *
  * \param[in] code  The exit code, to be returned to the parent process.
  */
 void snap_init::exit(int code) const
 {
+    // if some of our services are still running, just quitting may not
+    // get rid of them properly, here we want to make sure that this
+    // is done by attempting to do a stop if any such service is still
+    // running; however, on a second call to exit(), we end up just
+    // quitting...
+    //
+    static bool called_again = false;
+
+    if(!called_again)
+    {
+        called_again = true;
+
+        if(f_service_list.end() != std::find_if(
+                f_service_list.begin(),
+                f_service_list.end(),
+                [](auto const & svc)
+                {
+                    return svc->is_running();
+                }))
+        {
+            const_cast<snap_init *>(this)->terminate_services();
+
+            // we cannot return from this function so we have to
+            // re-enter the f_communicator loop (Big Hack!)
+            //
+            // the list of connections within the f_communicator
+            // should still go to zero if all services properly
+            // shutdown...
+            //
+            f_communicator->run();
+        }
+        //else -- ah, no other processes are running, just exit()
+    }
+    //else -- double fatal error, we just die
+
     remove_lock();
 
     ::exit(code);
