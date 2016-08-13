@@ -57,8 +57,15 @@
     can at least copy and create some files as required.
   -->
   <postinst>
+    # Clear out the easy-rsa dist just in case
+    rm -rf /etc/openvpn/easy-rsa
+
     # get the default RSA key data
     cp -r /usr/share/easy-rsa /etc/openvpn/.
+
+    # Generate the Diffie-Hellman parameters
+    openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+
     # Setup the keys as defined by the user in the installation form
     sed \
       -e "s/KEY_CN=\".*\"/KEY_CN=\"$BUNDLE_INSTALLATION_COMMON_NAME\"/" \
@@ -69,10 +76,19 @@
       -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"$BUNDLE_INSTALLATION_COUNTRY\"/" \
       -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"$BUNDLE_INSTALLATION_EMAIL\"/" \
             /usr/share/easy-rsa/vars >/etc/openvpn/easy-rsa/vars
+
+    # Now create the RSA CA key
     cd /etc/openvpn/easy-rsa
     . ./vars
     ./clean-all
     ./pkitool --initca
+
+    # Now create the server key and copy it in
+    ./pkitool --server server
+    /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
+
+    # Start the server
+    systemctl start openvpn@server
   </postinst>
 </bundle>
 <!--
