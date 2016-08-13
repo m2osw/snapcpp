@@ -22,10 +22,6 @@
     and in effect make it work in a failsafe manner.</p>
   </description>
   <fields>
-    <field name="common_name" type="input">
-      <label>Common Name</label>
-      <description>Common name (usually your domain name).</description>
-    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>Name of your organization.</description>
@@ -58,17 +54,27 @@
   -->
   <postinst>
     # Clear out the easy-rsa dist just in case
-    rm -rf /etc/openvpn/easy-rsa
+    rm -rf /etc/openvpn/server.* /etc/openvpn/easy-rsa
 
     # get the default RSA key data
     cp -r /usr/share/easy-rsa /etc/openvpn/.
 
     # Generate the Diffie-Hellman parameters
-    openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+    if [ ! -e /etc/openssl/dh2048.pem ]
+    then
+      openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+    fi
+
+    # Create server.conf file
+    gunzip -c /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz | \
+    sed \
+      -e "s/dh1024.pem/dh2048.pem/" \
+      -e "s/;user nobody/user nobody/" \
+      -e "s/;group nogroup/group nogroup/" \
+    > /etc/openvpn/server.conf
 
     # Setup the keys as defined by the user in the installation form
     sed \
-      -e "s/KEY_CN=\".*\"/KEY_CN=\"$BUNDLE_INSTALLATION_COMMON_NAME\"/" \
       -e "s/KEY_ORG=\".*\"/KEY_ORG=\"$BUNDLE_INSTALLATION_ORGANIZATION\"/" \
       -e "s/KEY_OU=\".*\"/KEY_OU=\"$BUNDLE_INSTALLATION_ORGANIZATION_UNIT\"/" \
       -e "s/KEY_CITY=\".*\"/KEY_CITY=\"$BUNDLE_INSTALLATION_CITY\"/" \
@@ -85,7 +91,7 @@
 
     # Now create the server key and copy it in
     ./pkitool --server server
-    /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
+    cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
 
     # Start the server
     systemctl start openvpn@server
