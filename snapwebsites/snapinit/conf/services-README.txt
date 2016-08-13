@@ -157,8 +157,8 @@
                   cleanly and safely stop the process if the user
                   requests a shutdown or other similar actions that
                   would require Snap! to stop. This feature makes
-                  use of a file under /var/spool/snap/snapinit to
-                  know when the last run happened. If more than one
+                  use of a file under /var/spool/snapwebsites/snapinit
+                  to know when the last run happened. If more than one
                   tick, then a run is started as soon as possible
                   (although we give the other services some time to
                   get started before we start the CRON process.)

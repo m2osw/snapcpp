@@ -725,7 +725,8 @@ void service::configure(QDomElement e, QString const & binary_path, std::vector<
                 }
                 // we function like anacron and know when we have to run
                 // (i.e. whether we missed some prior runs) so very large
-                // cron values will work just as expected (see /var/spool/snap/*)
+                // cron values will work just as expected
+                // (see /var/spool/snapwebsites/*)
                 //
                 // TBD: offer a similar syntax to crontab? frankly we are not
                 //      trying to replace cron and at this time we have just

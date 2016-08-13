@@ -386,7 +386,7 @@ private:
     QString                             f_lock_filename;
     QFile                               f_lock_file;
     QString                             f_data_path = "/var/lib/snapwebsites";
-    QString                             f_spool_path = "/var/spool/snap/snapinit";
+    QString                             f_spool_path = "/var/spool/snapwebsites/snapinit";
     mutable bool                        f_spool_directory_created = false;
     service::vector_t                   f_service_list;
     int                                 f_stop_max_wait = 60;
