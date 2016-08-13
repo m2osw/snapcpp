@@ -60,9 +60,10 @@
     cp -r /usr/share/easy-rsa /etc/openvpn/.
 
     # Generate the Diffie-Hellman parameters
-    if [ ! -e /etc/openssl/dh2048.pem ]
+    DH2048=/etc/openvpn/dh2048.pem
+    if [ ! -f ${DH2048} ]
     then
-      openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+      openssl dhparam -out ${DH2048} 2048
     fi
 
     # Create server.conf file
@@ -71,7 +72,7 @@
       -e "s/dh1024.pem/dh2048.pem/" \
       -e "s/;user nobody/user nobody/" \
       -e "s/;group nogroup/group nogroup/" \
-    > /etc/openvpn/server.conf
+    &gt; /etc/openvpn/server.conf
 
     # Setup the keys as defined by the user in the installation form
     sed \
@@ -81,7 +82,7 @@
       -e "s/KEY_PROVINCE=\".*\"/KEY_PROVINCE=\"$BUNDLE_INSTALLATION_PROVINCE\"/" \
       -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"$BUNDLE_INSTALLATION_COUNTRY\"/" \
       -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"$BUNDLE_INSTALLATION_EMAIL\"/" \
-            /usr/share/easy-rsa/vars >/etc/openvpn/easy-rsa/vars
+            /usr/share/easy-rsa/vars &gt; /etc/openvpn/easy-rsa/vars
 
     # Now create the RSA CA key
     cd /etc/openvpn/easy-rsa
