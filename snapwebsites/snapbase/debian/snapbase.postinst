@@ -55,6 +55,24 @@ then
     chown snapwebsites:snapwebsites ${ALLLOG}
     chmod 640 ${ALLLOG}
 
+    # Create the snapserver logfile because the snapwebsites user may
+    # have difficulties with it otherwise during logrotate. Also we do
+    # snapserver in the snapbase package because it is used by snapserver
+    # and snapbackend, two separate packages
+    #
+    PKGNAME=snapserver
+    SNAPLOGDIR=/var/log/snapwebsites
+    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    touch ${LOGFILE}
+    chown snapwebsites:snapwebsites ${LOGFILE}
+    chmod 640 ${LOGFILE}
+
+    SNAPSECURELOGDIR=/var/log/snapwebsites/secure
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    touch ${SECURELOGFILE}
+    chown snapwebsites:snapwebsites ${SECURELOGFILE}
+    chmod 640 ${SECURELOGFILE}
+
     # the cache directory is used by various daemons to save files that
     # can be lost over time, but allow for faster access when present;
     # at this time mainly snapcommunicator uses it to save messages it
