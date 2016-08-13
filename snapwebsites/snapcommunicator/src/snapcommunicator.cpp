@@ -3269,9 +3269,17 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                             //
                             return;
                         }
-                        else // TBD -- need some if()? if(conn->get_name() == "remote connection")
+                        else
                         {
-                            accepting_remote_connections.push_back(conn);
+                            // if not a local connection with the proper name,
+                            // still send it to that connection but only if it
+                            // is a remote connection
+                            //
+                            base_connection::connection_type_t const type(base_conn->get_connection_type());
+                            if(type == base->connection_type_t::CONNECTION_TYPE_REMOTE)
+                            {
+                                accepting_remote_connections.push_back(conn);
+                            }
                         }
                     }
                     else
@@ -3338,12 +3346,6 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             //
             try
             {
-                // This is being sent to a service on the remote connection
-                // so we cannot verify that it is known (i.e. only the remote
-                // connection has the list of commands of that service...)
-                //
-                //verify_command(remote_connection, message);
-
                 service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(r));
                 if(conn)
                 {
@@ -3354,6 +3356,12 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     remote_snap_communicator_pointer_t remote_connection(std::dynamic_pointer_cast<remote_snap_communicator>(r));
                     if(remote_connection)
                     {
+                        // This is being sent to a service on the remote connection
+                        // so we cannot verify that it is known (i.e. only the remote
+                        // connection has the list of commands of that service...)
+                        //
+                        //verify_command(remote_connection, message);
+
                         remote_connection->send_message(message);
                     }
                 }
