@@ -32,7 +32,7 @@
 
 int main(int argc, char *argv[])
 {
-    int retval = 0;
+    int retval(1);
 
     // save the main process PID in case common::fatal_error() gets called.
     //
@@ -48,26 +48,24 @@ int main(int argc, char *argv[])
         //
         snapinit::snap_init::pointer_t init( snapinit::snap_init::instance() );
         init->run_processes();
+
+        retval = 0;
     }
     catch( snap::snap_exception const & e )
     {
-        snapinit::common::fatal_error(QString("snapinit: snap_exception caught! %1").arg(e.what()));
-        snap::NOTREACHED();
+        snapinit::common::fatal_message(QString("snapinit: snap_exception caught! %1").arg(e.what()));
     }
     catch( std::invalid_argument const & e )
     {
-        snapinit::common::fatal_error(QString("snapinit: invalid argument: %1").arg(e.what()));
-        snap::NOTREACHED();
+        snapinit::common::fatal_message(QString("snapinit: invalid argument: %1").arg(e.what()));
     }
     catch( std::exception const & e )
     {
-        snapinit::common::fatal_error(QString("snapinit: std::exception caught! %1").arg(e.what()));
-        snap::NOTREACHED();
+        snapinit::common::fatal_message(QString("snapinit: std::exception caught! %1").arg(e.what()));
     }
     catch( ... )
     {
-        snapinit::common::fatal_error("snapinit: unknown exception caught!");
-        snap::NOTREACHED();
+        snapinit::common::fatal_message("snapinit: unknown exception caught!");
     }
 
     return retval;

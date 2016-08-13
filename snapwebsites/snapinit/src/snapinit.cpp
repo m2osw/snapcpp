@@ -2559,9 +2559,73 @@ void snap_init::start()
 
     // run the event loop until we receive a STOP message
     //
-    f_communicator->run();
+    // We have a try/catch, in case we throw an exception, we want to
+    // have one chance at terminating the services we started before
+    // quitting.
+    //
+    std::exception_ptr first_exception;
+    try
+    {
+        f_communicator->run();
+    }
+    catch(snap::snap_exception const & e)
+    {
+        SNAP_LOG_FATAL("snapinit got a snap_exception: ")(e.what())(". Terminating processes now.");
+        first_exception = std::current_exception();
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_FATAL("snapinit got a standard exception: ")(e.what())(". Terminating processes now.");
+        first_exception = std::current_exception();
+    }
+    catch(...)
+    {
+        SNAP_LOG_FATAL("snapinit got an unknown type of exception. Terminating processes now.");
+        first_exception = std::current_exception();
+    }
+
+    if(first_exception)
+    {
+        // something within the event loop raised an exception, make sure
+        // we terminate all of our services and then re-throw that exception
+        //
+        if(f_service_list.end() != std::find_if(
+                f_service_list.begin(),
+                f_service_list.end(),
+                [](auto const & svc)
+                {
+                    return svc->is_running();
+                }))
+        {
+            terminate_services();
+
+            // if someone throws again while terminating, then we are
+            // hosed and main.cpp catches that exception and exits...
+            //
+            try
+            {
+                f_communicator->run();
+            }
+            catch(...)
+            {
+                remove_lock();
+
+                // just rethrow that last one
+                //
+                throw;
+            }
+        }
+    }
 
     remove_lock();
+
+    if(first_exception)
+    {
+        // re-throw, exception will now be handled in main.cpp
+        //
+        std::rethrow_exception(first_exception);
+        snap::NOTREACHED();
+    }
 
     SNAP_LOG_INFO("Normal shutdown.");
 }
