@@ -22,6 +22,10 @@
     and in effect make it work in a failsafe manner.</p>
   </description>
   <fields>
+    <field name="common_name" type="input">
+      <label>Common Name</label>
+      <description>Common name (usually your domain name).</description>
+    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>Name of your organization.</description>
@@ -40,7 +44,7 @@
     </field>
     <field name="country" type="input">
       <label>Country</label>
-      <description>Name of your country.</description>
+      <description>Two letter abbrieviation for the name of your country (e.g. 'US' stands for 'United States').</description>
     </field>
     <field name="email" type="input">
       <label>Email</label>
@@ -57,6 +61,7 @@
     cp -r /usr/share/easy-rsa /etc/openvpn/.
     # Setup the keys as defined by the user in the installation form
     sed \
+      -e "s/KEY_CN=\".*\"/KEY_CN=\"$BUNDLE_INSTALLATION_COMMON_NAME\"/" \
       -e "s/KEY_ORG=\".*\"/KEY_ORG=\"$BUNDLE_INSTALLATION_ORGANIZATION\"/" \
       -e "s/KEY_OU=\".*\"/KEY_OU=\"$BUNDLE_INSTALLATION_ORGANIZATION_UNIT\"/" \
       -e "s/KEY_CITY=\".*\"/KEY_CITY=\"$BUNDLE_INSTALLATION_CITY\"/" \
@@ -67,7 +72,7 @@
     cd /etc/openvpn/easy-rsa
     . ./vars
     ./clean-all
-    ./build-ca
+    ./pkitool --initca
   </postinst>
 </bundle>
 <!--
