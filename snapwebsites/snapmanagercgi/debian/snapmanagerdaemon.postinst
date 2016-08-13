@@ -27,7 +27,7 @@ then
     BUNDLE_SCRIPTS=/var/lib/snapwebsites/bundle-scripts
     mkdir -p ${BUNDLE_SCRIPTS}
     chmod 755 ${BUNDLE_SCRIPTS}
-    chown snapwebsites:www-data ${BUNDLE_SCRIPTS}
+    chown snapwebsites:snapwebsites ${BUNDLE_SCRIPTS}
 
     # Create the logfile because the snapwebsites user may have
     # difficulties with it otherwise during logrotate.
