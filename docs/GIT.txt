@@ -39,6 +39,9 @@ git commit --amend
 git commit --amend -c 123...123
 
 # Amending also involves merging, somehow.
+# For additional information about amending and fixing comments in your
+# commits, there is a great page about that here:
+# https://help.github.com/articles/changing-a-commit-message/
 
 
 # changing the URL of the origin
