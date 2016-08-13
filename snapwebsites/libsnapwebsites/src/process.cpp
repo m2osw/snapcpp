@@ -1358,7 +1358,7 @@ void process_list::rewind()
  *
  * \return A shared pointer to a proc_t structure.
  */
-process_list::proc_info_pointer_t process_list::next()
+process_list::proc_info::pointer_t process_list::next()
 {
     struct deleters
     {
@@ -1390,13 +1390,14 @@ process_list::proc_info_pointer_t process_list::next()
 
     // I tested and if readproc() is called again after returning nullptr, it
     // continues to return nullptr so no need to do anything more
+    //
     std::shared_ptr<proc_t> p(std::shared_ptr<proc_t>(readproc(f_proctab.get(), nullptr), deleters::delete_proc));
     if(p)
     {
-        return proc_info_pointer_t(new proc_info(p, f_flags));
+        return proc_info::pointer_t(new proc_info(p, f_flags));
     }
 
-    return proc_info_pointer_t();
+    return proc_info::pointer_t();
 }
 
 

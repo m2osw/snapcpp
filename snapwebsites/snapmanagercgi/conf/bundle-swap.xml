@@ -73,6 +73,21 @@
       swapon -a
     fi
   </postinst>
+  <postrm>
+    if test -f /var/cache/swapfile
+    then
+      # turn off that swap file
+      swapoff /var/cache/swapfile
+
+      # remove that entry from the fstab file
+      sed -i.bak \
+            /^.var.cache.swapfile/ d \
+                fstab
+
+      # remove the file and reclaim the space
+      rm /var/cache/swapfile
+    fi
+  </postrm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et

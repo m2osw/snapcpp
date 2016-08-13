@@ -14,8 +14,8 @@
       A <bundle> includes a <name> and a <description> (both those tags are
       mandatory.)
 
-      Optionally, it includes the <packages>, <preinst>, <postinst>, <fields>
-      tags.
+      Optionally, it includes the <packages>, <preinst>, <postinst>, <prerm>,
+      <postrm>, <fields> tags.
 
         <bundle>
         <name>  [required]
@@ -43,7 +43,7 @@
           anyway, you may use either the <preinst> or <postinst> to
           simulate an installation as required by your bundle.
 
-          The <preinst> script is give variables as defined by the
+          The <preinst> script is given variables as defined by the
           <fields> tag if present. See the <postinst> below for
           details about that.
 
@@ -64,6 +64,25 @@
           a variable named:
 
               BUNDLE_INSTALLATION_CITY
+
+        <bundle>
+        <prerm>  [optional]
+          This is a shell script that the uninstaller will run before
+          removing the <packages>. If there are no packages to uninstall
+          anyway, you may use either the <prerm> or <postrm> to
+          simulate an uninstallation as required by your bundle.
+
+          The <prerm> script is not given additional variables.
+
+        <bundle>
+        <postrm>  [optional]
+          This is a shell script that the uninstaller will run after
+          uninstalling the <packages>. In some cases some software
+          may not properly clean up behind themselves and in such
+          circumstances, this process can intervene to further clean
+          up the system.
+
+          The <postrm> script is not given additional variables.
 
         <bundle>
         <fields>  [optional]
@@ -246,6 +265,10 @@ a server.
 
   <xs:element name="postinst" type="xs:string"/>
 
+  <xs:element name="prerm" type="xs:string"/>
+
+  <xs:element name="postrm" type="xs:string"/>
+
   <xs:element name="field">
     <xs:complexType>
       <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -276,6 +299,8 @@ a server.
         <xs:element ref="is-installed" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="preinst" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="postinst" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="prerm" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="postrm" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="fields" minOccurs="0" maxOccurs="1"/>
       </xs:choice>
     </xs:complexType>

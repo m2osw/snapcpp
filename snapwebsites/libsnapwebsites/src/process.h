@@ -184,6 +184,8 @@ public:
     class proc_info
     {
     public:
+        typedef std::shared_ptr<proc_info>      pointer_t;
+
         pid_t                       get_pid() const;
         pid_t                       get_ppid() const;
         void                        get_page_faults(unsigned long & major, unsigned long & minor) const;
@@ -212,14 +214,13 @@ public:
         controlled_vars::zint32_t   f_flags;
         mutable m1_count_t          f_count;
     };
-    typedef std::shared_ptr<proc_info>      proc_info_pointer_t;
 
     bool                        get_field(field_t fld) const;
     void                        set_field(field_t fld);
     void                        clear_field(field_t fld);
 
     void                        rewind();
-    proc_info_pointer_t         next();
+    proc_info::pointer_t        next();
 
 private:
     int                         field_to_flag(field_t fld) const;

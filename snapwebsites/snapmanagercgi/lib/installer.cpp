@@ -485,11 +485,15 @@ bool manager::installer(QString const & bundle_name, std::string const & command
         return false;
     }
 
+    // whether we are going to install or purge
+    //
+    bool const installing(command == "install");
+
     // for installation we first do an update of the packages,
     // otherwise it could fail the installation because of
     // outdated data
     //
-    if(command == "install")
+    if(installing)
     {
         // we cannot "just upgrade" now because the upgrader() function
         // calls fork() and this the call would return early. Instead
@@ -526,85 +530,92 @@ bool manager::installer(QString const & bundle_name, std::string const & command
     // install_values is a string of variables that come from the list
     // of fields defined in the bundle file
     //
-    std::vector<std::string> variables;
-    snap::NOTUSED(snap::tokenize_string(variables, install_values, "\r\n", true, " "));
     std::string vars;
-    std::for_each(variables.begin(), variables.end(),
-                [&vars](auto const & v)
-                {
-                    // TODO: move to a function, this is just too long for a lambda
-                    //
-                    vars += "BUNDLE_INSTALLATION_";
-                    bool found_equal(false);
-                    // make sure that double quotes get escaped within
-                    // the string
-                    //
-                    for(auto const c : v)
-                    //for(size_t p(0); p < v.length(); ++p)
+    if(installing)
+    {
+        // only installations offer variables at the moment
+        //
+        std::vector<std::string> variables;
+        snap::NOTUSED(snap::tokenize_string(variables, install_values, "\r\n", true, " "));
+        std::for_each(variables.begin(), variables.end(),
+                    [&vars](auto const & v)
                     {
-                        if(c == '\r'
-                        || c == '\n')
+                        // TODO: move to a function, this is just too long for a lambda
+                        //
+                        vars += "BUNDLE_INSTALLATION_";
+                        bool found_equal(false);
+                        // make sure that double quotes get escaped within
+                        // the string
+                        //
+                        for(auto const c : v)
+                        //for(size_t p(0); p < v.length(); ++p)
                         {
-                            // these characters should not happen in those
-                            // strings, but just in case...
-                            //
-                            continue;
-                        }
-
-                        if(found_equal)
-                        {
-                            if(c == '"')
+                            if(c == '\r'
+                            || c == '\n')
                             {
-                                vars += '\\';
-                            }
-                            vars += c;
-                        }
-                        else if(c == '=')
-                        {
-                            found_equal = true;
-                            vars += "=\"";
-                        }
-                        else
-                        {
-                            if(c >= 'a' && c <= 'z')
-                            {
-                                // force ASCII uppercase for the name
+                                // these characters should not happen in those
+                                // strings, but just in case...
                                 //
-                                vars += c & 0x5f;
+                                continue;
+                            }
+
+                            if(found_equal)
+                            {
+                                if(c == '"')
+                                {
+                                    vars += '\\';
+                                }
+                                vars += c;
+                            }
+                            else if(c == '=')
+                            {
+                                found_equal = true;
+                                vars += "=\"";
                             }
                             else
                             {
-                                vars += c;
+                                if(c >= 'a' && c <= 'z')
+                                {
+                                    // force ASCII uppercase for the name
+                                    //
+                                    vars += c & 0x5f;
+                                }
+                                else
+                                {
+                                    vars += c;
+                                }
                             }
                         }
-                    }
-                    if(!found_equal)
-                    {
-                        vars += "=\"\"\n";
-                    }
-                    else
-                    {
-                        vars += "\"\n"; // always add a new line at the end
-                    }
-                });
+                        if(!found_equal)
+                        {
+                            vars += "=\"\"\n";
+                        }
+                        else
+                        {
+                            vars += "\"\n"; // always add a new line at the end
+                        }
+                    });
+    }
 
     // there may be some pre-installation instructions
     //
-    QDomNodeList bundle_preinst(bundle_xml.elementsByTagName("preinst"));
-    if(bundle_preinst.size() == 1)
+    QString const prename(installing ? "preinst" : "prerm");
+    QDomNodeList bundle_precmd(bundle_xml.elementsByTagName(prename));
+    if(bundle_precmd.size() == 1)
     {
-        // create a <name>.preinst script that we can run
+        // create a <name>.precmd script that we can run
         //
         std::string path(f_data_path.toUtf8().data());
         path += "/bundle-scripts/"; 
         path += bundle_name.toUtf8().data();
-        path += ".preinst";
+        path += ".";
+        path += prename.toUtf8().data();
         snap::file_content script(path);
-        QDomElement preinst(bundle_preinst.at(0).toElement());
-        script.set_content("# auto-generated by snapmanagerdaemon\n" + vars + preinst.text().toUtf8().data());
+        QDomElement precmd(bundle_precmd.at(0).toElement());
+        script.set_content("# auto-generated by snapmanagerdaemon\n" + vars + precmd.text().toUtf8().data());
         script.write_all();
         chmod(path.c_str(), 0755);
-        snap::process p("preinst");
+        snap::process p(prename);
         p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
         p.set_command(QString::fromUtf8(path.c_str()));
         int const r(p.run());
@@ -640,17 +651,19 @@ bool manager::installer(QString const & bundle_name, std::string const & command
 
     // there may be some post installation instructions
     //
-    QDomNodeList bundle_postinst(bundle_xml.elementsByTagName("postinst"));
-    if(bundle_postinst.size() == 1)
+    QString const postname(installing ? "postinst" : "postrm");
+    QDomNodeList bundle_postcmd(bundle_xml.elementsByTagName(postname));
+    if(bundle_postcmd.size() == 1)
     {
         // create a <name>.postinst script that we can run
         //
         std::string path(f_data_path.toUtf8().data());
         path += "/bundle-scripts/"; 
         path += bundle_name.toUtf8().data();
-        path += ".postinst";
+        path += ".";
+        path += postname.toUtf8().data();
         snap::file_content script(path);
-        QDomElement postinst(bundle_postinst.at(0).toElement());
+        QDomElement postinst(bundle_postcmd.at(0).toElement());
         script.set_content("# auto-generated by snapmanagerdaemon\n" + vars + postinst.text().toUtf8().data());
         script.write_all();
         chmod(path.c_str(), 0755);
@@ -667,7 +680,6 @@ bool manager::installer(QString const & bundle_name, std::string const & command
             success = false;
         }
     }
-
 
     return success;
 }
