@@ -205,7 +205,7 @@ void processes::on_process_watch(QDomDocument doc)
     list.set_field(process_list::field_t::STATISTICS);
     while(!re_names.isEmpty())
     {
-        process_list::proc_info_pointer_t info(list.next());
+        process_list::proc_info::pointer_t info(list.next());
         if(!info)
         {
             // some process(es) missing?
