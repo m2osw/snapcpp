@@ -22,9 +22,13 @@
     with other clients (client-to-client).</p>
   </description>
   <fields>
-    <field name="organization" type="input">
-      <label>Organization</label>
-      <description>Name of your organization.</description>
+    <field name="client_name" type="input">
+      <label>VPN Client Name</label>
+      <description>The name of the client which will connect to the VPN server.</description>
+    </field>
+    <field name="server_address" type="input">
+      <label>VPN Server IP address</label>
+      <description>The server IP address to which the cleint will connect.</description>
     </field>
   </fields>
   <packages>openvpn</packages>
@@ -33,6 +37,35 @@
     keys and a client.conf properly setup.
   -->
   <postinst>
+    # Clear out the easy-rsa dist just in case
+    rm -rf /etc/openvpn/*.crt /etc/openvpn/*.key /etc/openvpn/client.conf
+
+    # Build the client key on the server
+    ssh ${BUNDLE_INSTALLATION_SERVER_ADDRESS} &gt;&gt;EOF
+      cd /etc/openvpn/easy-rsa
+      rm -f keys/${BUNDLE_INSTALLATION_CLIENT_NAME}.* keys/client.ovpn
+      ./pkitool --initca ${BUNDLE_INSTALLATION_CLIENT_NAME}
+      sed \
+        -e "s/;user nobody/user nobody/" \
+        -e "s/;group nogroup/group nogroup/" \
+        -e "s/remote my-server-1 1194/remote ${BUNDLE_INSTALLATION_SERVER_ADDRESS} 1194/" \
+        -e "s/cert client.crt/cert ${BUNDLE_INSTALLATION_CLIENT_NAME}.crt/" \
+        -e "s/key client.key/key ${BUNDLE_INSTALLATION_CLIENT_NAME}.key/" \
+        /usr/share/doc/openvpn/examples/sample-config-files/client.conf \
+        &gt; /etc/openvpn/easy-rsa/keys/client.ovpn
+      EOF
+
+    # Copy the certs over from the server
+    scp \
+      ${BUNDLE_INSTALLATION_SERVER_ADDRESS}:/etc/openvpn/ca.crt
+      ${BUNDLE_INSTALLATION_SERVER_ADDRESS}:/etc/openvpn/keys/${BUNDLE_INSTALLATION_CLIENT_NAME}.crt
+      ${BUNDLE_INSTALLATION_SERVER_ADDRESS}:/etc/openvpn/keys/${BUNDLE_INSTALLATION_CLIENT_NAME}.key
+      ${BUNDLE_INSTALLATION_SERVER_ADDRESS}:/etc/openvpn/keys/client.ovpn
+      /etc/openvpn
+
+    # Start the server
+    systemctl start openvpn@client
+
   </postinst>
 </bundle>
 <!--

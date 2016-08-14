@@ -58,7 +58,7 @@ add_subdirectory(apache2)
 add_subdirectory(self)
 add_subdirectory(ssh)
 #add_subdirectory(system)
-#add_subdirectory(vpn)
+add_subdirectory(vpn)
 
 
 # vim: ts=4 sw=4 nocindent et
