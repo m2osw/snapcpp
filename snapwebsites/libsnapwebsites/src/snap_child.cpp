@@ -2683,7 +2683,7 @@ pid_t snap_child::fork_child()
         {
             // the snap_logic_exception is not a snap_exception
             // and other libraries may generate other exceptions
-            // (i.e. controlled_vars, thrift...)
+            // (i.e. controlled_vars, C++ cassandra driver...)
             SNAP_LOG_FATAL("snap_child::fork_child(): std::exception caught: ")(std_except.what());
             exit(1);
             NOTREACHED();
@@ -2824,7 +2824,7 @@ bool snap_child::process(int socket)
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        // (i.e. controlled_vars, thrift...)
+        // (i.e. controlled_vars, C++ cassandra driver...)
         SNAP_LOG_FATAL("snap_child::process(): std::exception caught: ")(std_except.what());
     }
     catch( ... )

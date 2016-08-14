@@ -69,7 +69,6 @@ apt-get install cassandra snapserver snapcgi
 #  . libqtcassandra
 #  . libqtserialization
 #  . libsnapwebsites
-#  . libthrift0
 #  . libtld
 #  . snapcgi
 #  . snapwebserver

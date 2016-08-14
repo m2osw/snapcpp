@@ -1000,7 +1000,7 @@ void watchdog_child::run_watchdog_plugins()
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what());
     }
     catch(...)
     {
@@ -1096,7 +1096,7 @@ void watchdog_child::record_usage(snap::snap_communicator_message const & messag
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what());
     }
     catch(...)
     {

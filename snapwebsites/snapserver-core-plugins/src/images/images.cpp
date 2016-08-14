@@ -996,7 +996,7 @@ void images::on_backend_action(QString const & action)
 
     if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
-        f_backend = dynamic_cast<snap_backend *>(f_snap.get());
+        f_backend = dynamic_cast<snap_backend *>(f_snap);
         if(!f_backend)
         {
             throw images_exception_no_backend("could not determine the snap_backend pointer");

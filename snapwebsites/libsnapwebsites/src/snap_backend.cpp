@@ -157,7 +157,7 @@ public:
 
 private:
     // TBD: should this be a weak pointer?
-    snap_backend *          f_snap_backend;
+    snap_backend *          f_snap_backend = nullptr;
 };
 
 
@@ -218,7 +218,7 @@ public:
     virtual void                process_timeout();
 
 private:
-    snap_backend *              f_snap_backend;
+    snap_backend *              f_snap_backend = nullptr;
 };
 
 
@@ -286,7 +286,7 @@ public:
     virtual void                process_timeout();
 
 private:
-    snap_backend *              f_snap_backend;
+    snap_backend *              f_snap_backend = nullptr;
 };
 
 
@@ -358,8 +358,8 @@ public:
 
 private:
     // this is owned by a server function so no need for a smart pointer
-    snap_backend::zpsnap_backend_t  f_snap_backend;
-    QString                         f_action;
+    snap_backend *      f_snap_backend = nullptr;
+    QString             f_action;
 };
 
 
@@ -487,7 +487,7 @@ public:
     virtual void                process_message(snap_communicator_message const & message);
 
 private:
-    snap_backend *                              f_snap_backend;
+    snap_backend *                              f_snap_backend = nullptr;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     snap_lock::pointer_t                        f_lock;
 };
@@ -1843,7 +1843,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        // (i.e. controlled_vars, thrift...)
+        // (i.e. controlled_vars, C++ cassandra driver...)
         SNAP_LOG_FATAL("snap_backend::process_backend_uri(): std::exception caught: ")(std_except.what());
     }
     catch( ... )

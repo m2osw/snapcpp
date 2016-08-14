@@ -286,8 +286,8 @@ private:
     SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_mixed)
     SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_report)
 
-    zpsnap_child_t                  f_snap;
-    snap_backend::zpsnap_backend_t  f_backend;
+    snap_child *                    f_snap = nullptr;
+    snap_backend *                  f_backend = nullptr;
     email                           f_email; // email being processed
 };
 

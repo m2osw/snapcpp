@@ -184,9 +184,9 @@ private:
     bool                func_trim(parameters_t & params);
     bool                func_write(parameters_t & params);
 
-    zpsnap_child_t                  f_snap;
-    snap_backend::zpsnap_backend_t  f_backend;
-    controlled_vars::fbool_t        f_ping_backend;
+    snap_child *                    f_snap = nullptr;
+    snap_backend *                  f_backend = nullptr;
+    bool                            f_ping_backend = false;
     QString                         f_on_error; // execute this script on errors
 
     static images::func_t const     g_commands[];

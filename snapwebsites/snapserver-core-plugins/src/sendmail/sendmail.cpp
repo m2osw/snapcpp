@@ -2010,7 +2010,7 @@ void sendmail::on_backend_action(QString const & action)
     {
         try
         {
-            f_backend = dynamic_cast<snap_backend *>(f_snap.get());
+            f_backend = dynamic_cast<snap_backend *>(f_snap);
             if(!f_backend)
             {
                 throw sendmail_exception_no_backend("could not determine the snap_backend pointer");

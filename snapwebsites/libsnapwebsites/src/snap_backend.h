@@ -26,8 +26,7 @@ namespace snap
 class snap_backend : public snap_child
 {
 public:
-    typedef controlled_vars::ptr_auto_init<snap_backend>    zpsnap_backend_t;
-    typedef std::string                                     message_t;
+    typedef std::string         message_t;
 
                                 snap_backend( server_pointer_t s );
     virtual                     ~snap_backend();
