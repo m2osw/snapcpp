@@ -13,10 +13,12 @@
     <field name="cluster_name" type="input">
       <label>Swap Size</label>
       <description>
-        <p>Enter amount of swap you would like to use (i.e. 512M, 1G, ...)</p>
-        <p>IMPORTANT NOTE: If you using this computer just and only for a Cassandra
-        node and the computer has about 4Gb, then you do not need to install swap
-        (Cassandra actually suggest you do not.)</p>
+        <p>Enter amount of swap you would like to have (i.e. 512M, 1G, ...)</p>
+        <p><strong>IMPORTANT NOTE:</strong> If you are to use this computer
+        just and only as a Cassandra node and the computer has about 4Gb or
+        more, then you do not need to install swap (Cassandra actually
+        suggests you do not setup swap to avoid slowness when hitting
+        swap.)</p>
       </description>
     </field>
   </fields>
