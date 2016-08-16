@@ -21,12 +21,6 @@
     to one or more servers, the new client can also communicate
     with other clients (client-to-client).</p>
   </description>
-  <fields>
-    <field name="client_conf" type="input">
-      <label>VPN Client Configuration Text</label>
-      <description>The OVPN file which the client uses to start openvpn. Keys and certs are included.</description>
-    </field>
-  </fields>
   <packages>openvpn</packages>
   <!--
     For a client, the setup is simpler: we just need to have a few

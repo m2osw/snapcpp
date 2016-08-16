@@ -335,11 +335,10 @@ bool vpn::display_value ( QDomElement parent
                 , snap_manager::form::FORM_BUTTON_SAVE
                 );
         snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
-                    "Enter IP address of the server, followed by one or more names of the clients you wish to add, separated by spaces."
+                    "Enter one or more names of the clients you wish to add, one per line."
                     , s.get_field_name()
                     , ""
-                    , "For example, if the server IP is 10.1.1.116, and the clients are 'fresno2', 'fresno3' and 'fresno4,"
-                      "then type '10.1.1.116 fresno2 fresno3 fresno4' and click 'ADD'."
+                    , ""
                     ));
         f.add_widget(field);
         f.generate(parent, uri);
@@ -408,23 +407,6 @@ bool vpn::apply_setting ( QString const & button_name
 
     if( field_name == CLIENT_ADDNEW_NAME )
     {
-#if 0
-        QFile script_file(":/create_client_certs.sh");
-        if( !script_file.open( QIODevice::ReadOnly | QIODevice::Text )
-        {
-            QString const errmsg = QString("Cannot open '%1' for reading!").arg(file.fileName());
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            return false;
-        }
-
-        QFile outfile("/tmp/create_client_certs.sh");
-        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
-        {
-            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            return false;
-        }
-#endif
         QFile create_script( "/tmp/create_client_certs.sh" );
         if( !create_script.exists() )
         {
@@ -436,18 +418,19 @@ bool vpn::apply_setting ( QString const & button_name
             }
         }
 
-        QStringList clients( new_value.split(" ") );
-        QString const server = clients[0];
+        QStringList clients( new_value.split("\n") );
         clients.erase( 0 );
         for( auto const &client : clients )
         {
-            QProcess::execute( "/tmp/create_client_certs.sh", {server,client} );
+            QProcess::execute( "/tmp/create_client_certs.sh", {f_snap->get_public_ip(),client} );
         }
         return true;
     }
 
     if( field_name == CLIENT_CONFIG_NAME )
     {
+        QProcess::execute( "systemctl stop openvpn@client" );
+
         QFile file( "/etc/openvpn/client.ovpn" );
         if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
         {
@@ -459,6 +442,8 @@ bool vpn::apply_setting ( QString const & button_name
 
         QTextStream out( &file );
         out << new_value;
+
+        QProcess::execute( "systemctl start openvpn@client" );
         return true;
     }
 
