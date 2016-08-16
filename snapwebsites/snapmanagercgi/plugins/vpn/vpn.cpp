@@ -411,6 +411,7 @@ bool vpn::apply_setting ( QString const & button_name
         //
         // Overwrite the script every time
         //
+        create_script.remove();
         if( !QFile::copy( ":/create_client_certs.sh", create_script.fileName() ) )
         {
             QString const errmsg = QString("Cannot copy create_client_certs.sh file!");
