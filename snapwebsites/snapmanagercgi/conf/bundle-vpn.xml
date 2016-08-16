@@ -111,33 +111,32 @@
       }
  
     unset arr
-    parse_list( ${BUNDLE_INSTALLATION_CLIENTS} )
-    for client in "${arr[@]]}"
+    parse_list ${BUNDLE_INSTALLATION_CLIENTS}
+    for client in "${arr[@]}"
     do
-      local keys_dir=/etc/openvpn/easy-rsa/keys
-      local client_file="${keys_dir}/${client}.ovpn"
-      ./pkitool --initca ${client}
+      keys_dir=/etc/openvpn/easy-rsa/keys
+      client_file="${keys_dir}/${client}.ovpn"
+      ./pkitool ${client}
       sed \
         -e "s/^;user nobody/user nobody/" \
         -e "s/^;group nogroup/group nogroup/" \
         -e "s/^remote my-server-1 1194/remote ${BUNDLE_INSTALLATION_SERVER_ADDRESS} 1194/" \
-        -e "s/^cert client.crt/cert ${client}.crt/" \
-        -e "s/^key client.key/key ${client}.key/" \
-        -e "s/^ca ca.crt/#ca ca.crt/" \
-        -e "s/^cert server.crt/#cert server.crt/" \
-        -e "s/^key server.key/#key server.key/" \
+        -e "s/^ca ca.crt/;ca ca.crt/" \
+        -e "s/^cert client.crt/;cert client.crt/" \
+        -e "s/^key client.key/;key client.key/" \
         /usr/share/doc/openvpn/examples/sample-config-files/client.conf \
         &gt; ${client_file}
         append_file() {
-          echo "&gt;${1}&lt;"    &lt;&lt; ${client_file}
-          cat  ${keys_dir}/${2}  &lt;&lt; ${client_file}
-          echo "&gt;/${1}&lt;\n" &lt;&lt; ${client_file}
+          echo "&lt;${1}&gt;"     &gt;&gt; ${client_file}
+          cat  "${keys_dir}/${2}" &gt;&gt; ${client_file}
+          echo "&lt;/${1}&gt;"    &gt;&gt; ${client_file}
         }
-        append_file( "ca"  "ca.crt"        )
-        append_file( "key" "${client}.key" )
-        append_file( "crt" "${client}.crt" )
-    done
 
+        append_file "ca"  "ca.crt"
+        append_file "key" "${client}.key"
+        append_file "crt" "${client}.crt"
+    done
+ 
     # Start the server
     systemctl start openvpn@server
   </postinst>
