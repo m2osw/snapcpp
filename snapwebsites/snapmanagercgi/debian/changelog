@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-403: Need to remove script before trying to overwrite it.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 16:51:41 -0700
+
 snapmanagercgi (1.0.6.7~xenialm2osw4) xenial; urgency=high
 
   * SNAP-403: Now can handle text without any '\n's in it.
