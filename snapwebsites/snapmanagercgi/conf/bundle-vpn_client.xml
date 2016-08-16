@@ -22,7 +22,7 @@
     with other clients (client-to-client).</p>
   </description>
   <fields>
-    <field name="client_conf" type="text">
+    <field name="client_conf" type="input">
       <label>VPN Client Configuration Text</label>
       <description>The OVPN file which the client uses to start openvpn. Keys and certs are included.</description>
     </field>

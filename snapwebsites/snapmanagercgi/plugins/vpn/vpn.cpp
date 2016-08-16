@@ -33,7 +33,7 @@
 
 // Qt5
 //
-#include <QDir>
+#include <QtCore>
 
 // C++ lib
 //
@@ -205,7 +205,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     //
     QStringList exts    = {"ovpn"}; //{"key","crt","ovpn"};
     QStringList filters;
-    for( auto const &ext : ext ) { filters << QString("*.%1").arg(ext); }
+    for( auto const &ext : exts ) { filters << QString("*.%1").arg(ext); }
 
     QDir keys_path;
     keys_path.setPath( "/etc/openvpn/easy_rsa/keys/" );
@@ -234,7 +234,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
                               snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
                             , QString("%1 %2").arg(info.baseName()).arg(ext)
-                            , in.readAll();
+                            , in.readAll()
                             );
             server_status.set_field(ctl);
         }

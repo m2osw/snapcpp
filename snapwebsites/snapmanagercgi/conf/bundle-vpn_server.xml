@@ -50,9 +50,9 @@
       <label>Email</label>
       <description>Contact email address.</description>
     </field>
-    <field name="clients" type="text">
+    <field name="clients" type="input">
       <label>Client Name List</label>
-      <description>Enter one client per line. This name should also resolve to the IP address of the client in question.</description>
+      <description>Separate client names with a space. Each name should also resolve to the IP address of the client in question.</description>
     </field>
   </fields>
   <packages>openvpn, easy-rsa</packages>
@@ -104,7 +104,7 @@
     cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
 
     parse_list() {
-      local IFS="\n"
+      local IFS=" "
       set -f
       arr=( $@ )
       set +f
