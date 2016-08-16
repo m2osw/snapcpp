@@ -32,15 +32,6 @@
     For a client, the setup is simpler: we just need to have a few
     keys and a client.conf properly setup.
   -->
-  <postinst>
-    # Clear out the easy-rsa dist just in case
-    cd /etc/openvpn
-    rm -rf *.crt *.key *.conf *.ovpn
-    echo "${BUNDLE_INSTALLATION_CLIENT_CONF}" > client.ovpn
-
-    # Start the server
-    systemctl start openvpn@client
-  </postinst>
   <prerm>
     systemctl stop openvpn@client
   </prerm>

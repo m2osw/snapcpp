@@ -39,8 +39,8 @@ snap_validate_xml( bundle-rkhunter.xml   bundles.xsd )
 snap_validate_xml( bundle-swap.xml       bundles.xsd )
 snap_validate_xml( bundle-tools.xml      bundles.xsd )
 snap_validate_xml( bundle-tripwire.xml   bundles.xsd )
-snap_validate_xml( bundle-vpn.xml        bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
+snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
 
 snap_validate_xml( service-snapmanagerdaemon.xml service.xsd )
 
@@ -100,8 +100,8 @@ install(
         bundle-swap.xml
         bundle-tools.xml
         bundle-tripwire.xml
-        bundle-vpn.xml
         bundle-vpn_client.xml
+        bundle-vpn_server.xml
 
     DESTINATION
         share/snapwebsites/bundles

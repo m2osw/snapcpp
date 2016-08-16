@@ -5,7 +5,7 @@
     xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-vpn_server.xml
 -->
 <bundle>
-  <name>vpn</name>
+  <name>vpn_server</name>
   <description>
     <p>The OpenVPN bundle is used to secure public connections
     between computers. If you have a secure LAN then you do not
@@ -49,10 +49,6 @@
     <field name="email" type="input">
       <label>Email</label>
       <description>Contact email address.</description>
-    </field>
-    <field name="clients" type="input">
-      <label>Client Name List</label>
-      <description>Separate client names with a space. Each name should also resolve to the IP address of the client in question.</description>
     </field>
   </fields>
   <packages>openvpn, easy-rsa</packages>
@@ -102,40 +98,6 @@
     # Now create the server key and copy it in
     ./pkitool --server server
     cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
-
-    parse_list() {
-      local IFS=" "
-      set -f
-      arr=( $@ )
-      set +f
-      }
- 
-    unset arr
-    parse_list ${BUNDLE_INSTALLATION_CLIENTS}
-    for client in "${arr[@]}"
-    do
-      keys_dir=/etc/openvpn/easy-rsa/keys
-      client_file="${keys_dir}/${client}.ovpn"
-      ./pkitool ${client}
-      sed \
-        -e "s/^;user nobody/user nobody/" \
-        -e "s/^;group nogroup/group nogroup/" \
-        -e "s/^remote my-server-1 1194/remote ${BUNDLE_INSTALLATION_SERVER_ADDRESS} 1194/" \
-        -e "s/^ca ca.crt/;ca ca.crt/" \
-        -e "s/^cert client.crt/;cert client.crt/" \
-        -e "s/^key client.key/;key client.key/" \
-        /usr/share/doc/openvpn/examples/sample-config-files/client.conf \
-        &gt; ${client_file}
-        append_file() {
-          echo "&lt;${1}&gt;"     &gt;&gt; ${client_file}
-          cat  "${keys_dir}/${2}" &gt;&gt; ${client_file}
-          echo "&lt;/${1}&gt;"    &gt;&gt; ${client_file}
-        }
-
-        append_file "ca"  "ca.crt"
-        append_file "key" "${client}.key"
-        append_file "crt" "${client}.crt"
-    done
  
     # Start the server
     systemctl start openvpn@server

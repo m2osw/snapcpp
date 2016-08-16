@@ -64,10 +64,17 @@ endif()
 install(
     TARGETS vpn LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
+
 file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 install(
     FILES ${HEADER_FILES}
     DESTINATION include/snapmanager/plugins/vpn
 )
+
+#file(GLOB SCRIPT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.sh")
+#install(
+#    FILES ${SCRIPT_FILES}
+#    DESTINATION share/snapmanager/scripts
+#)
 
 # vim: ts=4 sw=4 et

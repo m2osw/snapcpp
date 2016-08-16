@@ -44,6 +44,13 @@
 #include "poison.h"
 
 
+namespace
+{
+    QString const CLIENT_ADDNEW_NAME = QString("Add new client");
+    QString const CLIENT_CONFIG_NAME = QString("VPN Client Configuration");
+}
+
+
 SNAP_PLUGIN_START(vpn, 1, 0)
 
 
@@ -200,10 +207,6 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     // only a few admins should be permitted on those computers
     // anyway...
     //
-    SNAP_LOG_TRACE("vpn::on_retrieve_status()");
-
-    // NOTE: TODO: Replace glob() with QDir.
-    //
     QStringList exts    = {"ovpn"}; //{"key","crt","ovpn"};
     QStringList filters;
     for( auto const &ext : exts ) { filters << QString("*.%1").arg(ext); }
@@ -227,24 +230,58 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
                 .arg(info.baseName())
                 .arg(ext)
                 );
-            if( !file.open( QIODevice::ReadOnly| QIODevice::Text ) )
+            if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
+            {
+                QString const name = QString("Generated vpn_client %1.%2").arg(info.baseName()).arg(ext);
+                SNAP_LOG_TRACE("vpn::on_retrieve_status(): setting ctl, name=")(qPrintable(name));
+                QTextStream in(&file);
+                snap_manager::status_t const ctl
+                    ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , name
+                    , in.readAll()
+                    );
+                server_status.set_field(ctl);
+            }
+            else
             {
                 QString const errmsg = QString("Cannot open '%1' for reading!").arg(info.filePath());
                 SNAP_LOG_ERROR(qPrintable(errmsg));
-                throw vpn_exception( errmsg );
+                //throw vpn_exception( errmsg );
             }
-
-            QString const name = QString("%1 %2").arg(info.baseName()).arg(ext);
-            SNAP_LOG_TRACE("vpn::on_retrieve_status(): setting ctl, name=")(qPrintable(name));
-            QTextStream in(&file);
-            snap_manager::status_t const ctl(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , name
-                            , in.readAll()
-                            );
-            server_status.set_field(ctl);
         }
+    }
+
+    // Add new client
+    //
+    {
+        snap_manager::status_t const ctl(
+                snap_manager::status_t::state_t::STATUS_STATE_INFO
+                , get_plugin_name()
+                , CLIENT_ADDNEW_NAME
+                , QString()
+                );
+        server_status.set_field(ctl);
+    }
+
+    // Create the display for the client cert, if you want a client to run on this machine
+    //
+    {
+        QString contents;
+        QFile file( "/etc/openvpn/client.ovpn" );
+        if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
+        {
+            QTextStream in(&file);
+            contents = in.readAll();
+        }
+
+        snap_manager::status_t const ctl(
+                snap_manager::status_t::state_t::STATUS_STATE_INFO
+                , get_plugin_name()
+                , CLIENT_CONFIG_NAME
+                , contents
+                );
+        server_status.set_field(ctl);
     }
 }
 
@@ -290,6 +327,43 @@ bool vpn::display_value ( QDomElement parent
         return false;
     }
 
+    if( s.get_field_name() == CLIENT_ADDNEW_NAME )
+    {
+        snap_manager::form f(
+                get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                    "Enter IP address of the server, followed by one or more names of the clients you wish to add, separated by spaces."
+                    , s.get_field_name()
+                    , ""
+                    , "For example, if the server IP is 10.1.1.116, and the clients are 'fresno2', 'fresno3' and 'fresno4,"
+                      "then type '10.1.1.116 fresno2 fresno3 fresno4' and click 'ADD'."
+                    ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
+    }
+
+    if( s.get_field_name() == CLIENT_CONFIG_NAME )
+    {
+        snap_manager::form f(
+                get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                    "Client OpenVPN configuration file."
+                    , s.get_field_name()
+                    , s.get_value()
+                    , "Paste in the file that was generated on the VPN server page, if you want to run a client on this system."
+                    ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
+    }
+
     // the list of client config files
     //
     snap_manager::form f(
@@ -301,7 +375,8 @@ bool vpn::display_value ( QDomElement parent
                 "Paste this into the client system to activate."
                 , s.get_field_name()
                 , s.get_value()
-                , "This data will not be changed on disk if you alter it."
+                , "NOTE: This has been read in from the generated client file on the system."
+                "This field is READ ONLY! Any changes to the text will not be persisted."
                 ));
     f.add_widget(field);
     f.generate(parent, uri);
@@ -328,11 +403,65 @@ bool vpn::apply_setting ( QString const & button_name
                         )
 {
     NOTUSED(button_name);
-    NOTUSED(field_name);
-    NOTUSED(new_value);
     NOTUSED(old_or_installation_value);
     NOTUSED(affected_services);
-    SNAP_LOG_TRACE("vpn::apply_setting()");
+
+    if( field_name == CLIENT_ADDNEW_NAME )
+    {
+#if 0
+        QFile script_file(":/create_client_certs.sh");
+        if( !script_file.open( QIODevice::ReadOnly | QIODevice::Text )
+        {
+            QString const errmsg = QString("Cannot open '%1' for reading!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return false;
+        }
+
+        QFile outfile("/tmp/create_client_certs.sh");
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return false;
+        }
+#endif
+        QFile create_script( "/tmp/create_client_certs.sh" );
+        if( !create_script.exists() )
+        {
+            if( !QFile::copy( ":/create_client_certs.sh", create_script.fileName() ) )
+            {
+                QString const errmsg = QString("Cannot copy create_client_certs.sh file!");
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                return false;
+            }
+        }
+
+        QStringList clients( new_value.split(" ") );
+        QString const server = clients[0];
+        clients.erase( 0 );
+        for( auto const &client : clients )
+        {
+            QProcess::execute( "/tmp/create_client_certs.sh", {server,client} );
+        }
+        return true;
+    }
+
+    if( field_name == CLIENT_CONFIG_NAME )
+    {
+        QFile file( "/etc/openvpn/client.ovpn" );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            //throw vpn_exception( errmsg );
+            return false;
+        }
+
+        QTextStream out( &file );
+        out << new_value;
+        return true;
+    }
+
     return false;
 }
 
