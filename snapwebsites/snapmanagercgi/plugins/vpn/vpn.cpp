@@ -200,6 +200,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     // only a few admins should be permitted on those computers
     // anyway...
     //
+    SNAP_LOG_TRACE("vpn::on_retrieve_status()");
 
     // NOTE: TODO: Replace glob() with QDir.
     //
@@ -208,13 +209,15 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     for( auto const &ext : exts ) { filters << QString("*.%1").arg(ext); }
 
     QDir keys_path;
-    keys_path.setPath( "/etc/openvpn/easy_rsa/keys/" );
+    keys_path.setPath( "/etc/openvpn/easy-rsa/keys/" );
     keys_path.setNameFilters( filters );
     keys_path.setSorting( QDir::Name );
     keys_path.setFilter( QDir::Files );
 
     for( QFileInfo const &info : keys_path.entryInfoList() )
     {
+        SNAP_LOG_TRACE("file info=")(info.filePath());
+
         // create a field for this one, it worked
         //
         for( auto const &ext : exts )
@@ -226,14 +229,18 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
                 );
             if( !file.open( QIODevice::ReadOnly| QIODevice::Text ) )
             {
-                throw vpn_exception( QString("Cannot open '%1' for reading!").arg(info.filePath()) );
+                QString const errmsg = QString("Cannot open '%1' for reading!").arg(info.filePath());
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                throw vpn_exception( errmsg );
             }
 
+            QString const name = QString("%1 %2").arg(info.baseName()).arg(ext);
+            SNAP_LOG_TRACE("vpn::on_retrieve_status(): setting ctl, name=")(qPrintable(name));
             QTextStream in(&file);
             snap_manager::status_t const ctl(
                               snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
-                            , QString("%1 %2").arg(info.baseName()).arg(ext)
+                            , name
                             , in.readAll()
                             );
             server_status.set_field(ctl);
@@ -288,13 +295,13 @@ bool vpn::display_value ( QDomElement parent
     snap_manager::form f(
             get_plugin_name()
             , s.get_field_name()
-            , snap_manager::form::FORM_BUTTON_REFRESH
+            , snap_manager::form::FORM_BUTTON_NONE
             );
     snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
                 "Paste this into the client system to activate."
                 , s.get_field_name()
                 , s.get_value()
-                , "This data will not be changed if you alter it."
+                , "This data will not be changed on disk if you alter it."
                 ));
     f.add_widget(field);
     f.generate(parent, uri);
@@ -325,6 +332,7 @@ bool vpn::apply_setting ( QString const & button_name
     NOTUSED(new_value);
     NOTUSED(old_or_installation_value);
     NOTUSED(affected_services);
+    SNAP_LOG_TRACE("vpn::apply_setting()");
     return false;
 }
 

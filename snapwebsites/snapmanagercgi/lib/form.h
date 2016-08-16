@@ -99,6 +99,7 @@ class form
 public:
     typedef uint32_t    button_t;
 
+    static button_t const       FORM_BUTTON_NONE            = 0x00000000;
     static button_t const       FORM_BUTTON_RESET           = 0x00000001;
     static button_t const       FORM_BUTTON_SAVE            = 0x00000002;
     static button_t const       FORM_BUTTON_SAVE_EVERYWHERE = 0x00000004;
@@ -109,7 +110,7 @@ public:
     static button_t const       FORM_BUTTON_UPGRADE         = 0x00000080;
     static button_t const       FORM_BUTTON_REFRESH         = 0x00000100;
 
-                        form(QString const & plugin_name, QString const & field_name, button_t button);
+                        form(QString const & plugin_name, QString const & field_name, button_t button = FORM_BUTTON_NONE);
 
     void                generate(QDomElement parent, snap::snap_uri const & uri);
     void                add_widget(widget::pointer_t w);
