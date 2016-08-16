@@ -1,3 +1,9 @@
+snapdb (1.0.1.100~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 16 Aug 2016 02:00:52 -0700
+
 snapdb (1.0.1.99~xenial) xenial; urgency=high
 
   * Nightly build.
