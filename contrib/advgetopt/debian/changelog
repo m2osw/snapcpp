@@ -1,3 +1,9 @@
+advgetopt (1.1.0.99~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 15 Aug 2016 22:45:45 -0700
+
 advgetopt (1.1.0.98~xenial) xenial; urgency=high
 
   * Nightly build.
