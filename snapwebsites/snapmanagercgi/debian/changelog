@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.6.7~xenialm2osw3) xenial; urgency=high
+
+  * SNAP-403: Now using public_ip for script, and clients are one per line.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 15:37:00 -0700
+
 snapmanagercgi (1.0.6.7~xenialm2osw2) xenial; urgency=high
 
   * SNAP-403: Bumping version for testing of new client-level functionality in plugin
