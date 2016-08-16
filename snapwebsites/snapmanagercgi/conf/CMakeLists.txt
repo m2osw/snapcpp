@@ -100,8 +100,8 @@ install(
         bundle-swap.xml
         bundle-tools.xml
         bundle-tripwire.xml
+        bundle-vpn.xml
         bundle-vpn_client.xml
-        bundle-vpn_server.xml
 
     DESTINATION
         share/snapwebsites/bundles
