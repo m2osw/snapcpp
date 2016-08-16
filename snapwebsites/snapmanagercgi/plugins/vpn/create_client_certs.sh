@@ -9,7 +9,7 @@ then
   exit 1
 fi
 
-if ! [ -f "/etc/openvpn/easy-rsa" ]
+if ! [ -d "/etc/openvpn/easy-rsa" ]
 then
   echo "server cert is not set up!"
   exit 1

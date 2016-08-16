@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.6.7~xenialm2osw4) xenial; urgency=high
+
+  * SNAP-403: Now can handle text without any '\n's in it.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 16:26:58 -0700
+
 snapmanagercgi (1.0.6.7~xenialm2osw3) xenial; urgency=high
 
   * SNAP-403: Now using public_ip for script, and clients are one per line.

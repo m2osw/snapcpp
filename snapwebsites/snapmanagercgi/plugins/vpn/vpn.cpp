@@ -417,12 +417,32 @@ bool vpn::apply_setting ( QString const & button_name
                 return false;
             }
         }
+        create_script.setPermissions
+                ( create_script.permissions()
+                | QFileDevice::ExeOwner
+                | QFileDevice::ExeUser
+                | QFileDevice::ExeGroup
+                );
 
-        QStringList clients( new_value.split("\n") );
-        clients.erase( 0 );
+        QStringList clients;
+
+        if( new_value.contains("\n") )
+        {
+            clients = new_value.split("\n");
+        }
+        else
+        {
+            clients << new_value;
+        }
+
         for( auto const &client : clients )
         {
-            QProcess::execute( "/tmp/create_client_certs.sh", {f_snap->get_public_ip(),client} );
+            if( QProcess::execute( "/tmp/create_client_certs.sh", {f_snap->get_public_ip(), client} ) != 0 )
+            {
+                SNAP_LOG_ERROR("Could not execute client creation script! IP=")
+                    (qPrintable(f_snap->get_public_ip()))
+                    (", client=")(qPrintable(client));
+            }
         }
         return true;
     }
