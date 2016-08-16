@@ -5,7 +5,7 @@
     xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-vpn_server.xml
 -->
 <bundle>
-  <name>vpn_server</name>
+  <name>vpn</name>
   <description>
     <p>The OpenVPN bundle is used to secure public connections
     between computers. If you have a secure LAN then you do not
@@ -22,6 +22,10 @@
     and in effect make it work in a failsafe manner.</p>
   </description>
   <fields>
+    <field name="server_address" type="input">
+      <label>VPN Server IP address</label>
+      <description>The server IP address to which the cleint will connect.</description>
+    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>Name of your organization.</description>
@@ -46,6 +50,10 @@
       <label>Email</label>
       <description>Contact email address.</description>
     </field>
+    <field name="clients" type="text">
+      <label>Client Name List</label>
+      <description>Enter one client per line. This name should also resolve to the IP address of the client in question.</description>
+    </field>
   </fields>
   <packages>openvpn, easy-rsa</packages>
   <!--
@@ -54,10 +62,11 @@
   -->
   <postinst>
     # Clear out the easy-rsa dist just in case
-    rm -rf /etc/openvpn/server.* /etc/openvpn/easy-rsa
+    cd /etc/openvpn
+    rm -rf *.crt *.key *.conf *.ovpn easy-rsa
 
     # get the default RSA key data
-    cp -r /usr/share/easy-rsa /etc/openvpn/.
+    cp -r /usr/share/easy-rsa .
 
     # Generate the Diffie-Hellman parameters
     DH2048=/etc/openvpn/dh2048.pem
@@ -76,12 +85,12 @@
 
     # Setup the keys as defined by the user in the installation form
     sed \
-      -e "s/KEY_ORG=\".*\"/KEY_ORG=\"$BUNDLE_INSTALLATION_ORGANIZATION\"/" \
-      -e "s/KEY_OU=\".*\"/KEY_OU=\"$BUNDLE_INSTALLATION_ORGANIZATION_UNIT\"/" \
-      -e "s/KEY_CITY=\".*\"/KEY_CITY=\"$BUNDLE_INSTALLATION_CITY\"/" \
-      -e "s/KEY_PROVINCE=\".*\"/KEY_PROVINCE=\"$BUNDLE_INSTALLATION_PROVINCE\"/" \
-      -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"$BUNDLE_INSTALLATION_COUNTRY\"/" \
-      -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"$BUNDLE_INSTALLATION_EMAIL\"/" \
+      -e "s/KEY_ORG=\".*\"/KEY_ORG=\"${BUNDLE_INSTALLATION_ORGANIZATION}\"/" \
+      -e "s/KEY_OU=\".*\"/KEY_OU=\"${BUNDLE_INSTALLATION_ORGANIZATION_UNIT}\"/" \
+      -e "s/KEY_CITY=\".*\"/KEY_CITY=\"${BUNDLE_INSTALLATION_CITY}\"/" \
+      -e "s/KEY_PROVINCE=\".*\"/KEY_PROVINCE=\"${BUNDLE_INSTALLATION_PROVINCE}\"/" \
+      -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"${BUNDLE_INSTALLATION_COUNTRY}\"/" \
+      -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"${BUNDLE_INSTALLATION_EMAIL}\"/" \
             /usr/share/easy-rsa/vars &gt; /etc/openvpn/easy-rsa/vars
 
     # Now create the RSA CA key
@@ -94,9 +103,47 @@
     ./pkitool --server server
     cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
 
+    parse_list() {
+      local IFS="\n"
+      set -f
+      arr=( $@ )
+      set +f
+      }
+ 
+    unset arr
+    parse_list( ${BUNDLE_INSTALLATION_CLIENTS} )
+    for client in "${arr[@]]}"
+    do
+      local keys_dir=/etc/openvpn/easy-rsa/keys
+      local client_file="${keys_dir}/${client}.ovpn"
+      ./pkitool --initca ${client}
+      sed \
+        -e "s/^;user nobody/user nobody/" \
+        -e "s/^;group nogroup/group nogroup/" \
+        -e "s/^remote my-server-1 1194/remote ${BUNDLE_INSTALLATION_SERVER_ADDRESS} 1194/" \
+        -e "s/^cert client.crt/cert ${client}.crt/" \
+        -e "s/^key client.key/key ${client}.key/" \
+        -e "s/^ca ca.crt/#ca ca.crt/" \
+        -e "s/^cert server.crt/#cert server.crt/" \
+        -e "s/^key server.key/#key server.key/" \
+        /usr/share/doc/openvpn/examples/sample-config-files/client.conf \
+        &gt; ${client_file}
+        append_file() {
+          echo "&gt;${1}&lt;"    &lt;&lt; ${client_file}
+          cat  ${keys_dir}/${2}  &lt;&lt; ${client_file}
+          echo "&gt;/${1}&lt;\n" &lt;&lt; ${client_file}
+        }
+        append_file( "ca"  "ca.crt"        )
+        append_file( "key" "${client}.key" )
+        append_file( "crt" "${client}.crt" )
+    done
+
     # Start the server
     systemctl start openvpn@server
   </postinst>
+  <prerm>
+    systemctl stop openvpn@server
+  </prerm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
