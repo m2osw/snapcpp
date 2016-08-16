@@ -408,15 +408,16 @@ bool vpn::apply_setting ( QString const & button_name
     if( field_name == CLIENT_ADDNEW_NAME )
     {
         QFile create_script( "/tmp/create_client_certs.sh" );
-        if( !create_script.exists() )
+        //
+        // Overwrite the script every time
+        //
+        if( !QFile::copy( ":/create_client_certs.sh", create_script.fileName() ) )
         {
-            if( !QFile::copy( ":/create_client_certs.sh", create_script.fileName() ) )
-            {
-                QString const errmsg = QString("Cannot copy create_client_certs.sh file!");
-                SNAP_LOG_ERROR(qPrintable(errmsg));
-                return false;
-            }
+            QString const errmsg = QString("Cannot copy create_client_certs.sh file!");
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return false;
         }
+        //
         create_script.setPermissions
                 ( create_script.permissions()
                 | QFileDevice::ExeOwner
@@ -425,7 +426,7 @@ bool vpn::apply_setting ( QString const & button_name
                 );
 
         QStringList clients;
-
+        //
         if( new_value.contains("\n") )
         {
             clients = new_value.split("\n");
@@ -434,7 +435,7 @@ bool vpn::apply_setting ( QString const & button_name
         {
             clients << new_value;
         }
-
+        //
         for( auto const &client : clients )
         {
             if( QProcess::execute( "/tmp/create_client_certs.sh", {f_snap->get_public_ip(), client} ) != 0 )
