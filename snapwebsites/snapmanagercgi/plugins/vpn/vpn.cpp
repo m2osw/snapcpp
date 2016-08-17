@@ -253,9 +253,13 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
         }
     }
 
-    // Add new client
+    // If this is a server, allow client keys to be created.
     //
+    QFile file( "/etc/openvpn/server.conf" );
+    if( file.exists() )
     {
+        // Add new client
+        //
         snap_manager::status_t const ctl(
                 snap_manager::status_t::state_t::STATUS_STATE_INFO
                 , get_plugin_name()
@@ -264,15 +268,15 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
                 );
         server_status.set_field(ctl);
     }
-
-    // Create the display for the client cert, if you want a client to run on this machine
-    //
+    else
     {
+        // Else, create the display for the client cert, if you want a client to run on this machine
+        //
         QString contents;
-        QFile file( "/etc/openvpn/client.conf" );
-        if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
+        QFile client_file( "/etc/openvpn/client.conf" );
+        if( client_file.open( QIODevice::ReadOnly| QIODevice::Text ) )
         {
-            QTextStream in(&file);
+            QTextStream in(&client_file);
             contents = in.readAll();
         }
 
