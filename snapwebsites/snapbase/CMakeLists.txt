@@ -40,13 +40,9 @@ find_package( SnapDoxygen )
 
 SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-
-file( GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/* )
-install( FILES ${SRC_FILES} DESTINATION share/snapwebsites/src )
-
 add_subdirectory( conf )
 add_subdirectory( doc  )
 add_subdirectory( dtd  )
-add_subdirectory( xsd  )
+add_subdirectory( src  )
 
 # vim: ts=4 sw=4 et

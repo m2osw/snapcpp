@@ -1,6 +1,6 @@
 #
 # File:
-#      xsd/CMakeLists.txt
+#      src/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.
@@ -31,14 +31,16 @@
 
 
 #################################################################################
-## Save XSD files in their own directory
+## Save SRC files in their own directory. These are not compiled, just stand
+## as source inputs for other projects as needed.
 ##
 install(
     FILES
-        service.xsd
+        snap_tests.cpp
+        snap_tests.h
 
     DESTINATION
-        share/snapwebsites/xsd
+        share/snapwebsites/src
 )
 
 
