@@ -50,12 +50,14 @@ class snap_cassandra
 public:
     typedef std::shared_ptr<snap_cassandra>     pointer_t;
 
-                                                snap_cassandra( snap_config const & parameters );
+                                                snap_cassandra();
 
     void                                        connect();
-    void                                        init_context();
+    void                                        disconnect();
     QtCassandra::QCassandraContext::pointer_t   get_snap_context();
     QtCassandra::QCassandraTable::pointer_t     create_table(QString const & table_name, QString const & comment);
+    void                                        create_table_list();
+    QtCassandra::QCassandraTable::pointer_t     get_table(QString const & table_name);
 
     QString                                     get_snapdbproxy_addr() const;
     int32_t                                     get_snapdbproxy_port() const;
@@ -65,7 +67,6 @@ private:
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QString                                     f_snapdbproxy_addr = "localhost";
     int                                         f_snapdbproxy_port = 4042;
-    snap_config const &                         f_parameters;
     QMap<QString, bool>                         f_created_table;
 };
 

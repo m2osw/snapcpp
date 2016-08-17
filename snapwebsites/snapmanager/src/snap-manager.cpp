@@ -910,7 +910,8 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     addQuery(query);
 
     // now we want to add the "domains" and "websites" tables to be
-    // complete
+    // complete; also not having the "sites" table can cause problem
+    // for that tab, create it now too.
     //
     create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain rules");
     create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website rules");

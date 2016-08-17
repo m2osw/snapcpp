@@ -2,4 +2,3 @@ usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
 conf/snapdbproxy.properties conf/snapdbproxy.conf etc/snapwebsites/
-conf/service-snapdbproxy.xml etc/snapwebsites/services.d/

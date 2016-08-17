@@ -21,11 +21,6 @@
 #include <QDomDocument>
 
 
-#define    SNAPWATCHDOG_VERSION_MAJOR   @SNAPWATCHDOG_VERSION_MAJOR@
-#define    SNAPWATCHDOG_VERSION_MINOR   @SNAPWATCHDOG_VERSION_MINOR@
-#define    SNAPWATCHDOG_VERSION_PATCH   @SNAPWATCHDOG_VERSION_PATCH@
-#define    SNAPWATCHDOG_VERSION_STRING  "@SNAPWATCHDOG_VERSION_MAJOR@.@SNAPWATCHDOG_VERSION_MINOR@.@SNAPWATCHDOG_VERSION_PATCH@"
-
 namespace snap
 {
 
@@ -78,7 +73,6 @@ public:
     void                watchdog();
 
     virtual void        show_version();
-    QString             get_server_name() const { return f_parameters[get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME)]; }
     int64_t             get_statistics_period() const { return f_statistics_period; }
     int64_t             get_statistics_ttl() const { return f_statistics_ttl; }
 
@@ -91,7 +85,7 @@ public:
 
 private:
     void                define_server_name();
-    void                check_cassandra();
+    bool                check_cassandra();
     void                init_parameters();
     void                run_watchdog_process();
 

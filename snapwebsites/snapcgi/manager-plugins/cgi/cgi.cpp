@@ -57,7 +57,7 @@ namespace
 //char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapcgi.xml";
 
 // TODO: get that path from the XML instead
-char const * g_configuration_filename = "/etc/snapwebsites/snapcgi.conf";
+char const * g_configuration_filename = "snapcgi";
 
 // TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcgi.conf";
@@ -219,8 +219,7 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
     // TODO: find a way to get the configuration filename for snapcgi
     //       (i.e. take it from the XML?)
     {
-        snap_config snap_cgi;
-        snap_cgi.read_config_file(g_configuration_filename);
+        snap_config snap_cgi(g_configuration_filename);
 
         snap_manager::status_t const snapserver(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO

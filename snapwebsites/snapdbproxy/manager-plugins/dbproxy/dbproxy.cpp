@@ -57,7 +57,7 @@ namespace
 //char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapdbproxy.xml";
 
 // TODO: get that path from the XML instead
-char const * g_configuration_filename = "/etc/snapwebsites/snapdbproxy.conf";
+char const * g_configuration_filename = "snapdbproxy";
 
 // TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapdbproxy.conf";
@@ -261,8 +261,7 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
     // TODO: find a way to get the configuration filename for snapdbproxy
     //       (i.e. take it from the XML?)
     {
-        snap_config snap_dbproxy_conf;
-        snap_dbproxy_conf.read_config_file(g_configuration_filename);
+        snap_config snap_dbproxy_conf(g_configuration_filename);
 
         snap_manager::status_t const my_address(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO

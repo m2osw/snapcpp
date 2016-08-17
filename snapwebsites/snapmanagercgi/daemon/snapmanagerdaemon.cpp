@@ -63,9 +63,9 @@ void manager_daemon::init(int argc, char * argv[])
 
     f_status_connection->set_server_name(f_server_name);
 
-    // --connect <communicator IP:port> (mandatory)
+    // local_listen=... from snapcommunicator.conf
     //
-    tcp_client_server::get_addr_port(f_opt->get_string("connect").c_str(), f_communicator_address, f_communicator_port, "tcp");
+    tcp_client_server::get_addr_port(QString::fromUtf8(f_config("snapcommunicator", "local_listen").c_str()), f_communicator_address, f_communicator_port, "tcp");
 
     // TODO: make us snapwebsites by default and root only when required...
     //       (and use RAII to do the various switches)
@@ -84,7 +84,7 @@ void manager_daemon::init(int argc, char * argv[])
     // get the list of front end servers (i.e. list of computer names
     // accepting snapmanager.cgi requests)
     //
-    if(f_config.contains("snapmanager_frontend"))
+    if(f_config.has_parameter("snapmanager_frontend"))
     {
         f_status_runner.set_snapmanager_frontend(f_config["snapmanager_frontend"]);
     }
@@ -95,9 +95,9 @@ void manager_daemon::init(int argc, char * argv[])
 
     // handle the bundle loading now
     //
-    if(f_config.contains("bundle_uri"))
+    if(f_config.has_parameter("bundle_uri"))
     {
-        std::string const bundle_uri(f_config["bundle_uri"].toUtf8().data());
+        std::string const bundle_uri(f_config["bundle_uri"]);
         snap::tokenize_string(f_bundle_uri, bundle_uri, ",", true, " ");
 
         if(!f_bundle_uri.empty())

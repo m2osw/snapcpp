@@ -367,7 +367,6 @@ void QCassandraProxy::bio_get()
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
         BIO_set_conn_hostname(bio.get(), const_cast<char *>(f_host.toUtf8().data()));
-#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
         BIO_set_conn_int_port(bio.get(), const_cast<int *>(&f_port));
 #pragma GCC diagnostic pop
 

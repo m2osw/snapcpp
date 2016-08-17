@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
         s->setup_as_backend();
 
         // parse the command line arguments (this also brings in the .conf params)
-        s->config(argc, argv, snap::server::SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME);
+        s->config(argc, argv);
 
         // Now create the qt application instance
         //
@@ -51,7 +51,8 @@ int main(int argc, char *argv[])
         //
         QString addr("127.0.0.1");
         int port(4041);
-        tcp_client_server::get_addr_port(s->get_parameter("snapcommunicator_signal"), addr, port, "udp");
+        snap::snap_config config("snapcommunicator");
+        tcp_client_server::get_addr_port(QString::fromUtf8(config.get_parameter("signal").c_str()), addr, port, "udp");
 
         // now send the message
         //

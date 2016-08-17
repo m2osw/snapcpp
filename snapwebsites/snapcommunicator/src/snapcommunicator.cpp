@@ -1735,7 +1735,7 @@ snap_communicator_server::snap_communicator_server(snap::server::pointer_t s)
 void snap_communicator_server::init()
 {
     // keep a copy of the server name handy
-    f_server_name = f_server->get_parameter("server_name");
+    f_server_name = QString::fromUtf8(snap::server::get_server_name().c_str());
 
     f_number_of_processors = std::max(1U, std::thread::hardware_concurrency());
 
@@ -4375,7 +4375,7 @@ int main(int argc, char * argv[])
 
         // parse the command line arguments (this also brings in the .conf params)
         //
-        s->set_default_config_filename( "/etc/snapwebsites/snapcommunicator.conf" );
+        s->set_config_filename( "snapcommunicator" );
         s->config( argc, argv );
 
         // if possible, detach the server

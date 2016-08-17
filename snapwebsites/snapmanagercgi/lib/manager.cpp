@@ -122,17 +122,9 @@ advgetopt::getopt::option const g_manager_options[] =
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "config",
-        "/etc/snapwebsites/snapmanager.conf",
+        nullptr,
         "Path and filename of the snapmanager.cgi and snapmanagerdaemon configuration file.",
         advgetopt::getopt::argument_mode_t::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "connect",
-        nullptr,
-        "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',
@@ -165,22 +157,6 @@ advgetopt::getopt::option const g_manager_options[] =
         nullptr,
         "Show this help screen.",
         advgetopt::getopt::argument_mode_t::no_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "server-name",
-        0,
-        "Name of the server on which snapmanagerdaemon is running.",
-        advgetopt::getopt::argument_mode_t::optional_argument // required for snapmanagerdaemon, ignored by snapmanager.cgi
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "snapdbproxy",
-        0,
-        "The IP address and port of the snapdbproxy service.",
-        advgetopt::getopt::argument_mode_t::optional_argument // required for snapmanagerdaemon, ignored by snapmanager.cgi
     },
     {
         '\0',
@@ -245,6 +221,7 @@ char const * get_name(name_t name)
 manager::manager(bool daemon)
     : snap_child(server_pointer_t())
     , f_daemon(daemon)
+    , f_config("snapmanager")
 {
 }
 
@@ -291,25 +268,14 @@ void manager::init(int argc, char * argv[])
 
     // read the configuration file
     //
-    f_config.read_config_file( QString::fromUtf8( f_opt->get_string("config").c_str() ) );
+    if(f_opt->is_defined( "config"))
+    {
+        f_config.set_configuration_path(f_opt->get_string("config"));
+    }
 
-    // --server-name (mandatory for snapmanagerdaemon, not expected for snapmanager.cgi)
+    // get the server name using the library function
     //
-    if(f_daemon)
-    {
-        if(!f_opt->is_defined("server-name"))
-        {
-            throw std::runtime_error("fatal error: --server-name is a required argument for snapmanagerdaemon.");
-        }
-        f_server_name = f_opt->get_string("server-name").c_str();
-    }
-    else
-    {
-        if(f_opt->is_defined("server-name"))
-        {
-            throw std::runtime_error("fatal error: --server-name is not an authorized argument for snapmanager.cgi.");
-        }
-    }
+    f_server_name = QString::fromUtf8(snap::server::get_server_name().c_str());
 
     // --debug
     //
@@ -318,7 +284,7 @@ void manager::init(int argc, char * argv[])
     // setup the logger
     // the definition in the configuration file has priority...
     //
-    if(f_config.contains("log_server")
+    if(f_config.has_parameter("log_server")
     && snap::logging::is_loggingserver_available(f_config["log_server"]))
     {
         f_log_conf = f_config["log_server"];
@@ -326,7 +292,7 @@ void manager::init(int argc, char * argv[])
     else
     {
         QString const log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
-        if(f_config.contains(log_config_filename))
+        if(f_config.has_parameter(log_config_filename))
         {
             // use .conf definition when available
             f_log_conf = f_config[log_config_filename];
@@ -360,7 +326,7 @@ void manager::init(int argc, char * argv[])
     // under a sub-directory of that name.
     //
     f_data_path = "/var/lib/snapwebsites";
-    if(f_config.contains("data_path"))
+    if(f_config.has_parameter("data_path"))
     {
         // use .conf definition when available
         f_data_path = f_config["data_path"];
@@ -392,35 +358,35 @@ void manager::init(int argc, char * argv[])
 
     // get the user defined path to plugins if set
     //
-    if(f_config.contains("plugins_path"))
+    if(f_config.has_parameter("plugins_path"))
     {
         f_plugins_path = f_config["plugins_path"];
     }
 
     // get the user defined path to a folder used to cache data
     //
-    if(f_config.contains("cache_path"))
+    if(f_config.has_parameter("cache_path"))
     {
         f_cache_path = f_config["cache_path"];
     }
 
     // get the path and filename to the apt-check tool
     //
-    if(f_config.contains("apt_check"))
+    if(f_config.has_parameter("apt_check"))
     {
         f_apt_check = f_config["apt_check"];
     }
 
     // get the path and filename to the reboot-required flag
     //
-    if(f_config.contains("reboot_required"))
+    if(f_config.has_parameter("reboot_required"))
     {
         f_reboot_required = f_config["reboot_required"];
     }
 
     // get the path to a directory where we can create lock files
     //
-    if(f_config.contains("lock_path"))
+    if(f_config.has_parameter("lock_path"))
     {
         f_lock_path = f_config["lock_path"];
     }
@@ -428,9 +394,9 @@ void manager::init(int argc, char * argv[])
     // If not defined, keep the default of localhost:4041
     // TODO: make these "just in time" parameters, we nearly never need them
     //
-    if(f_config.contains("snapcommunicator_signal"))
+    if(f_config.has_parameter("snapcommunicator", "signal"))
     {
-        snap_addr::addr const a(f_config["snapcommunicator_signal"].toUtf8().data(), f_signal_address, f_signal_port, "udp");
+        snap_addr::addr const a(f_config("snapcommunicator", "signal"), f_signal_address, f_signal_port, "udp");
         f_signal_address = a.get_ipv4or6_string(false, false);
         f_signal_port = a.get_port();
     }

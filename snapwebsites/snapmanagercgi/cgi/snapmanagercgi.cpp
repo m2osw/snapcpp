@@ -135,7 +135,7 @@ int manager_cgi::error(char const * code, char const * msg, char const * details
  */
 bool manager_cgi::verify()
 {
-    if(!f_config.contains("stylesheet"))
+    if(!f_config.has_parameter("stylesheet"))
     {
         error("503 Service Unavailable",
               "The snapmanager.cgi service is not currently available.",
@@ -145,9 +145,9 @@ bool manager_cgi::verify()
 
     // If not defined, keep the default of localhost:4040
     // TODO: make these "just in time" parameters, we nearly never need them
-    if(f_config.contains("snapcommunicator"))
+    if(f_config.has_parameter("snapcommunicator", "local_listen"))
     {
-        snap_addr::addr const a(f_config["snapcommunicator"].toUtf8().data(), "127.0.0.1", 4040, "tcp");
+        snap_addr::addr const a(f_config("snapcommunicator", "local_listen"), "127.0.0.1", 4040, "tcp");
         f_communicator_address = a.get_ipv4or6_string(false, false);
         f_communicator_port = a.get_port();
     }
@@ -213,7 +213,7 @@ bool manager_cgi::verify()
 
     // verify that this is a client we allow to use snapmanager.cgi
     //
-    if(!f_config.contains("clients"))
+    if(!f_config.has_parameter("clients"))
     {
         error("403 Forbidden", "You are not allowed on this server.", "The clients=... parameter is undefined.");
         return false;
@@ -221,7 +221,7 @@ bool manager_cgi::verify()
 
     {
         snap_addr::addr const remote_address(std::string(remote_addr) + ":80", "tcp");
-        std::string const client(f_config.contains("clients") ? f_config["clients"].toUtf8().data() : "");
+        std::string const client(f_config.has_parameter("clients") ? f_config["clients"] : std::string());
 
         snap::snap_string_list const client_list(QString::fromUtf8(client.c_str()).split(',', QString::SkipEmptyParts));
         bool found(false);

@@ -1,29 +1,42 @@
 #!/bin/sh
 
 # Full clean up
-rm -rf BUILD /tmp/SnapFindDeps.pl.hash
-
-mkdir BUILD
-cd BUILD
+rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
 
 # You may change the compiler with something like this:
 # (The CMAKE_C_COMPILER and CMAKE_CXX_COMPILER will NOT work)
 #export CC=gcc-4.9
 #export CXX=g++-4.9 cmake
 
-#TYPE=Release
-TYPE=Debug
-
 #PROCESSORS=1
 PROCESSORS=4
 
-# Configure and generate (Debug or Release)
+# Configure and generate the Release version
+mkdir RELEASE
+cd RELEASE
 cmake \
-	-DCMAKE_BUILD_TYPE=$TYPE \
+	-DCMAKE_BUILD_TYPE=Release \
 	-DMAKEFLAGS=-j$PROCESSORS \
 	-DBUILD_ONCE=OFF \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
 	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
 	../snapcpp
 
+# Do not bild the release version by default
+# Use something like:
+#        make -C RELEASE
+
+# Configure and generate the Debug version
+cd ..
+mkdir BUILD
+cd BUILD
+cmake \
+	-DCMAKE_BUILD_TYPE=Debug \
+	-DMAKEFLAGS=-j$PROCESSORS \
+	-DBUILD_ONCE=OFF \
+	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
+	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
+	../snapcpp
+
+# Build the Debug version
 make

@@ -49,7 +49,7 @@
 #include <QtCore>
 #include <advgetopt/advgetopt.h>
 
-// system
+// C++ lib
 //
 #include <algorithm>
 #include <iostream>
@@ -81,17 +81,9 @@ namespace
             'c',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
-            "/etc/snapwebsites/snaplock.conf",
+            nullptr,
             "Configuration file to initialize snaplock.",
             advgetopt::getopt::argument_mode_t::optional_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "connect",
-            nullptr,
-            "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -140,22 +132,6 @@ namespace
             nullptr,
             "Only output to the console, not a log file.",
             advgetopt::getopt::argument_mode_t::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "server-name",
-            nullptr,
-            "Define the name of the server this service is running on.",
-            advgetopt::getopt::argument_mode_t::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "snapdbproxy",
-            nullptr,
-            "This parameter is currently ignored since snaplock never connects to the Snap! data store.",
-            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -227,6 +203,7 @@ namespace
  */
 snaplock::snaplock(int argc, char * argv[])
     : f_opt( argc, argv, g_snaplock_options, g_configuration_files, nullptr )
+    , f_config("snaplock")
 {
     // --help
     if( f_opt.is_defined( "help" ) )
@@ -245,20 +222,23 @@ snaplock::snaplock(int argc, char * argv[])
 
     // read the configuration file
     //
-    f_config.read_config_file( QString::fromUtf8( f_opt.get_string("config").c_str() ) );
+    if(f_opt.is_defined( "config"))
+    {
+        f_config.set_configuration_path( f_opt.get_string("config") );
+    }
 
     // --debug
     f_debug = f_opt.is_defined("debug");
 
     // --debug-lock-messages
     f_debug_lock_messages = f_opt.is_defined("debug-lock-messages")     // command line
-                         || f_config.contains("debug_lock_messages");   // .conf file
+                         || f_config.has_parameter("debug_lock_messages");   // .conf file
 
-    // --server-name (mandatory)
-    f_server_name = f_opt.get_string("server-name").c_str();
+    // get the server name using the library function
+    f_server_name = QString::fromUtf8(snap::server::get_server_name().c_str());
 
-    // --connect (mandatory)
-    tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_addr, f_communicator_port, "tcp");
+    // local_listen=... -- from snapcommnicator.conf
+    tcp_client_server::get_addr_port(QString::fromUtf8(f_config("snapcommunicator", "local_listen").c_str()), f_communicator_addr, f_communicator_port, "tcp");
 
     // setup the logger: --nolog, --logfile, or config file log_config
     //
@@ -272,7 +252,7 @@ snaplock::snaplock(int argc, char * argv[])
     }
     else
     {
-        if(f_config.contains("log_config"))
+        if(f_config.has_parameter("log_config"))
         {
             // use .conf definition when available
             f_log_conf = f_config["log_config"];
@@ -293,7 +273,7 @@ snaplock::snaplock(int argc, char * argv[])
     // the maximum number of "pending" connections and not the total
     // number of acceptable connections)
     //
-    if(f_config.contains("max_pending_connections"))
+    if(f_config.has_parameter("max_pending_connections"))
     {
         QString const max_connections(f_config["max_pending_connections"]);
         if(!max_connections.isEmpty())

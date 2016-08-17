@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "version.h"
 #include "plugins.h"
 #include "snap_child.h"
 #include "snap_communicator.h"
@@ -37,11 +38,6 @@
  *
  * See the .cpp file for more details.
  */
-
-#define    SNAPWEBSITES_VERSION_MAJOR   @LIBSNAPWEBSITES_VERSION_MAJOR@
-#define    SNAPWEBSITES_VERSION_MINOR   @LIBSNAPWEBSITES_VERSION_MINOR@
-#define    SNAPWEBSITES_VERSION_PATCH   @LIBSNAPWEBSITES_VERSION_PATCH@
-#define    SNAPWEBSITES_VERSION_STRING  "@LIBSNAPWEBSITES_VERSION_MAJOR@.@LIBSNAPWEBSITES_VERSION_MINOR@.@LIBSNAPWEBSITES_VERSION_PATCH@"
 
 namespace snap
 {
@@ -108,6 +104,14 @@ public:
     snapwebsites_exception_invalid_parameters(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
     snapwebsites_exception_invalid_parameters(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
     snapwebsites_exception_invalid_parameters(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+};
+
+class snapwebsites_exception_parameter_no_available : public snapwebsites_exception
+{
+public:
+    snapwebsites_exception_parameter_no_available(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_parameter_no_available(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_parameter_no_available(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 class snapwebsites_exception_io_error : public snapwebsites_exception
@@ -223,13 +227,15 @@ public:
     static pointer_t    instance();
     virtual             ~server();
 
-    static void         exit( int const code );
+    [[noreturn]] static void exit( int const code );
 
     static char const * version();
     static int          version_major();
     static int          version_minor();
     static int          version_patch();
     virtual void        show_version();
+
+    static std::string const get_server_name();
 
     // plugins::plugin implementation
     virtual QString     icon() const;
@@ -238,22 +244,21 @@ public:
     virtual void        bootstrap(snap_child * snap);
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                usage();
+    [[noreturn]] void   usage();
     void                setup_as_backend();
     bool                is_debug() const { return f_debug; }
     bool                is_foreground() const { return f_foreground; }
     bool                is_backend() const { return f_backend; }
     bool                is_logging_server() const { return f_using_logging_server; }
     static size_t       thread_count();
-    void                set_default_config_filename(QString const & filename) { f_config_filename = filename; }
-    void                config( int argc, char * argv[], config_flags_t flags = 0 );
+    void                set_config_filename(std::string const & filename);
+    void                config( int argc, char * argv[] );
     void                set_translation(QString const xml_data);
     QString             get_parameter(QString const & param_name) const;
     void                set_parameter( QString const & param_name, QString const & value );
     void                prepare_qtapp( int argc, char * argv[] );
     void                prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
-    void                create_table_list(QtCassandra::QCassandraContext::pointer_t context);
     void                detach();
     void                listen();
     void                backend();
@@ -302,7 +307,7 @@ protected:
     static server::pointer_t    set_instance(pointer_t server);
 
     // See TODO in server::prepare_cassandra()
-    QString                                 f_snapdbproxy_addr;
+    QString                                 f_snapdbproxy_addr;     // NO DEFAULT, if isEmpty() then we are not connected / cannot connect to snapdbproxy
     controlled_vars::zint32_t               f_snapdbproxy_port;
     snap_config                             f_parameters;
 
@@ -327,7 +332,6 @@ private:
     controlled_vars::fbool_t                f_backend;
     controlled_vars::fbool_t                f_using_logging_server;
     QMap<QString, bool>                     f_created_table;
-    QString                                 f_config_filename;
 
     controlled_vars::zuint64_t              f_connections_count;
     snap_child_vector_t                     f_children_running;

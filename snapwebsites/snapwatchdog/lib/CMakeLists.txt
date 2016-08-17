@@ -1,6 +1,6 @@
 #
 # File:
-#      lib/CMakeLists.txt
+#      snapwebsites/snapwatchdog/lib/CMakeLists.txt
 #
 # Description:
 #      Library used by the Snap! Watchdog server and plugins.
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -34,7 +34,7 @@ project(snapwatchdog)
 set( CMAKE_AUTOMOC TRUE )
 
 # Put the version in the header file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwatchdog.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwatchdog.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
 
 #find_package( log4cplus REQUIRED )
 find_package( Qt5Core        REQUIRED )
@@ -90,7 +90,7 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwatchdog.h
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h
     DESTINATION include/snapwatchdog
 )
 

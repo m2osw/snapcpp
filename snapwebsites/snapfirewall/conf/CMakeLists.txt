@@ -1,6 +1,6 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      snapwebsites/snapfirewall/conf/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.
@@ -31,8 +31,6 @@
 
 
 snap_validate_xml( bundle-firewall.xml bundles.xsd )
-
-snap_validate_xml( service-snapfirewall.xml service.xsd )
 
 
 #################################################################################
@@ -69,18 +67,6 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
-)
-
-
-#################################################################################
-## Service definitions
-##
-install(
-    FILES
-        service-snapfirewall.xml
-
-    DESTINATION
-        share/snapwebsites/conf/services.d
 )
 
 

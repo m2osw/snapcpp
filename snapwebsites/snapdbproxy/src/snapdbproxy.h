@@ -215,7 +215,7 @@ public:
                                 snapdbproxy( int argc, char * argv[] );
                                 ~snapdbproxy();
 
-    QString                     server_name() const;
+    std::string                 server_name() const;
 
     void                        run();
     void                        process_message(snap::snap_communicator_message const & message);
@@ -240,7 +240,7 @@ private:
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
     QString                                     f_log_conf = "/etc/snapwebsites/snapdbproxy.properties";
-    QString                                     f_server_name;
+    std::string                                 f_server_name;
     QString                                     f_communicator_addr = "127.0.0.1";
     int                                         f_communicator_port = 4040;
     QString                                     f_snapdbproxy_addr = "127.0.0.1";

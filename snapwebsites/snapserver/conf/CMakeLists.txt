@@ -31,25 +31,6 @@
 
 snap_validate_xml( bundle-snapserver.xml bundles.xsd )
 
-snap_validate_xml( service-snapserver.xml service.xsd )
-
-
-#################################################################################
-## Config files
-##
-install(
-    FILES 
-        # log4cplus properties
-        # These are managed by snapbase because they are common to
-        # snapserver and snapbackend and possibly other tools too
-
-        # snap configuration files
-        snapserver.conf
-
-    DESTINATION
-        share/snapwebsites/conf
-)
-
 
 #################################################################################
 ## Bundles are also saved under a bundle directory for reference
@@ -60,18 +41,6 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
-)
-
-
-#################################################################################
-## Service definitions
-##
-install(
-    FILES 
-        service-snapserver.xml
-
-    DESTINATION
-        share/snapwebsites/conf/services.d
 )
 
 

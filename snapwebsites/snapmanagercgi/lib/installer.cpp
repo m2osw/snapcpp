@@ -359,8 +359,11 @@ bool manager::upgrader()
     snap::process p("upgrader");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
     p.set_command("snapupgrader");
-    p.add_argument("--config");
-    p.add_argument( QString::fromUtf8( f_opt->get_string("config").c_str() ) );
+    if(f_opt->is_defined("config"))
+    {
+        p.add_argument("--config");
+        p.add_argument( QString::fromUtf8( f_opt->get_string("config").c_str() ) );
+    }
     p.add_argument("--data-path");
     p.add_argument(f_data_path);
     if(f_debug)

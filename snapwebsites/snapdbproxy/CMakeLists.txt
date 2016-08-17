@@ -68,11 +68,12 @@ set( QT_LIBRARIES
 add_subdirectory( conf            )
 add_subdirectory( src             )
 add_subdirectory( manager-plugins )
+add_subdirectory( tools           )
 add_subdirectory( doc             )
 
 ##
 ## Analyse xml and javascript
 ##
-snap_build_xml_targets()
+#snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et

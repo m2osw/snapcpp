@@ -60,11 +60,11 @@ namespace
      * This variable is used as a list of configuration files. It may be
      * empty.
      */
-    std::vector<std::string> const g_configuration_files
-    {
-        "@snapwebsites@",       // project name
-        "/etc/snapwebsites/snapbounce.conf"
-    };
+    std::vector<std::string> const g_configuration_files;
+    //{
+    //    "@snapwebsites@",       // project name
+    //    "/etc/snapwebsites/snapbounce.conf"
+    //};
 
     /** \brief Command line options.
      *
@@ -108,7 +108,7 @@ namespace
             'c',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
-            "/etc/snapwebsites/snapserver.conf",
+            nullptr,
             "[optional] Configuration file from which to get cassandra server details.",
             advgetopt::getopt::argument_mode_t::optional_argument
         },
@@ -178,9 +178,9 @@ private:
 snap_bounce::pointer_t snap_bounce::f_instance;
 
 
-snap_bounce::snap_bounce( int argc, char *argv[] )
+snap_bounce::snap_bounce( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapbounce_options, g_configuration_files, "SNAPBOUNCE_OPTIONS")
-    , f_cassandra( f_config )
+    , f_config( "snapserver" ) // right now snapbounce does not really use any .conf data, it's just a filter, so we specify snapserver as a "fallback"
 {
     if(f_opt.is_defined("version"))
     {
@@ -205,7 +205,10 @@ snap_bounce::snap_bounce( int argc, char *argv[] )
         snap::logging::configure_syslog();
     }
 
-    f_config.read_config_file( f_opt.get_string("config").c_str() );
+    if(f_opt.is_defined("config"))
+    {
+        f_config.set_configuration_path( f_opt.get_string("config") );
+    }
 }
 
 

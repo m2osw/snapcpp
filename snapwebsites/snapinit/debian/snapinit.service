@@ -1,3 +1,6 @@
+# Documentation available at:
+# https://www.freedesktop.org/software/systemd/man/systemd.service.html
+
 [Unit]
 Description=Snap! Websites snapinit daemon
 After=network.target
@@ -13,3 +16,5 @@ KillMode=process
 
 [Install]
 WantedBy=multi-user.target
+
+# vim: syntax=dosini

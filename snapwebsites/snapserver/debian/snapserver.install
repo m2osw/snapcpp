@@ -1,3 +1,1 @@
 usr/bin/*
-conf/snapserver.conf /etc/snapwebsites
-conf/service-snapserver.xml etc/snapwebsites/services.d/

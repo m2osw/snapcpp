@@ -4146,7 +4146,7 @@ void snap_child::connect_cassandra()
 // WARNING: The f_casssandra->contexts() function should not be used anymore
 //          (only to check whether the context exists,) because the context
 //          is normally created by snapmanager[.cgi] now.
-SNAP_LOG_WARNING("snap_child::connect_cassandra() should not be used anymore...");
+SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contexts() anymore...");
 
     // select the Snap! context
     f_cassandra->contexts();

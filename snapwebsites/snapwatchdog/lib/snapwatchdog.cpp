@@ -374,7 +374,7 @@ char const * get_name(name_t name)
  */
 watchdog_server::watchdog_server()
 {
-    set_default_config_filename( "/etc/snapwebsites/snapwatchdog.conf" );
+    server::set_config_filename("snapwatchdog");
 }
 
 
@@ -428,7 +428,6 @@ void watchdog_server::watchdog()
 {
     SNAP_LOG_INFO("------------------------------------ snapwatchdog started on ")(get_parameter("server_name"));
 
-    check_cassandra();
     init_parameters();
 
     // TODO: test that the "sites" table is available?
@@ -439,7 +438,7 @@ void watchdog_server::watchdog()
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
-    tcp_client_server::get_addr_port(get_parameter("snapcommunicator_listen"), communicator_addr, communicator_port, "tcp");
+    tcp_client_server::get_addr_port(f_parameters(QString("snapcommunicator"), "listen"), communicator_addr, communicator_port, "tcp");
 
     // create the messager, a connection between the snapwatchdogserver
     // and the snapcommunicator which allows us to communicate with
@@ -610,35 +609,54 @@ void watchdog_server::process_sigchld()
  * This function initializes the Cassandra connection and creates
  * the watchdog "serverstats" table.
  */
-void watchdog_server::check_cassandra()
+bool watchdog_server::check_cassandra()
 {
-    snap_cassandra cassandra( f_parameters );
-    cassandra.connect();
-    cassandra.init_context();
+    snap_cassandra cassandra;
 
-    QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
-    if( !context )
+    try
     {
-        SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
-        exit(1);
+        cassandra.connect();
+
+        QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
+        if( !context )
+        {
+            // if the context is not yet available, we really cannot do
+            // anything more here--snapmanager (later snapmanager.cgi)
+            // is 100% in charge of that creation.
+            //
+            SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
+            exit(1);
+        }
+
+        // this is sucky, the host/port info should not be taken that way!
+        // also we should allow servers without access to cassandra...
+        //
+        f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
+        f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
+
+        // make sure the table is ready
+        //
+        if(!cassandra.get_table(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS)))
+        {
+            // if the table does not exist yet, then snapwatchdog is not
+            // correctly initialized--at this point this means we are hosed
+            // as a self running daemon
+            //
+            // tables are expected to be created from the *-tables.xml files
+            // (see snapdbproxy for details.)
+            //
+            SNAP_LOG_FATAL(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS))(" table does not exist! Exiting.");
+            exit(1);
+        }
+
+        return true;
+    }
+    catch(std::runtime_error const & e)
+    {
+        SNAP_LOG_ERROR("snap_watchdog could not connect to the snapdbproxy daemon.");
     }
 
-    // this is sucky, the host/port info should not be taken that way!
-    // also we should allow servers without access to cassandra...
-    //
-    f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
-    f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
-
-    // create possibly missing tables
-    //
-    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS), "Statistics of all our servers.");
-
-    // make sure it is synchronized
-    //
-    // TODO: fix that by using snap_cassandra all along (in the snapserver
-    //       too actually...)
-    //
-    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS), "Statistics of all our servers.");
+    return false;
 }
 
 
@@ -784,6 +802,31 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         return;
     }
 
+    if(command == "NOCASSANDRA")
+    {
+        // we lost Cassandra, disconnect from snapdbproxy until we
+        // get CASSANDRAREADY again
+        //
+
+        return;
+    }
+
+    if(command == "CASSANDRAREADY")
+    {
+        try
+        {
+            // connect to Cassandra and get a pointer to our firewall table
+            //
+            check_cassandra();
+        }
+        catch(std::runtime_error const & e)
+        {
+            SNAP_LOG_WARNING("snapwatchdog failed to connect to snapdbproxy: ")(e.what());
+        }
+
+        return;
+    }
+
     // all have to implement the HELP command
     //
     if(command == "HELP")
@@ -793,7 +836,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
 
         // list of commands understood by snapinit
         //
-        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,RUSAGE,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,RUSAGE,STOP,UNKNOWN");
 
         g_messager->send_message(reply);
         return;
@@ -987,7 +1030,7 @@ void watchdog_child::run_watchdog_plugins()
             value.setTtl(server->get_statistics_ttl());
             QByteArray cell_key;
             QtCassandra::setInt64Value(cell_key, date);
-            table->row(server->get_server_name() + "/system-statistics")->cell(cell_key)->setValue(value);
+            table->row(QString::fromUtf8(server->get_server_name().c_str()) + "/system-statistics")->cell(cell_key)->setValue(value);
         }
 
         // the child has to exit()
@@ -1084,7 +1127,7 @@ void watchdog_child::record_usage(snap::snap_communicator_message const & messag
         value.setStringValue(doc.toString(-1));
         value.setTtl(server->get_statistics_ttl());
         QString const cell_key(QString("%1::%2").arg(process_name).arg(start_date));
-        table->row(server->get_server_name() + "/rusage")->cell(cell_key)->setValue(value);
+        table->row(QString::fromUtf8(server->get_server_name().c_str()) + "/rusage")->cell(cell_key)->setValue(value);
 
         // the child has to exit()
         exit(0);

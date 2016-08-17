@@ -18,7 +18,6 @@ Build-Depends: cmake,
     qt5-default,
     snapbase-dev (>= 1.0.0.79~xenial),
     snapcmakemodules (>= 1.0.25.203~xenial),
-    snapinit (>= 1.0.0.80~xenial),
     zip
 Standards-Version: 3.9.4
 Section: libs
@@ -30,7 +29,7 @@ Package: snapbackend
 Section: admin
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy, snapinit
+    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy
 Recommends: snapfirewall
 Suggests: snapbackend-doc, snapserver
 Description: Fast Websites: powerful CMS for Apache written in C++.

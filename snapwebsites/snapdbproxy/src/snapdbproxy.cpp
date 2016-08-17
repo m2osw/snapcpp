@@ -87,17 +87,9 @@ namespace
             'c',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
-            "/etc/snapwebsites/snapdbproxy.conf",
+            nullptr,
             "Configuration file to initialize snapdbproxy.",
             advgetopt::getopt::argument_mode_t::optional_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "connect",
-            nullptr,
-            "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -130,22 +122,6 @@ namespace
             nullptr,
             "Only output to the console, not a log file.",
             advgetopt::getopt::argument_mode_t::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "server-name",
-            nullptr,
-            "Define the name of the server this service is running on.",
-            advgetopt::getopt::argument_mode_t::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "snapdbproxy",
-            nullptr,
-            "The address and port information to listen on (defined in /etc/snapwebsites/snapinit.xml).",
-            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -212,6 +188,7 @@ snapdbproxy::pointer_t                    snapdbproxy::g_instance;
  */
 snapdbproxy::snapdbproxy(int argc, char * argv[])
     : f_opt( argc, argv, g_snapdbproxy_options, g_configuration_files, nullptr )
+    , f_config( "snapdbproxy" )
     , f_session( QtCassandra::QCassandraSession::create() )
 {
     // --help
@@ -231,19 +208,19 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
 
     // read the configuration file
     //
-    f_config.read_config_file( f_opt.get_string("config").c_str() );
+    if(f_opt.is_defined( "config"))
+    {
+        f_config.set_configuration_path( f_opt.get_string("config") );
+    }
 
     // --debug
     f_debug = f_opt.is_defined("debug");
 
-    // --server-name (mandatory)
-    f_server_name = f_opt.get_string("server-name").c_str();
+    // local_listen=... from snapcommunicator.conf
+    tcp_client_server::get_addr_port(QString::fromUtf8(f_config("snapcommunicator", "local_listen").c_str()), f_communicator_addr, f_communicator_port, "tcp");
 
-    // --connect (mandatory)
-    tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_addr, f_communicator_port, "tcp");
-
-    // --snapdbproxy (mandatory)
-    tcp_client_server::get_addr_port(f_opt.get_string("snapdbproxy").c_str(), f_snapdbproxy_addr, f_snapdbproxy_port, "tcp");
+    // listen=... from snapdbproxy.conf
+    tcp_client_server::get_addr_port(QString::fromUtf8(f_config("listen").c_str()), f_snapdbproxy_addr, f_snapdbproxy_port, "tcp");
 
     // setup the logger: --nolog, --logfile, or config file log_config
     //
@@ -257,7 +234,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     }
     else
     {
-        if(f_config.contains("log_config"))
+        if(f_config.has_parameter("log_config"))
         {
             // use .conf definition when available
             f_log_conf = f_config["log_config"];
@@ -273,8 +250,12 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
         snap::logging::reduce_log_output_level(snap::logging::log_level_t::LOG_LEVEL_DEBUG);
     }
 
+    // get the server name from the snapcommunicator.conf or hostname()
+    //
+    f_server_name = snap::server::get_server_name();
+
     // from config file only
-    if(f_config.contains("cassandra_host_list"))
+    if(f_config.has_parameter("cassandra_host_list"))
     {
         f_cassandra_host_list = f_config[ "cassandra_host_list" ];
         if(f_cassandra_host_list.isEmpty())
@@ -282,11 +263,12 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
             throw snap::snapwebsites_exception_invalid_parameters("cassandra_host_list cannot be empty.");
         }
     }
-    if(f_config.contains("cassandra_port"))
+    if(f_config.has_parameter("cassandra_port"))
     {
-        bool ok(false);
-        f_cassandra_port = f_config["cassandra_port"].toInt(&ok);
-        if(!ok
+        std::size_t pos(0);
+        std::string const port(f_config["cassandra_port"]);
+        f_cassandra_port = std::stoi(port, &pos, 10);
+        if(pos != port.length()
         || f_cassandra_port < 0
         || f_cassandra_port > 65535)
         {
@@ -299,7 +281,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     // the maximum number of "pending" connections and not the total
     // number of acceptable connections)
     //
-    if(f_config.contains("max_pending_connections"))
+    if(f_config.has_parameter("max_pending_connections"))
     {
         QString const max_connections(f_config["max_pending_connections"]);
         if(!max_connections.isEmpty())
@@ -358,7 +340,7 @@ void snapdbproxy::usage(advgetopt::getopt::status_t status)
  *
  * \return The server name.
  */
-QString snapdbproxy::server_name() const
+std::string snapdbproxy::server_name() const
 {
     return f_server_name;
 }
@@ -510,10 +492,12 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
     QString const command(message.get_command());
 
-// TODO: use a switch statement
+// TODO: use a map statement (see poor old snapinit...)
 
     if(command == "CASSANDRASTATUS")
     {
+        // immediately reply with the current status
+        //
         snap::snap_communicator_message reply;
         reply.reply_to(message);
         reply.set_command(f_session->isConnected() ? "CASSANDRAREADY" : "NOCASSANDRA");
@@ -608,21 +592,14 @@ void snapdbproxy::process_connection(int const s)
     // only the main process calls this function so we can take the time
     // to check the f_connections vector and remove dead threads
     //
-    {
-        size_t idx(f_connections.size());
-        while(idx > 0)
-        {
-            --idx;
-
-            if(!f_connections[idx]->is_running())
-            {
-                // thread exited, remove from vector so that the
-                // vector does not grow forever
-                //
-                f_connections.erase(f_connections.begin() + idx);
-            }
-        }
-    }
+    f_connections.erase(std::remove_if(
+                f_connections.begin(),
+                f_connections.end(),
+                [](auto const & c)
+                {
+                    return !c->is_running();
+                }),
+            f_connections.end());
 
     if(!f_session->isConnected())
     {

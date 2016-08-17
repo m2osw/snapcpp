@@ -29,10 +29,8 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-snap_validate_xml( service-snapcommunicator.xml service.xsd )
 
-
-#################################################################################
+################################################################################
 ## Config files
 ##
 install(
@@ -45,18 +43,6 @@ install(
 
     DESTINATION
         share/snapwebsites/conf
-)
-
-
-#################################################################################
-## Service definitions
-##
-install(
-    FILES 
-        service-snapcommunicator.xml
-
-    DESTINATION
-        share/snapwebsites/conf/services.d
 )
 
 

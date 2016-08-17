@@ -1,0 +1,38 @@
+#!/bin/sh
+
+HERE=`pwd`
+
+# Add the snapupgrader for snapmanagerdaemon to find the compiled one on a programmer system
+PATH=${HERE}/BUILD/snapwebsites/snapmanagercgi/upgrader:${PATH}
+
+
+# First we start snapcommunicator which is required by other processes
+BUILD/snapwebsites/snapcommunicator/src/snapcommunicator &
+
+# Write a programmer tool to create a barrier? It seems to me that the
+# other tools needto be smart enough to wait for snapcommunicator to be
+# ready to connect to otherwise we will miss it in many cases anyway.
+
+# Start other services (comment out if you do not want to start such and such)
+BUILD/snapwebsites/snaplock/src/snaplock &
+BUILD/snapwebsites/snapdbproxy/src/snapdbproxy &
+BUILD/snapwebsites/snapfirewall/src/snapfirewall &
+#BUILD/snapwebsites/snapserver/src/snapserver &
+#BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action images::images &
+#BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action list::pagelist &
+#BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action sendmail::sendmail --param GLOBAL_LOCK=1 &
+BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon &
+#BUILD/snapwebsites/snapwatchdog/src/snapwatchdog &
+
+
+# For the CRON task, run it once in a while...
+#while true
+#do
+#	sleep 300
+#
+#	# Run this one blocking to avoid having to instances running
+#	# simultaneously
+#	#
+#	BUILD/snapwebsites/snapcommunicator/src/snapbackend
+#done
+

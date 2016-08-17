@@ -57,7 +57,7 @@ namespace
 //char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapcommunicator.xml";
 
 // TODO: get that path from the XML instead
-char const * g_configuration_filename = "/etc/snapwebsites/snapcommunicator.conf";
+char const * g_configuration_filename = "snapcommunicator";
 
 // TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf";
@@ -261,8 +261,7 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
     // TODO: find a way to get the configuration filename for snapcommunicator
     //       (i.e. take it from the XML?)
     {
-        snap_config snap_communicator_conf;
-        snap_communicator_conf.read_config_file(g_configuration_filename);
+        snap_config snap_communicator_conf(g_configuration_filename);
 
         snap_manager::status_t const my_address(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO

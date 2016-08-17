@@ -16,7 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <QString>
+// ourselves
+//
+#include "snap_config.h"
 
 namespace snap
 {
@@ -57,6 +59,7 @@ public:
     logger &        operator () (std::string const & s);
     logger &        operator () (std::wstring const & s);
     logger &        operator () (QString const & s);
+    logger &        operator () (snap_config::snap_config_parameter_ref const & s);
     logger &        operator () (char const v);
     logger &        operator () (signed char const v);
     logger &        operator () (unsigned char const v);
@@ -99,11 +102,12 @@ void reduce_log_output_level    ( log_level_t level );
 bool is_loggingserver_available ( QString const & logserver );
 bool is_enabled_for             ( log_level_t const log_level );
 
-logger & operator << ( logger & l, QString const &                    msg );
-logger & operator << ( logger & l, std::basic_string<char> const &    msg );
-logger & operator << ( logger & l, std::basic_string<wchar_t> const & msg );
-logger & operator << ( logger & l, char const *                       msg );
-logger & operator << ( logger & l, wchar_t const *                    msg );
+logger & operator << ( logger & l, QString const &                                msg );
+logger & operator << ( logger & l, std::basic_string<char> const &                msg );
+logger & operator << ( logger & l, std::basic_string<wchar_t> const &             msg );
+logger & operator << ( logger & l, snap_config::snap_config_parameter_ref const & msg );
+logger & operator << ( logger & l, char const *                                   msg );
+logger & operator << ( logger & l, wchar_t const *                                msg );
 
 template <class T>
 logger & operator << ( logger & l, T const & msg )

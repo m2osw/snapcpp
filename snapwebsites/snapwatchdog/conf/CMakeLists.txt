@@ -31,8 +31,6 @@
 
 snap_validate_xml( bundle-watchdog.xml bundles.xsd )
 
-snap_validate_xml( service-snapwatchdog.xml service.xsd )
-
 
 #################################################################################
 ## Config files
@@ -59,18 +57,6 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
-)
-
-
-#################################################################################
-## Service definitions
-##
-install(
-    FILES 
-        service-snapwatchdog.xml
-
-    DESTINATION
-        share/snapwebsites/conf/services.d
 )
 
 

@@ -965,7 +965,6 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
             BIO_set_conn_hostname(bio.get(), const_cast<char *>(addr.c_str()));
-#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
             BIO_set_conn_int_port(bio.get(), &port);
 #pragma GCC diagnostic pop
 
@@ -1021,7 +1020,6 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
             BIO_set_conn_hostname(bio.get(), const_cast<char *>(addr.c_str()));
-#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
             BIO_set_conn_int_port(bio.get(), &port);
 #pragma GCC diagnostic pop
 

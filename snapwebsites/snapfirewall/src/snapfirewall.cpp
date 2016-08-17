@@ -159,7 +159,6 @@ private:
 
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
-    snap::snap_config                           f_server_config;
     QString                                     f_log_conf = "/etc/snapwebsites/snapfirewall.properties";
     QString                                     f_server_name;
     QString                                     f_communicator_addr = "127.0.0.1";
@@ -355,17 +354,9 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         'c',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "config",
-        "/etc/snapwebsites/snapfirewall.conf",
+        nullptr,
         "Configuration file to initialize snapfirewall.",
         advgetopt::getopt::argument_mode_t::optional_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-        "connect",
-        nullptr,
-        "The address and port information to connect to snapcommunicator (defined in /etc/snapwebsites/snapinit.xml).",
-        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -398,22 +389,6 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         nullptr,
         "Only output to the console, not a log file.",
         advgetopt::getopt::argument_mode_t::no_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-        "server-name",
-        nullptr,
-        "The name of the server that is going to run this instance of snapfirewall (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
-        advgetopt::getopt::argument_mode_t::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-        "snapdbproxy",
-        nullptr,
-        "The address and port information to connect to snapdbproxy (defined in /etc/snapwebsites/snapinit.xml).",
-        advgetopt::getopt::argument_mode_t::required_argument
     },
     {
         '\0',
@@ -450,7 +425,7 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
  */
 snap_firewall::snap_firewall( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapfirewall_options, g_configuration_files, "SNAPFIREWALL_OPTIONS")
-    , f_cassandra(f_server_config)
+    , f_config("snapfirewall")
 {
     if(f_opt.is_defined("help"))
     {
@@ -469,12 +444,10 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
 
     // read the configuration file
     //
-    f_config.read_config_file( f_opt.get_string("config").c_str() );
-
-    // the "server" configuration file is used in f_cassandra and it
-    // needs to have the cassandra connection information
-    //
-    f_server_config["snapdbproxy_listen"] = f_opt.get_string("snapdbproxy").c_str();
+    if(f_opt.is_defined( "config"))
+    {
+        f_config.set_configuration_path( f_opt.get_string("config") );
+    }
 
     // setup the logger
     //
@@ -488,7 +461,7 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
     }
     else
     {
-        if( f_config.contains("log_config") )
+        if( f_config.has_parameter("log_config") )
         {
             // use .conf definition when available
             f_log_conf = f_config["log_config"];
@@ -566,21 +539,13 @@ void snap_firewall::run()
 
     // get the server name
     //
-    f_server_name = f_opt.get_string("server-name").c_str();
+    f_server_name = QString::fromUtf8(snap::server::get_server_name().c_str());
 
     SNAP_LOG_INFO("--------------------------------- snapfirewall started on ")(f_server_name);
 
-    // connect to Cassandra and get a pointer to our firewall table
-    //
-    {
-        f_cassandra.connect();
-        f_cassandra.create_table("firewall", "List of IP addresses we want blocked");
-        f_firewall_table = f_cassandra.create_table("firewall", "List of IP addresses we want blocked");
-    }
-
     // retrieve the snap communicator information
     //
-    tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_addr, f_communicator_port, "tcp");
+    tcp_client_server::get_addr_port(QString::fromUtf8(f_config("snapcommunicator", "local_listen").c_str()), f_communicator_addr, f_communicator_port, "tcp");
 
     // initialize the communicator and its connections
     //
@@ -615,6 +580,13 @@ void snap_firewall::run()
  */
 void snap_firewall::setup_firewall()
 {
+    // make sure we are also connected with the Cassandra database
+    //
+    if(!f_firewall_table)
+    {
+        return;
+    }
+
     int64_t const now(snap::snap_communicator::get_current_date());
     int64_t const limit(now + 60LL * 1000000LL);
 
@@ -693,6 +665,19 @@ void snap_firewall::setup_firewall()
             }
         }
     }
+
+    // send a "FIREWALLUP" message to let others know that the firewall
+    // is up
+    //
+    // TODO
+    // some daemons, such as the snapserver, should wait on that
+    // signal before starting... (but snapfirewall is optional, so TBD)
+    //
+    snap::snap_communicator_message firewallup_message;
+    firewallup_message.set_command("FIREWALLUP");
+    firewallup_message.set_service(".");
+    f_messager->send_message(firewallup_message);
+
 }
 
 
@@ -713,6 +698,13 @@ void snap_firewall::process_timeout()
     // so we want to check here to make sure we are good.
     //
     if(f_stop_received)
+    {
+        return;
+    }
+
+    // make sure we are connected to cassandra
+    //
+    if(!f_firewall_table)
     {
         return;
     }
@@ -791,28 +783,45 @@ void snap_firewall::process_timeout()
  */
 void snap_firewall::next_wakeup()
 {
-    QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
-
-    // determine whether there is another IP in the table and if so at
-    // what time we need to wake up to remove it from the firewall
+    // by default use now + 5 min.
+    // (if we do not yet have access to the database)
     //
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
-    column_predicate->setCount(1);
-    column_predicate->setIndex(); // behave like an index
-    row->clearCache();
-    row->readCells(column_predicate);
-    QtCassandra::QCassandraCells const cells(row->cells());
-    if(!cells.isEmpty())
+    // TODO: instead we want some form of "temporary database" mechanism
+    //       so that way we can access the real user's data
+    //
+    int64_t limit(QtCassandra::QCassandra::timeofday() + 5LL * 60LL * 1000000LL);
+    if(f_firewall_table)
     {
-        QByteArray const key(cells.begin().key());
-        int64_t const limit(QtCassandra::safeInt64Value(key, 0, -1));
-        if(limit >= 0)
+        QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+
+        // determine whether there is another IP in the table and if so at
+        // what time we need to wake up to remove it from the firewall
+        //
+        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+        column_predicate->setCount(1);
+        column_predicate->setIndex(); // behave like an index
+        row->clearCache();
+        row->readCells(column_predicate);
+        QtCassandra::QCassandraCells const cells(row->cells());
+        if(!cells.isEmpty())
         {
-            // we have a valid date to wait on,
-            // save it in our wakeup timer
-            //
-            f_wakeup_timer->set_timeout_date(limit);
+            QByteArray const key(cells.begin().key());
+            limit = QtCassandra::safeInt64Value(key, 0, -1);
         }
+        else
+        {
+            // no entries means no need to wakeup
+            //
+            limit = 0;
+        }
+    }
+
+    if(limit >= 0)
+    {
+        // we have a valid date to wait on,
+        // save it in our wakeup timer
+        //
+        f_wakeup_timer->set_timeout_date(limit);
     }
 }
 
@@ -892,11 +901,19 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
         // save in our list of blocked IP addresses
         //
-        QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
-        int64_t const now(snap::snap_communicator::get_current_date());
-        QByteArray key;
-        QtCassandra::setInt64Value(key, now + block_period);
-        row->cell(key)->setValue(ip);
+        if(f_firewall_table)
+        {
+            QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+            int64_t const now(snap::snap_communicator::get_current_date());
+            QByteArray key;
+            QtCassandra::setInt64Value(key, now + block_period);
+            row->cell(key)->setValue(ip);
+        }
+        else
+        {
+            // TODO: add this IP in a memory list with it's block period
+            //       and save that in the database once available
+        }
 
         next_wakeup();
 
@@ -943,6 +960,51 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         // Snap! Communicator received our REGISTER command
         //
 
+        // request snapdbproxy to send us a status signal about
+        // Cassandra, after that one call, we will receive the
+        // statuses just because we understand them.
+        //
+        snap::snap_communicator_message isdbready_message;
+        isdbready_message.set_command("CASSANDRASTATUS");
+        isdbready_message.set_service("snapdbproxy");
+        f_messager->send_message(isdbready_message);
+
+        return;
+    }
+
+    if(command == "NOCASSANDRA")
+    {
+        // we lost Cassandra, disconnect from snapdbproxy until we
+        // get CASSANDRAREADY again
+        //
+        f_cassandra.disconnect();
+        f_firewall_table.reset();
+
+        return;
+    }
+
+    if(command == "CASSANDRAREADY")
+    {
+        try
+        {
+            // connect to Cassandra and get a pointer to our firewall table
+            //
+            f_cassandra.connect();
+            f_firewall_table = f_cassandra.get_table("firewall");
+
+            // now that we are fully registered, setup the firewall
+            //
+            setup_firewall();
+        }
+        catch(std::runtime_error const & e)
+        {
+            SNAP_LOG_WARNING("failed to connect to snapdbproxy: ")(e.what());
+
+            // make sure the table is not defined
+            //
+            f_firewall_table.reset();
+        }
+
         return;
     }
 
@@ -955,28 +1017,9 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "BLOCK,HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "BLOCK,CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNKNOWN");
 
         f_messager->send_message(reply);
-
-        // now that we are fully registered, setup the firewall
-        //
-        setup_firewall();
-
-        // send a message to the snapinit service letting it know
-        // that it can now safely start the snapserver (i.e. we
-        // blocked all the unwanted IP addresses)
-        //
-        // We can do this here because we blocked the initialization
-        // to setup the firewall. So the snapfirewall has been safe
-        // for a little while now.
-        //
-        snap::snap_communicator_message safe_message;
-        safe_message.set_command("SAFE");
-        safe_message.set_service("snapinit");
-        safe_message.add_parameter("name", "firewall");
-        safe_message.add_parameter("pid", QString("%1").arg(getpid()));
-        f_messager->send_message(safe_message);
 
         return;
     }

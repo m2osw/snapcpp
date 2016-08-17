@@ -321,14 +321,6 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "connect",
-            nullptr,
-            "The address and port information to connect to snapcommunicator (defined in /etc/snapwebsites/snapinit.xml).",
-            advgetopt::getopt::argument_mode_t::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "cron-action",
             nullptr,
             "Specify a server CRON action.",
@@ -406,14 +398,6 @@ namespace
             "server-name",
             nullptr,
             "The name of the server that is going to run this instance of snapserver (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
-            advgetopt::getopt::argument_mode_t::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "snapdbproxy",
-            nullptr,
-            "The address and port information to connect to snapdbproxy (defined in /etc/snapwebsites/snapinit.xml).",
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {
@@ -716,18 +700,10 @@ int64_t server::do_update(int64_t last_updated)
  * signals in the server.
  */
 server::server()
-    : f_config_filename("/etc/snapwebsites/snapserver.conf")
+    : f_parameters("snapserver")
 {
+    // set the plugin version
     set_version(SNAPWEBSITES_VERSION_MAJOR, SNAPWEBSITES_VERSION_MINOR);
-
-    // default parameters -- we may want to have a separate function and
-    //                       maybe some clear separate variables?
-    f_parameters["listen"]         = "0.0.0.0:4004";
-    f_parameters[get_name(name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH)]      = "/usr/lib/snapwebsites/plugins";
-    f_parameters[get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH)] = "/usr/lib/snapwebsites/tables";
-    f_parameters["qs_action"]      = "a";
-    f_parameters["qs_hit"]         = "hit";
-    f_parameters["server_name"]    = "";
 }
 
 
@@ -796,17 +772,40 @@ void server::exit( int const code )
  */
 void server::usage()
 {
-    std::string server_name( "snapserver" );
-    if( !f_servername.empty() )
-    {
-        server_name = f_servername;
-    }
+    // get the name of the binary, or default to "snapserver" if still undefined
+    //
+    std::string const server_name(f_servername.empty() ? "snapserver" : f_servername);
 
-    std::cerr << "Configuration File: " << f_config_filename << std::endl << std::endl;
+    std::cerr << "Configuration File: \""
+              << f_parameters.get_configuration_path()
+              << "/"
+              << f_parameters.get_configuration_filename()
+              << ".conf\""
+              << std::endl
+              << std::endl;
 
     f_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: %s -<arg> ...\n", server_name.c_str());
     NOTREACHED();
     exit(1);
+}
+
+
+/** \brief Change the configuration filename.
+ *
+ * The various daemons that make use of the server will generally want to
+ * use a different .conf filename (i.e. snapwatchdog uses snapwatchdog.conf
+ * instead of snapserver.conf). This function is used for that purpose
+ * right after the server was created, call it with the name of your
+ * configuration file.
+ *
+ * The path is not set here. The default is "/etc/snapwebsites". It can
+ * be changed using the --config command line option.
+ *
+ * \param[in] filename  The name of the configuration file.
+ */
+void server::set_config_filename(std::string const & filename)
+{
+    f_parameters.set_configuration_filename(filename);
 }
 
 
@@ -872,16 +871,10 @@ void server::show_version()
  * may want to record the configuration file errors and log them
  * if we can still properly initialize the logger.
  *
- * Suported flags are:
- *
- * \li SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME -- if set the name of the server
- *     is optional for that run (i.e. snapsignal)
- *
  * \param[in] argc  The number of arguments in argv.
  * \param[in] argv  The array of argument strings.
- * \param[in] flags  A set of flags defining the behavior of the funciton.
  */
-void server::config(int argc, char * argv[], uint32_t flags)
+void server::config(int argc, char * argv[])
 {
     // Stop on these signals, log them, then terminate.
     //
@@ -934,6 +927,7 @@ void server::config(int argc, char * argv[], uint32_t flags)
 
     // Parse command-line options...
     //
+
     f_opt = std::make_shared<advgetopt::getopt>( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" );
 
     if(f_opt->is_defined("version"))
@@ -945,22 +939,45 @@ void server::config(int argc, char * argv[], uint32_t flags)
 
     // We want the servername for later.
     //
+    // TODO: this f_servername is the name of the daemon binary, not
+    //       the name of the computer; we want to change that variable
+    //       name and rename the corresponding functions too at some point
+    //
     f_servername = f_opt->get_program_name();
 
     // Keep the server in the foreground?
     //
     f_foreground = !f_opt->is_defined( "background" );
 
-    // Output log to stdout. Implies foreground mode.
-    //
-    f_debug = f_opt->is_defined( "debug" );
-
     // initialize the syslog() interface
     openlog(f_servername.c_str(), LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
     bool help(false);
 
-    snap_config::parameter_map_t cmd_line_params;
+    // handle configuration file
+    //
+    // One can change the path with "--config <new path>", but not the
+    // filename of the configuration file.
+    //
+    if(f_opt->is_defined( "config"))
+    {
+        f_parameters.set_configuration_path(f_opt->get_string("config"));
+    }
+
+    // default parameters -- we may want to have a separate function and
+    //                       maybe some clear separate variables?
+    f_parameters.set_parameter_default("listen", "0.0.0.0:4004");
+    f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH), "/usr/lib/snapwebsites/plugins");
+    f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH), "/usr/lib/snapwebsites/tables");
+    f_parameters.set_parameter_default("qs_action", "a");
+    f_parameters.set_parameter_default("qs_hit", "hit");
+    f_parameters.set_parameter_default("server_name", "snap");
+
+    // Output log to stdout. Implies foreground mode.
+    //
+    f_debug = f_opt->is_defined( "debug" )
+           || f_parameters.has_parameter("debug");
+
     if(f_opt->is_defined("param"))
     {
         int const max_params(f_opt->size("param"));
@@ -979,7 +996,6 @@ void server::config(int argc, char * argv[], uint32_t flags)
                 // got a user defined parameter
                 QString const name(param.left(p));
                 f_parameters[name] = param.mid(p + 1);
-                cmd_line_params[name] = ""; // the value is not important here
             }
         }
     }
@@ -1043,81 +1059,19 @@ void server::config(int argc, char * argv[], uint32_t flags)
         }
     }
 
-    f_parameters.set_cmdline_params( cmd_line_params );
-
-    // handle configuration file
-    if( f_opt->is_defined( "config" ) )
-    {
-        f_config_filename = f_opt->get_string( "config" ).c_str();
-    }
-    f_parameters.read_config_file( f_config_filename );
-
     if( help || f_opt->is_defined( "help" ) )
     {
         usage();
         exit(1);
     }
 
-    // the name of the server is mandatory
-    //
-    // it cannot be specified in the .conf file though
-    //
-    if(f_parameters["server_name"] != "")
-    {
-        char const * msg("variable \"server_name\" cannot be defined in snapserver.conf, it is specified with --server-name now, which is automatically passed by snapinit.");
-        SNAP_LOG_FATAL(msg);
-        syslog( LOG_CRIT, "%s", msg );
-        exit(1);
-    }
-    if((flags & SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME) == 0
-    || f_opt->is_defined("server-name"))
-    {
-        f_parameters["server_name"] = f_opt->get_string( "server-name" ).c_str();
-    }
-
-    // the name of the snapcommunicator is optional, but it cannot appear in the config file
-    //
-    // it cannot be specified in the .conf file though
-    //
-    if(f_parameters["snapcommunicator_listen"] != "")
-    {
-        char const * msg("variable \"snapcommunicator_listen\" cannot be defined in snapserver.conf or some other .conf, it is specified with --connect now, which is automatically passed by snapinit and the address and port are defined in /etc/snapwebsites/snapinit.xml.");
-        SNAP_LOG_FATAL(msg);
-        syslog( LOG_CRIT, "%s", msg );
-        exit(1);
-    }
-    if(f_opt->is_defined( "connect" ))
-    {
-        f_parameters["snapcommunicator_listen"] = f_opt->get_string( "connect" ).c_str();
-    }
-
-    // the connection to the data store is done through snapdbproxy
-    // which information we get on the command line
-    //
-    if(f_parameters["snapdbproxy_listen"] != "")
-    {
-        char const * msg("variable \"snapdbproxy_listen\" cannot be defined in snapserver.conf or some other .conf, it is specified with --snapdbproxy, which is automatically passed by snapinit and the address and port are defined in /etc/snapwebsites/snapinit.xml.");
-        SNAP_LOG_FATAL(msg);
-        syslog( LOG_CRIT, "%s", msg );
-        exit(1);
-    }
-    if(f_opt->is_defined( "snapdbproxy" ))
-    {
-        // the information is optional for snapcommunicator (At least)
-        // which may be running on a system where we do not want to
-        // run snapdbproxy; you may also use the <option> tag to
-        // specified the --snapdbproxy ... info
-        //
-        f_parameters["snapdbproxy_listen"] = f_opt->get_string("snapdbproxy").c_str();
-    }
-
     // Finally we can initialize the log system
     //
+    logging::set_progname(f_servername);
     if( f_opt->is_defined( "no-log" ) )
     {
         // Override log_config and output only to the console
         //
-        logging::set_progname(argv[0]);
         logging::configure_console();
     }
     else if( f_opt->is_defined("logfile") )
@@ -1170,6 +1124,137 @@ void server::config(int argc, char * argv[], uint32_t flags)
         //
         logging::reduce_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
     }
+
+    // determine the name of the server
+    //
+    get_server_name();
+}
+
+
+std::string const server::get_server_name()
+{
+    // if called more than once, returned the same name each time after that
+    //
+    static std::string saved_server_name;
+    if(!saved_server_name.empty())
+    {
+        return saved_server_name;
+    }
+
+    // WARNING: we create a separate version of the parameters variable,
+    //          but remember that all the configurations accessible
+    //          through that interface which saves them in a global, so
+    //          yes, it is a separate parameter, but really the same
+    //          configuration variables
+    //
+    //          we expect server_name to only be defined in the
+    //          snapcommunicator.conf file because it needs it
+    //          and it gets started first.
+    //
+    // Note: We create this separate variable because this is a static
+    //       function and thus we do not have access to f_parameters.
+    //
+    snap_config parameters("snapcommunicator");
+
+    snap_config::snap_config_parameter_ref server_name(parameters["server_name"]);
+
+    // if the parameter was not defined in the configuration file,
+    // read the system hostname
+    //
+    if(server_name.empty())
+    {
+        // use hostname by default if undefined in configuration file
+        //
+        char host[HOST_NAME_MAX + 1];
+        host[HOST_NAME_MAX] = '\0';
+        if(gethostname(host, sizeof(host)) != 0
+        || strlen(host) == 0)
+        {
+            throw snapwebsites_exception_parameter_no_available("snapwebsites.cpp: server::get_server_name() could not determine the name of this server.");
+        }
+        // TODO: add code to verify that we like that name (i.e. if the
+        //       name includes periods we will reject it when sending
+        //       messages to/from snapcommunicator)
+        //
+        server_name = host;
+    }
+
+    {
+        std::string name;
+        std::string const original(server_name);
+        char const * s(original.c_str());
+        while(*s != '\0' && *s != '.')
+        {
+            if(*s == '-')
+            {
+                // the dash is not acceptable in our server name
+                // replace it with an underscore
+                //
+                SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dash character (-) which is not supported by snap. Replacing with an underscore (_). If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+                name += '_';
+            }
+            else if(*s >= 'A' && *s <= 'Z')
+            {
+                // force lowercase -- hostnames are expected to be in
+                // lowercase although they are case insensitive so we
+                // certainly want them to be in lowercase anyway
+                //
+                // note: we do not support UTF-8 servernames so really only
+                //       ASCII will be taken in account here
+                //
+                name += *s | 0x20;
+            }
+            else if((*s >= 'a' && *s <= 'z')
+                 || (*s >= '0' && *s <= '9')
+                 || *s == '_')
+            {
+                name += *s;
+            }
+            else
+            {
+                throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::get_server_name() found invalid characters in your server_name parameter.");
+            }
+
+            ++s;
+        }
+        if(*s == '.')
+        {
+            // according to the hostname documentation, the FQDN is
+            // the name before the first dot; this means if you have
+            // more than two dots, the sub-sub-sub...sub-domain is
+            // the FQDN
+            //
+            SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dot character (.) which is not supported by snap. We assume that indicates the end of the name. If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+        }
+
+
+        // TBD: We could further prevent the name from starting/ending with '_'?
+        //
+        if(server_name != name)
+        {
+            // warning about changing the name (not that in the above loop
+            // we do not warn about changing the name to lowercase)
+            //
+            SNAP_LOG_WARNING("Your server_name parameter \"")(std::string(server_name))("\" was transformed to \"")(name)("\" to be compatible with Snap!");
+            server_name = name;
+        }
+
+        // make sure the computer name is no more than 63 characters
+        //
+        if(server_name.empty()
+        || server_name.length() > 63)
+        {
+            throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::get_server_name(): your server_name parameter is empty or too long. The maximum length is 63 characters.");
+        }
+
+        // make sure we can use that name to send messages between computers
+        //
+        snap::snap_communicator_message::verify_name(server_name, false, true);
+    }
+
+    saved_server_name = server_name;
+
+    return server_name;
 }
 
 
@@ -1235,11 +1320,7 @@ size_t server::thread_count()
  */
 QString server::get_parameter(QString const & param_name) const
 {
-    if(f_parameters.contains(param_name))
-    {
-        return f_parameters[param_name];
-    }
-    return "";
+    return f_parameters[param_name];
 }
 
 
@@ -1333,9 +1414,9 @@ void server::set_translation(QString const xml_data)
  */
 void server::prepare_cassandra()
 {
-    snap_cassandra cassandra( f_parameters );
+    snap_cassandra cassandra;
     cassandra.connect();
-    cassandra.init_context();
+    //cassandra.init_context(); -- snapmanager initializes the context now
     QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
     if( !context )
     {
@@ -1351,7 +1432,12 @@ void server::prepare_cassandra()
 
     // Create all the missing tables from all the plugins which
     // packages are currently installed
-    create_table_list(context);
+    //
+    // -- this MUST be done using the snapdbproxy tool: `snapcreatetables`
+    //    and sooner or later that will be part of
+    //    snapmanager.cgi / snapmanagerdaemon
+    //
+    //create_table_list(context);
 
     // --prepare-cassandra used?
     if(f_opt->is_defined("prepare-cassandra"))
@@ -1447,293 +1533,6 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
 }
 
 
-/** \brief Create a set if table as found under path.
- *
- * This function reads all the XML files found under the specified
- * path.
- *
- * The format of these XML files is defined in the core system XML
- * files definition the core system tables.
- *
- * These XML files define a keyspace of one or more tables.
- *
- * The format is defined in details in libsnapwebsites/src/core-tables.xml.
- *
- * \param[in] context  The context in which the table is to be created.
- */
-void server::create_table_list(QtCassandra::QCassandraContext::pointer_t context)
-{
-    snap_tables tables;
-
-    // user may specify multiple paths separated by a colon
-    //
-    snap_string_list paths(f_parameters[get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH)].split(':'));
-    for(auto p : paths)
-    {
-        tables.load(p);
-    }
-
-    // now we have all the tables loaded,
-    //
-    snap_tables::table_schema_t::map_t const & schemas(tables.get_schemas());
-    SNAP_LOG_INFO("check existence of ")(schemas.size())(" tables...");
-    for(auto const & s : schemas)
-    {
-        QString const table_name(s.second.get_name());
-
-        // does table exist?
-        QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-        if(!table)
-        {
-            SNAP_LOG_INFO("creating table \"")(table_name)("\"");
-
-            // create table
-            //
-            // setup the name in the "constructor"
-            //
-            table = context->table(table_name);
-
-            // other fields make use of a map
-            //
-            // for details see:
-            // http://docs.datastax.com/en/cql/3.1/cql/cql_reference/tabProp.html
-            //
-            auto & table_fields(table->fields());
-
-            // setup the comment for information
-            //
-            table_fields["comment"] = QVariant(s.second.get_name());
-
-            // how often we want the mem[ory] tables to be flushed out
-            //
-            snap_tables::model_t const model(s.second.get_model());
-            switch(model)
-            {
-            case snap_tables::model_t::MODEL_LOG:
-                // 99% of the time, there is really no need to keep
-                // log like data in memory, give it 5 min.
-                //
-                table_fields["memtable_flush_period_in_ms"] = QVariant(300);
-                break;
-
-            case snap_tables::model_t::MODEL_CONTENT:
-            case snap_tables::model_t::MODEL_DATA:
-            case snap_tables::model_t::MODEL_SESSION:
-                // keep the default, which is to disable the memory tables
-                // flushing mechanism; this means that data stays in memory
-                // as long as space is available for it
-                //
-                break;
-
-            default:
-                // once per hour for most of our tables, because their
-                // data is not generally necessary in the memory cache
-                //
-                table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
-                break;
-
-            }
-
-            // not so sure that we really want a read-repair mechanism
-            // to run on any read, but it sounds like it work working
-            // that way in older versions and since we use a ONE
-            // consistency with our writes, it may be safer to have
-            // a read repair at least in the few tables where we have
-            // what we consider end user data
-            //
-            // note that all my tables used to have 0.1 and it worked
-            // nicely
-            //
-            switch(model)
-            {
-            case snap_tables::model_t::MODEL_CONTENT:
-            case snap_tables::model_t::MODEL_DATA:
-            case snap_tables::model_t::MODEL_SESSION:
-                // 10% of the time, verify that the data being read is
-                // consistent (it does not slow down our direct reads,
-                // however, it makes Cassandra busier as it checks many
-                // values on each node that has a copy of that data)
-                //
-                table_fields["read_repair_chance"] = QVariant(0.1f);
-                break;
-
-            default:
-                // keep the default for the others (i.e. no repair)
-                //
-                break;
-
-            }
-
-            // force a retry on reads that timeout
-            //
-            // we keep the default for most tables, there are tables
-            // where we do not care as much and we can turn that
-            // feature off on those
-            //
-            switch(model)
-            {
-            case snap_tables::model_t::MODEL_LOG:
-                // no retry
-                //
-                table_fields["speculative_retry"] = QVariant("NONE");
-                break;
-
-            default:
-                // keep the default for the others (i.e. 99%)
-                //
-                break;
-
-            }
-
-            // The following sets up how often a table should be checked
-            // for tombstones; the models have quite different needs in
-            // this area
-            //
-            // Important notes about potential problems in regard to
-            // the Cassandra Gargbage Collection and tombstones not
-            // being taken in account:
-            //
-            //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
-            //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
-            //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
-            //
-            // Garbage Collection of 1 day (could be a lot shorter for several
-            // tables such as the "list", "backend" and "antihammering"
-            // tables... we will have to fix that once we have our proper per
-            // table definitions)
-            switch(model)
-            {
-            case snap_tables::model_t::MODEL_DATA:
-            case snap_tables::model_t::MODEL_LOG: // TBD: we may have problems getting old tombstones removed if too large?
-                // default of 10 days for heavy write but nearly no upgrades
-                //
-                table_fields["gc_grace_seconds"] = QVariant(864000);
-                break;
-
-            case snap_tables::model_t::MODEL_QUEUE:
-                // 1h and we want a clean up; this is important in queue
-                // otherwise the tombstones build up very quickly
-                //
-                table_fields["gc_grace_seconds"] = QVariant(3600);
-                break;
-
-            default:
-                // 1 day, these tables need cleaning relatively often
-                // because they have quite a few updates
-                //
-                table_fields["gc_grace_seconds"] = QVariant(86400);
-                break;
-
-            }
-
-            // data can be compressed, in a few cases, there is really
-            // no need for such though
-            //
-            switch(model)
-            {
-            case snap_tables::model_t::MODEL_QUEUE:
-                // no compression for queues
-                //
-                // The documentation says to use "" for "no compression"
-                //
-                {
-                    QtCassandra::QCassandraSchema::Value compression;
-                    auto & compression_map(compression.map());
-                    compression_map["sstable_compression"] = QVariant(QString());
-                    table_fields["compression"] = compression;
-                }
-                break;
-
-            case snap_tables::model_t::MODEL_LOG:
-                // data that we do not generally re-read can be
-                // ultra-compressed only it will be slower to
-                // decompress such data
-                //
-                // TBD: we could enlarge block size to 1Mb, it would
-                //      help in terms of compression, but slow down
-                //      (dramatically?) in term of speed and it forces
-                //      that much memory to be used too...
-                //
-                {
-                    QtCassandra::QCassandraSchema::Value compression;
-                    auto & compression_map(compression.map());
-                    compression_map["sstable_compression"] = QVariant("DeflateCompressor");
-                    //compression_map["chunk_length_kb"] = QVariant(64);
-                    //compression_map["crc_check_chance"] = QVariant(1.0); // 100%
-                    table_fields["compression"] = compression;
-                }
-                break;
-
-            default:
-                // leave the default (LZ4Compressor at the moment)
-                break;
-
-            }
-
-            // Define the compaction mechanism; in most cases we want to
-            // use the Leveled compation as it looks like there is no real
-            // advantages to using the other compaction methods available
-            //
-            switch(model)
-            {
-            case snap_tables::model_t::MODEL_QUEUE:
-                {
-                    // we choose Data Tiered Compaction for queues because
-                    // Cassandra is smart enough to place rows with similar
-                    // timeout dates within the same file and just delete
-                    // an sstable file when all data within is past its
-                    // deadline
-                    //
-                    QtCassandra::QCassandraSchema::Value compaction;
-                    auto & compaction_map(compaction.map());
-                    compaction_map["class"] = QVariant("DateTieredCompactionStrategy");
-                    compaction_map["min_threshold"] = QVariant(4);
-                    compaction_map["max_threshold"] = QVariant(10);
-                    compaction_map["tombstone_threshold"] = QVariant(0.02); // 2%
-                    table_fields["compaction"] = compaction;
-
-                    table_fields["bloom_filter_fp_chance"] = QVariant(0.1f); // suggested default is 0.01 for date compaction, but I do not see the point of having tables 10x the size
-                }
-                break;
-
-            case snap_tables::model_t::MODEL_DATA:
-            case snap_tables::model_t::MODEL_LOG:
-                {
-                    // tables that have mainly just writes are better
-                    // handled with a Size Tiered Compaction (50% less I/O)
-                    //
-                    QtCassandra::QCassandraSchema::Value compaction;
-                    auto & compaction_map(compaction.map());
-                    compaction_map["class"] = QVariant("SizeTieredCompactionStrategy");
-                    //compaction_map["min_threshold"] = QVariant(4);
-                    //compaction_map["max_threshold"] = QVariant(32);
-                    //compaction_map["tombstone_threshold"] = QVariant(0.2); // 20%
-                    table_fields["compaction"] = compaction;
-
-                    table_fields["bloom_filter_fp_chance"] = QVariant(0.1f); // suggested default is 0.01 for date compaction, but I do not see the point of having tables 10x the size
-                }
-                break;
-
-            default:
-                {
-                    QtCassandra::QCassandraSchema::Value compaction;
-                    auto & compaction_map(compaction.map());
-                    compaction_map["class"] = QVariant("LeveledCompactionStrategy");
-                    //compaction_map["tombstone_threshold"] = QVariant(0.2); // 20%
-                    table_fields["compaction"] = compaction;
-
-                    table_fields["bloom_filter_fp_chance"] = QVariant(0.1f); // suggested for leveled compaction
-                }
-                break;
-
-            }
-
-            table->create();
-        }
-    }
-}
-
-
 /** \brief Detach the server unless in foreground mode.
  *
  * This function detaches the server unless it is in foreground mode.
@@ -1819,7 +1618,7 @@ void server::udp_ping_server( QString const & service, QString const & uri )
     //
     QString addr("127.0.0.1");
     int port(4041);
-    QString const communicator_addr_port( get_parameter("snapcommunicator_signal") );
+    QString const communicator_addr_port( f_parameters(QString("snapcommunicator"), "signal") );
     tcp_client_server::get_addr_port(communicator_addr_port, addr, port, "udp");
 
     snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, ping);
@@ -1878,7 +1677,7 @@ void server::udp_rusage(QString const & process_name)
     //
     QString addr("127.0.0.1");
     int port(4041);
-    QString const communicator_addr_port( get_parameter("snapcommunicator_signal") );
+    QString const communicator_addr_port( f_parameters(QString("snapcommunicator"), "signal") );
     tcp_client_server::get_addr_port(communicator_addr_port, addr, port, "udp");
 
     snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, rusage_message);
@@ -1914,7 +1713,8 @@ void server::block_ip( QString const & ip, QString const & period )
     //
     QString addr("127.0.0.1");
     int port(4041);
-    tcp_client_server::get_addr_port(s->get_parameter("snapcommunicator_signal"), addr, port, "udp");
+    snap_config config("snapcommunicator");
+    tcp_client_server::get_addr_port(config["signal"], addr, port, "udp");
 
     // create a BLOCK message
     //
@@ -2423,7 +2223,7 @@ void server::listen()
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
-    tcp_client_server::get_addr_port(get_parameter("snapcommunicator_listen"), communicator_addr, communicator_port, "tcp");
+    tcp_client_server::get_addr_port(QString::fromUtf8(f_parameters("snapcommunicator", "local_listen").c_str()), communicator_addr, communicator_port, "tcp");
 
     // TBD: Would we need a lock sooner? if so, we are in trouble...
     //      Initialize the snap communicator information in snap_lock

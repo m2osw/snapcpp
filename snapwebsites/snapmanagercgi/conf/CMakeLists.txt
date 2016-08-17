@@ -1,6 +1,6 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      snapwebsites/snapmanagercgi/conf/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.
@@ -41,8 +41,6 @@ snap_validate_xml( bundle-tools.xml      bundles.xsd )
 snap_validate_xml( bundle-tripwire.xml   bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
-
-snap_validate_xml( service-snapmanagerdaemon.xml service.xsd )
 
 #################################################################################
 ## Config files
@@ -105,18 +103,6 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
-)
-
-
-#################################################################################
-## Service definitions
-##
-install(
-    FILES 
-        service-snapmanagerdaemon.xml
-
-    DESTINATION
-        share/snapwebsites/conf/services.d
 )
 
 

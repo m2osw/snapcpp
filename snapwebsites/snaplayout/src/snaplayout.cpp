@@ -807,50 +807,52 @@ void snap_layout::add_files()
     const QString context_name( f_opt->get_string("context").c_str() );
     if( !tableExists("layout") )
     {
-        try
-        {
-            const QString query_template(
-                    "CREATE TABLE IF NOT EXISTS %1.layout (\n"
-                    "  key BLOB,\n"
-                    "  column1 BLOB,\n"
-                    "  value BLOB,\n"
-                    ") WITH COMPACT STORAGE\n"
-                    "  AND bloom_filter_fp_chance = 0.01\n"
-                    "  AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}\n"
-                    "  AND comment = 'Table of layouts'\n"
-                    "  AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '22', 'min_threshold': '4'}\n"
-                    "  AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}\n"
-                    "  AND crc_check_chance = 1\n"
-                    "  AND dclocal_read_repair_chance = 0\n"
-                    "  AND default_time_to_live = 0\n"
-                    "  AND gc_grace_seconds = 864000\n"
-                    "  AND max_index_interval = 2048\n"
-                    "  AND memtable_flush_period_in_ms = 3600000\n"
-                    "  AND min_index_interval = 128\n"
-                    "  AND read_repair_chance = 0\n"
-                    "  AND speculative_retry = 'NONE'\n"
-                    "  ;"
-                    );
+        //try
+        //{
+        //    const QString query_template(
+        //            "CREATE TABLE IF NOT EXISTS %1.layout (\n"
+        //            "  key BLOB,\n"
+        //            "  column1 BLOB,\n"
+        //            "  value BLOB,\n"
+        //            ") WITH COMPACT STORAGE\n"
+        //            "  AND bloom_filter_fp_chance = 0.01\n"
+        //            "  AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}\n"
+        //            "  AND comment = 'Table of layouts'\n"
+        //            "  AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '22', 'min_threshold': '4'}\n"
+        //            "  AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}\n"
+        //            "  AND crc_check_chance = 1\n"
+        //            "  AND dclocal_read_repair_chance = 0\n"
+        //            "  AND default_time_to_live = 0\n"
+        //            "  AND gc_grace_seconds = 864000\n"
+        //            "  AND max_index_interval = 2048\n"
+        //            "  AND memtable_flush_period_in_ms = 3600000\n"
+        //            "  AND min_index_interval = 128\n"
+        //            "  AND read_repair_chance = 0\n"
+        //            "  AND speculative_retry = 'NONE'\n"
+        //            "  ;"
+        //            );
 
-            std::cout << "Creating table layout";
-            auto q( QCassandraQuery::create(f_session) );
-            q->query( query_template.arg(context_name) );
-            q->start(false);
-            while( !q->isReady() )
-            {
-                std::cout << ".";
-            }
-            q->getQueryResult();
-            q->end();
-            std::cout << "done!" << std::endl;
-        }
-        catch( const std::exception& ex )
-        {
-            std::cout << "error!" << std::endl;
-            std::cerr << "Layout table creation QCassandraQuery exception caught! What=" << ex.what() << std::endl;
-            exit(1);
-            snap::NOTREACHED();
-        }
+        //    std::cout << "Creating table layout";
+        //    auto q( QCassandraQuery::create(f_session) );
+        //    q->query( query_template.arg(context_name) );
+        //    q->start(false);
+        //    while( !q->isReady() )
+        //    {
+        //        std::cout << ".";
+        //    }
+        //    q->getQueryResult();
+        //    q->end();
+        //    std::cout << "done!" << std::endl;
+        //}
+        //catch( const std::exception& ex )
+        //{
+        //    std::cout << "error!" << std::endl;
+        //    std::cerr << "Layout table creation QCassandraQuery exception caught! What=" << ex.what() << std::endl;
+        //    exit(1);
+        //    snap::NOTREACHED();
+        //}
+        std::cerr << "Layout table does not exist yet. Run snapcreatetables at least once on a computer running snapdbproxy." << std::endl;
+        exit(1);
     }
 
     typedef QMap<QString, time_t> mtimes_t;

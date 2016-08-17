@@ -177,6 +177,7 @@ public:
     logger &        operator () (std::string const & s)         { NOTUSED(s); return *this; }
     logger &        operator () (std::wstring const & s)        { NOTUSED(s); return *this; }
     logger &        operator () (QString const & s)             { NOTUSED(s); return *this; }
+    logger &        operator () (snap::snap_config::snap_config_parameter_ref const & s) { NOTUSED(s); return *this; }
     logger &        operator () (char const v)                  { NOTUSED(v); return *this; }
     logger &        operator () (signed char const v)           { NOTUSED(v); return *this; }
     logger &        operator () (unsigned char const v)         { NOTUSED(v); return *this; }
@@ -1048,6 +1049,13 @@ logger & logger::operator () (QString const & s)
 }
 
 
+logger & logger::operator () (snap::snap_config::snap_config_parameter_ref const & s)
+{
+    f_message += QString(s);
+    return *this;
+}
+
+
 logger & logger::operator () (char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
@@ -1153,6 +1161,12 @@ logger & operator << ( logger & l, QString const & msg )
 
 
 logger & operator << ( logger & l, std::basic_string<char> const & msg )
+{
+    return l( msg );
+}
+
+
+logger & operator << ( logger & l, snap::snap_config::snap_config_parameter_ref const & msg )
 {
     return l( msg );
 }

@@ -2,4 +2,3 @@ usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
 conf/snapcommunicator.properties conf/snapcommunicator.conf etc/snapwebsites/
-conf/service-snapcommunicator.xml etc/snapwebsites/services.d/

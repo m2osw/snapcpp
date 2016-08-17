@@ -32,11 +32,6 @@
 
 snap_validate_xml( bundle-snapbackend.xml bundles.xsd )
 
-snap_validate_xml( service-images.xml      service.xsd )
-snap_validate_xml( service-pagelist.xml    service.xsd )
-snap_validate_xml( service-sendmail.xml    service.xsd )
-snap_validate_xml( service-snapbackend.xml service.xsd )
-
 
 #################################################################################
 ## Bundles are also saved under a bundle directory for reference
@@ -47,21 +42,6 @@ install(
 
     DESTINATION
         share/snapwebsites/bundles
-)
-
-
-#################################################################################
-## Service definitions
-##
-install(
-    FILES
-        service-images.xml
-        service-pagelist.xml
-        service-sendmail.xml
-        service-snapbackend.xml
-
-    DESTINATION
-        share/snapwebsites/conf/services.d
 )
 
 

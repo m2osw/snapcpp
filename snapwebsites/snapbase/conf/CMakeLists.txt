@@ -29,6 +29,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+
 #################################################################################
 ## Config files
 ##
@@ -39,19 +40,11 @@ install(
         log.properties
         logserver.properties
 
+        # snap configuration files
+        snapserver.conf
+
     DESTINATION
         share/snapwebsites/conf
-)
-
-#################################################################################
-## Save XSD files in their own directory
-##
-install(
-    FILES
-        service.xsd
-
-    DESTINATION
-        share/snapwebsites/xsd
 )
 
 

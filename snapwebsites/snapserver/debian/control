@@ -46,7 +46,7 @@ Package: snapserver
 Section: web
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy, snapinit
+    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy
 Recommends: snapdb
 Suggests: cassandra (>= 3.5.0), snapcgi, snapbounce, snapserver-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
