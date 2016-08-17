@@ -46,6 +46,7 @@ include_directories(
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${snapwatchdog_SOURCE_DIR}
 )
 
 add_executable(${PROJECT_NAME}
