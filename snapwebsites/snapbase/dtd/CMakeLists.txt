@@ -1,11 +1,9 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      dtd/CMakeLists.txt
 #
 # Description:
-#      The Snap! Websites Server. The server is the main() of the Snap!
-#      environment. Most everything is however defined in the
-#      libsnapwebsites.so library (see lib/*).
+#      Install configuration files and samples.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -31,22 +29,17 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-cmake_minimum_required( VERSION 3.5 )
 
-project(snapbase_project)
+#################################################################################
+## Install DTD file.
+##
+install(
+    FILES
+        simplified-xslt20.dtd
 
-find_package( SnapCMakeModules  REQUIRED )
-find_package( SnapDoxygen )
+    DESTINATION
+        share/snapwebsites/dtd
+)
 
-SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
-
-
-file( GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/* )
-install( FILES ${SRC_FILES} DESTINATION share/snapwebsites/src )
-
-add_subdirectory( conf )
-add_subdirectory( doc  )
-add_subdirectory( dtd  )
-add_subdirectory( xsd  )
 
 # vim: ts=4 sw=4 et
