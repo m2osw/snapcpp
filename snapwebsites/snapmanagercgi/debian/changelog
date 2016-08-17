@@ -1,3 +1,10 @@
+snapmanagercgi (1.0.7.1~xenial) xenial; urgency=high
+
+  * SNAP-403: Can't use "ovpn" suffix under linux
+  * SNAP-403: <crt> is wrong: it is really <cert>
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 17:17:31 -0700
+
 snapmanagercgi (1.0.7.0~xenial) xenial; urgency=high
 
   * SNAP-403: Need to remove script before trying to overwrite it.

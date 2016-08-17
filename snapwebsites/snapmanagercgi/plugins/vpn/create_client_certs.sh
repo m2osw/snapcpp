@@ -19,7 +19,7 @@ cd /etc/openvpn/easy-rsa
 . ./vars
 
 keys_dir=/etc/openvpn/easy-rsa/keys
-client_file="${keys_dir}/${client}.ovpn"
+client_file="${keys_dir}/${client}.conf"
 ./pkitool ${client}
 sed \
   -e "s/^;user nobody/user nobody/" \
@@ -37,8 +37,8 @@ append_file() {
   echo "</${1}>"          >> ${client_file}
 }
 
-append_file "ca"  "ca.crt"
-append_file "key" "${client}.key"
-append_file "crt" "${client}.crt"
+append_file "ca"   "ca.crt"
+append_file "key"  "${client}.key"
+append_file "cert" "${client}.crt"
 
 # vim: ts=2 sw=2 et

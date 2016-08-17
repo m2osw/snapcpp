@@ -207,7 +207,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     // only a few admins should be permitted on those computers
     // anyway...
     //
-    QStringList exts    = {"ovpn"}; //{"key","crt","ovpn"};
+    QStringList exts    = {"conf"}; //{"key","crt","conf"};
     QStringList filters;
     for( auto const &ext : exts ) { filters << QString("*.%1").arg(ext); }
 
@@ -221,6 +221,8 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     {
         SNAP_LOG_TRACE("file info=")(info.filePath());
 
+        if( info.baseName() == "server" ) continue; // Ignore the server configuration
+
         // create a field for this one, it worked
         //
         for( auto const &ext : exts )
@@ -232,8 +234,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
                 );
             if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
             {
-                QString const name = QString("Generated vpn_client %1.%2").arg(info.baseName()).arg(ext);
-                SNAP_LOG_TRACE("vpn::on_retrieve_status(): setting ctl, name=")(qPrintable(name));
+                QString const name = QString("%1.%2").arg(info.baseName()).arg(ext);
                 QTextStream in(&file);
                 snap_manager::status_t const ctl
                     ( snap_manager::status_t::state_t::STATUS_STATE_INFO
@@ -268,7 +269,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     //
     {
         QString contents;
-        QFile file( "/etc/openvpn/client.ovpn" );
+        QFile file( "/etc/openvpn/client.conf" );
         if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
         {
             QTextStream in(&file);
@@ -453,7 +454,7 @@ bool vpn::apply_setting ( QString const & button_name
     {
         QProcess::execute( "systemctl stop openvpn@client" );
 
-        QFile file( "/etc/openvpn/client.ovpn" );
+        QFile file( "/etc/openvpn/client.conf" );
         if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
         {
             QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
