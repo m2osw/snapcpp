@@ -21,12 +21,6 @@
     to one or more servers, the new client can also communicate
     with other clients (client-to-client).</p>
   </description>
-  <fields>
-    <field name="empty_field" type="input">
-      <label>Dummy Field</label>
-      <description>Ignore this field--placeholder until this bug is fixed.</description>
-    </field>
-  </fields>
   <packages>openvpn</packages>
   <!--
     For a client, the setup is simpler: we just need to have a few
