@@ -85,7 +85,6 @@ public:
 
 private:
     void                define_server_name();
-    bool                check_cassandra();
     void                init_parameters();
     void                run_watchdog_process();
 

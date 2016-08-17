@@ -42,9 +42,6 @@ int main(int argc, char * argv[])
         //
         s->prepare_qtapp( argc, argv );
 
-        // prepare the database
-        s->prepare_cassandra();
-
         // run backends
         s->backend();
 

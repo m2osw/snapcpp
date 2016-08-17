@@ -295,14 +295,6 @@ namespace
             advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
-            '\0',
-            0,
-            "add-host",
-            nullptr,
-            "Add a host to the lock table. Remember that you cannot safely do that while any one of the servers are running. This should not be used anymore since that feature was moved to the snapmanager instead.",
-            advgetopt::getopt::argument_mode_t::optional_argument
-        },
-        {
             'b',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "background",
@@ -383,14 +375,6 @@ namespace
             nullptr,
             "Define one or more server parameters on the command line (-p name=value).",
             advgetopt::getopt::argument_mode_t::required_multiple_argument
-        },
-        {
-            '\0',
-            0,
-            "prepare-cassandra",
-            nullptr,
-            "Create the cassandra \"domains\" and \"websites\" tables and exit. This should not be used anymore since that feature was moved to the snapmanager instead.",
-            advgetopt::getopt::argument_mode_t::optional_argument
         },
         {
             '\0',
@@ -1411,54 +1395,58 @@ void server::set_translation(QString const xml_data)
  * If this function does not get called, the f_snapdbproxy_addr and
  * f_snapdbproxy_port do not get defined. This is a problem that should
  * be addressed at some point.
+ *
+ * \param[in] mandatory_table  A table that we expect to exist to go on.
  */
-void server::prepare_cassandra()
+bool server::check_cassandra(QString const & mandatory_table)
 {
     snap_cassandra cassandra;
-    cassandra.connect();
-    //cassandra.init_context(); -- snapmanager initializes the context now
-    QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
-    if( !context )
+
+    try
     {
-        SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
-        exit(1);
-    }
-    //
-    f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
-    f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
+        // attempt a connection, this may throw if the connection fails
+        //
+        cassandra.connect();
 
-    // setup the server name, this is important for locks
-    context->setHostName(f_parameters["server_name"]);
-
-    // Create all the missing tables from all the plugins which
-    // packages are currently installed
-    //
-    // -- this MUST be done using the snapdbproxy tool: `snapcreatetables`
-    //    and sooner or later that will be part of
-    //    snapmanager.cgi / snapmanagerdaemon
-    //
-    //create_table_list(context);
-
-    // --prepare-cassandra used?
-    if(f_opt->is_defined("prepare-cassandra"))
-    {
-        exit(0);
-    }
-
-    // --add-host used?
-    if(f_opt->is_defined("add-host"))
-    {
-        // The libQtCassandra library creates a lock table named
-        // lock_table. That table needs to include each host as
-        // any one host may need to lock the system.
-        QString host_name(f_opt->get_string("add-host").c_str());
-        if(host_name.isEmpty())
+        // make sure we have the "snap_websites" context
+        //
+        QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
+        if( !context )
         {
-            host_name = f_parameters["server_name"];
+            SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
+            exit(1);
         }
-        context->addLockHost(host_name);
-        exit(0);
+
+        // save the snapdbproxy address and port so the child can quickly
+        // get that information
+        //
+        f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
+        f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
+
+        // make sure a certain table is ready so this daemon can run as
+        // expected; if not present, exit immediately
+        //
+        if(!cassandra.get_table(mandatory_table))
+        {
+            // if the table does not exist yet, then snapwatchdog is not
+            // correctly initialized--at this point this means we are hosed
+            // as a self running daemon
+            //
+            // tables are expected to be created from the *-tables.xml files
+            // (see snapdbproxy for details.)
+            //
+            SNAP_LOG_FATAL(mandatory_table)(" table does not exist! Exiting.");
+            exit(1);
+        }
+
+        return true;
     }
+    catch(std::runtime_error const & e)
+    {
+        SNAP_LOG_ERROR("could not connect to the \"snapdbproxy\" daemon.");
+    }
+
+    return false;
 }
 
 
