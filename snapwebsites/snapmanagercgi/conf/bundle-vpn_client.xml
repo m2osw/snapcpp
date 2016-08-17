@@ -26,9 +26,23 @@
     For a client, the setup is simpler: we just need to have a few
     keys and a client.conf properly setup.
   -->
+  <postinst>
+    # Remove any default configuration
+    if systemctl is-active openvpn@client
+    then
+      systemctl stop openvpn@client
+    fi
+    rm -f /etc/openvpn/*.conf
+  </postinst>
   <prerm>
-    systemctl stop openvpn@client
+    if systemctl is-active openvpn@client
+    then
+      systemctl stop openvpn@client
+    fi
   </prerm>
+  <postrm>
+    rm -f /etc/openvpn/*.conf
+  </postrm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et

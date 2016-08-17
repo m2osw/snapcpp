@@ -57,6 +57,11 @@
     can at least copy and create some files as required.
   -->
   <postinst>
+    if systemctl is-active openvpn@server
+    then
+      systemctl stop openvpn@server
+    fi
+
     # Clear out the easy-rsa dist just in case
     cd /etc/openvpn
     rm -rf *.crt *.key *.conf *.ovpn easy-rsa
@@ -103,8 +108,15 @@
     systemctl start openvpn@server
   </postinst>
   <prerm>
-    systemctl stop openvpn@server
+    if systemctl is-active openvpn@server
+    then
+      systemctl stop openvpn@server
+    fi
   </prerm>
+  <postrm>
+    cd /etc/openvpn
+    rm -rf *.crt *.key *.conf *.ovpn easy-rsa
+  </postrm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
