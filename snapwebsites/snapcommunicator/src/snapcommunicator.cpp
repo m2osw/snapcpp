@@ -2717,6 +2717,24 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 snap::logging::reconfigure();
                 return;
             }
+            else if(command == "LISTSERVICES")
+            {
+                snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
+                std::string list;
+                std::for_each(
+                        all_connections.begin(),
+                        all_connections.end(),
+                        [&list](auto const & c)
+                        {
+                            if(!list.empty())
+                            {
+                                list += ", ";
+                            }
+                            list += c->get_name();
+                        });
+                SNAP_LOG_INFO("current list of connections: ")(list);
+                return;
+            }
             break;
 
         case 'P':

@@ -17,6 +17,8 @@
 
 #include "snapwatchdog.h"
 
+#include "version.h"
+
 #include <snapwebsites/log.h>
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/qdomhelpers.h>
@@ -438,7 +440,7 @@ void watchdog_server::watchdog()
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
-    tcp_client_server::get_addr_port(f_parameters(QString("snapcommunicator"), "listen"), communicator_addr, communicator_port, "tcp");
+    tcp_client_server::get_addr_port(f_parameters(QString("snapcommunicator"), "local_listen"), communicator_addr, communicator_port, "tcp");
 
     // create the messager, a connection between the snapwatchdogserver
     // and the snapcommunicator which allows us to communicate with
@@ -474,6 +476,13 @@ void watchdog_server::watchdog()
  */
 void watchdog_server::process_tick()
 {
+    // Can connect to Cassandra yet?
+    //
+    if(f_snapdbproxy_addr.isEmpty())
+    {
+        return;
+    }
+
     // make sure we do not start more than one tick process because that
     // would cause horrible problems (i.e. many fork()'s, heavy memory
     // usage, CPU usage, incredible I/O, etc.) although that should not
@@ -804,9 +813,11 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
 
     if(command == "NOCASSANDRA")
     {
-        // we lost Cassandra, disconnect from snapdbproxy until we
+        // we lost Cassandra, "disconnect" from snapdbproxy until we
         // get CASSANDRAREADY again
         //
+        f_snapdbproxy_addr.clear();
+        f_snapdbproxy_port = 0;
 
         return;
     }
@@ -844,8 +855,15 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
 
     if(command == "RUSAGE")
     {
+        // Can connect to Cassandra yet?
+        //
+        if(f_snapdbproxy_addr.isEmpty())
+        {
+            return;
+        }
+
         // a process just sent us its RUSAGE just before exiting
-        // (note that a PING is generally used to send that info
+        // (note that a UDP message is generally used to send that info
         // so we are likely to miss some of those statistics)
         //
         watchdog_child::pointer_t child(std::make_shared<watchdog_child>(instance(), false));
@@ -949,7 +967,7 @@ void watchdog_child::run_watchdog_plugins()
         {
             // we do not try again, we just abandon the whole process
             //
-            SNAP_LOG_ERROR("watchdog_server::run_watchdog_process() could not create child process, fork() failed with errno: ")(e)(" -- ")(strerror(e))(".");
+            SNAP_LOG_ERROR("watchdog_server::run_watchdog_plugins() could not create child process, fork() failed with errno: ")(e)(" -- ")(strerror(e))(".");
         }
         return;
     }

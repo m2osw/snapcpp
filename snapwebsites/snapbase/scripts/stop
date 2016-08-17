@@ -3,7 +3,7 @@
 BUILD/snapwebsites/snapcommunicator/src/snapsignal snapcommunicator/STOP
 
 #BUILD/snapwebsites/snapcommunicator/src/snapsignal snaplock/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapdnproxy/STOP
+#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapdbproxy/STOP
 #BUILD/snapwebsites/snapcommunicator/src/snapsignal snapfirewall/STOP
 #BUILD/snapwebsites/snapcommunicator/src/snapsignal snapserver/STOP
 #BUILD/snapwebsites/snapcommunicator/src/snapsignal images/STOP
