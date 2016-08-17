@@ -613,62 +613,6 @@ void watchdog_server::process_sigchld()
 }
 
 
-/** \brief Initialize the Cassandra connection.
- *
- * This function initializes the Cassandra connection and creates
- * the watchdog "serverstats" table.
- */
-bool watchdog_server::check_cassandra()
-{
-    snap_cassandra cassandra;
-
-    try
-    {
-        cassandra.connect();
-
-        QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
-        if( !context )
-        {
-            // if the context is not yet available, we really cannot do
-            // anything more here--snapmanager (later snapmanager.cgi)
-            // is 100% in charge of that creation.
-            //
-            SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
-            exit(1);
-        }
-
-        // this is sucky, the host/port info should not be taken that way!
-        // also we should allow servers without access to cassandra...
-        //
-        f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
-        f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
-
-        // make sure the table is ready
-        //
-        if(!cassandra.get_table(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS)))
-        {
-            // if the table does not exist yet, then snapwatchdog is not
-            // correctly initialized--at this point this means we are hosed
-            // as a self running daemon
-            //
-            // tables are expected to be created from the *-tables.xml files
-            // (see snapdbproxy for details.)
-            //
-            SNAP_LOG_FATAL(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS))(" table does not exist! Exiting.");
-            exit(1);
-        }
-
-        return true;
-    }
-    catch(std::runtime_error const & e)
-    {
-        SNAP_LOG_ERROR("snap_watchdog could not connect to the snapdbproxy daemon.");
-    }
-
-    return false;
-}
-
-
 /** \brief Initialize the watchdog server parameters.
  *
  * This function gets the parameters from the watchdog configuration file
@@ -828,7 +772,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         {
             // connect to Cassandra and get a pointer to our firewall table
             //
-            check_cassandra();
+            check_cassandra(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
         }
         catch(std::runtime_error const & e)
         {
