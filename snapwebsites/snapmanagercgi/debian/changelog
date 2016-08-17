@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.7.2~xenial) xenial; urgency=high
+
+  * SNAP-403: Now puts up vpn client box *only* on clients, and similar for servers.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 18:15:23 -0700
+
 snapmanagercgi (1.0.7.1~xenial) xenial; urgency=high
 
   * SNAP-403: Can't use "ovpn" suffix under linux
