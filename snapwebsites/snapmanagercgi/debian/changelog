@@ -1,3 +1,76 @@
+snapmanagercgi (1.0.7.2~xenial) xenial; urgency=high
+
+  * SNAP-403: Now puts up vpn client box *only* on clients, and similar for servers.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 18:15:23 -0700
+
+snapmanagercgi (1.0.7.1~xenial) xenial; urgency=high
+
+  * SNAP-403: Can't use "ovpn" suffix under linux
+  * SNAP-403: <crt> is wrong: it is really <cert>
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 17:17:31 -0700
+
+snapmanagercgi (1.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-403: Need to remove script before trying to overwrite it.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 16:51:41 -0700
+
+snapmanagercgi (1.0.6.7~xenialm2osw4) xenial; urgency=high
+
+  * SNAP-403: Now can handle text without any '\n's in it.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 16:26:58 -0700
+
+snapmanagercgi (1.0.6.7~xenialm2osw3) xenial; urgency=high
+
+  * SNAP-403: Now using public_ip for script, and clients are one per line.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 15:37:00 -0700
+
+snapmanagercgi (1.0.6.7~xenialm2osw2) xenial; urgency=high
+
+  * SNAP-403: Bumping version for testing of new client-level functionality in plugin
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 14:55:46 -0700
+
+snapmanagercgi (1.0.6.7~xenialm2osw1) xenial; urgency=high
+
+  * SNAP-403: Text box appears with no button for VPN certs.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 13:10:27 -0700
+
+snapmanagercgi (1.0.6.7~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 16 Aug 2016 02:00:52 -0700
+
+snapmanagercgi (1.0.6.6~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 15 Aug 2016 22:45:48 -0700
+
+snapmanagercgi (1.0.6.5~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 15 Aug 2016 02:00:52 -0700
+
+snapmanagercgi (1.0.6.4~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 14 Aug 2016 02:00:47 -0700
+
+snapmanagercgi (1.0.6.3~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 13 Aug 2016 02:00:48 -0700
+
 snapmanagercgi (1.0.6.2~xenial) xenial; urgency=high
 
   * Nightly build.

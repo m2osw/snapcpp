@@ -22,6 +22,10 @@
     and in effect make it work in a failsafe manner.</p>
   </description>
   <fields>
+    <field name="server_address" type="input">
+      <label>VPN Server IP address</label>
+      <description>The server IP address to which the cleint will connect.</description>
+    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>Name of your organization.</description>
@@ -53,11 +57,17 @@
     can at least copy and create some files as required.
   -->
   <postinst>
+    if systemctl is-active openvpn@server
+    then
+      systemctl stop openvpn@server
+    fi
+
     # Clear out the easy-rsa dist just in case
-    rm -rf /etc/openvpn/server.* /etc/openvpn/easy-rsa
+    cd /etc/openvpn
+    rm -rf *.crt *.key *.conf *.ovpn easy-rsa
 
     # get the default RSA key data
-    cp -r /usr/share/easy-rsa /etc/openvpn/.
+    cp -r /usr/share/easy-rsa .
 
     # Generate the Diffie-Hellman parameters
     DH2048=/etc/openvpn/dh2048.pem
@@ -76,12 +86,12 @@
 
     # Setup the keys as defined by the user in the installation form
     sed \
-      -e "s/KEY_ORG=\".*\"/KEY_ORG=\"$BUNDLE_INSTALLATION_ORGANIZATION\"/" \
-      -e "s/KEY_OU=\".*\"/KEY_OU=\"$BUNDLE_INSTALLATION_ORGANIZATION_UNIT\"/" \
-      -e "s/KEY_CITY=\".*\"/KEY_CITY=\"$BUNDLE_INSTALLATION_CITY\"/" \
-      -e "s/KEY_PROVINCE=\".*\"/KEY_PROVINCE=\"$BUNDLE_INSTALLATION_PROVINCE\"/" \
-      -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"$BUNDLE_INSTALLATION_COUNTRY\"/" \
-      -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"$BUNDLE_INSTALLATION_EMAIL\"/" \
+      -e "s/KEY_ORG=\".*\"/KEY_ORG=\"${BUNDLE_INSTALLATION_ORGANIZATION}\"/" \
+      -e "s/KEY_OU=\".*\"/KEY_OU=\"${BUNDLE_INSTALLATION_ORGANIZATION_UNIT}\"/" \
+      -e "s/KEY_CITY=\".*\"/KEY_CITY=\"${BUNDLE_INSTALLATION_CITY}\"/" \
+      -e "s/KEY_PROVINCE=\".*\"/KEY_PROVINCE=\"${BUNDLE_INSTALLATION_PROVINCE}\"/" \
+      -e "s/KEY_COUNTRY=\".*\"/KEY_COUNTRY=\"${BUNDLE_INSTALLATION_COUNTRY}\"/" \
+      -e "s/KEY_EMAIL=\".*\"/KEY_EMAIL=\"${BUNDLE_INSTALLATION_EMAIL}\"/" \
             /usr/share/easy-rsa/vars &gt; /etc/openvpn/easy-rsa/vars
 
     # Now create the RSA CA key
@@ -93,10 +103,20 @@
     # Now create the server key and copy it in
     ./pkitool --server server
     cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
-
+ 
     # Start the server
     systemctl start openvpn@server
   </postinst>
+  <prerm>
+    if systemctl is-active openvpn@server
+    then
+      systemctl stop openvpn@server
+    fi
+  </prerm>
+  <postrm>
+    cd /etc/openvpn
+    rm -rf *.crt *.key *.conf *.ovpn easy-rsa
+  </postrm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
