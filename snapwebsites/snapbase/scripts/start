@@ -17,12 +17,12 @@ BUILD/snapwebsites/snapcommunicator/src/snapcommunicator &
 BUILD/snapwebsites/snaplock/src/snaplock &
 BUILD/snapwebsites/snapdbproxy/src/snapdbproxy &
 BUILD/snapwebsites/snapfirewall/src/snapfirewall &
-#BUILD/snapwebsites/snapserver/src/snapserver &
+BUILD/snapwebsites/snapserver/src/snapserver &
 #BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action images::images &
 #BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action list::pagelist &
 #BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action sendmail::sendmail --param GLOBAL_LOCK=1 &
 BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon &
-#BUILD/snapwebsites/snapwatchdog/src/snapwatchdog &
+BUILD/snapwebsites/snapwatchdog/src/snapwatchdog &
 
 
 # For the CRON task, run it once in a while...

@@ -415,7 +415,7 @@ namespace
         snap_communicator::pointer_t                    f_communicator;
         snap_communicator::snap_connection::pointer_t   f_listener;
         snap_communicator::snap_connection::pointer_t   f_child_death_listener;
-        snap_communicator::snap_connection::pointer_t   f_messager;
+        snap_communicator::snap_connection::pointer_t   f_messenger;
     };
 
     /** \brief The pointers to communicator elements.
@@ -1961,23 +1961,23 @@ void server::process_message(snap_communicator_message const & message)
     {
         SNAP_LOG_INFO("Stopping server.");
 
-        if(g_connection->f_messager)
+        if(g_connection->f_messenger)
         {
-            std::static_pointer_cast<messager>(g_connection->f_messager)->mark_done();
+            std::static_pointer_cast<messager>(g_connection->f_messenger)->mark_done();
 
             if(command != "QUITTING")
             {
                 snap::snap_communicator_message cmd;
                 cmd.set_command("UNREGISTER");
                 cmd.add_parameter("service", "snapserver");
-                std::static_pointer_cast<messager>(g_connection->f_messager)->send_message(cmd);
+                std::static_pointer_cast<messager>(g_connection->f_messenger)->send_message(cmd);
             }
         }
 
         {
             g_connection->f_communicator->remove_connection(g_connection->f_listener);
             g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
-            //g_connection->f_communicator->remove_connection(g_connection->f_messager); -- will HUP once done
+            //g_connection->f_communicator->remove_connection(g_connection->f_messenger); -- will HUP once done
         }
         return;
     }
@@ -1997,6 +1997,47 @@ void server::process_message(snap_communicator_message const & message)
         //      snapcommunicator we would start the listener
         //      at another time anyway
         //
+
+        // request snapdbproxy to send us a status signal about
+        // Cassandra, after that one call, we will receive the
+        // statuses just because we understand them.
+        //
+        snap::snap_communicator_message isdbready_message;
+        isdbready_message.set_command("CASSANDRASTATUS");
+        isdbready_message.set_service("snapdbproxy");
+        std::dynamic_pointer_cast<messager>(g_connection->f_messenger)->send_message(isdbready_message);
+
+        return;
+    }
+
+    if(command == "NOCASSANDRA")
+    {
+        // we lost Cassandra, disconnect from snapdbproxy until we
+        // get CASSANDRAREADY again
+        //
+        f_snapdbproxy_addr.clear();
+        f_snapdbproxy_port = 0;
+
+        return;
+    }
+
+    if(command == "CASSANDRAREADY")
+    {
+        try
+        {
+            // connect to Cassandra and verify that a "domains" table
+            // exists
+            //
+            check_cassandra(get_name(name_t::SNAP_NAME_DOMAINS));
+        }
+        catch(std::runtime_error const & e)
+        {
+            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy: ")(e.what());
+
+            f_snapdbproxy_addr.clear();
+            f_snapdbproxy_port = 0;
+        }
+
         return;
     }
 
@@ -2006,9 +2047,9 @@ void server::process_message(snap_communicator_message const & message)
         reply.set_command("COMMANDS");
 
         // list of commands understood by server
-        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNKNOWN");
 
-        std::dynamic_pointer_cast<messager>(g_connection->f_messager)->send_message(reply);
+        std::dynamic_pointer_cast<messager>(g_connection->f_messenger)->send_message(reply);
         return;
     }
 
@@ -2025,7 +2066,7 @@ void server::process_message(snap_communicator_message const & message)
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        std::dynamic_pointer_cast<messager>(g_connection->f_messager)->send_message(reply);
+        std::dynamic_pointer_cast<messager>(g_connection->f_messenger)->send_message(reply);
     }
     return;
 }
@@ -2245,10 +2286,10 @@ void server::listen()
     g_connection->f_child_death_listener->set_priority(75);
     g_connection->f_communicator->add_connection(g_connection->f_child_death_listener);
 
-    g_connection->f_messager.reset(new messager(this, communicator_addr.toUtf8().data(), communicator_port));
-    g_connection->f_messager->set_name("messager");
-    g_connection->f_messager->set_priority(50);
-    g_connection->f_communicator->add_connection(g_connection->f_messager);
+    g_connection->f_messenger.reset(new messager(this, communicator_addr.toUtf8().data(), communicator_port));
+    g_connection->f_messenger->set_name("messager");
+    g_connection->f_messenger->set_priority(50);
+    g_connection->f_communicator->add_connection(g_connection->f_messenger);
 
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(f_parameters["server_name"])("\" started.");
@@ -2277,39 +2318,59 @@ void server::process_connection(int socket)
     // not we increase our internal counter
     ++f_connections_count;
 
-    if(f_children_waiting.empty())
+    // make sure the database connection is ready, if not, we just
+    // reply with an instant error
+    if(f_snapdbproxy_addr.isEmpty())
     {
-        child = new snap_child(g_instance);
-    }
-    else
-    {
-        child = f_children_waiting.back();
-        f_children_waiting.pop_back();
-    }
-
-    if(child->process(socket))
-    {
-        // this child is now busy
-        f_children_running.push_back(child);
-    }
-    else
-    {
-        // it failed, we can keep that child as a waiting child
-        f_children_waiting.push_back(child);
-
-        // and tell the user about a problem without telling much...
-        // (see the logs for more info.)
-        // TBD Translation?
-        std::string const err("Status: HTTP/1.1 503 Service Unavailable\n"
+        std::string const err("Status: 503 Service Unavailable\n"
                       "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
                       "Content-type: text/html\n"
+                      "Connection: close\n"
                       "\n"
                       "<h1>503 Service Unavailable</h1>\n"
-                      "<p>Server cannot start child process.</p>\n");
+                      "<p>Snap cannot find Cassandra at the moment.</p>\n");
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
         write(socket, err.c_str(), err.size());
 #pragma GCC diagnostic pop
+    }
+    else
+    {
+        if(f_children_waiting.empty())
+        {
+            child = new snap_child(g_instance);
+        }
+        else
+        {
+            child = f_children_waiting.back();
+            f_children_waiting.pop_back();
+        }
+
+        if(child->process(socket))
+        {
+            // this child is now busy
+            f_children_running.push_back(child);
+        }
+        else
+        {
+            // it failed, we can keep that child as a waiting child
+            f_children_waiting.push_back(child);
+
+            // and tell the user about a problem without telling much...
+            // (see the logs for more info.)
+            // TBD Translation?
+            std::string const err("Status: 503 Service Unavailable\n"
+                          "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
+                          "Content-type: text/html\n"
+                          "Connection: close\n"
+                          "\n"
+                          "<h1>503 Service Unavailable</h1>\n"
+                          "<p>Server cannot start child process.</p>\n");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+            write(socket, err.c_str(), err.size());
+#pragma GCC diagnostic pop
+        }
     }
 
     // since we do not create any object holding this socket, we have

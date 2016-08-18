@@ -1002,6 +1002,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
             // make sure the table is not defined
             //
+            f_cassandra.disconnect();
             f_firewall_table.reset();
         }
 
