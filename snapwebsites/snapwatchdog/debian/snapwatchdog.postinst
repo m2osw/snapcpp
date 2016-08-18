@@ -31,7 +31,10 @@ then
 
     # Make sure that the snapwatchdog table exists
     #
-    snapcreatetables
+    if ! snapcreatetables
+    then
+        echo "notice: snapcreatetables failed."
+    fi
 
     if systemctl is-enabled ${PKGNAME} 2> /dev/null
     then

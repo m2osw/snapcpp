@@ -26,7 +26,10 @@ then
 
     # Make sure that the plugin tables exist
     #
-    snapcreatetables
+    if ! snapcreatetables
+    then
+        echo "notice: snapcreatetables failed."
+    fi
 
     # if snapinit is already running, we need to give it a kick
     #

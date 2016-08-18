@@ -9,7 +9,10 @@ if [ "$1" = "configure" ]
 then
     # Make sure that the core table exists
     #
-    snapcreatetables
+    if ! snapcreatetables
+    then
+        echo "notice: snapcreatetables failed."
+    fi
 
     for pkg in snapbackend snapsendmail snapimages snappagelist
     do
