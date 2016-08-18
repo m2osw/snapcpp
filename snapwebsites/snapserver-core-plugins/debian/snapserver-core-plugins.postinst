@@ -24,6 +24,10 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
+    # Make sure that the plugin tables exist
+    #
+    snapcreatetables
+
     # if snapinit is already running, we need to give it a kick
     #
     if systemctl is-active snapinit

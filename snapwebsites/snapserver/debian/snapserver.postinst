@@ -8,6 +8,11 @@
 if [ "$1" = "configure" ]
 then
     PKGNAME=snapserver
+
+    # Make sure that the core table exists
+    #
+    snapcreatetables
+
     if systemctl is-enabled ${PKGNAME} 2> /dev/null
     then
         systemctl start ${PKGNAME}
