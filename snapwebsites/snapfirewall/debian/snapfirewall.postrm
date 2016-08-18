@@ -3,21 +3,20 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snapfirewall
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
+
 
 if [ "$1" = "purge" ]
 then
-    # delete the snapfirewall logs
-    rm -f /var/log/snapwebsites/snapfirewall.log*
-    rm -f /var/log/snapwebsites/secure/snapfirewall.log*
+    # delete the logs
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 
     # TBD: reset the firewall to empty? It does not seem wise to me.
-
-    # if snapinit is running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
-    then
-        systemctl restart snapinit
-    fi
 fi
 
 #DEBHELPER#
