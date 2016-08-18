@@ -7,6 +7,10 @@
 
 if [ "$1" = "configure" ]
 then
+    # Make sure that the core table exists
+    #
+    snapcreatetables
+
     for pkg in snapbackend snapsendmail snapimages snappagelist
     do
         if systemctl is-enabled ${pkg} 2> /dev/null

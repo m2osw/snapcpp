@@ -29,6 +29,10 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
+    # Make sure that the snapwatchdog table exists
+    #
+    snapcreatetables
+
     if systemctl is-enabled ${PKGNAME} 2> /dev/null
     then
         systemctl start ${PKGNAME}
