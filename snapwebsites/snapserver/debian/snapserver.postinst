@@ -5,14 +5,12 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-
 if [ "$1" = "configure" ]
 then
-    # if snapinit is already running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
+    PKGNAME=snapserver
+    if systemctl is-enabled ${PKGNAME} 2> /dev/null
     then
-        systemctl restart snapinit
+        systemctl start ${PKGNAME}
     fi
 fi
 

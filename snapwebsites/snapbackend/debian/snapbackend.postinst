@@ -5,15 +5,15 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-
 if [ "$1" = "configure" ]
 then
-    # if snapinit is already running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
-    then
-        systemctl restart snapinit
-    fi
+    for pkg in snapbackend snapsendmail snapimages snappagelist
+    do
+        if systemctl is-enabled ${pkg} 2> /dev/null
+        then
+            systemctl start ${pkg}
+        fi
+    done
 fi
 
 # vim: ts=4 sw=4 et nocindent

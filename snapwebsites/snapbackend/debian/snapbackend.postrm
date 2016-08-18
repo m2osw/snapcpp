@@ -3,11 +3,13 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-PACKAGENAME=snapbackend
-if systemctl is-active ${PACKAGENAME}
-then
-    systemctl stop ${PACKAGENAME}
-fi
+for pkg in snapbackend snapsendmail snapimages snappagelist
+do
+    if systemctl is-active ${pkg} 2> /dev/null
+    then
+        systemctl stop ${pkg}
+    fi
+done
 
 #DEBHELPER#
 
