@@ -2789,7 +2789,7 @@ bool snap_child::process(int socket)
         // now we connect to the DB
         // move all possible work that does not required the DB before
         // this line so we avoid a network connection altogether
-        connect_cassandra();
+        NOTUSED(connect_cassandra(true));  // since we pass 'true', the returned value will always be true
 
         canonicalize_domain();      // using the URI, find the domain core::rules and start the canonicalization process
         canonicalize_website();     // using the canonicalized domain, find the website core::rules and continue the canonicalization process
@@ -4103,12 +4103,26 @@ void snap_child::verify_email(QString const & email, size_t const max)
  * This function connects to the Cassandra database system and
  * returns only if the connection succeeds. If it fails, it logs
  * the fact and sends an error back to the user.
+ *
+ * By default the function calls die() on error. If you would
+ * prefer to have the function return with false, then set the
+ * child parameter to false.
+ *
+ * \param[in] child  Whether a child is calling this function.
+ *
+ * \return true if the connection succeeded, false if child is false
+ *         and the connection failed, does not return if child is true
+ *         and the connection failed.
  */
-void snap_child::connect_cassandra()
+bool snap_child::connect_cassandra(bool child)
 {
     // Cassandra already exists?
     if(f_cassandra)
     {
+        if(!child)
+        {
+            return false;
+        }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database is being initialized more than once.",
                 "The connect_cassandra() function cannot be called more than once.");
@@ -4137,14 +4151,15 @@ void snap_child::connect_cassandra()
     {
         connected = false; // make double sure this is still false
         SNAP_LOG_FATAL("Could not connect to the snapdbproxy server (")(snapdbproxy_addr)(":")(snapdbproxy_port)("). Reason: ")(e.what());
-
-// TODO: need to thix this one still...
-        throw snap_child_exception_no_server("random");
     }
     if(!connected)
     {
         // cassandra is not valid, get rid of it
         f_cassandra.reset();
+        if(!child)
+        {
+            return false;
+        }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database system is temporarilly unavailable.",
                 "Could not connect to Cassandra");
@@ -4163,6 +4178,12 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
     if(!f_context)
     {
         // we connected to the database, but it is not properly initialized!?
+        //
+        f_cassandra.reset();
+        if(!child)
+        {
+            return false;
+        }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database system does not seem to be properly installed.",
                 QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
@@ -4173,6 +4194,8 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
     //        (in this way it is done once for any plugin using
     //        the snap expression system; but it looks like a hack!)
     snap_expr::expr::set_cassandra_context(f_context);
+
+    return true;
 }
 
 

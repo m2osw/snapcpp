@@ -15,18 +15,30 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
 #include "snapwatchdog.h"
 
+// out lib
+//
 #include "version.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/log.h>
-#include <snapwebsites/snap_cassandra.h>
+#include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/snap_cassandra.h>
 
+// C++ lib
+//
 #include <algorithm>
 #include <fstream>
 
+// C lib
+//
 #include <sys/wait.h>
+
 
 #include "poison.h"
 
@@ -940,7 +952,7 @@ void watchdog_child::run_watchdog_plugins()
 
         init_start_date();
 
-        connect_cassandra();
+        NOTUSED(connect_cassandra(true));
 
         auto server(std::dynamic_pointer_cast<watchdog_server>(f_server.lock()));
         if(!server)
@@ -1069,7 +1081,7 @@ void watchdog_child::record_usage(snap::snap_communicator_message const & messag
         // on fork() we lose the configuration so we have to reload it
         logging::reconfigure();
 
-        connect_cassandra();
+        NOTUSED(connect_cassandra(true));
 
         auto server(std::dynamic_pointer_cast<watchdog_server>(f_server.lock()));
         if(!server)
