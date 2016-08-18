@@ -1,0 +1,17 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "upgrade" ]
+then
+    PKGNAME=snapmanagerdaemon
+    if systemctl is-active ${PKGNAME} 2> /dev/null
+    then
+        systemctl stop ${PKGNAME}
+    fi
+fi
+
+# vim: ts=4 sw=4 et nocindent
