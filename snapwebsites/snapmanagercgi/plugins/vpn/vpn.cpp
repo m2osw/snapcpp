@@ -442,8 +442,12 @@ bool vpn::apply_setting ( QString const & button_name
             clients << new_value;
         }
         //
-        for( auto const &client : clients )
+        // I deliberately want a copy, not a reference, as I'm going to modify the client
+        // string and remove any stray CRs
+        //
+        for( auto client : clients )
         {
+            client.remove('\r'); // Get rid of CRs
             if( QProcess::execute( "/tmp/create_client_certs.sh", {f_snap->get_public_ip(), client} ) != 0 )
             {
                 SNAP_LOG_ERROR("Could not execute client creation script! IP=")

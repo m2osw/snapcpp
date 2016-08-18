@@ -46,6 +46,7 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 
 add_library(vpn SHARED
     vpn.cpp
+    create_client_certs.sh
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
