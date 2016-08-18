@@ -1,3 +1,9 @@
+snaplock (1.0.0.103~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 20:54:03 -0700
+
 snaplock (1.0.0.102~xenial) xenial; urgency=high
 
   * Nightly build.
