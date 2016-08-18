@@ -3,16 +3,13 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-
-if [ "$1" = "purge" ]
-then
-    # if snapinit is running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
+for pkg in snapbackend snapsendmail snapimages snappagelist
+do
+    if systemctl is-active ${pkg} 2> /dev/null
     then
-        systemctl restart snapinit
+        systemctl stop ${pkg}
     fi
-fi
+done
 
 #DEBHELPER#
 

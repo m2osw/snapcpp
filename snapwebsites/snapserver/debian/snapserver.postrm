@@ -3,19 +3,16 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snapserver
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
 
 if [ "$1" = "purge" ]
 then
-    PKGNAME=snapserver
-    rm -f /var/log/snapwebsites/${PKGNAME}.log
-    rm -f /var/log/snapwebsites/secure/${PKGNAME}.log
-
-    # if snapinit is running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
-    then
-        systemctl restart snapinit
-    fi
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log
 fi
 
 #DEBHELPER#

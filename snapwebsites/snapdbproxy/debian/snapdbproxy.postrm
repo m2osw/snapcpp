@@ -3,12 +3,18 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snapdbproxy
+
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
 
 if [ "$1" = "purge" ]
 then
-    # delete the snapdbproxy logs
-    rm -f /var/log/snapwebsites/snapdbproxy.log*
-    rm -f /var/log/snapwebsites/secure/snapdbproxy.log*
+    # delete the logs
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi
 
 #DEBHELPER#

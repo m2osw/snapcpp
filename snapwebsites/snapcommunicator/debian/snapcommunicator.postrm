@@ -3,15 +3,20 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snapcommunicator
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
 
 if [ "$1" = "purge" ]
 then
     # delete a cache file
     rm -f /var/cache/snapwebsites/neighbors.txt
 
-    # delete the snapcommunicator logs
-    rm -f /var/log/snapwebsites/snapcommunicator.log*
-    rm -f /var/log/snapwebsites/secure/snapcommunicator.log*
+    # delete the logs
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi
 
 #DEBHELPER#

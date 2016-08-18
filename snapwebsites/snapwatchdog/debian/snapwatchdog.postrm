@@ -3,26 +3,23 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snapwatchdog
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
 
 if [ "$1" = "purge" ]
 then
-    # Remove snapwatchdog data directory
+    # Remove data directory
     #
-    rm -rf /var/lib/snapwebsites/snapwatchdog
+    rm -rf /var/lib/snapwebsites/${PACKAGENAME}
 
     # Remove all logs
     #
-    rm -f /var/log/snapwebsites/snapwatchdog.log*
-    rm -f /var/log/snapwebsites/secure/snapwatchdog.log*
-
-    # if snapinit is running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
-    then
-        systemctl restart snapinit
-    fi
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi
-
 
 #DEBHELPER#
 
