@@ -1,3 +1,9 @@
+libqtserialization (0.1.16.730~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 20:54:04 -0700
+
 libqtserialization (0.1.16.729~xenial) xenial; urgency=high
 
   * Nightly build.
