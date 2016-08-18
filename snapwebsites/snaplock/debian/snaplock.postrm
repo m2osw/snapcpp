@@ -3,12 +3,18 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snaplock
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
+
 
 if [ "$1" = "purge" ]
 then
-    # delete the snaplock logs
-    rm -f /var/log/snapwebsites/snaplock.log*
-    rm -f /var/log/snapwebsites/secure/snaplock.log*
+    # delete the logs
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi
 
 #DEBHELPER#

@@ -3,6 +3,11 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+PACKAGENAME=snapmanagerdaemon
+if systemctl is-active ${PACKAGENAME}
+then
+    systemctl stop ${PACKAGENAME}
+fi
 
 if [ "$1" = "purge" ]
 then
@@ -10,9 +15,9 @@ then
     rm -rf /var/lib/snapwebsites/bundles
     rm -f /var/cache/snapwebsites/apt-check.output
 
-    # delete the snapmanagerdaemon logs if any
-    rm -f /var/log/snapwebsites/snapmanagerdaemon.log*
-    rm -f /var/log/snapwebsites/secure/snapmanagerdaemon.log*
+    # delete the logs if any
+    rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
+    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi
 
 #DEBHELPER#

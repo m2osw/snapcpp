@@ -5,12 +5,12 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-if [ "$1" = "configure" ]
+if [ "$1" = "upgrade" ]
 then
-    PKGNAME=snapserver
-    if systemctl is-enabled ${PKGNAME} 2> /dev/null
+    PKGNAME=snapbackend
+    if systemctl is-active ${PKGNAME} 2> /dev/null
     then
-        systemctl start ${PKGNAME}
+        systemctl stop ${PKGNAME}
     fi
 fi
 

@@ -5,7 +5,6 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-
 if [ "$1" = "configure" ]
 then
     # Create the logfile because the snapwebsites user may have
@@ -23,6 +22,11 @@ then
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
+
+    if systemctl is-enabled ${PKGNAME} 2> /dev/null
+    then
+        systemctl start ${PKGNAME}
+    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent

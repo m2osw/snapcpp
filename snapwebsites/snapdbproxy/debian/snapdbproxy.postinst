@@ -24,11 +24,9 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
-    # if snapinit is already running, we need to give it a kick
-    #
-    if systemctl is-active snapinit
+    if systemctl is-enabled ${PKGNAME} 2> /dev/null
     then
-        systemctl restart snapinit
+        systemctl start ${PKGNAME}
     fi
 fi
 
