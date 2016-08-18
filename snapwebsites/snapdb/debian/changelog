@@ -1,3 +1,9 @@
+snapdb (1.0.1.106~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 18 Aug 2016 14:07:13 -0700
+
 snapdb (1.0.1.105~xenial) xenial; urgency=high
 
   * Nightly build.
