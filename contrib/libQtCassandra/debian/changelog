@@ -1,3 +1,15 @@
+libqtcassandra (0.6.0.139~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 20:31:54 -0700
+
+libqtcassandra (0.6.0.138~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 13:11:21 -0700
+
 libqtcassandra (0.6.0.137~xenial) xenial; urgency=high
 
   * Nightly build.
