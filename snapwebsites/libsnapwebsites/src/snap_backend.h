@@ -23,7 +23,8 @@
 namespace snap
 {
 
-class snap_backend : public snap_child
+class snap_backend
+        : public snap_child
 {
 public:
     typedef std::string         message_t;
@@ -40,7 +41,7 @@ public:
     void                        run_backend();
 
     // internal functions that need to be public...
-    // (until we create friends)
+    // (we could create friends, too)
     //
     void                        process_tick();
     bool                        process_timeout();
@@ -53,6 +54,7 @@ private:
     bool                        process_backend_uri(QString const & uri);
     void                        stop(bool quitting);
     void                        disconnect();
+    virtual void                disconnect_cassandra() override;
     std::string                 get_signal_name_from_action();
     bool                        is_cron_action(QString const & action);
     bool                        is_ready(QString const & uri);

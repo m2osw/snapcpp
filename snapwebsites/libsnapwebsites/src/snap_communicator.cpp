@@ -1391,7 +1391,7 @@ void snap_communicator::snap_connection::calculate_next_tick()
     int64_t const gap(now - f_timeout_next_date);
     if(gap < 0)
     {
-        // someone we got called even though now is still larger
+        // somehow we got called even though now is still larger
         // than f_timeout_next_date
         //
         SNAP_LOG_DEBUG("snap_communicator::snap_connection::calculate_next_tick() called even though the next date is still larger than 'now'.");

@@ -326,7 +326,7 @@ wakeup_timer::wakeup_timer(snap_backend * sb)
  * (if the trigger is now or in the past, then it is not used, we
  * directly create the next child instance.)
  *
- * The messager may receive a PING in between in which case the timer
+ * The messenger may receive a PING in between in which case the timer
  * may be reset to a different date and time at which to wake up.
  */
 void wakeup_timer::process_timeout()
@@ -343,13 +343,13 @@ void wakeup_timer::process_timeout()
  * This class is an implementation of the TCP client message connection
  * so we can handle incoming messages.
  */
-class messager
+class messenger
         : public snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<messager>    pointer_t;
+    typedef std::shared_ptr<messenger>    pointer_t;
 
-                        messager(snap_backend * sb, QString const & action, std::string const & addr, int port);
+                        messenger(snap_backend * sb, QString const & action, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void        process_message(snap::snap_communicator_message const & message);
@@ -363,16 +363,16 @@ private:
 };
 
 
-/** \brief The messager.
+/** \brief The messenger.
  *
- * We create only one messager. It is saved in this variable.
+ * We create only one messenger. It is saved in this variable.
  */
-messager::pointer_t             g_messager;
+messenger::pointer_t             g_messenger;
 
 
-/** \brief The messager initialization.
+/** \brief The messenger initialization.
  *
- * The messager is a connection to the snapcommunicator server.
+ * The messenger is a connection to the snapcommunicator server.
  *
  * In most cases we receive STOP and LOG messages from it. We implement
  * a few other messages too (HELP, READY...)
@@ -381,12 +381,12 @@ messager::pointer_t             g_messager;
  * for whatever reason, we reconnect automatically.
  *
  * \param[in] sb  The snap backend server we are listening for.
- * \param[in] action  The action for which this messager is created, it is
+ * \param[in] action  The action for which this messenger is created, it is
  *                    sent to the snapcommunicator server when we REGISTER.
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on (4040).
  */
-messager::messager(snap_backend * sb, QString const & action, std::string const & addr, int port)
+messenger::messenger(snap_backend * sb, QString const & action, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(
                 addr,
                 port,
@@ -396,7 +396,7 @@ messager::messager(snap_backend * sb, QString const & action, std::string const 
     , f_snap_backend(sb)
     , f_action(action)
 {
-    set_name("snap_backend messager");
+    set_name("snap_backend messenger");
 }
 
 
@@ -409,15 +409,15 @@ messager::messager(snap_backend * sb, QString const & action, std::string const 
  *
  * \param[in] message  The message we just received.
  */
-void messager::process_message(snap::snap_communicator_message const & message)
+void messenger::process_message(snap::snap_communicator_message const & message)
 {
     f_snap_backend->process_message(message);
 }
 
 
-/** \brief The messager could not connect to snapcommunicator.
+/** \brief The messenger could not connect to snapcommunicator.
  *
- * This function is called whenever the messagers fails to
+ * This function is called whenever the messengers fails to
  * connect to the snapcommunicator server. This could be
  * because snapcommunicator is not running or because the
  * information for the snapbackend is wrong...
@@ -428,7 +428,7 @@ void messager::process_message(snap::snap_communicator_message const & message)
  *
  * \param[in] error_message  An error message.
  */
-void messager::process_connection_failed(std::string const & error_message)
+void messenger::process_connection_failed(std::string const & error_message)
 {
     SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
 
@@ -442,11 +442,11 @@ void messager::process_connection_failed(std::string const & error_message)
  * Whenever the connection is establied with the Snap! Communicator,
  * this callback function is called.
  *
- * The messager reacts by REGISTERing the snap_backend with the Snap!
+ * The messenger reacts by REGISTERing the snap_backend with the Snap!
  * Communicator. The name of the backend is taken from the action
  * it was called with.
  */
-void messager::process_connected()
+void messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
@@ -791,8 +791,6 @@ void snap_backend::process_action()
     f_child_pid = getpid();
     f_socket = -1;
 
-    connect_cassandra();
-
     // define a User-Agent for all backends
     // TBD: should that be a parameter in the .conf file?
     //
@@ -836,14 +834,15 @@ void snap_backend::process_action()
     //
     g_communicator = snap_communicator::instance();
 
-    // create a TCP messager connected to the Snap! Communicator server
+    // create a TCP messenger connected to the Snap! Communicator server
     //
     {
         QString tcp_addr("127.0.0.1");
         int tcp_port(4040);
-        tcp_client_server::get_addr_port(p_server->get_parameter("communicator"), tcp_addr, tcp_port, "tcp");
-        g_messager.reset(new messager(this, f_action, tcp_addr.toUtf8().data(), tcp_port));
-        g_communicator->add_connection(g_messager);
+        snap_config parameters("snapcommunicator");
+        tcp_client_server::get_addr_port(QString(parameters["local_listen"]), tcp_addr, tcp_port, "tcp");
+        g_messenger.reset(new messenger(this, f_action, tcp_addr.toUtf8().data(), tcp_port));
+        g_communicator->add_connection(g_messenger);
     }
 
     // create a wake up timer; whenever we have work to do, this timer
@@ -918,18 +917,22 @@ void snap_backend::process_tick()
         {
             if(!f_cron_action)
             {
-                SNAP_LOG_FATAL("The sites table does not even exist, we cannot yet run a backend action.");
+                SNAP_LOG_FATAL("The \"sites\" table does not even exist, we cannot yet run a backend action.");
                 exit(1);
                 snap::NOTREACHED();
             }
 
-            if(f_emit_warning)
+            if(!f_cassandra)
+            {
+                SNAP_LOG_WARNING("snap_backend::process_tick(): not yet connected to snapdbproxy.");
+            }
+            else if(f_emit_warning)
             {
                 f_emit_warning = false;
 
                 // the whole table is still missing after 5 minutes!
                 // in this case it is an error instead of a fatal error
-                SNAP_LOG_WARNING("snap_backend::process_tick(): The 'sites' table is still empty or nonexistent! Waiting before starting the \"")(f_action)("\" backend processing (a CRON action).");
+                SNAP_LOG_WARNING("snap_backend::process_tick(): The \"sites\" table is still empty or nonexistent! Waiting before starting the \"")(f_action)("\" backend processing (a CRON action).");
             }
 
             // the website is not ready, wait another 10 seconds and try
@@ -974,7 +977,7 @@ void snap_backend::process_tick()
         }
     }
 
-    // if no child is currently running, wake up the messager ASAP
+    // if no child is currently running, wake up the messenger ASAP
     //
     if(!g_child_connection)
     {
@@ -988,7 +991,7 @@ void snap_backend::process_tick()
 
 /** \brief Timeout is called whenever a child process needs to be started.
  *
- * This function is called when the Snap! Communicator main messager
+ * This function is called when the Snap! Communicator main messenger
  * connection times out. This generally means the child process needs
  * to be started with a URI.
  *
@@ -1089,7 +1092,7 @@ bool snap_backend::process_timeout()
  */
 void snap_backend::process_message(snap::snap_communicator_message const & message)
 {
-    SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_action);
+    SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_action);
 
     QString const command(message.get_command());
 
@@ -1120,7 +1123,7 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         {
             add_uri_for_processing(f_action, get_current_date(), uri);
 
-            // if no child is currently running, wake up the messager ASAP
+            // if no child is currently running, wake up the messenger ASAP
             //
             if(!g_child_connection)
             {
@@ -1168,6 +1171,44 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
     {
         // Snap! Communicator received our REGISTER command
         //
+
+        // request snapdbproxy to send us a status signal about
+        // Cassandra, after that one call, we will receive the
+        // statuses just because we understand them.
+        //
+        snap::snap_communicator_message isdbready_message;
+        isdbready_message.set_command("CASSANDRASTATUS");
+        isdbready_message.set_service("snapdbproxy");
+        g_messenger->send_message(isdbready_message);
+
+        return;
+    }
+
+    if(command == "NOCASSANDRA")
+    {
+        // we lost Cassandra, disconnect from snapdbproxy until we
+        // get CASSANDRAREADY again
+        //
+        disconnect_cassandra();
+
+        return;
+    }
+
+    if(command == "CASSANDRAREADY")
+    {
+        try
+        {
+            // connect to Cassandra
+            //
+            connect_cassandra();
+        }
+        catch(std::runtime_error const & e)
+        {
+            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy: ")(e.what());
+
+            disconnect_cassandra();
+        }
+
         return;
     }
 
@@ -1180,9 +1221,9 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "HELP,LOG,PING,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,PING,QUITTING,READY,STOP,UNKNOWN");
 
-        g_messager->send_message(reply);
+        g_messenger->send_message(reply);
         return;
     }
 
@@ -1201,10 +1242,18 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        g_messager->send_message(reply);
+        g_messenger->send_message(reply);
     }
 
     return;
+}
+
+
+void snap_backend::disconnect_cassandra()
+{
+    f_sites_table.reset();
+    f_backend_table.reset();
+    snap_child::disconnect_cassandra();
 }
 
 
@@ -1213,18 +1262,18 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
  * This function makes sure the snapbackend exits as quickly as
  * possible.
  *
- * \li Marks the messager as done.
+ * \li Marks the messenger as done.
  * \li Disabled wake up and tick timers.
  * \li UNREGISTER from snapcommunicator.
  * \li STOP child if one is currently running.
  * \li Remove timers and child death connections if no child is running.
  *
  * \note
- * If the g_messager is still in place, then just sending the
+ * If the g_messenger is still in place, then just sending the
  * UNREGISTER is enough to quit normally. The socket of the
- * g_messager will be closed by the snapcommunicator server
+ * g_messenger will be closed by the snapcommunicator server
  * and we will get a HUP signal. However, we get the HUP only
- * because we first mark the messager as done.
+ * because we first mark the messenger as done.
  *
  * \param[in] quitting  Set to true if we received a QUITTING message.
  */
@@ -1232,9 +1281,9 @@ void snap_backend::stop(bool quitting)
 {
     f_stop_received = true;
 
-    if(g_messager)
+    if(g_messenger)
     {
-        g_messager->mark_done();
+        g_messenger->mark_done();
     }
 
     // stop the timers immediately, although that will not prevent
@@ -1252,10 +1301,10 @@ void snap_backend::stop(bool quitting)
         g_tick_timer->set_timeout_delay(-1);
     }
 
-    // unregister if we are still connected to the messager
+    // unregister if we are still connected to the messenger
     // and Snap! Communicator is not already quitting
     //
-    if(g_messager && !quitting)
+    if(g_messenger && !quitting)
     {
         QString action(f_action);
         int const pos(action.indexOf(':'));
@@ -1267,7 +1316,7 @@ void snap_backend::stop(bool quitting)
         snap::snap_communicator_message cmd;
         cmd.set_command("UNREGISTER");
         cmd.add_parameter("service", action);
-        g_messager->send_message(cmd);
+        g_messenger->send_message(cmd);
     }
 
     // if we still have a child, ask the child to quit first
@@ -1282,7 +1331,7 @@ void snap_backend::stop(bool quitting)
     }
     else
     {
-        //g_communicator->remove_connection(g_messager); -- this one will get an expected HUP shortly
+        //g_communicator->remove_connection(g_messenger); -- this one will get an expected HUP shortly
         g_communicator->remove_connection(g_wakeup_timer);
         g_communicator->remove_connection(g_tick_timer);
         g_communicator->remove_connection(g_signal_child_death);
@@ -1484,6 +1533,11 @@ void snap_backend::capture_zombies(pid_t pid)
  */
 bool snap_backend::is_ready(QString const & uri)
 {
+    if(!f_cassandra)
+    {
+        return false;
+    }
+
     if(!f_sites_table)
     {
         f_context->clearCache();
@@ -1544,11 +1598,11 @@ void snap_backend::disconnect()
     // TODO: disconnecting these early generates errors we should try to fix:
     //       (see also SNAP-305)
     //
-    //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:2999:halk: error: an error occurred while writing to socket of "snap_tcp_client_permanent_message_connection_impl messager" (errno: 9 -- Bad file descriptor).
-    //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messager" was marked as erroneous by the kernel.
+    //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:2999:halk: error: an error occurred while writing to socket of "snap_tcp_client_permanent_message_connection_impl messenger" (errno: 9 -- Bad file descriptor).
+    //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messenger" was marked as erroneous by the kernel.
     //
 
-    if(g_messager && !f_cron_action && f_action != "list")
+    if(g_messenger && !f_cron_action && f_action != "list")
     {
         // this was the CRON action (which snapinit takes care of
         // restarting once in a while)
@@ -1563,12 +1617,12 @@ void snap_backend::disconnect()
         snap::snap_communicator_message cmd;
         cmd.set_command("UNREGISTER");
         cmd.add_parameter("service", action);
-        g_messager->send_message(cmd);
+        g_messenger->send_message(cmd);
     }
 
     // now disconnect so we can quit
     //
-    g_communicator->remove_connection(g_messager);
+    g_communicator->remove_connection(g_messenger);
     g_communicator->remove_connection(g_wakeup_timer);
     g_communicator->remove_connection(g_tick_timer);
     g_communicator->remove_connection(g_signal_child_death);
@@ -1693,10 +1747,10 @@ bool snap_backend::process_backend_uri(QString const & uri)
         SNAP_LOG_INFO("==================================== backend process website \"")(uri)("\" with ")(f_cron_action ? "cron " : "")("action \"")(f_action)("\" started.");
 
         // make sure that Snap! Communicator is clean in the child,
-        // it really cannot be listening on g_messager or g_signal_child_death
+        // it really cannot be listening on g_messenger or g_signal_child_death
         //
-        g_communicator->remove_connection(g_messager);
-        g_messager.reset();
+        g_communicator->remove_connection(g_messenger);
+        g_messenger.reset();
         g_communicator->remove_connection(g_wakeup_timer);
         g_wakeup_timer.reset();
         g_communicator->remove_connection(g_tick_timer);

@@ -4115,23 +4115,31 @@ void snap_child::connect_cassandra()
         NOTREACHED();
     }
 
+    // retrieve the address:port info
+    //
+    // WARNING: server->get_snapdbproxy_addr/port() do not work in
+    //          snapbackend so we do it this way instead.
+    //
+    QString snapdbproxy_addr("127.0.0.1");
+    int snapdbproxy_port(4042);
+    snap_config config("snapdbproxy");
+    tcp_client_server::get_addr_port(config["listen"], snapdbproxy_addr, snapdbproxy_port, "tcp");
+
     // connect to Cassandra
-    server::pointer_t server( f_server.lock() );
-    if(!server)
-    {
-        throw snap_logic_exception("server pointer is nullptr");
-    }
     f_cassandra = QtCassandra::QCassandra::create();
     f_cassandra->setDefaultConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     bool connected(false);
     try
     {
-        connected = f_cassandra->connect(server->snapdbproxy_addr(), server->snapdbproxy_port());
+        connected = f_cassandra->connect(snapdbproxy_addr, snapdbproxy_port);
     }
     catch(std::exception const & e)
     {
         connected = false; // make double sure this is still false
-        SNAP_LOG_FATAL("Could not connect to the snapdbproxy server (")(server->snapdbproxy_addr())(":")(server->snapdbproxy_port())("). Reason: ")(e.what());
+        SNAP_LOG_FATAL("Could not connect to the snapdbproxy server (")(snapdbproxy_addr)(":")(snapdbproxy_port)("). Reason: ")(e.what());
+
+// TODO: need to thix this one still...
+        throw snap_child_exception_no_server("random");
     }
     if(!connected)
     {
@@ -4160,13 +4168,25 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
                 QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
         NOTREACHED();
     }
-    // setup the host name for locks to function properly (TODO: remove since we are not using the libQtCassandra lock anymore!)
-    f_context->setHostName(server->get_parameter("server_name"));
 
     // TBD -- Is that really the right place for this?
     //        (in this way it is done once for any plugin using
     //        the snap expression system; but it looks like a hack!)
     snap_expr::expr::set_cassandra_context(f_context);
+}
+
+
+/** \brief Completely disconnect from cassandra.
+ *
+ * Whenever we receive a NOCASSANDRA event in a backend, we want to
+ * disconnect completely. We will then reconnect once we receive the
+ * CASSANDRAREADY message.
+ */
+void snap_child::disconnect_cassandra()
+{
+    snap_expr::expr::set_cassandra_context(nullptr);
+    f_context.reset();
+    f_cassandra.reset();
 }
 
 

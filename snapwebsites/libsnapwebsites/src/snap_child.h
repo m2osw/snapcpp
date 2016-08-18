@@ -409,6 +409,7 @@ public:
 protected:
     pid_t                       fork_child();
     void                        connect_cassandra();
+    virtual void                disconnect_cassandra();
     void                        canonicalize_domain();
     void                        canonicalize_website();
     void                        canonicalize_options();
