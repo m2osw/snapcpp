@@ -437,125 +437,149 @@ int snap_cgi::process()
 #endif
     tcp_client_server::tcp_client socket(f_address, f_port);
 
+    std::string var;
+    auto send_data([this, &var, &socket, request_method]()
+        {
+#ifdef _DEBUG
+            SNAP_LOG_DEBUG("writing #START=" SNAPWEBSITES_VERSION_STRING);
+#endif
+
 #define START_COMMAND "#START=" SNAPWEBSITES_VERSION_STRING
-    if(socket.write(START_COMMAND "\n", sizeof(START_COMMAND)) != sizeof(START_COMMAND))
+            if(socket.write(START_COMMAND "\n", sizeof(START_COMMAND)) != sizeof(START_COMMAND))
 #undef START_COMMAND
-    {
-        return error("504 Gateway Timeout", "error while writing to the child process (1).", nullptr);
-    }
-    for(char ** e(environ); *e; ++e)
-    {
-        std::string env(*e);
-        int const len(static_cast<int>(env.size()));
-
-        // Prevent the HTTP_PROXY variable from going through, although
-        // apparently Apache2 prevents such on its own but at this point
-        // it is not clear to me whether it really does or not.
-        //
-        // (see https://httpoxy.org/)
-        //
-        if(static_cast<size_t>(len) >= sizeof("HTTP_PROXY")) // sizeof() includes the '\0', we test the '=' below
-        {
-            // env.startsWith("HTTP_PROXY=")?
-            if(env[ 0] == 'H'
-            && env[ 1] == 'T'
-            && env[ 2] == 'T'
-            && env[ 3] == 'P'
-            && env[ 4] == '_'
-            && env[ 5] == 'P'
-            && env[ 6] == 'R'
-            && env[ 7] == 'O'
-            && env[ 8] == 'X'
-            && env[ 9] == 'Y'
-            && env[10] == '=')
             {
-                continue;
+                return 1;
             }
-        }
-
-        //
-        // Replacing all '\n' in the env variables to '|'
-        // to prevent snap_child from complaining and die.
-        //
-        std::replace( env.begin(), env.end(), '\n', '|' );
-#ifdef _DEBUG
-        //SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
-#endif
-        if(socket.write(env.c_str(), len) != len)
-        {
-            return error("504 Gateway Timeout", "error while writing to the child process (2).", nullptr);
-        }
-        if(socket.write("\n", 1) != 1)
-        {
-            return error("504 Gateway Timeout", "error while writing to the child process (3).", nullptr);
-        }
-    }
-    if( strcmp(request_method, "POST") == 0 )
-    {
-#ifdef _DEBUG
-        SNAP_LOG_DEBUG("writing #POST");
-#endif
-        if(socket.write("#POST\n", 6) != 6)
-        {
-            return error("504 Gateway Timeout", "error while writing to the child process (4).", nullptr);
-        }
-        // we also want to send the POST variables
-        // http://httpd.apache.org/docs/2.4/howto/cgi.html
-        // note that in case of a non-multipart post variables are separated
-        // by & and the variable names and content cannot include the & since
-        // that would break the whole scheme so we can safely break (add \n)
-        // at that location
-        char const * content_type(getenv("CONTENT_TYPE"));
-        if(content_type == nullptr)
-        {
-            return error("500 Internal Server Error", "the CONTENT_TYPE variable was not defined along a POST.", nullptr);
-        }
-        bool const is_multipart(QString(content_type).startsWith("multipart/form-data"));
-        int const break_char(is_multipart ? '\n' : '&');
-        std::string var;
-        for(;;)
-        {
-            int const c(getchar());
-            if(c == break_char || c == EOF)
+            for(char ** e(environ); *e; ++e)
             {
-                // Note: a POST without variables most often ends up with
-                //       one empty line
+                std::string env(*e);
+                int const len(static_cast<int>(env.size()));
+
+                // Prevent the HTTP_PROXY variable from going through, although
+                // apparently Apache2 prevents such on its own but at this point
+                // it is not clear to me whether it really does or not.
                 //
-                if(!is_multipart || c != EOF)
+                // (see https://httpoxy.org/)
+                //
+                if(static_cast<size_t>(len) >= sizeof("HTTP_PROXY")) // sizeof() includes the '\0', we test the '=' below
                 {
-                    // WARNING: This \n MUST exist if the POST includes
-                    //          a binary file!
-                    var += "\n";
-                }
-                if(!var.empty())
-                {
-                    if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
+                    // env.startsWith("HTTP_PROXY=")?
+                    if(env[ 0] == 'H'
+                    && env[ 1] == 'T'
+                    && env[ 2] == 'T'
+                    && env[ 3] == 'P'
+                    && env[ 4] == '_'
+                    && env[ 5] == 'P'
+                    && env[ 6] == 'R'
+                    && env[ 7] == 'O'
+                    && env[ 8] == 'X'
+                    && env[ 9] == 'Y'
+                    && env[10] == '=')
                     {
-                        return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str(), nullptr);
+                        continue;
                     }
                 }
+
+                //
+                // Replacing all '\n' in the env variables to '|'
+                // to prevent snap_child from complaining and die.
+                //
+                std::replace( env.begin(), env.end(), '\n', '|' );
 #ifdef _DEBUG
-                SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+                //SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
 #endif
-                var.clear();
-                if(c == EOF)
+                if(socket.write(env.c_str(), len) != len)
                 {
-                    // this was the last variable
-                    break;
+                    return 2;
+                }
+                if(socket.write("\n", 1) != 1)
+                {
+                    return 3;
                 }
             }
-            else
+            if( strcmp(request_method, "POST") == 0 )
             {
-                var += c;
-            }
-        }
-    }
 #ifdef _DEBUG
-    SNAP_LOG_DEBUG("writing #END");
+                SNAP_LOG_DEBUG("writing #POST");
 #endif
-    if(socket.write("#END\n", 5) != 5)
+                if(socket.write("#POST\n", 6) != 6)
+                {
+                    return 4;
+                }
+                // we also want to send the POST variables
+                // http://httpd.apache.org/docs/2.4/howto/cgi.html
+                // note that in case of a non-multipart post variables are separated
+                // by & and the variable names and content cannot include the & since
+                // that would break the whole scheme so we can safely break (add \n)
+                // at that location
+                char const * content_type(getenv("CONTENT_TYPE"));
+                if(content_type == nullptr)
+                {
+                    return 5;
+                }
+                bool const is_multipart(QString(content_type).startsWith("multipart/form-data"));
+                int const break_char(is_multipart ? '\n' : '&');
+                for(;;)
+                {
+                    int const c(getchar());
+                    if(c == break_char || c == EOF)
+                    {
+                        // Note: a POST without variables most often ends up with
+                        //       one empty line
+                        //
+                        if(!is_multipart || c != EOF)
+                        {
+                            // WARNING: This \n MUST exist if the POST includes
+                            //          a binary file!
+                            var += "\n";
+                        }
+                        if(!var.empty())
+                        {
+                            if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
+                            {
+                                return 6;
+                            }
+                        }
+#ifdef _DEBUG
+                        SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+#endif
+                        var.clear();
+                        if(c == EOF)
+                        {
+                            // this was the last variable
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        var += c;
+                    }
+                }
+            }
+#ifdef _DEBUG
+            SNAP_LOG_DEBUG("writing #END");
+#endif
+            if(socket.write("#END\n", 5) != 5)
+            {
+                return 7;
+            }
+
+            return 0; // success
+        });
+    int const send_error(send_data());
+
+    if(send_error == 5)
     {
-        return error("504 Gateway Timeout", "error while writing to the child process (5).", nullptr);
+        return error("500 Internal Server Error", "the CONTENT_TYPE variable was not defined along a POST.", nullptr);
+    }
+
+    if(send_error != 0)
+    {
+        SNAP_LOG_FATAL("Ready to send a 504 Gateway Timeout to client (")(send_error)(")...");
+
+        // on error the server may have sent us a reply that we are
+        // expected to send to the client
+        //
     }
 
     // if we get here then we can just copy the output of the child to Apache2
@@ -566,6 +590,7 @@ int snap_cgi::process()
     //       error instead of a broken page, we may want to consider
     //       buffering first?
     //
+    int wrote(0);
     for(;;)
     {
         char buf[64 * 1024];
@@ -583,6 +608,7 @@ int snap_cgi::process()
                 SNAP_LOG_FATAL("an I/O error occurred while sending the response to the client");
                 return 1;
             }
+            wrote += r;
 
 // to get a "verbose" CGI (For debug purposes)
 #if 0
@@ -607,6 +633,22 @@ int snap_cgi::process()
             break;
         }
     }
+
+    // although the server was not happy with us, it may have sent us a
+    // reply that we transmitted to the client (i.e. wrote != 0)
+    //
+    if(send_error != 0 && wrote == 0)
+    {
+        if(send_error == 6)
+        {
+            return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str(), nullptr);
+        }
+        else
+        {
+            return error("504 Gateway Timeout", (std::string("error while writing to the child process (") + std::to_string(send_error) + ").").c_str(), nullptr);
+        }
+    }
+
     // TODO: handle potential read problems...
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("Closing connection...");

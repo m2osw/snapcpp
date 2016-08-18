@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     snap::logging::set_progname(progname);
     snap::logging::configure_syslog();
 
-    int exitval = 1;
+    int exitval(1);
     try
     {
         // create a server object

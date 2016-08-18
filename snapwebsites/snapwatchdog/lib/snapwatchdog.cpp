@@ -172,7 +172,7 @@ private:
  *
  * We create only one messager. It is saved in this variable.
  */
-messager::pointer_t             g_messager;
+messager::pointer_t             g_messenger;
 
 
 /** \brief The messager initialization.
@@ -446,8 +446,8 @@ void watchdog_server::watchdog()
     // and the snapcommunicator which allows us to communicate with
     // the watchdog (STATUS and STOP especially, more later)
     //
-    g_messager.reset(new messager(instance(), communicator_addr.toUtf8().data(), communicator_port));
-    g_communicator->add_connection(g_messager);
+    g_messenger.reset(new messager(instance(), communicator_addr.toUtf8().data(), communicator_port));
+    g_communicator->add_connection(g_messenger);
 
     // add the ticker, this wakes the system up once in a while so
     // we can gather statistics at a given interval
@@ -717,7 +717,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         SNAP_LOG_INFO("Stopping watchdog server.");
 
         f_stopping = true;
-        g_messager->mark_done();
+        g_messenger->mark_done();
 
         // someone asking us to stop snap_init; this means we want to stop
         // all the services that snap_init started; if we have a
@@ -727,7 +727,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         snap_communicator_message unregister;
         unregister.set_command("UNREGISTER");
         unregister.add_parameter("service", "snapwatchdog");
-        g_messager->send_message(unregister);
+        g_messenger->send_message(unregister);
 
         g_communicator->remove_connection(g_tick_timer);
         if(f_processes.empty())
@@ -745,6 +745,16 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         // TBD: should we wait on this signal before we start the g_tick_timer?
         //      since we do not need the snap communicator, probably not useful
         //
+
+        // request snapdbproxy to send us a status signal about
+        // Cassandra, after that one call, we will receive the
+        // changes in status just because we understand them.
+        //
+        snap::snap_communicator_message isdbready_message;
+        isdbready_message.set_command("CASSANDRASTATUS");
+        isdbready_message.set_service("snapdbproxy");
+        g_messenger->send_message(isdbready_message);
+
         return;
     }
 
@@ -770,13 +780,17 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
     {
         try
         {
-            // connect to Cassandra and get a pointer to our firewall table
+            // connect to Cassandra and verify that a "serverstats"
+            // table exists
             //
             check_cassandra(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
         }
         catch(std::runtime_error const & e)
         {
             SNAP_LOG_WARNING("snapwatchdog failed to connect to snapdbproxy: ")(e.what());
+
+            f_snapdbproxy_addr.clear();
+            f_snapdbproxy_port = 0;
         }
 
         return;
@@ -793,7 +807,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         //
         reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,RUSAGE,STOP,UNKNOWN");
 
-        g_messager->send_message(reply);
+        g_messenger->send_message(reply);
         return;
     }
 
@@ -833,7 +847,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        g_messager->send_message(reply);
+        g_messenger->send_message(reply);
     }
 }
 
