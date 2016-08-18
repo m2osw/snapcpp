@@ -1196,15 +1196,11 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
     if(command == "CASSANDRAREADY")
     {
-        try
+        // connect to Cassandra
+        //
+        if(!connect_cassandra(false))
         {
-            // connect to Cassandra
-            //
-            connect_cassandra();
-        }
-        catch(std::runtime_error const & e)
-        {
-            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy: ")(e.what());
+            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy");
 
             disconnect_cassandra();
         }
@@ -1782,7 +1778,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
         f_sites_table.reset();
         f_backend_table.reset();
         f_cassandra.reset(); // here all the remaining QCassandra objects should all get deleted
-        connect_cassandra();
+        NOTUSED(connect_cassandra(true)); // since we pass 'true', the returned value will always be true
 
         if(!is_ready(uri))
         {

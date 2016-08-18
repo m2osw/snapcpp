@@ -408,7 +408,7 @@ public:
 
 protected:
     pid_t                       fork_child();
-    void                        connect_cassandra();
+    bool                        connect_cassandra(bool child);
     virtual void                disconnect_cassandra();
     void                        canonicalize_domain();
     void                        canonicalize_website();
