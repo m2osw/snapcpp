@@ -7,7 +7,9 @@
 <bundle>
   <name>swap</name>
   <description>
-    <p>Install the Cassandra bundle and initializes it appropriately for your cluster.</p>
+    <p>Add a swap file of the size you specify. By default, SSD-only
+    installations often do not offer any swap. It is yet a good idea
+    to have some on your snapserver and snapbackend machines.</p>
   </description>
   <fields>
     <field name="cluster_name" type="input">
