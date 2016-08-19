@@ -16,7 +16,89 @@
     since it makes use of the database to manage the list
     of IP addresses to block.</p>
   </description>
+  <fields>
+    <field name="public_ip" type="input">
+      <label>This Computer Public IP</label>
+      <description>Enter the IP address of this computer, the one facing the Internet.</description>
+    </field>
+    <field name="public_interface" type="input">
+      <label>The Interface This Computer uses for Public IP</label>
+      <description>Enter the name of the interface (such as 'eth0') that this computer uses for his Public IP address.</description>
+    </field>
+    <field name="private_ip" type="input">
+      <label>This Computer Private IP</label>
+      <description>Enter the private IP address of this computer, the one used to communicate with your other private computers.</description>
+    </field>
+    <field name="private_interface" type="input">
+      <label>The Interface This Computer uses for Public IP</label>
+      <description>Enter the name of the interface (such as 'eth0') that this computer uses for his Public IP address.</description>
+    </field>
+    <field name="admin_ips" type="input">
+      <label>List of Administrator IPs</label>
+      <description>Enter the <strong>space separator</strong> list of IPs that your administrators use to access this computer.</description>
+    </field>
+    <field name="private_network_ips" type="input">
+      <label>Private Network IPs</label>
+      <description>Enter the <strong>space separator</strong> list of IPs of all the computers that may access this computer so we can open the corresponding ports in the firewall.</description>
+    </field>
+  </fields>
   <packages>snapfirewall</packages>
+  <postinst>
+    # Setup the firewall IPs and interfaces
+    #
+    sed -i.bak \
+      -e "s/@BUNDLE_PUBLIC_IP@/$BUNDLE_INSTALLATION_PUBLIC_IP/" \
+      -e "s/@BUNDLE_PUBLIC_INTERFACE@/$BUNDLE_INSTALLATION_PUBLIC_INTERFACE/" \
+      -e "s/@BUNDLE_PRIVATE_IP@/$BUNDLE_INSTALLATION_PRIVATE_IP/" \
+      -e "s/@BUNDLE_PRIVATE_INTERFACE@/$BUNDLE_INSTALLATION_PRIVATE_INTERFACE/" \
+      -e "s/@BUNDLE_ADMIN_IPS@/$BUNDLE_INSTALLATION_ADMIN_IPS/" \
+      -e "s/@BUNDLE_PRIVATE_NETWORK_IPS@/$BUNDLE_INSTALLATION_PRIVATE_NETWORK_IPS/" \
+            /etc/network/firewall
+
+      # We need to put "pre-up /etc/network/firewall" in the interfaces
+      # file so the firewall comes back on each reboot
+      #
+      # sine we know the name of the interface, we have all we need
+      #
+      awk -vPUBLIC_INTERFACE="^iface ${BUNDLE_INSTALLATION_PUBLIC_INTERFACE}" \
+        'BEGIN {
+          found=0
+        }
+        {
+          if(found) {
+            if($0 ~ /^$/ || $0 !~ /^[[:space:]]/) {
+              print "\tpre-up /etc/network/firewall"
+              print
+              found=0
+            }
+            else {
+              if($0 !~ /pre-up .etc.network.firewall/) {
+                print
+              }
+            }
+          }
+          else {
+            if($0 ~ PUBLIC_INTERFACE) {
+              print
+              found=1
+            }
+            else {
+              print
+            }
+          }
+        }
+        END {
+          if(found) {
+            print "\tpre-up /etc/network/firewall"
+          }
+        }' ~/tmp/d.txt
+
+
+    # The packager does not install the firewall since it requires
+    # those IP addresses and interface names, so we set it up now
+    #
+    /etc/network/firewwall
+  </postinst>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
