@@ -192,29 +192,21 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
     // if we have installation parameters, then there is no old value
     QString old_or_installation_value;
     //
-    // SNAP-412: Check for button name. If the parameter is empty, it throws so revert to blank value.
+    // SNAP-412: Check for button name to know what we are expected to use.
     //
-    try
+    if(button_name == "install")
     {
-        if(button_name == "install")
+        if(message.has_parameter("install_values"))
         {
             old_or_installation_value = message.get_parameter("install_values");
         }
-        else
+    }
+    else
+    {
+        if(message.has_parameter("old_value"))
         {
             old_or_installation_value = message.get_parameter("old_value");
         }
-    }
-    catch( snap::snap_communicator_invalid_message const &x )
-    {
-        SNAP_LOG_ERROR("manager_daemon::modify_settings()")
-                      ("Caught error while trying to read old or installation values: ")
-                      (x.what());
-    }
-    catch( ... )
-    {
-        SNAP_LOG_ERROR("manager_daemon::modify_settings()")
-                      ("Cannot read old or installation values, so defaulting to blank");
     }
 
     snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
