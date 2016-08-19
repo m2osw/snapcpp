@@ -43,10 +43,7 @@
 // C lib
 //
 #include <grp.h>
-#include <proc/sysinfo.h>
 #include <pwd.h>
-#include <syslog.h>
-#include <sys/prctl.h>
 #include <sys/resource.h>
 
 
