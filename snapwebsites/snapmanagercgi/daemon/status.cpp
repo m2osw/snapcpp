@@ -190,6 +190,12 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
     //       do not kill us while we're still trying to install things...
     //       (for installations see the self.cpp plugin implementation, we
     //       probably want to do that there and not here.)
+    //
+    //       the following could be worked on by a thread as we mentioned
+    //       in SNAP-395 -- snapmanagerdaemon already uses threads to run
+    //       various other tasks (i.e the status thread and the bundle
+    //       gathering thread...) so we could have one worker thread to
+    //       which we send work to be done such as the modified settings.
 
     // now call the plugin change settings function
     //

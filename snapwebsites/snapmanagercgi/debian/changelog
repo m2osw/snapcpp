@@ -1,38 +1,8 @@
-snapmanagercgi (1.0.7.8~xenial) xenial; urgency=high
+snapmanagercgi (1.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Applied a couple of fixes to the handling of installation bundles.
 
- -- Doug Barbieri <doug@dooglio.net>  Thu, 18 Aug 2016 14:07:14 -0700
-
-snapmanagercgi (1.0.7.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 18 Aug 2016 11:09:47 -0700
-
-snapmanagercgi (1.0.7.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 18 Aug 2016 02:00:55 -0700
-
-snapmanagercgi (1.0.7.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 20:54:00 -0700
-
-snapmanagercgi (1.0.7.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 20:31:51 -0700
-
-snapmanagercgi (1.0.7.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Wed, 17 Aug 2016 13:11:20 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 18 Aug 2016 14:07:14 -0700
 
 snapmanagercgi (1.0.7.2~xenial) xenial; urgency=high
 
@@ -76,48 +46,6 @@ snapmanagercgi (1.0.6.7~xenialm2osw1) xenial; urgency=high
   * SNAP-403: Text box appears with no button for VPN certs.
 
  -- Doug Barbieri <doug@dooglio.net>  Tue, 16 Aug 2016 13:10:27 -0700
-
-snapmanagercgi (1.0.6.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 16 Aug 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.6.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Mon, 15 Aug 2016 22:45:48 -0700
-
-snapmanagercgi (1.0.6.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 15 Aug 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.6.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 14 Aug 2016 02:00:47 -0700
-
-snapmanagercgi (1.0.6.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 13 Aug 2016 02:00:48 -0700
-
-snapmanagercgi (1.0.6.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 12 Aug 2016 12:11:29 -0700
-
-snapmanagercgi (1.0.6.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 12 Aug 2016 02:01:05 -0700
 
 snapmanagercgi (1.0.6~xenial) xenial; urgency=high
 
