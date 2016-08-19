@@ -22,6 +22,7 @@
 // our lib
 //
 #include "addr.h"
+#include "chownnm.h"
 #include "loadavg.h"
 #include "log.h"
 #include "mkdir_p.h"
@@ -33,15 +34,23 @@
 //
 #include <QFile>
 
-// C lib
-//
-#include <sys/resource.h>
-
 // C++ lib
 //
 #include <atomic>
 #include <fstream>
 #include <thread>
+
+// C lib
+//
+#include <grp.h>
+#include <proc/sysinfo.h>
+#include <pwd.h>
+#include <syslog.h>
+#include <sys/prctl.h>
+#include <sys/resource.h>
+
+
+#include "poison.h"
 
 
 /** \file
@@ -359,6 +368,7 @@ public:
     void                        process_load_balancing();
 
 private:
+    void                        do_root_work();
     void                        refresh_heard_of();
     void                        shutdown(bool full);
     void                        listen_loadavg(snap::snap_communicator_message const & message);
@@ -1734,6 +1744,9 @@ snap_communicator_server::snap_communicator_server(snap::server::pointer_t s)
  */
 void snap_communicator_server::init()
 {
+    // do some work as root, then drop rights to snapwebsites:snapwebsites
+    do_root_work();
+
     // keep a copy of the server name handy
     f_server_name = QString::fromUtf8(snap::server::get_server_name().c_str());
 
@@ -1875,6 +1888,126 @@ void snap_communicator_server::init()
                                                  ++it)
     {
         f_remote_snapcommunicators->add_remote_communicator(it.key());
+    }
+}
+
+
+/** \brief Do some work as the root user before we become snapwebsites.
+ *
+ * This function is called just before we drop our permissions to
+ * snapwebsites:snapwebsites. It creates a few directories that the
+ * other services and ourselves may use but may not be available
+ * at the time we start (because we use RAM disks for many of our
+ * temporary files.)
+ */
+void snap_communicator_server::do_root_work()
+{
+    // get the user and group name that we want to use for the directories
+    // we are about to create and then to become (i.e. to drop our permissions)
+    //
+    QString username(f_server->get_parameter("user"));
+    if(username.isEmpty())
+    {
+        username = "snapwebsites";
+    }
+    QString groupname(f_server->get_parameter("group"));
+    if(groupname.isEmpty())
+    {
+        groupname = "snapwebsites";
+    }
+
+    // make sure the path to the lock file exists
+    //
+    {
+        QString lock_path(f_server->get_parameter("lock_path"));
+        if(lock_path.isEmpty())
+        {
+            lock_path = "/run/lock/snapwebsites";
+        }
+        if(snap::mkdir_p(lock_path, false) != 0)
+        {
+            SNAP_LOG_FATAL("the path to the lock filename could not be created (mkdir -p \"")(lock_path)("\").");
+            throw snap::snap_exception(QString("the path to the lock filename could not be created (mkdir -p \"%1\").")
+                                .arg(lock_path));
+        }
+
+        // for sub-processes to be able to access that folder we need to
+        // also setup the user and group as expected
+        //
+        snap::chownnm(lock_path, username, groupname);
+    }
+
+    // create the run-time directory because other processes may not
+    // otherwise have enough permissions (i.e. not be root as possibly
+    // required for this task)
+    //
+    {
+        // user can change the path in snapinit.conf (although it does not
+        // get passed down at this point... so each tool has to be properly
+        // adjusted if modified here.)
+        //
+        QString run_path(f_server->get_parameter("run_path"));
+        if(run_path.isEmpty())
+        {
+            run_path = "/run/snapwebsites";
+        }
+        if(snap::mkdir_p(run_path, false) != 0)
+        {
+            SNAP_LOG_FATAL("run_path \"")(run_path)("\" could not be created (mkdir -p \"")(run_path)("\").");
+            throw snap::snap_exception(QString("run_path \"%1\" could not be created (mkdir -p \"%1\").")
+                                .arg(run_path));
+        }
+
+        // for sub-processes to be able to access that folder we need to
+        // also setup the user and group as expected
+        //
+        snap::chownnm(run_path, username, groupname);
+    }
+
+// ------------------- this must be last, any step that require root privileges must be done before this line --------------------
+
+    // drop to non-priv user/group if we are root
+    // (i.e. this code is skip on programmer's machines)
+    //
+    if( getuid() == 0 )
+    {
+        // Group first, then user. Otherwise you lose privs to change your group!
+        //
+        {
+            struct group const * grp(getgrnam(groupname.toUtf8().data()));
+            if( nullptr == grp )
+            {
+                SNAP_LOG_FATAL("Cannot locate group \"")(groupname)("\"! Create it first, then run the server.");
+                throw snap::snap_exception(QString("Cannot locate group \"%1\"! Create it first, then run the server.")
+                                    .arg(groupname));
+            }
+            int const sw_grp_id(grp->gr_gid);
+            //
+            if( setgid( sw_grp_id ) != 0 )
+            {
+                SNAP_LOG_FATAL("Cannot drop privileges to group \"")(groupname)("\"!");
+                throw snap::snap_exception(QString("Cannot drop privileges group \"%1\"!")
+                                    .arg(groupname));
+            }
+        }
+        //
+        {
+            struct passwd const * pswd(getpwnam(username.toUtf8().data()));
+            if( nullptr == pswd )
+            {
+                SNAP_LOG_FATAL("Cannot locate user \"")(username)("\"! Create it first, then run the server.");
+                throw snap::snap_exception(QString("Cannot locate user \"%1\"! Create it first, then run the server.")
+                                    .arg(username));
+            }
+            int const sw_usr_id(pswd->pw_uid);
+            //
+            if( setuid( sw_usr_id ) != 0 )
+            {
+                SNAP_LOG_FATAL("Cannot drop privileges to user \"")(username)("\"! Create it first, then run the server.");
+                throw snap::snap_exception(QString("Cannot drop privileges to user \"%1\"! Create it first, then run the server.")
+                                    .arg(username));
+            }
+        }
     }
 }
 

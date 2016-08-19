@@ -9,6 +9,9 @@ PATH=${HERE}/BUILD/snapwebsites/snapmanagercgi/upgrader:${PATH}
 # First we start snapcommunicator which is required by other processes
 BUILD/snapwebsites/snapcommunicator/src/snapcommunicator &
 
+# Wait a tad bit for the initialization process to get done
+sleep 2
+
 # Write a programmer tool to create a barrier? It seems to me that the
 # other tools needto be smart enough to wait for snapcommunicator to be
 # ready to connect to otherwise we will miss it in many cases anyway.

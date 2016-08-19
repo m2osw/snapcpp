@@ -900,7 +900,8 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
             SNAP_LOG_ERROR("install or uninstall with field_name \"")(field_name)("\" is invalid, we expected a name starting with \"bundle::\".");
             return false;
         }
-        bool const r(f_snap->installer(field_name.mid(8), install ? "install" : "purge", old_or_installation_value.toUtf8().data()));
+        QByteArray values(old_or_installation_value.toUtf8());
+        bool const r(f_snap->installer(field_name.mid(8), install ? "install" : "purge", values.data()));
         f_snap->reset_aptcheck();
         return r;
     }

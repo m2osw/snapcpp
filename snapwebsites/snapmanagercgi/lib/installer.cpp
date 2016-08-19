@@ -473,10 +473,18 @@ std::string manager::lock_filename() const
 
 bool manager::installer(QString const & bundle_name, std::string const & command, std::string const & install_values)
 {
+SNAP_LOG_WARNING("got here...");
     bool success(true);
 
-    SNAP_LOG_INFO("Installing bundle \"")(bundle_name)("\" on host \"")(f_server_name)("\"");
+    // whether we are going to install or purge
+    //
+SNAP_LOG_WARNING("check command...");
+    bool const installing(command == "install");
+SNAP_LOG_WARNING("command = [")(command)("]...");
 
+    SNAP_LOG_INFO(installing ? "Installing" : "Removing")(" bundle \"")(bundle_name)("\" on host \"")(f_server_name)("\".");
+
+SNAP_LOG_WARNING("install_values = [")(install_values)("]...");
     // make sure we do not start an installation while an upgrade is
     // still going (and vice versa)
     //
@@ -486,10 +494,6 @@ bool manager::installer(QString const & bundle_name, std::string const & command
 SNAP_LOG_WARNING("lock failed...");
         return false;
     }
-
-    // whether we are going to install or purge
-    //
-    bool const installing(command == "install");
 
     // for installation we first do an update of the packages,
     // otherwise it could fail the installation because of
