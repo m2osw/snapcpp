@@ -29,13 +29,6 @@ then
     chmod 755 ${BUNDLE_SCRIPTS}
     chown snapwebsites:snapwebsites ${BUNDLE_SCRIPTS}
 
-    # create the lock directory if it doesn't already exist
-    #
-    LOCK_DIR=/run/lock/snapwebsites
-    mkdir -p ${LOCK_DIR}
-    chmod 755 ${LOCK_DIR}
-    chown snapwebsites:snapwebsites ${LOCK_DIR}
-
     # Create the logfile because the snapwebsites user may have
     # difficulties with it otherwise during logrotate.
     #
