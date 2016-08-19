@@ -1,3 +1,9 @@
+log4cplus (1.2.0.505~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 11:55:26 -0700
+
 log4cplus (1.2.0.504~xenial) xenial; urgency=high
 
   * Nightly build.
