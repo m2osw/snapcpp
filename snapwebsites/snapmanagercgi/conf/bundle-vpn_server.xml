@@ -105,6 +105,7 @@
     cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn/
  
     # Start the server
+    systemctl enable openvpn@server
     systemctl start openvpn@server
   </postinst>
   <prerm>
@@ -112,6 +113,7 @@
     then
       systemctl stop openvpn@server
     fi
+    systemctl disable openvpn@server
   </prerm>
   <postrm>
     cd /etc/openvpn
