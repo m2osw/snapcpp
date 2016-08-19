@@ -100,10 +100,19 @@ function( SnapGetVersion PACKAGE_NAME WORKING_DIRECTORY )
         OUTPUT_VARIABLE VERSION
         )
 
-    STRING( REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+\\.[^$]+$" "\\1" major_version "${VERSION}" )
-    STRING( REGEX REPLACE "^[0-9]+\\.([0-9])+\\.[0-9]+\\.[^$]+$" "\\1" minor_version "${VERSION}" )
-    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)\\.[^$]+$" "\\1" patch_version "${VERSION}" )
-    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\.([^\n]+)\n" "\\1" build_version "${VERSION}" )
+    string( REPLACE "\n" ""  ORIG_VERSION ${VERSION}      )
+    string( REPLACE "."  " " VERSION      ${ORIG_VERSION} )
+
+    separate_arguments( VERSION )
+
+    list( LENGTH VERSION LEN )
+    if( NOT ${LEN} EQUAL 4 )
+        message( FATAL_ERROR "Package name '${PACKAGE_NAME}' does not have a valid version number: '${ORIG_VERSION}'. It must have 4 parts: major.minor.patch.build!" )
+    endif()
+    list( GET VERSION 0 major_version )
+    list( GET VERSION 1 minor_version )
+    list( GET VERSION 2 patch_version )
+    list( GET VERSION 3 build_version )
 
     set( ${PACKAGE_NAME}_VERSION_MAJOR ${major_version} PARENT_SCOPE )
     set( ${PACKAGE_NAME}_VERSION_MINOR ${minor_version} PARENT_SCOPE )
