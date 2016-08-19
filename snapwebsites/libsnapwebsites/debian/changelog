@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.0.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 19 Aug 2016 02:00:51 -0700
+
 libsnapwebsites (1.1.0.1~xenial) xenial; urgency=high
 
   * Version number is wrong: it must have four parts (build number is missing).
