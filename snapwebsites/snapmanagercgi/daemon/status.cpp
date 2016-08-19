@@ -182,6 +182,15 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
     acknowledge.add_parameter("who", f_server_name);
     f_messenger->send_message(acknowledge);
 
+    // TODO: unfortunately, although it looks like we're sending that message
+    //       right now, it's stuck until we're done because this process is
+    //       currently blocking; we need to change that and maybe even use
+    //       a separate process like the snapupgrader so that way we make
+    //       sure installations that would want to restart snapmanagerdaemon
+    //       do not kill us while we're still trying to install things...
+    //       (for installations see the self.cpp plugin implementation, we
+    //       probably want to do that there and not here.)
+
     // now call the plugin change settings function
     //
     QString const button_name(message.get_parameter("button_name"));
