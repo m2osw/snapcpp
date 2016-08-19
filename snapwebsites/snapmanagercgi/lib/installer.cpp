@@ -473,25 +473,20 @@ std::string manager::lock_filename() const
 
 bool manager::installer(QString const & bundle_name, std::string const & command, std::string const & install_values)
 {
-SNAP_LOG_WARNING("got here...");
     bool success(true);
 
     // whether we are going to install or purge
     //
-SNAP_LOG_WARNING("check command...");
     bool const installing(command == "install");
-SNAP_LOG_WARNING("command = [")(command)("]...");
 
     SNAP_LOG_INFO(installing ? "Installing" : "Removing")(" bundle \"")(bundle_name)("\" on host \"")(f_server_name)("\".");
 
-SNAP_LOG_WARNING("install_values = [")(install_values)("]...");
     // make sure we do not start an installation while an upgrade is
     // still going (and vice versa)
     //
     snap::lockfile lf(lock_filename(), snap::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
     if(!lf.try_lock())
     {
-SNAP_LOG_WARNING("lock failed...");
         return false;
     }
 
@@ -507,7 +502,6 @@ SNAP_LOG_WARNING("lock failed...");
         // and if not zero, emit an error and return...
         //success = upgrader();
 
-SNAP_LOG_WARNING("count packages to update...");
         QString const count_packages(count_packages_that_can_be_updated(false));
         if(!count_packages.isEmpty())
         {
@@ -526,7 +520,6 @@ SNAP_LOG_WARNING("count packages to update...");
     //
     QDomDocument bundle_xml;
     QString const filename(QString("%1/bundle-%2.xml").arg(f_bundles_path).arg(bundle_name));
-SNAP_LOG_WARNING("load bundle \"")(filename)("\"...");
     QFile input(filename);
     if(!input.open(QIODevice::ReadOnly)
     || !bundle_xml.setContent(&input, false))
@@ -543,11 +536,8 @@ SNAP_LOG_WARNING("load bundle \"")(filename)("\"...");
     {
         // only installations offer variables at the moment
         //
-SNAP_LOG_WARNING("check installation variables \"")(install_values)("\"...");
         std::vector<std::string> variables;
-SNAP_LOG_WARNING("check installation variables \"")(install_values)("\"...");
         snap::NOTUSED(snap::tokenize_string(variables, install_values, "\r\n", true, " "));
-SNAP_LOG_WARNING("broke up variables on newlines \"")(variables.size())("\"...");
         std::for_each(variables.begin(), variables.end(),
                     [&vars](auto const & v)
                     {
@@ -617,7 +607,6 @@ SNAP_LOG_WARNING("broke up variables on newlines \"")(variables.size())("\"...")
     //
     QString const prename(installing ? "preinst" : "prerm");
     QDomNodeList bundle_precmd(bundle_xml.elementsByTagName(prename));
-SNAP_LOG_WARNING("preinst? \"")(bundle_precmd.size())("\"...");
     if(bundle_precmd.size() == 1)
     {
         // create a <name>.precmd script that we can run
@@ -650,15 +639,12 @@ SNAP_LOG_WARNING("preinst? \"")(bundle_precmd.size())("\"...");
     // get the list of expected packages, it may be empty/non-existant
     //
     QDomNodeList bundle_packages(bundle_xml.elementsByTagName("packages"));
-SNAP_LOG_WARNING("packages to install? \"")(bundle_packages.size())("\"...");
     if(bundle_packages.size() == 1)
     {
         QDomElement package_list(bundle_packages.at(0).toElement());
         std::string const list_of_packages(package_list.text().toUtf8().data());
         std::vector<std::string> packages;
-SNAP_LOG_WARNING("list of packages : \"")(list_of_packages)("\"...");
         snap::NOTUSED(snap::tokenize_string(packages, list_of_packages, ",", true, " "));
-SNAP_LOG_WARNING("list of packages count: \"")(packages.size())("\"...");
         std::for_each(packages.begin(), packages.end(),
                 [=, &success](auto const & p)
                 {
@@ -673,7 +659,6 @@ SNAP_LOG_WARNING("list of packages count: \"")(packages.size())("\"...");
     //
     QString const postname(installing ? "postinst" : "postrm");
     QDomNodeList bundle_postcmd(bundle_xml.elementsByTagName(postname));
-SNAP_LOG_WARNING("post install? \"")(bundle_postcmd.size())("\"...");
     if(bundle_postcmd.size() == 1)
     {
         // create a <name>.postinst script that we can run
