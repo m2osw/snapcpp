@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+
+# Run the following in your build directory output against the
+# .deb, .dsc, etc.
+
+# Packages
+apt-ftparchive packages . > Packages
+gzip -f9c Packages > Packages.gz
+
+# Sources
+apt-ftparchive sources  . > Sources
+gzip -f9c Sources > Sources.gz
+
