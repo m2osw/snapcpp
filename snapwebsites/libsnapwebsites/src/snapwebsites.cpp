@@ -955,7 +955,6 @@ void server::config(int argc, char * argv[])
     f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH), "/usr/lib/snapwebsites/tables");
     f_parameters.set_parameter_default("qs_action", "a");
     f_parameters.set_parameter_default("qs_hit", "hit");
-    f_parameters.set_parameter_default("server_name", "snap");
 
     // Output log to stdout. Implies foreground mode.
     //
