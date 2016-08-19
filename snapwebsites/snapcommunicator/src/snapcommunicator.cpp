@@ -321,7 +321,7 @@ public:
 private:
     snap_communicator_server_pointer_t  f_communicator_server;
     snap_addr::addr const &             f_my_address;
-    bool                                f_started = false;
+    bool                                f_started = true;   // "temporary" hack which says to immediately start all remote connections
     QMap<QString, int>                  f_all_ips;
     remote_snap_communicator_list_t     f_smaller_ips;      // we connect to smaller IPs
     gossip_snap_communicator_list_t     f_gossip_ips;
