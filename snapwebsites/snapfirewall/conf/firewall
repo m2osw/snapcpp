@@ -3,37 +3,60 @@
 # Until we get snapfirewall to dynamically setup all the rules, here we
 # have a simple script that pushes the ip?tables.rules files to the kernel.
 #
-#set -e
-
-# By default, make sure it does not run because the rules are likely wrong
-# for your computers. Just comment out the exit 1 once you fixed the rules
-# (see ip4tables.rules) and can start the firewall properly.
-#
-exit 1
+set -e
 
 # Setup your public (Internet) IP address here
-PUBLIC_IP=your.public.ip.address
-PUBLIC_INTERFACE=eth0
+#
+# For example: 8.8.8.8 and eth0 or enp0s1
+#
+PUBLIC_IP="@BUNDLE_PUBLIC_IP@"
+PUBLIC_INTERFACE="@BUNDLE_PUBLIC_INTERFACE@"
 
 # Setup your private (Internet) IP address here
-PRIVATE_IP=your.private.ip.address
-PRIVATE_INTERFACE=eth1
+#
+# For example: 10.1.1.1 or 192.168.2.2 and eth1 or enp0s3
+#
+PRIVATE_IP="@BUNDLE_PRIVATE_IP@"
+PRIVATE_INTERFACE="@BUNDLE_PRIVATE_INTERFACE@"
 
-# Edit these files to change the firewalls setup
+# Edit these files to change the firewall settings
+#
 IP4TABLES_CONFIG=/etc/network/ip4tables.rules
 IP6TABLES_CONFIG=/etc/network/ip6tables.rules
 
 # List of space separated IP addresses for your administrators
-ADMIN_IPS="x.x.x.1 x.x.x.2 x.x.x.3"
+#
+# If your computers are remote, make sure to use your static IP
+# addresses. If your computers are on your private network, use
+# private addresses.
+#
+ADMIN_IPS="@BUNDLE_ADMIN_IPS@"
 
 # List of space separated IP addresses to other private network computers
-PRIVATE_NETWORK_IPS="y.y.y.1 y.y.y.2"
+#
+# These are expected to all be private addresses.
+#
+PRIVATE_NETWORK_IPS="@BUNDLE_PRIVATE_NETWORK_IPS@"
 
 
+# Make sure the user entered all the parameters as expected
+# If installed from the bundle, this will be automatic
+#
+if test "$PUBLIC_IP" = "@BUNDLE_PUBLIC_IP@" \
+     -o "$PUBLIC_INTERFACE" = "@BUNDLE_PUBLIC_INTERFACE@" \
+     -o "$PRIVATE_IP" = "@BUNDLE_PRIVATE_IP@" \
+     -o "$PRIVATE_INTERFACE" = "@BUNDLE_PRIVATE_INTERFACE@" \
+     -o "$ADMIN_IPS" = "@BUNDLE_ADMIN_IPS@" \
+     -o "$PRIVATE_NETWORK_IPS" = "@BUNDLE_PRIVATE_NETWORK_IPS@"
+then
+	echo "One or more of the firewall variables was not properly setup yet. Firewal NOT setup!"
+	exit 1;
+fi
 
-#. /lib/lsb/init-functions
 
-#log_daemon_msg "Setting up the firewall" "$IP4TABLES_CONFIG"
+. /lib/lsb/init-functions
+
+log_daemon_msg "Setting up the firewall" "$IP4TABLES_CONFIG"
 grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
 	| grep -v '^[[:space:]]*$' \
 	| sed -e "s/@PUBLIC_IP@/$PUBLIC_IP/" \
@@ -73,7 +96,7 @@ grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
 			else {
 				print;
 			}
-		}'
+		}' \
 	| iptables-restore
 log_end_msg $?
 
