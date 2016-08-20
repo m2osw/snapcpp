@@ -1,3 +1,15 @@
+snapbounce (1.0.0.109~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 14:54:03 -0700
+
+snapbounce (1.0.0.108~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 11:55:24 -0700
+
 snapbounce (1.0.0.107~xenial) xenial; urgency=high
 
   * Nightly build.

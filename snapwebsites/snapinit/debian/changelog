@@ -1,3 +1,15 @@
+snapinit (1.0.2.27~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 14:54:05 -0700
+
+snapinit (1.0.2.26~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 11:55:22 -0700
+
 snapinit (1.0.2.25~xenial) xenial; urgency=high
 
   * Nightly build.

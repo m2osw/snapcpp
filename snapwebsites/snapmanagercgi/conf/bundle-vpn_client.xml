@@ -39,6 +39,7 @@
     then
       systemctl stop openvpn@client
     fi
+    systemctl disable openvpn@client
   </prerm>
   <postrm>
     rm -f /etc/openvpn/*.conf

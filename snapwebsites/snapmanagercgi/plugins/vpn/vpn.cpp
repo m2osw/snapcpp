@@ -462,19 +462,23 @@ bool vpn::apply_setting ( QString const & button_name
     {
         QProcess::execute( "systemctl stop openvpn@client" );
 
-        QFile file( "/etc/openvpn/client.conf" );
-        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
         {
-            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            //throw vpn_exception( errmsg );
-            return false;
+            QFile file( "/etc/openvpn/client.conf" );
+            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+            {
+                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                //throw vpn_exception( errmsg );
+                return false;
+            }
+
+            QTextStream out( &file );
+            out << new_value;
         }
 
-        QTextStream out( &file );
-        out << new_value;
-
+        QProcess::execute( "systemctl enable openvpn@client" );
         QProcess::execute( "systemctl start openvpn@client" );
+
         return true;
     }
 
