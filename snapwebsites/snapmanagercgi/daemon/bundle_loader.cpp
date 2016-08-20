@@ -17,6 +17,7 @@
 
 #include "snapmanagerdaemon.h"
 
+#include <snapwebsites/chownnm.h>
 #include <snapwebsites/process.h>
 
 #include <QFile>
@@ -217,6 +218,23 @@ bool bundle_loader::wget(std::string const & uri, std::string const & filename)
     p.add_argument(QString("%1/%2").arg(f_bundles_path).arg(filename.c_str()));
     p.add_argument(QString::fromUtf8((uri + "/" + filename).c_str()));
     int const r(p.run());
+
+    // fix the ownership of the log file--it should not matter unless we
+    // want to give access to the website administrator (on the browser side)
+    //
+    snap::snap_config communicator_config("snapcommunicator");
+    QString username(communicator_config["user"]);
+    if(username.isEmpty())
+    {
+        username = "snapwebsites";
+    }
+    QString groupname(communicator_config["group"]);
+    if(groupname.isEmpty())
+    {
+        groupname = "snapwebsites";
+    }
+    snap::chownnm("/var/log/snapwebsites/snapmanager-bundle.log", username, groupname);
+
     if(r != 0)
     {
         SNAP_LOG_ERROR("wget \"")(uri)("\" returned an error (")(r)(").");
