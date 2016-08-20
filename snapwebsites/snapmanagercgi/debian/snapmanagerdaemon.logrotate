@@ -31,4 +31,20 @@
     create 600 snapwebsites snapwebsites
 }
 
+# We use this specific file whenever we download the bundles.
+# Only errors get output in the file which most the time shoud remain empty.
+/var/log/snapwebsites/snapmanager-bundle.log {
+    weekly
+    maxsize 1M
+    su snapwebsites snapwebsites
+    missingok
+    rotate 10
+    postrotate
+        /usr/bin/snapsignal snapmanagerdaemon/LOG
+    endscript
+    compress
+    notifempty
+    create 640 snapwebsites snapwebsites
+}
+
 # vim: ts=4 sw=4 et
