@@ -916,6 +916,260 @@ std::string::size_type manager::search_parameter(std::string const & configurati
 }
 
 
+/** \brief Check the current status of a service.
+ *
+ * This function checks whether a service is available (i.e. installed)
+ * and if so what it's current status is.
+ *
+ * \li SERVICE_STATUS_NOT_INSTALLED -- the service is not even installed
+ * \li SERVICE_STATUS_DISABLED -- the service is installed, but currently
+ * disabled
+ * \li SERVICE_STATUS_ENABLED -- the service is enabled, but not active
+ * (running) nor did it fail earlier
+ * \li SERVICE_STATUS_ACTIVE -- the service is enabled and running right
+ * now
+ * \li SERVICE_STATUS_FAILED -- the service is enabled, was active, but
+ * crashed or exited in such a way that it is viewed as failed
+ *
+ * The function expects the path and filename of the service. This is used
+ * to make sure the service was installed. One can use the systemctl
+ * command with list-unit-files to see whether a unit is installed.
+ * However, that command cannot be used to determine whether a service
+ * is installed or not. All the other commands generate errors, but
+ * errors that cannot properly be distinguished from expected errors
+ * when probing the systemd environment.
+ *
+ * The \p service_name parameter is the exact name you use when
+ * running systemctl on the command line. It may include the .service
+ * extension, although we usually do not include the extension.
+ *
+ * \param[in] service_filename  The path and filename to the service.
+ * \param[in] service_name  The name of the service as defined by the
+ *                          .service file.
+ *
+ * \return One of the SERVICE_STATUS_... values.
+ */
+service_status_t manager::service_status(std::string const & service_filename, std::string const & service_name)
+{
+    // does the service binary exists, if not, then it is not currently
+    // installed and that's it
+    //
+    if(access(service_filename.c_str(), R_OK | X_OK) != 0)
+    {
+        return service_status_t::SERVICE_STATUS_NOT_INSTALLED;
+    }
+
+    // when installed the service may be:
+    //
+    //      disabled
+    //      enabled
+    //      active
+    //
+    snap::process p1("query service status");
+    p1.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p1.set_command("systemctl");
+    p1.add_argument("is-enabled");
+    p1.add_argument(QString::fromUtf8(service_name.c_str()));
+    int const r1(p1.run());
+    SNAP_LOG_INFO("\"is-enabled\" query output (")(r1)("): ")(p1.get_output(true));
+    if(r1 != 0)
+    {
+        // it is not enabled, so it cannot be active, thus it is disabled
+        //
+        return service_status_t::SERVICE_STATUS_DISABLED;
+    }
+
+    snap::process p2("query service status");
+    p2.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p2.set_command("systemctl");
+    p2.add_argument("is-active");
+    p2.add_argument(QString::fromUtf8(service_name.c_str()));
+    int const r2(p2.run());
+    SNAP_LOG_INFO("\"is-active\" query output (")(r2)("): ")(p2.get_output(true));
+    if(r2 != 0)
+    {
+        // it is enabled and not active, it could be failed though
+        //
+        snap::process p3("query service status");
+        p3.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+        p3.set_command("systemctl");
+        p3.add_argument("is-failed");
+        p3.add_argument(QString::fromUtf8(service_name.c_str()));
+        int const r3(p3.run());
+        SNAP_LOG_INFO("\"is-failed\" query output (")(r3)("): ")(p3.get_output(true));
+        if(r3 != 0)
+        {
+            // it is enabled and not active, thus we return "enabled"
+            //
+            return service_status_t::SERVICE_STATUS_ENABLED;
+        }
+
+        return service_status_t::SERVICE_STATUS_FAILED;
+    }
+
+    // the service is enabled and active
+    //
+    return service_status_t::SERVICE_STATUS_ACTIVE;
+}
+
+
+char const * manager::service_status_to_string(service_status_t const status)
+{
+    switch(status)
+    {
+    case service_status_t::SERVICE_STATUS_NOT_INSTALLED:
+        return "not_installed";
+
+    case service_status_t::SERVICE_STATUS_DISABLED:
+        return "disabled";
+
+    case service_status_t::SERVICE_STATUS_ENABLED:
+        return "enabled";
+
+    case service_status_t::SERVICE_STATUS_ACTIVE:
+        return "active";
+
+    case service_status_t::SERVICE_STATUS_FAILED:
+        return "failed";
+
+    default:
+        return "unknown";
+
+    }
+}
+
+
+service_status_t manager::string_to_service_status(std::string const & status)
+{
+    if(status == "not_installed")
+    {
+        return service_status_t::SERVICE_STATUS_NOT_INSTALLED;
+    }
+
+    if(status == "disabled")
+    {
+        return service_status_t::SERVICE_STATUS_DISABLED;
+    }
+
+    if(status == "enabled")
+    {
+        return service_status_t::SERVICE_STATUS_ENABLED;
+    }
+
+    if(status == "active")
+    {
+        return service_status_t::SERVICE_STATUS_ACTIVE;
+    }
+
+    if(status == "failed")
+    {
+        return service_status_t::SERVICE_STATUS_FAILED;
+    }
+
+    return service_status_t::SERVICE_STATUS_UNKNOWN;
+}
+
+
+void manager::service_apply_status(std::string const & service_name, service_status_t const status)
+{
+    QString service(QString::fromUtf8(service_name.c_str()));
+    switch(status)
+    {
+    case service_status_t::SERVICE_STATUS_DISABLED:
+        {
+            snap::process p("stop service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("stop");
+            p.add_argument(service);
+            int const r(p.run());
+            SNAP_LOG_INFO("\"stop\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("stop of service \"")(service_name)("\" failed.");
+            }
+        }
+        {
+            snap::process p("disable service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("disable");
+            p.add_argument(service);
+            int const r(p.run());
+            SNAP_LOG_INFO("\"disable\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("disable of service \"")(service_name)("\" failed.");
+            }
+        }
+        break;
+
+    case service_status_t::SERVICE_STATUS_ENABLED:
+        {
+            snap::process p("stop service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("stop");
+            p.add_argument(service);
+            int const r(p.run());
+            SNAP_LOG_INFO("\"stop\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("stop of service \"")(service_name)("\" failed.");
+            }
+        }
+        {
+            snap::process p("enable service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("enable");
+            p.add_argument(service);
+            int const r(p.run());
+            SNAP_LOG_INFO("\"enable\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("enable of service \"")(service_name)("\" failed.");
+            }
+        }
+        break;
+
+    case service_status_t::SERVICE_STATUS_ACTIVE:
+        {
+            snap::process p("enable service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("enable");
+            p.add_argument(service);
+            int const r(p.run());
+            SNAP_LOG_INFO("\"enable\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("enable of service \"")(service_name)("\" failed.");
+            }
+        }
+        {
+            snap::process p("start service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("start");
+            p.add_argument(service);
+            int const r(p.run());
+            SNAP_LOG_INFO("\"start\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("start of service \"")(service_name)("\" failed.");
+            }
+        }
+        break;
+
+    default:
+        // invalid status request
+        SNAP_LOG_ERROR("you cannot apply status \"")(service_status_to_string(status))("\" to a service.");
+        break;
+
+    }
+}
+
 
 } // namespace snap_manager
 // vim: ts=4 sw=4 et

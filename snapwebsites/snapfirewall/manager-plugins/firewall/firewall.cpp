@@ -53,10 +53,6 @@ SNAP_PLUGIN_START(firewall, 1, 0)
 namespace
 {
 
-// TODO: offer the user a way to change this path?
-char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapfirewall.xml";
-
-
 
 //void file_descriptor_deleter(int * fd)
 //{
@@ -211,54 +207,26 @@ void firewall::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    // TODO: make the path a parameter from snapinit somehow?
-    //       (also it will change once we have a broken up version of
-    //       the file)
+    // get the snapfirewall status
     //
-    bool valid_xml(false);
-    QFile input(g_service_filename);
-    if(input.open(QIODevice::ReadOnly))
-    {
-        QDomDocument doc;
-        doc.setContent(&input, false);
+    snap_manager::service_status_t status(f_snap->service_status("/usr/bin/snapfirewall", "snapfirewall"));
 
-        // TBD: do we need the search? We expect only one <service> root tag
-        //      with a name, we could just check the name?
-        QDomXPath dom_xpath;
-        dom_xpath.setXPath("/service[@name=\"snapfirewall\"]");
-        QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-        if(result.size() > 0)
-        {
-            if(result[0].isElement())
-            {
-                QDomElement service(result[0].toElement());
-                QString const disabled_attr(service.attribute("disabled"));
-                snap_manager::status_t const disabled(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                                      get_plugin_name(),
-                                                      "disabled",
-                                                      disabled_attr.isEmpty() ? "enabled" : "disabled");
-                server_status.set_field(disabled);
+    // transform to a string
+    //
+    QString const status_string(QString::fromUtf8(snap_manager::manager::service_status_to_string(status)));
 
-                QDomElement recovery_tag(service.firstChildElement("recovery"));
-                snap_manager::status_t const recovery(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                                      get_plugin_name(),
-                                                      "recovery",
-                                                      recovery_tag.text());
-                server_status.set_field(recovery);
-
-                valid_xml = true;
-            }
-        }
-    }
-    if(!valid_xml)
-    {
-        snap_manager::status_t const snapinit(snap_manager::status_t::state_t::STATUS_STATE_ERROR,
-                                              get_plugin_name(),
-                                              "snapinit",
-                                              QString("Could not read \"%1\" file or it was missing a snapfirewall service.")
-                                                    .arg(g_service_filename));
-        server_status.set_field(snapinit);
-    }
+    // create status widget
+    //
+    snap_manager::status_t const status_widget(
+                    status == snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED
+                            ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                            : status == snap_manager::service_status_t::SERVICE_STATUS_DISABLED
+                                    ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                    : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                    get_plugin_name(),
+                    "service_status",
+                    status_string);
+    server_status.set_field(status_widget);
 }
 
 
@@ -282,51 +250,64 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
 {
     QDomDocument doc(parent.ownerDocument());
 
-    if(s.get_field_name() == "disabled")
+    if(s.get_field_name() == "service_status")
     {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
+        // The current status of the snapfirewall service
         //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-                );
+        snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(s.get_value().toUtf8().data()));
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Enable/Disable Firewall"
-                        , s.get_field_name()
-                        , s.get_value()
-                        , "Define whether the firewall is \"enabled\" or \"disabled\"."
-                        ));
-        f.add_widget(field);
+        if(status == snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED)
+        {
+            // there is nothing we can do if it is not considered installed
+            //
+            snap_manager::form f(
+                      get_plugin_name()
+                    , s.get_field_name()
+                    , snap_manager::form::FORM_BUTTON_NONE
+                    );
 
-        f.generate(parent, uri);
+            snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                              "Somehow the service plugin is still in place when the service was uninstalled"
+                            , s.get_field_name()
+                            , "This plugin should not be able to detect that the service in question is"
+                             " uninstalled since the plugin is part of that service and thus it should"
+                             " disappear along the main binary... Please report this bug."
+                            ));
+            f.add_widget(field);
 
-        return true;
-    }
+            f.generate(parent, uri);
+        }
+        else
+        {
+            snap_manager::form f(
+                      get_plugin_name()
+                    , s.get_field_name()
+                    , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
+                    );
 
-    if(s.get_field_name() == "recovery")
-    {
-        // the list of URIs from which we can download software bundles;
-        // this should not be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-                );
+            snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                              "Enabled/Disabled/Activate Firewall"
+                            , s.get_field_name()
+                            , s.get_value()
+                            , "<p>Enter the new state of the snapfirewall"
+                              " service as one of:</p>"
+                              "<ul>"
+                              "  <li>disabled -- deactivate and disable the service</li>"
+                              "  <li>enabled -- enable the service, deactivate if it was activated</li>"
+                              "  <li>active -- enable and activate the service</li>"
+                              "</ul>"
+                              "<p>You cannot request to go to the \"failed\" status."
+                              " To uninstall search the corresponding bundle and"
+                              " click the <strong>Uninstall</strong> button.</p>"
+                              "<p><strong>WARNING:</strong> The current snapmanagercgi"
+                              " implementation does not clearly give you feedback if"
+                              " you mispell the new status. We suggest you copy and"
+                              " paste from this description to avoid mistakes.</p>"
+                            ));
+            f.add_widget(field);
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Recovery Delay"
-                        , s.get_field_name()
-                        , s.get_value()
-                        , "Delay before restarting snapfirewall if it fails to restart immediately after a crash. This number is in seconds."
-                        ));
-        f.add_widget(field);
-
-        f.generate(parent, uri);
+            f.generate(parent, uri);
+        }
 
         return true;
     }
@@ -353,96 +334,14 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
 bool firewall::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
     NOTUSED(old_or_installation_value);
+    NOTUSED(button_name);
+    NOTUSED(affected_services);
 
-    // restore defaults?
-    //
-    bool const use_default_value(button_name == "restore_default");
-
-    if(field_name == "disabled")
+    if(field_name == "service_status")
     {
-        QFile file(g_service_filename);
-        if(file.open(QIODevice::ReadWrite))
-        {
-            QDomDocument doc;
-            doc.setContent(&file, false);
-
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath("/service[@name=\"snapfirewall\"]");
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-                    // although this is about the snapfirewall, we have to
-                    // restart the snapinit process if we want the change to
-                    // be taken in account
-                    //
-                    affected_services.insert("snapinit");
-
-                    QDomElement service(result[0].toElement());
-                    if(use_default_value
-                    || new_value.mid(0, 1).toUpper() == "D")
-                    {
-                        service.setAttribute("disabled", "disabled");
-                    }
-                    else
-                    {
-                        service.removeAttribute("disabled");
-                    }
-
-                    QString output(doc.toString(2));
-                    QByteArray output_utf8(output.toUtf8());
-                    file.seek(0L);
-                    file.write(output_utf8);
-                    file.resize(output_utf8.size());
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    if(field_name == "recovery")
-    {
-        QFile file(g_service_filename);
-        if(file.open(QIODevice::ReadWrite))
-        {
-            QDomDocument doc;
-            doc.setContent(&file, false);
-
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath("/service[@name=\"snapfirewall\"]/recovery");
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-                    // although this is about the snapfirewall, we have to
-                    // restart the snapinit process if we want the change to
-                    // be taken in account
-                    //
-                    affected_services.insert("snapinit");
-
-                    QDomElement recovery(result[0].toElement());
-                    // remove existing children
-                    while(!recovery.firstChild().isNull())
-                    {
-                        recovery.removeChild(result[0].firstChild());
-                    }
-                    // now save the new recovery value
-                    QDomText recovery_text(doc.createTextNode(use_default_value ? QString("60") : new_value));
-                    recovery.appendChild(recovery_text);
-
-                    QString output(doc.toString(2));
-                    QByteArray output_utf8(output.toUtf8());
-                    file.seek(0L);
-                    file.write(output_utf8);
-                    file.resize(output_utf8.size());
-                    return true;
-                }
-            }
-        }
-        return false;
+        snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
+        f_snap->service_apply_status("snapfirewall", status);
+        return true;
     }
 
     return false;

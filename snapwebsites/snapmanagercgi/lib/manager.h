@@ -81,6 +81,15 @@ public:
 
 
 
+enum class service_status_t
+{
+    SERVICE_STATUS_UNKNOWN = -2,
+    SERVICE_STATUS_NOT_INSTALLED = -1,
+    SERVICE_STATUS_DISABLED,
+    SERVICE_STATUS_ENABLED,
+    SERVICE_STATUS_ACTIVE,
+    SERVICE_STATUS_FAILED
+};
 
 
 
@@ -121,6 +130,8 @@ public:
     int                             update_packages(std::string const & command);
     void                            reset_aptcheck();
     bool                            installer(QString const & bundle_name, std::string const & command, std::string const & install_values);
+    service_status_t                service_status(std::string const & service_filename, std::string const & service_name);
+    void                            service_apply_status(std::string const & service_name, service_status_t const status);
     void                            reboot(bool reboot = true);
     int                             package_status(std::string const & package_name, std::string & output);
     QString                         count_packages_that_can_be_updated(bool check_cache);
@@ -135,6 +146,8 @@ public:
     static int                      get_version_patch() __attribute__ ((const));
     static char const *             get_version_string() __attribute__ ((const));
     static std::string::size_type   search_parameter(std::string const & configuration, std::string const & parameter_name, std::string::size_type const start_pos, bool const ignore_case);
+    static char const *             service_status_to_string(service_status_t const status);
+    static service_status_t         string_to_service_status(std::string const & status);
 
 protected:
     int                             install_package(std::string const & package_name, std::string const & command);
