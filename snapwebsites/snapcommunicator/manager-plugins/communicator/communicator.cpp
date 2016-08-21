@@ -216,48 +216,6 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
         return;
     }
 
-    // TODO: make the path a parameter from snapinit somehow?
-    //       (also it will change once we have a broken up version of
-    //       the file)
-    //
-    //bool valid_xml(false);
-    //QFile input(g_service_filename);
-    //if(input.open(QIODevice::ReadOnly))
-    //{
-    //    QDomDocument doc;
-    //    doc.setContent(&input, false);
-
-    //    // TBD: do we need the search? We expect only one <service> root tag
-    //    //      with a name, we could just check the name?
-    //    QDomXPath dom_xpath;
-    //    dom_xpath.setXPath("/service[@name=\"snapcommunicator\"]");
-    //    QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-    //    if(result.size() > 0)
-    //    {
-    //        if(result[0].isElement())
-    //        {
-    //            QDomElement service(result[0].toElement());
-    //            QString const disabled_attr(service.attribute("disabled"));
-    //            snap_manager::status_t const disabled(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-    //                                                  get_plugin_name(),
-    //                                                  "disabled",
-    //                                                  disabled_attr.isEmpty() ? "enabled" : "disabled");
-    //            server_status.set_field(disabled);
-
-    //            valid_xml = true;
-    //        }
-    //    }
-    //}
-    //if(!valid_xml)
-    //{
-    //    snap_manager::status_t const snapinit(snap_manager::status_t::state_t::STATUS_STATE_ERROR,
-    //                                          get_plugin_name(),
-    //                                          "snapinit",
-    //                                          QString("Could not read \"%1\" file or it was missing a snapcommunicator service.")
-    //                                                .arg(g_service_filename));
-    //    server_status.set_field(snapinit);
-    //}
-
     // TODO: find a way to get the configuration filename for snapcommunicator
     //       (i.e. take it from the XML?)
     {
@@ -404,58 +362,12 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
     //
     //bool const use_default_value(button_name == "restore_default");
 
-    //if(field_name == "disabled")
-    //{
-    //    QFile file(g_service_filename);
-    //    if(file.open(QIODevice::ReadWrite))
-    //    {
-    //        QDomDocument doc;
-    //        doc.setContent(&file, false);
-
-    //        QDomXPath dom_xpath;
-    //        dom_xpath.setXPath("/service[@name=\"snapcommunicator\"]");
-    //        QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-    //        if(result.size() > 0)
-    //        {
-    //            if(result[0].isElement())
-    //            {
-    //                // although this is about the snapcommunicator, we have to
-    //                // restart the snapinit process if we want the change to
-    //                // be taken in account
-    //                //
-    //                affected_services.insert("snapinit");
-
-    //                QDomElement service(result[0].toElement());
-    //                if(use_default_value
-    //                || new_value.mid(0, 1).toUpper() == "D")
-    //                {
-    //                    service.setAttribute("disabled", "disabled");
-    //                }
-    //                else
-    //                {
-    //                    service.removeAttribute("disabled");
-    //                }
-
-    //                QString output(doc.toString(2));
-    //                QByteArray output_utf8(output.toUtf8());
-    //                file.seek(0L);
-    //                file.write(output_utf8);
-    //                file.resize(output_utf8.size());
-    //                return true;
-    //            }
-    //        }
-    //    }
-    //    return false;
-    //}
-
     if(field_name == "my_address")
     {
-        // this address is only to connect this snapcommunicator to
-        // other snapcommunicators and thus we do not have to restart
-        // everything (but since we have to restart snapinit when
-        // snapcommunicator has to restart...)
+        // this address is to connect this snapcommunicator to
+        // other snapcommunicators
         //
-        affected_services.insert("snapinit");
+        affected_services.insert("snapcommunicator");
 
         // Here we change the "my_address" and "listen" parameters because
         // the two fields are expected to have the exact same IP address in
@@ -463,16 +375,16 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
         // because at this point we do not want to offer an end user
         // interface to deal with all the ports.
         //
-        bool success(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
+        bool const success(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
         return success && f_snap->replace_configuration_value(g_configuration_d_filename, "listen", new_value + ":4040");
     }
 
     if(field_name == "neighbors")
     {
         // for potential new neighbors indicated in snapcommunicator
-        // we have o restart it, which means we have to restart snapinit
+        // we have to restart it
         //
-        affected_services.insert("snapinit");
+        affected_services.insert("snapcommunicator");
 
         return f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value);
     }

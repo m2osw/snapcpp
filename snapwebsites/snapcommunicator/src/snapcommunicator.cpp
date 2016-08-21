@@ -2808,7 +2808,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     reply.set_command("COMMANDS");
 
                     // list of commands understood by snapcommunicator
-                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LISTENLOADAVG,LOADAVG,LOG,PUBLIC_IP,QUITTING,REFUSE,REGISTER,REGISTERFORLOADAVG,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER,UNREGISTERFORLOADAVG");
+                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LISTENLOADAVG,LOADAVG,LOG,PUBLIC_IP,QUITTING,REFUSE,REGISTER,REGISTERFORLOADAVG,RELOADCONFIG,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER,UNREGISTERFORLOADAVG");
 
                     //verify_command(base, reply); -- this verification does not work with remote snap communicator connections
                     if(remote_communicator)
@@ -3082,6 +3082,24 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     base->set_wants_loadavg(true);
                     f_loadavg_timer->set_enable(true);
                     return;
+                }
+            }
+            else if(command == "RELOADCONFIG")
+            {
+                // we need a full restart in this case (because when we
+                // restart snapcommunicator it also automatically restart
+                // all of its dependencies!)
+                //
+                // also if you are a programmer we cannot do a systemctl
+                // restart so we just skip the feature...
+                //
+                if(getuid() == 0)
+                {
+                    snap::NOTUSED(system("systemctl restart snapcommunicator"));
+                }
+                else
+                {
+                    SNAP_LOG_WARNING("You are not running snapcommunicator as root (because you are running as a programmer?) so the RELOADCONFIG will be ignored.");
                 }
             }
             break;

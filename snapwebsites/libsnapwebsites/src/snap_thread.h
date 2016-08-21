@@ -16,10 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// our lib
+//
+#include "not_reached.h"
 #include "snap_exception.h"
 
-#include "not_reached.h"
-
+// controlled_vars lib
+//
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
@@ -27,9 +30,14 @@
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
 #include <controlled_vars/controlled_vars_ptr_need_init.h>
 
-#include <sys/time.h>
-
+// C++ lib
+//
+#include <memory>
 #include <queue>
+
+// C lib
+//
+#include <sys/time.h>
 
 
 namespace snap
@@ -103,12 +111,14 @@ public:
 class snap_thread
 {
 public:
-    typedef controlled_vars::ptr_auto_init<snap_thread> zpthread_t;
+    typedef std::shared_ptr<snap_thread>    pointer_t;
 
     // a mutex to ensure single threaded work
     class snap_mutex
     {
     public:
+        typedef std::shared_ptr<snap_mutex>     pointer_t;
+
                             snap_mutex();
                             ~snap_mutex();
 
@@ -122,12 +132,10 @@ public:
         void                broadcast();
 
     private:
-
-        controlled_vars::zuint32_t      f_reference_count;
-        pthread_mutex_t                 f_mutex;
-        pthread_cond_t                  f_condition;
+        uint32_t            f_reference_count = 0;
+        pthread_mutex_t     f_mutex;
+        pthread_cond_t      f_condition;
     };
-    typedef controlled_vars::ptr_auto_init<snap_mutex> zpsnap_mutex_t;
 
     class snap_lock
     {
@@ -138,7 +146,7 @@ public:
         void                unlock();
 
     private:
-        zpsnap_mutex_t      f_mutex;
+        snap_mutex *        f_mutex = nullptr;
     };
 
     // this is the actual thread because we cannot use the main thread
@@ -160,10 +168,9 @@ public:
     private:
         friend class snap_thread;
 
-        zpthread_t          f_thread;
+        snap_thread *       f_thread = nullptr;
         QString const       f_name;
     };
-    typedef controlled_vars::ptr_auto_init<snap_runner> zprunner_t;
 
 
     /** \brief Create a thread safe FIFO.
@@ -310,7 +317,7 @@ public:
         snap_thread_life( snap_thread * const thread )
             : f_thread(thread)
         {
-            if(!f_thread)
+            if(f_thread == nullptr)
             {
                 throw snap_logic_exception("snap_thread_life pointer is nullptr");
             }
@@ -331,7 +338,7 @@ public:
         }
 
     private:
-        zpthread_t      f_thread;
+        snap_thread *           f_thread = nullptr;
     };
 
                                 snap_thread(QString const & name, snap_runner * runner);
@@ -347,8 +354,6 @@ public:
     bool                        kill(int sig);
 
 private:
-    typedef controlled_vars::auto_init<pthread_t, -1> m1pthread_t;
-
     // internal function to start the runner
     friend void *               func_internal_start(void * thread);
     void                        internal_run();
@@ -356,10 +361,10 @@ private:
     QString const               f_name;
     snap_runner *               f_runner;
     mutable snap_mutex          f_mutex;
-    controlled_vars::flbool_t   f_running;
-    controlled_vars::flbool_t   f_started;
-    controlled_vars::flbool_t   f_stopping;
-    m1pthread_t                 f_thread_id;
+    bool                        f_running = false;
+    bool                        f_started = false;
+    bool                        f_stopping = false;
+    pthread_t                   f_thread_id = -1;
     pthread_attr_t              f_thread_attr;
     std::exception_ptr          f_exception;
 };

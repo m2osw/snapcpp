@@ -216,48 +216,6 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    // TODO: make the path a parameter from snapinit somehow?
-    //       (also it will change once we have a broken up version of
-    //       the file)
-    //
-    //bool valid_xml(false);
-    //QFile input(g_service_filename);
-    //if(input.open(QIODevice::ReadOnly))
-    //{
-    //    QDomDocument doc;
-    //    doc.setContent(&input, false);
-
-    //    // TBD: do we need the search? We expect only one <service> root tag
-    //    //      with a name, we could just check the name?
-    //    QDomXPath dom_xpath;
-    //    dom_xpath.setXPath("/service[@name=\"snapdbproxy\"]");
-    //    QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-    //    if(result.size() > 0)
-    //    {
-    //        if(result[0].isElement())
-    //        {
-    //            QDomElement service(result[0].toElement());
-    //            QString const disabled_attr(service.attribute("disabled"));
-    //            snap_manager::status_t const disabled(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-    //                                                  get_plugin_name(),
-    //                                                  "disabled",
-    //                                                  disabled_attr.isEmpty() ? "enabled" : "disabled");
-    //            server_status.set_field(disabled);
-
-    //            valid_xml = true;
-    //        }
-    //    }
-    //}
-    //if(!valid_xml)
-    //{
-    //    snap_manager::status_t const snapinit(snap_manager::status_t::state_t::STATUS_STATE_ERROR,
-    //                                          get_plugin_name(),
-    //                                          "snapinit",
-    //                                          QString("Could not read \"%1\" file or it was missing a snapdbproxy service.")
-    //                                                .arg(g_service_filename));
-    //    server_status.set_field(snapinit);
-    //}
-
     // TODO: find a way to get the configuration filename for snapdbproxy
     //       (i.e. take it from the XML?)
     {
@@ -371,50 +329,6 @@ bool dbproxy::apply_setting(QString const & button_name, QString const & field_n
     // restore defaults?
     //
     //bool const use_default_value(button_name == "restore_default");
-
-    //if(field_name == "disabled")
-    //{
-    //    QFile file(g_service_filename);
-    //    if(file.open(QIODevice::ReadWrite))
-    //    {
-    //        QDomDocument doc;
-    //        doc.setContent(&file, false);
-
-    //        QDomXPath dom_xpath;
-    //        dom_xpath.setXPath("/service[@name=\"snapdbproxy\"]");
-    //        QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-    //        if(result.size() > 0)
-    //        {
-    //            if(result[0].isElement())
-    //            {
-    //                // although this is about the snapdbproxy, we have to
-    //                // restart the snapinit process if we want the change to
-    //                // be taken in account
-    //                //
-    //                affected_services.insert("snapinit");
-
-    //                QDomElement service(result[0].toElement());
-    //                if(use_default_value
-    //                || new_value.mid(0, 1).toUpper() == "D")
-    //                {
-    //                    service.setAttribute("disabled", "disabled");
-    //                }
-    //                else
-    //                {
-    //                    service.removeAttribute("disabled");
-    //                }
-
-    //                QString output(doc.toString(2));
-    //                QByteArray output_utf8(output.toUtf8());
-    //                file.seek(0L);
-    //                file.write(output_utf8);
-    //                file.resize(output_utf8.size());
-    //                return true;
-    //            }
-    //        }
-    //    }
-    //    return false;
-    //}
 
     if(field_name == "cassandra_host_list")
     {

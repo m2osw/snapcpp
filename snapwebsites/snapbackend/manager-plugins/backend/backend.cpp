@@ -216,9 +216,11 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    // TODO: make the path a parameter from snapinit somehow?
-    //       (also it will change once we have a broken up version of
-    //       the file)
+    // TODO: add support so the user can edit the recovery delay, the nice
+    //       value and in case of CRON, the timer ticking
+    //
+
+    // TODO: replace with new snapfirewall implementation
     //
     for(auto const & service_info : g_services)
     {
@@ -349,80 +351,80 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
         return true;
     }
 
-    if(field_name == "recovery")
-    {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-                );
+    //if(field_name == "recovery")
+    //{
+    //    // the list if frontend snapmanagers that are to receive statuses
+    //    // of the cluster computers; may be just one computer; should not
+    //    // be empty; shows a text input field
+    //    //
+    //    snap_manager::form f(
+    //              get_plugin_name()
+    //            , s.get_field_name()
+    //            , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
+    //            );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          QString("Recovery Delay for %1 Backend").arg(service_name)
-                        , s.get_field_name()
-                        , s.get_value()
-                        , QString("Delay before restarting %1 if it fails to restart immediately after a crash. This number is in seconds.").arg(service_name)
-                        ));
-        f.add_widget(field);
+    //    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+    //                      QString("Recovery Delay for %1 Backend").arg(service_name)
+    //                    , s.get_field_name()
+    //                    , s.get_value()
+    //                    , QString("Delay before restarting %1 if it fails to restart immediately after a crash. This number is in seconds.").arg(service_name)
+    //                    ));
+    //    f.add_widget(field);
 
-        f.generate(parent, uri);
+    //    f.generate(parent, uri);
 
-        return true;
-    }
+    //    return true;
+    //}
 
-    if(field_name == "cron")
-    {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-                );
+    //if(field_name == "cron")
+    //{
+    //    // the list if frontend snapmanagers that are to receive statuses
+    //    // of the cluster computers; may be just one computer; should not
+    //    // be empty; shows a text input field
+    //    //
+    //    snap_manager::form f(
+    //              get_plugin_name()
+    //            , s.get_field_name()
+    //            , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
+    //            );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          QString("CRON Delay between runs of %1").arg(service_name)
-                        , s.get_field_name()
-                        , s.get_value()
-                        , QString("The delay, in seconds, between each run of the %1 backend process. Note that this defines an exact tick, if the process outruns this delay, snapinit waits for the next tick, no matter what.").arg(service_name)
-                        ));
-        f.add_widget(field);
+    //    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+    //                      QString("CRON Delay between runs of %1").arg(service_name)
+    //                    , s.get_field_name()
+    //                    , s.get_value()
+    //                    , QString("The delay, in seconds, between each run of the %1 backend process. Note that this defines an exact tick, if the process outruns this delay,  waits for the next tick, no matter what.").arg(service_name)
+    //                    ));
+    //    f.add_widget(field);
 
-        f.generate(parent, uri);
+    //    f.generate(parent, uri);
 
-        return true;
-    }
+    //    return true;
+    //}
 
-    if(field_name == "nice")
-    {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-                );
+    //if(field_name == "nice")
+    //{
+    //    // the list if frontend snapmanagers that are to receive statuses
+    //    // of the cluster computers; may be just one computer; should not
+    //    // be empty; shows a text input field
+    //    //
+    //    snap_manager::form f(
+    //              get_plugin_name()
+    //            , s.get_field_name()
+    //            , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
+    //            );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          QString("Nice value for %1").arg(service_name)
-                        , s.get_field_name()
-                        , s.get_value()
-                        , "The nice value is the same as the nice command line Unix utility. It changes the priority of the process. The larger the value, the weak the priority of that process (it will yield to processes with a smaller nice value.)"
-                        ));
-        f.add_widget(field);
+    //    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+    //                      QString("Nice value for %1").arg(service_name)
+    //                    , s.get_field_name()
+    //                    , s.get_value()
+    //                    , "The nice value is the same as the nice command line Unix utility. It changes the priority of the process. The larger the value, the weak the priority of that process (it will yield to processes with a smaller nice value.)"
+    //                    ));
+    //    f.add_widget(field);
 
-        f.generate(parent, uri);
+    //    f.generate(parent, uri);
 
-        return true;
-    }
+    //    return true;
+    //}
 
     return false;
 }
@@ -530,139 +532,139 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
         return false;
     }
 
-    if(field == "recovery")
-    {
-SNAP_LOG_WARNING(" -- recovery...");
-        QFile file(filename);
-        if(file.open(QIODevice::ReadWrite))
-        {
-SNAP_LOG_WARNING(" -- opened file...");
-            QDomDocument doc;
-            doc.setContent(&file, false);
-
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/service[@name=\"%1\"]/recovery").arg(service_name));
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-SNAP_LOG_WARNING(" -- found ")(result.size())(" matches...");
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-SNAP_LOG_WARNING(" -- ")(result.size())(" match 0 is an element...");
-                    // although this is about the snapfirewall, we have to
-                    // restart the snapinit process if we want the change to
-                    // be taken in account
-                    //
-                    affected_services.insert(service_name);
-
-                    QDomElement recovery(result[0].toElement());
-                    // remove existing children
-                    while(!recovery.firstChild().isNull())
-                    {
-                        recovery.removeChild(result[0].firstChild());
-                    }
-                    // now save the new recovery value
-SNAP_LOG_WARNING(" -- ")(use_default_value ? "set default value" : "use new value")(" for this time...");
-                    QDomText recovery_text(doc.createTextNode(use_default_value ? QString("3600") : new_value));
-                    recovery.appendChild(recovery_text);
-
-                    QString output(doc.toString(2));
-                    QByteArray output_utf8(output.toUtf8());
-                    file.seek(0L);
-                    file.write(output_utf8);
-                    file.resize(output_utf8.size());
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    if(field == "cron")
-    {
-        QFile file(filename);
-        if(file.open(QIODevice::ReadWrite))
-        {
-            QDomDocument doc;
-            doc.setContent(&file, false);
-
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/service[@name=\"%1\"]/cron").arg(service_name));
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-                    // although this is about the snapfirewall, we have to
-                    // restart the snapinit process if we want the change to
-                    // be taken in account
-                    //
-                    affected_services.insert(service_name);
-
-                    QDomElement cron(result[0].toElement());
-                    // remove existing children
-                    while(!cron.firstChild().isNull())
-                    {
-                        cron.removeChild(result[0].firstChild());
-                    }
-                    // now save the new cron value
-                    QDomText cron_text(doc.createTextNode(use_default_value ? QString("300") : new_value));
-                    cron.appendChild(cron_text);
-
-                    QString output(doc.toString(2));
-                    QByteArray output_utf8(output.toUtf8());
-                    file.seek(0L);
-                    file.write(output_utf8);
-                    file.resize(output_utf8.size());
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    if(field == "nice")
-    {
-        QFile file(filename);
-        if(file.open(QIODevice::ReadWrite))
-        {
-            QDomDocument doc;
-            doc.setContent(&file, false);
-
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/service[@name=\"%1\"]/nice").arg(service_name));
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-                    // although this is about the snapfirewall, we have to
-                    // restart the snapinit process if we want the change to
-                    // be taken in account
-                    //
-                    affected_services.insert(service_name);
-
-                    QDomElement nice(result[0].toElement());
-                    // remove existing children
-                    while(!nice.firstChild().isNull())
-                    {
-                        nice.removeChild(result[0].firstChild());
-                    }
-                    // now save the new nice value
-                    QDomText nice_text(doc.createTextNode(use_default_value ? QString("%1").arg(nice_value) : new_value));
-                    nice.appendChild(nice_text);
-
-                    QString output(doc.toString(2));
-                    QByteArray output_utf8(output.toUtf8());
-                    file.seek(0L);
-                    file.write(output_utf8);
-                    file.resize(output_utf8.size());
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+//    if(field == "recovery")
+//    {
+//SNAP_LOG_WARNING(" -- recovery...");
+//        QFile file(filename);
+//        if(file.open(QIODevice::ReadWrite))
+//        {
+//SNAP_LOG_WARNING(" -- opened file...");
+//            QDomDocument doc;
+//            doc.setContent(&file, false);
+//
+//            QDomXPath dom_xpath;
+//            dom_xpath.setXPath(QString("/service[@name=\"%1\"]/recovery").arg(service_name));
+//            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
+//SNAP_LOG_WARNING(" -- found ")(result.size())(" matches...");
+//            if(result.size() > 0)
+//            {
+//                if(result[0].isElement())
+//                {
+//SNAP_LOG_WARNING(" -- ")(result.size())(" match 0 is an element...");
+//                    // although this is about the snapfirewall, we have to
+//                    // restart the snapinit process if we want the change to
+//                    // be taken in account
+//                    //
+//                    affected_services.insert(service_name);
+//
+//                    QDomElement recovery(result[0].toElement());
+//                    // remove existing children
+//                    while(!recovery.firstChild().isNull())
+//                    {
+//                        recovery.removeChild(result[0].firstChild());
+//                    }
+//                    // now save the new recovery value
+//SNAP_LOG_WARNING(" -- ")(use_default_value ? "set default value" : "use new value")(" for this time...");
+//                    QDomText recovery_text(doc.createTextNode(use_default_value ? QString("3600") : new_value));
+//                    recovery.appendChild(recovery_text);
+//
+//                    QString output(doc.toString(2));
+//                    QByteArray output_utf8(output.toUtf8());
+//                    file.seek(0L);
+//                    file.write(output_utf8);
+//                    file.resize(output_utf8.size());
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//    if(field == "cron")
+//    {
+//        QFile file(filename);
+//        if(file.open(QIODevice::ReadWrite))
+//        {
+//            QDomDocument doc;
+//            doc.setContent(&file, false);
+//
+//            QDomXPath dom_xpath;
+//            dom_xpath.setXPath(QString("/service[@name=\"%1\"]/cron").arg(service_name));
+//            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
+//            if(result.size() > 0)
+//            {
+//                if(result[0].isElement())
+//                {
+//                    // although this is about the snapfirewall, we have to
+//                    // restart the snapinit process if we want the change to
+//                    // be taken in account
+//                    //
+//                    affected_services.insert(service_name);
+//
+//                    QDomElement cron(result[0].toElement());
+//                    // remove existing children
+//                    while(!cron.firstChild().isNull())
+//                    {
+//                        cron.removeChild(result[0].firstChild());
+//                    }
+//                    // now save the new cron value
+//                    QDomText cron_text(doc.createTextNode(use_default_value ? QString("300") : new_value));
+//                    cron.appendChild(cron_text);
+//
+//                    QString output(doc.toString(2));
+//                    QByteArray output_utf8(output.toUtf8());
+//                    file.seek(0L);
+//                    file.write(output_utf8);
+//                    file.resize(output_utf8.size());
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//    if(field == "nice")
+//    {
+//        QFile file(filename);
+//        if(file.open(QIODevice::ReadWrite))
+//        {
+//            QDomDocument doc;
+//            doc.setContent(&file, false);
+//
+//            QDomXPath dom_xpath;
+//            dom_xpath.setXPath(QString("/service[@name=\"%1\"]/nice").arg(service_name));
+//            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
+//            if(result.size() > 0)
+//            {
+//                if(result[0].isElement())
+//                {
+//                    // although this is about the snapfirewall, we have to
+//                    // restart the snapinit process if we want the change to
+//                    // be taken in account
+//                    //
+//                    affected_services.insert(service_name);
+//
+//                    QDomElement nice(result[0].toElement());
+//                    // remove existing children
+//                    while(!nice.firstChild().isNull())
+//                    {
+//                        nice.removeChild(result[0].firstChild());
+//                    }
+//                    // now save the new nice value
+//                    QDomText nice_text(doc.createTextNode(use_default_value ? QString("%1").arg(nice_value) : new_value));
+//                    nice.appendChild(nice_text);
+//
+//                    QString output(doc.toString(2));
+//                    QByteArray output_utf8(output.toUtf8());
+//                    file.seek(0L);
+//                    file.write(output_utf8);
+//                    file.resize(output_utf8.size());
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
 
     return false;
 }

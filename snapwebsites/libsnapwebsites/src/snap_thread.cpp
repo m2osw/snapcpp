@@ -603,10 +603,10 @@ snap_thread::snap_lock::~snap_lock()
  */
 void snap_thread::snap_lock::unlock()
 {
-    if(f_mutex)
+    if(f_mutex != nullptr)
     {
         f_mutex->unlock();
-        f_mutex.reset();
+        f_mutex = nullptr;
     }
 }
 
@@ -821,7 +821,7 @@ snap_thread::snap_thread(QString const & name, snap_runner * runner)
 snap_thread::~snap_thread()
 {
     stop();
-    f_runner->f_thread.reset();
+    f_runner->f_thread = nullptr;
 
     int const err(pthread_attr_destroy(&f_thread_attr));
     if(err != 0)
@@ -983,7 +983,7 @@ bool snap_thread::start()
     f_started = false;
     f_stopping = false; // make sure it is reset
 
-    int const err(pthread_create(f_thread_id.ptr(), &f_thread_attr, &func_internal_start, this));
+    int const err(pthread_create(&f_thread_id, &f_thread_attr, &func_internal_start, this));
     if(err != 0)
     {
         SNAP_LOG_ERROR("the thread could not be created, error #")(err);

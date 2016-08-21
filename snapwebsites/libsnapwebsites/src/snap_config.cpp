@@ -15,19 +15,32 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
 #include "snap_config.h"
+
+// our lib
+//
 #include "log.h"
 #include "not_reached.h"
+#include "snap_thread.h"
 
+// Qt lib
 #include <QFile>
 
+// C++ lib
+//
 #include <memory>
 #include <sstream>
 
+// C lib
+//
 #include <syslog.h>
 #include <unistd.h>
 
+
 #include "poison.h"
+
 
 namespace snap
 {
@@ -51,6 +64,14 @@ namespace
  * we would want you to make use of this interface instead.
  */
 std::shared_ptr<snap_configurations>        g_configurations;
+
+
+/** \brief Mutex used to make the configuration thread safe.
+ *
+ * This object is used whenever the configuration is accessed in
+ * order to make it thread safe.
+ */
+std::shared_ptr<snap_thread::snap_mutex>    g_mutex;
 
 
 /** \brief The path to the configuration files.
@@ -451,6 +472,12 @@ snap_configurations::snap_configurations()
  * before you create threads, or make sure the other threads never
  * access the configuration data.
  *
+ * \warning
+ * The implementation of the snap_config objects is thread safe, but
+ * only if you make sure that you call this function once before
+ * you create any threads. In other words, this very function is
+ * not actually thread safe.
+ *
  * \return A pointer to the snap_configurations object.
  */
 snap_configurations::pointer_t snap_configurations::get_instance()
@@ -460,8 +487,18 @@ snap_configurations::pointer_t snap_configurations::get_instance()
         // WARNING: cannot use std::make_shared<>() because the singleton
         //          has a private constructor
         //
-        g_configurations.reset(new snap_configurations());
+
+        // first do all allocations, so if one fails, it is exception safe
+        //
+        std::shared_ptr<snap_configurations> configurations(new snap_configurations());
+        std::shared_ptr<snap_thread::snap_mutex> mutex(new snap_thread::snap_mutex());
+
+        // now that all allocations were done, save the results
+        //
+        g_configurations = configurations;
+        g_mutex = mutex;
     }
+
     return g_configurations;
 }
 
@@ -475,6 +512,7 @@ snap_configurations::pointer_t snap_configurations::get_instance()
  */
 std::string const & snap_configurations::get_configuration_path() const
 {
+    snap_thread::snap_lock lock(*g_mutex);
     return g_configurations_path;
 }
 
@@ -497,6 +535,8 @@ std::string const & snap_configurations::get_configuration_path() const
  */
 void snap_configurations::set_configuration_path(std::string const & path)
 {
+    snap_thread::snap_lock lock(*g_mutex);
+
     // prevent changing the path once we started loading files.
     //
     if(g_configuration_has_started)
@@ -518,27 +558,6 @@ void snap_configurations::set_configuration_path(std::string const & path)
 }
 
 
-/** \brief Check whether a certain configuration file has a certain parameter.
- *
- * This function reads the specified configuration file and then check
- * whether it defines the specified parameter. If so, it returns true.
- * If not, it returns false.
- *
- * \warning
- * Note that this function forces a read of the specified configuration
- * file since the only way to know whether that parameter exists in the
- * configuration is to read it.
- *
- * \param[in] configuration_filename  The name of the configuration file to read.
- * \param[in] parameter_name  The parameter to check the presence of.
- */
-bool snap_configurations::snap_configurations::has_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
-{
-    auto const config(get_configuration(configuration_filename));
-    return config->has_parameter(parameter_name);
-}
-
-
 /** \brief Get a constant reference to all the parameters.
  *
  * Once in a while it may be useful to gain access to the entire list
@@ -555,6 +574,7 @@ bool snap_configurations::snap_configurations::has_parameter(std::string const &
  */
 snap_configurations::parameter_map_t const & snap_configurations::get_parameters(std::string const & configuration_filename) const
 {
+    snap_thread::snap_lock lock(*g_mutex);
     auto const config(get_configuration(configuration_filename));
     return config->get_parameters();
 }
@@ -576,24 +596,9 @@ snap_configurations::parameter_map_t const & snap_configurations::get_parameters
  */
 void snap_configurations::set_parameters(std::string const & configuration_filename, parameter_map_t const & params)
 {
+    snap_thread::snap_lock lock(*g_mutex);
     auto const config(get_configuration(configuration_filename));
     config->set_parameters(params);
-}
-
-
-/** \brief Replace the value of one parameter.
- *
- * This function replaces the value of parameter \p parameter_name
- * in configuration file \p configuration_filename with \p value.
- *
- * \param[in] configuration_filename  The name of the configuration file to change.
- * \param[in] parameter_name  The name of the parameter to modify.
- * \param[in] value  The new value of the parameter.
- */
-void snap_configurations::set_parameter(std::string const & configuration_filename, std::string const & parameter_name, std::string const & value)
-{
-    auto const config(get_configuration(configuration_filename));
-    config->set_parameter(parameter_name, value);
 }
 
 
@@ -613,8 +618,48 @@ void snap_configurations::set_parameter(std::string const & configuration_filena
  */
 std::string snap_configurations::get_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
 {
+    snap_thread::snap_lock lock(*g_mutex);
     auto const config(get_configuration(configuration_filename));
     return config->get_parameter(parameter_name);
+}
+
+
+/** \brief Check whether a certain configuration file has a certain parameter.
+ *
+ * This function reads the specified configuration file and then check
+ * whether it defines the specified parameter. If so, it returns true.
+ * If not, it returns false.
+ *
+ * \warning
+ * Note that this function forces a read of the specified configuration
+ * file since the only way to know whether that parameter exists in the
+ * configuration is to read it.
+ *
+ * \param[in] configuration_filename  The name of the configuration file to read.
+ * \param[in] parameter_name  The parameter to check the presence of.
+ */
+bool snap_configurations::snap_configurations::has_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
+{
+    snap_thread::snap_lock lock(*g_mutex);
+    auto const config(get_configuration(configuration_filename));
+    return config->has_parameter(parameter_name);
+}
+
+
+/** \brief Replace the value of one parameter.
+ *
+ * This function replaces the value of parameter \p parameter_name
+ * in configuration file \p configuration_filename with \p value.
+ *
+ * \param[in] configuration_filename  The name of the configuration file to change.
+ * \param[in] parameter_name  The name of the parameter to modify.
+ * \param[in] value  The new value of the parameter.
+ */
+void snap_configurations::set_parameter(std::string const & configuration_filename, std::string const & parameter_name, std::string const & value)
+{
+    snap_thread::snap_lock lock(*g_mutex);
+    auto const config(get_configuration(configuration_filename));
+    config->set_parameter(parameter_name, value);
 }
 
 
