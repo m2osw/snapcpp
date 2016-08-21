@@ -35,11 +35,11 @@
     </field>
     <field name="admin_ips" type="input">
       <label>List of Administrator IPs</label>
-      <description>Enter the <strong>space separator</strong> list of IPs that your administrators use to access this computer.</description>
+      <description>Enter the <strong>space separated</strong> list of IPs that your administrators use to access this computer.</description>
     </field>
     <field name="private_network_ips" type="input">
       <label>Private Network IPs</label>
-      <description>Enter the <strong>space separator</strong> list of IPs of all the computers that may access this computer so we can open the corresponding ports in the firewall.</description>
+      <description>Enter the <strong>space separated</strong> list of IPs of all the computers that may access this computer so we can open the corresponding ports in the firewall.</description>
     </field>
   </fields>
   <packages>snapfirewall</packages>
@@ -91,7 +91,7 @@
           if(found) {
             print "\tpre-up /etc/network/firewall"
           }
-        }' ~/tmp/d.txt
+        }' /etc/network/interfaces
 
 
     # The packager does not install the firewall since it requires

@@ -78,7 +78,10 @@
 # Bad TCP packets (from the wrong addresses)
 # We just don't respond
 
-# Let out local network computers communicate via our VPN
+# Let the administrator connect to this computer
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s @ADMIN_IPS@ -j RETURN
+
+# Let our local network computers communicate via our VPN
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s @PRIVATE_NETWORK_IPS@ -j RETURN
 
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
@@ -95,6 +98,7 @@
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j DROP
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j DROP
+
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j DROP
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
@@ -130,11 +134,15 @@
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p tcp -m tcp -s @PUBLIC_IP@ -j ACCEPT
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p udp -m udp -s @PUBLIC_IP@ -j ACCEPT
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p icmp -m icmp --icmp-type any -s @PUBLIC_IP@ -j ACCEPT
--A OUTPUT -o @PUBLIC_INTERFACE@ -j REJECT
 
 -A OUTPUT -o @PRIVATE_INTERFACE@ -p tcp -m tcp -j ACCEPT
 -A OUTPUT -o @PRIVATE_INTERFACE@ -p udp -m udp -j ACCEPT
 -A OUTPUT -o @PRIVATE_INTERFACE@ -p icmp -m icmp --icmp-type any -j ACCEPT
+
+# If the public and private interfaces are the same, then we accept
+# nearly everything over that wire... so the REJECT here will probably
+# never be reached...
+-A OUTPUT -o @PUBLIC_INTERFACE@ -j REJECT
 -A OUTPUT -o @PRIVATE_INTERFACE@ -j REJECT
 
 # Apply all of that now
