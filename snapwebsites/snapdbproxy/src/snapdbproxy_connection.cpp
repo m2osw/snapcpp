@@ -125,6 +125,13 @@ snapdbproxy_connection::~snapdbproxy_connection()
 {
     // WARNING: do not close f_socket here, our parent (snapdbproxy_thread)
     //          takes care of that
+
+    // TODO:
+    // Note that on errors we still force close the socket, and we may
+    // want to anyway revisit this scheme because the parent destructor
+    // only happens when another connection comes in... and that means
+    // we keep that socket opened for all that time, whether our thread
+    // died a long time ago or not.
 }
 
 
@@ -132,6 +139,9 @@ void snapdbproxy_connection::run()
 {
     // let the other process push the whole order before moving forward
     //sched_yield();
+
+    int const socket_on_entry(f_socket);
+    SNAP_LOG_TRACE("starting new snapdbproxy connection thread (")(f_socket)(").");
 
     try
     {
@@ -194,7 +204,16 @@ void snapdbproxy_connection::run()
                 // or some transmission error (although really, with
                 // TCP/IP transmission errors rarely happen.)
                 //
-//SNAP_LOG_WARNING("socket is gone or order was invalid... ")(f_socket);
+                if(order.validOrder())
+                {
+                    SNAP_LOG_TRACE("snapdbproxy connection socket is gone (")(f_socket)(").");
+                }
+                else
+                {
+                    SNAP_LOG_TRACE("snapdbproxy received an invalid order (")(f_socket)(").");
+                }
+
+                snap::NOTUSED(::close(f_socket));
                 f_socket = -1;
             }
         }
@@ -209,6 +228,8 @@ void snapdbproxy_connection::run()
         SNAP_LOG_WARNING("thread received an unknown exception");
     }
     // exit thread normally
+
+    SNAP_LOG_TRACE("ending snapdbproxy connection thread (")(socket_on_entry)(").");
 }
 
 
@@ -458,6 +479,7 @@ void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const &
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        snap::NOTUSED(::close(f_socket));
         f_socket = -1;
     }
 }
@@ -488,6 +510,7 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
 
     if(!f_proxy.sendResult(*this, result))
     {
+        snap::NOTUSED(::close(f_socket));
         f_socket = -1;
     }
 }
@@ -537,6 +560,7 @@ void snapdbproxy_connection::fetch_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        snap::NOTUSED(::close(f_socket));
         f_socket = -1;
     }
 }
@@ -558,6 +582,7 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        snap::NOTUSED(::close(f_socket));
         f_socket = -1;
     }
 
@@ -597,6 +622,7 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        snap::NOTUSED(::close(f_socket));
         f_socket = -1;
     }
 }
@@ -638,6 +664,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        snap::NOTUSED(::close(f_socket));
         f_socket = -1;
     }
 }

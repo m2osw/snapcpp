@@ -42,8 +42,9 @@
 // ourselves
 //
 #include "snapdbproxy.h"
+#include "version.h"
 
-// our lib
+// snapwebsites lib
 //
 #include "log.h"
 #include "qstring_stream.h"
@@ -201,7 +202,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     // --version
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        std::cerr << SNAPDBPROXY_VERSION_STRING << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -592,7 +593,8 @@ void snapdbproxy::process_connection(int const s)
     // only the main process calls this function so we can take the time
     // to check the f_connections vector and remove dead threads
     //
-    f_connections.erase(std::remove_if(
+    f_connections.erase(
+            std::remove_if(
                 f_connections.begin(),
                 f_connections.end(),
                 [](auto const & c)

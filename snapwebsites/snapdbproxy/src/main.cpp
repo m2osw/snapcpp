@@ -42,8 +42,9 @@
  */
 
 #include "snapdbproxy.h"
+#include "version.h"
 
-// our lib
+// snapwebsites lib
 //
 #include "log.h"
 
@@ -69,7 +70,7 @@ int main(int argc, char * argv[])
         //
         snapdbproxy dbproxy( argc, argv );
 
-        SNAP_LOG_INFO("--------------------------------- snapdbproxy started on ")(dbproxy.server_name());
+        SNAP_LOG_INFO("--------------------------------- snapdbproxy v" SNAPDBPROXY_VERSION_STRING " started on ")(dbproxy.server_name());
 
         // Now run!
         //
