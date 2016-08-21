@@ -290,10 +290,13 @@ bool dbproxy::display_value(QDomElement parent, snap_manager::status_t const & s
                 );
 
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "The Private Network IP Address of this computer:"
+                          "Cassandra Node IP Addresses:"
                         , s.get_field_name()
                         , s.get_value()
-                        , "Here you want to enter the Private Network IP Address. If you have your own private network, this is likely the eth0 or equivalent IP address. If you have OpenVPN, then it is the IP address shown in the tun0 interface (with ifconfig)."
+                        , "The list of <strong>comma separated</strong> IP addresses used to connect to Cassandra."
+                         " In general these are seed nodes, although it does not need to be."
+                         " The C++ Cassandra driver will adjust the information as"
+                         " required and connect to additional nodes automatically."
                         ));
         f.add_widget(field);
 

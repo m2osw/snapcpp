@@ -555,7 +555,9 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
                 QString const output(p.get_output(true));
                 if(output.trimmed() == "install ok installed")
                 {
-                    package_name_and_version += "<li>This bundle includes a script to test whether it is installed.</li>";
+                    package_name_and_version += "<li>Bundle \"";
+                    package_name_and_version += name.toUtf8().data();
+                    package_name_and_version += "\" is installed.</li>";
                 }
                 else
                 {

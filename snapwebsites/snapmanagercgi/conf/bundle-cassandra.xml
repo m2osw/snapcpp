@@ -12,7 +12,7 @@
   <fields>
     <field name="cluster_name" type="input">
       <label>Cluster Name</label>
-      <description>Enter the name of your Cassandra cluster. All the nodes must have the same cluster name.</description>
+      <description>Enter the name of your Cassandra cluster. <strong>All the nodes must have the same cluster name.</strong></description>
     </field>
     <field name="seeds" type="input">
       <label>Seeds</label>
@@ -20,7 +20,7 @@
     </field>
     <field name="listen_address" type="input">
       <label>Listen Address</label>
-      <description>Indicate the private IP address of this node (ifconfig for eth0 or equivalent).</description>
+      <description>Indicate the private IP address of this node (Try ifconfig and take the address for tun0 or eth0, make sure to use the secured IP address if you are using OpenVPN).</description>
     </field>
   </fields>
   <preinst>
