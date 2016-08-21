@@ -33,11 +33,17 @@
  */
 #include    "advgetopt.h"
 
+// C++ lib
+//
+#include    <algorithm>
+#include    <fstream>
 #include    <fstream>
 #include    <iostream>
 #include    <iomanip>
 #include    <sstream>
 
+// C lib
+//
 #include    <stdarg.h>
 #include    <stdlib.h>
 #include    <errno.h>
@@ -505,10 +511,18 @@ void getopt::reset(int argc
                     /*NOTREACHED*/
                 }
                 std::string name(str_name, e - str_name);
+                std::replace(name.begin(), name.end(), '_', '-');
                 if(opt_by_long_name.find(name) == opt_by_long_name.end())
                 {
-                    usage(status_t::error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), filename.c_str());
-                    /*NOTREACHED*/
+                    // as a fallback allow _ in command line options
+                    // (although either way you cannot have a mix of - and _ ...)
+                    std::replace(name.begin(), name.end(), '-', '_');
+                    if(opt_by_long_name.find(name) == opt_by_long_name.end())
+                    {
+                        usage(status_t::error, "unknown options \"%s\" found in configuration file \"%s\" on line %d",
+                                        name.c_str(), filename.c_str(), line);
+                        /*NOTREACHED*/
+                    }
                 }
                 if((opts[opt_by_long_name[name.c_str()]].f_flags & GETOPT_FLAG_CONFIGURATION_FILE) == 0)
                 {
@@ -575,7 +589,7 @@ void getopt::reset(int argc
     // check the environment variable if defined
     if(environment_variable_name != nullptr && *environment_variable_name != '\0')
     {
-        const char *s(getenv(environment_variable_name));
+        char const * s(getenv(environment_variable_name));
         if(s != nullptr)
         {
             // this is exactly like the command line only in an environment variable
@@ -600,7 +614,7 @@ void getopt::reset(int argc
                 else if(*s == '"' || *s == '\'')
                 {
                     // support quotations and remove them from the argument
-                    const char quote = *s++;
+                    char const quote(*s++);
                     while(*s != '\0' && *s != quote)
                     {
                         a += *s++;
@@ -876,7 +890,7 @@ char const * getopt::get_default(std::string const & name) const
         throw getopt_exception_undefined("command line name cannot be empty");
     }
 
-    int long_option(name.length() != 1);
+    int const long_option(name.length() != 1);
     for(int i(0); f_options[i].f_arg_mode != argument_mode_t::end_of_options; ++i)
     {
         if(long_option)
@@ -970,12 +984,12 @@ long getopt::get_long(std::string const & name, int idx, long min, long max)
     int max_idx = size(name);
     if(max_idx == 0)
     {
-        const char *d(get_default(name));
+        char const * d(get_default(name));
         if(d == nullptr)
         {
             throw getopt_exception_undefined("the \"" + name + "\" option was not defined on the command line");
         }
-        char *end;
+        char * end;
         result = strtol(d, &end, 10);
         if(end != d + strlen(d))
         {
@@ -990,14 +1004,14 @@ long getopt::get_long(std::string const & name, int idx, long min, long max)
     }
     else
     {
-        optmap_info& opt(f_map[name]);
+        optmap_info & opt(f_map[name]);
         if(!opt.f_cvt)
         {
             // we did not yet convert to integers do that now
             for(int i = 0; i < max_idx; ++i)
             {
-                char *end;
-                const char *s(opt.f_val[i].c_str());
+                char * end;
+                char const * s(opt.f_val[i].c_str());
                 opt.f_int.push_back(strtol(s, &end, 10));
                 if(end != s + opt.f_val[i].size())
                 {
@@ -1043,7 +1057,7 @@ std::string getopt::get_string(std::string const & name, int idx) const
     optmap_t::const_iterator it(f_map.find(name));
     if(it == f_map.end())
     {
-        const char *d(get_default(name));
+        char const * d(get_default(name));
         if(d != nullptr)
         {
             return d;
@@ -1051,7 +1065,7 @@ std::string getopt::get_string(std::string const & name, int idx) const
         throw getopt_exception_undefined("the --" + name + " option was not defined on the command line");
     }
 
-    const size_t max_idx(it->second.f_val.size());
+    size_t const max_idx(it->second.f_val.size());
     if(static_cast<size_t>(idx) >= max_idx)
     {
         throw getopt_exception_undefined("not this many options were defined on the command line");
