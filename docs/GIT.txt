@@ -48,4 +48,11 @@ git commit --amend -c 123...123
 git remote set-url origin git@github.com:m2osw/snapcpp.git
 
 
+# Remove one or more files from your last commit (assuming you did not push yet)
+git reset --soft HEAD^
+git reset HEAD path/to/unwanted_file
+#...repeat previous command for each file to be removed from the last commit...
+git commit -c ORIG_HEAD
+
+
 # vim: syntax=sh
