@@ -27,7 +27,7 @@ then
     #
     if ! snapcreatetables
     then
-        echo "notice: snapcreatetables failed."
+        echo "notice: snapcreatetables failed. This is common on a first installation that does not yet have a database installed and connected."
     fi
 
     if systemctl is-enabled ${PKGNAME} 2> /dev/null
