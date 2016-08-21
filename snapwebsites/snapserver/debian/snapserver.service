@@ -3,7 +3,8 @@
 
 [Unit]
 Description=Snap! Websites snapserver daemon
-After=snapcommunicator.service
+After=snapcommunicator.service snapfirewall.service
+Requires=snapcommunicator.service snaplock.service snapdbproxy.service
 
 [Service]
 Type=simple

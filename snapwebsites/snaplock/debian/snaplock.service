@@ -4,6 +4,7 @@
 [Unit]
 Description=Snap! Websites snaplock daemon
 After=snapcommunicator.service
+Requires=snapcommunicator.service
 
 [Service]
 Type=simple

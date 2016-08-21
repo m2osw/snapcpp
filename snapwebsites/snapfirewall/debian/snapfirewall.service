@@ -4,6 +4,7 @@
 [Unit]
 Description=Snap! Websites snapfirewall daemon
 After=snapcommunicator.service
+Requires=snapcommunicator.service snapdbproxy.service
 
 [Service]
 Type=simple

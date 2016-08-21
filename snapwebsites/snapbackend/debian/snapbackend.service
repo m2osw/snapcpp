@@ -4,6 +4,7 @@
 [Unit]
 Description=Snap! Websites snapbackend CRON daemon
 After=snapcommunicator.service
+Requires=snapcommunicator.service snaplock.service snapdbproxy.service
 
 [Service]
 # See also the snapbackend.timer file

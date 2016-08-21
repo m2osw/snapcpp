@@ -4,6 +4,7 @@
 [Unit]
 Description=Snap! Websites snapdbproxy daemon
 After=snapcommunicator.service
+Requires=snapcommunicator.service
 
 [Service]
 Type=simple

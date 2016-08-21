@@ -4,6 +4,7 @@
 [Unit]
 Description=Snap! Websites pagelist backend
 After=snapcommunicator.service
+Requires=snapcommunicator.service snaplock.service snapdbproxy.service
 
 [Service]
 Type=simple
