@@ -42,6 +42,10 @@
   <postinst>
     systemctl stop apache2
 
+    # By default the rewrite module is not available
+    #
+    a2enmod rewrite
+
     # setup the default apache2 configuration file
     #
     sed -i.bak \
