@@ -89,9 +89,9 @@ include_directories( SYSTEM
 )
 
 include_directories(
+    ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/lib
-    ${PROJECT_SOURCE_DIR}/lib
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
