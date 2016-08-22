@@ -31,6 +31,7 @@
 #include "not_used.h"
 #include "qdomhelpers.h"
 #include "qdomxpath.h"
+#include "snap_cassandra.h"
 #include "string_pathinfo.h"
 #include "tokenize_string.h"
 
@@ -216,19 +217,56 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    // TODO: find a way to get the configuration filename for snapdbproxy
-    //       (i.e. take it from the XML?)
     {
         snap_config snap_dbproxy_conf(g_configuration_filename);
 
-        snap_manager::status_t const my_address(
+        snap_manager::status_t const host_list(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
                     , "cassandra_host_list"
                     , snap_dbproxy_conf["cassandra_host_list"]);
-        server_status.set_field(my_address);
+        server_status.set_field(host_list);
     }
 
+    try
+    {
+        // if the connection fails, we cannot have either of the following
+        // fields so the catch() makes sure to avoid them
+        //
+        snap::snap_cassandra cassandra;
+        cassandra.connect();
+
+        auto context(cassandra.get_snap_context());
+        if(!context)
+        {
+            // no context yet, offer to create the context
+            //
+            snap_manager::status_t const create_context(
+                          snap_manager::status_t::state_t::STATUS_STATE_INFO
+                        , get_plugin_name()
+                        , "cassandra_create_context"
+                        , "create");
+            server_status.set_field(create_context);
+        }
+        else
+        {
+            // database is available and context is available,
+            // offer to create the tables (it should be automatic
+            // though, but this way we can click on this one last
+            // time before installing a website)
+            //
+            snap_manager::status_t const create_tables(
+                          snap_manager::status_t::state_t::STATUS_STATE_INFO
+                        , get_plugin_name()
+                        , "cassandra_create_tables"
+                        , "create");
+            server_status.set_field(create_tables);
+        }
+    }
+    catch(snap::snap_cassandra_not_available_exception const &)
+    {
+        // ignore completely, we just cannot connect at this time
+    }
 }
 
 
@@ -252,31 +290,6 @@ bool dbproxy::display_value(QDomElement parent, snap_manager::status_t const & s
 {
     QDomDocument doc(parent.ownerDocument());
 
-    //if(s.get_field_name() == "disabled")
-    //{
-    //    // the list if frontend snapmanagers that are to receive statuses
-    //    // of the cluster computers; may be just one computer; should not
-    //    // be empty; shows a text input field
-    //    //
-    //    snap_manager::form f(
-    //              get_plugin_name()
-    //            , s.get_field_name()
-    //            , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-    //            );
-
-    //    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-    //                      "Enable/Disable Firewall"
-    //                    , s.get_field_name()
-    //                    , s.get_value()
-    //                    , "Define whether the dbproxy is \"enabled\" or \"disabled\"."
-    //                    ));
-    //    f.add_widget(field);
-
-    //    f.generate(parent, uri);
-
-    //    return true;
-    //}
-
     if(s.get_field_name() == "cassandra_host_list")
     {
         // the list if frontend snapmanagers that are to receive statuses
@@ -297,6 +310,66 @@ bool dbproxy::display_value(QDomElement parent, snap_manager::status_t const & s
                          " In general these are seed nodes, although it does not need to be."
                          " The C++ Cassandra driver will adjust the information as"
                          " required and connect to additional nodes automatically."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "cassandra_create_context")
+    {
+        // the list if frontend snapmanagers that are to receive statuses
+        // of the cluster computers; may be just one computer; should not
+        // be empty; shows a text input field
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Create Snap! Websites Context:"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "The Snap! Websites Server makes use of a Cassandra context named snap_websites."
+                         " It looks like that context does not yet exist."
+                         " To create it, just click on the Save button. The value of the field is currently ignored."
+                         " Note: be patient. The creation of the context can take a bit of time..."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "cassandra_create_tables")
+    {
+        // the list if frontend snapmanagers that are to receive statuses
+        // of the cluster computers; may be just one computer; should not
+        // be empty; shows a text input field
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Create Missing Snap! Websites Tables:"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "The Snap! Websites Server makes use of a Cassandra context with various tables."
+                         " Those tables must be created before one can install a Snap! domain and website."
+                         " This function creates the missing tables. Tables that are already there are untouched."
+                         " (i.e. we use CREATE IF NOT EXIST ...)."
+                         " We ignore the value of the field here. Just click on the Save button to create the missing tables."
+                         " Note: assuming that you install snapdb, create the context and then install other modules, then the"
+                         " tables will get installed when installing those modules. To help developers, however, it can be"
+                         " practical to have this button."
                         ));
         f.add_widget(field);
 
@@ -340,6 +413,22 @@ bool dbproxy::apply_setting(QString const & button_name, QString const & field_n
         affected_services.insert("snapdbproxy");
 
         return f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_host_list", new_value);
+    }
+
+    if(field_name == "cassandra_create_context")
+    {
+        // TODO: use snap::process to collect the output
+        //
+        NOTUSED(system("snapcreatecontext"));
+        return true;
+    }
+
+    if(field_name == "cassandra_create_tables")
+    {
+        // TODO: use snap::process to collect the output
+        //
+        NOTUSED(system("snapcreatetables"));
+        return true;
     }
 
     return false;
