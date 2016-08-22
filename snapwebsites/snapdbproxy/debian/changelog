@@ -1,14 +1,8 @@
-snapdbproxy (1.0.2.2~xenial) xenial; urgency=high
+snapdbproxy (1.0.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Removed the Cassandra database test from the manager plugin. It's wrong.
 
- -- Build Server <build@m2osw.com>  Mon, 22 Aug 2016 02:00:52 -0700
-
-snapdbproxy (1.0.2.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 21 Aug 2016 02:00:53 -0700
+ -- Alexis <alexis@m2osw.com>  Mon, 22 Aug 2016 02:00:52 -0700
 
 snapdbproxy (1.0.2.0~xenial) xenial; urgency=high
 
