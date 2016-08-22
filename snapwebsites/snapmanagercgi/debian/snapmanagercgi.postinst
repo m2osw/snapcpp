@@ -10,16 +10,17 @@ then
     # Create a default user editable snapmanager.conf file if it does not
     # exist yet
     #
-    if test ! -f /etc/snapwebsites/snapwebsites.d/snapmanager.conf
+    SNAPMANAGER_USER_CONFIGURATION_FILENAME=/etc/snapwebsites/snapwebsites.d/snapmanager.conf
+    if test ! -f $SNAPMANAGER_USER_CONFIGURATION_FILENAME
     then
         # We do not have an IP address to add to the clients variable
         # but the user should edit that specific variable
         #
-        echo "# Various changes to get snapmanager.cgi and snapmanagerdaemon to work" >/etc/snapwebsites/snapwebsites.d/snapmanager.conf
-        echo "# for more info and details about the variables defined here, check" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
-        echo "# the file of the same name on directory up" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
-        echo "#" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
-        echo "#clients=" >>/etc/snapwebsites/snapwebsites.d/snapmanager.conf
+        echo "# Various changes to get snapmanager.cgi and snapmanagerdaemon to work" >$SNAPMANAGER_USER_CONFIGURATION_FILENAME
+        echo "# for more info and details about the variables defined here, check" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
+        echo "# the file of the same name one directory up" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
+        echo "#" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
+        echo "#clients=" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
     fi
 
     # Create the snapmanagercgi.log file because the www-data user may have

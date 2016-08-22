@@ -383,6 +383,7 @@ private:
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_ping;             // UDP/IP
     snap::snap_communicator::snap_connection::pointer_t f_loadavg_timer;    // a 1 second timer to calculate load (used to load balance)
+    float                                               f_last_loadavg;
     snap_addr::addr                                     f_my_address;
     QString                                             f_local_services;
     sorted_list_of_strings_t                            f_local_services_list;
@@ -4031,6 +4032,14 @@ void snap_communicator_server::process_load_balancing()
         // represents 1/16th of the machine capacity.
         //
         float const avg(std::stof(avg_str) / f_number_of_processors);
+
+        // TODO: see whether the current epsilon is good enough
+        if(fabsf(f_last_loadavg - avg) < 0.1f)
+        {
+            // do not send if it did not change lately
+            return;
+        }
+        f_last_loadavg = avg;
 
         snap::snap_communicator_message load_avg;
         load_avg.set_command("LOADAVG");
