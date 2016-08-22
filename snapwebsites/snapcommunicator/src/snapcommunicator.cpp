@@ -366,6 +366,7 @@ public:
 
 private:
     void                        do_root_work();
+    void                        drop_privileges();
     void                        refresh_heard_of();
     void                        shutdown(bool full);
     void                        listen_loadavg(snap::snap_communicator_message const & message);
@@ -377,6 +378,8 @@ private:
     QString                                             f_server_name;
     int                                                 f_number_of_processors = 1;
     QString                                             f_neighbors_cache_filename;
+    QString                                             f_username;
+    QString                                             f_groupname;
     std::string                                         f_public_ip;        // f_listener IP address
     snap::snap_communicator::pointer_t                  f_communicator;
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
@@ -1903,15 +1906,15 @@ void snap_communicator_server::do_root_work()
     // get the user and group name that we want to use for the directories
     // we are about to create and then to become (i.e. to drop our permissions)
     //
-    QString username(f_server->get_parameter("user"));
-    if(username.isEmpty())
+    f_username = f_server->get_parameter("user");
+    if(f_username.isEmpty())
     {
-        username = "snapwebsites";
+        f_username = "snapwebsites";
     }
-    QString groupname(f_server->get_parameter("group"));
-    if(groupname.isEmpty())
+    f_groupname = f_server->get_parameter("group");
+    if(f_groupname.isEmpty())
     {
-        groupname = "snapwebsites";
+        f_groupname = "snapwebsites";
     }
 
     // make sure the path to the lock file exists
@@ -1932,7 +1935,7 @@ void snap_communicator_server::do_root_work()
         // for sub-processes to be able to access that folder we need to
         // also setup the user and group as expected
         //
-        snap::chownnm(lock_path, username, groupname);
+        snap::chownnm(lock_path, f_username, f_groupname);
     }
 
     // create the run-time directory because other processes may not
@@ -1959,11 +1962,17 @@ void snap_communicator_server::do_root_work()
         // for sub-processes to be able to access that folder we need to
         // also setup the user and group as expected
         //
-        snap::chownnm(run_path, username, groupname);
+        snap::chownnm(run_path, f_username, f_groupname);
     }
 
 // ------------------- this must be last, any step that require root privileges must be done before this line --------------------
 
+    drop_privileges();
+}
+
+
+void snap_communicator_server::drop_privileges()
+{
     // drop to non-priv user/group if we are root
     // (i.e. this code is skip on programmer's machines)
     //
@@ -1972,38 +1981,40 @@ void snap_communicator_server::do_root_work()
         // Group first, then user. Otherwise you lose privs to change your group!
         //
         {
-            struct group const * grp(getgrnam(groupname.toUtf8().data()));
+            struct group const * grp(getgrnam(f_groupname.toUtf8().data()));
             if( nullptr == grp )
             {
-                SNAP_LOG_FATAL("Cannot locate group \"")(groupname)("\"! Create it first, then run the server.");
+                SNAP_LOG_FATAL("Cannot locate group \"")(f_groupname)("\"! Create it first, then run the server.");
                 throw snap::snap_exception(QString("Cannot locate group \"%1\"! Create it first, then run the server.")
-                                    .arg(groupname));
+                                    .arg(f_groupname));
             }
             int const sw_grp_id(grp->gr_gid);
             //
-            if( setgid( sw_grp_id ) != 0 )
+            if( setegid( sw_grp_id ) != 0 )
             {
-                SNAP_LOG_FATAL("Cannot drop privileges to group \"")(groupname)("\"!");
+                int const e(errno);
+                SNAP_LOG_FATAL("Cannot drop privileges to group \"")(f_groupname)("\"! errno: ")(e)(", ")(strerror(e));
                 throw snap::snap_exception(QString("Cannot drop privileges group \"%1\"!")
-                                    .arg(groupname));
+                                    .arg(f_groupname));
             }
         }
         //
         {
-            struct passwd const * pswd(getpwnam(username.toUtf8().data()));
+            struct passwd const * pswd(getpwnam(f_username.toUtf8().data()));
             if( nullptr == pswd )
             {
-                SNAP_LOG_FATAL("Cannot locate user \"")(username)("\"! Create it first, then run the server.");
+                SNAP_LOG_FATAL("Cannot locate user \"")(f_username)("\"! Create it first, then run the server.");
                 throw snap::snap_exception(QString("Cannot locate user \"%1\"! Create it first, then run the server.")
-                                    .arg(username));
+                                    .arg(f_username));
             }
             int const sw_usr_id(pswd->pw_uid);
             //
-            if( setuid( sw_usr_id ) != 0 )
+            if( seteuid( sw_usr_id ) != 0 )
             {
-                SNAP_LOG_FATAL("Cannot drop privileges to user \"")(username)("\"! Create it first, then run the server.");
+                int const e(errno);
+                SNAP_LOG_FATAL("Cannot drop privileges to user \"")(f_username)("\"! Create it first, then run the server. errno: ")(e)(", ")(strerror(e));
                 throw snap::snap_exception(QString("Cannot drop privileges to user \"%1\"! Create it first, then run the server.")
-                                    .arg(username));
+                                    .arg(f_username));
             }
         }
     }
@@ -3094,9 +3105,24 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 // also if you are a programmer we cannot do a systemctl
                 // restart so we just skip the feature...
                 //
+                seteuid(0);
                 if(getuid() == 0)
                 {
+                    // we could become root to restart...
+                    //
+                    // TODO: Look into whether we could instead have a
+                    //       way to send a message (i.e. STOP) and exit
+                    //       with a code that requires systemctl to restart
+                    //       us; that would be cleaner and we could use
+                    //       setuid() again instead of seteuid()...
+                    //       (see drop_privileges() for details)
+                    //
+                    setegid(0);
                     snap::NOTUSED(system("systemctl restart snapcommunicator"));
+
+                    // make sure to not continue as root!
+                    //
+                    drop_privileges();
                 }
                 else
                 {
