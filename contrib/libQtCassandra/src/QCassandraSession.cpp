@@ -310,7 +310,7 @@ CassTools::timeout_t QCassandraSession::timeout() const
  *      session->setTimeout(old_timeout); // restore
  * \endcode
  *
- * It is strongly adviced that you make use of the QCassandraRequestTimeout
+ * It is strongly advised that you make use of the QCassandraRequestTimeout
  * class in order to do such changes to make sure that your timeout is
  * always removed once you are done with your work (i.e. RAII, exception
  * safe code):
