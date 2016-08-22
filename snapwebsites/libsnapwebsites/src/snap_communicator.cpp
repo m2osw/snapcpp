@@ -1704,7 +1704,7 @@ void snap_communicator::snap_connection::process_hup()
     //      case? because the get_socket() function will not return
     //      -1 after such errors...
 
-    SNAP_LOG_DEBUG("socket of connection \"")(f_name)("\" hang up.");
+    SNAP_LOG_DEBUG("socket ")(get_socket())(" of connection \"")(f_name)("\" hang up.");
 
     remove_from_communicator();
 }
@@ -4950,6 +4950,13 @@ std::string snap_communicator::snap_tcp_client_permanent_message_connection::get
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_timeout()
 {
+    // got a spurious call when already marked done
+    //
+    if(f_done)
+    {
+        return;
+    }
+
     // change the timeout delay although we will not use it immediately
     // if we start the thread or attempt an immediate connection, but
     // that way the user can change it by calling set_timeout_delay()
@@ -5695,7 +5702,7 @@ bool snap_communicator::remove_connection(snap_connection::pointer_t connection)
         return false;
     }
 
-    SNAP_LOG_TRACE("snap_communicator::remove_connection(): name=")(connection->get_name());
+    SNAP_LOG_TRACE("snap_communicator::remove_connection(): name=")(connection->get_name())(" of ")(f_connections.size())(" connections");
     f_connections.erase(it);
 
     connection->connection_removed();

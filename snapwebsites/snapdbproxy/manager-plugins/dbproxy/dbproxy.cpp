@@ -228,6 +228,12 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(host_list);
     }
 
+// TODO: at this time the snap_cassandra makes use of snapdbproxy...
+//       which means that we can connect to that anyway! It is not
+//       a proof that CASSANDRA is not avaible. For that we need
+//       a snapcommunicator message CASSANDRASTATUS and we'll get
+//       a NOCASSANDRA or CASSANDRAREADY...
+return;
     try
     {
         // if the connection fails, we cannot have either of the following
