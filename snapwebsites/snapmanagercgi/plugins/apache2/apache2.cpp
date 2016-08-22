@@ -46,6 +46,8 @@ SNAP_PLUGIN_START(apache2, 1, 0)
 namespace
 {
 
+    std::string const SNAPMANAGER_APACHE_CONF = "/etc/apache2/sites-available/snapmanager-apache2.conf";
+    std::string const SNAPCGI_APACHE_CONF     = "/etc/apache2/sites-available/000-snap-apache2-default.conf";
 
 } // no name namespace
 
@@ -193,8 +195,8 @@ void apache2::on_retrieve_status(snap_manager::server_status & server_status)
 
     // retrieve the two status
     //
-    retrieve_status_of_conf(server_status, "snapmanager", "/etc/apache2/sites-available/snapmanager-apache2.conf");
-    retrieve_status_of_conf(server_status, "snapcgi", "/etc/apache2/sites-available/snapcgi-apache2.conf");
+    retrieve_status_of_conf(server_status, "snapmanager", SNAPMANAGER_APACHE_CONF );
+    retrieve_status_of_conf(server_status, "snapcgi",     SNAPCGI_APACHE_CONF     );
 }
 
 
@@ -380,8 +382,9 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
         // generate the path to the id_rsa file
         //
         std::string const conf_filename(field_name.startsWith("snapmanager::")
-                                            ? "/etc/apache2/sites-available/snapmanager-apache2.conf"
-                                            : "/etc/apache2/sites-available/snapcgi-apache2.conf");
+                                            ? SNAPMANAGER_APACHE_CONF
+                                            : SNAPCGI_APACHE_CONF
+                                       );
 
         // get the current data
         //

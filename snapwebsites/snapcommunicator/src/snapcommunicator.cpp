@@ -3105,7 +3105,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 // also if you are a programmer we cannot do a systemctl
                 // restart so we just skip the feature...
                 //
-                seteuid(0);
+                snap::NOTUSED(seteuid(0));
                 if(getuid() == 0)
                 {
                     // we could become root to restart...
@@ -3117,7 +3117,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     //       setuid() again instead of seteuid()...
                     //       (see drop_privileges() for details)
                     //
-                    setegid(0);
+                    snap::NOTUSED(setegid(0));
                     snap::NOTUSED(system("systemctl restart snapcommunicator"));
 
                     // make sure to not continue as root!
