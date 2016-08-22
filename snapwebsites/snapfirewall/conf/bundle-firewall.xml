@@ -60,7 +60,9 @@
       #
       # sine we know the name of the interface, we have all we need
       #
-      awk -vPUBLIC_INTERFACE="^iface ${BUNDLE_INSTALLATION_PUBLIC_INTERFACE}" \
+      INTERFACES=/etc/network/interfaces
+      cp ${INTERFACES} ${INTERFACES}.bak
+      awk --assign PUBLIC_INTERFACE="^iface ${BUNDLE_INSTALLATION_PUBLIC_INTERFACE}" \
         'BEGIN {
           found=0
         }
@@ -91,13 +93,14 @@
           if(found) {
             print "\tpre-up /etc/network/firewall"
           }
-        }' /etc/network/interfaces
+        }' ${INTERFACES}.bak &lt;${INTERFACES}.new
+        mv ${INTERFACES}.new ${INTERFACES}
 
 
     # The packager does not install the firewall since it requires
     # those IP addresses and interface names, so we set it up now
     #
-    /etc/network/firewwall
+    /etc/network/firewall
   </postinst>
 </bundle>
 <!--

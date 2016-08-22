@@ -42,14 +42,14 @@ PRIVATE_NETWORK_IPS="@BUNDLE_PRIVATE_NETWORK_IPS@"
 # Make sure the user entered all the parameters as expected
 # If installed from the bundle, this will be automatic
 #
-if [[ "$PUBLIC_IP" == *"BUNDLE_PUBLIC_IP"* ]] \
-     || [[ "$PUBLIC_INTERFACE" == *"BUNDLE_PUBLIC_INTERFACE"* ]] \
-     || [[ "$PRIVATE_IP" == *"BUNDLE_PRIVATE_IP"* ]] \
-     || [[ "$PRIVATE_INTERFACE" == *"BUNDLE_PRIVATE_INTERFACE"* ]] \
-     || [[ "$ADMIN_IPS" == *"BUNDLE_ADMIN_IPS"* ]] \
-     || [[ "$PRIVATE_NETWORK_IPS" == *"BUNDLE_PRIVATE_NETWORK_IPS"* ]]
+if test "${PUBLIC_IP#*BUNDLE_PUBLIC_IP}" != "${PUBLIC_IP}" \
+     || test "${PUBLIC_INTERFACE#*BUNDLE_PUBLIC_INTERFACE}" != "${PUBLIC_INTERFACE}" \
+     || test "${PRIVATE_IP#*BUNDLE_PRIVATE_IP}" != "${PRIVATE_IP}" \
+     || test "${PRIVATE_INTERFACE#*BUNDLE_PRIVATE_INTERFACE}" != "${PRIVATE_INTERFACE}" \
+     || test "${ADMIN_IPS#*BUNDLE_ADMIN_IPS}" != "${ADMIN_IPS}" \
+     || test "${PRIVATE_NETWORK_IPS#*BUNDLE_PRIVATE_NETWORK_IPS}" != "${PRIVATE_NETWORK_IPS}"
 then
-	echo "One or more of the firewall variables was not properly setup yet. Firewal NOT setup!"
+	echo "One or more of the firewall variables was not properly updated yet. Firewal NOT setup!"
 	exit 1;
 fi
 
