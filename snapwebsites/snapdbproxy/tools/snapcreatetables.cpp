@@ -1,4 +1,4 @@
-// Snap Websites Server -- snap websites server
+// Snap Websites Server -- create the snap websites tables
 // Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
