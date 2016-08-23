@@ -11,6 +11,14 @@ do
     fi
 done
 
+# Remove files representing each service offered by this package
+#
+SERVICES_DIR=/usr/share/snapwebsites/services
+rm -f $SERVICES_DIR/snapbackend.service
+rm -f $SERVICES_DIR/images.service
+rm -f $SERVICES_DIR/pagelist.service
+rm -f $SERVICES_DIR/sendmail.service
+
 #DEBHELPER#
 
 # vim: ts=4 sw=4 et nocindent

@@ -9,6 +9,11 @@ if [ "$1" = "configure" ]
 then
     PKGNAME=snapserver
 
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/snapserver.service
+
     # Make sure that the core table exists
     #
     if ! snapcreatetables

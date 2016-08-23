@@ -9,6 +9,10 @@ then
     systemctl stop ${PACKAGENAME}
 fi
 
+# Remove files representing each service offered by this package
+#
+SERVICES_DIR=/usr/share/snapwebsites/services
+rm -f $SERVICES_DIR/snapfirewall.service
 
 if [ "$1" = "purge" ]
 then

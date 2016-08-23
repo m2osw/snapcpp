@@ -42,6 +42,7 @@
 
 // C lib
 //
+#include <glob.h>
 #include <grp.h>
 #include <pwd.h>
 #include <sys/resource.h>
@@ -270,6 +271,39 @@ QString canonicalize_neighbors(QString const & neighbors)
     return list.join(",");
 }
 
+
+
+/** \brief Capture the glob pointer in a shared pointer, this deletes it.
+ *
+ * This function is used to RAII the pointer returned by glob.
+ *
+ * \param[in] g  The glob pointer.
+ */
+void glob_deleter(glob_t * g)
+{
+    globfree(g);
+}
+
+
+/** \brief Capture errors happening while glob() is running.
+ *
+ * This function gets called whenever glob() encounters an I/O error.
+ *
+ * \return 0 asking for glob() to stop ASAP.
+ */
+int glob_error_callback(const char * epath, int eerrno)
+{
+    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                  (epath)
+                  ("\". Got error: ")
+                  (eerrno)
+                  (", ")
+                  (strerror(eerrno))
+                  (".");
+
+    // do not abort on a directory read error...
+    return 0;
+}
 
 
 } // no name namespace
@@ -1777,6 +1811,71 @@ void snap_communicator_server::init()
         }
     }
 
+    // read the list of available services
+    //
+    {
+        QString path_to_services(f_server->get_parameter("services"));
+        if(path_to_services.isEmpty())
+        {
+            path_to_services = "/usr/share/snapwebsites/services";
+        }
+        path_to_services += "/*.service";
+        QByteArray pattern(path_to_services.toUtf8());
+        glob_t dir = glob_t();
+        int const r(glob(
+                      pattern.data()
+                    , GLOB_NOESCAPE
+                    , glob_error_callback
+                    , &dir));
+        std::shared_ptr<glob_t> ai(&dir, glob_deleter);
+
+        if(r != 0)
+        {
+            // do nothing when errors occur
+            //
+            switch(r)
+            {
+            case GLOB_NOSPACE:
+                SNAP_LOG_FATAL("glob() did not have enough memory to alllocate its buffers.");
+                throw snap::snap_exception("glob() did not have enough memory to alllocate its buffers.");
+
+            case GLOB_ABORTED:
+                SNAP_LOG_FATAL("glob() was aborted after a read error.");
+                throw snap::snap_exception("glob() was aborted after a read error.");
+
+            case GLOB_NOMATCH:
+                SNAP_LOG_FATAL("glob() could not find any status information.");
+                throw snap::snap_exception("glob() could not find any status information.");
+
+            default:
+                SNAP_LOG_FATAL(QString("unknown glob() error code: %1.").arg(r));
+                throw snap::snap_exception(QString("unknown glob() error code: %1.").arg(r));
+
+            }
+            snap::NOTREACHED();
+        }
+
+        for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+        {
+            char const * basename(strrchr(dir.gl_pathv[idx], '/'));
+            if(basename == nullptr)
+            {
+                basename = dir.gl_pathv[idx];
+            }
+            else
+            {
+                ++basename;
+            }
+            char const * end(strstr(basename, ".service"));
+            if(end == nullptr)
+            {
+                end = basename + strlen(basename);
+            }
+            QString const key(QString::fromUtf8(basename, end - basename));
+            f_local_services_list[key] = true;
+        }
+    }
+
     f_communicator = snap::snap_communicator::instance();
 
     int max_pending_connections(-1);
@@ -3132,48 +3231,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             break;
 
         case 'S':
-            if(command == "SERVICES")
-            {
-                if(udp)
-                {
-                    SNAP_LOG_ERROR("SERVICES is only accepted over a TCP connection.");
-                    return;
-                }
-
-                if(base)
-                {
-                    if(!message.has_parameter("list"))
-                    {
-                        SNAP_LOG_ERROR("SERVICES was called without a \"list\" parameter, it is mandatory.");
-                        return;
-                    }
-                    // the "service" parameter is the name of the service,
-                    // now we can process messages for this service
-                    //
-                    f_local_services_list = canonicalize_services(message.get_parameter("list"));
-
-                    // Since snapinit started us, this list cannot ever be empty!
-                    //
-                    if(f_local_services_list.isEmpty())
-                    {
-                        SNAP_LOG_ERROR("SERVICES was called with an empty \"list\", there should at least be snapcommunicator (and snapwatchdog).");
-                        return;
-                    }
-
-                    // create a string so we can send the list of services
-                    // at once instead of recreating the string each time
-                    //
-                    f_local_services = static_cast<snap::snap_string_list>(f_local_services_list.keys()).join(",");
-
-                    // now we can get the connections to other communicators
-                    // started
-                    //
-                    f_remote_snapcommunicators->start();
-
-                    return;
-                }
-            }
-            else if(command == "SHUTDOWN")
+            if(command == "SHUTDOWN")
             {
                 shutdown(true);
                 return;

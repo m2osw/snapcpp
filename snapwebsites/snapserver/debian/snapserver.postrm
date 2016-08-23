@@ -9,6 +9,11 @@ then
     systemctl stop ${PACKAGENAME}
 fi
 
+# Remove files representing each service offered by this package
+#
+SERVICES_DIR=/usr/share/snapwebsites/services
+rm -f $SERVICES_DIR/snapserver.service
+
 if [ "$1" = "purge" ]
 then
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log

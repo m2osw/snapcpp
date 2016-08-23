@@ -14,6 +14,14 @@ then
         echo "notice: snapcreatetables failed."
     fi
 
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/snapbackend.service
+    touch $SERVICES_DIR/images.service
+    touch $SERVICES_DIR/pagelist.service
+    touch $SERVICES_DIR/sendmail.service
+
     for pkg in snapbackend snapsendmail snapimages snappagelist
     do
         if systemctl is-enabled ${pkg} 2> /dev/null

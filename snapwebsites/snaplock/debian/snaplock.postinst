@@ -24,6 +24,11 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/snaplock.service
+
     if systemctl is-enabled ${PKGNAME} 2> /dev/null
     then
         systemctl start ${PKGNAME}

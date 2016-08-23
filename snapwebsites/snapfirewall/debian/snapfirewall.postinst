@@ -23,6 +23,11 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/snapfirewall.service
+
     # Make sure that the snapfirewall table exists
     #
     if ! snapcreatetables

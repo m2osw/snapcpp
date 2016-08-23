@@ -9,6 +9,11 @@ then
     systemctl stop ${PACKAGENAME}
 fi
 
+# Remove files representing each service offered by this package
+#
+SERVICES_DIR=/usr/share/snapwebsites/services
+rm -f $SERVICES_DIR/snapmanagerdaemon.service
+
 if [ "$1" = "purge" ]
 then
     # delete the data directory and a cache file

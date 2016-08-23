@@ -46,4 +46,19 @@ install(
 )
 
 
+################################################################################
+## Service files
+##
+## This is really to create the directory and control its lifetime, the
+## snapcommunicator itself is not listed as a service otherwise.
+##
+install(
+    FILES 
+        README.txt
+
+    DESTINATION
+        share/snapwebsites/services
+)
+
+
 # vim: ts=4 sw=4 et
