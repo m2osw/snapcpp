@@ -260,7 +260,8 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
                           snap_manager::status_t::state_t::STATUS_STATE_INFO
                         , get_plugin_name()
                         , "cassandra_create_context"
-                        , "create");
+                        , context_name
+                        );
             server_status.set_field(create_context);
         }
         else
@@ -274,7 +275,8 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
                           snap_manager::status_t::state_t::STATUS_STATE_INFO
                         , get_plugin_name()
                         , "cassandra_create_tables"
-                        , "create");
+                        , context_name
+                        );
             server_status.set_field(create_tables);
         }
     }
