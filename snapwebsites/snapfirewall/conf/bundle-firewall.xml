@@ -93,7 +93,7 @@
           if(found) {
             print "\tpre-up /etc/network/firewall"
           }
-        }' ${INTERFACES}.bak >${INTERFACES}.new
+        }' ${INTERFACES}.bak &gt;${INTERFACES}.new
         mv ${INTERFACES}.new ${INTERFACES}
 
 

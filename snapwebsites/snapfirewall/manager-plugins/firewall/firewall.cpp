@@ -297,7 +297,7 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
                               "  <li>active -- enable and activate the service</li>"
                               "</ul>"
                               "<p>You cannot request to go to the \"failed\" status."
-                              " To uninstall search the corresponding bundle and"
+                              " To uninstall search for the corresponding bundle and"
                               " click the <strong>Uninstall</strong> button.</p>"
                               "<p><strong>WARNING:</strong> The current snapmanagercgi"
                               " implementation does not clearly give you feedback if"
