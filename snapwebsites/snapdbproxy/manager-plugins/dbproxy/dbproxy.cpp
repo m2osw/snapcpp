@@ -244,38 +244,39 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         session->connect(snap_dbproxy_conf["cassandra_host_list"]);
         if( !session->isConnected() )
         {
-            SNAP_LOG_ERROR( "Cannot connect to cassandra host! Check cassandra_host_list in snapdbproxy.conf!" );
-            return;
-        }
-
-        auto meta( QCassandraSchema::SessionMeta::create( session ) );
-        meta->loadSchema();
-        auto const &keyspaces( meta->getKeyspaces() );
-        QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-        if( keyspaces.find(context_name) == std::end(keyspaces) )
-        {
-            // no context yet, offer to create the context
-            //
-            snap_manager::status_t const create_context(
-                          snap_manager::status_t::state_t::STATUS_STATE_INFO
-                        , get_plugin_name()
-                        , "cassandra_create_context"
-                        , "create");
-            server_status.set_field(create_context);
+            SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list in snapdbproxy.conf!" );
         }
         else
         {
-            // database is available and context is available,
-            // offer to create the tables (it should be automatic
-            // though, but this way we can click on this one last
-            // time before installing a website)
-            //
-            snap_manager::status_t const create_tables(
-                          snap_manager::status_t::state_t::STATUS_STATE_INFO
-                        , get_plugin_name()
-                        , "cassandra_create_tables"
-                        , "create");
-            server_status.set_field(create_tables);
+            auto meta( QCassandraSchema::SessionMeta::create( session ) );
+            meta->loadSchema();
+            auto const &keyspaces( meta->getKeyspaces() );
+            QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+            if( keyspaces.find(context_name) == std::end(keyspaces) )
+            {
+                // no context yet, offer to create the context
+                //
+                snap_manager::status_t const create_context(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "cassandra_create_context"
+                            , "create");
+                server_status.set_field(create_context);
+            }
+            else
+            {
+                // database is available and context is available,
+                // offer to create the tables (it should be automatic
+                // though, but this way we can click on this one last
+                // time before installing a website)
+                //
+                snap_manager::status_t const create_tables(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "cassandra_create_tables"
+                            , "create");
+                server_status.set_field(create_tables);
+            }
         }
     }
     catch( std::exception const &x )

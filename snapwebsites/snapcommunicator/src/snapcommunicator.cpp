@@ -2355,6 +2355,17 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //
                     register_for_loadavg(his_address);
 
+                    // now let local services know that we have a new
+                    // remote connections (which may be of interest
+                    // for that service--see snapmanagerdaemon)
+                    //
+                    // TODO: to be symmetrical, we should also have
+                    //       a message telling us when a remote
+                    //       connection goes down...
+                    //
+                    new_remote_connection.set_command("NEWREMOTECONNECTION");
+                    new_remote_connection.set_service(".");
+                    new_remote_connection.add_parameter("server_name", remote_server_name);
                     return;
                 }
             }
