@@ -235,7 +235,8 @@ public:
     static int          version_patch();
     virtual void        show_version();
 
-    static std::string const get_server_name();
+    static std::string  get_server_name();
+    static void         verify_server_name(std::string & server_name);
 
     // plugins::plugin implementation
     virtual QString     icon() const;

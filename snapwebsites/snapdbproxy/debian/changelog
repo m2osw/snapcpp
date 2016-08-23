@@ -1,3 +1,9 @@
+snapdbproxy (1.0.4.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 23 Aug 2016 02:00:52 -0700
+
 snapdbproxy (1.0.4.0~xenial) xenial; urgency=high
 
   * Now uses QtCassandra::QCassandraSchema to detect if the snapwebsites
