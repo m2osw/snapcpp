@@ -35,6 +35,10 @@
 #include "string_pathinfo.h"
 #include "tokenize_string.h"
 
+// libQtCassandra
+//
+#include "QtCassandra/QCassandraSchema.h"
+
 // Qt lib
 //
 #include <QFile>
@@ -49,6 +53,9 @@
 
 
 SNAP_PLUGIN_START(dbproxy, 1, 0)
+
+
+using namespace QtCassandra;
 
 
 namespace
@@ -217,9 +224,9 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    {
-        snap_config snap_dbproxy_conf(g_configuration_filename);
+    snap_config snap_dbproxy_conf(g_configuration_filename);
 
+    {
         snap_manager::status_t const host_list(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
@@ -228,22 +235,24 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(host_list);
     }
 
-// TODO: at this time the snap_cassandra makes use of snapdbproxy...
-//       which means that we can connect to that anyway! It is not
-//       a proof that CASSANDRA is not avaible. For that we need
-//       a snapcommunicator message CASSANDRASTATUS and we'll get
-//       a NOCASSANDRA or CASSANDRAREADY...
-return;
     try
     {
         // if the connection fails, we cannot have either of the following
         // fields so the catch() makes sure to avoid them
         //
-        snap::snap_cassandra cassandra;
-        cassandra.connect();
+        auto session( QCassandraSession::create() );
+        session->connect(snap_dbproxy_conf["cassandra_host_list"]);
+        if( !session->isConnected() )
+        {
+            SNAP_LOG_ERROR( "Cannot connect to cassandra host! Check cassandra_host_list in snapdbproxy.conf!" );
+            return;
+        }
 
-        auto context(cassandra.get_snap_context());
-        if(!context)
+        auto meta( QCassandraSchema::SessionMeta::create( session ) );
+        meta->loadSchema();
+        auto const &keyspaces( meta->getKeyspaces() );
+        QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+        if( keyspaces.find(context_name) == std::end(keyspaces) )
         {
             // no context yet, offer to create the context
             //
@@ -269,9 +278,13 @@ return;
             server_status.set_field(create_tables);
         }
     }
-    catch(snap::snap_cassandra_not_available_exception const &)
+    catch( std::exception const &x )
     {
-        // ignore completely, we just cannot connect at this time
+        SNAP_LOG_ERROR("Caught exception: [")(x.what())("]!");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("Caught unknown exception!");
     }
 }
 
