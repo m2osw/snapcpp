@@ -108,9 +108,15 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
 
     f_snapmanager_frontend = snapmanager_frontend.split(",", QString::SkipEmptyParts);
 
-    std::for_each(f_snapmanager_frontend.begin(),
-                  f_snapmanager_frontend.end(),
-                  [](auto & f) { f = f.trimmed(); });
+    std::for_each(
+            f_snapmanager_frontend.begin(),
+            f_snapmanager_frontend.end(),
+            [](auto & f)
+            {
+                std::string a(f.trimmed().toUtf8().data());
+                snap::server::verify_server_name(a);
+                f = QString::fromUtf8(a.c_str());
+            });
 }
 
 

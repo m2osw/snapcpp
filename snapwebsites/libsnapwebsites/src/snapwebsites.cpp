@@ -1114,130 +1114,162 @@ void server::config(int argc, char * argv[])
 }
 
 
-std::string const server::get_server_name()
+/** \brief Get the server name.
+ *
+ * This function retrieves the name of the server. If it is defined in
+ * the snapcommunicator.conf file, then that name is returned. If not
+ * defined there, then the hostname() function is used to retrieve
+ * the name of the computer.
+ *
+ * The name will be verified and reformatted to be compatible with
+ * the snapcommunicator messaging system. This means '-' are replaced
+ * with '_', A to Z are replaced by a to z, and names cannot start
+ * with a digit or be empty.
+ *
+ * \note
+ * The function caches the name so it does not have to recalculate
+ * it over and over again. This also means that a change of the hostname
+ * will not be seen by one of our daemons until it gets restarted.
+ *
+ * \return A copy of the server name.
+ */
+std::string server::get_server_name()
 {
     // if called more than once, returned the same name each time after that
     //
     static std::string saved_server_name;
-    if(!saved_server_name.empty())
+    if(saved_server_name.empty())
     {
-        return saved_server_name;
-    }
-
-    // WARNING: we create a separate version of the parameters variable,
-    //          but remember that all the configurations accessible
-    //          through that interface which saves them in a global, so
-    //          yes, it is a separate parameter, but really the same
-    //          configuration variables
-    //
-    //          we expect server_name to only be defined in the
-    //          snapcommunicator.conf file because it needs it
-    //          and it gets started first.
-    //
-    // Note: We create this separate variable because this is a static
-    //       function and thus we do not have access to f_parameters.
-    //
-    snap_config parameters("snapcommunicator");
-
-    snap_config::snap_config_parameter_ref server_name(parameters["server_name"]);
-
-    // if the parameter was not defined in the configuration file,
-    // read the system hostname
-    //
-    if(server_name.empty())
-    {
-        // use hostname by default if undefined in configuration file
+        // WARNING: we create a separate version of the parameters variable,
+        //          but remember that all the configurations accessible
+        //          through that interface which saves them in a global, so
+        //          yes, it is a separate parameter, but really the same
+        //          configuration variables
         //
-        char host[HOST_NAME_MAX + 1];
-        host[HOST_NAME_MAX] = '\0';
-        if(gethostname(host, sizeof(host)) != 0
-        || strlen(host) == 0)
-        {
-            throw snapwebsites_exception_parameter_no_available("snapwebsites.cpp: server::get_server_name() could not determine the name of this server.");
-        }
-        // TODO: add code to verify that we like that name (i.e. if the
-        //       name includes periods we will reject it when sending
-        //       messages to/from snapcommunicator)
+        //          we expect server_name to only be defined in the
+        //          snapcommunicator.conf file because it needs it
+        //          and it gets started first.
         //
-        server_name = host;
-    }
+        // Note: We create this separate variable because this is a static
+        //       function and thus we do not have access to f_parameters.
+        //
+        snap_config parameters("snapcommunicator");
 
-    {
-        std::string name;
-        std::string const original(server_name);
-        char const * s(original.c_str());
-        while(*s != '\0' && *s != '.')
-        {
-            if(*s == '-')
-            {
-                // the dash is not acceptable in our server name
-                // replace it with an underscore
-                //
-                SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dash character (-) which is not supported by snap. Replacing with an underscore (_). If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
-                name += '_';
-            }
-            else if(*s >= 'A' && *s <= 'Z')
-            {
-                // force lowercase -- hostnames are expected to be in
-                // lowercase although they are case insensitive so we
-                // certainly want them to be in lowercase anyway
-                //
-                // note: we do not support UTF-8 servernames so really only
-                //       ASCII will be taken in account here
-                //
-                name += *s | 0x20;
-            }
-            else if((*s >= 'a' && *s <= 'z')
-                 || (*s >= '0' && *s <= '9')
-                 || *s == '_')
-            {
-                name += *s;
-            }
-            else
-            {
-                throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::get_server_name() found invalid characters in your server_name parameter.");
-            }
+        snap_config::snap_config_parameter_ref server_name(parameters["server_name"]);
 
-            ++s;
-        }
-        if(*s == '.')
+        // if the parameter was not defined in the configuration file,
+        // read the system hostname
+        //
+        if(server_name.empty())
         {
-            // according to the hostname documentation, the FQDN is
-            // the name before the first dot; this means if you have
-            // more than two dots, the sub-sub-sub...sub-domain is
-            // the FQDN
+            // use hostname by default if undefined in configuration file
             //
-            SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dot character (.) which is not supported by snap. We assume that indicates the end of the name. If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
-        }
-
-
-        // TBD: We could further prevent the name from starting/ending with '_'?
-        //
-        if(server_name != name)
-        {
-            // warning about changing the name (not that in the above loop
-            // we do not warn about changing the name to lowercase)
+            char host[HOST_NAME_MAX + 1];
+            host[HOST_NAME_MAX] = '\0';
+            if(gethostname(host, sizeof(host)) != 0
+            || strlen(host) == 0)
+            {
+                throw snapwebsites_exception_parameter_no_available("snapwebsites.cpp: server::get_server_name() could not determine the name of this server.");
+            }
+            // TODO: add code to verify that we like that name (i.e. if the
+            //       name includes periods we will reject it when sending
+            //       messages to/from snapcommunicator)
             //
-            SNAP_LOG_WARNING("Your server_name parameter \"")(std::string(server_name))("\" was transformed to \"")(name)("\" to be compatible with Snap!");
-            server_name = name;
+            server_name = host;
         }
 
-        // make sure the computer name is no more than 63 characters
-        //
-        if(server_name.empty()
-        || server_name.length() > 63)
-        {
-            throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::get_server_name(): your server_name parameter is empty or too long. The maximum length is 63 characters.");
-        }
+        saved_server_name = server_name;
 
-        // make sure we can use that name to send messages between computers
-        //
-        snap::snap_communicator_message::verify_name(server_name, false, true);
+        verify_server_name(saved_server_name);
     }
 
-    saved_server_name = server_name;
+    return saved_server_name;
+}
 
-    return server_name;
+
+/** \brief Verify a name that is expected to be used as a server name.
+ *
+ * This function is used to check a \p server_name string. The function
+ * fixes up the name (replace the '-' with '_', removed any characters
+ * after the first '.', and force characters to lowercase.)
+ *
+ * The name cannot be empty nor larger than 63 characters. Note that
+ * a name that starts with a period looks like it is empty.
+ *
+ * \param[in,out] server_name  The name to be checked.
+ */
+void server::verify_server_name(std::string & server_name)
+{
+    std::string name;
+    std::string const original(server_name);
+    char const * s(original.c_str());
+    while(*s != '\0' && *s != '.')
+    {
+        if(*s == '-')
+        {
+            // the dash is not acceptable in our server name
+            // replace it with an underscore
+            //
+            SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dash character (-) which is not supported by snap. Replacing with an underscore (_). If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+            name += '_';
+        }
+        else if(*s >= 'A' && *s <= 'Z')
+        {
+            // force lowercase -- hostnames are expected to be in
+            // lowercase although they are case insensitive so we
+            // certainly want them to be in lowercase anyway
+            //
+            // note: we do not support UTF-8 servernames so really only
+            //       ASCII will be taken in account here
+            //
+            name += *s | 0x20;
+        }
+        else if((*s >= 'a' && *s <= 'z')
+             || (*s >= '0' && *s <= '9')
+             || *s == '_')
+        {
+            name += *s;
+        }
+        else
+        {
+            throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::get_server_name() found invalid characters in your server_name parameter.");
+        }
+
+        ++s;
+    }
+    if(*s == '.')
+    {
+        // according to the hostname documentation, the FQDN is
+        // the name before the first dot; this means if you have
+        // more than two dots, the sub-sub-sub...sub-domain is
+        // the FQDN
+        //
+        SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dot character (.) which is not supported by snap. We assume that indicates the end of the name. If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+    }
+
+
+    // TBD: We could further prevent the name from starting/ending with '_'?
+    //
+    if(server_name != name)
+    {
+        // warning about changing the name (not that in the above loop
+        // we do not warn about changing the name to lowercase)
+        //
+        SNAP_LOG_WARNING("Your server_name parameter \"")(std::string(server_name))("\" was transformed to \"")(name)("\" to be compatible with Snap!");
+        server_name = name;
+    }
+
+    // make sure the computer name is no more than 63 characters
+    //
+    if(server_name.empty()
+    || server_name.length() > 63)
+    {
+        throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::get_server_name(): your server_name parameter is empty or too long. The maximum length is 63 characters.");
+    }
+
+    // make sure we can use that name to send messages between computers
+    //
+    snap::snap_communicator_message::verify_name(QString::fromUtf8(server_name.c_str()), false, true);
 }
 
 
