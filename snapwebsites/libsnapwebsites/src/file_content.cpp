@@ -109,7 +109,7 @@ std::string const & file_content::get_filename() const
  */
 bool file_content::exists() const
 {
-    return access(f_filename.c_str(), R_OK);
+    return access(f_filename.c_str(), R_OK) == 0;
 }
 
 

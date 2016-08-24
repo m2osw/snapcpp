@@ -281,9 +281,9 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
             }
         }
     }
-    catch( std::exception const &x )
+    catch( std::exception const & e )
     {
-        SNAP_LOG_ERROR("Caught exception: [")(x.what())("]!");
+        SNAP_LOG_ERROR("Caught exception: ")(e.what());
     }
     catch( ... )
     {

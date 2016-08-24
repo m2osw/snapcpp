@@ -1123,6 +1123,13 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
         text = doc.createTextNode("Err/War");
         th.appendChild(text);
 
+    // output/table/tr/th[5]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+        text = doc.createTextNode("Last Updated");
+        th.appendChild(text);
+
     bool has_error(false);
     for(size_t idx(0); idx < dir.gl_pathc; ++idx)
     {
@@ -1226,6 +1233,27 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
                     // output/table/tr/td[4]/<text>
                     text = doc.createTextNode(QString("%1/%2").arg(error_count).arg(warning_count));
                     td.appendChild(text);
+
+                // get the date when it was last modified
+                //
+                time_t last_modification(0);
+                struct stat s;
+                if(stat(dir.gl_pathv[idx], &s) == 0)
+                {
+                    last_modification = s.st_mtim.tv_sec;
+                }
+                struct tm * t(localtime(&last_modification));
+                char last_mod[1024];
+                strftime(last_mod, sizeof(last_mod), "%Y/%m/%d  %H:%M:%S", t);
+
+                // output/table/tr/td[5]
+                td = doc.createElement("td");
+                tr.appendChild(td);
+
+                    // output/table/tr/td[4]/<text>
+                    text = doc.createTextNode(QString::fromUtf8(last_mod));
+                    td.appendChild(text);
+
             }
 
             if(file.has_error())
