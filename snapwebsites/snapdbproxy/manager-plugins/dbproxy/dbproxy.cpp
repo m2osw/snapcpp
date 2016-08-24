@@ -240,44 +240,61 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         // if the connection fails, we cannot have either of the following
         // fields so the catch() makes sure to avoid them
         //
-        auto session( QCassandraSession::create() );
-        session->connect(snap_dbproxy_conf["cassandra_host_list"], snap_dbproxy_conf["cassandra_port"]);
-        if( !session->isConnected() )
+        int port(9042);
+        QString const port_str(snap_dbproxy_conf["cassandra_port"]);
+        if(!port_str.isEmpty())
         {
-            SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list and cassandra_port in snapdbproxy.conf!" );
-        }
-        else
-        {
-            auto meta( QCassandraSchema::SessionMeta::create( session ) );
-            meta->loadSchema();
-            auto const &keyspaces( meta->getKeyspaces() );
-            QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-            if( keyspaces.find(context_name) == std::end(keyspaces) )
+            bool ok(false);
+            port = port_str.toInt(&ok, 10);
+            if(!ok
+            || port <= 0
+            || port > 65535)
             {
-                // no context yet, offer to create the context
-                //
-                snap_manager::status_t const create_context(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "cassandra_create_context"
-                            , context_name
-                            );
-                server_status.set_field(create_context);
+                SNAP_LOG_ERROR( "Invalid cassandra_port specification in snapdbproxy.conf (invalid number, smaller than 1 or larger than 65535)" );
+                port = 0;
+            }
+        }
+        if(port > 0)
+        {
+            auto session( QCassandraSession::create() );
+            session->connect(snap_dbproxy_conf["cassandra_host_list"], port);
+            if( !session->isConnected() )
+            {
+                SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list and cassandra_port in snapdbproxy.conf!" );
             }
             else
             {
-                // database is available and context is available,
-                // offer to create the tables (it should be automatic
-                // though, but this way we can click on this one last
-                // time before installing a website)
-                //
-                snap_manager::status_t const create_tables(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "cassandra_create_tables"
-                            , context_name
-                            );
-                server_status.set_field(create_tables);
+                auto meta( QCassandraSchema::SessionMeta::create( session ) );
+                meta->loadSchema();
+                auto const &keyspaces( meta->getKeyspaces() );
+                QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+                if( keyspaces.find(context_name) == std::end(keyspaces) )
+                {
+                    // no context yet, offer to create the context
+                    //
+                    snap_manager::status_t const create_context(
+                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                , get_plugin_name()
+                                , "cassandra_create_context"
+                                , context_name
+                                );
+                    server_status.set_field(create_context);
+                }
+                else
+                {
+                    // database is available and context is available,
+                    // offer to create the tables (it should be automatic
+                    // though, but this way we can click on this one last
+                    // time before installing a website)
+                    //
+                    snap_manager::status_t const create_tables(
+                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                , get_plugin_name()
+                                , "cassandra_create_tables"
+                                , context_name
+                                );
+                    server_status.set_field(create_tables);
+                }
             }
         }
     }
