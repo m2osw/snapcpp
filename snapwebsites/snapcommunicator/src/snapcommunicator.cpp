@@ -3928,10 +3928,13 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
             {
                 conn->send_message(broadcast_msg);
             }
-            else //if(remote_communicator) -- if 'broadcast' is true, we have either conn or remote_communicator defined
+            else
             {
                 remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(bc));
-                remote_communicator->send_message(broadcast_msg);
+                if(remote_communicator) // this should always be true, but to be double sure...
+                {
+                    remote_communicator->send_message(broadcast_msg);
+                }
             }
         }
     }
