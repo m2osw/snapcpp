@@ -1296,6 +1296,7 @@ void remote_communicator_connections::shutting_down(QString const & addr)
     if(f_smaller_ips.contains(addr))
     {
         // wait for 15 minutes and try again
+        //
         f_smaller_ips[addr]->set_timeout_delay(15LL * 60LL * 1000000LL);
     }
 }
@@ -2723,12 +2724,12 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             //       sent us a CONNECT later sends us the
                             //       DISCONNECT
                             //
-                            f_communicator->remove_connection(connection);
+                            //f_communicator->remove_connection(connection); -- done below
                         }
                         else
                         {
                             // in this case we are in charge of attempting
-                            // to reconnect until it work... however, it
+                            // to reconnect until it worked... however, it
                             // is likely that the other side just shutdown
                             // so we want to "induce a long enough pause"
                             // to avoid attempting to reconnect like crazy
@@ -2736,6 +2737,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             QString const addr(QString::fromUtf8(remote_communicator->get_client_addr().c_str()));
                             f_remote_snapcommunicators->shutting_down(addr);
                         }
+
+                        f_communicator->remove_connection(connection);
 
                         // we just got some new services information,
                         // refresh our cache
@@ -4475,6 +4478,10 @@ void snap_communicator_server::shutdown(bool full)
                 // we need to have something that tells us that
                 // the message was sent and at that time remove
                 // the connection
+                //
+                // TODO: this is wrong, the SHUTDOWN won't get sent
+                //       if we remove the remote_communicator from
+                //       the list...
                 //
                 f_communicator->remove_connection(remote_communicator);
             }

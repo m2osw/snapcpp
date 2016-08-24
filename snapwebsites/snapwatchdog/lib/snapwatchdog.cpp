@@ -161,13 +161,13 @@ void tick_timer::process_timeout()
  * This class is an implementation of the TCP client message connection
  * so we can handle incoming messages.
  */
-class messager
+class messenger
         : public snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<messager>    pointer_t;
+    typedef std::shared_ptr<messenger>    pointer_t;
 
-                                messager(watchdog_server::pointer_t ws, std::string const & addr, int port);
+                                messenger(watchdog_server::pointer_t ws, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void                process_message(snap::snap_communicator_message const & message);
@@ -180,16 +180,16 @@ private:
 };
 
 
-/** \brief The messager.
+/** \brief The messenger.
  *
- * We create only one messager. It is saved in this variable.
+ * We create only one messenger. It is saved in this variable.
  */
-messager::pointer_t             g_messenger;
+messenger::pointer_t             g_messenger;
 
 
-/** \brief The messager initialization.
+/** \brief The messenger initialization.
  *
- * The messager is a connection to the snapcommunicator server.
+ * The messenger is a connection to the snapcommunicator server.
  *
  * In most cases we receive STOP and LOG messages from it. We implement
  * a few other messages too (HELP, READY...)
@@ -201,7 +201,7 @@ messager::pointer_t             g_messenger;
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on (4040).
  */
-messager::messager(watchdog_server::pointer_t ws, std::string const & addr, int port)
+messenger::messenger(watchdog_server::pointer_t ws, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(
                 addr,
                 port,
@@ -210,7 +210,7 @@ messager::messager(watchdog_server::pointer_t ws, std::string const & addr, int 
                 false) // do not use a separate thread, we do many fork()'s
     , f_watchdog_server(ws)
 {
-    set_name("watchdog_server messager");
+    set_name("watchdog_server messenger");
 }
 
 
@@ -223,15 +223,15 @@ messager::messager(watchdog_server::pointer_t ws, std::string const & addr, int 
  *
  * \param[in] message  The message we just received.
  */
-void messager::process_message(snap::snap_communicator_message const & message)
+void messenger::process_message(snap::snap_communicator_message const & message)
 {
     f_watchdog_server->process_message(message);
 }
 
 
-/** \brief The messager could not connect to snapcommunicator.
+/** \brief The messenger could not connect to snapcommunicator.
  *
- * This function is called whenever the messagers fails to
+ * This function is called whenever the messengers fails to
  * connect to the snapcommunicator server. This could be
  * because snapcommunicator is not running or because the
  * information given to the snapwatchdog is wrong...
@@ -242,7 +242,7 @@ void messager::process_message(snap::snap_communicator_message const & message)
  *
  * \param[in] error_message  An error message.
  */
-void messager::process_connection_failed(std::string const & error_message)
+void messenger::process_connection_failed(std::string const & error_message)
 {
     SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
 
@@ -256,10 +256,10 @@ void messager::process_connection_failed(std::string const & error_message)
  * Whenever the connection is establied with the Snap! Communicator,
  * this callback function is called.
  *
- * The messager reacts by REGISTERing "snapwatchdog" service with the
+ * The messenger reacts by REGISTERing "snapwatchdog" service with the
  * Snap! Communicator.
  */
-void messager::process_connected()
+void messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
@@ -435,7 +435,7 @@ void watchdog_server::show_version()
  *
  * This function finishes the initialization such as defining the
  * server name, check that cassandra is available, and create various
- * connections such as the messager to communicate with the
+ * connections such as the messenger to communicate with the
  * snapcommunicator service.
  */
 void watchdog_server::watchdog()
@@ -454,11 +454,11 @@ void watchdog_server::watchdog()
     int communicator_port(4040);
     tcp_client_server::get_addr_port(f_parameters(QString("snapcommunicator"), "local_listen"), communicator_addr, communicator_port, "tcp");
 
-    // create the messager, a connection between the snapwatchdogserver
+    // create the messenger, a connection between the snapwatchdogserver
     // and the snapcommunicator which allows us to communicate with
     // the watchdog (STATUS and STOP especially, more later)
     //
-    g_messenger.reset(new messager(instance(), communicator_addr.toUtf8().data(), communicator_port));
+    g_messenger.reset(new messenger(instance(), communicator_addr.toUtf8().data(), communicator_port));
     g_communicator->add_connection(g_messenger);
 
     // add the ticker, this wakes the system up once in a while so

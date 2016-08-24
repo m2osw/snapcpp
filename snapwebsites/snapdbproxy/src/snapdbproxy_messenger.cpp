@@ -3,7 +3,7 @@
  *      snapdbproxy_messenger.cpp
  *
  * Description:
- *      Messager Class implementation. The messager is used to send/receive
+ *      Messager Class implementation. The messenger is used to send/receive
  *      messages mainly from snapinit to REGISTER the proxy and to accept
  *      the STOP function.
  *
@@ -53,9 +53,9 @@
 
 
 
-/** \brief The messager initialization.
+/** \brief The messenger initialization.
  *
- * The messager is a connection to the snapcommunicator server.
+ * The messenger is a connection to the snapcommunicator server.
  *
  * In most cases we receive BLOCK, STOP, and LOG messages from it. We
  * implement a few other messages too (HELP, READY...)
@@ -64,7 +64,7 @@
  * for whatever reason, we reconnect automatically.
  *
  * \note
- * The messager connection used by the snapfirewall tool makes use
+ * The messenger connection used by the snapfirewall tool makes use
  * of a thread. You will want to change this initialization function
  * if you intend to fork() direct children of ours (i.e. not fork()
  * + execv() as we do to run iptables.)
@@ -77,7 +77,7 @@ snapdbproxy_messenger::snapdbproxy_messenger(snapdbproxy * proxy, std::string co
     : snap_tcp_client_permanent_message_connection(addr, port)
     , f_snapdbproxy(proxy)
 {
-    set_name("snapdbproxy messager");
+    set_name("snapdbproxy messenger");
 }
 
 
@@ -96,9 +96,9 @@ void snapdbproxy_messenger::process_message(snap::snap_communicator_message cons
 }
 
 
-/** \brief The messager could not connect to snapcommunicator.
+/** \brief The messenger could not connect to snapcommunicator.
  *
- * This function is called whenever the messagers fails to
+ * This function is called whenever the messengers fails to
  * connect to the snapcommunicator server. This could be
  * because snapcommunicator is not running or because the
  * configuration information for the snapfirewall is wrong...
@@ -123,7 +123,7 @@ void snapdbproxy_messenger::process_connection_failed(std::string const & error_
  * Whenever the connection is established with the Snap! Communicator,
  * this callback function is called.
  *
- * The messager reacts by REGISTERing the snapdbproxy with the Snap!
+ * The messenger reacts by REGISTERing the snapdbproxy with the Snap!
  * Communicator.
  */
 void snapdbproxy_messenger::process_connected()

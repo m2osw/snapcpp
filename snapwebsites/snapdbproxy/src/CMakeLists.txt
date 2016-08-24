@@ -44,7 +44,7 @@ add_executable(${PROJECT_NAME}
     main.cpp
     snapdbproxy_connection.cpp
     snapdbproxy_listener.cpp
-    snapdbproxy_messager.cpp
+    snapdbproxy_messenger.cpp
     snapdbproxy_thread.cpp
 )
 

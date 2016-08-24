@@ -544,6 +544,7 @@ public:
 
         bool                        send_message(snap_communicator_message const & message, bool cache = false);
         bool                        is_connected() const;
+        void                        disconnect();
         void                        mark_done();
         size_t                      get_client_address(struct sockaddr_storage & address) const;
         std::string                 get_client_addr() const;

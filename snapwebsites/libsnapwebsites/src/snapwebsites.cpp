@@ -1884,13 +1884,13 @@ void signal_child_death::process_signal()
  * count those children until they get a new connection; before that they
  * do not count.)
  */
-class messager
+class messenger
         : public snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<messager>    pointer_t;
+    typedef std::shared_ptr<messenger>    pointer_t;
 
-                        messager(server * s, std::string const & addr, int port);
+                        messenger(server * s, std::string const & addr, int port);
 
     // snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void        process_message(snap_communicator_message const & message);
@@ -1901,9 +1901,9 @@ private:
 };
 
 
-/** \brief Initialize the messager connection.
+/** \brief Initialize the messenger connection.
  *
- * This function initializes the messager connection. It saves
+ * This function initializes the messenger connection. It saves
  * a pointer to the main Snap! server so it can react appropriately
  * whenever a message is received.
  *
@@ -1911,7 +1911,7 @@ private:
  * \param[in] addr  The address of the snapcommunicator server.
  * \param[in] port  The port of the snapcommunicator server.
  */
-messager::messager(server * s, std::string const & addr, int port)
+messenger::messenger(server * s, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(addr, port, tcp_client_server::bio_client::mode_t::MODE_PLAIN, snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING, false)
     , f_server(s)
 {
@@ -1925,7 +1925,7 @@ messager::messager(server * s, std::string const & addr, int port)
  *
  * \param[in] message  The message we just recieved.
  */
-void messager::process_message(snap_communicator_message const & message)
+void messenger::process_message(snap_communicator_message const & message)
 {
     f_server->process_message(message);
 }
@@ -1942,7 +1942,7 @@ void messager::process_message(snap_communicator_message const & message)
  * the snapcommunicator server, it will re-register the snapserver
  * again as expected.
  */
-void messager::process_connected()
+void messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
@@ -1994,14 +1994,14 @@ void server::process_message(snap_communicator_message const & message)
 
         if(g_connection->f_messenger)
         {
-            std::static_pointer_cast<messager>(g_connection->f_messenger)->mark_done();
+            std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
 
             if(command != "QUITTING")
             {
                 snap::snap_communicator_message cmd;
                 cmd.set_command("UNREGISTER");
                 cmd.add_parameter("service", "snapserver");
-                std::static_pointer_cast<messager>(g_connection->f_messenger)->send_message(cmd);
+                std::static_pointer_cast<messenger>(g_connection->f_messenger)->send_message(cmd);
             }
         }
 
@@ -2036,7 +2036,7 @@ void server::process_message(snap_communicator_message const & message)
         snap::snap_communicator_message isdbready_message;
         isdbready_message.set_command("CASSANDRASTATUS");
         isdbready_message.set_service("snapdbproxy");
-        std::dynamic_pointer_cast<messager>(g_connection->f_messenger)->send_message(isdbready_message);
+        std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(isdbready_message);
 
         return;
     }
@@ -2080,7 +2080,7 @@ void server::process_message(snap_communicator_message const & message)
         // list of commands understood by server
         reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNKNOWN");
 
-        std::dynamic_pointer_cast<messager>(g_connection->f_messenger)->send_message(reply);
+        std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(reply);
         return;
     }
 
@@ -2097,7 +2097,7 @@ void server::process_message(snap_communicator_message const & message)
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        std::dynamic_pointer_cast<messager>(g_connection->f_messenger)->send_message(reply);
+        std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(reply);
     }
     return;
 }
@@ -2209,14 +2209,14 @@ void listener_impl::process_accept()
  * \li A listener, which opens a port to listen to new incoming connections.
  * \li A signal handler, also via a connection, which listens to the SIGCHLD
  *     Unix signal. This allows us to immediately manage zombie processes.
- * \li A messager, which is a permanent connection to the Snap Communicator
+ * \li A messenger, which is a permanent connection to the Snap Communicator
  *     server. Permanent because if the connection is lost, it will be
  *     reinstantiated as soon as possible.
  *
  * Our snap.cgi process is the one that connects to our listener, since at
  * this time we do not directly listen to port 80 or 443.
  *
- * The messager receives messages such as the STOP and LOG messages. The
+ * The messenger receives messages such as the STOP and LOG messages. The
  * STOP message actually requests that this very function returns as soon
  * as the server is done with anything it is currently doing.
  *
@@ -2317,8 +2317,8 @@ void server::listen()
     g_connection->f_child_death_listener->set_priority(75);
     g_connection->f_communicator->add_connection(g_connection->f_child_death_listener);
 
-    g_connection->f_messenger.reset(new messager(this, communicator_addr.toUtf8().data(), communicator_port));
-    g_connection->f_messenger->set_name("messager");
+    g_connection->f_messenger.reset(new messenger(this, communicator_addr.toUtf8().data(), communicator_port));
+    g_connection->f_messenger->set_name("messenger");
     g_connection->f_messenger->set_priority(50);
     g_connection->f_communicator->add_connection(g_connection->f_messenger);
 

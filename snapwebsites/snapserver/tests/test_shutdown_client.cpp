@@ -43,17 +43,17 @@
 
 
 
-class messager_connection
+class messenger_connection
         : public snap::snap_communicator::snap_tcp_client_message_connection
 {
 public:
-    messager_connection()
+    messenger_connection()
         : snap_tcp_client_message_connection(
                     snap_test::host(),
                     4030,
                     tcp_client_server::bio_client::mode_t::MODE_PLAIN)
     {
-        set_name("messager");
+        set_name("messenger");
     }
 
     virtual void process_message(snap::snap_communicator_message const & message)
@@ -145,7 +145,7 @@ int main(int /*argc*/, char * /*argv*/[])
 
     try
     {
-        messager_connection::pointer_t mc(new messager_connection);
+        messenger_connection::pointer_t mc(new messenger_connection);
         mc->set_timeout_delay(1LL * 1000000LL);
 
         int flag(1);

@@ -4511,7 +4511,7 @@ public:
         //, f_thread_done() -- auto-init
         , f_thread_runner(this, address, port, mode)
         , f_thread("background connection handler thread", &f_thread_runner)
-        //, f_messager(nullptr) -- auto-init
+        //, f_messenger(nullptr) -- auto-init
         //, f_message_cache() -- auto-init
     {
     }
@@ -4532,7 +4532,7 @@ public:
         // removed from the snap communicator if we were not doing
         // it explicitly
         //
-        lose_messager();
+        lose_messenger();
     }
 
 
@@ -4563,7 +4563,7 @@ public:
      */
     bool is_connected()
     {
-        return !!f_messager;
+        return !!f_messenger;
     }
 
 
@@ -4665,17 +4665,17 @@ public:
         }
         else
         {
-            f_messager.reset(new messenger(f_client, f_thread_runner.get_socket()));
+            f_messenger.reset(new messenger(f_client, f_thread_runner.get_socket()));
 
             // add the messenger to the communicator
             //
-            snap_communicator::instance()->add_connection(f_messager);
+            snap_communicator::instance()->add_connection(f_messenger);
 
             // if some messages were cached, process them immediately
             //
             while(!f_message_cache.empty())
             {
-                f_messager->send_message(f_message_cache[0]);
+                f_messenger->send_message(f_message_cache[0]);
                 f_message_cache.erase(f_message_cache.begin());
             }
 
@@ -4700,9 +4700,9 @@ public:
      */
     bool send_message(snap_communicator_message const & message, bool cache)
     {
-        if(f_messager)
+        if(f_messenger)
         {
-            f_messager->send_message(message);
+            f_messenger->send_message(message);
             return true;
         }
 
@@ -4717,7 +4717,7 @@ public:
 
     /** \brief Forget about the messenger connect.
      *
-     * This function resets the f_messager pointer as an error occurred
+     * This function resets the f_messenger pointer as an error occurred
      * on that connection.
      *
      * \note
@@ -4726,12 +4726,12 @@ public:
      * loop has a copy in its own temporary copy of the vector of
      * connections.
      */
-    void lose_messager()
+    void lose_messenger()
     {
-        if(f_messager)
+        if(f_messenger)
         {
-            snap_communicator::instance()->remove_connection(f_messager);
-            f_messager.reset();
+            snap_communicator::instance()->remove_connection(f_messenger);
+            f_messenger.reset();
 
             // just the messenger does not close the TCP connection because
             // we have a copy in the thread runner
@@ -4750,7 +4750,12 @@ public:
      */
     size_t get_client_address(struct sockaddr_storage & address) const
     {
-        return f_messager->get_client_address(address);
+        if(f_messenger)
+        {
+            return f_messenger->get_client_address(address);
+        }
+        memset(&address, 0, sizeof(address));
+        return 0;
     }
 
 
@@ -4762,7 +4767,27 @@ public:
      */
     std::string get_client_addr() const
     {
-        return f_messager->get_client_addr();
+        if(f_messenger)
+        {
+            return f_messenger->get_client_addr();
+        }
+        return std::string();
+    }
+
+
+    /** \brief At times, you may want to disconnect a permanent connection.
+     *
+     * There are times when you need to disconnect a permanent connection
+     * and reconnect later. This function allows you to handle the
+     * disconnection. The reconnection will be handled using the timer.
+     *
+     * Specifically, this happens in the snapcommunicator tool which
+     * sends a DISCONNECT message to a remote snapcommunicator and
+     * expects the remote instance to disconnect the socket.
+     */
+    void disconnect()
+    {
+        f_messenger.reset();
     }
 
 
@@ -4771,7 +4796,7 @@ private:
     thread_done_signal::pointer_t                                       f_thread_done;
     runner                                                              f_thread_runner;
     snap::snap_thread                                                   f_thread;
-    messenger::pointer_t                                                f_messager;
+    messenger::pointer_t                                                f_messenger;
     snap_communicator_message::vector_t                                 f_message_cache;
 };
 
@@ -4873,6 +4898,30 @@ bool snap_communicator::snap_tcp_client_permanent_message_connection::is_connect
 }
 
 
+/** \brief Disconnect the messenger now.
+ *
+ * This function kills the current connection.
+ *
+ * There are a few cases where two daemons communicate between each others
+ * and at some point one of them wants to exit and needs to disconnect. This
+ * function can be used in that one situation assuming that you have an
+ * acknowledgement from the other daemon.
+ *
+ * Say you have daemon A and B. B wants to quit and before doing so sends
+ * a form of "I'm quitting" message to A. In that situation, B is not closing
+ * the messenger connection, A is responsible for that (i.e. A acknowledges
+ * receipt of the "I'm quitting" message from B by closing the connection.)
+ *
+ * B also wants to call the mark_done() function to make sure that it
+ * does not reconnected a split second later and instead the permanent
+ * connection gets removed from the snap_communicator list of connections.
+ */
+void snap_communicator::snap_tcp_client_permanent_message_connection::disconnect()
+{
+    f_impl->disconnect();
+}
+
+
 /** \brief Call once you are done with a permanent connection.
  *
  * This function lets the permanent connection know that you are done with
@@ -4880,8 +4929,8 @@ bool snap_communicator::snap_tcp_client_permanent_message_connection::is_connect
  * message to the server. For example, the snapbackend tool will do:
  *
  * \code
- *      f_messager->mark_done();
- *      f_messager->send_message(stop_message);
+ *      f_messenger->mark_done();
+ *      f_messenger->send_message(stop_message);
  * \endcode
  *
  * That way the next HUP error is properly interpreted as "we are done".
@@ -5019,7 +5068,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_er
     }
     else
     {
-        f_impl->lose_messager();
+        f_impl->lose_messenger();
         set_enable(true);
     }
 }
@@ -5046,7 +5095,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_hu
     }
     else
     {
-        f_impl->lose_messager();
+        f_impl->lose_messenger();
         set_enable(true);
     }
 }
@@ -5073,7 +5122,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_in
     }
     else
     {
-        f_impl->lose_messager();
+        f_impl->lose_messenger();
         set_enable(true);
     }
 }
@@ -5088,7 +5137,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_in
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::connection_removed()
 {
-    f_impl->lose_messager();
+    f_impl->lose_messenger();
 }
 
 
@@ -5702,10 +5751,22 @@ bool snap_communicator::remove_connection(snap_connection::pointer_t connection)
         return false;
     }
 
-    SNAP_LOG_TRACE("snap_communicator::remove_connection(): name=")(connection->get_name())(" of ")(f_connections.size())(" connections");
+    SNAP_LOG_TRACE("snap_communicator::remove_connection(): removing 1 connection, \"")(connection->get_name())("\", of ")(f_connections.size())(" connections (including this one.)");
     f_connections.erase(it);
 
     connection->connection_removed();
+
+#if 0
+#ifdef _DEBUG
+std::for_each(
+          f_connections.begin()
+        , f_connections.end()
+        , [](auto const & c)
+        {
+            SNAP_LOG_TRACE("snap_communicator::remove_connection(): remaining connection: \"")(c->get_name())("\"");
+        });
+#endif
+#endif
 
     return true;
 }

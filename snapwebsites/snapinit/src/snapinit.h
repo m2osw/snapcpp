@@ -142,9 +142,9 @@ public:
     public:
         typedef std::shared_ptr<ping_impl>    pointer_t;
 
-        /** \brief The messager initialization.
+        /** \brief The messenger initialization.
          *
-         * The messager receives UDP messages from various sources (mainly
+         * The messenger receives UDP messages from various sources (mainly
          * backends at this point.)
          *
          * \param[in] si  The snap init server we are listening for.

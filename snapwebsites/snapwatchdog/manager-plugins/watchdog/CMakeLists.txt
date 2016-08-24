@@ -1,6 +1,6 @@
 #
 # File:
-#      snapwebsites/snapfirewall/manager-plugins/firewall/CMakeLists.txt
+#      snapwebsites/snapwatchdog/manager-plugins/watchdog/CMakeLists.txt
 #
 # Description:
 #      Manage parameters from snapmanager.cgi and snapmanagerdaemon
@@ -30,7 +30,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_firewall)
+project(plugin_watchdog)
 
 find_package( Qt5Core REQUIRED )
 find_package( Qt5Xml  REQUIRED )
@@ -41,20 +41,20 @@ include_directories(
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
-    firewall.qrc
+    watchdog.qrc
 )
 
 
 
-add_library(firewall SHARED
-    firewall.cpp
+add_library(watchdog SHARED
+    watchdog.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
 message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
-target_link_libraries(firewall
+target_link_libraries(watchdog
     #${AS2JS_LIBRARIES}
     #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
     #${QTCASSANDRA_LIBRARIES}
@@ -66,12 +66,12 @@ target_link_libraries(firewall
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( firewall make_controlled_vars_headers )
+    add_dependencies( watchdog make_controlled_vars_headers )
 endif()
 
 install(
     TARGETS
-        firewall
+        watchdog
 
     LIBRARY DESTINATION
         ${PLUGIN_INSTALL_DIR}
@@ -83,7 +83,7 @@ install(
         ${HEADER_FILES}
 
     DESTINATION
-        include/snapmanager/plugins/firewall
+        include/snapmanager/plugins/watchdog
 )
 
 # vim: ts=4 sw=4 et

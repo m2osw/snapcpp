@@ -1,6 +1,6 @@
 #
 # File:
-#      CMakeLists.txt
+#      snapwebsites/snapwatchdog/CMakeLists.txt
 #
 # Description:
 #      Definitions to create the build environment with cmake
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -100,11 +100,12 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 ##
 ## Compiling
 ##
-add_subdirectory(cmake)         # SnapWebsites CMake Modules
-add_subdirectory(conf)          # Configuration files and samples
-add_subdirectory(lib)           # Common code which is too specialized to create a separate library
-add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
-add_subdirectory(src)           # Actual Snap! Websites server
+add_subdirectory(cmake)             # SnapWebsites CMake Modules
+add_subdirectory(conf)              # Configuration files and samples
+add_subdirectory(lib)               # Common code which is too specialized to create a separate library
+add_subdirectory(plugins)           # Plug-ins (i.e. modular functionality)
+add_subdirectory(src)               # Actual Snap! Websites server
+add_subdirectory(manager-plugins)   # Actual Snap! Websites server
 
 ##
 ## Analyse xml and javascript

@@ -43,7 +43,7 @@ namespace snap_manager
 
 
 
-/** \brief Initiate a messager to send a request to all snapmanagerdaemon.
+/** \brief Initiate a messenger to send a request to all snapmanagerdaemon.
  *
  * This function initializes a messenger that connects to the snapcommunicator
  * and then sends the specified \p message to snapmanagerdaemon.

@@ -8,6 +8,7 @@ export REMOTE_ADDR=192.168.2.45
 export HTTP_HOST=csnap.m2osw.com
 export REQUEST_URI=/
 export HTTP_USER_AGENT="Mozilla 5.1"
+export SERVER_PORT=80
 
 # Run the CGI under full control
 #

@@ -391,7 +391,7 @@ void snapdbproxy::run()
     f_listener = std::make_shared<snapdbproxy_listener>(this, f_snapdbproxy_addr.toUtf8().data(), f_snapdbproxy_port, f_max_pending_connections, true, false);
     f_communicator->add_connection(f_listener);
 
-    // create a messager to communicate with the Snap Communicator process
+    // create a messenger to communicate with the Snap Communicator process
     // and snapinit as required
     //
     f_messenger = std::make_shared<snapdbproxy_messenger>(this, f_communicator_addr.toUtf8().data(), f_communicator_port);
@@ -489,7 +489,7 @@ void snapdbproxy::sighandler( int sig )
  */
 void snapdbproxy::process_message(snap::snap_communicator_message const & message)
 {
-    SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 
@@ -720,16 +720,16 @@ void snapdbproxy::cassandra_ready()
  * This function makes sure the snaplock exits as quickly as
  * possible.
  *
- * \li Marks the messager as done.
+ * \li Marks the messenger as done.
  * \li UNREGISTER from snapcommunicator.
  * \li Remove the listener.
  *
  * \note
- * If the g_messager is still in place, then just sending the
+ * If the g_messenger is still in place, then just sending the
  * UNREGISTER is enough to quit normally. The socket of the
- * g_messager will be closed by the snapcommunicator server
+ * g_messenger will be closed by the snapcommunicator server
  * and we will get a HUP signal. However, we get the HUP only
- * because we first mark the messager as done.
+ * because we first mark the messenger as done.
  *
  * \param[in] quitting  Set to true if we received a QUITTING message.
  */
@@ -741,7 +741,7 @@ void snapdbproxy::stop(bool quitting)
     {
         f_messenger->mark_done();
 
-        // unregister if we are still connected to the messager
+        // unregister if we are still connected to the messenger
         // and Snap! Communicator is not already quitting
         //
         if(!quitting)

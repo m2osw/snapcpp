@@ -32,13 +32,13 @@ class snap_firewall;
  * This class is an implementation of the TCP client message connection
  * so we can handle incoming messages.
  */
-class messager
+class messenger
         : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<messager>    pointer_t;
+    typedef std::shared_ptr<messenger>    pointer_t;
 
-                        messager(snap_firewall * sfw, std::string const & addr, int port);
+                        messenger(snap_firewall * sfw, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void        process_message(snap::snap_communicator_message const & message);
@@ -168,7 +168,7 @@ private:
     QtCassandra::QCassandraTable::pointer_t     f_firewall_table;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
-    messager::pointer_t                         f_messager;
+    messenger::pointer_t                         f_messenger;
     wakeup_timer::pointer_t                     f_wakeup_timer;
 };
 
@@ -216,7 +216,7 @@ wakeup_timer::wakeup_timer(snap_firewall * sfw)
  * however, if this was not a full server restart, then we do removals
  * only.)
  *
- * Note that the messager may receive an UNBLOCK command in which
+ * Note that the messenger may receive an UNBLOCK command in which
  * case an IP gets removed immediately and the timer reset to the
  * next IP that needs to be removed as required.
  */
@@ -229,9 +229,9 @@ void wakeup_timer::process_timeout()
 
 
 
-/** \brief The messager initialization.
+/** \brief The messenger initialization.
  *
- * The messager is a connection to the snapcommunicator server.
+ * The messenger is a connection to the snapcommunicator server.
  *
  * In most cases we receive BLOCK, STOP, and LOG messages from it. We
  * implement a few other messages too (HELP, READY...)
@@ -240,7 +240,7 @@ void wakeup_timer::process_timeout()
  * for whatever reason, we reconnect automatically.
  *
  * \note
- * The messager connection used by the snapfirewall tool makes use
+ * The messenger connection used by the snapfirewall tool makes use
  * of a thread. You will want to change this initialization function
  * if you intend to fork() direct children of ours (i.e. not fork()
  * + execv() as we do to run iptables.)
@@ -249,11 +249,11 @@ void wakeup_timer::process_timeout()
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on (4040).
  */
-messager::messager(snap_firewall * sfw, std::string const & addr, int port)
+messenger::messenger(snap_firewall * sfw, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(addr, port)
     , f_snap_firewall(sfw)
 {
-    set_name("snap_firewall messager");
+    set_name("snap_firewall messenger");
 }
 
 
@@ -266,15 +266,15 @@ messager::messager(snap_firewall * sfw, std::string const & addr, int port)
  *
  * \param[in] message  The message we just received.
  */
-void messager::process_message(snap::snap_communicator_message const & message)
+void messenger::process_message(snap::snap_communicator_message const & message)
 {
     f_snap_firewall->process_message(message);
 }
 
 
-/** \brief The messager could not connect to snapcommunicator.
+/** \brief The messenger could not connect to snapcommunicator.
  *
- * This function is called whenever the messagers fails to
+ * This function is called whenever the messengers fails to
  * connect to the snapcommunicator server. This could be
  * because snapcommunicator is not running or because the
  * configuration information for the snapfirewall is wrong...
@@ -285,7 +285,7 @@ void messager::process_message(snap::snap_communicator_message const & message)
  *
  * \param[in] error_message  An error message.
  */
-void messager::process_connection_failed(std::string const & error_message)
+void messenger::process_connection_failed(std::string const & error_message)
 {
     SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
 
@@ -299,11 +299,11 @@ void messager::process_connection_failed(std::string const & error_message)
  * Whenever the connection is established with the Snap! Communicator,
  * this callback function is called.
  *
- * The messager reacts by REGISTERing the snap_firewall with the Snap!
+ * The messenger reacts by REGISTERing the snap_firewall with the Snap!
  * Communicator. The name of the backend is taken from the action
  * it was called with.
  */
-void messager::process_connected()
+void messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
@@ -554,8 +554,8 @@ void snap_firewall::run()
     f_wakeup_timer.reset(new wakeup_timer(this));
     f_communicator->add_connection(f_wakeup_timer);
 
-    f_messager.reset(new messager(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
-    f_communicator->add_connection(f_messager);
+    f_messenger.reset(new messenger(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+    f_communicator->add_connection(f_messenger);
 
     f_communicator->run();
 }
@@ -676,7 +676,7 @@ void snap_firewall::setup_firewall()
     snap::snap_communicator_message firewallup_message;
     firewallup_message.set_command("FIREWALLUP");
     firewallup_message.set_service(".");
-    f_messager->send_message(firewallup_message);
+    f_messenger->send_message(firewallup_message);
 
 }
 
@@ -838,7 +838,7 @@ void snap_firewall::next_wakeup()
  */
 void snap_firewall::process_message(snap::snap_communicator_message const & message)
 {
-    SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 
@@ -967,7 +967,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         snap::snap_communicator_message isdbready_message;
         isdbready_message.set_command("CASSANDRASTATUS");
         isdbready_message.set_service("snapdbproxy");
-        f_messager->send_message(isdbready_message);
+        f_messenger->send_message(isdbready_message);
 
         return;
     }
@@ -1020,7 +1020,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         //
         reply.add_parameter("list", "BLOCK,CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNKNOWN");
 
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
 
         return;
     }
@@ -1040,7 +1040,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
     }
 
     return;
@@ -1052,17 +1052,17 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
  * This function makes sure the snapfirewall exits as quickly as
  * possible.
  *
- * \li Marks the messager as done.
+ * \li Marks the messenger as done.
  * \li Disabled wakeup timer.
  * \li UNREGISTER from snapcommunicator.
  * \li Remove wakeup timer from snapcommunicator.
  *
  * \note
- * If the f_messager is still in place, then just sending the
+ * If the f_messenger is still in place, then just sending the
  * UNREGISTER is enough to quit normally. The socket of the
- * f_messager will be closed by the snapcommunicator server
+ * f_messenger will be closed by the snapcommunicator server
  * and we will get a HUP signal. However, we get the HUP only
- * because we first mark the messager as done.
+ * because we first mark the messenger as done.
  *
  * \param[in] quitting  Set to true if we received a QUITTING message.
  */
@@ -1070,9 +1070,9 @@ void snap_firewall::stop(bool quitting)
 {
     f_stop_received = true;
 
-    if(f_messager)
+    if(f_messenger)
     {
-        f_messager->mark_done();
+        f_messenger->mark_done();
     }
 
     // stop the timer immediately, although that will not prevent
@@ -1085,20 +1085,20 @@ void snap_firewall::stop(bool quitting)
         f_wakeup_timer->set_timeout_date(-1);
     }
 
-    // unregister if we are still connected to the messager
+    // unregister if we are still connected to the messenger
     // and Snap! Communicator is not already quitting
     //
-    if(f_messager && !quitting)
+    if(f_messenger && !quitting)
     {
         snap::snap_communicator_message cmd;
         cmd.set_command("UNREGISTER");
         cmd.add_parameter("service", "snapfirewall");
-        f_messager->send_message(cmd);
+        f_messenger->send_message(cmd);
     }
 
     if(f_communicator)
     {
-        //f_communicator->remove_connection(f_messager); -- this one will get an expected HUP shortly
+        //f_communicator->remove_connection(f_messenger); -- this one will get an expected HUP shortly
         f_communicator->remove_connection(f_wakeup_timer);
     }
 }
