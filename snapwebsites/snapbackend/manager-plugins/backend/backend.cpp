@@ -57,16 +57,16 @@ namespace
 struct backend_services
 {
     char const *        f_service_name = nullptr;
-    char const *        f_service_filename = nullptr;
+    char const *        f_service_executable = nullptr;
     bool                f_recovery = true;
     int                 f_nice = 0;
 };
 
 backend_services g_services[4] = {
-        { "snapbackend", "/etc/snapwebsites/services.d/service-snapbackend.xml", false,  5 },
-        { "images",      "/etc/snapwebsites/services.d/service-images.xml",      true,  10 },
-        { "pagelist",    "/etc/snapwebsites/services.d/service-pagelist.xml",    true,   3 },
-        { "sendmail",    "/etc/snapwebsites/services.d/service-sendmail.xml",    true,   7 }
+        { "snapbackend", "/usr/bin/snapbackend", false,  5 },
+        { "images",      "/usr/bin/snapbackend", true,  10 },
+        { "pagelist",    "/usr/bin/snapbackend", true,   3 },
+        { "sendmail",    "/usr/bin/snapbackend", true,   7 }
     };
 
 
@@ -224,6 +224,29 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
     //
     for(auto const & service_info : g_services)
     {
+        // get the backend service status
+        //
+        snap_manager::service_status_t status(f_snap->service_status(service_info.f_service_executable, service_info.f_service_name));
+
+        // transform to a string
+        //
+        QString const status_string(QString::fromUtf8(snap_manager::manager::service_status_to_string(status)));
+
+        // create status widget
+        //
+        snap_manager::status_t const status_widget(
+                        status == snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED
+                                ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                                : status == snap_manager::service_status_t::SERVICE_STATUS_DISABLED
+                                        ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                        : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                        get_plugin_name(),
+                        QString("%1::service_status").arg(service_info.f_service_name),
+                        status_string);
+        server_status.set_field(status_widget);
+    }
+
+#if 0
         bool valid_xml(false);
         QFile input(service_info.f_service_filename);
         if(input.open(QIODevice::ReadOnly))
@@ -287,7 +310,7 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
                                                         .arg(service_info.f_service_filename));
             server_status.set_field(snapbackend);
         }
-    }
+#endif
 }
 
 
@@ -326,30 +349,101 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
         return false;
     }
 
-    if(field_name == "disabled")
+    if(field_name == "service_status")
     {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-                );
+        for(auto const & service_info : g_services)
+        {
+            if(service_name != service_info.f_service_name)
+            {
+                continue;
+            }
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          QString("Enable/Disable %1 Backend").arg(service_name)
+            // The current status of the snapfirewall service
+            //
+            snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(s.get_value().toUtf8().data()));
+
+            if(status == snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED)
+            {
+                // there is nothing we can do if it is not considered installed
+                //
+                snap_manager::form f(
+                          get_plugin_name()
                         , s.get_field_name()
-                        , s.get_value()
-                        , QString("Define whether the %1 backend is \"enabled\" or \"disabled\".").arg(service_name)
-                        ));
-        f.add_widget(field);
+                        , snap_manager::form::FORM_BUTTON_NONE
+                        );
 
-        f.generate(parent, uri);
+                snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                                  "Somehow the service plugin is still in place when the service was uninstalled"
+                                , s.get_field_name()
+                                , "This plugin should not be able to detect that the service in question is"
+                                 " uninstalled since the plugin is part of that service and thus it should"
+                                 " disappear along the main binary... Please report this bug."
+                                ));
+                f.add_widget(field);
 
-        return true;
+                f.generate(parent, uri);
+            }
+            else
+            {
+                snap_manager::form f(
+                          get_plugin_name()
+                        , s.get_field_name()
+                        , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
+                        );
+
+                snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                                  QString("Enabled/Disabled/Activate %1").arg(service_info.f_service_name)
+                                , s.get_field_name()
+                                , s.get_value()
+                                , QString("<p>Enter the new state of the %1"
+                                  " service as one of:</p>"
+                                  "<ul>"
+                                  "  <li>disabled -- deactivate and disable the service</li>"
+                                  "  <li>enabled -- enable the service, deactivate if it was activated</li>"
+                                  "  <li>active -- enable and activate the service</li>"
+                                  "</ul>"
+                                  "<p>You cannot request to go to the \"failed\" status."
+                                  " To uninstall search for the corresponding bundle and"
+                                  " click the <strong>Uninstall</strong> button.</p>"
+                                  "<p><strong>WARNING:</strong> The current snapmanagercgi"
+                                  " implementation does not clearly give you feedback if"
+                                  " you mispell the new status. We suggest you copy and"
+                                  " paste from this description to avoid mistakes.</p>")
+                                        .arg(service_info.f_service_name)
+                                ));
+                f.add_widget(field);
+
+                f.generate(parent, uri);
+            }
+
+            return true;
+        }
     }
+
+    //if(field_name == "disabled")
+    //{
+    //    // the list if frontend snapmanagers that are to receive statuses
+    //    // of the cluster computers; may be just one computer; should not
+    //    // be empty; shows a text input field
+    //    //
+    //    snap_manager::form f(
+    //              get_plugin_name()
+    //            , s.get_field_name()
+    //            , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
+    //            );
+
+    //    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+    //                      QString("Enable/Disable %1 Backend").arg(service_name)
+    //                    , s.get_field_name()
+    //                    , s.get_value()
+    //                    , QString("Define whether the %1 backend is \"enabled\" or \"disabled\".").arg(service_name)
+    //                    ));
+    //    f.add_widget(field);
+
+    //    f.generate(parent, uri);
+
+    //    return true;
+    //}
 
     //if(field_name == "recovery")
     //{
@@ -447,11 +541,13 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
  */
 bool backend::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
+    NOTUSED(button_name);
     NOTUSED(old_or_installation_value);
+    NOTUSED(affected_services);
 
     // restore defaults?
     //
-    bool const use_default_value(button_name == "restore_default");
+    //bool const use_default_value(button_name == "restore_default");
 
     int const pos(field_name.indexOf("::"));
     if(pos <= 0)
@@ -468,70 +564,77 @@ bool backend::apply_setting(QString const & button_name, QString const & field_n
         return false;
     }
 
-    // determine filename using the list of supported backend services
+    // determine executable using the list of supported backend services
     //
     int nice_value(0);
-    QString filename;
+    QString executable;
     for(auto const & service : g_services)
     {
         if(service_name == service.f_service_name)
         {
-            filename = service.f_service_filename;
+            executable = service.f_service_executable;
             nice_value = service.f_nice;
             break;
         }
     }
-    if(filename.isEmpty())
+    if(executable.isEmpty())
     {
         return false;
     }
 
-SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\" filename = [")(filename)("].");
+SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\" executable = [")(executable)("].");
 
-    if(field == "disabled")
+    if(field_name == "service_status")
     {
-        QFile file(filename);
-        if(file.open(QIODevice::ReadWrite))
-        {
-            QDomDocument doc;
-            doc.setContent(&file, false);
-
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/service[@name=\"%1\"]").arg(service_name));
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-                    // although this is about the snapbackend, we have to
-                    // restart the snapinit process if we want the change to
-                    // be taken in account
-                    //
-                    affected_services.insert(service_name);
-
-                    QDomElement service(result[0].toElement());
-                    if(use_default_value
-                    || new_value.mid(0, 1).toUpper() == "D")
-                    {
-                        service.setAttribute("disabled", "disabled");
-                    }
-                    else
-                    {
-                        service.removeAttribute("disabled");
-                    }
-
-                    QString output(doc.toString(2));
-                    QByteArray output_utf8(output.toUtf8());
-                    file.seek(0L);
-                    file.write(output_utf8);
-                    file.resize(output_utf8.size());
-                    return true;
-                }
-            }
-        }
-        return false;
+        snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
+        f_snap->service_apply_status(service_name.toUtf8().data(), status);
+        return true;
     }
 
+//    if(field == "disabled")
+//    {
+//        QFile file(filename);
+//        if(file.open(QIODevice::ReadWrite))
+//        {
+//            QDomDocument doc;
+//            doc.setContent(&file, false);
+//
+//            QDomXPath dom_xpath;
+//            dom_xpath.setXPath(QString("/service[@name=\"%1\"]").arg(service_name));
+//            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
+//            if(result.size() > 0)
+//            {
+//                if(result[0].isElement())
+//                {
+//                    // although this is about the snapbackend, we have to
+//                    // restart the snapinit process if we want the change to
+//                    // be taken in account
+//                    //
+//                    affected_services.insert(service_name);
+//
+//                    QDomElement service(result[0].toElement());
+//                    if(use_default_value
+//                    || new_value.mid(0, 1).toUpper() == "D")
+//                    {
+//                        service.setAttribute("disabled", "disabled");
+//                    }
+//                    else
+//                    {
+//                        service.removeAttribute("disabled");
+//                    }
+//
+//                    QString output(doc.toString(2));
+//                    QByteArray output_utf8(output.toUtf8());
+//                    file.seek(0L);
+//                    file.write(output_utf8);
+//                    file.resize(output_utf8.size());
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
 //    if(field == "recovery")
 //    {
 //SNAP_LOG_WARNING(" -- recovery...");
