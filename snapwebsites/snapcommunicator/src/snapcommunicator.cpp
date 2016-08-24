@@ -395,7 +395,7 @@ public:
     void                        save_neighbors();
     inline void                 verify_command(base_connection_pointer_t connection, snap::snap_communicator_message const & message);
     void                        process_connected(snap::snap_communicator::snap_connection::pointer_t connection);
-    void                        broadcast_message(snap::snap_communicator_message const & message, base_connection_vector_t accepting_remote_connections = base_connection_vector_t());
+    void                        broadcast_message(snap::snap_communicator_message const & message, base_connection_vector_t const & accepting_remote_connections = base_connection_vector_t());
     void                        process_load_balancing();
 
 private:
@@ -2301,7 +2301,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         return;
                     }
                     base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_REMOTE);
-                    base->set_server_name(message.get_parameter("server_name"));
+                    QString const & remote_server_name(message.get_parameter("server_name"));
+                    base->set_server_name(remote_server_name);
 
                     // reply to a CONNECT, this was to connect to another
                     // snapcommunicator on another computer, retrieve the
@@ -2363,9 +2364,11 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //       a message telling us when a remote
                     //       connection goes down...
                     //
+                    snap::snap_communicator_message new_remote_connection;
                     new_remote_connection.set_command("NEWREMOTECONNECTION");
                     new_remote_connection.set_service(".");
                     new_remote_connection.add_parameter("server_name", remote_server_name);
+                    broadcast_message(new_remote_connection);
                     return;
                 }
             }
@@ -3650,7 +3653,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
 }
 
 
-void snap_communicator_server::broadcast_message(snap::snap_communicator_message const & message, base_connection_vector_t accepting_remote_connections)
+void snap_communicator_server::broadcast_message(snap::snap_communicator_message const & message, base_connection_vector_t const & accepting_remote_connections)
 {
     QString broadcast_msgid;
     QString informed_neighbors;
