@@ -241,10 +241,10 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         // fields so the catch() makes sure to avoid them
         //
         auto session( QCassandraSession::create() );
-        session->connect(snap_dbproxy_conf["cassandra_host_list"]);
+        session->connect(snap_dbproxy_conf["cassandra_host_list"], snap_dbproxy_conf["cassandra_port"]);
         if( !session->isConnected() )
         {
-            SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list in snapdbproxy.conf!" );
+            SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list and cassandra_port in snapdbproxy.conf!" );
         }
         else
         {
