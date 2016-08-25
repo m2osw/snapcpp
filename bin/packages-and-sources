@@ -1,14 +1,24 @@
-#!/bin/sh
+#!/bin/sh -e
 #
+
+# Go the right place (it should already exist)
+cd /var/www/debian/xenial
+
+# Use the full path even if the cd worked to make 100% sure we are
+# not deleting the wrong files
+rm /var/www/debian/xenial/*
+
+# Copy the files from the build output
+scp 192.168.2.90:/home/build/pbuilder/xenial_result/* .
 
 # Run the following in your build directory output against the
 # .deb, .dsc, etc.
 
-# Packages
+# Create Packages[.gz]
 apt-ftparchive packages . > Packages
 gzip -f9c Packages > Packages.gz
 
-# Sources
+# Create Sources[.gz]
 apt-ftparchive sources  . > Sources
 gzip -f9c Sources > Sources.gz
 
