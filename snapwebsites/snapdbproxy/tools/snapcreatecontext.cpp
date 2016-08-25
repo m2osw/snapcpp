@@ -109,7 +109,7 @@ int main(int argc, char * argv[])
         // TODO: add a field to the function that allows us to create
         //       the context
         //
-        query_str += QString( " AND replication = { 'class': 'NetworkTopologyStrategy', 'DC1': '1' }" );
+        query_str += QString( " AND replication = { 'class': 'NetworkTopologyStrategy', 'dc1': '1' }" );
     //}
 
     auto query( QtCassandra::QCassandraQuery::create( session ) );

@@ -697,9 +697,6 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
                         , s.get_field_name()
                         , s.get_value()
                         , QString("This is a list of comma separated URIs specifying the location of Directory Bundles. Usually, this is just one URI.")
-                                .arg(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                                    ? " <span style=\"color: red;\">The WARNING status signals that you have not specified any such URI. Also, to be able to install any bundle on any computer, you want to have the same list of URIs on all your computers.</span>"
-                                    : "")
                         ));
         f.add_widget(field);
 

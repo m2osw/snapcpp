@@ -203,13 +203,6 @@ SNAP_LOG_WARNING("create_table() should not be called anymore, use get_table() i
 
 QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const & table_name)
 {
-
-// TODO: we do not want to create tables from anywhere except one place
-//       while first installing or through snapmanager.cgi or such
-//       All other calls should use a "get_table(name)" instead!
-SNAP_LOG_WARNING("create_table() should not be called when just the get_table() should be used--only get_table() is not yet implemented...");
-
-
     QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
     if(!context)
     {
