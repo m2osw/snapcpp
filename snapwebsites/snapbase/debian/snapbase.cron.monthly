@@ -1,0 +1,7 @@
+#!/bin/sh -e
+#
+
+# Delete old files under /var/cache/snapwebsites
+#
+find /var/cache/snapwebsites -type f -atime +31 -delete
+
