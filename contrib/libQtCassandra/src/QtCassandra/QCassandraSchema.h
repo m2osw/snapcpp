@@ -84,6 +84,7 @@ class SessionMeta
 {
 public:
     typedef std::shared_ptr<SessionMeta>        pointer_t;
+    typedef std::weak_ptr<SessionMeta>          weak_pointer_t;
     typedef std::map<QString, pointer_t>        map_t;
     typedef std::map<QString, QString>        	string_map_t;
 
@@ -92,6 +93,7 @@ public:
     {
     public:
         typedef std::shared_ptr<KeyspaceMeta>       pointer_t;
+        typedef std::weak_ptr<KeyspaceMeta>         weak_pointer_t;
         typedef std::map<QString, pointer_t>        map_t;
 
         class TableMeta
@@ -99,6 +101,7 @@ public:
         {
         public:
             typedef std::shared_ptr<TableMeta>          pointer_t;
+            typedef std::weak_ptr<TableMeta>            weak_pointer_t;
             typedef std::map<QString, pointer_t>        map_t;
 
             class ColumnMeta
@@ -106,6 +109,7 @@ public:
             {
             public:
                 typedef std::shared_ptr<ColumnMeta>         pointer_t;
+                typedef std::weak_ptr<ColumnMeta>           weak_pointer_t;
                 typedef std::map<QString, pointer_t>        map_t;
 
                 enum class type_t {
@@ -134,7 +138,7 @@ public:
             private:
                 friend class SessionMeta;
 
-                TableMeta::pointer_t            f_table;
+                TableMeta::weak_pointer_t       f_table;
                 QString                         f_name;
                 Value::map_t                    f_fields;
                 type_t                          f_type       = type_t::TypeRegular;
@@ -159,7 +163,7 @@ public:
         private:
             friend class SessionMeta;
 
-            KeyspaceMeta::pointer_t         f_keyspace;
+            KeyspaceMeta::weak_pointer_t    f_keyspace;
             QString                         f_name;
             Value::map_t                    f_fields;
             ColumnMeta::map_t               f_columns;
@@ -186,7 +190,7 @@ public:
     private:
         friend class SessionMeta;
 
-        SessionMeta::pointer_t          f_session;
+        SessionMeta::weak_pointer_t     f_session;
         QString                         f_name;
         Value::map_t                    f_fields;
         TableMeta::map_t                f_tables;

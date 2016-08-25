@@ -562,9 +562,15 @@ void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const QCassandraDecod
  */
 QString SessionMeta::KeyspaceMeta::TableMeta::getCqlString() const
 {
+    KeyspaceMeta::pointer_t keyspace(f_keyspace.lock());
+    if(!keyspace)
+    {
+        throw std::runtime_error( "A table lost its keyspace!" );
+    }
+
     QStringList table_cql;
     table_cql << QString("CREATE TABLE IF NOT EXISTS %1.%2 (")
-           .arg(f_keyspace->getName())
+           .arg(keyspace->getName())
            .arg(f_name);
 
     QString partition_key;

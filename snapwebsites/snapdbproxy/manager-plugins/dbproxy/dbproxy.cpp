@@ -55,7 +55,6 @@
 SNAP_PLUGIN_START(dbproxy, 1, 0)
 
 
-using namespace QtCassandra;
 
 
 namespace
@@ -256,7 +255,7 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         }
         if(port > 0)
         {
-            auto session( QCassandraSession::create() );
+            auto session( QtCassandra::QCassandraSession::create() );
             session->connect(snap_dbproxy_conf["cassandra_host_list"], port);
             if( !session->isConnected() )
             {
@@ -264,9 +263,9 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
             }
             else
             {
-                auto meta( QCassandraSchema::SessionMeta::create( session ) );
+                auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
                 meta->loadSchema();
-                auto const &keyspaces( meta->getKeyspaces() );
+                auto const & keyspaces( meta->getKeyspaces() );
                 QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
                 if( keyspaces.find(context_name) == std::end(keyspaces) )
                 {

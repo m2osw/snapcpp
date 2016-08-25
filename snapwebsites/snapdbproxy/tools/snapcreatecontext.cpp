@@ -80,6 +80,14 @@ int main(int argc, char * argv[])
     // connect to the Cassandra cluster
     //
     session->connect( cassandra_host_list, cassandra_port ); // throws on failure!
+    if(!session->isConnected())
+    {
+        // this error should not ever appear since the connect()
+        // function throws on errors, but for completeness...
+        //
+        std::cerr << "error: could not connect to Cassandra cluster." << std::endl;
+        exit(1);
+    }
 
     // when called here we have f_session defined but no context yet
     //
