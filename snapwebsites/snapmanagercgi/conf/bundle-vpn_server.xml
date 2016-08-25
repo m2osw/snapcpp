@@ -24,7 +24,7 @@
   <fields>
     <field name="server_address" type="input">
       <label>VPN Server IP address</label>
-      <description>The server IP address to which the cleint will connect.</description>
+      <description>The server IP address to which clients will connect.</description>
     </field>
     <field name="organization" type="input">
       <label>Organization</label>
@@ -82,6 +82,7 @@
       -e "s/dh1024.pem/dh2048.pem/" \
       -e "s/;user nobody/user nobody/" \
       -e "s/;group nogroup/group nogroup/" \
+      -e "s/;client-to-client/client-to-client/" \
     &gt; /etc/openvpn/server.conf
 
     # Setup the keys as defined by the user in the installation form
