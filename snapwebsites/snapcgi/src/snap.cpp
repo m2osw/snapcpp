@@ -448,6 +448,9 @@ int snap_cgi::process()
             if(socket.write(START_COMMAND "\n", sizeof(START_COMMAND)) != sizeof(START_COMMAND))
 #undef START_COMMAND
             {
+#ifdef _DEBUG
+                SNAP_LOG_DEBUG("socket.write() of START_COMMAND failed!");
+#endif
                 return 1;
             }
             for(char ** e(environ); *e; ++e)
@@ -486,17 +489,29 @@ int snap_cgi::process()
                 //
                 std::replace( env.begin(), env.end(), '\n', '|' );
 #ifdef _DEBUG
-                //SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
+                SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("', len=")(len);
 #endif
                 if(socket.write(env.c_str(), len) != len)
                 {
+#ifdef _DEBUG
+                    SNAP_LOG_DEBUG("socket.write() of env failed!");
+#endif
                     return 2;
                 }
+#ifdef _DEBUG
+                SNAP_LOG_DEBUG("Writing newline");
+#endif
                 if(socket.write("\n", 1) != 1)
                 {
+#ifdef _DEBUG
+                    SNAP_LOG_DEBUG("socket.write() of '\n' failed!");
+#endif
                     return 3;
                 }
             }
+#ifdef _DEBUG
+            SNAP_LOG_DEBUG("Done with writing env");
+#endif
             if( strcmp(request_method, "POST") == 0 )
             {
 #ifdef _DEBUG
@@ -672,18 +687,27 @@ int main(int argc, char * argv[])
         }
         catch(std::runtime_error const & e)
         {
+#ifdef _DEBUG
+            SNAP_LOG_DEBUG("runtime error ")(e.what());
+#endif
             // this should never happen!
             cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
             return 1;
         }
         catch(std::logic_error const & e)
         {
+#ifdef _DEBUG
+            SNAP_LOG_DEBUG("logic error ")(e.what());
+#endif
             // this should never happen!
             cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
             return 1;
         }
         catch(...)
         {
+#ifdef _DEBUG
+            SNAP_LOG_DEBUG("unknown error!");
+#endif
             // this should never happen!
             cgi.error("503 Service Unavailable", nullptr, "The Snap! C++ CGI script caught an unknown exception.");
             return 1;
@@ -691,6 +715,9 @@ int main(int argc, char * argv[])
     }
     catch(std::exception const & e)
     {
+#ifdef _DEBUG
+        SNAP_LOG_DEBUG("outer exception: ")(e.what());
+#endif
         // we are in trouble, we cannot even answer
         std::cerr << "snap: exception: " << e.what() << std::endl;
         return 1;
