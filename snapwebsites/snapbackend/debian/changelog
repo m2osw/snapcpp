@@ -1,8 +1,8 @@
-snapbackend (1.0.1.2~xenial) xenial; urgency=high
+snapbackend (1.0.2.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * The .timer file also needs to be installed by us.
 
- -- Build Server <build@m2osw.com>  Fri, 26 Aug 2016 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 26 Aug 2016 02:00:52 -0700
 
 snapbackend (1.0.1.1~xenial) xenial; urgency=high
 
