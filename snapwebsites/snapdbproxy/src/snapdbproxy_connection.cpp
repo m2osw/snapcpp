@@ -107,7 +107,7 @@ pid_t gettid()
 
 
 
-snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int s, QString const & cassandra_host_list, int cassandra_port)
+snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int & s, QString const & cassandra_host_list, int cassandra_port)
     : snap_runner("snapdbproxy_connection")
     //, f_proxy()
     , f_session(session)

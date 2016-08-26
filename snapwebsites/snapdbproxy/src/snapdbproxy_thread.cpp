@@ -58,9 +58,9 @@
  * thread.
  */
 snapdbproxy_thread::snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t session, int const s, QString const & cassandra_host_list, int cassandra_port)
-    : f_connection(session, s, cassandra_host_list, cassandra_port)
+    : f_socket(s)
+    , f_connection(session, f_socket, cassandra_host_list, cassandra_port)
     , f_thread("connection", &f_connection)
-    , f_socket(s)
 {
     if(!f_thread.start())
     {
@@ -82,7 +82,23 @@ snapdbproxy_thread::~snapdbproxy_thread()
 {
     f_connection.kill();
     f_thread.stop();
-    close(f_socket);
+
+    // the stop() has barriers so we do not need another one here to
+    // check/use the f_socket value
+    //
+    if(f_socket != -1)
+    {
+        // close in case the thread did not start properly and thus
+        // most certainly did not close the socket yet
+        //
+        // WARNING: the thread MUST make sure to set the socket variable
+        //          to -1 or it could end up closing the socket twice
+        //          but really that would eventually mean closing a new
+        //          connection's socket and not the old one!!!
+        //
+        close(f_socket);
+        //f_socket = -1; -- we're leaving this time, so no need to set that to -1 now
+    }
 }
 
 

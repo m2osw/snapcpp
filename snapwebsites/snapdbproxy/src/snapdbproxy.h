@@ -151,7 +151,7 @@ class snapdbproxy_connection
         , public QtCassandra::QCassandraProxyIO
 {
 public:
-                                snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int s, QString const & cassandra_host_list, int cassandra_port);
+                                snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int & s, QString const & cassandra_host_list, int cassandra_port);
     virtual                     ~snapdbproxy_connection();
 
     // implement snap_runner
@@ -182,7 +182,7 @@ private:
     QtCassandra::QCassandraProxy                f_proxy;
     QtCassandra::QCassandraSession::pointer_t   f_session;
     std::vector<cursor_t>                       f_cursors;
-    int                                         f_socket = -1;
+    int &                                       f_socket;
     QString                                     f_cassandra_host_list = "localhost";
     int                                         f_cassandra_port = 9042;
 };
@@ -199,9 +199,9 @@ public:
     bool                    is_running() const;
 
 private:
+    int                     f_socket = -1;
     snapdbproxy_connection  f_connection;
     snap::snap_thread       f_thread;
-    int                     f_socket = 0;
 };
 
 

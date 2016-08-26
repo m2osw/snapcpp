@@ -716,12 +716,14 @@ int main(int argc, char * argv[])
     catch(std::exception const & e)
     {
 #ifdef _DEBUG
-        SNAP_LOG_DEBUG("outer exception: ")(e.what());
+        // the outter exception does not have access to the logger
+        //SNAP_LOG_DEBUG("outer exception: ")(e.what());
 #endif
         // we are in trouble, we cannot even answer
         std::cerr << "snap: exception: " << e.what() << std::endl;
         return 1;
     }
+    snap::NOTREACHED();
 }
 
 // vim: ts=4 sw=4 et

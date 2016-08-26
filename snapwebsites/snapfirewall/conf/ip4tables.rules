@@ -5,6 +5,10 @@
 # then, we install this by default. It can be edited as required by
 # your setup.
 #
+# After changes to this file, make sure to run:
+#
+#      /etc/network/firewall
+#
 
 *filter
 :INPUT ACCEPT [0:0]
@@ -41,8 +45,8 @@
 
 # Temporary to initialize website from your computer
 # (i.e. give access to snapserver or a Cassandra node over the Internet)
-#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 4004 -d @PUBLIC_IP@ -s x.x.x.x --syn -j ACCEPT
-#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 9042 -d @PUBLIC_IP@ -s x.x.x.x --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 4004 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 9042 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
 
 # Various services
 # SMTP (postfix)

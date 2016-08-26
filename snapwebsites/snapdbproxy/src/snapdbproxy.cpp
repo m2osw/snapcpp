@@ -611,7 +611,7 @@ void snapdbproxy::process_connection(int const s)
     // create one thread per connection
     //
     // TODO: look into having either worker threads, or at least a pool
-    //       that we need around
+    //       that we keep around
     //
     // The snapdbproxy_thread constructor is expected to start the thread
     // although it may fail; if it does fail, we avoid adding the thread
