@@ -1,3 +1,9 @@
+snapbackend (1.0.1.1~xenial) xenial; urgency=high
+
+  * Fixing install mistakes with new systemd services.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 25 Aug 2016 20:11:35 -0700
+
 snapbackend (1.0.0.115~xenial) xenial; urgency=high
 
   * Nightly build.
