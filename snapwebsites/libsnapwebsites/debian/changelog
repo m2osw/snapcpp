@@ -6,51 +6,9 @@ libsnapwebsites (1.1.0.10~xenial) xenial; urgency=high
 
 libsnapwebsites (1.1.0.9~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Added the exception information in the check_cassandra() function.
 
- -- Build Server <build@m2osw.com>  Thu, 25 Aug 2016 02:00:54 -0700
-
-libsnapwebsites (1.1.0.8~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 23 Aug 2016 02:00:50 -0700
-
-libsnapwebsites (1.1.0.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 22 Aug 2016 02:00:51 -0700
-
-libsnapwebsites (1.1.0.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 21 Aug 2016 02:00:50 -0700
-
-libsnapwebsites (1.1.0.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 20 Aug 2016 02:00:51 -0700
-
-libsnapwebsites (1.1.0.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 14:54:03 -0700
-
-libsnapwebsites (1.1.0.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 11:55:24 -0700
-
-libsnapwebsites (1.1.0.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 19 Aug 2016 02:00:51 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 25 Aug 2016 02:00:54 -0700
 
 libsnapwebsites (1.1.0.1~xenial) xenial; urgency=high
 
