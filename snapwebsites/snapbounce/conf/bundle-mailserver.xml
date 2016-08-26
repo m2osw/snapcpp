@@ -60,15 +60,28 @@ EOF
     # TODO: the .sed will re-add the notify_classes, bounce_notice_recipient
     #       and transport_maps each time we run this script...
     #
-    echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" >/tmp/bundle-mailserver.sed
-    echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" >>/tmp/bundle-mailserver.sed
-    echo "$ i \\" >>/tmp/bundle-mailserver.sed
-    echo "# `date` \\" >>/tmp/bundle-mailserver.sed
-    echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\" >>/tmp/bundle-mailserver.sed
-    echo "notify_classes = bounce \\" >>/tmp/bundle-mailserver.sed
-    echo "bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \\" >>/tmp/bundle-mailserver.sed
-    echo "transport_maps = hash:/etc/postfix/transport.maps" >>/tmp/bundle-mailserver.sed
-    sed -i.bak -f /tmp/bundle-mailserver.sed /etc/postfix/main.cf
+    MAILSERVER_SED=/tmp/bundle-mailserver.sed
+    echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" &gt; ${MAILSERVER_SED}
+    echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" &gt;&gt; ${MAILSERVER_SED}
+    echo "$ i \\" &gt;&gt; ${MAILSERVER_SED}
+    echo "# `date` \\" &gt;&gt; ${MAILSERVER_SED}
+    echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\" &gt;&gt; ${MAILSERVER_SED}
+    echo "notify_classes = bounce \\" &gt;&gt; ${MAILSERVER_SED}
+    echo "bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \\" &gt;&gt; ${MAILSERVER_SED}
+    echo "transport_maps = hash:/etc/postfix/transport.maps" &gt;&gt; ${MAILSERVER_SED}
+    sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
+
+    # we then need to add a snapbounce entry to the master.cf file
+    #
+    # TODO: the echo append the snapbounce entry again each time the
+    #       script runs...
+    #
+    MASTER=/etc/postfix/master.cf
+    cp ${MASTER} ${MASTER}.bak
+    echo "# Service to save bounced emails in Cassandra" &gt;&gt; ${MASTER}
+    echo "snapbounce unix -       n       n       -       -       pipe" &gt;&gt; ${MASTER}
+    echo "  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}" &gt;&gt; ${MASTER}
+    echo &gt;&gt; ${MASTER}
 
     # restart postfix with the correct parameters
     #
