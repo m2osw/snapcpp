@@ -780,6 +780,55 @@ void addr::address_changed()
 }
 
 
+/** \brief Return a list of local addresses on this machine.
+ *
+ * Peruse the list of available interfaces, and return any detected ip addresses
+ * in a vector.
+ */
+addr::vector_t addr::get_local_addresses()
+{
+    // get the list of interface addresses
+    //
+    struct ifaddrs * ifa_start(nullptr);
+    if(getifaddrs(&ifa_start) != 0)
+    {
+        // TODO: Should this throw, or just return an empty list quietly?
+        //
+        return vector_t();
+    }
+
+    std::shared_ptr<struct ifaddrs> auto_free(ifa_start, ifaddrs_deleter);
+
+    vector_t addr_list;
+    for(struct ifaddrs * ifa(ifa_start); ifa != nullptr; ifa = ifa->ifa_next)
+    {
+        if( ifa->ifa_addr == nullptr ) continue;
+
+        addr the_address;
+
+        uint16_t const family( ifa->ifa_addr->sa_family );
+        if( family == AF_INET )
+        {
+            the_address.set_ipv4( *(reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr)) );
+        }
+        else if( family == AF_INET6 )
+        {
+            the_address.set_ipv6( *(reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr)) );
+        }
+        else
+        {
+            // TODO: can we just ignore invalid addresses?
+            //throw addr_invalid_structure_exception( "Unknown address family!" );
+            continue;
+        }
+
+        addr_list.push_back( the_address );
+    }
+
+    return addr_list;
+}
+
+
 /** \brief Check whether this address represents this computer.
  *
  * This function reads the addresses as given to us by the getifaddrs()
