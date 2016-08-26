@@ -1385,6 +1385,7 @@ int bio_client::read_line(std::string & line)
  */
 int bio_client::write(char const * buf, size_t size)
 {
+    SNAP_LOG_TRACE("bio_client::write(): buf=")(buf)(", size=")(size);
     if(!f_bio)
     {
         return -1;
