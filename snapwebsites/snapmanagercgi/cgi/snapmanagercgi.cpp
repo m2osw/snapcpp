@@ -687,9 +687,13 @@ int manager_cgi::process_post()
     // update should happen and "fix" the status back to something else
     // than MODIFIED
     //
-    snap_manager::status_t const modified(snap_manager::status_t::state_t::STATUS_STATE_MODIFIED, plugin_name, field_name, new_value);
-    status_file.set_field(modified);
-    status_file.write();
+    if(plugin_name != "self"
+    || field_name != "refresh")
+    {
+        snap_manager::status_t const modified(snap_manager::status_t::state_t::STATUS_STATE_MODIFIED, plugin_name, field_name, new_value);
+        status_file.set_field(modified);
+        status_file.write();
+    }
 
     // retrieve installation variables which can be numerous
     //

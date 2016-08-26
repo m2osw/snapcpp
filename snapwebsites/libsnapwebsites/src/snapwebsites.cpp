@@ -1466,7 +1466,7 @@ bool server::check_cassandra(QString const & mandatory_table)
             // tables are expected to be created from the *-tables.xml files
             // (see snapdbproxy for details.)
             //
-            SNAP_LOG_FATAL(mandatory_table)(" table does not exist! Exiting.");
+            SNAP_LOG_FATAL("\"")(mandatory_table)("\" table does not exist! Exiting.");
             exit(1);
         }
 
@@ -1474,7 +1474,7 @@ bool server::check_cassandra(QString const & mandatory_table)
     }
     catch(std::runtime_error const & e)
     {
-        SNAP_LOG_ERROR("could not connect to the \"snapdbproxy\" daemon.");
+        SNAP_LOG_ERROR("could not connect to the \"snapdbproxy\" daemon or table \"")(mandatory_table)("\" is missing. Error: ")(e.what());
     }
 
     return false;
