@@ -22,6 +22,8 @@ then
     touch $SERVICES_DIR/pagelist.service
     touch $SERVICES_DIR/sendmail.service
 
+    systemctl daemon-reload
+
     for pkg in snapbackend snapsendmail snapimages snappagelist
     do
         if systemctl is-enabled ${pkg} 2> /dev/null
