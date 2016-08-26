@@ -489,7 +489,7 @@ int snap_cgi::process()
                 //
                 std::replace( env.begin(), env.end(), '\n', '|' );
 #ifdef _DEBUG
-                SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("', len=")(len);
+                //SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("', len=")(len);
 #endif
                 if(socket.write(env.c_str(), len) != len)
                 {
@@ -499,7 +499,7 @@ int snap_cgi::process()
                     return 2;
                 }
 #ifdef _DEBUG
-                SNAP_LOG_DEBUG("Writing newline");
+                //SNAP_LOG_DEBUG("Writing newline");
 #endif
                 if(socket.write("\n", 1) != 1)
                 {
@@ -510,7 +510,7 @@ int snap_cgi::process()
                 }
             }
 #ifdef _DEBUG
-            SNAP_LOG_DEBUG("Done with writing env");
+            //SNAP_LOG_DEBUG("Done with writing env");
 #endif
             if( strcmp(request_method, "POST") == 0 )
             {
@@ -556,7 +556,7 @@ int snap_cgi::process()
                             }
                         }
 #ifdef _DEBUG
-                        SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+                        //SNAP_LOG_DEBUG("wrote var=")(var.c_str());
 #endif
                         var.clear();
                         if(c == EOF)
