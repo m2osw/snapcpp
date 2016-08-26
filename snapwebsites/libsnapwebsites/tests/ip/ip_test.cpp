@@ -16,6 +16,8 @@ int main( int argc, char *argv[] )
 
 	for( const auto& addr : address_list )
 	{
+        cout << "Interface name: " << addr.get_iface_name() << endl;
+
         cout << "Network type: ";
 		switch( addr.get_network_type() )
 		{
@@ -41,7 +43,7 @@ int main( int argc, char *argv[] )
         {
             cout << " (ipv6)";
         }
-        cout << endl;
+        cout << endl << endl;
 	}
 }
 

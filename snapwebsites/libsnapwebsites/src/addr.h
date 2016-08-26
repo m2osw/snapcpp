@@ -104,6 +104,7 @@ public:
     network_type_t                  get_network_type() const;
     computer_interface_address_t    is_computer_interface_address() const;
 
+    std::string                     get_iface_name() const;
     int                             get_port() const;
     int                             get_protocol() const;
 
@@ -116,6 +117,7 @@ private:
 
     // either way, keep address in an IPv6 structure
     struct sockaddr_in6             f_address = sockaddr_in6();
+    std::string                     f_iface_name;
     int                             f_protocol = IPPROTO_TCP;
     mutable network_type_t          f_private_network_defined = network_type_t::NETWORK_TYPE_UNDEFINED;
 };

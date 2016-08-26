@@ -684,6 +684,17 @@ addr::network_type_t addr::get_network_type() const
 }
 
 
+/** \brief Retrieve the interface name
+ *
+ * This function retrieves the name of the interface of the address.
+ * This is set using the get_local_addresses() static method.
+ */
+std::string addr::get_iface_name() const
+{
+    return f_iface_name;
+}
+
+
 /** \brief Retrieve the port.
  *
  * This function retrieves the port of the IP address in host order.
@@ -806,6 +817,7 @@ addr::vector_t addr::get_local_addresses()
 
         addr the_address;
 
+        the_address.f_iface_name = ifa->ifa_name;
         uint16_t const family( ifa->ifa_addr->sa_family );
         if( family == AF_INET )
         {
