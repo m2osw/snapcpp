@@ -1,4 +1,4 @@
 usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
-conf/snappagelist.service conf/snapsendmail.service conf/snappagelist.service lib/systemd/system/
+conf/snapimages.service conf/snappagelist.service conf/snapsendmail.service lib/systemd/system/
