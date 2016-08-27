@@ -12,7 +12,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapbackend --cron-action list::pagelist
-ExecStop=/usr/bin/snapsignal pagelist/STOP
+ExecStop=/usr/bin/snapsignal "pagelist/STOP cache=no"
 Restart=on-failure
 RestartSec=1h
 User=snapwebsites

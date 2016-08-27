@@ -502,6 +502,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         snap::snap_communicator_message reply;
         reply.reply_to(message);
         reply.set_command(f_session->isConnected() ? "CASSANDRAREADY" : "NOCASSANDRA");
+        reply.add_parameter("cache", "no");
         f_messenger->send_message(reply);
         return;
     }
@@ -692,6 +693,7 @@ void snapdbproxy::no_cassandra()
         snap::snap_communicator_message cmd;
         cmd.set_command("NOCASSANDRA");
         cmd.set_service(".");
+        cmd.add_parameter("cache", "no");
         f_messenger->send_message(cmd);
     }
 
@@ -710,6 +712,7 @@ void snapdbproxy::cassandra_ready()
         snap::snap_communicator_message cmd;
         cmd.set_command("CASSANDRAREADY");
         cmd.set_service(".");
+        cmd.add_parameter("cache", "no");
         f_messenger->send_message(cmd);
     }
 }

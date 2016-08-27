@@ -399,6 +399,14 @@ public:
     void                        process_load_balancing();
 
 private:
+    struct message_cache
+    {
+        typedef std::vector<message_cache>  vector_t;
+
+        time_t                              f_timeout_timestamp;        // when that message is to be removed from the cache whether it was sent or not
+        snap::snap_communicator_message     f_message;                  // the message
+    };
+
     void                        do_root_work();
     void                        drop_privileges();
     void                        refresh_heard_of();
@@ -433,7 +441,7 @@ private:
     size_t                                              f_max_connections = SNAP_COMMUNICATOR_MAX_CONNECTIONS;
     bool                                                f_shutdown = false;
     bool                                                f_debug_lock = false;
-    snap::snap_communicator_message::vector_t           f_local_message_cache;
+    message_cache::vector_t                             f_local_message_cache;
     std::map<QString, time_t>                           f_received_broadcast_messages;
 };
 
@@ -3150,6 +3158,20 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     //
                     send_status(connection);
 
+                    // remove cached messages that timed out
+                    //
+                    time_t const now(time(nullptr));
+                    f_local_message_cache.erase(
+                                  std::remove_if(
+                                      f_local_message_cache.begin()
+                                    , f_local_message_cache.end()
+                                    , [now](auto const & cached_message)
+                                    {
+                                        return now > cached_message.f_timeout_timestamp;
+                                    })
+                                , f_local_message_cache.end()
+                                );
+
                     // if we have local messages that were cached, then
                     // forward them now
                     //
@@ -3160,16 +3182,9 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     size_t max_messages(f_local_message_cache.size());
                     for(size_t idx(0); idx < max_messages; )
                     {
-                        snap::snap_communicator_message const m(f_local_message_cache[idx]);
+                        snap::snap_communicator_message const & m(f_local_message_cache[idx].f_message);
                         if(m.get_service() == service_name)
                         {
-                            // whether it works, remove the message from
-                            // the cache
-                            //
-                            f_local_message_cache.erase(f_local_message_cache.begin() + idx);
-                            --max_messages;
-                            // no ++idx since we removed the item at 'idx'
-
                             // TBD: should we remove the service name before forwarding?
                             //      (we have two instances)
                             //
@@ -3188,6 +3203,13 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                                 //
                                 throw snap::snap_exception("REGISTER sent on a \"weird\" connection (3).");
                             }
+
+                            // whether it works, remove the message from
+                            // the cache
+                            //
+                            f_local_message_cache.erase(f_local_message_cache.begin() + idx);
+                            --max_messages;
+                            // no ++idx since we removed the item at 'idx'
                         }
                         else
                         {
@@ -3340,11 +3362,11 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     // STOP is understood by all services so not having
                     // some special case is safer.
                     //
-                    if(save_name == "snapinit")
-                    {
-                        // "false" like a STOP
-                        shutdown(false);
-                    }
+                    //if(save_name == "snapinit")
+                    //{
+                    //    // "false" like a STOP
+                    //    shutdown(false);
+                    //}
                     return;
                 }
             }
@@ -3586,7 +3608,49 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             //   (3) save the date when the message arrived and keep it in
             //       the cache only for a limited time (i.e. 5h)
             //
-            f_local_message_cache.push_back(message);
+            QString cache;
+            if(message.has_parameter("cache"))
+            {
+                cache = message.get_parameter("cache");
+            }
+            if(cache != "no")
+            {
+                // convert the cache into a map of parameters
+                //
+                snap::snap_string_list cache_parameters(cache.split(";"));
+                QMap<QString, QString> params;
+                for(auto p : cache_parameters)
+                {
+                    snap::snap_string_list param(p.split("="));
+                    if(param.size() == 2)
+                    {
+                        params[param[0]] = param[1];
+                    }
+                }
+
+                // get TTL if defined (1 min. per default)
+                //
+                int ttl(60);
+                if(params.contains("ttl"))
+                {
+                    bool ok(false);
+                    ttl = params["ttl"].toInt(&ok, 10);
+                    if(!ok || ttl < 10 || ttl > 86400)
+                    {
+                        SNAP_LOG_ERROR("invalid TTL in message [")(message.to_message())("]");
+
+                        // revert to default
+                        ttl = 60;
+                    }
+                }
+
+                // save the message
+                //
+                message_cache cache_message;
+                cache_message.f_timeout_timestamp = time(nullptr) + ttl;
+                cache_message.f_message = message;
+                f_local_message_cache.push_back(cache_message);
+            }
             return;
         }
 
