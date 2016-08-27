@@ -146,6 +146,7 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 add_subdirectory(cmake)         # SnapWebsites CMake Modules
 add_subdirectory(src)           # The snapwebsites library
 add_subdirectory(doc)           # API Documentation
+add_subdirectory(tests)         # Unit tests
 
 ##
 ## Code Analysis
