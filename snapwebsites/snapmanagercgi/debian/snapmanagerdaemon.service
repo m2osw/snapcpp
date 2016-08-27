@@ -12,7 +12,7 @@ Type=simple
 WorkingDirectory=/var/lib/snapwebsites
 ProtectHome=off
 ExecStart=/usr/bin/snapmanagerdaemon
-ExecStop=/usr/bin/snapsignal snapmanagerdaemon/STOP
+ExecStop=/usr/bin/snapsignal "snapmanagerdaemon/STOP cache=no"
 Restart=on-failure
 RestartSec=1min
 # Be explicit, we need snapmanagerdaemon running as root

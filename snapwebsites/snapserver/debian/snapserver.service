@@ -12,7 +12,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapserver
-ExecStop=/usr/bin/snapsignal snapserver/STOP
+ExecStop=/usr/bin/snapsignal "snapserver/STOP cache=no"
 Restart=on-failure
 RestartSec=5
 User=snapwebsites

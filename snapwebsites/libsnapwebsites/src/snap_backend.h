@@ -64,6 +64,7 @@ private:
     QtCassandra::QCassandraTable::pointer_t f_backend_table;
     QString                                 f_action;
     QString                                 f_website;
+    int                                     f_not_ready_counter = 0;
     bool                                    f_cron_action = false;
     bool                                    f_stop_received = false;
     bool                                    f_emit_warning = true;

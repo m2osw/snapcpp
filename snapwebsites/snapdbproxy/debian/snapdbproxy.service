@@ -12,7 +12,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapdbproxy
-ExecStop=/usr/bin/snapsignal snapdbproxy/STOP
+ExecStop=/usr/bin/snapsignal "snapdbproxy/STOP cache=no"
 Restart=on-failure
 RestartSec=10
 User=snapwebsites

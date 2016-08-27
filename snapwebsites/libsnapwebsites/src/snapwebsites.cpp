@@ -1679,6 +1679,7 @@ void server::udp_rusage(QString const & process_name)
     rusage_message.set_command("RUSAGE");
     rusage_message.set_server(f_parameters["server_name"]);
     rusage_message.set_service("snapwatchdog");
+    rusage_message.add_parameter("cache", "ttl=10");  // cache for at most 10 seconds
     rusage_message.add_parameter("process_name", process_name);
     rusage_message.add_parameter("pid", getpid());
     rusage_message.add_parameter("user_time", QString("%1.%2").arg(usage.ru_utime.tv_sec).arg(usage.ru_utime.tv_usec, 6, 10, QChar('0')));

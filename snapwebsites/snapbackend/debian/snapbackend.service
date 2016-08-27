@@ -13,7 +13,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapbackend
-ExecStop=/usr/bin/snapsignal snapbackend/STOP
+ExecStop=/usr/bin/snapsignal "snapbackend/STOP cache=no"
 User=snapwebsites
 Group=snapwebsites
 # No auto-restart, we use the timer to start once in a while

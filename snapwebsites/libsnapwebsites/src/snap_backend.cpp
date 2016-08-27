@@ -917,9 +917,28 @@ void snap_backend::process_tick()
         {
             if(!f_cron_action)
             {
-                SNAP_LOG_FATAL("The \"sites\" table does not even exist, we cannot yet run a backend action.");
-                exit(1);
-                snap::NOTREACHED();
+                // if we are connected to cassandra but are not marked ready
+                // that means the "sites" table is not yet defined
+                //
+                if(f_cassandra)
+                {
+                    SNAP_LOG_FATAL("snap_backend::process_tick(): The \"sites\" table does not even exist, we cannot yet run a backend action.");
+                    exit(1);
+                    snap::NOTREACHED();
+                }
+
+                // The CRON behavior ends up here all the time because we
+                // now wait for the CASSANDRAREADY event before the
+                // is_ready() function returns true... so we have to
+                // wait a bit before we exit with a fatal error
+                //
+                ++f_not_ready_counter;
+                if(f_not_ready_counter > 3)  // 3 represent a total of 30 seconds of wait at this time (see the 10 second wait below)
+                {
+                    SNAP_LOG_FATAL("snap_backend::process_tick(): We could not connect to snapdbproxy within 30 seconds.");
+                    exit(1);
+                    snap::NOTREACHED();
+                }
             }
 
             if(!f_cassandra)
@@ -948,6 +967,10 @@ void snap_backend::process_tick()
             g_tick_timer->set_timeout_date(snap_communicator::get_current_date() + 10LL * 1000000LL);
             return;
         }
+
+        // make sure we reset the "not ready counter" once ready
+        //
+        f_not_ready_counter = 0;
 
         // if a site exists then it has a "core::last_updated" entry
         //
@@ -1470,7 +1493,7 @@ void snap_backend::capture_zombies(pid_t pid)
     //
     // TBD: it looks like we could reuse that connection so we
     //      may want to avoid destroying and recreating the
-    //      child connection each time, although then we need
+    //      child connections each time, although then we need
     //      a separate flag to know whether a child is currently
     //      running or not (maybe keep its PID?) and it does not
     //      look like the creation is slow at all...
@@ -1600,8 +1623,7 @@ void snap_backend::disconnect()
 
     if(g_messenger && !f_cron_action && f_action != "list")
     {
-        // this was the CRON action (which snapinit takes care of
-        // restarting once in a while)
+        // this was the CRON action
         //
         QString action(f_action);
         int const pos(action.indexOf(':'));
