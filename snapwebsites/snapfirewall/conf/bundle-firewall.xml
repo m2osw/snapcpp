@@ -15,6 +15,13 @@
     <p>Note that the firewall requires the snapdbproxy package
     since it makes use of the database to manage the list
     of IP addresses to block.</p>
+
+    <p><strong>IMPORTANT NOTE:</strong> the IP address of that
+    the VPN generates for your computers are NOT used with the
+    firewall because all those IP addresses are virtual and
+    they do not interact with the firewall at all. So, in the
+    following questions, you do not have to enter any IP
+    addresses that your VPN generates.</p>
   </description>
   <fields>
     <field name="public_ip" type="input">

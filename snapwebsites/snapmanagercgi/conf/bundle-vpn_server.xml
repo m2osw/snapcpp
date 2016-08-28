@@ -22,10 +22,6 @@
     and in effect make it work in a failsafe manner.</p>
   </description>
   <fields>
-    <field name="server_address" type="input">
-      <label>VPN Server IP address</label>
-      <description>The server IP address to which clients will connect.</description>
-    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>Name of your organization.</description>

@@ -219,14 +219,17 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
 
     {
         snap_addr::addr::vector_t interfaces( snap_addr::addr::get_local_addresses() );
-        for( auto const &addr : interfaces )
+        for( auto const & addr : interfaces )
         {
-            if( !addr.is_ipv4() )                                                                  continue;
-            if( addr.get_network_type() != snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE ) continue;
+            if( !addr.is_ipv4()
+            ||  addr.get_network_type() != snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE )
+            {
+                continue;
+            }
 
             snap_manager::status_t const iface ( snap_manager::status_t::state_t::STATUS_STATE_INFO
                                                , get_plugin_name()
-                                               , QString("if: %1").arg(addr.get_iface_name().c_str())
+                                               , QString("if::%1").arg(addr.get_iface_name().c_str())
                                                , addr.get_ipv4_string().c_str()
                                                );
             server_status.set_field(iface);
@@ -267,6 +270,8 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         }
     }
 
+#if 0
+    // this does not currently work properly
     {
         snap::snap_string_list const & frontend_servers(f_snap->get_snapmanager_frontend());
         snap_manager::status_t const frontend(
@@ -278,6 +283,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                     , frontend_servers.join(","));
         server_status.set_field(frontend);
     }
+#endif
 
     {
         std::vector<std::string> const & bundle_uri(f_snap->get_bundle_uri());
@@ -665,6 +671,7 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         return true;
     }
 
+#if 0
     if(s.get_field_name() == "snapmanager_frontend")
     {
         // the list if frontend snapmanagers that are to receive statuses
@@ -697,6 +704,7 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
 
         return true;
     }
+#endif
 
     if(s.get_field_name() == "bundle_uri")
     {
@@ -968,6 +976,10 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
         }
     }
 
+    // WARNING: since we commented out the snapmanager_frontend for now
+    //          we should never get here with such a field name so we
+    //          do not have to do that here
+    //
     if(field_name == "snapmanager_frontend"
     || reset_bundle_uri)
     {

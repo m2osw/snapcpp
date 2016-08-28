@@ -46,8 +46,8 @@
 
 namespace
 {
-    QString const CLIENT_ADDNEW_NAME = QString("Add new client");
-    QString const CLIENT_CONFIG_NAME = QString("VPN Client Configuration");
+    QString const CLIENT_ADDNEW_NAME = QString("add_new_client");
+    QString const CLIENT_CONFIG_NAME = QString("vpn_client_configuration");
 }
 
 
@@ -221,7 +221,10 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     {
         SNAP_LOG_TRACE("file info=")(info.filePath());
 
-        if( info.baseName() == "server" ) continue; // Ignore the server configuration
+        if( info.baseName() == "server" )
+        {
+            continue; // Ignore the server configuration
+        }
 
         // create a field for this one, it worked
         //
@@ -343,7 +346,7 @@ bool vpn::display_value ( QDomElement parent
                     "Enter one or more names of the clients you wish to add, one per line."
                     , s.get_field_name()
                     , ""
-                    , ""
+                    , "<p>You may reuse this form to add more clients at any time.</p>"
                     ));
         f.add_widget(field);
         f.generate(parent, uri);
