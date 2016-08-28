@@ -54,6 +54,10 @@ namespace
 {
 
 
+char const * g_configuration_filename = "snapserver";
+
+char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapserver.conf";
+
 //void file_descriptor_deleter(int * fd)
 //{
 //    if(close(*fd) != 0)
@@ -207,6 +211,19 @@ void snapserver_manager::on_retrieve_status(snap_manager::server_status & server
         return;
     }
 
+    // allow for editing the IP:port info
+    //
+    snap_config snap_server_conf(g_configuration_filename);
+
+    {
+        snap_manager::status_t const host_list(
+                      snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "listen"
+                    , snap_server_conf["listen"]);
+        server_status.set_field(host_list);
+    }
+
     // get the snapserver status
     //
     snap_manager::service_status_t status(f_snap->service_status("/usr/bin/snapserver", "snapserver"));
@@ -249,6 +266,39 @@ void snapserver_manager::on_retrieve_status(snap_manager::server_status & server
 bool snapserver_manager::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
     QDomDocument doc(parent.ownerDocument());
+
+    if(s.get_field_name() == "listen")
+    {
+        // IP:port, usually remains 127.0.0.1 unless the server is moved
+        // on a middle-end server.
+        //
+        // Also, unless we move snapmanager support to snapmanager.cgi/daemon
+        // we need to connect and thus can use 0.0.0.0 here for that period
+        // of time
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Snap Server IP Addresses:"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "By default we setup the Snap! Servers with IP address 127.0.0.1 and port 4004."
+                         " If you move the Snap! Servers on a separate computer (not on the computer."
+                         " with Apache2 and snap.cgi, then you will need to change the IP address to"
+                         " your computer Private Network IP Address (if you use OpenVPN, it is likely"
+                         " the tun0 IP address. If you do not use OpenVPN, it is likely something like"
+                         " eth0 or enp0s3."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
 
     if(s.get_field_name() == "service_status")
     {
@@ -336,6 +386,20 @@ bool snapserver_manager::apply_setting(QString const & button_name, QString cons
     NOTUSED(old_or_installation_value);
     NOTUSED(button_name);
     NOTUSED(affected_services);
+
+    if(field_name == "cassandra_host_list")
+    {
+        // to make use of the new list, make sure to restart
+        //
+        affected_services.insert("snapserver");
+
+        // fix the value in memory
+        //
+        snap_config snap_server_conf(g_configuration_filename);
+        snap_server_conf["listen"] = new_value;
+
+        return f_snap->replace_configuration_value(g_configuration_d_filename, "listen", new_value);
+    }
 
     if(field_name == "service_status")
     {

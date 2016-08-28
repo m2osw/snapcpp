@@ -790,7 +790,7 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
         if(read(fd, buf.get(), size) != size)
         {
             int const e(errno);
-            SNAP_LOG_ERROR("writing of new line to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+            SNAP_LOG_ERROR("writing of new line to \"")(filename)("\" failed -- could not read input file (errno: ")(e)(", ")(strerror(e))(")");
             return false;
         }
 

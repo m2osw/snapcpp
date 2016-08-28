@@ -226,7 +226,9 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
     {
         // get the backend service status
         //
-        snap_manager::service_status_t status(f_snap->service_status(service_info.f_service_executable, service_info.f_service_name));
+        snap_manager::service_status_t status(f_snap->service_status(
+                        service_info.f_service_executable,
+                        std::string(service_info.f_service_name) + (service_info.f_recovery ? "" : ".timer")));
 
         // transform to a string
         //
@@ -244,6 +246,12 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
                         QString("%1::service_status").arg(service_info.f_service_name),
                         status_string);
         server_status.set_field(status_widget);
+
+        //snap_manager::status_t const nice(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+        //                                      get_plugin_name(),
+        //                                      QString("%1::nice").arg(service_info.f_service_name),
+        //                                      nice_tag.text());
+        //server_status.set_field(nice);
     }
 
 #if 0
@@ -566,6 +574,7 @@ bool backend::apply_setting(QString const & button_name, QString const & field_n
 
     // determine executable using the list of supported backend services
     //
+    bool recovery(false);
     int nice_value(0);
     QString executable;
     for(auto const & service : g_services)
@@ -573,12 +582,14 @@ bool backend::apply_setting(QString const & button_name, QString const & field_n
         if(service_name == service.f_service_name)
         {
             executable = service.f_service_executable;
+            recovery   = service.f_recovery;
             nice_value = service.f_nice;
             break;
         }
     }
     if(executable.isEmpty())
     {
+        // field not found?!
         return false;
     }
 
@@ -586,8 +597,13 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
 
     if(field == "service_status")
     {
+        QString unit_name(service_name);
+        if(!recovery)
+        {
+            unit_name += ".timer";
+        }
         snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
-        f_snap->service_apply_status(service_name.toUtf8().data(), status);
+        f_snap->service_apply_status(unit_name.toUtf8().data(), status);
         return true;
     }
 

@@ -60,13 +60,10 @@ SNAP_PLUGIN_START(dbproxy, 1, 0)
 namespace
 {
 
-// TODO: offer the user a way to change this path?
-//char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapdbproxy.xml";
+//char const * g_service_filename = "/lib/systemd/system/snapdbproxy.service";
 
-// TODO: get that path from the XML instead
 char const * g_configuration_filename = "snapdbproxy";
 
-// TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapdbproxy.conf";
 
 
