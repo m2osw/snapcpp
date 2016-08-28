@@ -406,6 +406,14 @@ void snapdbproxy::run()
     // now run our listening loop
     //
     f_communicator->run();
+
+    if(f_force_restart)
+    {
+        // by exiting with 1 systemd thinks we have failed and restarts
+        // us automatically...
+        //
+        exit(1);
+    }
 }
 
 
@@ -547,6 +555,13 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         return;
     }
 
+    if(command == "RELOADCONFIG")
+    {
+        f_force_restart = true;
+        stop(false);
+        return;
+    }
+
     if(command == "HELP")
     {
         // Snap! Communicator is asking us about the commands that we support
@@ -556,7 +571,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRASTATUS,HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         f_messenger->send_message(reply);
         return;

@@ -450,6 +450,11 @@ bool dbproxy::apply_setting(QString const & button_name, QString const & field_n
         //
         affected_services.insert("snapdbproxy");
 
+        // fix the value in memory
+        //
+        snap_config snap_dbproxy_conf(g_configuration_filename);
+        snap_dbproxy_conf["cassandra_host_list"] = new_value;
+
         return f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_host_list", new_value);
     }
 

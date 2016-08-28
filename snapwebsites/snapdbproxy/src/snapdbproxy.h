@@ -253,6 +253,7 @@ private:
     snapdbproxy_timer::pointer_t                f_timer;
     int                                         f_max_pending_connections = -1;
     bool                                        f_ready = false;
+    bool                                        f_force_restart = false;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     bool                                        f_no_cassandra_sent = false;
