@@ -351,6 +351,7 @@ public:
     void                start();
     void                server_unreachable(QString const & addr);
     void                gossip_received(QString const & addr);
+    void                forget_remote_connection(QString const & addr);
 
 private:
     snap_communicator_server_pointer_t  f_communicator_server;
@@ -1358,6 +1359,23 @@ void remote_communicator_connections::gossip_received(QString const & addr)
 }
 
 
+void remote_communicator_connections::forget_remote_connection(QString const & addr_port)
+{
+    QString addr(addr_port);
+    int const pos(addr.indexOf(':'));
+    if(pos > 0)
+    {
+        addr = addr.mid(pos + 1);
+    }
+    auto it(f_smaller_ips.find(addr));
+    if(it != f_smaller_ips.end())
+    {
+        snap::snap_communicator::instance()->remove_connection(*it);
+        f_smaller_ips.erase(it);
+    }
+}
+
+
 
 
 
@@ -2240,9 +2258,10 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 
     // TODO: move all the command bodies to sub-funtions.
 
-    // check who this message is for
-    if((server_name.isEmpty() || server_name == f_server_name)      // match server
-    && (service.isEmpty() || service == "snapcommunicator"))        // and service?
+    // check whether this message is for us
+    //
+    if((server_name.isEmpty() || server_name == f_server_name || server_name == "*")    // match server
+    && (service.isEmpty() || service == "snapcommunicator"))                            // and service?
     {
         if(f_shutdown)
         {
@@ -2781,12 +2800,19 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                 // means that the IP address is now stuck in the
                 // computer's brain "forever"
                 //
+                QString const forget_ip(message.get_parameter("ip"));
+
+                // self is not a connection that get broadcast messages
+                // for snapcommunicator, so we also call the remove_neighbor()
+                // function now
+                //
+                remove_neighbor(forget_ip);
+
                 // once you notice many connection errors to other computers
                 // that have been removed from your cluster, you want the
                 // remaining computers to forget about that IP address and
                 // it is done by broadcasting a FORGET message to everyone
                 //
-                QString const forget_ip(message.get_parameter("ip"));
                 if(!message.has_parameter("broadcast_hops"))
                 {
                     // this was sent directly to this instance only,
@@ -2794,15 +2820,11 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //
                     snap::snap_communicator_message forget;
                     forget.set_command("FORGET");
-                    forget.set_service("*");
+                    forget.set_server("*");
+                    forget.set_service("snapcommunicator");
                     forget.add_parameter("ip", forget_ip);
                     broadcast_message(forget);
                 }
-                // self is not a connection that get broadcast messages
-                // for snapcommunicator, so we also call the remove_neighbor()
-                // function now
-                //
-                remove_neighbor(forget_ip);
                 return;
             }
             break;
@@ -3805,9 +3827,24 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
         informed_neighbors_list = informed_neighbors.split(',', QString::SkipEmptyParts);
     }
 
+    QString destination("?");
     QString const service(message.get_service());
-    bool const all(hops < 5 && service == "*");
-    bool const remote(hops < 5 && (all || service == "?"));
+    if(service != "."
+    && service != "?"
+    && service != "*")
+    {
+        destination = message.get_server();
+        if(destination.isEmpty())
+        {
+            destination = "?";
+        }
+    }
+    else
+    {
+        destination = service;
+    }
+    bool const all(hops < 5 && destination == "*");
+    bool const remote(hops < 5 && (all || destination == "?"));
 
     // we always broadcast to all local services
     snap::snap_communicator::snap_connection::vector_t broadcast_connection;
@@ -4350,11 +4387,23 @@ bool snap_communicator_server::add_neighbors(QString const & new_neighbors)
  */
 void snap_communicator_server::remove_neighbor(QString const & neighbor)
 {
+    // remove the IP from the neighbors.txt file if still present there
+    //
     if(f_all_neighbors.contains(neighbor))
     {
         f_all_neighbors.remove(neighbor);
         save_neighbors();
     }
+
+    // make sure we stop all gossiping toward that address
+    //
+    f_remote_snapcommunicators->gossip_received(neighbor);
+
+    // also remove the remote connection otherwise it will send that
+    // info in broadcast messages and the neighbor resaved in those
+    // other platforms neighbors.txt files
+    //
+    f_remote_snapcommunicators->forget_remote_connection(neighbor);
 }
 
 

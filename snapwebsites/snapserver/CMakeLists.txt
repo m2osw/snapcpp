@@ -1,6 +1,6 @@
 #
 # File:
-#      CMakeLists.txt
+#      snapwebsites/snapserver/CMakeLists.txt
 #
 # Description:
 #      Definitions to create the build environment with cmake
@@ -152,10 +152,11 @@ include_directories(
 ##
 ## Compiling
 ##
-add_subdirectory( conf  )           # Configuration files and samples
-add_subdirectory( src   )           # Actual Snap! Websites server
-add_subdirectory( doc   )           # Generate the documentation
-add_subdirectory( tests )           # Tests to run against the server
+add_subdirectory( conf            ) # Configuration files and samples
+add_subdirectory( src             ) # Actual Snap! Websites server
+add_subdirectory( manager-plugins ) # Actual Snap! Websites server
+add_subdirectory( doc             ) # Generate the documentation
+add_subdirectory( tests           ) # Tests to run against the server
 
 snap_build_xml_targets()
 

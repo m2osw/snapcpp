@@ -669,6 +669,10 @@ QString const & snap_communicator_message::get_server() const
  * This is particularly useful when you need to send a reply to a
  * specific daemon that sent you a message.
  *
+ * The name can be set to "*", which is useful to broadcast the message
+ * to all servers even if the destination service name is
+ * "snapcommunicator".
+ *
  * \param[in] server  The name of the server to send this message to.
  *
  * \sa get_server()
@@ -681,7 +685,10 @@ void snap_communicator_message::set_server(QString const & server)
     {
         // this name can be empty and it supports lowercase
         //
-        verify_name(server, true);
+        if(server != "*")
+        {
+            verify_name(server, true);
+        }
 
         f_server = server;
         f_cached_message.clear();
