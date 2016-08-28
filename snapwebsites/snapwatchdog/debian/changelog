@@ -1,26 +1,8 @@
-snapwatchdog (0.2.2.4~xenial) xenial; urgency=high
+snapwatchdog (0.2.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the installation of tables and plugins.
 
- -- Build Server <build@m2osw.com>  Sat, 27 Aug 2016 02:00:51 -0700
-
-snapwatchdog (0.2.2.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 26 Aug 2016 20:12:25 -0700
-
-snapwatchdog (0.2.2.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 26 Aug 2016 02:00:51 -0700
-
-snapwatchdog (0.2.2.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 25 Aug 2016 18:20:25 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 27 Aug 2016 02:00:51 -0700
 
 snapwatchdog (0.2.2.0~xenial) xenial; urgency=high
 
