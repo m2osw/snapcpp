@@ -584,7 +584,7 @@ bool backend::apply_setting(QString const & button_name, QString const & field_n
 
 SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\" executable = [")(executable)("].");
 
-    if(field_name == "service_status")
+    if(field == "service_status")
     {
         snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
         f_snap->service_apply_status(service_name.toUtf8().data(), status);
