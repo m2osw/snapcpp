@@ -195,14 +195,25 @@ void snap_config_file::read_config_file()
     //
     g_configuration_has_started = true;
 
-    actual_read_config_file(g_configurations_path + "/" + f_filename + ".conf", false);
-
-    // second try reading a file of the same name in a sub-directory named
-    // "snapwebsites.d"; we have to do it last because we do overwrite
-    // parameters (i.e. we keep the very last instance of each parameter
-    // read from files.)
+    // if the filename includes any "." or "/", it is not one of our
+    // files so we instead load the file as is
     //
-    actual_read_config_file(g_configurations_path + "/snapwebsites.d/" + f_filename + ".conf", true);
+    std::string::size_type const pos(f_filename.find_first_of("./"));
+    if(pos != std::string::npos)
+    {
+        actual_read_config_file(f_filename, false);
+    }
+    else
+    {
+        actual_read_config_file(g_configurations_path + "/" + f_filename + ".conf", false);
+
+        // second try reading a file of the same name in a sub-directory named
+        // "snapwebsites.d"; we have to do it last because we do overwrite
+        // parameters (i.e. we keep the very last instance of each parameter
+        // read from files.)
+        //
+        actual_read_config_file(g_configurations_path + "/snapwebsites.d/" + f_filename + ".conf", true);
+    }
 }
 
 
@@ -240,6 +251,7 @@ void snap_config_file::actual_read_config_file(std::string const & filename, boo
     // read the configuration file variables as parameters
     //
     // TODO: use C++ and std::getline(in, ...) so we do not have to limit the length of a line
+    std::string prefix;
     char buf[1024];
     for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
     {
@@ -271,47 +283,89 @@ void snap_config_file::actual_read_config_file(std::string const & filename, boo
         {
             ++n;
         }
-        if(*n == '#' || *n == '\0')
+        if(*n == '#' || *n == ';' || *n == '\0')
         {
             // comment or empty line
             continue;
         }
-        char * v(n);
-        while(*v != '=' && *v != '\0')
+        if(*n == '[')
         {
-            // TODO verify that the name is only ASCII? (probably not too
-            //      important because if not it will be ignored anyway)
-            //      Note that the layout expects names including colons (:)
-            //      as a namespace separator: layout::layout, layout::theme.
-            ++v;
+            // support for INI files starts here, we take the name between
+            // [ and ] and save it as a "prefix" to our follow list of
+            // names until another section appears
+            //
+            do
+            {
+                ++n;
+            }
+            while(isspace(*n));
+            char * v(n);
+            while(*v != ']' && *v != '\0' && !isspace(*v) && *v != ':')
+            {
+                ++v;
+            }
+            char * e(v);
+            while(isspace(*v))
+            {
+                ++v;
+            }
+            // Note: we do not support "[]" to reset back to "global"
+            //       variables; just place your global variables first
+            //
+            if(*v != ']' || n == e)
+            {
+                std::stringstream ss;
+                ss << "invalid section on line " << line << " in \"" << filename << "\", no equal sign found";
+                SNAP_LOG_ERROR(ss.str())(".");
+                syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
+                exit(1);
+            }
+            // right away add the "::" to the prefix so we can use it as is
+            // when we find a variable
+            //
+            prefix = std::string(n, e - n) + "::";
         }
-        if(*v != '=')
+        else
         {
-            std::stringstream ss;
-            ss << "invalid variable on line " << line << " in \"" << filename << "\", no equal sign found";
-            SNAP_LOG_ERROR(ss.str())(".");
-            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-            exit(1);
-        }
-        char * e;
-        for(e = v; e > n && isspace(e[-1]); --e);
-        *e = '\0';
-        do
-        {
-            ++v;
-        }
-        while(isspace(*v));
-        for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
-        *e = '\0';
-        if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
-        {
-            // remove single or double quotes
-            v++;
-            e[-1] = '\0';
-        }
+            char * v(n);
+            while(*v != '=' && *v != '\0')
+            {
+                // TODO verify that the name is only ASCII? (probably not too
+                //      important because if not it will be ignored anyway)
+                //      Note that the layout expects names including colons (:)
+                //      as a namespace separator: layout::layout, layout::theme.
+                ++v;
+            }
+            if(*v != '=')
+            {
+                std::stringstream ss;
+                ss << "invalid variable on line " << line << " in \"" << filename << "\", no equal sign found";
+                SNAP_LOG_ERROR(ss.str())(".");
+                syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
+                exit(1);
+            }
+            char * e;
+            for(e = v; e > n && isspace(e[-1]); --e);
+            *e = '\0';
+            do
+            {
+                ++v;
+            }
+            while(isspace(*v));
+            for(e = v + strlen(v); e > v && isspace(e[-1]); --e);
+            *e = '\0';
+            if(v != e && ((v[0] == '\'' && e[-1] == '\'') || (v[0] == '"' && e[-1] == '"')))
+            {
+                // remove single or double quotes
+                //
+                v++;
+                e[-1] = '\0';
+            }
 
-        // keep the last read value
-        f_parameters[n] = v;
+            // keep the last read value in that section
+            //
+            f_parameters[prefix + n] = v;
+        }
     }
 }
 

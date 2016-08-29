@@ -741,7 +741,7 @@ void manager::reboot(bool reboot)
 }
 
 
-bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value)
+bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, bool const create_backup)
 {
     QString const line(QString("%1=%2\n").arg(field_name).arg(new_value));
     QByteArray utf8_line(line.toUtf8());
@@ -794,7 +794,8 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
             return false;
         }
 
-        // TBD: Often administrators a way to define the backup extension?
+        // TBD: Offer administrators a way to define the backup extension?
+        if(create_backup)
         {
             int bak(open((filename + ".bak").toUtf8().data(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH));
             if(bak == -1)

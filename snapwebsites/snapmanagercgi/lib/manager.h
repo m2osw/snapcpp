@@ -136,7 +136,7 @@ public:
     int                             package_status(std::string const & package_name, std::string & output);
     QString                         count_packages_that_can_be_updated(bool check_cache);
     std::vector<std::string>        read_filenames(std::string const & pattern) const;
-    bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value);
+    bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, bool const create_backup = true);
 
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
     SNAP_SIGNAL_WITH_MODE(handle_affected_services, (std::set<QString> & affected_services), (affected_services), NEITHER);
