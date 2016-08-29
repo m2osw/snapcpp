@@ -1,3 +1,9 @@
+snapcommunicator (1.0.3.9~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 29 Aug 2016 12:53:50 -0700
+
 snapcommunicator (1.0.3.8~xenial) xenial; urgency=high
 
   * Nightly build.
