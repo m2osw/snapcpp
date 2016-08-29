@@ -82,6 +82,8 @@ private:
     bool                    is_installed();
 
     snap_manager::manager * f_snap = nullptr;
+
+    QString                 get_server_ip() const;
 };
 
 } // namespace vpn

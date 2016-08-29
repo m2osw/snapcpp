@@ -1,56 +1,14 @@
-snapmanagercgi (1.0.11.9~xenial) xenial; urgency=high
+snapmanagercgi (1.0.12.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
  -- Doug Barbieri <doug@dooglio.net>  Mon, 29 Aug 2016 12:53:46 -0700
 
-snapmanagercgi (1.0.11.8~xenial) xenial; urgency=high
+snapmanagercgi (1.0.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added the affected-services tag to the XSD definitions.
 
- -- Build Server <build@m2osw.com>  Mon, 29 Aug 2016 02:00:55 -0700
-
-snapmanagercgi (1.0.11.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 28 Aug 2016 10:10:14 -0700
-
-snapmanagercgi (1.0.11.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 27 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.11.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 26 Aug 2016 20:12:27 -0700
-
-snapmanagercgi (1.0.11.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 26 Aug 2016 02:00:53 -0700
-
-snapmanagercgi (1.0.11.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 25 Aug 2016 18:20:27 -0700
-
-snapmanagercgi (1.0.11.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 25 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.11.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 23 Aug 2016 02:00:50 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 29 Aug 2016 02:00:55 -0700
 
 snapmanagercgi (1.0.11.0~xenial) xenial; urgency=high
 
@@ -58,47 +16,11 @@ snapmanagercgi (1.0.11.0~xenial) xenial; urgency=high
 
  -- Doug Barbieri <doug@dooglio.net>  Mon, 22 Aug 2016 18:28:34 -0700
 
-snapmanagercgi (1.0.10.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 22 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.10.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 21 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.10.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 20 Aug 2016 02:00:51 -0700
-
-snapmanagercgi (1.0.10.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 14:54:04 -0700
-
 snapmanagercgi (1.0.10.1~xenial) xenial; urgency=high
 
   * Bumping to accomodate new change to enable openvpn.
 
  -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 14:47:59 -0700
-
-snapmanagercgi (1.0.9.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Fri, 19 Aug 2016 11:55:23 -0700
-
-snapmanagercgi (1.0.9.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 19 Aug 2016 02:00:52 -0700
 
 snapmanagercgi (1.0.9.0~xenial) xenial; urgency=high
 

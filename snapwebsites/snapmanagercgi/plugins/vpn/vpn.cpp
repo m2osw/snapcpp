@@ -48,6 +48,8 @@ namespace
 {
     QString const CLIENT_ADDNEW_NAME = QString("add_new_client");
     QString const CLIENT_CONFIG_NAME = QString("vpn_client_configuration");
+    QString const CLIENT_SERVER_IP   = QString("server_ip");
+    QString const SERVER_IP_FILENAME = QString("server_ip_address.conf");
 }
 
 
@@ -180,6 +182,23 @@ void vpn::bootstrap(snap_child * snap)
 }
 
 
+QString vpn::get_server_ip() const
+{
+    QString server_ip;
+    QFile file( QString("%1/%2").arg(f_snap->get_data_path()).arg(SERVER_IP_FILENAME) );
+    if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
+    {
+        QTextStream in(&file);
+        server_ip = in.readAll();
+    }
+    if( server_ip.isEmpty() )
+    {
+        server_ip = f_snap->get_public_ip();
+    }
+    return server_ip;
+}
+
+
 /** \brief Determine this plugin status data.
  *
  * This function builds a tree of statuses.
@@ -261,15 +280,29 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     QFile file( "/etc/openvpn/server.conf" );
     if( file.exists() )
     {
+        // Server IP
+        //
+        {
+            snap_manager::status_t const ctl(
+                snap_manager::status_t::state_t::STATUS_STATE_INFO
+                , get_plugin_name()
+                , CLIENT_SERVER_IP
+                , get_server_ip()
+                );
+            server_status.set_field(ctl);
+        }
+
         // Add new client
         //
-        snap_manager::status_t const ctl(
+        {
+            snap_manager::status_t const ctl(
                 snap_manager::status_t::state_t::STATUS_STATE_INFO
                 , get_plugin_name()
                 , CLIENT_ADDNEW_NAME
                 , QString()
                 );
-        server_status.set_field(ctl);
+            server_status.set_field(ctl);
+        }
     }
     else
     {
@@ -333,6 +366,24 @@ bool vpn::display_value ( QDomElement parent
     if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_ERROR)
     {
         return false;
+    }
+
+    if( s.get_field_name() == CLIENT_SERVER_IP )
+    {
+        snap_manager::form f(
+                get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                    "Enter the public IP address of this server:"
+                    , s.get_field_name()
+                    , s.get_value()
+                    , "<p>Do <b>not</b> enter the VPN address from the tun0 interface.</p>"
+                    ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
     }
 
     if( s.get_field_name() == CLIENT_ADDNEW_NAME )
@@ -413,6 +464,21 @@ bool vpn::apply_setting ( QString const & button_name
     NOTUSED(old_or_installation_value);
     NOTUSED(affected_services);
 
+    if( field_name == CLIENT_SERVER_IP )
+    {
+        QFile file( QString("%1/%2").arg(f_snap->get_data_path()).arg(SERVER_IP_FILENAME) );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return false;
+        }
+
+        QTextStream out( &file );
+        out << new_value;
+        return true;
+    }
+
     if( field_name == CLIENT_ADDNEW_NAME )
     {
         QFile create_script( "/tmp/create_client_certs.sh" );
@@ -444,6 +510,8 @@ bool vpn::apply_setting ( QString const & button_name
         {
             clients << new_value;
         }
+
+        QString const server_ip( get_server_ip() );
         //
         // I deliberately want a copy, not a reference, as I'm going to modify the client
         // string and remove any stray CRs
@@ -451,10 +519,10 @@ bool vpn::apply_setting ( QString const & button_name
         for( auto client : clients )
         {
             client.remove('\r'); // Get rid of CRs
-            if( QProcess::execute( "/tmp/create_client_certs.sh", {f_snap->get_public_ip(), client} ) != 0 )
+            if( QProcess::execute( "/tmp/create_client_certs.sh", {server_ip, client} ) != 0 )
             {
                 SNAP_LOG_ERROR("Could not execute client creation script! IP=")
-                    (qPrintable(f_snap->get_public_ip()))
+                    (qPrintable(server_ip))
                     (", client=")(qPrintable(client));
             }
         }
