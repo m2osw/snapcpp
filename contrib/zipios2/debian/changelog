@@ -1,3 +1,9 @@
+zipios (2.1.2.246~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 29 Aug 2016 14:35:09 -0700
+
 zipios (2.1.2.245~xenial) xenial; urgency=high
 
   * Nightly build.

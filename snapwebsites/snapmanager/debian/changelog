@@ -1,3 +1,9 @@
+snapmanager (1.1.0.250~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 29 Aug 2016 14:35:13 -0700
+
 snapmanager (1.1.0.249~xenial) xenial; urgency=high
 
   * Nightly build.
