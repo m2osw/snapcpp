@@ -387,7 +387,7 @@ bool snapserver_manager::apply_setting(QString const & button_name, QString cons
     NOTUSED(button_name);
     NOTUSED(affected_services);
 
-    if(field_name == "cassandra_host_list")
+    if(field_name == "listen")
     {
         // to make use of the new list, make sure to restart
         //
