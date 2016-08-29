@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+  see /usr/share/snapwebsites/xsd/bundles.xsd for details
+  to verify your changes (change the == with two dashes):
+    xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-tools.xml
+-->
+<bundle>
+  <name>dns</name>
+  <description>
+    <p>This bundle installs the Domain Name Server (bind9) on your machine.</p>
+  </description>
+  <packages>bind9</packages>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

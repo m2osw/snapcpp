@@ -201,7 +201,7 @@ void snap_config_file::read_config_file()
     std::string::size_type const pos(f_filename.find_first_of("./"));
     if(pos != std::string::npos)
     {
-        actual_read_config_file(f_filename, false);
+        actual_read_config_file(f_filename, true);
     }
     else
     {
