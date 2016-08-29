@@ -32,6 +32,11 @@
           for, etc.
 
         <bundle>
+        <affected-services>
+          A comma separated list of service names that need to be sent
+          the RELOADCONFIG after installing or uninstalling this bundle.
+
+        <bundle>
         <packages>  [optional]
           A comma separated list of package names. These are the packages
           installed and managed by this bundle.
@@ -255,6 +260,8 @@ a server.
 
   <xs:element name="description" type="html"/>
 
+  <xs:element name="affected-services" type="xs:string"/>
+
   <xs:element name="packages" type="xs:string"/>
 
   <xs:element name="label" type="xs:string"/>
@@ -295,6 +302,7 @@ a server.
         <xs:element ref="name" minOccurs="1" maxOccurs="1"/>
         <xs:element ref="description" minOccurs="1" maxOccurs="1"/>
         <!-- optional fields -->
+        <xs:element ref="affected-services" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="packages" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="is-installed" minOccurs="0" maxOccurs="1"/>
         <xs:element ref="preinst" minOccurs="0" maxOccurs="1"/>
