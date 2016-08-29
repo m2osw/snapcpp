@@ -49,6 +49,7 @@
       <description>Enter the <strong>space separated</strong> list of IPs of all the computers that may access this computer so we can open the corresponding ports in the firewall.</description>
     </field>
   </fields>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapfirewall</packages>
   <postinst>
     # Setup the firewall IPs and interfaces

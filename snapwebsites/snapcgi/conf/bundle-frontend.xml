@@ -38,6 +38,7 @@
       </description>
     </field>
   </fields>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapcgi</packages>
   <postinst>
     systemctl stop apache2

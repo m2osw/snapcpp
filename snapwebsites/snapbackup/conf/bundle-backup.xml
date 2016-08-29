@@ -19,6 +19,7 @@
     get any backups. A field named backup / host will appear
     after installation.</p>
   </description>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapbackup</packages>
 </bundle>
 <!--

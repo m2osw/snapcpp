@@ -159,7 +159,7 @@ int manager_daemon::run()
     //
     f_communicator->run();
 
-    return 0;
+    return f_force_restart ? 1 : 0;
 }
 
 
@@ -369,8 +369,10 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // systems... if the configuration changes their IP address,
             // what to do, really...)
             //
-            // At this time this is 100% equivalent to STOP!
+            // At this time this is a STOP with an error which in effects
+            // asks systemd to restart us!
             //
+            f_force_restart = true;
             stop(false);
             return;
         }

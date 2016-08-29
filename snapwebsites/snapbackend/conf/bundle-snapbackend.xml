@@ -13,12 +13,13 @@
     pre-computed data.)</p>
 
     <p>Which backends run on which computer can be selected from the
-    snapinit.xml setup. You may reserve one whole computer to just
-    run the pagelist backend, for instance.</p>
+    various service and timer files. You may reserve one whole computer
+    to just run the pagelist backend, for instance.</p>
 
     <p>This package depends on the snapserver-core-plugins. Backends that
     you develop can depend on your own plugins as well.</p>
   </description>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapbackend</packages>
 </bundle>
 <!--
