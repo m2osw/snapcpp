@@ -1,8 +1,8 @@
-snapwatchdog (0.2.3.1~xenial) xenial; urgency=high
+snapwatchdog (0.2.4.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the path to the binary, it is named "snapwatchdogserver".
 
- -- Build Server <build@m2osw.com>  Sun, 28 Aug 2016 10:10:15 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 28 Aug 2016 10:10:15 -0700
 
 snapwatchdog (0.2.3.0~xenial) xenial; urgency=high
 
