@@ -1,3 +1,9 @@
+snapdbproxy (1.0.5.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 29 Aug 2016 02:00:54 -0700
+
 snapdbproxy (1.0.5.0~xenial) xenial; urgency=high
 
   * Added support for the RELOADCONFIG message.
