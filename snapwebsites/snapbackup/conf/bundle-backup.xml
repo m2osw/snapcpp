@@ -16,8 +16,10 @@
     uses <code>127.0.0.1</code> as a Cassandra node IP address.
     If you are not installing snapbackup on a Cassandra node,
     then make sure to change that IP address or you will not
-    get any backups.</p>
+    get any backups. A field named backup / host will appear
+    after installation.</p>
   </description>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapbackup</packages>
 </bundle>
 <!--

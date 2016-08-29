@@ -17,6 +17,7 @@
     <p>The snapserver is the actual daemon that generates the HTML
     of your Snap! Websites.</p>
   </description>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapserver</packages>
 </bundle>
 <!--

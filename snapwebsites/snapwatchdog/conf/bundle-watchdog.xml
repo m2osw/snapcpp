@@ -16,6 +16,7 @@
     a new VPS automatically as a replacement of the whole server that's
     failing.</p>
   </description>
+  <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapwatchdog</packages>
 </bundle>
 <!--

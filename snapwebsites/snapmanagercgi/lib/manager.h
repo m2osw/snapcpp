@@ -129,7 +129,7 @@ public:
     std::string                     lock_filename() const;
     int                             update_packages(std::string const & command);
     void                            reset_aptcheck();
-    bool                            installer(QString const & bundle_name, std::string const & command, std::string const & install_values);
+    bool                            installer(QString const & bundle_name, std::string const & command, std::string const & install_values, std::set<QString> & affected_services);
     service_status_t                service_status(std::string const & service_filename, std::string const & service_name);
     void                            service_apply_status(std::string const & service_name, service_status_t const status);
     void                            reboot(bool reboot = true);

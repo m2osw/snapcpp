@@ -291,9 +291,10 @@ int manager::update_packages(std::string const & command)
 
 
 
-/** \brief Installs one Debian package.
+/** \brief Installs or Removes one Debian package.
  *
- * This function installs ONE package as specified by \p package_name.
+ * This function installs or removes ONE package as specified by
+ * \p package_name.
  *
  * \param[in] package_name  The name of the package to install.
  * \param[in] command  One of "install", "remove", or "purge".
@@ -471,7 +472,7 @@ std::string manager::lock_filename() const
 }
 
 
-bool manager::installer(QString const & bundle_name, std::string const & command, std::string const & install_values)
+bool manager::installer(QString const & bundle_name, std::string const & command, std::string const & install_values, std::set<QString> & affected_services)
 {
     bool success(true);
 
@@ -603,6 +604,28 @@ bool manager::installer(QString const & bundle_name, std::string const & command
                     });
     }
 
+    // list of affected services (those that need a RELOADCONFIG after
+    // this installation)
+    //
+    QDomNodeList affected_services_tag(bundle_xml.elementsByTagName("affected-services"));
+    if(affected_services_tag.size() == 1)
+    {
+        std::vector<std::string> variables;
+        if(snap::tokenize_string(variables, install_values, ",", true, " ") > 0)
+        {
+            // variables are 'std::string' and affected_services are 'QString' for now...
+            //std::copy(variables.cbegin(), variables.cend(), std::inserter(affected_services, affected_services.begin()));
+
+            std::for_each(
+                    variables.cbegin(),
+                    variables.cend(),
+                    [&affected_services](auto const & str)
+                    {
+                        affected_services.insert(QString::fromUtf8(str.c_str()));
+                    });
+        }
+    }
+
     // there may be some pre-installation instructions
     //
     QString const prename(installing ? "preinst" : "prerm");
@@ -686,6 +709,8 @@ bool manager::installer(QString const & bundle_name, std::string const & command
             success = false;
         }
     }
+
+    reset_aptcheck();
 
     return success;
 }

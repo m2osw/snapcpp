@@ -247,32 +247,35 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
                         status_string);
         server_status.set_field(status_widget);
 
-        snap_config service_config(std::string("/lib/service/system/") + service_info.f_service_name + ".service");
-        snap_manager::status_t const nice(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                  get_plugin_name(),
-                                  QString("%1::nice").arg(service_info.f_service_name),
-                                  service_config["Service::Nice"]);
-        server_status.set_field(nice);
+        if(status != snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED)
+        {
+            snap_config service_config(std::string("/lib/service/system/") + service_info.f_service_name + ".service");
+            snap_manager::status_t const nice(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                      get_plugin_name(),
+                                      QString("%1::nice").arg(service_info.f_service_name),
+                                      service_config["Service::Nice"]);
+            server_status.set_field(nice);
 
-        if(service_info.f_recovery)
-        {
-            snap_manager::status_t const recovery(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                      get_plugin_name(),
-                                      QString("%1::recovery").arg(service_info.f_service_name),
-                                      service_config["Service::RestartSec"]);
-            server_status.set_field(recovery);
-        }
-        else
-        {
-            // for the delay between runs of the snapbackend as a CRON service
-            // the delay is in the .timer file instead
-            //
-            snap_config timer_config(std::string("/lib/service/system/") + service_info.f_service_name + ".timer");
-            snap_manager::status_t const cron(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                      get_plugin_name(),
-                                      QString("%1::cron").arg(service_info.f_service_name),
-                                      timer_config["Service::OnUnitActiveSec"]);
-            server_status.set_field(cron);
+            if(service_info.f_recovery)
+            {
+                snap_manager::status_t const recovery(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                          get_plugin_name(),
+                                          QString("%1::recovery").arg(service_info.f_service_name),
+                                          service_config["Service::RestartSec"]);
+                server_status.set_field(recovery);
+            }
+            else
+            {
+                // for the delay between runs of the snapbackend as a CRON service
+                // the delay is in the .timer file instead
+                //
+                snap_config timer_config(std::string("/lib/service/system/") + service_info.f_service_name + ".timer");
+                snap_manager::status_t const cron(snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                                          get_plugin_name(),
+                                          QString("%1::cron").arg(service_info.f_service_name),
+                                          timer_config["Service::OnUnitActiveSec"]);
+                server_status.set_field(cron);
+            }
         }
     }
 

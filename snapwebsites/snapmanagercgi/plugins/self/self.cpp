@@ -960,7 +960,8 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
  *            (usually ignored,) or the installation values (only
  *            for the self plugin that manages bundles.)
  *
- * \return true if the new_value was applied successfully.
+ * \return true if the new_value was applied and the affected_services
+ *         should be sent their RELOADCONFIG message.
  */
 bool self::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
@@ -981,9 +982,9 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
                                                                                 , f_snap->get_signal_port()
                                                                                 , resend);
 
-        // it worked (maybe)
+        // message sent...
         //
-        return 0;
+        return true;
     }
 
     // installation is a special case in the "self" plugin only (or at least
@@ -999,9 +1000,8 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
             return false;
         }
         QByteArray values(old_or_installation_value.toUtf8());
-        bool const r(f_snap->installer(field_name.mid(8), install ? "install" : "purge", values.data()));
-        f_snap->reset_aptcheck();
-        return r;
+        NOTUSED(f_snap->installer(field_name.mid(8), install ? "install" : "purge", values.data(), affected_services));
+        return true;
     }
 
     // after installations and upgrades, a reboot may be required
@@ -1017,12 +1017,16 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     //
     if(button_name == "upgrade")
     {
-        bool const r(f_snap->upgrader());
+        NOTUSED(f_snap->upgrader());
         //f_snap->reset_aptcheck(); -- this is too soon, the upgrader() call
         //                             now creates a child process with fork()
         //                             to make sure we can go on even when
-        //                             snapinit gets upgraded
-        return r;
+        //                             snapmanagerdaemon gets upgraded
+
+        // TBD: we need to add something to the affected_services?
+        //      (the snapupgrader tool should restart the whole stack
+        //      anyway so we should be fine...)
+        return true;
     }
 
     // restore defaults?
@@ -1073,7 +1077,8 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
         //       now, probably from the "--config" parameter, but how do
         //       we do that for each service?)
         //
-        return f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, value);
+        NOTUSED(f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, value));
+        return true;
     }
 
     // user wants a new log level

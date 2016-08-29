@@ -176,6 +176,7 @@ private:
     snap::snap_thread                           f_status_thread;
     bundle_loader                               f_bundle_loader;
     snap::snap_thread                           f_bundle_thread;
+    bool                                        f_force_restart = false;
     //server_status                               f_status;           // our status
     QString                                     f_output;           // commands output, to be sent to end user
 };
