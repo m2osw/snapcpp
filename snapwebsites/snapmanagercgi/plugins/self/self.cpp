@@ -253,6 +253,27 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         }
     }
 
+    {
+        // right now we have ONE level for ALL .properties, later we should
+        // probably duplicate this code and allow each .properties file to
+        // be edited as required
+        //
+        snap::snap_config logger_properties("/etc/snapwebsites/snapmanagerdaemon.properties");
+        std::string const level_appenders(logger_properties["log4cplus.logger.snap"]);
+        std::string level("INFO");
+        std::string::size_type const pos(level_appenders.find_first_of(','));
+        if(pos > 0)
+        {
+            level = level_appenders.substr(0, pos);
+        }
+        snap_manager::status_t const up(
+                            snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                            get_plugin_name(),
+                            "log_level",
+                            QString::fromUtf8(level.c_str()));
+        server_status.set_field(up);
+    }
+
     bool no_installs(false);
     {
         QString const updates(f_snap->count_packages_that_can_be_updated(true));
@@ -769,6 +790,37 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         return true;
     }
 
+    if(s.get_field_name() == "log_level")
+    {
+        // the current log level (at least in snapmanagerdaemon.properties)
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Enter Log Level"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>The log level can be any one of the following:</p>"
+                          "<ul>"
+                            "<li>TRACE -- trace level, you get everything!</li>"
+                            "<li>DEBUG -- debug level, you get additional logs about things that may be problems.</li>"
+                            "<li>INFO -- normal informational level, this is the default.</li>"
+                            "<li>WARNING -- only display warnings, errors and fatal errors, no additional information.</li>"
+                            "<li>ERROR -- only display errors and fatal errors.</li>"
+                            "<li>FATAL -- only display messages about fatal errors (why a service quits abnormally when it has a chance to log such.)</li>"
+                          "</ul>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name() == "upgrade_required")
     {
         // the OS declared that a reboot was required, offer the option
@@ -1022,6 +1074,25 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
         //       we do that for each service?)
         //
         return f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, value);
+    }
+
+    // user wants a new log level
+    //
+    if(field_name == "log_level")
+    {
+        // we have to restart all the services, by restarting snapcommunicator
+        // though, it restarts everything.
+        //
+        affected_services.insert("snapcommunicator");
+
+        SNAP_LOG_DEBUG("Running command: snapchangeloglevel ")(new_value);
+        int const r(system(("snapchangeloglevel " + new_value).toUtf8().data()));
+        if(r != 0)
+        {
+            int const e(errno);
+            SNAP_LOG_ERROR("snapchangeloglevel failed with error: ")(e)(", ")(strerror(e));
+        }
+        return true;
     }
 
     return false;
