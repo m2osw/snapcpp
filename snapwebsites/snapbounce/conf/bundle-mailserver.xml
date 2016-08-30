@@ -31,8 +31,21 @@
       </description>
     </field>
   </fields>
-  <packages>snapbounce</packages>
+  <packages>snapbounce,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
   <postinst>
+    if ! [ -f /etc/postfix/main.cf.orig ]
+    then
+      cp /etc/postfix/main.cf /etc/postfix/main.cf.orig
+    fi
+    if ! [ -f /etc/postfix/master.cf.orig ]
+    then
+      cp /etc/postfix/master.cf /etc/postfix/master.cf.orig
+    fi
+    if ! [ -f /etc/postfix/transport.maps.orig ]
+    then
+      cp /etc/postfix/transport.maps /etc/postfix/transport.maps.orig
+    fi
+
     # Setup the transport.map file
     #
     # I'm not too sure why we would want these two lines:
@@ -41,9 +54,6 @@
     #mail.$BUNDLE_INSTALLATION_DOMAIN bounces:
     #
     # For now, I removed them from the file altogether.
-    #
-    # TODO: we need the following cat to first remove the bounces
-    #       entry so we do not get a duplicate...
     #
     cat &gt;/etc/postfix/transport.maps &lt;&lt;EOF
 # See SNAP-67
@@ -57,9 +67,6 @@ EOF
     # setup the domain and a few other things
     # the few entries at the bottom connects snapbounce to postfix
     #
-    # TODO: the .sed will re-add the notify_classes, bounce_notice_recipient
-    #       and transport_maps each time we run this script...
-    #
     MAILSERVER_SED=/tmp/bundle-mailserver.sed
     echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" &gt; ${MAILSERVER_SED}
     echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" &gt;&gt; ${MAILSERVER_SED}
@@ -72,9 +79,6 @@ EOF
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
 
     # we then need to add a snapbounce entry to the master.cf file
-    #
-    # TODO: the echo append the snapbounce entry again each time the
-    #       script runs...
     #
     MASTER=/etc/postfix/master.cf
     cp ${MASTER} ${MASTER}.bak
@@ -91,6 +95,10 @@ EOF
     systemctl enable postfix
     systemctl restart postfix
   </postinst>
+  <postrm>
+    # Eliminate the postfix directory completely, that way we remove the .orig files.
+    rm -rf /etc/postfix
+  </postrm>
   <!-- TODO: add a postrm which at least removes the 3 variables we added
              at the end, because wihout snapbounce it won't work... -->
 </bundle>
