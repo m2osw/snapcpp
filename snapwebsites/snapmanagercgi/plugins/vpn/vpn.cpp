@@ -375,11 +375,15 @@ bool vpn::display_value ( QDomElement parent
                 , s.get_field_name()
                 , snap_manager::form::FORM_BUTTON_SAVE
                 );
-        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
-                    "Enter the public IP address of this server:"
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                    "Enter the Public (inter data center) or Private IP address of this server:"
                     , s.get_field_name()
                     , s.get_value()
                     , "<p>Do <b>not</b> enter the VPN address from the tun0 interface.</p>"
+                     " In most cases, this is a Private IP Address and NOT a Public IP"
+                     " Address. In most cases, Private IP Addresses look like"
+                     " 192.168.x.x or 10.x.x.x. Public IP Addresses are accessible"
+                     " by anyone who has an Internet connection."
                     ));
         f.add_widget(field);
         f.generate(parent, uri);

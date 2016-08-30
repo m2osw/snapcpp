@@ -29,6 +29,7 @@
 -A INPUT -i lo -s @PUBLIC_IP@ -j ACCEPT
 -A INPUT -i lo -s @PRIVATE_IP@ -j ACCEPT
 -A INPUT -i lo -s 127.0.0.1 -j ACCEPT
+-A INPUT -i lo -s 127.0.1.1 -j ACCEPT
 -A INPUT -i lo -j LOG --log-prefix "reject_lo: " --log-uid
 -A INPUT -i lo -j REJECT
 

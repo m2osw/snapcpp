@@ -70,10 +70,12 @@ grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
 		{
 			if(/@ADMIN_IPS@/) {
 				copy=$0
-				for(i in array) {
-					gsub(/@ADMIN_IPS@/, array[i], copy)
-					print copy
-					copy=$0
+				if(length(ADMIN_IPS) > 0) {
+					for(i in array) {
+						gsub(/@ADMIN_IPS@/, array[i], copy)
+						print copy
+						copy=$0
+					}
 				}
 			}
 			else {
@@ -87,10 +89,12 @@ grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
 		{
 			if(/@PRIVATE_NETWORK_IPS@/) {
 				copy=$0
-				for(i in array) {
-					gsub(/@PRIVATE_NETWORK_IPS@/, array[i], copy)
-					print copy
-					copy=$0
+				if(length(PRIVATE_NETWORK_IPS) > 0) {
+					for(i in array) {
+						gsub(/@PRIVATE_NETWORK_IPS@/, array[i], copy)
+						print copy
+						copy=$0
+					}
 				}
 			}
 			else {
