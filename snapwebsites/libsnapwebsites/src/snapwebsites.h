@@ -159,8 +159,8 @@ public:
 
 private:
     zpsnap_child_t              f_snap;
-    controlled_vars::mlbool_t   f_log;
-    controlled_vars::flbool_t   f_error;
+    bool                        f_log = false;
+    bool                        f_error = false;
 };
 
 
@@ -321,6 +321,7 @@ private:
 
     void                                    process_connection(int socket);
     void                                    stop_thread_func();
+    void                                    stop(bool quitting);
 
     static pointer_t                        g_instance;
 
@@ -328,13 +329,14 @@ private:
     QByteArray                              f_translation_xml;
 
     std::string                             f_servername;
-    controlled_vars::fbool_t                f_debug;
-    controlled_vars::fbool_t                f_foreground;
-    controlled_vars::fbool_t                f_backend;
-    controlled_vars::fbool_t                f_using_logging_server;
+    bool                                    f_debug = false;
+    bool                                    f_foreground = false;
+    bool                                    f_backend = false;
+    bool                                    f_using_logging_server = false;
+    bool                                    f_force_restart = false;
     QMap<QString, bool>                     f_created_table;
 
-    controlled_vars::zuint64_t              f_connections_count;
+    uint64_t                                f_connections_count = 0;
     snap_child_vector_t                     f_children_running;
     snap_child_vector_t                     f_children_waiting;
 
@@ -344,7 +346,7 @@ private:
     std::unique_ptr<snap_thread>            f_listen_thread;
 
 #ifdef SNAP_NO_FORK
-    controlled_vars::zbool_t                f_nofork;
+    bool                                    f_nofork = false;
 #endif
 };
 

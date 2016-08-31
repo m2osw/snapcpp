@@ -1988,29 +1988,14 @@ void server::process_message(snap_communicator_message const & message)
 
     QString const command(message.get_command());
 
-    if(command == "STOP"
-    || command == "QUITTING")  // QUITTING happens when we send a message to snapcommunicator after it received a STOP
+    if(command == "STOP")
     {
-        SNAP_LOG_INFO("Stopping server.");
-
-        if(g_connection->f_messenger)
-        {
-            std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
-
-            if(command != "QUITTING")
-            {
-                snap::snap_communicator_message cmd;
-                cmd.set_command("UNREGISTER");
-                cmd.add_parameter("service", "snapserver");
-                std::static_pointer_cast<messenger>(g_connection->f_messenger)->send_message(cmd);
-            }
-        }
-
-        {
-            g_connection->f_communicator->remove_connection(g_connection->f_listener);
-            g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
-            //g_connection->f_communicator->remove_connection(g_connection->f_messenger); -- will HUP once done
-        }
+        stop(false);
+        return;
+    }
+    if(command == "QUITTING")  // QUITTING happens when we send a message to snapcommunicator after it received a STOP
+    {
+        stop(true);
         return;
     }
 
@@ -2079,9 +2064,16 @@ void server::process_message(snap_communicator_message const & message)
         reply.set_command("COMMANDS");
 
         // list of commands understood by server
-        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(reply);
+        return;
+    }
+
+    if(command == "RELOADCONFIG")
+    {
+        f_force_restart = true;
+        stop(false);
         return;
     }
 
@@ -2101,6 +2093,39 @@ void server::process_message(snap_communicator_message const & message)
         std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(reply);
     }
     return;
+}
+
+
+
+/** \brief Do the necessary to stop the Snap! server.
+ *
+ * This function closes the connections which as a result will stop
+ * the snapserver daemon.
+ *
+ * \param[in] quitting  If true, the process received a QUITTING message.
+ */
+void server::stop(bool quitting)
+{
+    SNAP_LOG_INFO("Stopping server.");
+
+    if(g_connection->f_messenger)
+    {
+        std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
+
+        if(quitting)
+        {
+            snap::snap_communicator_message cmd;
+            cmd.set_command("UNREGISTER");
+            cmd.add_parameter("service", "snapserver");
+            std::static_pointer_cast<messenger>(g_connection->f_messenger)->send_message(cmd);
+        }
+    }
+
+    {
+        g_connection->f_communicator->remove_connection(g_connection->f_listener);
+        g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
+        //g_connection->f_communicator->remove_connection(g_connection->f_messenger); -- will HUP once done
+    }
 }
 
 
@@ -2332,6 +2357,11 @@ void server::listen()
     // if we are returning that is because the signals were removed from
     // the communicator so we can now destroy the communicator
     g_connection->f_communicator.reset();
+
+    if(f_force_restart)
+    {
+        exit(1);
+    }
 }
 
 

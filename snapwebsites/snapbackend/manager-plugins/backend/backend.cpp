@@ -249,7 +249,7 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
 
         if(status != snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED)
         {
-            snap_config service_config(std::string("/lib/service/system/") + service_info.f_service_name + ".service");
+            snap_config service_config(std::string("/lib/systemd/system/") + service_info.f_service_name + ".service");
             snap_manager::status_t const nice(snap_manager::status_t::state_t::STATUS_STATE_INFO,
                                       get_plugin_name(),
                                       QString("%1::nice").arg(service_info.f_service_name),
@@ -269,11 +269,11 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
                 // for the delay between runs of the snapbackend as a CRON service
                 // the delay is in the .timer file instead
                 //
-                snap_config timer_config(std::string("/lib/service/system/") + service_info.f_service_name + ".timer");
+                snap_config timer_config(std::string("/lib/systemd/system/") + service_info.f_service_name + ".timer");
                 snap_manager::status_t const cron(snap_manager::status_t::state_t::STATUS_STATE_INFO,
                                           get_plugin_name(),
                                           QString("%1::cron").arg(service_info.f_service_name),
-                                          timer_config["Service::OnUnitActiveSec"]);
+                                          timer_config["Timer::OnUnitActiveSec"]);
                 server_status.set_field(cron);
             }
         }
@@ -676,27 +676,32 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
 //        return false;
 //    }
 
+    // TODO: the following works just fine at this time, but it is not very
+    //       save:
+    //         1. we should use a snap_process to get errors logged automatically
+    //         2. we should have a way to change a variable within a [section]
+    //
     if(field == "recovery")
     {
-        QString const filename(QString("/lib/service/system/%1.service").arg(service_name));
+        QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
         f_snap->replace_configuration_value(filename, "RestartSec", new_value, false);
-        system("systemctl daemon-reload");
+        NOTUSED(system("systemctl daemon-reload"));
         return true;
     }
 
     if(field == "cron")
     {
-        QString const filename(QString("/lib/service/system/%1.timer").arg(service_name));
+        QString const filename(QString("/lib/systemd/system/%1.timer").arg(service_name));
         f_snap->replace_configuration_value(filename, "OnUnitActiveSec", new_value, false);
-        system("systemctl daemon-reload");
+        NOTUSED(system("systemctl daemon-reload"));
         return true;
     }
 
     if(field == "nice")
     {
-        QString const filename(QString("/lib/service/system/%1.service").arg(service_name));
+        QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
         f_snap->replace_configuration_value(filename, "Nice", new_value, false);
-        system("systemctl daemon-reload");
+        NOTUSED(system("systemctl daemon-reload"));
         return true;
     }
 

@@ -607,11 +607,12 @@ bool manager::installer(QString const & bundle_name, std::string const & command
     // list of affected services (those that need a RELOADCONFIG after
     // this installation)
     //
-    QDomNodeList affected_services_tag(bundle_xml.elementsByTagName("affected-services"));
-    if(affected_services_tag.size() == 1)
+    QDomNodeList affected_services_tags(bundle_xml.elementsByTagName("affected-services"));
+    if(affected_services_tags.size() == 1)
     {
+        QDomElement affected_services_element(affected_services_tags.at(0).toElement());
         std::vector<std::string> variables;
-        if(snap::tokenize_string(variables, install_values, ",", true, " ") > 0)
+        if(snap::tokenize_string(variables, affected_services_element.text().toUtf8().data(), ",", true, " ") > 0)
         {
             // variables are 'std::string' and affected_services are 'QString' for now...
             //std::copy(variables.cbegin(), variables.cend(), std::inserter(affected_services, affected_services.begin()));
