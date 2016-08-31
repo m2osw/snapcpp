@@ -21,13 +21,6 @@
         name as an MX record.
       </description>
     </field>
-    <field name="public_ip" type="input">
-      <label>Public IP Address</label>
-      <description>
-        This is the public IP address to which the mailserver will monitor. It will
-        also become the "A" record in the DNS server.
-      </description>
-    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>
@@ -47,7 +40,6 @@
        /etc/postfix/main.cf \
        /etc/postfix/master.cf \
        /etc/postfix/transport.maps \
-       /etc/bind/named.conf.local \
        /etc/opendkim.conf \
        /etc/opendmarc.conf \
        /etc/default/opendkim \
@@ -69,7 +61,7 @@
     # I'm not too sure why we would want these two lines:
     #
     #localhost bounces:
-    #mail.$BUNDLE_INSTALLATION_DOMAIN bounces:
+    #mail.${BUNDLE_INSTALLATION_DOMAIN} bounces:
     #
     # For now, I removed them from the file altogether.
     #
@@ -78,7 +70,7 @@
 # After changes, run postmap:
 #   postmap /etc/postfix/transport.maps
 #
-bounces@$BUNDLE_INSTALLATION_DOMAIN snapbounce:
+bounces@${BUNDLE_INSTALLATION_DOMAIN} snapbounce:
 EOF
     postmap /etc/postfix/transport.maps
 
@@ -86,25 +78,26 @@ EOF
     # the few entries at the bottom connects snapbounce to postfix
     #
     MAILSERVER_SED=/tmp/bundle-mailserver.sed
-    echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/"                            &gt;     ${MAILSERVER_SED}
+    echo "s/^myhostname = .*/myhostname = ${BUNDLE_INSTALLATION_DOMAIN}/"                            &gt;     ${MAILSERVER_SED}
     echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" &gt;&gt; ${MAILSERVER_SED}
     echo "$ i \\"                                                                                  &gt;&gt; ${MAILSERVER_SED}
     echo "# `date` \\"                                                                             &gt;&gt; ${MAILSERVER_SED}
     echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\"                        &gt;&gt; ${MAILSERVER_SED}
     echo "notify_classes = bounce \\"                                                              &gt;&gt; ${MAILSERVER_SED}
-    echo "bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \\"                        &gt;&gt; ${MAILSERVER_SED}
+    echo "bounce_notice_recipient = bounces@${BUNDLE_INSTALLATION_DOMAIN} \\"                        &gt;&gt; ${MAILSERVER_SED}
     echo "transport_maps = hash:/etc/postfix/transport.maps"                                       &gt;&gt; ${MAILSERVER_SED}
     echo "policy-spf_time_limit = 3600s"                                                           &gt;&gt; ${MAILSERVER_SED}
     echo "smtpd_recipient_restrictions = permit_mynetworks," \
       "permit_sasl_authenticated," \
       "reject_unauth_destination," \
       "check_policy_service unix:private/policy-spf"                                               &gt;&gt; ${MAILSERVER_SED}
-    echo &lt;&lt;EOF
+    cat &gt;&gt; ${MAILSERVER_SED} &lt;&lt;EOF
 milter_protocol = 6
 milter_default_action = accept
 smtpd_milters = inet:localhost:12345,inet:localhost:54321
 non_smtpd_milters = inet:localhost:12345,inet:localhost:54321
-EOF                                                                                                &gt;&gt; ${MAILSERVER_SED}
+EOF
+    #
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
 
     # we then need to add a snapbounce entry to the master.cf file
@@ -131,7 +124,7 @@ EOF                                                                             
     ################################################################################
     # Set up DKIM support
     #
-    echo &lt;&lt;EOF
+    cat &gt;&gt; /etc/opendkim.conf &lt;&lt;EOF
 KeyTable           /etc/opendkim/key_table
 SigningTable       /etc/opendkim/signing_table
 ExternalIgnoreList /etc/opendkim/trusted_hosts
@@ -143,84 +136,62 @@ PidFile            /var/run/opendkim/opendkim.pid
 SignatureAlgorithm rsa-sha256
 Canonicalization   relaxed/simple
 UserID             opendkim:opendkim
-EOF \
-       &gt;&gt; /etc/opendkim.conf
+EOF
     #
     mkdir -p /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}
-    echo &lt;&lt;EOF
+    cat &gt;&gt; /etc/opendkim/trusted_hosts &lt;&lt;EOF
 # local host
 127.0.0.1
 # local subnets that are trusted and do not need to be verified
 10.8.0.0/24
-EOF &gt; /etc/opendkim/trusted_hosts
+EOF
     cd /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}
     opendkim-genkey -s mail -d ${BUNDLE_INSTALLATION_DOMAIN}
     chown opendkim:opendkim mail.private
     cd -
-    echo &lt;&lt;EOF
+    cat &gt;&gt; /etc/opendkim/key_table &lt;&lt;EOF
 mail._domainkey.${BUNDLE_INSTALLATION_DOMAIN} ${BUNDLE_INSTALLATION_DOMAIN}:mail:/etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.private
-EOF &gt; /etc/opendkim/key_table
-    echo &lt;&lt;EOF
+EOF
+    cat &gt;&gt; /etc/opendkim/signing_table &lt;&lt;EOF
 ${BUNDLE_INSTALLATION_DOMAIN} mail._domainkey.${BUNDLE_INSTALLATION_DOMAIN}
-EOF &gt; /etc/opendkim/signing_table
-    echo &lt;&lt;EOF
+EOF
+    cat &gt;&gt; /etc/default/opendkim &lt;&lt;EOF
 SOCKET="inet:12345@localhost"
-EOF &gt;&gt; /etc/default/opendkim
+EOF
 
 
     ################################################################################
     # Set up DMARC
     #
-    echo &lt;&lt;EOF
+    cat &gt;&gt; /etc/opendmarc.conf &lt;&lt;EOF
 AuthservID mail.example.com
 TrustedAuthservIDs mail.${BUNDLE_INSTALLATION_DOMAIN}
 IgnoreHosts /etc/opendmarc/ignore.hosts
 HistoryFile /var/run/opendmarc/opendmarc.dat
-EOF &gt;&gt; /etc/opendmarc.conf
-    echo &lt;&lt;EOF
+EOF
+    cat &gt;&gt; /etc/opendmarc/ignore.hosts &lt;&lt;EOF
 localhost
 10.8.0.0/24
-EOF &gt;&gt; /etc/opendmarc/ignore.hosts
-    echo &lt;&lt;EOF
+EOF
+    cat &gt;&gt; /etc/default/opendmarc &lt;&lt;EOF
 SOCKET="inet:54321@localhost"
-EOF &gt;&gt; /etc/default/opendmarc
+EOF
 
 
     ################################################################################
-    # Set up the named.conf.local file
+    # Append the spf/dkim/dmarc TXT records to the zone file for our domain
     #
-    echo "include \"/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone\"\n" > /etc/bind/named.conf.local
-
-    # TODO: make sure these values are sane
-    #
-    cat &gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
-$ORIGIN .
-$TTL 86400
-${BUNDLE_INSTALLATION_DOMAIN}       IN SOA  ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaster.${BUNDLE_INSTALLATION_DOMAIN}. (
-        1
-        3H
-        180
-        14D
-        300
-        )
-        NS      ns1.${BUNDLE_INSTALLATION_DOMAIN}
-        NS      ns2.${BUNDLE_INSTALLATION_DOMAIN}
-        MX 10   mail.${BUNDLE_INSTALLATION_DOMAIN}
-
-        A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
-\$ORIGIN ${BUNDLE_INSTALLATION_DOMAIN}.
+    if [ -f "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone" ]
+    then
+      cat &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
 @       1800 IN TXT "v=spf1 a${BUNDLE_INSTALLATION_DOMAIN} -all"
 adsp._domainkey 1800 IN TXT "dkim=all"
 EOF
-    cat /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.txt &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
-    cat &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
+      cat /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.txt &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
+      cat &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
 _dmarc          1800 IN TXT "v=DMARC1; p=quarantine; fo=0; adkim=r; aspf=r; pct=100; rf=afrf; sp=quarantine"
-w       A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
-ww      A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
-www     A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
-wwww    A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
-; vim: syntax=bindzone
 EOF
+    fi
 
     ################################################################################
     # (re)start services with the correct parameters
@@ -241,7 +212,6 @@ EOF
        /etc/postfix/main.cf \
        /etc/postfix/master.cf \
        /etc/postfix/transport.maps \
-       /etc/bind/named.conf.local \
        /etc/opendkim.conf \
        /etc/opendmarc.conf \
        /etc/default/opendkim.conf \
