@@ -47,7 +47,12 @@
     ################################################################################
     # Set up the named.conf.local file
     #
-    echo "include \"/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone\";" &gt;&gt; /etc/bind/named.conf.local
+    cat &gt;&gt; /etc/bind/named.conf.local &lt;&lt;EOF
+zone "${BUNDLE_INSTALLATION_DOMAIN}" {
+        type master;
+        file "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone";
+};
+EOF
 
     # TODO: make sure these values are sane
     #
