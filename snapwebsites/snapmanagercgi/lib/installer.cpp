@@ -1187,6 +1187,23 @@ void manager::service_apply_status(std::string const & service_name, service_sta
                 SNAP_LOG_ERROR("start of service \"")(service_name)("\" failed.");
             }
         }
+        if(service.endsWith(".timer"))
+        {
+            // the service needs a kick otherwise it never starts until
+            // the next reboot
+            //
+            snap::process p("start service");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("systemctl");
+            p.add_argument("start");
+            p.add_argument(service.left(service.length() - 6));
+            int const r(p.run());
+            SNAP_LOG_INFO("\"start\" function output: ")(p.get_output(true));
+            if(r != 0)
+            {
+                SNAP_LOG_ERROR("start of service \"")(service_name)("\" failed.");
+            }
+        }
         break;
 
     default:
