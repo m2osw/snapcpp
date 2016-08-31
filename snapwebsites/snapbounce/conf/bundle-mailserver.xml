@@ -21,6 +21,13 @@
         name as an MX record.
       </description>
     </field>
+    <field name="public_ip" type="input">
+      <label>Public IP Address</label>
+      <description>
+        This is the public IP address to which the mailserver will monitor. It will
+        also become the "A" record in the DNS server.
+      </description>
+    </field>
     <field name="organization" type="input">
       <label>Organization</label>
       <description>
@@ -31,21 +38,32 @@
       </description>
     </field>
   </fields>
-  <packages>snapbounce,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
+  <packages>snapbounce,bind9,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
   <postinst>
-    if ! [ -f /etc/postfix/main.cf.orig ]
-    then
-      cp /etc/postfix/main.cf /etc/postfix/main.cf.orig
-    fi
-    if ! [ -f /etc/postfix/master.cf.orig ]
-    then
-      cp /etc/postfix/master.cf /etc/postfix/master.cf.orig
-    fi
-    if ! [ -f /etc/postfix/transport.maps.orig ]
-    then
-      cp /etc/postfix/transport.maps /etc/postfix/transport.maps.orig
-    fi
+    # Create backups if the .orig files don't exist.
+    # But only do this once.
+    #
+    for i in \
+       /etc/postfix/main.cf \
+       /etc/postfix/master.cf \
+       /etc/postfix/transport.maps \
+       /etc/bind/named.conf.local \
+       /etc/opendkim.conf \
+       /etc/opendmarc.conf \
+       /etc/default/opendkim \
+       /etc/default/openmarc
+    do
+      if [ -f $i.orig ]
+      then
+        # Reset the file to the original
+        cp $i.orig $i
+      else
+        # Make a backup once
+        cp $i $i.orig
+      fi
+    done
 
+    ################################################################################
     # Setup the transport.map file
     #
     # I'm not too sure why we would want these two lines:
@@ -68,39 +86,173 @@ EOF
     # the few entries at the bottom connects snapbounce to postfix
     #
     MAILSERVER_SED=/tmp/bundle-mailserver.sed
-    echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/" &gt; ${MAILSERVER_SED}
+    echo "s/^myhostname = .*/myhostname = $BUNDLE_INSTALLATION_DOMAIN/"                            &gt;     ${MAILSERVER_SED}
     echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" &gt;&gt; ${MAILSERVER_SED}
-    echo "$ i \\" &gt;&gt; ${MAILSERVER_SED}
-    echo "# `date` \\" &gt;&gt; ${MAILSERVER_SED}
-    echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\" &gt;&gt; ${MAILSERVER_SED}
-    echo "notify_classes = bounce \\" &gt;&gt; ${MAILSERVER_SED}
-    echo "bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \\" &gt;&gt; ${MAILSERVER_SED}
-    echo "transport_maps = hash:/etc/postfix/transport.maps" &gt;&gt; ${MAILSERVER_SED}
+    echo "$ i \\"                                                                                  &gt;&gt; ${MAILSERVER_SED}
+    echo "# `date` \\"                                                                             &gt;&gt; ${MAILSERVER_SED}
+    echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\"                        &gt;&gt; ${MAILSERVER_SED}
+    echo "notify_classes = bounce \\"                                                              &gt;&gt; ${MAILSERVER_SED}
+    echo "bounce_notice_recipient = bounces@$BUNDLE_INSTALLATION_DOMAIN \\"                        &gt;&gt; ${MAILSERVER_SED}
+    echo "transport_maps = hash:/etc/postfix/transport.maps"                                       &gt;&gt; ${MAILSERVER_SED}
+    echo "policy-spf_time_limit = 3600s"                                                           &gt;&gt; ${MAILSERVER_SED}
+    echo "smtpd_recipient_restrictions = permit_mynetworks," \
+      "permit_sasl_authenticated," \
+      "reject_unauth_destination," \
+      "check_policy_service unix:private/policy-spf"                                               &gt;&gt; ${MAILSERVER_SED}
+    echo &lt;&lt;EOF
+milter_protocol = 6
+milter_default_action = accept
+smtpd_milters = inet:localhost:12345,inet:localhost:54321
+non_smtpd_milters = inet:localhost:12345,inet:localhost:54321
+EOF                                                                                                &gt;&gt; ${MAILSERVER_SED}
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
 
     # we then need to add a snapbounce entry to the master.cf file
     #
     MASTER=/etc/postfix/master.cf
     cp ${MASTER} ${MASTER}.bak
-    echo "# Service to save bounced emails in Cassandra" &gt;&gt; ${MASTER}
-    echo "snapbounce unix -       n       n       -       -       pipe" &gt;&gt; ${MASTER}
+    echo "# Service to save bounced emails in Cassandra"                                                      &gt;&gt; ${MASTER}
+    echo "snapbounce unix -       n       n       -       -       pipe"                                       &gt;&gt; ${MASTER}
     echo "  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}" &gt;&gt; ${MASTER}
+    echo "policy-spf  unix  -       n       n       -       -       spawn"                                    &gt;&gt; ${MASTER}
+    echo "  user=nobody argv=/usr/bin/policyd-spf"                                                            &gt;&gt; ${MASTER}
     echo &gt;&gt; ${MASTER}
 
-    # restart postfix with the correct parameters
+
+    ################################################################################
+    # Setup SPF support
+    #
+    sed \
+      -e "s/HELO_reject = SPF_Not_Pass/HELO_reject = False/" \
+      -e "s/Mail_From_reject = Fail/Mail_From_reject = False/"
+        /etc/postfix-policyd-spf-python/policyd-spf.conf &gt; /etc/postfix-policyd-spf-python/policyd-spf.conf
+    
+
+    ################################################################################
+    # Set up DKIM support
+    #
+    echo &lt;&lt;EOF
+KeyTable           /etc/opendkim/key_table
+SigningTable       /etc/opendkim/signing_table
+ExternalIgnoreList /etc/opendkim/trusted_hosts
+InternalHosts      /etc/opendkim/trusted_hosts
+AutoRestart        Yes
+AutoRestartRate    10/1h
+Mode               sv
+PidFile            /var/run/opendkim/opendkim.pid
+SignatureAlgorithm rsa-sha256
+Canonicalization   relaxed/simple
+UserID             opendkim:opendkim
+EOF \
+       &gt;&gt; /etc/opendkim.conf
+    #
+    mkdir -p /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}
+    echo &lt;&lt;EOF
+# local host
+127.0.0.1
+# local subnets that are trusted and do not need to be verified
+10.8.0.0/24
+EOF &gt; /etc/opendkim/trusted_hosts
+    cd /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}
+    opendkim-genkey -s mail -d ${BUNDLE_INSTALLATION_DOMAIN}
+    chown opendkim:opendkim mail.private
+    cd -
+    echo &lt;&lt;EOF
+mail._domainkey.${BUNDLE_INSTALLATION_DOMAIN} ${BUNDLE_INSTALLATION_DOMAIN}:mail:/etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.private
+EOF &gt; /etc/opendkim/key_table
+    echo &lt;&lt;EOF
+${BUNDLE_INSTALLATION_DOMAIN} mail._domainkey.${BUNDLE_INSTALLATION_DOMAIN}
+EOF &gt; /etc/opendkim/signing_table
+    echo &lt;&lt;EOF
+SOCKET="inet:12345@localhost"
+EOF &gt;&gt; /etc/default/opendkim
+
+
+    ################################################################################
+    # Set up DMARC
+    #
+    echo &lt;&lt;EOF
+AuthservID mail.example.com
+TrustedAuthservIDs mail.${BUNDLE_INSTALLATION_DOMAIN}
+IgnoreHosts /etc/opendmarc/ignore.hosts
+HistoryFile /var/run/opendmarc/opendmarc.dat
+EOF &gt;&gt; /etc/opendmarc.conf
+    echo &lt;&lt;EOF
+localhost
+10.8.0.0/24
+EOF &gt;&gt; /etc/opendmarc/ignore.hosts
+    echo &lt;&lt;EOF
+SOCKET="inet:54321@localhost"
+EOF &gt;&gt; /etc/default/opendmarc
+
+
+    ################################################################################
+    # Set up the named.conf.local file
+    #
+    echo "include \"/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone\"\n" > /etc/bind/named.conf.local
+
+    # TODO: make sure these values are sane
+    #
+    cat &gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
+$ORIGIN .
+$TTL 86400
+${BUNDLE_INSTALLATION_DOMAIN}       IN SOA  ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaster.${BUNDLE_INSTALLATION_DOMAIN}. (
+        1
+        3H
+        180
+        14D
+        300
+        )
+        NS      ns1.${BUNDLE_INSTALLATION_DOMAIN}
+        NS      ns2.${BUNDLE_INSTALLATION_DOMAIN}
+        MX 10   mail.${BUNDLE_INSTALLATION_DOMAIN}
+
+        A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+\$ORIGIN ${BUNDLE_INSTALLATION_DOMAIN}.
+@       1800 IN TXT "v=spf1 a${BUNDLE_INSTALLATION_DOMAIN} -all"
+adsp._domainkey 1800 IN TXT "dkim=all"
+EOF
+    cat /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.txt &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
+    cat &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
+_dmarc          1800 IN TXT "v=DMARC1; p=quarantine; fo=0; adkim=r; aspf=r; pct=100; rf=afrf; sp=quarantine"
+w       A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+ww      A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+www     A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+wwww    A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+; vim: syntax=bindzone
+EOF
+
+    ################################################################################
+    # (re)start services with the correct parameters
     #
     # also the tripwire bundle may disable postfix so here we make sure
     # it is enabled
     #
-    systemctl enable postfix
-    systemctl restart postfix
+    for i in opendkim opendmarc postfix bind9
+    do
+      systemctl enable  $i
+      systemctl restart $i
+    done
   </postinst>
   <postrm>
-    # Eliminate the postfix directory completely, that way we remove the .orig files.
-    rm -rf /etc/postfix
+    # Restore the backups as the original files they were,
+    # overwriting our changes
+    for i in \
+       /etc/postfix/main.cf \
+       /etc/postfix/master.cf \
+       /etc/postfix/transport.maps \
+       /etc/bind/named.conf.local \
+       /etc/opendkim.conf \
+       /etc/opendmarc.conf \
+       /etc/default/opendkim.conf \
+       /etc/default/opendmarc.conf
+    do
+      if [ -f $i.orig ]
+      then
+        mv $i.orig $i 
+      fi
+    done
   </postrm>
-  <!-- TODO: add a postrm which at least removes the 3 variables we added
-             at the end, because wihout snapbounce it won't work... -->
 </bundle>
 <!--
   vim: ts=2 sw=2 et
