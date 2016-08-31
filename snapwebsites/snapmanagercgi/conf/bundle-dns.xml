@@ -47,13 +47,13 @@
     ################################################################################
     # Set up the named.conf.local file
     #
-    echo "include \"/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone\"\n" &gt;&gt; /etc/bind/named.conf.local
+    echo "include \"/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone\";" &gt;&gt; /etc/bind/named.conf.local
 
     # TODO: make sure these values are sane
     #
     cat &gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
-$ORIGIN .
-$TTL 86400
+\$ORIGIN .
+\$TTL 86400
 ${BUNDLE_INSTALLATION_DOMAIN} IN SOA ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaster.${BUNDLE_INSTALLATION_DOMAIN}. (
           1
           3H
