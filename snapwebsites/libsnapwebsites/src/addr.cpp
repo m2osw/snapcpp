@@ -684,6 +684,28 @@ addr::network_type_t addr::get_network_type() const
 }
 
 
+/** \brief Get the network type string
+ *
+ * Translate the network type into a string.
+ */
+std::string addr::get_network_type_string() const
+{
+    std::string name;
+    switch( addr.get_network_type() )
+    {
+        case addr::network_type_t::NETWORK_TYPE_UNDEFINED  : name= "Undefined";  break;
+        case addr::network_type_t::NETWORK_TYPE_PRIVATE    : name= "Private";    break;
+        case addr::network_type_t::NETWORK_TYPE_CARRIER    : name= "Carrier";    break;
+        case addr::network_type_t::NETWORK_TYPE_LINK_LOCAL : name= "Local Link"; break;
+        case addr::network_type_t::NETWORK_TYPE_MULTICAST  : name= "Multicast";  break;
+        case addr::network_type_t::NETWORK_TYPE_LOOPBACK   : name= "Loopback";   break;
+        case addr::network_type_t::NETWORK_TYPE_ANY        : name= "Any";        break;
+        case addr::network_type_t::NETWORK_TYPE_UNKNOWN    : name= "Unknown";    break;
+    }
+    return name;
+}
+
+
 /** \brief Retrieve the interface name
  *
  * This function retrieves the name of the interface of the address.

@@ -102,6 +102,7 @@ public:
     std::string                     get_ipv4or6_string(bool include_port = false, bool include_brackets = true) const;
 
     network_type_t                  get_network_type() const;
+    std::string                     get_network_type_string() const;
     computer_interface_address_t    is_computer_interface_address() const;
 
     std::string                     get_iface_name() const;
