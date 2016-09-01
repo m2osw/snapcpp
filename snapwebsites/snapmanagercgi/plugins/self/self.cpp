@@ -222,8 +222,8 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         snap_addr::addr::vector_t interfaces( snap_addr::addr::get_local_addresses() );
         for( auto const & addr : interfaces )
         {
-            if( !addr.is_ipv4()
-            ||  addr.get_network_type() != snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE )
+            if( !addr.is_ipv4() )
+            //||  addr.get_network_type() != snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE )
             {
                 continue;
             }
