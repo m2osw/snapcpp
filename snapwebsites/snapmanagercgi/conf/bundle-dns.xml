@@ -13,16 +13,14 @@
     <field name="domain" type="input">
       <label>Domain (myhostname)</label>
       <description>
-        The name of the domain used for this mail server.
-        For example: mail.snapwebsites.net -- your DNS should define that
-        name as an MX record.
+        The name of the domain used for this DNS server.
+        For example: "snapwebsites.net"
       </description>
     </field>
     <field name="public_ip" type="input">
       <label>Public IP Address</label>
       <description>
-        This is the public IP address to which the mailserver will monitor. It will
-        also become the "A" record in the DNS server.
+        This is the public IP address to which the DNS will assign the "A" record.
       </description>
     </field>
   </fields>
