@@ -691,7 +691,7 @@ addr::network_type_t addr::get_network_type() const
 std::string addr::get_network_type_string() const
 {
     std::string name;
-    switch( addr.get_network_type() )
+    switch( get_network_type() )
     {
         case addr::network_type_t::NETWORK_TYPE_UNDEFINED  : name= "Undefined";  break;
         case addr::network_type_t::NETWORK_TYPE_PRIVATE    : name= "Private";    break;
