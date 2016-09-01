@@ -16,7 +16,7 @@
     since it makes use of the database to manage the list
     of IP addresses to block.</p>
 
-    <p><strong>IMPORTANT NOTE:</strong> the IP address of that
+    <p><strong>IMPORTANT NOTE:</strong> the IP address that
     the VPN generates for your computers are NOT used with the
     firewall because all those IP addresses are virtual and
     they do not interact with the firewall at all. So, in the
@@ -37,8 +37,8 @@
       <description>Enter the private IP address of this computer, the one used to communicate with your other private computers.</description>
     </field>
     <field name="private_interface" type="input">
-      <label>The Interface This Computer uses for Public IP</label>
-      <description>Enter the name of the interface (such as 'eth0') that this computer uses for his Public IP address.</description>
+      <label>The Interface This Computer uses for Private IP</label>
+      <description>Enter the name of the interface (such as 'eth1') that this computer uses for his Private IP address.</description>
     </field>
     <field name="admin_ips" type="input">
       <label>List of Administrator IPs</label>
