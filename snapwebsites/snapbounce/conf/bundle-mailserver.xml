@@ -221,6 +221,7 @@ EOF
     done
   </postinst>
   <postrm>
+    BUNDLE_INSTALLATION_DOMAIN=`cat /etc/mailname`
     # Restore the backups as the original files they were,
     # overwriting our changes.
     # For now, I've removed the other files--only the zone file stays,
