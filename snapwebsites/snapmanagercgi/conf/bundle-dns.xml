@@ -23,6 +23,12 @@
         This is the public IP address to which the DNS will assign the "A" record.
       </description>
     </field>
+    <field name="nameserver_2" type="input">
+      <label>Nameserver 2</label>
+      <description>
+        Input the address of the secondary nameserver (ns2).
+      </description>
+    </field>
   </fields>
   <packages>bind9</packages>
   <postinst>
@@ -70,10 +76,13 @@ ${BUNDLE_INSTALLATION_DOMAIN} IN SOA ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaste
 
         A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 \$ORIGIN ${BUNDLE_INSTALLATION_DOMAIN}.
+ns1     A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+ns2     A       ${BUNDLE_INSTALLATION_NAMESERVER_2}
 w       A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 ww      A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 www     A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 wwww    A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+mail    A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 ; vim: syntax=bindzone
 EOF
 
