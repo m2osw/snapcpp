@@ -25,6 +25,7 @@
 
 // snapwebsites lib
 //
+#include "file_content.h"
 #include "join_strings.h"
 #include "log.h"
 #include "not_reached.h"
@@ -52,6 +53,9 @@ SNAP_PLUGIN_START(firewall, 1, 0)
 
 namespace
 {
+
+
+char const *    g_conf_filename = "/etc/network/firewall";
 
 
 //void file_descriptor_deleter(int * fd)
@@ -207,27 +211,118 @@ void firewall::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    // get the snapfirewall status
-    //
-    snap_manager::service_status_t status(f_snap->service_status("/usr/bin/snapfirewall", "snapfirewall"));
+    {
+        // get the snapfirewall status
+        //
+        snap_manager::service_status_t status(f_snap->service_status("/usr/bin/snapfirewall", "snapfirewall"));
 
-    // transform to a string
-    //
-    QString const status_string(QString::fromUtf8(snap_manager::manager::service_status_to_string(status)));
+        // transform to a string
+        //
+        QString const status_string(QString::fromUtf8(snap_manager::manager::service_status_to_string(status)));
 
-    // create status widget
-    //
-    snap_manager::status_t const status_widget(
-                    status == snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED
-                            ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
-                            : status == snap_manager::service_status_t::SERVICE_STATUS_DISABLED
-                                    ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                                    : snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                    get_plugin_name(),
-                    "service_status",
-                    status_string);
-    server_status.set_field(status_widget);
+        // create status widget
+        //
+        snap_manager::status_t const status_widget(
+                        status == snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED
+                                ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                                : status == snap_manager::service_status_t::SERVICE_STATUS_DISABLED
+                                        ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                        : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                        get_plugin_name(),
+                        "service_status",
+                        status_string);
+        server_status.set_field(status_widget);
+    }
+
+    {
+        retrieve_settings_field(server_status, "PUBLIC_IP");
+        retrieve_settings_field(server_status, "PUBLIC_INTERFACE");
+        retrieve_settings_field(server_status, "PRIVATE_IP");
+        retrieve_settings_field(server_status, "PRIVATE_INTERFACE");
+        retrieve_settings_field(server_status, "ADMIN_IPS");
+        retrieve_settings_field(server_status, "PRIVATE_NETWORK_IPS");
+    }
 }
+
+
+void firewall::retrieve_settings_field(snap_manager::server_status & server_status,
+                                       std::string const & variable_name)
+{
+    // we want fields to be lowercase, when these variables are uppercase
+    //
+    std::string field_name(variable_name);
+    std::transform(
+              field_name.begin()
+            , field_name.end()
+            , field_name.begin()
+            , [](char c)
+            {
+                // very quick and dirty since these are variable names
+                // in a shell script...
+                return c >= 'A' && c <= 'Z' ? c | 0x20 : c;
+            });
+    QString const qfield_name(QString::fromUtf8(field_name.c_str()));
+
+    // get the data
+    //
+    file_content fc(g_conf_filename);
+    if(fc.read_all())
+    {
+        // could read the file, go on
+        //
+        bool found(false);
+        std::string const content(fc.get_content());
+        std::string::size_type const pos(snap_manager::manager::search_parameter(content, variable_name + "=", 0, false));
+        if(pos != std::string::size_type(-1))
+        {
+            // found one, get the content
+            //
+            std::string::size_type p1(pos + variable_name.length() + 1);
+            if(p1 < content.length() && content[p1] == '"')
+            {
+                ++p1;
+                std::string::size_type const p2(content.find_first_of("\"", p1));
+                if(p2 != std::string::size_type(-1))
+                {
+                    std::string const value(content.substr(p1, p2 - p1));
+
+                    snap_manager::status_t const conf_field(
+                                      snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                    , get_plugin_name()
+                                    , qfield_name
+                                    , QString::fromUtf8(value.c_str()));
+                    server_status.set_field(conf_field);
+
+                    found = true;
+                }
+            }
+        }
+        if(!found)
+        {
+            // we got the file, but could not find the field as expected
+            //
+            snap_manager::status_t const conf_field(
+                              snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                            , get_plugin_name()
+                            , qfield_name
+                            , QString("\"%1\" is not editable at the moment.").arg(g_conf_filename));
+            server_status.set_field(conf_field);
+        }
+    }
+    else if(fc.exists())
+    {
+        // create an error field which is not editable
+        //
+        snap_manager::status_t const conf_field(
+                          snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                        , get_plugin_name()
+                        , qfield_name
+                        , QString("\"%1\" is not editable at the moment.").arg(g_conf_filename));
+        server_status.set_field(conf_field);
+    }
+    // else -- file does not exist
+}
+
 
 
 
@@ -312,6 +407,126 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         return true;
     }
 
+    if(s.get_field_name() == "public_ip")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "This Computer Public IP"
+                        , s.get_field_name()
+                        , "Enter the IP address of this computer, the one facing the Internet (often was eth0)."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "public_interface")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "The Interface This Computer uses for Public IP"
+                        , s.get_field_name()
+                        , "Enter the name of the interface (such as 'eth0') that this computer uses for his Public IP address."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "private_ip")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "This Computer Private IP"
+                        , s.get_field_name()
+                        , "Enter the private IP address of this computer, the one used to communicate with your other private computers (such as eth1)."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "private_interface")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "The Interface This Computer uses for Private IP"
+                        , s.get_field_name()
+                        , "Enter the name of the interface (such as 'eth1') that this computer uses for his Private IP address."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "admin_ips")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "List of Administrator IPs"
+                        , s.get_field_name()
+                        , "Enter the <strong>space separated</strong> list of IPs that your administrators use to access this computer."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "private_network_ips")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "List of Administrator IPs"
+                        , s.get_field_name()
+                        , "Enter the <strong>space separated</strong> list of IPs that your administrators use to access this computer."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     return false;
 }
 
@@ -341,6 +556,66 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
     {
         snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
         f_snap->service_apply_status("snapfirewall", status);
+        return true;
+    }
+
+    if(field_name == "public_ip")
+    {
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "PUBLIC_IP"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
+        return true;
+    }
+
+    if(field_name == "public_interface")
+    {
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "PUBLIC_INTERFACE"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
+        return true;
+    }
+
+    if(field_name == "private_ip")
+    {
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "PRIVATE_IP"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
+        return true;
+    }
+
+    if(field_name == "private_interface")
+    {
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "PRIVATE_INTERFACE"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
+        return true;
+    }
+
+    if(field_name == "admin_ips")
+    {
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "ADMIN_IPS"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
+        return true;
+    }
+
+    if(field_name == "private_network_ips")
+    {
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "PRIVATE_NETWORK_IPS"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
         return true;
     }
 

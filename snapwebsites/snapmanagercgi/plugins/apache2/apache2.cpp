@@ -216,7 +216,7 @@ void apache2::retrieve_status_of_conf(snap_manager::server_status & server_statu
         std::string::size_type const pos(snap_manager::manager::search_parameter(content, "servername", 0, true));
         if(pos != std::string::size_type(-1))
         {
-            if((pos == 0 || content[pos - 1] != '#'))
+            if(pos == 0 || content[pos - 1] != '#')
             {
                 // found one, get the name
                 //

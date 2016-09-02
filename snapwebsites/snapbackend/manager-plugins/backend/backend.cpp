@@ -684,7 +684,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "recovery")
     {
         QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
-        f_snap->replace_configuration_value(filename, "RestartSec", new_value, false);
+        f_snap->replace_configuration_value(filename, "RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
         NOTUSED(system("systemctl daemon-reload"));
         return true;
     }
@@ -692,7 +692,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "cron")
     {
         QString const filename(QString("/lib/systemd/system/%1.timer").arg(service_name));
-        f_snap->replace_configuration_value(filename, "OnUnitActiveSec", new_value, false);
+        f_snap->replace_configuration_value(filename, "OnUnitActiveSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
         NOTUSED(system("systemctl daemon-reload"));
         return true;
     }
@@ -700,7 +700,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "nice")
     {
         QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
-        f_snap->replace_configuration_value(filename, "Nice", new_value, false);
+        f_snap->replace_configuration_value(filename, "Nice", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
         NOTUSED(system("systemctl daemon-reload"));
         return true;
     }

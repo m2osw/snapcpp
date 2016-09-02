@@ -767,9 +767,10 @@ void manager::reboot(bool reboot)
 }
 
 
-bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, bool const create_backup)
+bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, replace_configuration_value_t const flags)
 {
-    QString const line(QString("%1=%2\n").arg(field_name).arg(new_value));
+    QString const quote((flags & REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE) == 0 ? "" : "\"");
+    QString const line(QString("%1=%3%2%3\n").arg(field_name).arg(new_value).arg(quote));
     QByteArray utf8_line(line.toUtf8());
 
     // make sure to create the file if it does not exist
@@ -779,6 +780,12 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
     int fd(open(filename.toUtf8().data(), O_RDWR));
     if(fd == -1)
     {
+        if((flags &  REPLACE_CONFIGURATION_VALUE_MUST_EXIST) != 0)
+        {
+            SNAP_LOG_WARNING("configuration file \"")(filename)("\" does not exist and we are not allowed to create it.");
+            return false;
+        }
+
         fd = open(filename.toUtf8().data(), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
         if(fd == -1)
         {
@@ -821,7 +828,7 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
         }
 
         // TBD: Offer administrators a way to define the backup extension?
-        if(create_backup)
+        if((flags & REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP) != 0)
         {
             int bak(open((filename + ".bak").toUtf8().data(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH));
             if(bak == -1)
@@ -886,10 +893,20 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
         }
         if(!found)
         {
+            if((flags &  REPLACE_CONFIGURATION_VALUE_MUST_EXIST) != 0)
+            {
+                SNAP_LOG_ERROR("configuration file \"")
+                              (filename)
+                              ("\" does not have a \"")
+                              (field_name)
+                              ("\" field and we are not allowed to append it.");
+                return false;
+            }
+
             if(::write(fd, utf8_line.data(), utf8_line.size()) != utf8_line.size())
             {
                 int const e(errno);
-                SNAP_LOG_ERROR("writing of new line at the end of \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+                SNAP_LOG_ERROR("writing of new parameter at the end of \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
                 return false;
             }
         }
