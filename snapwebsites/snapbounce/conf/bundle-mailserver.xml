@@ -55,7 +55,7 @@
     # I'm not too sure why we would want these two lines:
     #
     #localhost bounces:
-    #mail.${BUNDLE_INSTALLATION_DOMAIN} bounces:
+    #${BUNDLE_INSTALLATION_DOMAIN} bounces:
     #
     # For now, I removed them from the file altogether.
     #
@@ -68,18 +68,18 @@ bounces@${BUNDLE_INSTALLATION_DOMAIN} snapbounce:
 EOF
     postmap /etc/postfix/transport.maps
 
-    echo "mail.${BUNDLE_INSTALLATION_DOMAIN}" &gt; /etc/mailname 
+    echo "${BUNDLE_INSTALLATION_DOMAIN}" &gt; /etc/mailname 
 
     # setup the domain and a few other things
     # the few entries at the bottom connects snapbounce to postfix
     #
     MAILSERVER_SED=/tmp/bundle-mailserver.sed
-    echo "s/^#myorigin/myorigin/"                                                                  &gt;     ${MAILSERVER_SED}
+    echo "s/^myhostname = .*/myhostname = ${BUNDLE_INSTALLATION_DOMAIN}/"                                                                  &gt;     ${MAILSERVER_SED}
     echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" &gt;&gt; ${MAILSERVER_SED}
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
 
     cat &gt;&gt; /etc/postfix/main.cf &lt;&lt;EOF
-#
+
 # `date`
 # Tell postfix how we want to handle bounced emails (SNAP-67) 
 #
@@ -104,7 +104,7 @@ EOF
     #
     MASTER=/etc/postfix/master.cf
     cat &gt;&gt; ${MASTER} &lt;&lt;EOF
-#
+
 # `date`
 # Service to save bounced emails in Cassandra"                                                      
 snapbounce unix -       n       n       -       -       pipe
@@ -129,7 +129,7 @@ EOF
     # Set up DKIM support
     #
     cat &gt;&gt; /etc/opendkim.conf &lt;&lt;EOF
-#
+
 # `date`
 # Values used by Snap!
 #
@@ -173,12 +173,12 @@ EOF
     #
     mkdir -p /etc/opendmarc
     cat &gt;&gt; /etc/opendmarc.conf &lt;&lt;EOF
-#
+
 # `date`
 # Values used by Snap!
 #
-AuthservID         mail.${BUNDLE_INSTALLATION_DOMAIN}
-TrustedAuthservIDs mail.${BUNDLE_INSTALLATION_DOMAIN}
+AuthservID         ${BUNDLE_INSTALLATION_DOMAIN}
+TrustedAuthservIDs ${BUNDLE_INSTALLATION_DOMAIN}
 IgnoreHosts        /etc/opendmarc/ignore.hosts
 HistoryFile        /var/run/opendmarc/opendmarc.dat
 EOF
@@ -193,6 +193,8 @@ EOF
 
     ################################################################################
     # Append the spf/dkim/dmarc TXT records to the zone file for our domain
+    #
+    # TODO: bump the serial number of the zone file.
     #
     if [ -f "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone" ]
     then

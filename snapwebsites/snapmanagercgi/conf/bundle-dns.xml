@@ -37,9 +37,14 @@
     # Set up the named.conf.local file
     #
     cat &gt;&gt; /etc/bind/named.conf.local &lt;&lt;EOF
+acl trusted-servers  {
+    ${BUNDLE_INSTALLATION_NAMESERVER_2};  // ns2
+};
+
 zone "${BUNDLE_INSTALLATION_DOMAIN}" {
         type master;
         file "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone";
+        allow-transfer { trusted-servers; };
 };
 EOF
 
@@ -49,7 +54,7 @@ EOF
 \$ORIGIN .
 \$TTL 86400
 ${BUNDLE_INSTALLATION_DOMAIN} IN SOA ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaster.${BUNDLE_INSTALLATION_DOMAIN}. (
-          1
+          `date +%Y%m%d01`
           3H
           180
           14D
@@ -85,7 +90,7 @@ EOF
   </postinst>
   <prerm>
     # Remove locally generated files...
-    rm /etc/bind/*.zone
+    rm /etc/bind/*.zone*
   </prerm>
 </bundle>
 <!--
