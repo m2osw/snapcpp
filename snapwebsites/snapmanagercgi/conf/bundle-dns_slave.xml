@@ -17,8 +17,14 @@
         For example: "snapwebsites.net"
 
         Note: this is for a "slave" DNS server, which will copy info from the primary.
-        When you set up your DNS server, that will be "NS1", and this will be "NS2".
+        When you set up your DNS server, that will be "ns1", and this will be "ns2".
       </description>
+    <field name="nameserver_1" type="input">
+      <label>Nameserver 1</label>
+      <description>
+        Input the address of the primary nameserver (ns1).
+      </description>
+    </field>
     </field>
   </fields>
   <packages>bind9</packages>
@@ -27,9 +33,11 @@
     ################################################################################
     # Set up the named.conf.local file
     #
+    cat &gt;&gt; /etc/bind/named.conf.local &lt;&lt;EOF
 zone "${BUNDLE_INSTALLATION_DOMAIN}" {
         type slave;
-        file "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone";
+        file "/var/cache/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone";
+        masters { ${BUNDLE_INSTALLATION_NAMESERVER_1}; };
         allow-transfer { none; };
 };
 EOF
