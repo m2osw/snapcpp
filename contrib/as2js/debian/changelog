@@ -1,3 +1,9 @@
+as2js (0.1.14.248~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 01 Sep 2016 15:50:28 -0700
+
 as2js (0.1.14.247~xenial) xenial; urgency=high
 
   * Nightly build.
