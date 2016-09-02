@@ -31,7 +31,7 @@
       </description>
     </field>
   </fields>
-  <packages>snapbounce,bind9,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
+  <packages>snapbounce,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
   <postinst>
     # Create backups if the .orig files don't exist.
     # But only do this once.
@@ -43,8 +43,9 @@
        /etc/opendkim.conf \
        /etc/opendmarc.conf \
        /etc/default/opendkim \
-       /etc/default/openmarc
-    do
+       /etc/default/openmarc \
+       /etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
+       do
       if [ -f $i.orig ]
       then
         # Reset the file to the original
@@ -74,42 +75,52 @@ bounces@${BUNDLE_INSTALLATION_DOMAIN} snapbounce:
 EOF
     postmap /etc/postfix/transport.maps
 
+    echo "mail.${BUNDLE_INSTALLATION_DOMAIN}" &gt; /etc/mailname 
+
     # setup the domain and a few other things
     # the few entries at the bottom connects snapbounce to postfix
     #
     MAILSERVER_SED=/tmp/bundle-mailserver.sed
-    echo "s/^myhostname = .*/myhostname = ${BUNDLE_INSTALLATION_DOMAIN}/"                            &gt;     ${MAILSERVER_SED}
+    echo "s/^#myorigin/myorigin/"                                                                  &gt;     ${MAILSERVER_SED}
     echo "s/^smtpd_banner = \\(.*\\) (.*)/smtpd_banner = \\1 ($BUNDLE_INSTALLATION_ORGANIZATION)/" &gt;&gt; ${MAILSERVER_SED}
-    echo "$ i \\"                                                                                  &gt;&gt; ${MAILSERVER_SED}
-    echo "# `date` \\"                                                                             &gt;&gt; ${MAILSERVER_SED}
-    echo "# Tell postfix how we want to handle bounced emails (SNAP-67) \\"                        &gt;&gt; ${MAILSERVER_SED}
-    echo "notify_classes = bounce \\"                                                              &gt;&gt; ${MAILSERVER_SED}
-    echo "bounce_notice_recipient = bounces@${BUNDLE_INSTALLATION_DOMAIN} \\"                        &gt;&gt; ${MAILSERVER_SED}
-    echo "transport_maps = hash:/etc/postfix/transport.maps"                                       &gt;&gt; ${MAILSERVER_SED}
-    echo "policy-spf_time_limit = 3600s"                                                           &gt;&gt; ${MAILSERVER_SED}
-    echo "smtpd_recipient_restrictions = permit_mynetworks," \
-      "permit_sasl_authenticated," \
-      "reject_unauth_destination," \
-      "check_policy_service unix:private/policy-spf"                                               &gt;&gt; ${MAILSERVER_SED}
-    cat &gt;&gt; ${MAILSERVER_SED} &lt;&lt;EOF
-milter_protocol = 6
-milter_default_action = accept
-smtpd_milters = inet:localhost:12345,inet:localhost:54321
-non_smtpd_milters = inet:localhost:12345,inet:localhost:54321
-EOF
-    #
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
+
+    cat &gt;&gt; /etc/postfix/main.cf &lt;&lt;EOF
+#
+# `date`
+# Tell postfix how we want to handle bounced emails (SNAP-67) 
+#
+notify_classes               = bounce
+bounce_notice_recipient      = bounces@${BUNDLE_INSTALLATION_DOMAIN}
+transport_maps               = hash:/etc/postfix/transport.maps
+#
+# Set up SPF email verification, dkim and dmarc
+#
+policy-spf_time_limit        = 3600s
+smtpd_recipient_restrictions = permit_mynetworks,
+  permit_sasl_authenticated,
+  reject_unauth_destination,
+  check_policy_service unix:private/policy-spf
+milter_protocol       = 6
+milter_default_action = accept
+smtpd_milters         = inet:localhost:12345,inet:localhost:54321
+non_smtpd_milters     = inet:localhost:12345,inet:localhost:54321
+EOF
 
     # we then need to add a snapbounce entry to the master.cf file
     #
     MASTER=/etc/postfix/master.cf
-    cp ${MASTER} ${MASTER}.bak
-    echo "# Service to save bounced emails in Cassandra"                                                      &gt;&gt; ${MASTER}
-    echo "snapbounce unix -       n       n       -       -       pipe"                                       &gt;&gt; ${MASTER}
-    echo "  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}" &gt;&gt; ${MASTER}
-    echo "policy-spf  unix  -       n       n       -       -       spawn"                                    &gt;&gt; ${MASTER}
-    echo "  user=nobody argv=/usr/bin/policyd-spf"                                                            &gt;&gt; ${MASTER}
-    echo &gt;&gt; ${MASTER}
+    cat &gt;&gt; ${MASTER} &lt;&lt;EOF
+#
+# `date`
+# Service to save bounced emails in Cassandra"                                                      
+snapbounce unix -       n       n       -       -       pipe
+  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}
+#
+# Turn on SPF processing
+policy-spf  unix  -       n       n       -       -       spawn
+  user=nobody argv=/usr/bin/policyd-spf
+EOF
 
 
     ################################################################################
@@ -125,21 +136,25 @@ EOF
     # Set up DKIM support
     #
     cat &gt;&gt; /etc/opendkim.conf &lt;&lt;EOF
-KeyTable           /etc/opendkim/key_table
-SigningTable       /etc/opendkim/signing_table
-ExternalIgnoreList /etc/opendkim/trusted_hosts
-InternalHosts      /etc/opendkim/trusted_hosts
-AutoRestart        Yes
-AutoRestartRate    10/1h
-Mode               sv
-PidFile            /var/run/opendkim/opendkim.pid
-SignatureAlgorithm rsa-sha256
-Canonicalization   relaxed/simple
-UserID             opendkim:opendkim
+#
+# `date`
+# Values used by Snap!
+#
+KeyTable              /etc/opendkim/key_table
+SigningTable          /etc/opendkim/signing_table
+ExternalIgnoreList    /etc/opendkim/trusted_hosts
+InternalHosts         /etc/opendkim/trusted_hosts
+AutoRestart           Yes
+AutoRestartRate       10/1h
+Mode                  sv
+PidFile               /var/run/opendkim/opendkim.pid
+SignatureAlgorithm    rsa-sha256
+Canonicalization      relaxed/simple
+UserID                opendkim:opendkim
 EOF
     #
     mkdir -p /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}
-    cat &gt;&gt; /etc/opendkim/trusted_hosts &lt;&lt;EOF
+    cat &gt; /etc/opendkim/trusted_hosts &lt;&lt;EOF
 # local host
 127.0.0.1
 # local subnets that are trusted and do not need to be verified
@@ -149,10 +164,10 @@ EOF
     opendkim-genkey -s mail -d ${BUNDLE_INSTALLATION_DOMAIN}
     chown opendkim:opendkim mail.private
     cd -
-    cat &gt;&gt; /etc/opendkim/key_table &lt;&lt;EOF
+    cat &gt; /etc/opendkim/key_table &lt;&lt;EOF
 mail._domainkey.${BUNDLE_INSTALLATION_DOMAIN} ${BUNDLE_INSTALLATION_DOMAIN}:mail:/etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.private
 EOF
-    cat &gt;&gt; /etc/opendkim/signing_table &lt;&lt;EOF
+    cat &gt; /etc/opendkim/signing_table &lt;&lt;EOF
 ${BUNDLE_INSTALLATION_DOMAIN} mail._domainkey.${BUNDLE_INSTALLATION_DOMAIN}
 EOF
     cat &gt;&gt; /etc/default/opendkim &lt;&lt;EOF
@@ -163,13 +178,18 @@ EOF
     ################################################################################
     # Set up DMARC
     #
+    mkdir -p /etc/opendmarc
     cat &gt;&gt; /etc/opendmarc.conf &lt;&lt;EOF
-AuthservID mail.example.com
+#
+# `date`
+# Values used by Snap!
+#
+AuthservID         mail.${BUNDLE_INSTALLATION_DOMAIN}
 TrustedAuthservIDs mail.${BUNDLE_INSTALLATION_DOMAIN}
-IgnoreHosts /etc/opendmarc/ignore.hosts
-HistoryFile /var/run/opendmarc/opendmarc.dat
+IgnoreHosts        /etc/opendmarc/ignore.hosts
+HistoryFile        /var/run/opendmarc/opendmarc.dat
 EOF
-    cat &gt;&gt; /etc/opendmarc/ignore.hosts &lt;&lt;EOF
+    cat &gt; /etc/opendmarc/ignore.hosts &lt;&lt;EOF
 localhost
 10.8.0.0/24
 EOF
@@ -184,7 +204,7 @@ EOF
     if [ -f "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone" ]
     then
       cat &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone &lt;&lt;EOF
-@       1800 IN TXT "v=spf1 a${BUNDLE_INSTALLATION_DOMAIN} -all"
+@       1800 IN TXT "v=spf1 a:${BUNDLE_INSTALLATION_DOMAIN} -all"
 adsp._domainkey 1800 IN TXT "dkim=all"
 EOF
       cat /etc/opendkim/${BUNDLE_INSTALLATION_DOMAIN}/mail.txt &gt;&gt;/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
@@ -215,13 +235,15 @@ EOF
        /etc/opendkim.conf \
        /etc/opendmarc.conf \
        /etc/default/opendkim.conf \
-       /etc/default/opendmarc.conf
+       /etc/default/opendmarc.conf \
+       /etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
     do
       if [ -f $i.orig ]
       then
         mv $i.orig $i 
       fi
     done
+    rm -rf /etc/opendkim /etc/opendmarc
   </postrm>
 </bundle>
 <!--

@@ -32,21 +32,6 @@
   </fields>
   <packages>bind9</packages>
   <postinst>
-    # Create backups if the .orig files don't exist.
-    # But only do this once.
-    #
-    for i in \
-       /etc/bind/named.conf.local
-    do
-      if [ -f $i.orig ]
-      then
-        # Reset the file to the original
-        cp $i.orig $i
-      else
-        # Make a backup once
-        cp $i $i.orig
-      fi
-    done
 
     ################################################################################
     # Set up the named.conf.local file
@@ -98,18 +83,10 @@ EOF
       systemctl restart $i
     done
   </postinst>
-  <postrm>
-    # Restore the backups as the original files they were,
-    # overwriting our changes
-    for i in \
-       /etc/bind/named.conf.local
-    do
-      if [ -f $i.orig ]
-      then
-        mv $i.orig $i 
-      fi
-    done
-  </postrm>
+  <prerm>
+    # Remove locally generated files...
+    rm /etc/bind/*.zone
+  </prerm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
