@@ -37,13 +37,6 @@
     # But only do this once.
     #
     for i in \
-       /etc/postfix/main.cf \
-       /etc/postfix/master.cf \
-       /etc/postfix/transport.maps \
-       /etc/opendkim.conf \
-       /etc/opendmarc.conf \
-       /etc/default/opendkim \
-       /etc/default/openmarc \
        /etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
        do
       if [ -f $i.orig ]
@@ -227,15 +220,10 @@ EOF
   </postinst>
   <postrm>
     # Restore the backups as the original files they were,
-    # overwriting our changes
+    # overwriting our changes.
+    # For now, I've removed the other files--only the zone file stays,
+    # since we don't purge bind9.
     for i in \
-       /etc/postfix/main.cf \
-       /etc/postfix/master.cf \
-       /etc/postfix/transport.maps \
-       /etc/opendkim.conf \
-       /etc/opendmarc.conf \
-       /etc/default/opendkim.conf \
-       /etc/default/opendmarc.conf \
        /etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone
     do
       if [ -f $i.orig ]
