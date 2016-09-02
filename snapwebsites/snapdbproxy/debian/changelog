@@ -1,3 +1,15 @@
+snapdbproxy (1.0.5.7~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 01 Sep 2016 15:50:32 -0700
+
+snapdbproxy (1.0.5.6~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 01 Sep 2016 02:00:53 -0700
+
 snapdbproxy (1.0.5.5~xenial) xenial; urgency=high
 
   * Nightly build.
