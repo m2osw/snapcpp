@@ -108,7 +108,7 @@ EOF
 # `date`
 # Service to save bounced emails in Cassandra"                                                      
 snapbounce unix -       n       n       -       -       pipe
-  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}
+  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender \${sender} --recipient \${recipient}
 #
 # Turn on SPF processing
 policy-spf  unix  -       n       n       -       -       spawn
