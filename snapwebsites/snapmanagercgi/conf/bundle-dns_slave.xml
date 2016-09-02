@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!--
+  see /usr/share/snapwebsites/xsd/bundles.xsd for details
+  to verify your changes (change the == with two dashes):
+    xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-tools.xml
+-->
+<bundle>
+  <name>dns_slave</name>
+  <description>
+    <p>This bundle installs the Domain Name Server (bind9) on your machine.</p>
+  </description>
+  <fields>
+    <field name="domain" type="input">
+      <label>Domain</label>
+      <description>
+        The name of the domain used for this secondary DNS server.
+        For example: "snapwebsites.net"
+
+        Note: this is for a "slave" DNS server, which will copy info from the primary.
+        When you set up your DNS server, that will be "NS1", and this will be "NS2".
+      </description>
+    </field>
+  </fields>
+  <packages>bind9</packages>
+  <postinst>
+
+    ################################################################################
+    # Set up the named.conf.local file
+    #
+zone "${BUNDLE_INSTALLATION_DOMAIN}" {
+        type slave;
+        file "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone";
+        allow-transfer { none; };
+};
+EOF
+
+    ################################################################################
+    # (re)start service(s) with the correct parameters
+    #
+    # also the tripwire bundle may disable postfix so here we make sure
+    # it is enabled
+    #
+    for i in bind9
+    do
+      systemctl enable  $i
+      systemctl restart $i
+    done
+  </postinst>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

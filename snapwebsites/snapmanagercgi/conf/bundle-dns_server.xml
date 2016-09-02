@@ -5,13 +5,13 @@
     xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-tools.xml
 -->
 <bundle>
-  <name>dns</name>
+  <name>dns_server</name>
   <description>
     <p>This bundle installs the Domain Name Server (bind9) on your machine.</p>
   </description>
   <fields>
     <field name="domain" type="input">
-      <label>Domain (myhostname)</label>
+      <label>Domain</label>
       <description>
         The name of the domain used for this DNS server.
         For example: "snapwebsites.net"
