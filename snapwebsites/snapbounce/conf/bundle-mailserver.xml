@@ -31,7 +31,7 @@
       </description>
     </field>
   </fields>
-  <packages>snapbounce,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
+  <packages>snapbounce,postfix,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
   <postinst>
     # Create backups if the .orig files don't exist.
     # But only do this once.
