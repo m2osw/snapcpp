@@ -5,13 +5,13 @@
     xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-tools.xml
 -->
 <bundle>
-  <name>dns</name>
+  <name>dns_server</name>
   <description>
     <p>This bundle installs the Domain Name Server (bind9) on your machine.</p>
   </description>
   <fields>
     <field name="domain" type="input">
-      <label>Domain (myhostname)</label>
+      <label>Domain</label>
       <description>
         The name of the domain used for this DNS server.
         For example: "snapwebsites.net"
@@ -23,32 +23,28 @@
         This is the public IP address to which the DNS will assign the "A" record.
       </description>
     </field>
+    <field name="nameserver_2" type="input">
+      <label>Nameserver 2</label>
+      <description>
+        Input the address of the secondary nameserver (ns2).
+      </description>
+    </field>
   </fields>
   <packages>bind9</packages>
   <postinst>
-    # Create backups if the .orig files don't exist.
-    # But only do this once.
-    #
-    for i in \
-       /etc/bind/named.conf.local
-    do
-      if [ -f $i.orig ]
-      then
-        # Reset the file to the original
-        cp $i.orig $i
-      else
-        # Make a backup once
-        cp $i $i.orig
-      fi
-    done
 
     ################################################################################
     # Set up the named.conf.local file
     #
     cat &gt;&gt; /etc/bind/named.conf.local &lt;&lt;EOF
+acl trusted-servers  {
+    ${BUNDLE_INSTALLATION_NAMESERVER_2};  // ns2
+};
+
 zone "${BUNDLE_INSTALLATION_DOMAIN}" {
         type master;
         file "/etc/bind/${BUNDLE_INSTALLATION_DOMAIN}.zone";
+        allow-transfer { trusted-servers; };
 };
 EOF
 
@@ -58,7 +54,7 @@ EOF
 \$ORIGIN .
 \$TTL 86400
 ${BUNDLE_INSTALLATION_DOMAIN} IN SOA ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaster.${BUNDLE_INSTALLATION_DOMAIN}. (
-          1
+          `date +%Y%m%d01`
           3H
           180
           14D
@@ -70,10 +66,13 @@ ${BUNDLE_INSTALLATION_DOMAIN} IN SOA ns1.${BUNDLE_INSTALLATION_DOMAIN}. webmaste
 
         A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 \$ORIGIN ${BUNDLE_INSTALLATION_DOMAIN}.
+ns1     A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+ns2     A       ${BUNDLE_INSTALLATION_NAMESERVER_2}
 w       A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 ww      A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 www     A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 wwww    A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
+mail    A       ${BUNDLE_INSTALLATION_PUBLIC_IP}
 ; vim: syntax=bindzone
 EOF
 
@@ -89,18 +88,10 @@ EOF
       systemctl restart $i
     done
   </postinst>
-  <postrm>
-    # Restore the backups as the original files they were,
-    # overwriting our changes
-    for i in \
-       /etc/bind/named.conf.local
-    do
-      if [ -f $i.orig ]
-      then
-        mv $i.orig $i 
-      fi
-    done
-  </postrm>
+  <prerm>
+    # Remove locally generated files...
+    rm /etc/bind/*.zone*
+  </prerm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
