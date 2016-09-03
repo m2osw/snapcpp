@@ -775,13 +775,13 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                                     ? ""
                                     : "'")
                             : "\"");
-    QString const space_after((flags & REPLACE_CONFIGURATION_VALUE_SPACE_AFTER) == 0 ? " " : "");
+    QString const space_after((flags & REPLACE_CONFIGURATION_VALUE_SPACE_AFTER) != 0 ? " " : "");
 
     // WARNING: using concatenation (+) because "%1%2%3..." can cause
     //          problems if one of the values include a % followed by
     //          a number.
     //
-    QString const line(field_name + equal + space_after + quote + new_value + quote);
+    QString const line(field_name + equal + space_after + quote + new_value + quote + "\n");
 
     QByteArray utf8_line(line.toUtf8());
 
