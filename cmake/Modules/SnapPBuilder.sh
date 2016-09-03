@@ -18,7 +18,21 @@ fi
 
 if [ -n "$2" ]
 then
-    export MAKEFLAGS=$2
+    # The MAKEFLAGS do not make it through the chroot, but I keep this
+    # as a reminder
+    #
+    #export MAKEFLAGS=$2
+
+    # Extract the -j<count> option if any and pass it through the
+    # DEB_BUILD_OPTIONS parameter (Note: this can also be done through
+    # the .pbuilderrc file)
+    #
+    case "$2" in
+    *-j[0-9]*)
+        count=`echo "$2" | sed -e 's/.*-j\([[:digit:]]\)\+.*/\1/'`
+        export DEB_BUILD_OPTIONS="parallel=$count"
+        ;;
+    esac
 fi
 
 if [ ! -e debian/changelog ]
