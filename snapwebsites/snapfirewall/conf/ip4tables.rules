@@ -55,6 +55,7 @@
 # DNS (bind)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 53 -d @PUBLIC_IP@ --syn -j ACCEPT
 -A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --sport 53 -d @PUBLIC_IP@ -j ACCEPT
+-A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --dport 53 -d @PUBLIC_IP@ -j ACCEPT
 # NTP
 #-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 123 -d @PUBLIC_IP@ --syn -j ACCEPT
 -A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --sport 123 -d @PUBLIC_IP@ -j ACCEPT

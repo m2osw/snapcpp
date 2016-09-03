@@ -1,4 +1,3 @@
-debian/tmp/usr/bin/snapmanagerdaemon usr/bin
-debian/tmp/usr/bin/snapupgrader scripts/snapchangeloglevel usr/bin
+debian/tmp/usr/bin/snapmanagerdaemon debian/tmp/usr/bin/snapupgrader scripts/snapchangeloglevel script/snaprestartcassandra usr/bin
 conf/snapmanagerdaemon.properties usr/share/snapwebsites/conf
 conf/snapmanagerdaemon.properties etc/snapwebsites/

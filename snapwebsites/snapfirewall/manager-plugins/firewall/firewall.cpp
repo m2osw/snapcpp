@@ -412,12 +412,13 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "This Computer Public IP"
                         , s.get_field_name()
+                        , s.get_value()
                         , "Enter the IP address of this computer, the one facing the Internet (often was eth0)."
                         ));
         f.add_widget(field);
@@ -432,12 +433,13 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "The Interface This Computer uses for Public IP"
                         , s.get_field_name()
+                        , s.get_value()
                         , "Enter the name of the interface (such as 'eth0') that this computer uses for his Public IP address."
                         ));
         f.add_widget(field);
@@ -452,12 +454,13 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "This Computer Private IP"
                         , s.get_field_name()
+                        , s.get_value()
                         , "Enter the private IP address of this computer, the one used to communicate with your other private computers (such as eth1)."
                         ));
         f.add_widget(field);
@@ -472,12 +475,13 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "The Interface This Computer uses for Private IP"
                         , s.get_field_name()
+                        , s.get_value()
                         , "Enter the name of the interface (such as 'eth1') that this computer uses for his Private IP address."
                         ));
         f.add_widget(field);
@@ -492,12 +496,13 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "List of Administrator IPs"
                         , s.get_field_name()
+                        , s.get_value()
                         , "Enter the <strong>space separated</strong> list of IPs that your administrators use to access this computer."
                         ));
         f.add_widget(field);
@@ -512,12 +517,13 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "List of Administrator IPs"
                         , s.get_field_name()
+                        , s.get_value()
                         , "Enter the <strong>space separated</strong> list of IPs that your administrators use to access this computer."
                         ));
         f.add_widget(field);

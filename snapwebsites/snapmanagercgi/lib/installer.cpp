@@ -769,8 +769,14 @@ void manager::reboot(bool reboot)
 
 bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, replace_configuration_value_t const flags)
 {
-    QString const quote((flags & REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE) == 0 ? "" : "\"");
-    QString const line(QString("%1=%3%2%3\n").arg(field_name).arg(new_value).arg(quote));
+    QString const equal((flags & REPLACE_CONFIGURATION_VALUE_COLON) == 0 ? ":" : "=");
+    QString const quote((flags & REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE) == 0
+                            ? ((flags & REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE) == 0
+                                    ? ""
+                                    : "'")
+                            : "\"");
+    QString const space_after((flags & REPLACE_CONFIGURATION_VALUE_SPACE_AFTER) == 0 ? " " : "");
+    QString const line(QString("%1%4%5%3%2%3\n").arg(field_name).arg(new_value).arg(quote).arg(equal).arg(space_after));
     QByteArray utf8_line(line.toUtf8());
 
     // make sure to create the file if it does not exist
@@ -851,7 +857,7 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
         snap::NOTUSED(lseek(fd, 0, SEEK_SET));
         snap::NOTUSED(::ftruncate(fd, 0));
 
-        QByteArray field_name_utf8((field_name + "=").toUtf8());
+        QByteArray field_name_utf8((field_name + equal).toUtf8());
 
         bool found(false);
         char const * s(buf.get());
@@ -862,6 +868,19 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
             {
                 // length without the '\n'
                 //
+                if((flags & REPLACE_CONFIGURATION_VALUE_HASH_COMMENT) != 0)
+                {
+                    // remove the '#' and spaces if any
+                    //
+                    if(*start == '#')
+                    {
+                        ++start;
+                        while(isspace(*start) || *start == '#')
+                        {
+                            ++start;
+                        }
+                    }
+                }
                 size_t len(s - start);
                 if(len >= static_cast<size_t>(field_name_utf8.size())
                 && strncmp(start, field_name_utf8.data(), field_name_utf8.size()) == 0)

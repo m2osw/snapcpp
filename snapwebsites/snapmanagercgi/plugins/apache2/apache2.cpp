@@ -317,7 +317,7 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
             return false;
         }
 
-        // the list of id_rsa.pub files
+        // the server name
         //
         snap_manager::form f(
                   get_plugin_name()
@@ -519,12 +519,12 @@ void apache2::on_handle_affected_services(std::set<QString> & affected_services)
         //
         if(!restarted)
         {
-            // restart apache2
+            // reload apache2
             //
-            snap::process p("restart apache2");
+            snap::process p("reload apache2");
             p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
             p.set_command("systemctl");
-            p.add_argument("restart");
+            p.add_argument("reload");
             p.add_argument("apache2");
             NOTUSED(p.run());           // errors are automatically logged by snap::process
         }
