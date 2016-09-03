@@ -1,3 +1,9 @@
+snapfirewall (1.0.3.15~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 03 Sep 2016 02:00:55 -0700
+
 snapfirewall (1.0.3.14~xenial) xenial; urgency=high
 
   * Nightly build.
