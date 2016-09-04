@@ -1772,6 +1772,12 @@ void snap_manager::on_websiteSave_clicked()
                 valid = true;
             }
         }
+        else
+        {
+            // in this case it has to be exactly equal (i.e. no sub-domain)
+            //
+            valid = name == f_domain_org_name;
+        }
         if(!valid)
         {
             QMessageBox msg(QMessageBox::Critical, "Invalid Domain Name", "The full domain name of a website must end with the exact domain name of the website you are editing.", QMessageBox::Ok, this);
