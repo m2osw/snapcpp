@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.16.1~xenial) xenial; urgency=high
+
+  * Still an error with reading the zone files. Try again.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Sep 2016 23:47:39 -0700
+
 snapmanagercgi (1.0.15.1~xenial) xenial; urgency=high
 
   * Fixed error in script call.
