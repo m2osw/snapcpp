@@ -384,7 +384,7 @@ bool dns::display_value ( QDomElement parent
                 , s.get_field_name()
                 , snap_manager::form::FORM_BUTTON_SAVE
                 );
-        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                     "Enter the domain and master IP address of the slave zone you wish to mirror, comma delimited."
                     , s.get_field_name()
                     , ""
@@ -476,6 +476,7 @@ bool dns::apply_setting ( QString const & button_name
                 );
 
         QStringList params = new_value.split(",");
+        SNAP_LOG_TRACE("add_zone_script.sh ")(params.join(" "));
 
         if( QProcess::execute( "/tmp/add_zone_script.sh", params ) != 0 )
         {

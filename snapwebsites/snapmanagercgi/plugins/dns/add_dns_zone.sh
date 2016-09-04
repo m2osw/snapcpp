@@ -6,9 +6,9 @@ then
   exit 1
 fi
 
-set ARG_DOMAIN=$1
-set ARG_PUBLIC_IP=$2
-set ARG_NAMESERVER_2=$3
+ARG_DOMAIN=$1
+ARG_PUBLIC_IP=$2
+ARG_NAMESERVER_2=$3
 
 ################################################################################
 # Set up the named.conf.local file
