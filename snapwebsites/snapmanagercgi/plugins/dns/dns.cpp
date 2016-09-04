@@ -239,31 +239,24 @@ void dns::on_retrieve_status(snap_manager::server_status & server_status)
 
             // create a field for this one, it worked
             //
-            for( auto const &ext : exts )
+            QString const filename = info.filePath();
+            QFile file( filename );
+            if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
             {
-                QFile file( QString("%1/%2.%3")
-                        .arg(info.path())
-                        .arg(info.baseName())
-                        .arg(ext)
-                        );
-                if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
-                {
-                    QString const name = info.filePath();
-                    QTextStream in(&file);
-                    snap_manager::status_t const ctl
-                        ( snap_manager::status_t::state_t::STATUS_STATE_INFO
-                          , get_plugin_name()
-                          , name
-                          , in.readAll()
-                        );
-                    server_status.set_field(ctl);
-                }
-                else
-                {
-                    QString const errmsg = QString("Cannot open '%1' for reading!").arg(info.filePath());
-                    SNAP_LOG_ERROR(qPrintable(errmsg));
-                    //throw dns_exception( errmsg );
-                }
+                QTextStream in(&file);
+                snap_manager::status_t const ctl
+                    ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                      , get_plugin_name()
+                      , filename
+                      , in.readAll()
+                    );
+                server_status.set_field(ctl);
+            }
+            else
+            {
+                QString const errmsg = QString("Cannot open '%1' for reading!").arg(info.filePath());
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                //throw dns_exception( errmsg );
             }
         }
     }

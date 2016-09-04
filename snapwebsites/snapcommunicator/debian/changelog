@@ -1,3 +1,9 @@
+snapcommunicator (1.0.3.19~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 04 Sep 2016 02:00:54 -0700
+
 snapcommunicator (1.0.3.18~xenial) xenial; urgency=high
 
   * Nightly build.
