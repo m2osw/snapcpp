@@ -11,7 +11,12 @@ then
 	rm /var/www/debian/xenial/*
 
 	# Copy the files from the build output
-	scp 192.168.2.90:/home/build/pbuilder/xenial_result/* .
+	if test "$1" = "--tristan"
+	then
+		scp tristan:/home/build/pbuilder/xenial_result/* .
+	else
+		scp 192.168.2.90:/home/build/pbuilder/xenial_result/* .
+	fi
 fi
 
 # Run the following in your build directory output against the

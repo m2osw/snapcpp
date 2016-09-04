@@ -30,6 +30,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "process.h"
 #include "qdomhelpers.h"
 #include "qdomxpath.h"
 #include "string_pathinfo.h"
@@ -195,6 +196,7 @@ void firewall::bootstrap(snap_child * snap)
     }
 
     SNAP_LISTEN(firewall, "server", snap_manager::manager, retrieve_status, _1);
+    SNAP_LISTEN(firewall, "server", snap_manager::manager, handle_affected_services, _1);
 }
 
 
@@ -521,10 +523,10 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
                 );
 
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "List of Administrator IPs"
+                          "List of Private Network IPs"
                         , s.get_field_name()
                         , s.get_value()
-                        , "Enter the <strong>space separated</strong> list of IPs that your administrators use to access this computer."
+                        , "Enter the <strong>space separated</strong> list of IPs of all the computers present in your private network."
                         ));
         f.add_widget(field);
 
@@ -556,7 +558,6 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 {
     NOTUSED(old_or_installation_value);
     NOTUSED(button_name);
-    NOTUSED(affected_services);
 
     if(field_name == "service_status")
     {
@@ -567,6 +568,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "public_ip")
     {
+        affected_services.insert("firewall-reload");
         NOTUSED(f_snap->replace_configuration_value(
                       g_conf_filename
                     , "PUBLIC_IP"
@@ -577,6 +579,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "public_interface")
     {
+        affected_services.insert("firewall-reload");
         NOTUSED(f_snap->replace_configuration_value(
                       g_conf_filename
                     , "PUBLIC_INTERFACE"
@@ -587,6 +590,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "private_ip")
     {
+        affected_services.insert("firewall-reload");
         NOTUSED(f_snap->replace_configuration_value(
                       g_conf_filename
                     , "PRIVATE_IP"
@@ -597,6 +601,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "private_interface")
     {
+        affected_services.insert("firewall-reload");
         NOTUSED(f_snap->replace_configuration_value(
                       g_conf_filename
                     , "PRIVATE_INTERFACE"
@@ -607,6 +612,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "admin_ips")
     {
+        affected_services.insert("firewall-reload");
         NOTUSED(f_snap->replace_configuration_value(
                       g_conf_filename
                     , "ADMIN_IPS"
@@ -617,6 +623,7 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
 
     if(field_name == "private_network_ips")
     {
+        affected_services.insert("firewall-reload");
         NOTUSED(f_snap->replace_configuration_value(
                       g_conf_filename
                     , "PRIVATE_NETWORK_IPS"
@@ -626,6 +633,25 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
     }
 
     return false;
+}
+
+
+void firewall::on_handle_affected_services(std::set<QString> & affected_services)
+{
+    auto const & it_reload(std::find(affected_services.begin(), affected_services.end(), QString("firewall-reload")));
+    if(it_reload != affected_services.end())
+    {
+        // remove since we are handling that one here
+        //
+        affected_services.erase(it_reload);
+
+        // run the firewall script to apply the changes
+        //
+        snap::process p("reload firewall");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("/etc/network/firewall");
+        NOTUSED(p.run());           // errors are automatically logged by snap::process
+    }
 }
 
 

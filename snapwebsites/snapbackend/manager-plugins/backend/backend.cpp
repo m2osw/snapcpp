@@ -632,52 +632,8 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
         return true;
     }
 
-//    if(field == "disabled")
-//    {
-//        QFile file(filename);
-//        if(file.open(QIODevice::ReadWrite))
-//        {
-//            QDomDocument doc;
-//            doc.setContent(&file, false);
-//
-//            QDomXPath dom_xpath;
-//            dom_xpath.setXPath(QString("/service[@name=\"%1\"]").arg(service_name));
-//            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-//            if(result.size() > 0)
-//            {
-//                if(result[0].isElement())
-//                {
-//                    // although this is about the snapbackend, we have to
-//                    // restart the snapinit process if we want the change to
-//                    // be taken in account
-//                    //
-//                    affected_services.insert(service_name);
-//
-//                    QDomElement service(result[0].toElement());
-//                    if(use_default_value
-//                    || new_value.mid(0, 1).toUpper() == "D")
-//                    {
-//                        service.setAttribute("disabled", "disabled");
-//                    }
-//                    else
-//                    {
-//                        service.removeAttribute("disabled");
-//                    }
-//
-//                    QString output(doc.toString(2));
-//                    QByteArray output_utf8(output.toUtf8());
-//                    file.seek(0L);
-//                    file.write(output_utf8);
-//                    file.resize(output_utf8.size());
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
-
     // TODO: the following works just fine at this time, but it is not very
-    //       save:
+    //       safe:
     //         1. we should use a snap_process to get errors logged automatically
     //         2. we should have a way to change a variable within a [section]
     //
