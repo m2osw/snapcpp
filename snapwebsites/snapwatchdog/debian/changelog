@@ -1,3 +1,9 @@
+snapwatchdog (0.2.4.12~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 04 Sep 2016 02:00:51 -0700
+
 snapwatchdog (0.2.4.11~xenial) xenial; urgency=high
 
   * Nightly build.
