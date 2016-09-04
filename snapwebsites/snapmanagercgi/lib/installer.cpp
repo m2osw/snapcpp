@@ -218,6 +218,11 @@ QString manager::count_packages_that_can_be_updated(bool check_cache)
             // whenever the database is in an unknown state)
             //
             SNAP_LOG_ERROR("the \"apt-get update\" command, that we run prior to running the \"apt-check\" command, failed.");
+
+            // no ready at this point, we need to do an update and that
+            // failed -- we will try again later
+            //
+            return QString();
         }
     }
 

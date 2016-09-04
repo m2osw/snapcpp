@@ -366,6 +366,12 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
 void manager_status::resend_status(bool const kick_now)
 {
     snap::snap_thread::snap_lock guard(f_mutex);
+
+    // this will force a couple of things to get regenerated
+    // (i.e. info about bundles and whether the computer need to be upgraded)
+    //
+    f_manager_daemon->reset_aptcheck();
+
     f_resend_status = true;
 
     if(kick_now)
