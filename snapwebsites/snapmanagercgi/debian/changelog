@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.13.1~xenial) xenial; urgency=high
+
+  * Added dns plugin.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Sep 2016 18:19:18 -0700
+
 snapmanagercgi (1.0.12.10~xenial) xenial; urgency=high
 
   * Nightly build.

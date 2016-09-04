@@ -56,6 +56,7 @@ include_directories(
 #
 add_subdirectory(cassandra)
 add_subdirectory(apache2)
+add_subdirectory(dns)
 add_subdirectory(self)
 add_subdirectory(ssh)
 #add_subdirectory(system)
