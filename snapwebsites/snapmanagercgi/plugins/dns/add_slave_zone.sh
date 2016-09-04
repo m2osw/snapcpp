@@ -6,8 +6,8 @@ then
   exit 1
 fi
 
-set ARG_DOMAIN=$1
-set ARG_NAMESERVER_1=$3
+ARG_DOMAIN=$1
+ARG_NAMESERVER_1=$2
 
 ################################################################################
 # Set up the named.conf.local file
