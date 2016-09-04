@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.15.1~xenial) xenial; urgency=high
+
+  * Fixed error in script call.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Sep 2016 23:16:19 -0700
+
 snapmanagercgi (1.0.14.1~xenial) xenial; urgency=high
 
   * Bumped version for script fixes.

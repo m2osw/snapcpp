@@ -456,29 +456,29 @@ bool dns::apply_setting ( QString const & button_name
 
     if( field_name == CREATE_MASTER_ZONE )
     {
-        QFile add_zone_script( "/tmp/add_dns_zone.sh" );
+        QFile add_dns_zone( "/tmp/add_dns_zone.sh" );
         //
         // Overwrite the script every time
         //
-        add_zone_script.remove();
-        if( !QFile::copy( ":/add_dns_zone.sh", add_zone_script.fileName() ) )
+        add_dns_zone.remove();
+        if( !QFile::copy( ":/add_dns_zone.sh", add_dns_zone.fileName() ) )
         {
             QString const errmsg = QString("Cannot copy add_dns_zone.sh file!");
             SNAP_LOG_ERROR(qPrintable(errmsg));
             return false;
         }
         //
-        add_zone_script.setPermissions
-                ( add_zone_script.permissions()
+        add_dns_zone.setPermissions
+                ( add_dns_zone.permissions()
                 | QFileDevice::ExeOwner
                 | QFileDevice::ExeUser
                 | QFileDevice::ExeGroup
                 );
 
         QStringList params = new_value.split(",");
-        SNAP_LOG_TRACE("add_zone_script.sh ")(params.join(" "));
+        SNAP_LOG_TRACE("add_dns_zone.sh ")(params.join(" "));
 
-        if( QProcess::execute( "/tmp/add_zone_script.sh", params ) != 0 )
+        if( QProcess::execute( "/tmp/add_dns_zone.sh", params ) != 0 )
         {
             SNAP_LOG_ERROR("Could not execute zone creation script! Params=")
                 (qPrintable(new_value));
