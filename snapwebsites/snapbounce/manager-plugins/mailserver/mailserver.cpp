@@ -227,87 +227,13 @@ void mailserver::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    snap_config snap_mailserver_conf(g_configuration_filename);
-
+    if(!is_installed())
     {
-        snap_manager::status_t const host_list(
-                      snap_manager::status_t::state_t::STATUS_STATE_INFO
-                    , get_plugin_name()
-                    , "cassandra_host_list"
-                    , snap_mailserver_conf["cassandra_host_list"]);
-        server_status.set_field(host_list);
-    }
-
-    try
-    {
-        // if the connection fails, we cannot have either of the following
-        // fields so the catch() makes sure to avoid them
+        // no fields whatsoever if the package is not installed
+        // (remember that we are part of snapmanagercgi and that's
+        // going to be installed!)
         //
-        int port(9042);
-        QString const port_str(snap_mailserver_conf["cassandra_port"]);
-        if(!port_str.isEmpty())
-        {
-            bool ok(false);
-            port = port_str.toInt(&ok, 10);
-            if(!ok
-            || port <= 0
-            || port > 65535)
-            {
-                SNAP_LOG_ERROR( "Invalid cassandra_port specification in snapbounce.conf (invalid number, smaller than 1 or larger than 65535)" );
-                port = 0;
-            }
-        }
-        if(port > 0)
-        {
-            auto session( QtCassandra::QCassandraSession::create() );
-            session->connect(snap_mailserver_conf["cassandra_host_list"], port);
-            if( !session->isConnected() )
-            {
-                SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list and cassandra_port in snapbounce.conf!" );
-            }
-            else
-            {
-                auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
-                meta->loadSchema();
-                auto const & keyspaces( meta->getKeyspaces() );
-                QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-                if( keyspaces.find(context_name) == std::end(keyspaces) )
-                {
-                    // no context yet, offer to create the context
-                    //
-                    snap_manager::status_t const create_context(
-                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                , get_plugin_name()
-                                , "cassandra_create_context"
-                                , context_name
-                                );
-                    server_status.set_field(create_context);
-                }
-                else
-                {
-                    // database is available and context is available,
-                    // offer to create the tables (it should be automatic
-                    // though, but this way we can click on this one last
-                    // time before installing a website)
-                    //
-                    snap_manager::status_t const create_tables(
-                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                , get_plugin_name()
-                                , "cassandra_create_tables"
-                                , context_name
-                                );
-                    server_status.set_field(create_tables);
-                }
-            }
-        }
-    }
-    catch( std::exception const & e )
-    {
-        SNAP_LOG_ERROR("Caught exception: ")(e.what());
-    }
-    catch( ... )
-    {
-        SNAP_LOG_ERROR("Caught unknown exception!");
+        return;
     }
 }
 
@@ -330,97 +256,6 @@ void mailserver::on_retrieve_status(snap_manager::server_status & server_status)
  */
 bool mailserver::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
-    QDomDocument doc(parent.ownerDocument());
-
-    if(s.get_field_name() == "cassandra_host_list")
-    {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
-                );
-
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Cassandra Node IP Addresses:"
-                        , s.get_field_name()
-                        , s.get_value()
-                        , "The list of <strong>comma separated</strong> IP addresses used to connect to Cassandra."
-                         " In general these are seed nodes, although it does not need to be."
-                         " The C++ Cassandra driver will adjust the information as"
-                         " required and connect to additional nodes automatically."
-                        ));
-        f.add_widget(field);
-
-        f.generate(parent, uri);
-
-        return true;
-    }
-
-    if(s.get_field_name() == "cassandra_create_context")
-    {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_SAVE
-                );
-
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Create Snap! Websites Context:"
-                        , s.get_field_name()
-                        , s.get_value()
-                        , "The Snap! Websites Server makes use of a Cassandra context named snap_websites."
-                         " It looks like that context does not yet exist."
-                         " To create it, just click on the Save button. The value of the field is currently ignored."
-                         " Note: be patient. The creation of the context can take a bit of time..."
-                        ));
-        f.add_widget(field);
-
-        f.generate(parent, uri);
-
-        return true;
-    }
-
-    if(s.get_field_name() == "cassandra_create_tables")
-    {
-        // the list if frontend snapmanagers that are to receive statuses
-        // of the cluster computers; may be just one computer; should not
-        // be empty; shows a text input field
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_SAVE
-                );
-
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Create Missing Snap! Websites Tables:"
-                        , s.get_field_name()
-                        , s.get_value()
-                        , "The Snap! Websites Server makes use of a Cassandra context with various tables."
-                         " Those tables must be created before one can install a Snap! domain and website."
-                         " This function creates the missing tables. Tables that are already there are untouched."
-                         " (i.e. we use CREATE IF NOT EXIST ...)."
-                         " We ignore the value of the field here. Just click on the Save button to create the missing tables."
-                         " Note: assuming that you install snapdb, create the context and then install other modules, then the"
-                         " tables will get installed when installing those modules. To help developers, however, it can be"
-                         " practical to have this button."
-                        ));
-        f.add_widget(field);
-
-        f.generate(parent, uri);
-
-        return true;
-    }
-
-    return false;
 }
 
 
@@ -441,44 +276,6 @@ bool mailserver::display_value(QDomElement parent, snap_manager::status_t const 
  */
 bool mailserver::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
-    NOTUSED(old_or_installation_value);
-    NOTUSED(button_name);
-
-    // restore defaults?
-    //
-    //bool const use_default_value(button_name == "restore_default");
-
-    if(field_name == "cassandra_host_list")
-    {
-        // to make use of the new list, make sure to restart
-        //
-        affected_services.insert("snapbounce");
-
-        // fix the value in memory
-        //
-        snap_config snap_mailserver_conf(g_configuration_filename);
-        snap_mailserver_conf["cassandra_host_list"] = new_value;
-
-        return f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_host_list", new_value);
-    }
-
-    if(field_name == "cassandra_create_context")
-    {
-        // TODO: use snap::process to collect the output
-        //
-        NOTUSED(system("snapcreatecontext"));
-        return true;
-    }
-
-    if(field_name == "cassandra_create_tables")
-    {
-        // TODO: use snap::process to collect the output
-        //
-        NOTUSED(system("snapcreatetables"));
-        return true;
-    }
-
-    return false;
 }
 
 
