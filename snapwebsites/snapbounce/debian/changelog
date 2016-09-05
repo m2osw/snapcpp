@@ -1,3 +1,9 @@
+snapbounce (1.0.1.1~xenial) xenial; urgency=high
+
+  * Added new snapmanager plugin: mailserver.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 05 Sep 2016 12:15:49 -0700
+
 snapbounce (1.0.0.132~xenial) xenial; urgency=high
 
   * Nightly build.
