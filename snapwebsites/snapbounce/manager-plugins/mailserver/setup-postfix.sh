@@ -18,7 +18,7 @@ fi
 # Add required milter stuff if not in the main.cf
 #
 MAIN=/etc/postfix/main.cf
-if ! grep smtpd_milters ${MAIN} > /dev/null
+if ! grep smtpd_milters ${MAIN} &> /dev/null
 then
   cat >> ${MAIN} <<EOF
 
@@ -26,10 +26,7 @@ then
 # Set up SPF email verification, DKIM and DMARC
 #
 policy-spf_time_limit        = 3600s
-smtpd_recipient_restrictions = permit_mynetworks,
-permit_sasl_authenticated,
-reject_unauth_destination,
-check_policy_service unix:private/policy-spf
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination, check_policy_service unix:private/policy-spf
 milter_protocol       = 6
 milter_default_action = accept
 smtpd_milters         = inet:localhost:12345,inet:localhost:54321
@@ -41,7 +38,7 @@ fi
 # Add the spf policy to the master.cf, if it isn't already in there.
 #
 MASTER=/etc/postfix/master.cf
-if ! grep policy-spf ${MASTER} > /dev/null
+if ! grep policy-spf ${MASTER} &> /dev/null
 then
   cat >> ${MASTER} <<EOF
 
@@ -49,7 +46,7 @@ then
 # `date`
 # Turn on SPF processing
 policy-spf  unix  -       n       n       -       -       spawn
-user=nobody argv=/usr/bin/policyd-spf
+  user=nobody argv=/usr/bin/policyd-spf
 EOF
 fi
 
@@ -57,18 +54,25 @@ fi
 ################################################################################
 # Setup SPF support
 #
-sed \
-  -e "s/HELO_reject = SPF_Not_Pass/HELO_reject = False/" \
-  -e "s/Mail_From_reject = Fail/Mail_From_reject = False/"
-    /etc/postfix-policyd-spf-python/policyd-spf.conf > /etc/postfix-policyd-spf-python/policyd-spf.conf
+echo "Setup SPF support"
+if ! [ -f /etc/postfix-policyd-spf-python/policyd-spf.conf ]
+then
+	mv /etc/postfix-policyd-spf-python/policyd-spf.conf /etc/postfix-policyd-spf-python/policyd-spf.conf.orig
+	sed \
+	  -e "s/HELO_reject = SPF_Not_Pass/HELO_reject = False/" \
+	  -e "s/Mail_From_reject = Fail/Mail_From_reject = False/"
+	    /etc/postfix-policyd-spf-python/policyd-spf.conf.orig > /etc/postfix-policyd-spf-python/policyd-spf.conf
+fi
 
 
 ################################################################################
 # Set up DKIM support
 #
+echo "Setup DKIM support"
 OPENDKIM=/etc/opendkim.conf
-if ! grep "^KeyTable.*/etc/opendkim/key_table" ${OPENDKIM} > /dev/null
+if ! grep "^KeyTable.*/etc/opendkim/key_table" ${OPENDKIM} &> /dev/null
 then
+  echo "Adding KeyTable to ${OPENDKIM}"
   cat >> /etc/opendkim.conf <<EOF
 
 ########
@@ -101,13 +105,14 @@ then
 EOF
 fi
 #
-if ! grep "^SOCKET=\"inet:12345@localhost\"" /etc/default/opendkim > /dev/null
+if ! grep "^SOCKET=\"inet:12345@localhost\"" /etc/default/opendkim &> /dev/null
 then
   cat >> /etc/default/opendkim <<EOF
 SOCKET="inet:12345@localhost"
 EOF
 fi
 
+echo "Setup DKIM domain for ${ARG_DOMAIN}"
 DOMAIN_DKIM_DIR=/etc/opendkim/${ARG_DOMAIN}
 if [ -d ${DOMAIN_DKIM_DIR} ]
 then
@@ -119,28 +124,36 @@ cd ${DOMAIN_DKIM_DIR}
 opendkim-genkey -s mail -d ${ARG_DOMAIN}
 chown opendkim:opendkim mail.private
 cd -
-cat >> /etc/opendkim/key_table <<EOF
-mail._domainkey.mail.${ARG_DOMAIN} ${ARG_DOMAIN}:mail:/etc/opendkim/${ARG_DOMAIN}/mail.private
+if ! grep ${ARG_DOMAIN} /etc/opendkim/key_table &> /dev/null
+then
+	cat >> /etc/opendkim/key_table <<EOF
+mail._domainkey.${ARG_DOMAIN} ${ARG_DOMAIN}:mail:/etc/opendkim/${ARG_DOMAIN}/mail.private
 EOF
-
-cat >> /etc/opendkim/signing_table <<EOF
-${ARG_DOMAIN} mail._domainkey.mail.${ARG_DOMAIN}
+	#
+	cat >> /etc/opendkim/signing_table <<EOF
+${ARG_DOMAIN} mail._domainkey.${ARG_DOMAIN}
 EOF
+fi
+#
+# Create zonefile snippet
+#
+opendkim-genzone -d ${ARG_DOMAIN} -t 60 -D -o /etc/opendkim/${ARG_DOMAIN}/zone.txt
 
 
 ################################################################################
 # Set up DMARC
 #
+echo "Setup DMARC..."
 mkdir -p /etc/opendmarc
-if ! grep ^IgnoreHosts > /dev/null
+if ! grep ^IgnoreHosts /etc/opendmarc.conf &> /dev/null
 then
   cat >> /etc/opendmarc.conf <<EOF
 
 # `date`
 # Values used by Snap!
 #
-AuthservID         mail.${ARG_DOMAIN}
-TrustedAuthservIDs mail.${ARG_DOMAIN}
+AuthservID         ${ARG_DOMAIN}
+TrustedAuthservIDs ${ARG_DOMAIN}
 IgnoreHosts        /etc/opendmarc/ignore.hosts
 HistoryFile        /var/run/opendmarc/opendmarc.dat
 EOF
@@ -167,17 +180,16 @@ fi
 ZONEFILE=/etc/bind/${ARG_DOMAIN}.zone
 if [ -f ${ZONEFILE} ]
 then
-  if ! grep "^;==== ${ARG_DOMAIN} TXT records" > /dev/null
+  if ! grep "^;==== ${ARG_DOMAIN} TXT records" ${ZONEFILE} > /dev/null
   then
+    echo "Creating TXT records in ZONEFILE for ${ARG_DOMAIN}"
     echo ";==== ${ARG_DOMAIN} TXT records" >> ${ZONEFILE}
     cat >> ${ZONEFILE} <<EOF
-mail       1800 IN TXT "v=spf1 a:mail.${ARG_DOMAIN} -all"
-adsp._domainkey.mail 1800 IN TXT "dkim=all"
+@               60 IN TXT "v=spf1 a:${ARG_DOMAIN} -all"
+adsp._domainkey 60 IN TXT "dkim=all"
+_dmarc          60 IN TXT "v=DMARC1; p=quarantine; fo=0; adkim=r; aspf=r; pct=100; rf=afrf; sp=quarantine"
 EOF
-    cat /etc/opendkim/${ARG_DOMAIN}/mail.txt >> ${ZONEFILE}
-    cat >> ${ZONEFILE} <<EOF
-_dmarc.mail          1800 IN TXT "v=DMARC1; p=quarantine; fo=0; adkim=r; aspf=r; pct=100; rf=afrf; sp=quarantine"
-EOF
+    cat /etc/opendkim/${ARG_DOMAIN}/zone.txt >> ${ZONEFILE}
     echo ";==== end ${ARG_DOMAIN} TXT records" >> ${ZONEFILE}
   fi
 fi
@@ -190,6 +202,7 @@ fi
 #
 for i in opendkim opendmarc postfix bind9
 do
+  echo "(Re)start service $1..."
   systemctl enable  $i
   systemctl restart $i
 done
