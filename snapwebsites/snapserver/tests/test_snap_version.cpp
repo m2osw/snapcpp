@@ -24,7 +24,9 @@
 
 #include "snap_version.h"
 #include "qstring_stream.h"
+
 #include <QStringList>
+
 #include <iostream>
 
 

@@ -3,7 +3,9 @@
 #      snapwebsites/libsnapwebsites/tests/CMakeLists.txt
 #
 # Description:
-#      Includes various types of tests.
+#      Various very basic OS tests to verify that we can use such and
+#      such OS feature before implementing it in the libsnapwebsites
+#      library.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -29,11 +31,36 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-add_subdirectory(ip)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# By default "os" tests are turned off. These are used to test an OS feature
-# before writing an actual implementation. Most of these can generally be
-# considered throw away. Plus, they do not test the code in the library.
-#
-add_subdirectory(os)
+##
+## One test per OS feature tested
+##
 
+
+##
+## Check gethostbyname()
+##
+project(gethostips)
+add_executable( ${PROJECT_NAME}
+    gethostips.cpp
+)
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
+
+
+##
+## String Speed (testing a Qt feature)
+##
+project(string_speed)
+add_executable( ${PROJECT_NAME}
+    string_speed.cpp
+)
+target_link_libraries(${PROJECT_NAME}
+    ${QT_LIBRARIES}
+)
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
+
+
+# vim: ts=4 sw=4 et

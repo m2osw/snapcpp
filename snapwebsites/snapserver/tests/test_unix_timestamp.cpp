@@ -19,6 +19,7 @@
 #pragma GCC diagnostic ignored "-Wformat"
 
 #include "plugins.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

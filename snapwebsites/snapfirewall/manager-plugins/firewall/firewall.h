@@ -77,6 +77,7 @@ public:
 
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);
+    void                    on_handle_affected_services(std::set<QString> & affected_services);
 
 private:
     void                    retrieve_bundles_status(snap_manager::server_status & server_status);

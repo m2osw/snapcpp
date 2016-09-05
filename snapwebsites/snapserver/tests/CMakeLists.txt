@@ -246,43 +246,6 @@ if(CATCH_FOUND)
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
-
-    ##
-    ## String Speed (testing a Qt feature)
-    ##
-    project(string_speed)
-    add_executable( ${PROJECT_NAME}
-        ${SNAP_TESTS}
-        string_speed.cpp
-    )
-    target_link_libraries(${PROJECT_NAME}
-        #${SNAPWEBSITES_LIBRARIES}
-        #${QTCASSANDRA_LIBRARIES}
-        #${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        #dl
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
-
-    ##
-    ## Check gethostbyname()
-    ##
-    project(gethostips)
-    add_executable( ${PROJECT_NAME}
-        ${SNAP_TESTS}
-        gethostips.cpp
-    )
-    target_link_libraries(${PROJECT_NAME}
-        #${SNAPWEBSITES_LIBRARIES}
-        #${QTCASSANDRA_LIBRARIES}
-        #${LIBTLD_LIBRARIES}
-        #${QT_LIBRARIES}
-        #dl
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
-
 else(CATCH_FOUND)
 
     # You may use 'apt-get install catch' under Ubuntu

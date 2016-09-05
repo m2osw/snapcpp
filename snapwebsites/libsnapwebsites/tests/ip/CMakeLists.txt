@@ -1,6 +1,6 @@
 #
 # File:
-#      tests/ip/CMakeLists.txt
+#      snapwebsites/libsnapwebsites/tests/ip/CMakeLists.txt
 #
 # Description:
 #

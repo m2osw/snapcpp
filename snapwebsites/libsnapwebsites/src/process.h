@@ -16,17 +16,25 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// ourselves
+//
 #include "snap_thread.h"
+#include "snap_string_list.h"
 
-#include <snap_string_list.h>
+// Qt lib
+//
+#include <QVector>
 
+// C++ lib
+//
 #include <map>
 #include <memory>
 
-#include <proc/readproc.h>
 
-#include <QVector>
-
+// forward declarations to avoid including the readproc.h file in the header
+//#include <proc/readproc.h>
+extern "C" typedef struct proc_t proc_t;
+extern "C" typedef struct PROCTAB PROCTAB;
 
 namespace snap
 {
@@ -103,14 +111,12 @@ public:
         PROCESS_MODE_INOUT,
         PROCESS_MODE_INOUT_INTERACTIVE
     };
-    typedef controlled_vars::limited_auto_enum_init<mode_t, mode_t::PROCESS_MODE_COMMAND, mode_t::PROCESS_MODE_INOUT_INTERACTIVE, mode_t::PROCESS_MODE_COMMAND> zmode_t;
 
     class process_output_callback
     {
     public:
         virtual bool                output_available(process * p, QByteArray const & output) = 0;
     };
-    typedef controlled_vars::ptr_auto_init<process_output_callback> zpprocess_output_callback_t;
 
                                 process(QString const & name);
 
@@ -140,17 +146,15 @@ private:
                                 process(process const & rhs) = delete;
     process &                   operator = (process const & rhs) = delete;
 
-    typedef controlled_vars::auto_init<pid_t, 0>    safe_pid_t;
-
     QString const               f_name;
-    zmode_t                     f_mode;
+    mode_t                      f_mode = mode_t::PROCESS_MODE_COMMAND;
     QString                     f_command;
     snap_string_list            f_arguments;
     environment_map_t           f_environment;
     QByteArray                  f_input;
     QByteArray                  f_output;
-    controlled_vars::flbool_t   f_forced_environment;
-    zpprocess_output_callback_t f_output_callback;
+    bool                        f_forced_environment = false;
+    process_output_callback *   f_output_callback = nullptr;
     snap_thread::snap_mutex     f_mutex;
 };
 
@@ -158,6 +162,8 @@ private:
 class process_list
 {
 public:
+    typedef int         flags_t;
+
     enum class field_t
     {
         // current status
@@ -204,15 +210,13 @@ public:
     private:
         friend class process_list;
 
-        typedef controlled_vars::auto_init<int32_t, -1>   m1_count_t;
-
-                                    proc_info(std::shared_ptr<proc_t> p, int flags);
+                                    proc_info(std::shared_ptr<proc_t> p, flags_t flags);
                                     proc_info(proc_info const &) = delete;
         proc_info&                  operator = (proc_info const &) = delete;
 
         std::shared_ptr<proc_t>     f_proc;
-        controlled_vars::zint32_t   f_flags;
-        mutable m1_count_t          f_count;
+        flags_t                     f_flags = 0;
+        mutable int32_t             f_count = -1;
     };
 
     bool                        get_field(field_t fld) const;
@@ -226,7 +230,7 @@ private:
     int                         field_to_flag(field_t fld) const;
 
     std::shared_ptr<PROCTAB>    f_proctab;
-    controlled_vars::zint32_t   f_flags;
+    flags_t                     f_flags = 0;
 };
 
 

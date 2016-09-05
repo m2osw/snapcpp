@@ -1492,15 +1492,19 @@ int64_t snap_communicator::snap_connection::get_timeout_timestamp() const
     if(f_timeout_date != -1)
     {
         // this one is easy, it is already defined as expected
+        //
         return f_timeout_date;
     }
 
     if(f_timeout_delay != -1)
     {
-        // no timeout defined
+        // this one makes use of the calculated next date
+        //
         return f_timeout_next_date;
     }
 
+    // no timeout defined
+    //
     return -1;
 }
 
