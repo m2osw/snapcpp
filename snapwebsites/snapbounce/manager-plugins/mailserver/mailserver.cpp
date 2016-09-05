@@ -269,7 +269,7 @@ bool mailserver::display_value(QDomElement parent, snap_manager::status_t const 
             , s.get_field_name()
             , snap_manager::form::FORM_BUTTON_SAVE
             );
-    snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                 "Setup Mailserver Domain"
                 , s.get_field_name()
                 , s.get_value()

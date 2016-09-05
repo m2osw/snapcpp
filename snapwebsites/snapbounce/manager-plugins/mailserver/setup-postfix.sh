@@ -136,8 +136,11 @@ EOF
 fi
 #
 # Create zonefile snippet
+# NOTE: this is broken, because it breaks up the key over many lines, and apparently,
+# foreign dkim servers don't like that. So I'm back to using the mail.txt file.
+# Sadly, this does not put in a TLL value.
 #
-opendkim-genzone -d ${ARG_DOMAIN} -t 60 -D -o /etc/opendkim/${ARG_DOMAIN}/zone.txt
+#opendkim-genzone -d ${ARG_DOMAIN} -t 60 -D -o /etc/opendkim/${ARG_DOMAIN}/zone.txt
 
 
 ################################################################################
@@ -189,7 +192,7 @@ then
 adsp._domainkey 60 IN TXT "dkim=all"
 _dmarc          60 IN TXT "v=DMARC1; p=quarantine; fo=0; adkim=r; aspf=r; pct=100; rf=afrf; sp=quarantine"
 EOF
-    cat /etc/opendkim/${ARG_DOMAIN}/zone.txt >> ${ZONEFILE}
+    cat /etc/opendkim/${ARG_DOMAIN}/mail.txt >> ${ZONEFILE}
     echo ";==== end ${ARG_DOMAIN} TXT records" >> ${ZONEFILE}
   fi
 fi
