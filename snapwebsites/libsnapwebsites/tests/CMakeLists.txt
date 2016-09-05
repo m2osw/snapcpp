@@ -35,5 +35,5 @@ add_subdirectory(ip)
 # before writing an actual implementation. Most of these can generally be
 # considered throw away. Plus, they do not test the code in the library.
 #
-add_subdirectory(os)
+#add_subdirectory(os)
 
