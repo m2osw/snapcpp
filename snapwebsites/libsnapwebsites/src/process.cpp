@@ -15,16 +15,21 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// self
+//
 #include "process.h"
 
+// Our lib
+//
 #include "log.h"
 
-#include <controlled_vars/controlled_vars_no_init.h>
-#include <controlled_vars/controlled_vars_ptr_no_init.h>
-
+// C lib
+//
 #include <stdio.h>
 #include <unistd.h>
+#include <proc/readproc.h>
 #include <sys/wait.h>
+
 
 #include "poison.h"
 
@@ -345,12 +350,7 @@ int process::run()
     class raii_pipe
     {
     public:
-        //typedef controlled_vars::ptr_need_init<process> mpprocess_t;
-        typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
-
-        raii_pipe(/*process * p,*/ QString const & command, snap_string_list const & arguments)
-            //: f_process(p)
-            //, f_file(nullptr) -- auto-init
+        raii_pipe(QString const & command, snap_string_list const & arguments)
         {
             QString cmd(command);
             if(!arguments.isEmpty())
@@ -385,35 +385,34 @@ int process::run()
             return f_command;
         }
 
-        FILE * open_pipe(bool in)
+        FILE * open_pipe(char const * mode)
         {
-            f_file.reset(popen(f_command.toUtf8().data(), in ? "w" : "r"));
+            f_file = popen(f_command.toUtf8().data(), mode);
             return f_file;
         }
 
         int close_pipe()
         {
             int r(-1);
-            if(f_file)
+            if(f_file != nullptr)
             {
                 if(ferror(f_file))
                 {
                     // must return -1 on error, ignore pclose() return value
                     pclose(f_file);
-                    f_file.reset();
+                    f_file = nullptr;
                 }
                 else
                 {
                     r = pclose(f_file);
-                    f_file.reset();
+                    f_file = nullptr;
                 }
             }
             return r;
         }
 
     private:
-        //mpprocess_t                 f_process;
-        zpfile_t                    f_file;
+        FILE *                      f_file = nullptr;
         QString                     f_command;
         sigset_t                    f_signal_mask;
     };
@@ -432,7 +431,7 @@ int process::run()
 
         case mode_t::PROCESS_MODE_INPUT:
             {
-                FILE * f(rp.open_pipe(true));
+                FILE * f(rp.open_pipe("w"));
                 if(f == nullptr)
                 {
                     return -1;
@@ -447,7 +446,7 @@ int process::run()
 
         case mode_t::PROCESS_MODE_OUTPUT:
             {
-                FILE * f(rp.open_pipe(false));
+                FILE * f(rp.open_pipe("r"));
                 if(f == nullptr)
                 {
                     return -1;
@@ -530,9 +529,6 @@ int process::run()
     class raii_fork
     {
     public:
-        typedef controlled_vars::auto_init<int, -1> m1int_t;
-        typedef controlled_vars::auto_init<pid_t, -1> m1pid_t;
-
         raii_fork()
             //: f_child(-1)
             //, f_exit(-1)
@@ -581,8 +577,8 @@ int process::run()
         }
 
     private:
-        m1pid_t         f_child;
-        m1int_t         f_exit;
+        pid_t           f_child = -1;
+        int             f_exit = -1;
     };
     raii_fork child;
     switch(child.get_pid())
@@ -676,7 +672,7 @@ int process::run()
         {
             // the snap_logic_exception is not a snap_exception
             // and other libraries may generate other exceptions
-            // (i.e. controlled_vars, libQtCassandra...)
+            // (i.e. libtld, libQtCassandra...)
             SNAP_LOG_FATAL("process::run(): std::exception caught: ")(std_except.what());
         }
         catch( ... )
@@ -780,13 +776,10 @@ int process::run()
                     }
                 }
 
-                typedef controlled_vars::ptr_no_init<process_output_callback>   rp_process_output_callback_t;
-                typedef controlled_vars::ptr_no_init<process>                   rp_process_t;
-
                 QByteArray &                    f_output;
-                controlled_vars::rint32_t       f_pipe;
-                rp_process_output_callback_t    f_callback;
-                rp_process_t                    f_process;
+                int32_t                         f_pipe = -1;
+                process_output_callback *       f_callback = nullptr;
+                process *                       f_process = nullptr;
             } out(f_output);
             out.f_pipe = inout.f_pipes[2];
             out.f_callback = f_output_callback;
