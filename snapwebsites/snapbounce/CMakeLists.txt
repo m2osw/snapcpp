@@ -68,8 +68,9 @@ if( ${UUID} STREQUAL "UUID-NOTFOUND" )
     message( FATAL_ERROR "Cannot find uuid library!" )
 endif()
 
-add_subdirectory( conf  )
-add_subdirectory( src   )
+add_subdirectory( conf            )
+add_subdirectory( src             )
+add_subdirectory( manager-plugins )
 
 snap_build_xml_targets()
 

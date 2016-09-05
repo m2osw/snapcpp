@@ -25,27 +25,24 @@
 
 // snapwebsites lib
 //
-#include "join_strings.h"
+//#include "join_strings.h"
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
-#include "qdomhelpers.h"
-#include "qdomxpath.h"
-#include "snap_cassandra.h"
-#include "string_pathinfo.h"
-#include "tokenize_string.h"
-
-// libQtCassandra
-//
-#include "QtCassandra/QCassandraSchema.h"
+//#include "qdomhelpers.h"
+//#include "qdomxpath.h"
+//#include "snap_cassandra.h"
+//#include "string_pathinfo.h"
+//#include "tokenize_string.h"
 
 // Qt lib
 //
 #include <QFile>
+#include <QProcess>
 
 // C lib
 //
-#include <sys/file.h>
+//#include <sys/file.h>
 
 // last entry
 //
@@ -60,9 +57,7 @@ SNAP_PLUGIN_START(mailserver, 1, 0)
 namespace
 {
 
-//char const * g_service_filename = "/lib/systemd/system/snapbounce.service";
-char const * g_configuration_filename = "snapbounce";
-char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapbounce.conf";
+QString const SETUP_MAILSERVER = "setup_mailserver";
 
 
 void file_descriptor_deleter(int * fd)
@@ -235,6 +230,14 @@ void mailserver::on_retrieve_status(snap_manager::server_status & server_status)
         //
         return;
     }
+
+    snap_manager::status_t const ctl(
+            snap_manager::status_t::state_t::STATUS_STATE_INFO
+            , get_plugin_name()
+            , SETUP_MAILSERVER
+            , QString()
+            );
+    server_status.set_field(ctl);
 }
 
 
@@ -256,6 +259,26 @@ void mailserver::on_retrieve_status(snap_manager::server_status & server_status)
  */
 bool mailserver::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
+    if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_ERROR)
+    {
+        return false;
+    }
+
+    snap_manager::form f(
+            get_plugin_name()
+            , s.get_field_name()
+            , snap_manager::form::FORM_BUTTON_SAVE
+            );
+    snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                "Setup Mailserver Domain"
+                , s.get_field_name()
+                , s.get_value()
+                , "Enter the mailserver domain. This will generate the"
+                  " SPF, DKIM and DMARC keys and setup for bind."
+                ));
+    f.add_widget(field);
+    f.generate(parent, uri);
+    return true;
 }
 
 
@@ -274,8 +297,44 @@ bool mailserver::display_value(QDomElement parent, snap_manager::status_t const 
  *
  * \return true if the new_value was applied successfully.
  */
-bool mailserver::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
+bool mailserver::apply_setting(QString const & button_name
+    , QString const & field_name
+    , QString const & new_value
+    , QString const & old_or_installation_value
+    , std::set<QString> & affected_services)
 {
+    NOTUSED(button_name);
+    NOTUSED(field_name);
+    NOTUSED(old_or_installation_value);
+    NOTUSED(affected_services);
+
+    QFile setup_postfix_script( "/tmp/setup-postfix.sh" );
+    //
+    // Overwrite the script every time
+    //
+    setup_postfix_script.remove();
+    if( !QFile::copy( ":/setup-postfix.sh", setup_postfix_script.fileName() ) )
+    {
+        QString const errmsg = QString("Cannot copy setup-postfix.sh file!");
+        SNAP_LOG_ERROR(qPrintable(errmsg));
+        return false;
+    }
+    //
+    setup_postfix_script.setPermissions
+        ( setup_postfix_script.permissions()
+          | QFileDevice::ExeOwner
+          | QFileDevice::ExeUser
+          | QFileDevice::ExeGroup
+        );
+
+    if( QProcess::execute( setup_postfix_script.fileName(), {new_value} ) != 0 )
+    {
+        SNAP_LOG_ERROR("Could not execute spf/dkim/dmarc creation script! Params=")
+            (qPrintable(new_value));
+        return false;
+    }
+
+    return true;
 }
 
 
