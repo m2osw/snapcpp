@@ -61,7 +61,6 @@ add_library(memory SHARED
 target_link_libraries(memory
     Qt5::Core
     Qt5::Xml
-    ${LIBPROCPS_LIBRARIES}
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )

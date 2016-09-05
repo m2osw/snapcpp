@@ -67,7 +67,6 @@ target_link_libraries( ${PROJECT_NAME}
     #${QTCASSANDRA_LIBRARIES}
     #${QTSERIALIZATION_LIBRARIES}
     #${MAGIC_LIBRARY}
-    #${LIBPROCPS_LIBRARIES}
     #pthread
     #dl
 )
