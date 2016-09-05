@@ -348,7 +348,6 @@ public:
     void                stop_gossiping();
     void                too_busy(QString const & addr);
     void                shutting_down(QString const & addr);
-    void                start();
     void                server_unreachable(QString const & addr);
     void                gossip_received(QString const & addr);
     void                forget_remote_connection(QString const & addr);
@@ -356,8 +355,8 @@ public:
 private:
     snap_communicator_server_pointer_t  f_communicator_server;
     snap_addr::addr const &             f_my_address;
-    bool                                f_started = true;   // "temporary" hack which says to immediately start all remote connections
     QMap<QString, int>                  f_all_ips;
+    int64_t                             f_last_start_date = 0;
     remote_snap_communicator_list_t     f_smaller_ips;      // we connect to smaller IPs
     gossip_snap_communicator_list_t     f_gossip_ips;
     service_connection_list_t           f_larger_ips;       // larger IPs connect to us
@@ -891,15 +890,15 @@ class remote_snap_communicator
     , public base_connection
 {
 public:
-                                    remote_snap_communicator(snap_communicator_server::pointer_t cs, QString const & addr, int port);
-    virtual                         ~remote_snap_communicator();
+    static uint64_t const           REMOTE_CONNECTION_DEFAULT_TIMEOUT = 5LL * 60LL * 1000000LL;
 
-    // snap_connection implementation
-    virtual void                    process_message(snap::snap_communicator_message const & message);
+                                    remote_snap_communicator(snap_communicator_server::pointer_t cs, QString const & addr, int port);
+    virtual                         ~remote_snap_communicator() override;
 
     // snap_tcp_client_permanent_message_connection implementation
-    virtual void                    process_connection_failed(std::string const & error_message);
-    virtual void                    process_connected();
+    virtual void                    process_message(snap::snap_communicator_message const & message) override;
+    virtual void                    process_connection_failed(std::string const & error_message) override;
+    virtual void                    process_connected() override;
 
     snap_addr::addr const &         get_address() const;
 
@@ -1151,35 +1150,38 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
     QString const addr(remote_addr.get_ipv4or6_string().c_str());
     int const port(remote_addr.get_port());
 
-    // keep a copy of all addresses
+    // was this address already added
+    //
+    // TODO: use snap_addr::addr objects in the map and the == operator
+    //       will then use the one from snap_addr::addr (and not a string)
     //
     if(f_all_ips.contains(addr))
     {
-        if(f_started)
+        if(remote_addr < f_my_address)
         {
-            if(remote_addr < f_my_address)
+            // make sure it is defined!
+            //
+            if(f_smaller_ips.contains(addr)
+            && f_smaller_ips[addr])
             {
-                // make sure it is defined!
-                if(f_smaller_ips.contains(addr)
-                && f_smaller_ips[addr])
+                if(f_smaller_ips[addr]->is_enabled())
                 {
+                    // reset that timer to run ASAP in case the timer is enabled
+                    //
                     f_smaller_ips[addr]->set_timeout_date(snap::snap_communicator::get_current_date());
                 }
-                else
-                {
-                    SNAP_LOG_ERROR("smaller remote address is defined in f_all_ips but not in f_smaller_ips?");
-                }
             }
-            // else -- do we have to GOSSIP about this one? (see below)
-            return;
+            else
+            {
+                SNAP_LOG_ERROR("smaller remote address is defined in f_all_ips but not in f_smaller_ips?");
+            }
         }
-
-        // TBD: this may be normal (i.e. each neighbor should send us the
-        //      same list of IP addresses.)
-        //
-        SNAP_LOG_ERROR("address of remote snapcommunicator, \"")(addr_port)("\", already exists.");
+        // else -- we may already be GOSSIP-ing about this one (see below)
         return;
     }
+
+    // keep a copy of all addresses
+    //
     f_all_ips[addr] = port;
 
     // if this new IP is smaller than ours, then we start a connection
@@ -1189,30 +1191,38 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
         // smaller connections are created as remote snap communicator
         // which are permanent message connections
         //
-        f_smaller_ips[addr].reset(new remote_snap_communicator(f_communicator_server, addr, port));
+        remote_snap_communicator_pointer_t remote_communicator(std::make_shared<remote_snap_communicator>(f_communicator_server, addr, port));
+        f_smaller_ips[addr] = remote_communicator;
         f_smaller_ips[addr]->set_name("remote communicator connection"); // we connect to remote host
-        if(f_started)
+
+        // make sure not to try to connect to all remote communicators
+        // all at once
+        //
+        int64_t const now(snap::snap_communicator::get_current_date());
+        if(now > f_last_start_date)
         {
-            // we already started (i.e. we got the complete list of all our
-            // services up and going) so new remote communicator connections
-            // are immediately started (see the start() function for more
-            // details...)
-            //
-            // Note: the remote_snap_communicator() constructor calls
-            //       set_enable(false)
-            //
-            f_smaller_ips[addr]->set_enable(true);
+            f_last_start_date = now;
         }
+        else
+        {
+            // TBD: 1 second between attempts, should that be smaller?
+            //
+            f_last_start_date += 1000000LL;
+        }
+        f_smaller_ips[addr]->set_timeout_date(f_last_start_date);
 
         if(!snap::snap_communicator::instance()->add_connection(f_smaller_ips[addr]))
         {
             // this should never happens here since each new creates a
             // new pointer
             //
-            // TBD: should we lose that connection from the f_smaller_ips
-            //      map since it is not going to be used?
-            //
             SNAP_LOG_ERROR("new remote connection could not be added to the snap_communicator list of connections");
+
+            auto it(f_smaller_ips.find(addr));
+            if(it != f_smaller_ips.end())
+            {
+                f_smaller_ips.erase(it);
+            }
         }
     }
     else //if(remote_addr != f_my_address) -- already tested at the beginning of the function
@@ -1232,10 +1242,13 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
             // this should never happens here since each new creates a
             // new pointer
             //
-            // TBD: should we lose that connection from the f_gossip_ips
-            //      map since it is not going to be used?
-            //
             SNAP_LOG_ERROR("new gossip connection could not be added to the snap_communicator list of connections");
+
+            auto it(f_gossip_ips.find(addr));
+            if(it != f_gossip_ips.end())
+            {
+                f_gossip_ips.erase(it);
+            }
         }
     }
 }
@@ -1288,6 +1301,7 @@ void remote_communicator_connections::too_busy(QString const & addr)
     {
         // wait for 1 day and try again (is 1 day too long?)
         f_smaller_ips[addr]->set_timeout_delay(24LL * 60LL * 60LL * 1000000LL);
+        SNAP_LOG_INFO("remote communicator ")(addr)(" was marked as too busy. Pause for 1 day before trying to connect again.");
     }
 }
 
@@ -1307,30 +1321,6 @@ void remote_communicator_connections::shutting_down(QString const & addr)
         // wait for 15 minutes and try again
         //
         f_smaller_ips[addr]->set_timeout_delay(15LL * 60LL * 1000000LL);
-    }
-}
-
-
-void remote_communicator_connections::start()
-{
-    // make sure we start only once
-    //
-    if(!f_started)
-    {
-        f_started = true;
-
-        int64_t start_time(snap::snap_child::get_current_date());
-        for(auto const & communicator : f_smaller_ips)
-        {
-            communicator->set_timeout_date(start_time);
-            communicator->set_enable(true);
-
-            // XXX: with 8,000 computers in a cluster, this represents
-            //      a period of time of 2h 14m to get all the
-            //      connections ready...
-            //
-            start_time += 1000000;
-        }
     }
 }
 
@@ -4737,14 +4727,10 @@ void snap_communicator_server::process_connected(snap::snap_communicator::snap_c
  * CONNECT message, and other similar errors.
  */
 remote_snap_communicator::remote_snap_communicator(snap_communicator_server::pointer_t cs, QString const & addr, int port)
-    : snap_tcp_client_permanent_message_connection(addr.toUtf8().data(), port, tcp_client_server::bio_client::mode_t::MODE_PLAIN, 5LL * 60LL * 1000000LL)
+    : snap_tcp_client_permanent_message_connection(addr.toUtf8().data(), port, tcp_client_server::bio_client::mode_t::MODE_PLAIN, REMOTE_CONNECTION_DEFAULT_TIMEOUT)
     , base_connection(cs)
     , f_address(addr.toUtf8().data(), "", 4040, "tcp")
 {
-    // prevent the timer from going until we get our list of
-    // services from snapinit
-    //
-    set_enable(false);
 }
 
 
@@ -4772,6 +4758,16 @@ void remote_snap_communicator::process_connected()
     snap_tcp_client_permanent_message_connection::process_connected();
 
     f_communicator_server->process_connected(shared_from_this());
+
+    // reset the wait to the default 5 minutes
+    //
+    // (in case we had a shutdown event from that remote communicator
+    // and changed the timer to 15 min.)
+    //
+    // later we probably want to change the mechanism if we want to
+    // slowdown over time
+    //
+    set_timeout_delay(REMOTE_CONNECTION_DEFAULT_TIMEOUT);
 }
 
 
