@@ -18,8 +18,6 @@
 #include "snap_parser.h"
 #include "qstring_stream.h"
 
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <iostream>
 
 #include <stdio.h>
@@ -31,9 +29,9 @@
 void check_lexer()
 {
     struct literal_t {
-        snap::parser::token_t    f_token;
-        QVariant::Type    f_type;
-        const char *    f_result;
+        snap::parser::token_t   f_token;
+        QVariant::Type          f_type;
+        const char *            f_result;
     };
     static const literal_t results[] = {
         { snap::parser::TOKEN_ID_LITERAL, QVariant::Char,   "+" },
@@ -256,7 +254,7 @@ private:
 
     QString                         f_default;  // this may be the default (flag) or forced (website) value
 
-    controlled_vars::flbool_t       f_required;
+    bool                            f_required = false;
 };
 class domain_info : public snap::parser::parser_user_data
 {

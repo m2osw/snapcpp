@@ -16,16 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //
-// This test verifies that names, versions, and browsers are properly
-// extracted from filenames and dependencies and then that the resulting
-// versioned_filename and dependency objects compare against each others
-// as expected.
+// Test whether the == is faster than the endsWith() function of a QtString().
+// Because we were using endsWith() a lot and to optimize, not using it
+// wherever possible is a good idea (i.e. if you do it a lot.)
 //
-
-#include "snap_exception.h"
-#include "log.h"
-#include "qstring_stream.h"
-#include "not_reached.h"
 
 #include <iostream>
 #include <cctype>
@@ -33,9 +27,12 @@
 
 #include <sys/resource.h>
 
-#include <QDir>
+#include <QString>
 
 
+// use rusage info so we know of our USER SPACE usage and not some random
+// current time value
+//
 int64_t get_current_date()
 {
     struct rusage usage;
@@ -49,14 +46,14 @@ int64_t get_current_date()
 int main(int /*argc*/, char * /*argv*/[])
 {
     // prepare a string
-    QString path("finball/redirect/vendor-brand");
+    QString path("example/redirect/vendor-brand");
 
     // try == with full path
     int j(0);
     int64_t a_start(get_current_date());
     for(int i(0); i < 10000000; ++i)
     {
-        bool const unused(path == "finball/redirect/vendor-brand");
+        bool const unused(path == "example/redirect/vendor-brand");
         if(unused)
         {
             j++;
