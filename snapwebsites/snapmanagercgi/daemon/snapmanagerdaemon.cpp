@@ -256,11 +256,29 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             snap::snap_communicator_message reply;
             reply.set_command("COMMANDS");
 
+            snap::snap_string_list understood_commands;
+            understood_commands << "HELP";
+            understood_commands << "LOG";
+            understood_commands << "MANAGERINSTALL";
+            understood_commands << "MANAGERRESEND";
+            understood_commands << "MANAGERSTATUS";
+            understood_commands << "MODIFYSETTINGS";
+            understood_commands << "NEWREMOTECONNECTION";
+            understood_commands << "QUITTING";
+            understood_commands << "READY";
+            understood_commands << "RELOADCONFIG";
+            understood_commands << "SERVER_PUBLIC_IP";
+            understood_commands << "STOP";
+            understood_commands << "UNKNOWN";
+            understood_commands << "UNREACHABLE";
+
+            add_plugin_commands(understood_commands);
+
             // list of commands understood by service
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,MANAGERINSTALL,MANAGERRESEND,MANAGERSTATUS,MODIFYSETTINGS,NEWREMOTECONNECTION,QUITTING,READY,RELOADCONFIG,SERVER_PUBLIC_IP,STOP,UNKNOWN,UNREACHABLE");
+            reply.add_parameter("list", understood_commands.join(","));
 
             f_messenger->send_message(reply);
 
@@ -276,6 +294,13 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
                 resend.set_command("MANAGERRESEND");
                 f_messenger->send_message(resend);
             }
+
+            // we do this in the HELP instead of the READY to make sure
+            // that the snap communicator receives replies only after
+            // it receives our COMMANDS; otherwise it could break saying
+            // that it does not know the command of a reply...
+            //
+            communication_ready();
             return;
         }
         break;
@@ -420,6 +445,15 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
 
     }
 
+    // if not a basic message, it could be a plugin defined message
+    //
+    bool processed(false);
+    process_plugin_message(message, processed);
+    if(processed)
+    {
+        return;
+    }
+
     // unknown commands get reported and process goes on
     //
     SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the connection with Snap! Communicator.");
@@ -520,7 +554,7 @@ void manager_daemon::manager_install(snap::snap_communicator_message const & mes
 /** \brief Forword message to snapcommunicator.
  *
  * When we receive a message from our thread, and that message is not
- * directory to us (i.e. service name is the empty string of
+ * directed to us (i.e. service name is the empty string or
  * snapmanagerdaemon) then the message needs to be sent to the
  * snapcommunicator.
  *
@@ -528,7 +562,10 @@ void manager_daemon::manager_install(snap::snap_communicator_message const & mes
  * or even computers.
  *
  * At this time this is used to send the MANAGERSTATUS to all the
- * computer currently registered.
+ * computers currently registered.
+ *
+ * The function can also be used by plugins that need to send messages
+ * through the manager daemon connection to snapcommunicator.
  *
  * \param[in] message  The message to forward to snapcommunicator.
  */

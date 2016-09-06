@@ -2318,7 +2318,7 @@ void snap_communicator::snap_inter_thread_message_connection::close()
 
 /** \brief Poll the connection in the child.
  *
- * There can be only one snap_communicator, therefore, the threa
+ * There can be only one snap_communicator, therefore, the thread
  * cannot make use of it since it is only for the main application.
  * This poll() function can be used by the child to wait on the
  * connection.

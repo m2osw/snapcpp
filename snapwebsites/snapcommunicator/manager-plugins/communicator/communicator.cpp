@@ -322,31 +322,6 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
 {
     QDomDocument doc(parent.ownerDocument());
 
-    //if(s.get_field_name() == "disabled")
-    //{
-    //    // the list if frontend snapmanagers that are to receive statuses
-    //    // of the cluster computers; may be just one computer; should not
-    //    // be empty; shows a text input field
-    //    //
-    //    snap_manager::form f(
-    //              get_plugin_name()
-    //            , s.get_field_name()
-    //            , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
-    //            );
-
-    //    snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-    //                      "Enable/Disable Firewall"
-    //                    , s.get_field_name()
-    //                    , s.get_value()
-    //                    , "Define whether the communicator is \"enabled\" or \"disabled\"."
-    //                    ));
-    //    f.add_widget(field);
-
-    //    f.generate(parent, uri);
-
-    //    return true;
-    //}
-
     if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS))
     {
         // the list if frontend snapmanagers that are to receive statuses
@@ -504,6 +479,12 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
 
     if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER))
     {
+        // we are changing the snapcommunicator but only the manager daemon
+        // needs to be restarted so it gets the correct status; the After
+        // parameter should not affect the currently running snapcommunicator
+        //
+        affected_services.insert("snapmanagerdaemon");
+
         QString const filename(g_service_filename);
         f_snap->replace_configuration_value(
                           filename
@@ -520,6 +501,12 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
 
     if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE))
     {
+        // we are changing the snapcommunicator but only the manager daemon
+        // needs to be restarted so it gets the correct status; the After
+        // parameter should not affect the currently running snapcommunicator
+        //
+        affected_services.insert("snapmanagerdaemon");
+
         QString const filename(g_service_filename);
         f_snap->replace_configuration_value(
                           filename

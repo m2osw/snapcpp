@@ -593,6 +593,13 @@ bool manager::stop_now_prima() const
 }
 
 
+void manager::forward_message(snap::snap_communicator_message const & message)
+{
+    snap::NOTUSED(message);
+    throw std::logic_error("forward_message() called on the wrong object (i.e. it is not implemented.)");
+}
+
+
 int manager::get_version_major()
 {
     return SNAPMANAGERCGI_VERSION_MAJOR;
