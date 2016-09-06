@@ -94,14 +94,16 @@ enum class service_status_t
 
 typedef uint32_t   replace_configuration_value_t;
 
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_NO_FLAGS       =  0x0000;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP  =  0x0001;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE   =  0x0002;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE   =  0x0004;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_MUST_EXIST     =  0x0008;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_COLON          =  0x0010;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SPACE_AFTER    =  0x0020;
-replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_HASH_COMMENT   =  0x0040;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_NO_FLAGS        =  0x0000;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP   =  0x0001;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE    =  0x0002;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE    =  0x0004;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_MUST_EXIST      =  0x0008;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_COLON           =  0x0010;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SPACE_AFTER     =  0x0020;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_HASH_COMMENT    =  0x0040;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SECTION         =  0x0080;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST =  0x0100;
 
 
 class manager

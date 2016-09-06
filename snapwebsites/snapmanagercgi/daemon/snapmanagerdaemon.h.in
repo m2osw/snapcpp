@@ -16,15 +16,23 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "lib/manager.h"
+// ourselves
+//
+#include "snapmanager/manager.h"
 
-#include "advgetopt/advgetopt.h"
-#include "snapwebsites/addr.h"
-#include "snapwebsites/log.h"
-#include "snapwebsites/snap_exception.h"
-#include "snapwebsites/tcp_client_server.h"
-#include "snapwebsites/snapwebsites.h"
+// snapwebsites lib
+#include <snapwebsites/addr.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/snap_exception.h>
+#include <snapwebsites/tcp_client_server.h>
+#include <snapwebsites/snapwebsites.h>
 
+// advgetopt lib
+//
+#include <advgetopt/advgetopt.h>
+
+// C++ lib
+//
 #include <string>
 #include <iostream>
 

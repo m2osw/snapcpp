@@ -19,6 +19,10 @@
 //
 #include "communicator.h"
 
+// other plugins
+//
+#include "snapmanager/plugins/vpn/vpn.h"
+
 // our lib
 //
 #include "snapmanager/form.h"
@@ -29,6 +33,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "process.h"
 #include "qdomhelpers.h"
 #include "qdomxpath.h"
 #include "string_pathinfo.h"
@@ -62,6 +67,8 @@ char const * g_configuration_filename = "snapcommunicator";
 // TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf";
 
+char const * g_service_filename = "/lib/systemd/system/snapcommunicator.service";
+
 
 void file_descriptor_deleter(int * fd)
 {
@@ -90,8 +97,23 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_SNAPMANAGERCGI_COMMUNICATOR_NAME:
-        return "name";
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER:
+        return "after";
+
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD:
+        return "Unit::After";
+
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS:
+        return "my_address";
+
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS:
+        return "neighbors";
+
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE:
+        return "require";
+
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE_FIELD:
+        return "Unit::Require";
 
     default:
         // invalid index
@@ -224,18 +246,59 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
         snap_manager::status_t const my_address(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
-                    , "my_address"
-                    , snap_communicator_conf["my_address"]);
+                    , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS)
+                    , snap_communicator_conf[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS)]);
         server_status.set_field(my_address);
 
         snap_manager::status_t const neighbors(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
-                    , "neighbors"
-                    , snap_communicator_conf["neighbors"]);
+                    , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)
+                    , snap_communicator_conf[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)]);
         server_status.set_field(neighbors);
     }
 
+
+    // when the user installed VPN (client or server) then we want to
+    // check whether we have the following in snapcommunicator.service:
+    //
+    //    After=sys-devices-virtual-net-tun0.device
+    //    Require=sys-devices-virtual-net-tun0.device
+    //
+    if(vpn::vpn::is_installed())
+    {
+        snap_config config("/lib/systemd/system/snapcommunicator.service");
+
+        {
+            std::string const after(config[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD)]);
+            snap_manager::status_t::state_t state(
+                    after.find("sys-devices-virtual-net-tun") == std::string::npos
+                        ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                        : snap_manager::status_t::state_t::STATUS_STATE_INFO);
+            snap_manager::status_t const field(
+                      state
+                    , get_plugin_name()
+                    , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER)
+                    , QString::fromUtf8(after.c_str())
+                    );
+            server_status.set_field(field);
+        }
+
+        {
+            std::string const require(config[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE_FIELD)]);
+            snap_manager::status_t::state_t state(
+                    require.find("sys-devices-virtual-net-tun") == std::string::npos
+                        ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                        : snap_manager::status_t::state_t::STATUS_STATE_INFO);
+            snap_manager::status_t const field(
+                      state
+                    , get_plugin_name()
+                    , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE)
+                    , QString::fromUtf8(require.c_str())
+                    );
+            server_status.set_field(field);
+        }
+    }
 }
 
 
@@ -284,7 +347,7 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
     //    return true;
     //}
 
-    if(s.get_field_name() == "my_address")
+    if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS))
     {
         // the list if frontend snapmanagers that are to receive statuses
         // of the cluster computers; may be just one computer; should not
@@ -309,7 +372,7 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
         return true;
     }
 
-    if(s.get_field_name() == "neighbors")
+    if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS))
     {
         // the list if frontend snapmanagers that are to receive statuses
         // of the cluster computers; may be just one computer; should not
@@ -331,6 +394,54 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
 
         f.generate(parent, uri);
 
+        return true;
+    }
+
+    if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER))
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                    "\"After=\" of snapcommunicator.service"
+                    , s.get_field_name()
+                    , s.get_value()
+                    , "<p>You are using a VPN so the snapcommunicator.service must start after the OpenVPN is started."
+                     " This means the After= parameter is expected to include:</p>"
+                     "<pre>sys-devices-virtual-net-tun0.device</pre>"
+                     "<p>If you have other parameters in the After= variable, make sure to add a space between"
+                     " each one of them.</p>"
+                     "<p>At time of writing, the default After= variable is:</p>"
+                     "<pre>After=network.target</pre>"
+                     "<p>So with the VPN it would become:</p>"
+                     "<pre>After=network.target sys-devices-virtual-net-tun0.device</pre>"
+                    ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
+    }
+
+    if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE))
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                    "\"Require=\" of snapcommunicator.service"
+                    , s.get_field_name()
+                    , s.get_value()
+                    , "<p>You are using a VPN so the snapcommunicator.service must start after the OpenVPN is started."
+                     " This means the Require= parameter is expected to include:</p>"
+                     "<pre>sys-devices-virtual-net-tun0.device</pre>"
+                     "<p>If you have other parameters in the Require= variable, make sure to add a space between"
+                     " each one of them.</p>"
+                    ));
+        f.add_widget(field);
+        f.generate(parent, uri);
         return true;
     }
 
@@ -375,18 +486,52 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
         // because at this point we do not want to offer an end user
         // interface to deal with all the ports.
         //
-        bool const success(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
-        return success && f_snap->replace_configuration_value(g_configuration_d_filename, "listen", new_value + ":4040");
+        NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
+        NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, "listen", new_value + ":4040"));
+        return true;
     }
 
-    if(field_name == "neighbors")
+    if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS))
     {
         // for potential new neighbors indicated in snapcommunicator
         // we have to restart it
         //
         affected_services.insert("snapcommunicator");
 
-        return f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value);
+        NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
+        return true;
+    }
+
+    if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER))
+    {
+        QString const filename(g_service_filename);
+        f_snap->replace_configuration_value(
+                          filename
+                        , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD)
+                        , new_value
+                        , snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION | snap_manager::REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST);
+        snap::process p("reload daemon");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("systemctl");
+        p.add_argument("daemon-reload"); // python script sends output to STDERR
+        NOTUSED(p.run());
+        return true;
+    }
+
+    if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE))
+    {
+        QString const filename(g_service_filename);
+        f_snap->replace_configuration_value(
+                          filename
+                        , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE_FIELD)
+                        , new_value
+                        , snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION | snap_manager::REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST);
+        snap::process p("reload daemon");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("systemctl");
+        p.add_argument("daemon-reload"); // python script sends output to STDERR
+        NOTUSED(p.run());
+        return true;
     }
 
     return false;

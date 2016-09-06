@@ -34,16 +34,16 @@
 
 // ourselves
 //
-#include "manager.h"
+#include "snapmanager/manager.h"
 
 // snapwebsites lib
 //
-#include "file_content.h"
-#include "lockfile.h"
-#include "log.h"
-#include "not_used.h"
-#include "process.h"
-#include "tokenize_string.h"
+#include <snapwebsites/file_content.h>
+#include <snapwebsites/lockfile.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
+#include <snapwebsites/tokenize_string.h>
 
 // Qt lib
 //
@@ -53,6 +53,10 @@
 //
 #include <fcntl.h>
 #include <sys/wait.h>
+
+// last entry
+//
+#include <snapwebsites/poison.h>
 
 namespace snap_manager
 {
@@ -782,13 +786,36 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                             : "\"");
     QString const space_after((flags & REPLACE_CONFIGURATION_VALUE_SPACE_AFTER) != 0 ? " " : "");
 
+    QString section;
+    QString name(field_name);
+    if((flags & REPLACE_CONFIGURATION_VALUE_SECTION) != 0)
+    {
+        // if we are required to have a section, break it up in two names
+        int const pos(field_name.indexOf(':'));
+        if(pos <= 0
+        || pos + 1 >= field_name.length()
+        || field_name[pos + 1] != ':')
+        {
+            throw snapmanager_exception_invalid_parameters("the REPLACE_CONFIGURATION_VALUE_SECTION cannot be used with a field that does not include the section name (<section>::<field-name>).");
+        }
+        section = "[" + field_name.mid(0, pos) + "]";
+        name = field_name.mid(pos + 2);
+        if(name.isEmpty())
+        {
+            throw snapmanager_exception_invalid_parameters("the name part cannot be empty when a section is specified");
+        }
+    }
+
     // WARNING: using concatenation (+) because "%1%2%3..." can cause
     //          problems if one of the values include a % followed by
     //          a number.
     //
-    QString const line(field_name + equal + space_after + quote + new_value + quote + "\n");
+    QString const line(name + equal + space_after + quote + new_value + quote + "\n");
+    QByteArray const utf8_line(line.toUtf8());
 
-    QByteArray utf8_line(line.toUtf8());
+    // add a new line character at the end of that line
+    QString const section_line(section + "\n");
+    QByteArray const utf8_section_line(section_line.toUtf8());
 
     // make sure to create the file if it does not exist
     // we expect the filename parameter to be something like
@@ -797,7 +824,7 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
     int fd(open(filename.toUtf8().data(), O_RDWR));
     if(fd == -1)
     {
-        if((flags &  REPLACE_CONFIGURATION_VALUE_MUST_EXIST) != 0)
+        if((flags & (REPLACE_CONFIGURATION_VALUE_MUST_EXIST | REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST)) != 0)
         {
             SNAP_LOG_WARNING("configuration file \"")(filename)("\" does not exist and we are not allowed to create it.");
             return false;
@@ -820,10 +847,19 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
             SNAP_LOG_ERROR("write of header to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
             return false;
         }
+        if(!section.isEmpty())
+        {
+            if(::write(fd, utf8_section_line.data(), utf8_section_line.size()) != utf8_section_line.size())
+            {
+                int const e(errno);
+                SNAP_LOG_ERROR("writing of new parameter to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+                return false;
+            }
+        }
         if(::write(fd, utf8_line.data(), utf8_line.size()) != utf8_line.size())
         {
             int const e(errno);
-            SNAP_LOG_ERROR("writing of new line to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+            SNAP_LOG_ERROR("writing of new parameter to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
             return false;
         }
     }
@@ -868,9 +904,13 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
         snap::NOTUSED(lseek(fd, 0, SEEK_SET));
         snap::NOTUSED(::ftruncate(fd, 0));
 
-        QByteArray field_name_utf8((field_name + equal).toUtf8());
+        QByteArray const section_utf8(section.toUtf8());
+        bool in_section(section.isEmpty());
+        bool found_section(false);
 
-        bool found(false);
+        QByteArray const field_name_utf8((name + equal).toUtf8());
+        bool found_field(false);
+
         char const * s(buf.get());
         char const * end(s + size);
         for(char const * start(s); s < end; ++s)
@@ -893,12 +933,54 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                     }
                 }
                 size_t len(s - start);
-                if(len >= static_cast<size_t>(field_name_utf8.size())
+                if(!section_utf8.isEmpty())
+                {
+                    if(len >= static_cast<size_t>(section_utf8.size())
+                    && strncmp(start, section_utf8.data(), section_utf8.size()) == 0)
+                    {
+                        in_section = true;
+                        found_section = true;
+                    }
+                    else if(in_section && len > 0 && start[0] == '[')
+                    {
+                        // we found another section
+                        //
+                        in_section = false;
+
+                        // if the field was not found in the last section, we have to save it
+                        //
+                        if(!found_field)
+                        {
+                            // we "pretend" it was found
+                            //
+                            found_field = true;
+
+                            if((flags &  REPLACE_CONFIGURATION_VALUE_MUST_EXIST) != 0)
+                            {
+                                SNAP_LOG_ERROR("configuration file \"")
+                                              (filename)
+                                              ("\" does not have a \"")
+                                              (field_name)
+                                              ("\" field and we are not allowed to append it.");
+                                return false;
+                            }
+
+                            if(::write(fd, utf8_line.data(), utf8_line.size()) != utf8_line.size())
+                            {
+                                int const e(errno);
+                                SNAP_LOG_ERROR("writing of new parameter at the end of \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+                                return false;
+                            }
+                        }
+                    }
+                }
+                if(in_section
+                && len >= static_cast<size_t>(field_name_utf8.size())
                 && strncmp(start, field_name_utf8.data(), field_name_utf8.size()) == 0)
                 {
                     // we found the field the user is asking to update
                     //
-                    found = true;
+                    found_field = true;
                     if(::write(fd, utf8_line.data(), utf8_line.size()) != utf8_line.size())
                     {
                         int const e(errno);
@@ -921,7 +1003,7 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                 start = s + 1;
             }
         }
-        if(!found)
+        if(!found_field)
         {
             if((flags &  REPLACE_CONFIGURATION_VALUE_MUST_EXIST) != 0)
             {
@@ -933,6 +1015,18 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                 return false;
             }
 
+            // if we reach here with a section then the section did not yet
+            // exist, so create it
+            //
+            if(!section.isEmpty())
+            {
+                if(::write(fd, utf8_section_line.data(), utf8_section_line.size()) != utf8_section_line.size())
+                {
+                    int const e(errno);
+                    SNAP_LOG_ERROR("writing of new parameter to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+                    return false;
+                }
+            }
             if(::write(fd, utf8_line.data(), utf8_line.size()) != utf8_line.size())
             {
                 int const e(errno);

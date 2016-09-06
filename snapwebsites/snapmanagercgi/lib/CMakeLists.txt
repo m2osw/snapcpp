@@ -80,8 +80,8 @@ install(
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapmanager
-    FILES_MATCHING PATTERN "*.h"
+    DESTINATION include
+    FILES_MATCHING PATTERN "snapmanager/*.h"
 )
 install(
     FILES ${CMAKE_BINARY_DIR}/snapmanager/version.h

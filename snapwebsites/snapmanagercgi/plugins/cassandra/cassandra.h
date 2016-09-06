@@ -16,12 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "lib/manager.h"
-#include "lib/plugin_base.h"
+#include "snapmanager/manager.h"
+#include "snapmanager/plugin_base.h"
 
 #include <snapwebsites/plugins.h>
-
-//#include <QDomDocument>
 
 namespace snap
 {

@@ -27,18 +27,20 @@
 // THE SOFTWARE.
 //
 
+// ourselves
+//
 #include "snapmanagercgi.h"
 
 // our lib
 //
-#include "plugin_base.h"
-#include "server_status.h"
+#include "snapmanager/plugin_base.h"
+#include "snapmanager/server_status.h"
 
 // snapwebsites lib
 //
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "snap_communicator.h"
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/snap_communicator.h>
 
 // Qt lib
 //
@@ -50,6 +52,9 @@
 #include <glob.h>
 #include <sys/file.h>
 
+// last entry
+//
+#include <snapwebsites/poison.h>
 
 
 namespace snap_manager

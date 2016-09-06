@@ -17,13 +17,17 @@
 
 // our lib
 //
-#include "lib/manager.h"
+#include "snapmanager/manager.h"
 
 // snapwebsites lib
 //
-#include "log.h"
-#include "lockfile.h"
-#include "process.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/lockfile.h>
+#include <snapwebsites/process.h>
+
+// last entry
+//
+#include <snapwebsites/poison.h>
 
 
 namespace snap
