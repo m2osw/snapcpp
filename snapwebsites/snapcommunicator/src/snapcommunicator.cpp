@@ -1861,35 +1861,41 @@ void snap_communicator_server::init()
                 throw snap::snap_exception("glob() was aborted after a read error.");
 
             case GLOB_NOMATCH:
-                SNAP_LOG_FATAL("glob() could not find any status information.");
-                throw snap::snap_exception("glob() could not find any status information.");
+                // this is a legal case, absolutely no local services...
+                //
+                SNAP_LOG_DEBUG("glob() could not find any status information.");
+                break;
 
             default:
                 SNAP_LOG_FATAL(QString("unknown glob() error code: %1.").arg(r));
                 throw snap::snap_exception(QString("unknown glob() error code: %1.").arg(r));
 
             }
-            snap::NOTREACHED();
         }
-
-        for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+        else
         {
-            char const * basename(strrchr(dir.gl_pathv[idx], '/'));
-            if(basename == nullptr)
+            // we have some local services (note that snapcommunicator is
+            // not added as a local service)
+            //
+            for(size_t idx(0); idx < dir.gl_pathc; ++idx)
             {
-                basename = dir.gl_pathv[idx];
+                char const * basename(strrchr(dir.gl_pathv[idx], '/'));
+                if(basename == nullptr)
+                {
+                    basename = dir.gl_pathv[idx];
+                }
+                else
+                {
+                    ++basename;
+                }
+                char const * end(strstr(basename, ".service"));
+                if(end == nullptr)
+                {
+                    end = basename + strlen(basename);
+                }
+                QString const key(QString::fromUtf8(basename, end - basename));
+                f_local_services_list[key] = true;
             }
-            else
-            {
-                ++basename;
-            }
-            char const * end(strstr(basename, ".service"));
-            if(end == nullptr)
-            {
-                end = basename + strlen(basename);
-            }
-            QString const key(QString::fromUtf8(basename, end - basename));
-            f_local_services_list[key] = true;
         }
     }
 
