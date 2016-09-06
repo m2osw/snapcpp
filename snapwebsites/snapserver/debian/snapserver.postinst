@@ -20,11 +20,6 @@ then
     then
         echo "notice: snapcreatetables failed."
     fi
-
-    if systemctl is-enabled ${PKGNAME} 2> /dev/null
-    then
-        systemctl start ${PKGNAME}
-    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent

@@ -29,11 +29,6 @@ then
     SERVICES_DIR=/usr/share/snapwebsites/services
     touch $SERVICES_DIR/snapdbproxy.service
 
-    if systemctl is-enabled ${PKGNAME} 2> /dev/null
-    then
-        systemctl start ${PKGNAME}
-    fi
-
     # Make sure that the core tables exist
     # The core tables are defined in the library, but installed here
     # since it is only once we have snapdbproxy that we can install

@@ -3,12 +3,6 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-PACKAGENAME=snaplock
-if systemctl is-active ${PACKAGENAME}
-then
-    systemctl stop ${PACKAGENAME}
-fi
-
 # Remove files representing each service offered by this package
 #
 SERVICES_DIR=/usr/share/snapwebsites/services
@@ -17,6 +11,7 @@ rm -f $SERVICES_DIR/snaplock.service
 if [ "$1" = "purge" ]
 then
     # delete the logs
+    PACKAGENAME=snaplock
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi

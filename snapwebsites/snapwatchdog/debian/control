@@ -3,6 +3,7 @@ Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
     debhelper,
+    dh-systemd,
     libadvgetopt-dev (>= 1.1.0.79~xenial),
     libboost-dev,
     libcontrolledvars-dev (>= 1.4.16.447~xenial),
