@@ -1,3 +1,9 @@
+snapcommunicator (1.0.4.1~xenial) xenial; urgency=high
+
+  * Trying out "--with systemd" in rules file.
+
+ -- Doug Barbieri <doug@dooglio.net>  Mon, 05 Sep 2016 17:46:33 -0700
+
 snapcommunicator (1.0.3.21~xenial) xenial; urgency=high
 
   * Nightly build.
