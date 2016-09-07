@@ -399,7 +399,8 @@ int process::run()
                 if(ferror(f_file))
                 {
                     // must return -1 on error, ignore pclose() return value
-                    pclose(f_file);
+                    int const e(pclose(f_file));
+                    SNAP_LOG_ERROR("pclose() returned ")(e)(", but it will be ignored because the pipe was marked as erroneous.");
                     f_file = nullptr;
                 }
                 else

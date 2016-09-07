@@ -293,7 +293,7 @@ int manager::update_packages(std::string const & command)
 
     // the output is saved so we can send it to the user and log it...
     QString const output(p.get_output(true));
-    SNAP_LOG_INFO(command)(" of packages returned:\n")(output);
+    SNAP_LOG_INFO(command)(" of packages returned (exit code: ")(r)("):\n")(output);
 
     return r;
 }
