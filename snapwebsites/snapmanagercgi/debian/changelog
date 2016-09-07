@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.18.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:49 -0700
+
 snapmanagercgi (1.0.18.0~xenial) xenial; urgency=high
 
   * Okay, there is a synchronization problem. I added a sleep() as a
