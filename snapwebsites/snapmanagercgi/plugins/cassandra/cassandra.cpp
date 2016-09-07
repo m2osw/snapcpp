@@ -706,7 +706,8 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
             f_joining = true;
 
             snap::snap_communicator_message cassandra_query;
-            cassandra_query.set_service(new_value);
+            cassandra_query.set_server(new_value);
+            cassandra_query.set_service("snapmanagerdaemon");
             cassandra_query.set_command("CASSANDRAQUERY");
             get_cassandra_info(cassandra_query);
             f_snap->forward_message(cassandra_query);
