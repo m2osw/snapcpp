@@ -56,7 +56,8 @@ namespace
 {
 
 
-char const *    g_conf_filename = "/etc/network/firewall";
+char const *    g_conf_filename   = "/etc/network/firewall.conf";
+char const *    g_firewall_script = "/etc/network/firewall";
 
 
 //void file_descriptor_deleter(int * fd)
@@ -686,7 +687,7 @@ void firewall::on_handle_affected_services(std::set<QString> & affected_services
         //
         snap::process p("reload firewall");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
-        p.set_command("/etc/network/firewall");
+        p.set_command(g_firewall_script);
         NOTUSED(p.run());           // errors are automatically logged by snap::process
     }
 }
