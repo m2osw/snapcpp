@@ -84,8 +84,12 @@ bool upgrade(snap_manager::manager::pointer_t upgrader)
         // to fix most common problems and let us upgrade the computer;
         // if that fails, the user is on his own!
         //
-        // TODO: use a snap::process instead
+        // TODO: actually we really need to have one process running at
+        //       a time, be it for the status gathering, or the upgrader
+        //       or the installer... right now we do not have good
+        //       synchronization so things can break in between...
         //
+        sleep(10);
         if(upgrader->update_packages("update") != 0)
         {
             SNAP_LOG_ERROR("\"apt-get update\" failed.");

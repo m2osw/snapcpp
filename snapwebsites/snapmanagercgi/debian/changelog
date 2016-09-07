@@ -1,3 +1,10 @@
+snapmanagercgi (1.0.18.0~xenial) xenial; urgency=high
+
+  * Okay, there is a synchronization problem. I added a sleep() as a
+    temporary hack until we do better...
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 06 Sep 2016 02:00:54 -0700
+
 snapmanagercgi (1.0.17.0~xenial) xenial; urgency=high
 
   * Trying to understand why apt-get update returns 100 by no error messages.

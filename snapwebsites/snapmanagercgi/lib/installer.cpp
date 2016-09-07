@@ -277,10 +277,7 @@ int manager::update_packages(std::string const & command)
     snap::process p("update");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
     p.set_command("apt-get");
-    if(command != "update")
-    {
-        p.add_argument("--quiet");
-    }
+    p.add_argument("--quiet");
     p.add_argument("--assume-yes");
     if(command == "upgrade"
     || command == "dist-upgrade")
