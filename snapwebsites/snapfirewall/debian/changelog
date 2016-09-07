@@ -1,3 +1,9 @@
+snapfirewall (1.0.4.1~xenial) xenial; urgency=high
+
+  * Moved firewall variable definitions into a new file: /etc/network/firewall.conf
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 13:01:55 -0700
+
 snapfirewall (1.0.3.23~xenial) xenial; urgency=high
 
   * Nightly build.
