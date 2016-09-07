@@ -56,7 +56,8 @@
   <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapfirewall</packages>
   <postinst>
-    # Setup the firewall IPs and interfaces
+    # Setup the firewall IPs and interfaces.
+    # Wed Sep  7 13:16:27 PDT 2016: Now edits firewall.conf, instead of the main firewall script.
     #
     sed -i.bak \
       -e "s/@BUNDLE_PUBLIC_IP@/$BUNDLE_INSTALLATION_PUBLIC_IP/" \
@@ -66,7 +67,7 @@
       -e "s/@BUNDLE_ADMIN_IPS@/$BUNDLE_INSTALLATION_ADMIN_IPS/" \
       -e "s/@BUNDLE_PRIVATE_NETWORK_IPS@/$BUNDLE_INSTALLATION_PRIVATE_NETWORK_IPS/" \
       -e "s/@BUNDLE_SECURE_IP@/$BUNDLE_INSTALLATION_SECURE_IP/" \
-            /etc/network/firewall
+            /etc/network/firewall.conf
 
       # We need to put "pre-up /etc/network/firewall" in the interfaces
       # file so the firewall comes back on each reboot
