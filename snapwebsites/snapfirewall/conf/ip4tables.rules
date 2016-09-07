@@ -26,10 +26,11 @@
 -A INPUT -j bad_robots
 
 # local network
--A INPUT -i lo -s @PUBLIC_IP@ -j ACCEPT
--A INPUT -i lo -s @PRIVATE_IP@ -j ACCEPT
 -A INPUT -i lo -s 127.0.0.1 -j ACCEPT
 -A INPUT -i lo -s 127.0.1.1 -j ACCEPT
+-A INPUT -i lo -s @PUBLIC_IP@ -j ACCEPT
+-A INPUT -i lo -s @PRIVATE_IP@ -j ACCEPT
+-A INPUT -i lo -s @SECURE_IP@ -j ACCEPT
 -A INPUT -i lo -j LOG --log-prefix "reject_lo: " --log-uid
 -A INPUT -i lo -j REJECT
 
@@ -132,9 +133,10 @@
 # OUTPUT #
 ##########
 -A OUTPUT -o lo -d 127.0.0.1 -j ACCEPT
-#-A OUTPUT -o lo -d 10.0.0.1 -j ACCEPT
+-A OUTPUT -o lo -d 127.0.1.1 -j ACCEPT
 -A OUTPUT -o lo -d @PUBLIC_IP@ -j ACCEPT
 -A OUTPUT -o lo -d @PRIVATE_IP@ -j ACCEPT
+-A OUTPUT -o lo -d @SECURE_IP@ -j ACCEPT
 -A OUTPUT -o lo -j REJECT
 
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p tcp -m tcp -s @PUBLIC_IP@ -j ACCEPT
