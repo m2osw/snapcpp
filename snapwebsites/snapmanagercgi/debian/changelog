@@ -1,14 +1,8 @@
-snapmanagercgi (1.0.18.2~xenial) xenial; urgency=high
+snapmanagercgi (1.0.19.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the sending of the CASSANDRAQUERY message.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:41 -0700
-
-snapmanagercgi (1.0.18.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 07 Sep 2016 09:52:41 -0700
 
 snapmanagercgi (1.0.18.0~xenial) xenial; urgency=high
 
