@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.21.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:15 -0700
+
 snapmanagercgi (1.0.21.0~xenial) xenial; urgency=high
 
   * SNAP-110: Somehow some messages for local processes make it to other

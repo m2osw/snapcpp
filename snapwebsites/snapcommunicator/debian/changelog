@@ -1,3 +1,9 @@
+snapcommunicator (1.0.7.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:18 -0700
+
 snapcommunicator (1.0.7.0~xenial) xenial; urgency=high
 
   * SNAP-168: Fixed the handling of the DISCONNECT message. We now do not
