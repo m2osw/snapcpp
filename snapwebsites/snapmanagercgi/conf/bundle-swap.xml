@@ -85,11 +85,11 @@
 
       # remove that entry from the fstab file
       sed -i.bak \
-            /^.var.cache.swapfile/ d \
-                fstab
+            "/^.var.cache.swapfile/ d" \
+                /etc/fstab
 
       # remove the file and reclaim the space
-      rm /var/cache/swapfile
+      rm -f /var/cache/swapfile
     fi
   </postrm>
 </bundle>
