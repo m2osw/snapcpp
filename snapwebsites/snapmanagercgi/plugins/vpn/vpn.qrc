@@ -1,6 +1,6 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource>
+  <qresource prefix="/manager-plugins/vpn">
     <file>create_client_certs.sh</file>
   </qresource>
 </RCC>

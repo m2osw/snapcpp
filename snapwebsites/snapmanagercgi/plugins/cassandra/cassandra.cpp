@@ -990,7 +990,12 @@ void cassandra::join_cassandra_node(snap::snap_communicator_message const & mess
     preamble += seeds;
     preamble += "\n";
 
-    QFile script_original(":/join_cassandra_node.sh");
+    QFile script_original(":/manager-plugins/cassandra/join_cassandra_node.sh");
+    if(!script_original.open(QIODevice::ReadOnly))
+    {
+        SNAP_LOG_ERROR("failed to open the join_cassandra_node.sh resouce file.");
+        return;
+    }
     QByteArray const original(script_original.readAll());
 
     QByteArray const script(preamble.toUtf8() + original);

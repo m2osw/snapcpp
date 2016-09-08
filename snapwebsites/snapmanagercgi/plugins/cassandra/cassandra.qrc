@@ -1,6 +1,6 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource>
+  <qresource prefix="/manager-plugins/cassandra">
     <file>join_cassandra_node.sh</file>
   </qresource>
 </RCC>

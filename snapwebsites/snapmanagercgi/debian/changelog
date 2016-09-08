@@ -1,8 +1,8 @@
-snapmanagercgi (1.0.19.1~xenial) xenial; urgency=high
+snapmanagercgi (1.0.20.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Need to open the input file before reading from it.
 
- -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:39 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Sep 2016 09:19:39 -0700
 
 snapmanagercgi (1.0.19.0~xenial) xenial; urgency=high
 

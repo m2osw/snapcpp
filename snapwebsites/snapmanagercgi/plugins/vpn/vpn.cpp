@@ -495,7 +495,7 @@ bool vpn::apply_setting ( QString const & button_name
         // Overwrite the script every time
         //
         create_script.remove();
-        if( !QFile::copy( ":/create_client_certs.sh", create_script.fileName() ) )
+        if( !QFile::copy( ":/manager-plugins/vpn/create_client_certs.sh", create_script.fileName() ) )
         {
             SNAP_LOG_ERROR("Cannot copy \"")(create_script.fileName())("\" file!");
             return false;
