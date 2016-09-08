@@ -3939,7 +3939,7 @@ SNAP_LOG_TRACE("  . send to all connections unless already present in list...");
             {
                 // the dynamic_cast<>() should always work in this direction
                 //
-else SNAP_LOG_TRACE("    . got a remote connect... ")(conn->get_name());
+SNAP_LOG_TRACE("    . got a remote connect... ");
                 service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
                 if(conn)
                 {
