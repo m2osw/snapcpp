@@ -1,3 +1,10 @@
+snapmanagercgi (1.0.21.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Somehow some messages for local processes make it to other
+    servers.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Sep 2016 12:36:39 -0700
+
 snapmanagercgi (1.0.20.0~xenial) xenial; urgency=high
 
   * SNAP-110: Need to open the input file before reading from it.

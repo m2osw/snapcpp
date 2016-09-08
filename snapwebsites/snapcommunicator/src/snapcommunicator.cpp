@@ -2241,7 +2241,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     // if the destination server was specified, we have to forward
     // the message to that specific server
     //
-    QString const server_name(message.get_server());
+    QString const server_name(message.get_server() == "." ? f_server_name : message.get_server());
     QString const service(message.get_service());
     QString const command(message.get_command());
     QString const sent_from_service(message.get_sent_from_service());
@@ -3630,6 +3630,12 @@ SNAP_LOG_TRACE("  . yep remote, save for intercomputer broadcasting...");
                 }
             }
         }
+
+SNAP_LOG_TRACE("  . is that a local service? [")
+              (service)
+              ("] element of: [")
+              (f_local_services_list.join(","))
+              ("]");
 
         if((all_servers || server_name == f_server_name)
         && f_local_services_list.contains(service))
