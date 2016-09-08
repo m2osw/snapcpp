@@ -890,7 +890,9 @@ class remote_snap_communicator
     , public base_connection
 {
 public:
-    static uint64_t const           REMOTE_CONNECTION_DEFAULT_TIMEOUT = 5LL * 60LL * 1000000LL;
+    static uint64_t const           REMOTE_CONNECTION_DEFAULT_TIMEOUT   =         1LL * 60LL * 1000000LL;   // 1 minute
+    static uint64_t const           REMOTE_CONNECTION_RECONNECT_TIMEOUT =         5LL * 60LL * 1000000LL;   // 5 minutes
+    static uint64_t const           REMOTE_CONNECTION_TOO_BUSY_TIMEOUT  = 24LL * 60LL * 60LL * 1000000LL;   // 24 hours
 
                                     remote_snap_communicator(snap_communicator_server::pointer_t cs, QString const & addr, int port);
     virtual                         ~remote_snap_communicator() override;
@@ -1307,7 +1309,7 @@ void remote_communicator_connections::too_busy(QString const & addr)
     if(f_smaller_ips.contains(addr))
     {
         // wait for 1 day and try again (is 1 day too long?)
-        f_smaller_ips[addr]->set_timeout_delay(24LL * 60LL * 60LL * 1000000LL);
+        f_smaller_ips[addr]->set_timeout_delay(remote_snap_communicator::REMOTE_CONNECTION_TOO_BUSY_TIMEOUT);
         SNAP_LOG_INFO("remote communicator ")(addr)(" was marked as too busy. Pause for 1 day before trying to connect again.");
     }
 }
@@ -1327,7 +1329,7 @@ void remote_communicator_connections::shutting_down(QString const & addr)
     {
         // wait for 15 minutes and try again
         //
-        f_smaller_ips[addr]->set_timeout_delay(15LL * 60LL * 1000000LL);
+        f_smaller_ips[addr]->set_timeout_delay(remote_snap_communicator::REMOTE_CONNECTION_RECONNECT_TIMEOUT);
     }
 }
 
@@ -2748,18 +2750,20 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         if(!remote_communicator)
                         {
                             // disconnecting means it is gone so we can remove
-                            // it from the communicator
+                            // it from the communicator sinec the other end
+                            // will be reconnected (we are not responsible
+                            // for that in this case)
                             //
                             // Note: this one happens when the computer that
                             //       sent us a CONNECT later sends us the
                             //       DISCONNECT
                             //
-                            //f_communicator->remove_connection(connection); -- done below
+                            f_communicator->remove_connection(connection);
                         }
                         else
                         {
                             // in this case we are in charge of attempting
-                            // to reconnect until it worked... however, it
+                            // to reconnect until it works... however, it
                             // is likely that the other side just shutdown
                             // so we want to "induce a long enough pause"
                             // to avoid attempting to reconnect like crazy
@@ -2767,8 +2771,6 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             QString const addr(QString::fromUtf8(remote_communicator->get_client_addr().c_str()));
                             f_remote_snapcommunicators->shutting_down(addr);
                         }
-
-                        f_communicator->remove_connection(connection);
 
                         // we just got some new services information,
                         // refresh our cache
@@ -3631,11 +3633,22 @@ SNAP_LOG_TRACE("  . yep remote, save for intercomputer broadcasting...");
             }
         }
 
+{
+QString s;
+for(auto ls = f_local_services_list.begin(); ls != f_local_services_list.end(); ++ls)
+{
+    if(!s.isEmpty())
+    {
+        s += ", ";
+    }
+    s += ls.key();
+}
 SNAP_LOG_TRACE("  . is that a local service? [")
               (service)
               ("] element of: [")
-              (f_local_services_list.join(","))
+              (s)
               ("]");
+}
 
         if((all_servers || server_name == f_server_name)
         && f_local_services_list.contains(service))

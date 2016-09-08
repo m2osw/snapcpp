@@ -1,8 +1,11 @@
-snapcommunicator (1.0.6.1~xenial) xenial; urgency=high
+snapcommunicator (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-168: Fixed the handling of the DISCONNECT message. We now do not
+    remove a remote connnection from the list of connections saved in the
+    g_snapcommunicator object. This means those connections will survive
+    and attempt to reconnect at a later time, over and over again.
 
- -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:39 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Sep 2016 09:19:39 -0700
 
 snapcommunicator (1.0.6.0~xenial) xenial; urgency=high
 
