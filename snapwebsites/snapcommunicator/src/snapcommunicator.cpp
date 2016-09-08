@@ -4015,7 +4015,7 @@ SNAP_LOG_TRACE("  . broadcast list not empty... ");
             service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(bc));
             if(conn)
             {
-SNAP_LOG_TRACE("  . send broadcast message on 'conn'... ")(conn->get_name());
+SNAP_LOG_TRACE("  . send broadcast message on 'conn'... ");//(conn->get_name());
                 conn->send_message(broadcast_msg);
             }
             else
@@ -4023,7 +4023,7 @@ SNAP_LOG_TRACE("  . send broadcast message on 'conn'... ")(conn->get_name());
                 remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(bc));
                 if(remote_communicator) // this should always be true, but to be double sure...
                 {
-SNAP_LOG_TRACE("  . send broadcast message on 'remote_communicator'... ")(conn->get_server_name());
+SNAP_LOG_TRACE("  . send broadcast message on 'remote_communicator'... ");//(conn->get_server_name());
                     remote_communicator->send_message(broadcast_msg);
                 }
             }
