@@ -154,7 +154,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
     SNAP_SIGNAL_WITH_MODE(handle_affected_services, (std::set<QString> & affected_services), (affected_services), NEITHER);
     SNAP_SIGNAL_WITH_MODE(communication_ready, (), (), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(process_plugin_message, (snap::snap_communicator_message const & message, bool processed), (message, processed), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(process_plugin_message, (snap::snap_communicator_message const & message, bool & processed), (message, processed), NEITHER);
     SNAP_SIGNAL_WITH_MODE(add_plugin_commands, (snap::snap_string_list & understood_commands), (understood_commands), NEITHER);
 
     static int                      get_version_major() __attribute__ ((const));

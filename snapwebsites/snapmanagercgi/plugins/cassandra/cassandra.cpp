@@ -804,7 +804,7 @@ void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_comma
 }
 
 
-void cassandra::on_process_plugin_message(snap::snap_communicator_message const & message, bool processed)
+void cassandra::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
 {
     QString const command(message.get_command());
 

@@ -78,7 +78,7 @@ public:
     void                    on_handle_affected_services(std::set<QString> & affected_services);
     void                    on_communication_ready();
     void                    on_add_plugin_commands(snap::snap_string_list & understood_commands);
-    void                    on_process_plugin_message(snap::snap_communicator_message const & message, bool processed);
+    void                    on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed);
 
 private:
     void                    get_cassandra_info(snap::snap_communicator_message & status);
