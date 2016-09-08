@@ -3952,11 +3952,31 @@ SNAP_LOG_TRACE("    . got a remote connect... ");
                         //
                         informed_neighbors_list << address;
                         broadcast_connection.push_back(conn);
-SNAP_LOG_TRACE("    . send to this one... ")(conn->get_name());
+SNAP_LOG_TRACE("    . send to this one... ");
                     }
 else SNAP_LOG_TRACE("    . already in the list of of neighbors???... ");
                 }
-else SNAP_LOG_TRACE("    . but dynamic cast failed?!... ");
+                else
+                {
+SNAP_LOG_TRACE("    . but dynamic cast to service failed?!... ");
+                    remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(nc));
+                    if(remote_communicator)
+                    {
+                        QString const address(QString::fromUtf8(remote_communicator->get_address().get_ipv4or6_string(false, false).c_str()));
+                        if(!informed_neighbors_list.contains(address))
+                        {
+                            // not in the list of informed neighbors, add it and
+                            // keep conn in a list that we can use to actually
+                            // send the broadcast message
+                            //
+                            informed_neighbors_list << address;
+                            broadcast_connection.push_back(remote_communicator);
+SNAP_LOG_TRACE("    . send to this one... ");
+                        }
+else SNAP_LOG_TRACE("    . already in the list of of neighbors???... ");
+                    }
+else SNAP_LOG_TRACE("    . and dynamic cast in remote fails too???... ");
+                }
             });
     }
 
