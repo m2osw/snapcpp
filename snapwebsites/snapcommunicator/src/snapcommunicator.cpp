@@ -3939,6 +3939,7 @@ SNAP_LOG_TRACE("  . send to all connections unless already present in list...");
             {
                 // the dynamic_cast<>() should always work in this direction
                 //
+else SNAP_LOG_TRACE("    . got a remote connect... ")(conn->get_name());
                 service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
                 if(conn)
                 {
@@ -3951,9 +3952,11 @@ SNAP_LOG_TRACE("  . send to all connections unless already present in list...");
                         //
                         informed_neighbors_list << address;
                         broadcast_connection.push_back(conn);
-SNAP_LOG_TRACE("  . send to this one... ")(conn->get_name());
+SNAP_LOG_TRACE("    . send to this one... ")(conn->get_name());
                     }
+else SNAP_LOG_TRACE("    . already in the list of of neighbors???... ");
                 }
+else SNAP_LOG_TRACE("    . but dynamic cast failed?!... ");
             });
     }
 

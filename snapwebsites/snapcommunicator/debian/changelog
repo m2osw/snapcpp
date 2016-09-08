@@ -1,3 +1,9 @@
+snapcommunicator (1.0.6.0~xenial) xenial; urgency=high
+
+  * Added a few more TRACE messages.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 07 Sep 2016 09:52:43 -0700
+
 snapcommunicator (1.0.5.0~xenial) xenial; urgency=high
 
   * Trying without a couple of get name because it looks like it fails.
