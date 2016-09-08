@@ -575,6 +575,12 @@ QString const & manager::get_data_path() const
 }
 
 
+QString const & manager::get_cache_path() const
+{
+    return f_cache_path;
+}
+
+
 QString const & manager::get_bundles_path() const
 {
     return f_bundles_path;

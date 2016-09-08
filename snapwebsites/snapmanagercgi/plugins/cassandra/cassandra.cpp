@@ -1000,15 +1000,19 @@ void cassandra::join_cassandra_node(snap::snap_communicator_message const & mess
 
     QByteArray const script(preamble.toUtf8() + original);
 
-    // TODO: use variable for "/var/lib/snapwebsites"
+    // Put the script in the cache and run it
     //
-    std::string const script_filename("/var/lib/snapwebsites/join_cassandra_node.sh");
+    // TODO: add a /scripts/ sub-directory so all scripts can be found
+    //       there instead of the top directory?
+    //
+    QString const cache_path(f_snap->get_cache_path());
+    std::string const script_filename(std::string(cache_path.toUtf8().data()) + "/join_cassandra_node.sh");
     snap::file_content output_file(script_filename);
     output_file.set_content(script.data());
     output_file.write_all();
     chmod(script_filename.c_str(), 0700);
 
-    snap::process p("join cassandra cluster");
+    snap::process p("join cassandra node");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
     p.set_command(QString::fromUtf8(script_filename.c_str()));
     NOTUSED(p.run());           // errors are automatically logged by snap::process

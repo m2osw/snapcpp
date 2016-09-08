@@ -135,6 +135,7 @@ public:
     std::vector<std::string>        get_list_of_bundles() const;
     QString const &                 get_bundles_path() const;
     QString const &                 get_data_path() const;
+    QString const &                 get_cache_path() const;
     QString const &                 get_reboot_required_path() const;
     virtual bool                    stop_now_prima() const;
     virtual void                    forward_message(snap::snap_communicator_message const & message);
