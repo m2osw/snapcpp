@@ -3476,7 +3476,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
     //    to a remote snapcommunicator and not to a service on this system)
     //
 
-SNAP_LOG_TRACE("---------------- got message for [")(server_name)("] / [")(service)("]");
+//SNAP_LOG_TRACE("---------------- got message for [")(server_name)("] / [")(service)("]");
 
     // broadcasting?
     //
@@ -3497,7 +3497,6 @@ SNAP_LOG_TRACE("---------------- got message for [")(server_name)("] / [")(servi
             SNAP_LOG_ERROR("you cannot at the same time specify a server name (")(server_name)(") and \"*\" or \"?\" as the service.");
             return;
         }
-SNAP_LOG_TRACE("  . just broadcast that message");
         broadcast_message(message);
         return;
     }
@@ -3519,7 +3518,6 @@ SNAP_LOG_TRACE("  . just broadcast that message");
                 //
                 if(base_conn->get_server_name().isEmpty())
                 {
-SNAP_LOG_TRACE("  . connection without a server name?!");
                     if(!f_server->is_debug())
                     {
                         // ignore in non-debug versions because a throw
@@ -3552,20 +3550,17 @@ SNAP_LOG_TRACE("  . connection without a server name?!");
                 if(all_servers
                 || server_name == base_conn->get_server_name())
                 {
-SNAP_LOG_TRACE("  . server name matched or was *");
                     service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
                     if(conn)
                     {
                         if(conn->get_name() == service)
                         {
-SNAP_LOG_TRACE("  . server name was a match");
                             // we have such a service, just forward to it now
                             //
                             // TBD: should we remove the service name before forwarding?
                             //
                             try
                             {
-SNAP_LOG_TRACE("  . send local message");
                                 verify_command(conn, message);
                                 conn->send_message(message);
                             }
@@ -3593,10 +3588,8 @@ SNAP_LOG_TRACE("  . send local message");
                             // is a remote connection
                             //
                             base_connection::connection_type_t const type(base_conn->get_connection_type());
-SNAP_LOG_TRACE("  . check whether this is a remote connection ")(static_cast<int>(type));
                             if(type == base->connection_type_t::CONNECTION_TYPE_REMOTE)
                             {
-SNAP_LOG_TRACE("  . connection is remote save for intercomputer broadcasting...");
                                 accepting_remote_connections.push_back(conn);
                             }
                         }
@@ -3615,10 +3608,8 @@ SNAP_LOG_TRACE("  . connection is remote save for intercomputer broadcasting..."
                         //       of that service, and if that is also empty, send to
                         //       all... for now we send to all anyway)
                         //
-SNAP_LOG_TRACE("  . checked whether it is a remote connection object.");
                         if(remote_connection /*&& remote_connection->has_service(service)*/)
                         {
-SNAP_LOG_TRACE("  . yep remote, save for intercomputer broadcasting...");
                             accepting_remote_connections.push_back(remote_connection);
                         }
                     }
@@ -3626,27 +3617,9 @@ SNAP_LOG_TRACE("  . yep remote, save for intercomputer broadcasting...");
             }
         }
 
-{
-QString s;
-for(auto ls = f_local_services_list.begin(); ls != f_local_services_list.end(); ++ls)
-{
-    if(!s.isEmpty())
-    {
-        s += ", ";
-    }
-    s += ls.key();
-}
-SNAP_LOG_TRACE("  . is that a local service? [")
-              (service)
-              ("] element of: [")
-              (s)
-              ("]");
-}
-
         if((all_servers || server_name == f_server_name)
         && f_local_services_list.contains(service))
         {
-SNAP_LOG_TRACE("  . message looks like it is for a local service... caching?");
             // its a service that is expected on this computer, but it is not
             // running right now... so cache the message
             //
@@ -3664,7 +3637,6 @@ SNAP_LOG_TRACE("  . message looks like it is for a local service... caching?");
             }
             if(cache != "no")
             {
-SNAP_LOG_TRACE("  . really caching!");
                 // convert the cache into a map of parameters
                 //
                 snap::snap_string_list cache_parameters(cache.split(";"));
@@ -3708,7 +3680,6 @@ SNAP_LOG_TRACE("  . really caching!");
         //
         if(server_name == f_server_name)
         {
-SNAP_LOG_TRACE("  . local message without a destination service...");
             if(!service.startsWith("lock_"))
             {
                 SNAP_LOG_DEBUG("received event \"")(command)("\" for local service \"")(service)("\", which is not currently registered. Dropping message.");
@@ -3719,7 +3690,6 @@ SNAP_LOG_TRACE("  . local message without a destination service...");
 
     if(!accepting_remote_connections.empty())
     {
-SNAP_LOG_TRACE("  . got ")(accepting_remote_connections.size())(" message(s) to send to other computers.");
         broadcast_message(message, accepting_remote_connections);
     }
 }
@@ -3813,7 +3783,6 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
     // we always broadcast to all local services
     snap::snap_communicator::snap_connection::vector_t broadcast_connection;
 
-SNAP_LOG_TRACE("  . broadcasting message: processing now...");
     if(accepting_remote_connections.empty())
     {
         QString destination("?");
@@ -3835,7 +3804,6 @@ SNAP_LOG_TRACE("  . broadcasting message: processing now...");
         bool const all(hops < 5 && destination == "*");
         bool const remote(hops < 5 && (all || destination == "?"));
 
-SNAP_LOG_TRACE("  . check all existing connections...");
         snap::snap_communicator::snap_connection::vector_t const & connections(f_communicator->get_connections());
         for(auto const & nc : connections)
         {
@@ -3943,7 +3911,6 @@ SNAP_LOG_TRACE("  . check all existing connections...");
         // we already have a list, copy that list only as it is already
         // well defined
         //
-SNAP_LOG_TRACE("  . send to all connections unless already present in list...");
         std::for_each(
             accepting_remote_connections.begin(),
             accepting_remote_connections.end(),
@@ -3951,7 +3918,6 @@ SNAP_LOG_TRACE("  . send to all connections unless already present in list...");
             {
                 // the dynamic_cast<>() should always work in this direction
                 //
-SNAP_LOG_TRACE("    . got a remote connect... ");
                 service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
                 if(conn)
                 {
@@ -3964,13 +3930,10 @@ SNAP_LOG_TRACE("    . got a remote connect... ");
                         //
                         informed_neighbors_list << address;
                         broadcast_connection.push_back(conn);
-SNAP_LOG_TRACE("    . send to this one... ");
                     }
-else SNAP_LOG_TRACE("    . already in the list of of neighbors???... ");
                 }
                 else
                 {
-SNAP_LOG_TRACE("    . but dynamic cast to service failed?!... ");
                     remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(nc));
                     if(remote_communicator)
                     {
@@ -3983,18 +3946,14 @@ SNAP_LOG_TRACE("    . but dynamic cast to service failed?!... ");
                             //
                             informed_neighbors_list << address;
                             broadcast_connection.push_back(remote_communicator);
-SNAP_LOG_TRACE("    . send to this one... ");
                         }
-else SNAP_LOG_TRACE("    . already in the list of of neighbors???... ");
                     }
-else SNAP_LOG_TRACE("    . and dynamic cast in remote fails too???... ");
                 }
             });
     }
 
     if(!broadcast_connection.empty())
     {
-SNAP_LOG_TRACE("  . broadcast list not empty... ");
         // we are broadcasting now (Gossiping a regular message);
         // for the gossiping to work, we include additional
         // information in the message
@@ -4050,7 +4009,6 @@ SNAP_LOG_TRACE("  . broadcast list not empty... ");
             service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(bc));
             if(conn)
             {
-SNAP_LOG_TRACE("  . send broadcast message on 'conn'... ");//(conn->get_name());
                 conn->send_message(broadcast_msg);
             }
             else
@@ -4058,7 +4016,6 @@ SNAP_LOG_TRACE("  . send broadcast message on 'conn'... ");//(conn->get_name());
                 remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(bc));
                 if(remote_communicator) // this should always be true, but to be double sure...
                 {
-SNAP_LOG_TRACE("  . send broadcast message on 'remote_communicator'... ");//(conn->get_server_name());
                     remote_communicator->send_message(broadcast_msg);
                 }
             }
