@@ -1816,9 +1816,6 @@ void snap_communicator_server::init()
     f_debug_lock = !f_server->get_parameter("debug_lock_messages").isEmpty();
 
     {
-        f_explicit_neighbors = canonicalize_neighbors(f_server->get_parameter("neighbors"));
-        add_neighbors(f_explicit_neighbors);
-
         // check a user defined maximum number of connections
         // by default this is set to SNAP_COMMUNICATOR_MAX_CONNECTIONS,
         // which at this time is 100
@@ -2009,18 +2006,14 @@ void snap_communicator_server::init()
 
     f_remote_snapcommunicators.reset(new remote_communicator_connections(shared_from_this(), f_my_address));
 
-    // we also want to create timer for each neighbor
+    // the add_neighbors() function parses the list of neighbors and
+    // creates a permanent connection
     //
-    // right now we only have explicit neights until we support the
-    // reading of saved gossiped neighbors which means that we can
-    // as well implement the full set right now
+    // note that the first time add_neighbors is called it reads the
+    // list of cached neighbor IP:port info and connects those too
     //
-    for(sorted_list_of_strings_t::const_iterator it(f_all_neighbors.begin());
-                                                 it != f_all_neighbors.end();
-                                                 ++it)
-    {
-        f_remote_snapcommunicators->add_remote_communicator(it.key());
-    }
+    f_explicit_neighbors = canonicalize_neighbors(f_server->get_parameter("neighbors"));
+    add_neighbors(f_explicit_neighbors);
 }
 
 
@@ -4383,6 +4376,11 @@ void snap_communicator_server::add_neighbors(QString const & new_neighbors)
             {
                 changed = true;
                 f_all_neighbors[s] = true;
+
+                // in case we are already running we want to also add
+                // the corresponding connection
+                //
+                f_remote_snapcommunicators->add_remote_communicator(s);
             }
         }
 
