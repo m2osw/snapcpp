@@ -83,6 +83,8 @@ public:
 private:
     void                    get_cassandra_info(snap::snap_communicator_message & status);
     void                    join_cassandra_node(snap::snap_communicator_message const & message);
+    QString                 get_replication_factor();
+    void                    set_replication_factor(QString const & replication_factor);
 
     snap_manager::manager * f_snap = nullptr;
     bool                    f_joining = false;

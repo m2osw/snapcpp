@@ -345,6 +345,19 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
                             , "");
             server_status.set_field(conf_field);
         }
+
+        // if joined, we want the user to be able to change the replication factor
+        //
+        {
+            QString const replication_factor(get_replication_factor());
+            // TBD: if replication_factor.isEmpty() do not show?
+            snap_manager::status_t const conf_field(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "replication_factor"
+                            , replication_factor);
+            server_status.set_field(conf_field);
+        }
     }
     else if(info.exists())
     {
@@ -585,6 +598,35 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
         return true;
     }
 
+    if(s.get_field_name() == "replication_factor")
+    {
+        // the replication factor for Cassandra
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        QString const user_name(s.get_field_name().mid(8));
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Enter the replication factor (RF):"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>By default we create the Snap! cluster with a replication factor of 1"
+                         " (since you need 2 or more nodes to have a higher replication factor...)"
+                         " This option let you change the factor. It must be run on a computer with"
+                         " a Cassandra node. Make sure you do not enter a number larger than the"
+                         " total number of nodes or your cluster will be stuck.<p>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     return false;
 }
 
@@ -713,6 +755,12 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
             f_snap->forward_message(cassandra_query);
         }
 
+        return true;
+    }
+
+    if(field_name == "replication_factor")
+    {
+        set_replication_factor(new_value);
         return true;
     }
 
@@ -1016,6 +1064,185 @@ void cassandra::join_cassandra_node(snap::snap_communicator_message const & mess
     p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
     p.set_command(QString::fromUtf8(script_filename.c_str()));
     NOTUSED(p.run());           // errors are automatically logged by snap::process
+}
+
+
+QString cassandra::get_replication_factor()
+{
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+
+    // initialize the reading of the configuration file
+    //
+    snap::snap_config config("snapdbproxy");
+
+    // get the list of Cassandra hosts, "127.0.0.1" by default
+    //
+    QString cassandra_host_list("127.0.0.1");
+    if(config.has_parameter("cassandra_host_list"))
+    {
+        cassandra_host_list = config[ "cassandra_host_list" ];
+        if(cassandra_host_list.isEmpty())
+        {
+            SNAP_LOG_ERROR("cassandra_host_list cannot be empty.");
+            return QString();
+        }
+    }
+
+    // get the Cassandra port, 9042 by default
+    //
+    int cassandra_port(9042);
+    if(config.has_parameter("cassandra_port"))
+    {
+        std::size_t pos(0);
+        std::string const port(config["cassandra_port"]);
+        cassandra_port = std::stoi(port, &pos, 10);
+        if(pos != port.length()
+        || cassandra_port < 0
+        || cassandra_port > 65535)
+        {
+            SNAP_LOG_ERROR("cassandra_port to connect to Cassandra must be defined between 0 and 65535.");
+            return QString();
+        }
+    }
+
+    // create a new Cassandra session
+    //
+    auto session( QtCassandra::QCassandraSession::create() );
+
+    // increase the request timeout "dramatically" because creating a
+    // context is very slow
+    //
+    // note: we do not make use of the QCassandraRequestTimeout class
+    //       because we will just create the context and be done with it
+    //       so there is no real need for us to restore the timeout
+    //       at a later time
+    //
+    session->setTimeout(5 * 60 * 1000); // timeout = 5 min.
+
+    // connect to the Cassandra cluster
+    //
+    try
+    {
+        session->connect( cassandra_host_list, cassandra_port ); // throws on failure!
+        if(!session->isConnected())
+        {
+            // this error should not ever appear since the connect()
+            // function throws on errors, but for completeness...
+            //
+            SNAP_LOG_ERROR("error: could not connect to Cassandra cluster.");
+            return QString();
+        }
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_ERROR("error: could not connect to Cassandra cluster. Exception: ")(e.what());
+        return QString();
+    }
+
+    auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
+    meta->loadSchema();
+    auto const & keyspaces( meta->getKeyspaces() );
+    auto const & context( keyspaces.find(context_name) );
+    if( context == std::end(keyspaces) )
+    {
+        SNAP_LOG_ERROR("error: could not find \"")(context_name)("\" context in Cassandra.");
+        return QString();
+    }
+
+    QtCassandra::QCassandraSchema::Value const value(context->second->getFields()["replication"]);
+    QVariant const v(value.variant());
+    QString const json(v.toString());
+
+    SNAP_LOG_ERROR("got replication info JSON: ")(json);
+
+    return "1";
+}
+
+
+void cassandra::set_replication_factor(QString const & replication_factor)
+{
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+
+    // initialize the reading of the configuration file
+    //
+    snap::snap_config config("snapdbproxy");
+
+    // get the list of Cassandra hosts, "127.0.0.1" by default
+    //
+    QString cassandra_host_list("127.0.0.1");
+    if(config.has_parameter("cassandra_host_list"))
+    {
+        cassandra_host_list = config[ "cassandra_host_list" ];
+        if(cassandra_host_list.isEmpty())
+        {
+            SNAP_LOG_ERROR("cassandra_host_list cannot be empty.");
+            return;
+        }
+    }
+
+    // get the Cassandra port, 9042 by default
+    //
+    int cassandra_port(9042);
+    if(config.has_parameter("cassandra_port"))
+    {
+        std::size_t pos(0);
+        std::string const port(config["cassandra_port"]);
+        cassandra_port = std::stoi(port, &pos, 10);
+        if(pos != port.length()
+        || cassandra_port < 0
+        || cassandra_port > 65535)
+        {
+            SNAP_LOG_ERROR("cassandra_port to connect to Cassandra must be defined between 0 and 65535.");
+            return;
+        }
+    }
+
+    // create a new Cassandra session
+    //
+    auto session( QtCassandra::QCassandraSession::create() );
+
+    // increase the request timeout "dramatically" because creating a
+    // context is very slow
+    //
+    // note: we do not make use of the QCassandraRequestTimeout class
+    //       because we will just create the context and be done with it
+    //       so there is no real need for us to restore the timeout
+    //       at a later time
+    //
+    session->setTimeout(5 * 60 * 1000); // timeout = 5 min.
+
+    // connect to the Cassandra cluster
+    //
+    try
+    {
+        session->connect( cassandra_host_list, cassandra_port ); // throws on failure!
+        if(!session->isConnected())
+        {
+            // this error should not ever appear since the connect()
+            // function throws on errors, but for completeness...
+            //
+            SNAP_LOG_ERROR("error: could not connect to Cassandra cluster.");
+            return;
+        }
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_ERROR("error: could not connect to Cassandra cluster. Exception: ")(e.what());
+        return;
+    }
+
+    // when called here we have f_session defined but no context yet
+    //
+    QString query_str( QString("ALTER KEYSPACE %1").arg(context_name) );
+
+    query_str += QString( " WITH replication = { 'class': 'NetworkTopologyStrategy', 'dc1': '%1' }" ).arg(replication_factor);
+
+    auto query( QtCassandra::QCassandraQuery::create( session ) );
+    query->query( query_str, 0 );
+    //query->setConsistencyLevel( ... );
+    //query->setTimestamp(...);
+    //query->setPagingSize(...);
+    query->start();
 }
 
 
