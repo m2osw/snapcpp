@@ -304,6 +304,11 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
 
     if(field_name == "snapserver")
     {
+        // fix the value in memory
+        //
+        snap_config snap_cgi(g_configuration_filename);
+        snap_cgi["snapserver"] = new_value;
+
         return f_snap->replace_configuration_value(g_configuration_d_filename, "snapserver", new_value);
     }
 

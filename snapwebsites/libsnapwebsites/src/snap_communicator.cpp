@@ -3445,7 +3445,7 @@ void snap_communicator::snap_tcp_client_message_connection::process_line(QString
         // TODO: what to do here? This could be that the version changed
         //       and the messages are not compatible anymore.
         //
-        SNAP_LOG_ERROR("snap_communicator::snap_tcp_server_client_message_reader_connection::process_line() was asked to process an invalid message (")(line)(")");
+        SNAP_LOG_ERROR("snap_communicator::snap_tcp_client_message_connection::process_line() was asked to process an invalid message (")(line)(")");
     }
 }
 
@@ -5455,6 +5455,10 @@ snap_communicator::snap_tcp_blocking_client_message_connection::snap_tcp_blockin
  * If you called done() before, the done flag is reset back to false.
  * You will have to call done() again if you receive a message that
  * is expected to process and that message marks the end of the process.
+ *
+ * \note
+ * Internally, the function actually calls process_line() which transforms
+ * the line in a message and in turn calls process_message().
  */
 void snap_communicator::snap_tcp_blocking_client_message_connection::run()
 {
