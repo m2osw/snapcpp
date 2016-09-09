@@ -247,7 +247,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
             // TODO: also add uptime, loads and how/much used memory
             //       also change the Kb to Mb, Gb, Tb... as required
             //
-            QString const meminfo(
+            QString meminfo(
                     QString("RAM: %1Kb - Swap: %2Kb")
                         .arg((static_cast<long long>(info.totalram) + (static_cast<long long>(info.totalhigh) << 32)) * static_cast<long long>(info.mem_unit) / 1024LL)
                         .arg(static_cast<long long>(info.totalswap) * static_cast<long long>(info.mem_unit) / 1024LL));
@@ -260,6 +260,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                 if(stat("/usr/sbin/cassandra", &st) == 0)
                 {
                     status = snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT;
+                    meminfo += " (WARNING: You have a swap file on a system running Cassandra. This is not recommended.)";
                 }
             }
             snap_manager::status_t const memory(
