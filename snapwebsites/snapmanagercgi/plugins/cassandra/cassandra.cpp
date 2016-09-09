@@ -1149,32 +1149,40 @@ QString cassandra::get_replication_factor()
         return QString();
     }
 
-    auto fields(context->second->getFields());
-    for(auto f = fields.begin(); f != fields.end(); ++f)
-    {
-        SNAP_LOG_ERROR("field: ")(f->first);
-    }
+//    auto fields(context->second->getFields());
+//    for(auto f = fields.begin(); f != fields.end(); ++f)
+//    {
+//        SNAP_LOG_ERROR("field: ")(f->first);
+//    }
 
-    QtCassandra::QCassandraSchema::Value const & value(context->second->getFields()["replication"]);
-SNAP_LOG_ERROR("value type: ")(static_cast<int>(value.type()));
+    auto const & fields(context->second->getFields());
+    auto const replication(fields.find("replication"));
+    if(replication == fields.end())
+    {
+        SNAP_LOG_ERROR("error: could not find \"replication\" as one of the context fields.");
+        return QString();
+    }
+    //QtCassandra::QCassandraSchema::Value const & value(replication->second);
+//SNAP_LOG_ERROR("value type: ")(static_cast<int>(value.type()));
     //QVariant const v(value.variant());
     //QString const json(v.toString());
 
-    QtCassandra::QCassandraSchema::Value::map_t const map(value.map());
-for(auto m : map)
-{
-    SNAP_LOG_ERROR("map: [")(m.first)("] value type: ")(static_cast<int>(m.second.type()));
-}
+    QtCassandra::QCassandraSchema::Value::map_t const map(replication->second.map());
+//for(auto m : map)
+//{
+//    SNAP_LOG_ERROR("map: [")(m.first)("] value type: ")(static_cast<int>(m.second.type()));
+//}
     auto const item(map.find("dc1"));
-    if(item != map.end())
+    if(item == map.end())
     {
-        SNAP_LOG_ERROR("got item with type: ")(static_cast<int>(item->second.type()));
-        SNAP_LOG_ERROR("Value as string: ")(item->second.variant().toString());
+        SNAP_LOG_ERROR("error: could not find \"dc1\" in the context replication definition.");
+        return QString();
     }
 
-    SNAP_LOG_ERROR("got replication info JSON: ")("...");
+//SNAP_LOG_ERROR("got item with type: ")(static_cast<int>(item->second.type()));
+//SNAP_LOG_ERROR("Value as string: ")(item->second.variant().toString());
 
-    return "1";
+    return item->second.variant().toString();
 }
 
 
