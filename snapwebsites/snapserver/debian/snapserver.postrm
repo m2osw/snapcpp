@@ -3,11 +3,6 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-PACKAGENAME=snapserver
-if systemctl is-active ${PACKAGENAME}
-then
-    systemctl stop ${PACKAGENAME}
-fi
 
 # Remove files representing each service offered by this package
 #
@@ -16,6 +11,7 @@ rm -f $SERVICES_DIR/snapserver.service
 
 if [ "$1" = "purge" ]
 then
+    PACKAGENAME=snapserver
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log
 fi

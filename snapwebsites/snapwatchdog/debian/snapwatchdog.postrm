@@ -3,12 +3,6 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-PACKAGENAME=snapwatchdog
-if systemctl is-active ${PACKAGENAME}
-then
-    systemctl stop ${PACKAGENAME}
-fi
-
 # Remove files representing each service offered by this package
 #
 SERVICES_DIR=/usr/share/snapwebsites/services
@@ -16,6 +10,8 @@ rm -f $SERVICES_DIR/snapwatchdog.service
 
 if [ "$1" = "purge" ]
 then
+    PACKAGENAME=snapwatchdog
+
     # Remove data directory
     #
     rm -rf /var/lib/snapwebsites/${PACKAGENAME}

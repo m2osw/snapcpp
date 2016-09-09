@@ -24,7 +24,7 @@ then
 
     systemctl daemon-reload
 
-    for pkg in snapbackend snapsendmail snapimages snappagelist
+    for pkg in snapsendmail snapimages snappagelist
     do
         if systemctl is-enabled ${pkg} 2> /dev/null
         then

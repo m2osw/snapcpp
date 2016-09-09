@@ -1,8 +1,18 @@
+controlledvars (1.4.16.508~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 09 Sep 2016 02:00:53 -0700
+
 controlledvars (1.4.16.507~xenial) xenial; urgency=high
 
   * Nightly build.
 
+<<<<<<< HEAD
  -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:01 -0700
+=======
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 17:47:07 -0700
+>>>>>>> SNAP-436
 
 controlledvars (1.4.16.506~xenial) xenial; urgency=high
 
