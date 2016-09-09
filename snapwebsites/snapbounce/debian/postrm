@@ -3,7 +3,7 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-delgroup snapwebsites postdrop
+delgroup --only-if-empty snapwebsites postdrop
 
 #DEBHELPER#
 
