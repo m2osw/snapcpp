@@ -1210,7 +1210,12 @@ void server::verify_server_name(std::string & server_name)
             // the dash is not acceptable in our server name
             // replace it with an underscore
             //
-            SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dash character (-) which is not supported by snap. Replacing with an underscore (_). If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+            SNAP_LOG_WARNING("Hostname \"")
+                            (std::string(server_name))
+                            ("\" includes a dash character (-) which is not supported by snap."
+                             " Replacing with an underscore (_). If that is not what you expect,"
+                             " edit \"/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf\""
+                             " and set the name as you want it in \"server_name=...\"");
             name += '_';
         }
         else if(*s >= 'A' && *s <= 'Z')
