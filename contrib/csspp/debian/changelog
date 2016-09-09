@@ -2,7 +2,11 @@ csspp (1.0.10.188~xenial) xenial; urgency=high
 
   * Nightly build.
 
+<<<<<<< HEAD
  -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:04 -0700
+=======
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 17:47:04 -0700
+>>>>>>> SNAP-436
 
 csspp (1.0.10.187~xenial) xenial; urgency=high
 

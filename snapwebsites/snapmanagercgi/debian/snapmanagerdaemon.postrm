@@ -3,12 +3,6 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-PACKAGENAME=snapmanagerdaemon
-if systemctl is-active ${PACKAGENAME}
-then
-    systemctl stop ${PACKAGENAME}
-fi
-
 # Remove files representing each service offered by this package
 #
 SERVICES_DIR=/usr/share/snapwebsites/services
@@ -21,6 +15,7 @@ then
     rm -f /var/cache/snapwebsites/apt-check.output
 
     # delete the logs if any
+    PACKAGENAME=snapmanagerdaemon
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 fi

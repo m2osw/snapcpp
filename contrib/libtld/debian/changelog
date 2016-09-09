@@ -2,7 +2,11 @@ libtld (1.5.1.453~xenial) xenial; urgency=high
 
   * Nightly build.
 
+<<<<<<< HEAD
  -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:06 -0700
+=======
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 17:47:05 -0700
+>>>>>>> SNAP-436
 
 libtld (1.5.1.452~xenial) xenial; urgency=high
 

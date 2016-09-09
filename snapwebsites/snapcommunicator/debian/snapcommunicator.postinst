@@ -49,20 +49,6 @@ then
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
-
-    # enable on very first installation
-    #
-    if test -z "$2"
-    then
-        systemctl enable ${PKGNAME}
-    fi
-
-    # Bump the service if it is enabled
-    #
-    if systemctl is-enabled ${PKGNAME} 2> /dev/null
-    then
-        systemctl start ${PKGNAME}
-    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent

@@ -2,7 +2,11 @@ log4cplus (1.2.0.536~xenial) xenial; urgency=high
 
   * Nightly build.
 
+<<<<<<< HEAD
  -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:01 -0700
+=======
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 17:47:05 -0700
+>>>>>>> SNAP-436
 
 log4cplus (1.2.0.535~xenial) xenial; urgency=high
 
