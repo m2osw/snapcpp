@@ -961,6 +961,10 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
             tr_classes << "modified";
             break;
 
+        case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
+            tr_classes << "highlight";
+            break;
+
         case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
             tr_classes << "warnings";
             break;
