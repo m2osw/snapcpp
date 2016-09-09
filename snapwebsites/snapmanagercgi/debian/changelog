@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.22.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:04 -0700
+
 snapmanagercgi (1.0.22.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the VPN script name so it is defined in one place and

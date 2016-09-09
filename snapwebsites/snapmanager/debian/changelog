@@ -1,3 +1,9 @@
+snapmanager (1.1.0.267~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:03 -0700
+
 snapmanager (1.1.0.266~xenial) xenial; urgency=high
 
   * Nightly build.
