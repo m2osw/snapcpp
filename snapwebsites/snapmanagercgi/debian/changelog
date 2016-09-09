@@ -1,8 +1,8 @@
-snapmanagercgi (1.0.22.1~xenial) xenial; urgency=high
+snapmanagercgi (1.0.23.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added the highlight class that was still missing.
 
- -- Build Server <build@m2osw.com>  Thu, 08 Sep 2016 19:40:04 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Sep 2016 19:40:04 -0700
 
 snapmanagercgi (1.0.22.0~xenial) xenial; urgency=high
 
