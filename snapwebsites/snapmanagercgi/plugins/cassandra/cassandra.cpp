@@ -411,8 +411,8 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   get_plugin_name()
                 , s.get_field_name()
                 ,   snap_manager::form::FORM_BUTTON_RESET
-                  | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
                   | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
         QString const user_name(s.get_field_name().mid(8));
@@ -445,8 +445,8 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   get_plugin_name()
                 , s.get_field_name()
                 ,   snap_manager::form::FORM_BUTTON_RESET
-                  | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
                   | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
         QString const user_name(s.get_field_name().mid(8));
@@ -1147,6 +1147,12 @@ QString cassandra::get_replication_factor()
     {
         SNAP_LOG_ERROR("error: could not find \"")(context_name)("\" context in Cassandra.");
         return QString();
+    }
+
+    auto fields(context->second->getFields());
+    for(auto f = fields.begin(); f != fields.end(); ++f)
+    {
+        SNAP_LOG_ERROR("field: ")(f->first);
     }
 
     QtCassandra::QCassandraSchema::Value const value(context->second->getFields()["replication"]);
