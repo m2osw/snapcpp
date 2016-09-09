@@ -251,7 +251,22 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                     QString("RAM: %1Kb - Swap: %2Kb")
                         .arg((static_cast<long long>(info.totalram) + (static_cast<long long>(info.totalhigh) << 32)) * static_cast<long long>(info.mem_unit) / 1024LL)
                         .arg(static_cast<long long>(info.totalswap) * static_cast<long long>(info.mem_unit) / 1024LL));
-            snap_manager::status_t const memory(snap_manager::status_t::state_t::STATUS_STATE_INFO, get_plugin_name(), "memory", meminfo);
+            snap_manager::status_t::state_t status(snap_manager::status_t::state_t::STATUS_STATE_INFO);
+            if(info.totalswap > 0)
+            {
+                // there should not be a swap file along Cassandra
+                //
+                struct stat st;
+                if(stat("/usr/sbin/cassandra", &st) == 0)
+                {
+                    status = snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT;
+                }
+            }
+            snap_manager::status_t const memory(
+                                  status
+                                , get_plugin_name()
+                                , "memory"
+                                , meminfo);
             server_status.set_field(memory);
         }
     }

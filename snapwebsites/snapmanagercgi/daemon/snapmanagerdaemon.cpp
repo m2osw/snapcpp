@@ -633,7 +633,7 @@ void manager_daemon::unreachable_message(snap::snap_communicator_message const &
     //
     snap_addr::addr who_addr(snap_addr::addr((message.get_parameter("who") + ":123").toUtf8().data(), "tcp"));
 
-    // retreive the list of servers (data-path/*,db file names)
+    // retrieve the list of servers (<data-path>/cluster-status/*.db file names)
     //
     std::vector<std::string> const servers(get_list_of_servers());
 

@@ -68,8 +68,12 @@ namespace
  * Note that our reader ignores \r characters so this is not currently
  * a 100% exact match, but since only our application is expected to
  * create / read these files, we are not too concerned.
+ *
+ * v1 -- very first version
+ * v2 -- changed format to include error level
+ * v3 -- added error level [highlight]
  */
-char const g_status_file_magic[] = "Snap! Status v2";
+char const g_status_file_magic[] = "Snap! Status v3";
 
 }
 // no name namespace

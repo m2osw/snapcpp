@@ -1018,6 +1018,10 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
                     field_state = "modified";
                     break;
 
+                case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
+                    field_state = "highlight";
+                    break;
+
                 case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
                     field_state = "warning";
                     break;
