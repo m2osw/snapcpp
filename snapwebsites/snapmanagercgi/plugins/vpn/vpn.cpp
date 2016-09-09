@@ -490,7 +490,9 @@ bool vpn::apply_setting ( QString const & button_name
     {
         // TODO: use variable for "/var/lib/snapwebsites"
         //
-        QFile create_script( "/var/lib/snapwebsites/create_client_certs.sh" );
+        QString const cache_path(f_snap->get_cache_path());
+        QString const script_filename( QString("%1/create_client_certs.sh").arg(cache_path) );
+        QFile create_script( script_filename );
         //
         // Overwrite the script every time
         //
@@ -522,11 +524,13 @@ bool vpn::apply_setting ( QString const & button_name
         for( auto client : clients )
         {
             client.remove('\r'); // Get rid of CRs
-            if( QProcess::execute( "/tmp/create_client_certs.sh", {server_ip, client} ) != 0 )
+            int const r(QProcess::execute( script_filename, {server_ip, client} ));
+            if( r != 0 )
             {
                 SNAP_LOG_ERROR("Could not execute client creation script! IP=")
                     (qPrintable(server_ip))
-                    (", client=")(qPrintable(client));
+                    (", client=")(qPrintable(client))
+                    (", exitcode=")(r);
             }
         }
         return true;
