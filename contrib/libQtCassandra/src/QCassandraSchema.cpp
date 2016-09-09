@@ -105,7 +105,7 @@ void SessionMeta::loadSchema()
             );
         while( cass_iterator_next( fields_iter.get() ) )
         {
-            CassError rc = cass_iterator_get_meta_field_name( fields_iter.get(), &name, &len );
+            const CassError rc = cass_iterator_get_meta_field_name( fields_iter.get(), &name, &len );
             if( rc != CASS_OK )
             {
                 throw std::runtime_error( "Cannot get field name from iterator!" );
