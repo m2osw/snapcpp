@@ -1155,11 +1155,24 @@ QString cassandra::get_replication_factor()
         SNAP_LOG_ERROR("field: ")(f->first);
     }
 
-    QtCassandra::QCassandraSchema::Value const value(context->second->getFields()["replication"]);
-    QVariant const v(value.variant());
-    QString const json(v.toString());
+    QtCassandra::QCassandraSchema::Value const & value(context->second->getFields()["replication"]);
+SNAP_LOG_ERROR("value type: ")(static_cast<int>(value.type()));
+    //QVariant const v(value.variant());
+    //QString const json(v.toString());
 
-    SNAP_LOG_ERROR("got replication info JSON: ")(json);
+    QtCassandra::QCassandraSchema::Value::map_t const map(value.map());
+for(auto m : map)
+{
+    SNAP_LOG_ERROR("map: [")(m.first)("] value type: ")(static_cast<int>(m.second.type()));
+}
+    auto const item(map.find("dc1"));
+    if(item != map.end())
+    {
+        SNAP_LOG_ERROR("got item with type: ")(static_cast<int>(item->second.type()));
+        SNAP_LOG_ERROR("Value as string: ")(item->second.variant().toString());
+    }
+
+    SNAP_LOG_ERROR("got replication info JSON: ")("...");
 
     return "1";
 }
