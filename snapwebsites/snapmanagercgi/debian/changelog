@@ -1,8 +1,8 @@
-snapmanagercgi (1.0.24.1~xenial) xenial; urgency=high
+snapmanagercgi (1.0.25.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added code to support changing the replication factor.
 
- -- Build Server <build@m2osw.com>  Fri, 09 Sep 2016 02:00:55 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 09 Sep 2016 02:00:55 -0700
 
 snapmanagercgi (1.0.24.0~xenial) xenial; urgency=high
 
