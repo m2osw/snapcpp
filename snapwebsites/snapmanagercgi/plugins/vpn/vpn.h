@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "lib/manager.h"
-#include "lib/plugin_base.h"
+#include "snapmanager/manager.h"
+#include "snapmanager/plugin_base.h"
 
 #include <snapwebsites/plugins.h>
 
@@ -78,9 +78,9 @@ public:
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);
 
-private:
-    bool                    is_installed();
+    static bool             is_installed();
 
+private:
     snap_manager::manager * f_snap = nullptr;
 
     QString                 get_server_ip() const;

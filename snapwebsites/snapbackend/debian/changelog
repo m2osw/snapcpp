@@ -1,3 +1,33 @@
+snapbackend (1.0.3.19~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:16 -0700
+
+snapbackend (1.0.3.18~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:36 -0700
+
+snapbackend (1.0.3.17~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:42 -0700
+
+snapbackend (1.0.3.16~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:50 -0700
+
+snapbackend (1.0.3.15~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 06 Sep 2016 02:00:54 -0700
+
 snapbackend (1.0.3.14~xenial) xenial; urgency=high
 
   * Nightly build.

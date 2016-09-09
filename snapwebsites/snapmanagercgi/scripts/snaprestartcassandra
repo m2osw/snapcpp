@@ -28,7 +28,7 @@ PID=`cat $CASSANDRA_PID`
 #
 systemctl stop cassandra
 
-# Block until that process really quit (systemd may "lose its patience!")
+# Block until that process really quits (systemd may "lose its patience!")
 #
 while kill -0 $PID >/dev/null 2>&1
 do

@@ -21,15 +21,19 @@
 
 // our lib
 //
-#include "lib/form.h"
+#include "snapmanager/form.h"
 
 // snapwebsites lib
 //
-#include "file_content.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "process.h"
+#include <snapwebsites/file_content.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
+
+// Qt lib
+//
+#include <QFile>
 
 // C++ lib
 //
@@ -37,7 +41,7 @@
 
 // last entry
 //
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(cassandra, 1, 0)
@@ -47,6 +51,129 @@ namespace
 {
 
 char const * g_cassandra_yaml = "/etc/cassandra/cassandra.yaml";
+
+
+class cassandra_info
+{
+public:
+    cassandra_info()
+        : f_cassandra_configuration(g_cassandra_yaml)
+    {
+    }
+
+    bool read_configuration()
+    {
+        // try reading only once
+        //
+        if(!f_read)
+        {
+            f_read = true;
+            if(f_cassandra_configuration.read_all())
+            {
+                f_valid = true;
+            }
+        }
+
+        return f_valid;
+    }
+
+    bool exists()
+    {
+        return f_cassandra_configuration.exists();
+    }
+
+    std::string retrieve_parameter(bool & found, std::string const & parameter_name)
+    {
+        found = false;
+
+        // get the file content in a string reference
+        //
+        std::string const & content = f_cassandra_configuration.get_content();
+
+        // search for the parameter
+        //
+        std::string::size_type const pos(snap_manager::manager::search_parameter(content, parameter_name + ":", 0, true));
+
+        // make sure that there is nothing "weird" before that name
+        // (i.e. "rpc_address" and "broadcast_rpc_address")
+        //
+        if(pos != std::string::size_type(-1)
+        && (pos == 0
+        || content[pos - 1] == '\r'
+        || content[pos - 1] == '\n'
+        || content[pos - 1] == '\t'
+        || content[pos - 1] == ' '))
+        {
+            // found it, get the value
+            //
+            std::string::size_type const p1(content.find_first_not_of(" \t", pos + parameter_name.length() + 1));
+            if(p1 != std::string::size_type(-1))
+            {
+                std::string::size_type p2(content.find_first_of("\r\n", p1));
+                if(p2 != std::string::size_type(-1))
+                {
+                    found = true;
+
+                    // trim spaces at the end
+                    while(p2 > p1 && isspace(content[p2 - 1]))
+                    {
+                        --p2;
+                    }
+                    if(content[p1] == '"' || content[p1] == '\''
+                    && p2 - 1 > p1
+                    && content[p2 - 1] == content[p1])
+                    {
+                        // remove quotation (this is random in this configuration file)
+                        //
+                        return content.substr(p1 + 1, p2 - p1 - 2);
+                    }
+                    else
+                    {
+                        return content.substr(p1, p2 - p1);
+                    }
+                }
+            }
+        }
+
+        return std::string();
+    }
+
+private:
+    file_content        f_cassandra_configuration;
+    bool                f_read = false;
+    bool                f_valid = false;
+};
+
+
+void create_field(snap_manager::server_status & server_status, cassandra_info & info, QString const & plugin_name, std::string const & parameter_name)
+{
+    bool found(false);
+    std::string const value(info.retrieve_parameter(found, parameter_name));
+    if(found)
+    {
+        snap_manager::status_t const conf_field(
+                          snap_manager::status_t::state_t::STATUS_STATE_INFO
+                        , plugin_name
+                        , QString::fromUtf8(parameter_name.c_str())
+                        , QString::fromUtf8(value.c_str()));
+        server_status.set_field(conf_field);
+
+    }
+    else
+    {
+        // we got the file, but could not find the field as expected
+        //
+        snap_manager::status_t const conf_field(
+                          snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                        , plugin_name
+                        , QString::fromUtf8(parameter_name.c_str())
+                        , QString("\"%1\" is not defined in \"%2\".").arg(parameter_name.c_str()).arg(g_cassandra_yaml));
+        server_status.set_field(conf_field);
+    }
+}
+
+
+
 
 } // no name namespace
 
@@ -176,6 +303,9 @@ void cassandra::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(cassandra, "server", snap_manager::manager, retrieve_status, _1);
     SNAP_LISTEN(cassandra, "server", snap_manager::manager, handle_affected_services, _1);
+    SNAP_LISTEN(cassandra, "server", snap_manager::manager, add_plugin_commands, _1);
+    SNAP_LISTEN(cassandra, "server", snap_manager::manager, process_plugin_message, _1, _2);
+    SNAP_LISTEN0(cassandra, "server", snap_manager::manager, communication_ready);
 }
 
 
@@ -194,17 +324,29 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
 
     // get the data
     //
-    file_content fc(g_cassandra_yaml);
-    if(fc.read_all())
+    cassandra_info info;
+    if(info.read_configuration())
     {
-        std::string const & content(fc.get_content());
-        retrieve_parameter(server_status, content, "cluster_name");
-        retrieve_parameter(server_status, content, "seeds");
-        retrieve_parameter(server_status, content, "listen_address");
-        retrieve_parameter(server_status, content, "rpc_address");
-        retrieve_parameter(server_status, content, "broadcast_rpc_address");
+        create_field(server_status, info, get_plugin_name(), "cluster_name"         );
+        create_field(server_status, info, get_plugin_name(), "seeds"                );
+        create_field(server_status, info, get_plugin_name(), "listen_address"       );
+        create_field(server_status, info, get_plugin_name(), "rpc_address"          );
+        create_field(server_status, info, get_plugin_name(), "broadcast_rpc_address");
+
+        // also add a "join a cluster" field
+        //
+        // TODO: add the field ONLY if the node does not include a
+        //       snap_websites context!
+        {
+            snap_manager::status_t const conf_field(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "join_a_cluster"
+                            , "");
+            server_status.set_field(conf_field);
+        }
     }
-    else if(fc.exists())
+    else if(info.exists())
     {
         // create an error field which is not editable
         //
@@ -217,78 +359,6 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
     }
     // else -- file does not exist
 }
-
-
-void cassandra::retrieve_parameter(snap_manager::server_status & server_status, std::string const & content, std::string const & parameter_name)
-{
-    // could read the file, go on
-    //
-    bool found(false);
-    std::string::size_type const pos(snap_manager::manager::search_parameter(content, parameter_name + ":", 0, true));
-
-    // make sure that there is nothing "weird" before that name
-    // (i.e. "rpc_address" and "broadcast_rpc_address")
-    //
-    if(pos != std::string::size_type(-1)
-    && (pos == 0
-    || content[pos - 1] == '\r'
-    || content[pos - 1] == '\n'
-    || content[pos - 1] == '\t'
-    || content[pos - 1] == ' '))
-    {
-        // found it, get the value
-        //
-        std::string::size_type const p1(content.find_first_not_of(" \t", pos + parameter_name.length() + 1));
-        if(p1 != std::string::size_type(-1))
-        {
-            std::string::size_type p2(content.find_first_of("\r\n", p1));
-            if(p2 != std::string::size_type(-1))
-            {
-                std::string value;
-
-                // trim spaces at the end
-                while(p2 > p1 && isspace(content[p2 - 1]))
-                {
-                    --p2;
-                }
-                if(content[p1] == '"' || content[p1] == '\''
-                && p2 - 1 > p1
-                && content[p2 - 1] == content[p1])
-                {
-                    // remove quotation (this is random in this configuration file)
-                    //
-                    value = content.substr(p1 + 1, p2 - p1 - 2);
-                }
-                else
-                {
-                    value = content.substr(p1, p2 - p1);
-                }
-
-                snap_manager::status_t const conf_field(
-                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                , get_plugin_name()
-                                , QString::fromUtf8(parameter_name.c_str())
-                                , QString::fromUtf8(value.c_str()));
-                server_status.set_field(conf_field);
-
-                found = true;
-            }
-        }
-    }
-
-    if(!found)
-    {
-        // we got the file, but could not find the field as expected
-        //
-        snap_manager::status_t const conf_field(
-                          snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                        , get_plugin_name()
-                        , QString::fromUtf8(parameter_name.c_str())
-                        , QString("\"%1\" is not defined in \"%2\".").arg(parameter_name.c_str()).arg(g_cassandra_yaml));
-        server_status.set_field(conf_field);
-    }
-}
-
 
 
 
@@ -482,6 +552,39 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
         return true;
     }
 
+    if(s.get_field_name() == "join_a_cluster")
+    {
+        // the name of the computer to connect to
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        // TODO: get the list of names and show as a dropdown
+        //
+        QString const user_name(s.get_field_name().mid(8));
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Enter the server_name of the computer to join:"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>The <code>server_name</code> parameter is used to contact that specific server, get the"
+                         " Cassandra node information from that server, and then add the Cassandra"
+                         " node running on this computer to the one on that other computer.</p>"
+                         "<p><strong>WARNING:</strong> There is currently no safeguard for this"
+                         " feature. The computer will proceed and possibly destroy some of your"
+                         " data in the process if this current computer node is not a new node."
+                         " If you have a replication factor larger than 1, then it should be okay.<p>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     return false;
 }
 
@@ -588,6 +691,31 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
         return true;
     }
 
+    if(field_name == "join_a_cluster")
+    {
+        if(new_value == f_snap->get_server_name())
+        {
+            SNAP_LOG_ERROR("trying to join yourself (\"")(new_value)("\") is not going to work.");
+        }
+        else if(f_joining)
+        {
+            SNAP_LOG_ERROR("trying to join when you already ran that process. If it failed, restart snapmanagerdaemon and try again.");
+        }
+        else
+        {
+            f_joining = true;
+
+            snap::snap_communicator_message cassandra_query;
+            cassandra_query.set_server(new_value);
+            cassandra_query.set_service("snapmanagerdaemon");
+            cassandra_query.set_command("CASSANDRAQUERY");
+            get_cassandra_info(cassandra_query);
+            f_snap->forward_message(cassandra_query);
+        }
+
+        return true;
+    }
+
     return false;
 }
 
@@ -642,6 +770,253 @@ void cassandra::on_handle_affected_services(std::set<QString> & affected_service
     }
 }
 
+
+void cassandra::on_communication_ready()
+{
+    // now we can broadcast our CASSANDRAQUERY so we have
+    // information about all our accomplices
+    //
+    // IMPORTANT: this won't work properly if all the other nodes are
+    //            not yet fired up; for that reason the CASSANDRAQUERY
+    //            includes the information that the CASSANDRAFIELDS
+    //            reply includes because that way we avoid re-sending
+    //            the message when we later receive a CASSANDRAQUERY
+    //            message from a node that just woke up
+    //
+    // TODO:
+    // At this point, I am thinking we should not send this message
+    // until later enough so we know whether Cassandra started and
+    // whether the context is defined or not... but I'm not implementing
+    // that now.
+    //
+    //snap::snap_communicator_message cassandra_query;
+    //cassandra_query.set_service("*");
+    //cassandra_query.set_command("CASSANDRAQUERY");
+    //get_cassandra_info(cassandra_query);
+    //f_snap->forward_message(cassandra_query);
+}
+
+
+void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_commands)
+{
+    understood_commands << "CASSANDRAQUERY";
+    understood_commands << "CASSANDRAFIELDS";
+}
+
+
+void cassandra::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
+{
+    QString const command(message.get_command());
+
+    if(command == "CASSANDRAFIELDS")
+    {
+        //QString const server(message.get_sent_from_server());
+
+        //
+        // WARNING: Right now we assume that this reply is directly
+        //          a reply to a CASSANDRAQUERY we sent to a specific
+        //          computer and as a result we JOIN that other computer
+        //          Cassandra cluster... We still have a flag, to make
+        //          sure we are in the correct state, but as we want
+        //          to implement a CASSANDRAQUERY that gets broadcast
+        //          we may need to fix up the algorithm quite a bit
+        //          (and actually the join won't require sending the
+        //          CASSANDRAQUERY because we should already have the
+        //          information anyway...)
+        //
+
+        if(f_joining)
+        {
+            join_cassandra_node(message);
+            f_joining = false;
+        }
+
+        processed = true;
+    }
+    else if(command == "CASSANDRAQUERY")
+    {
+        // reply with a CASSANDRAINFO directly to the computer that
+        // asked for it
+        //
+        snap::snap_communicator_message cassandra_status;
+        cassandra_status.reply_to(message);
+        cassandra_status.set_command("CASSANDRAFIELDS");
+        get_cassandra_info(cassandra_status);
+        f_snap->forward_message(cassandra_status);
+
+        processed = true;
+    }
+}
+
+
+void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
+{
+    cassandra_info info;
+
+    // check whether the configuration file exists, if not then do not
+    // bother, Cassandra is not even installed
+    //
+    struct stat st;
+    if(stat("/usr/sbin/cassandra", &st) != 0
+    || !info.read_configuration())
+    {
+        status.add_parameter("status", "not-installed");
+        return;
+    }
+
+    status.add_parameter("status", "installed");
+
+    // if installed we want to include the "cluster_name" and "seeds"
+    // parameters
+    //
+    bool found(false);
+    std::string const cluster_name(info.retrieve_parameter(found, "cluster_name"));
+    if(found)
+    {
+        status.add_parameter("cluster_name", QString::fromUtf8(cluster_name.c_str()));
+    }
+
+    found = false;
+    std::string const seeds(info.retrieve_parameter(found, "seeds"));
+    if(found)
+    {
+        status.add_parameter("seeds", QString::fromUtf8(seeds.c_str()));
+    }
+
+#if 0
+    // the following actually requires polling for the port...
+    //
+    // i.e. we cannot assume that cassandra is not running just because
+    // we cannot yet connect to the port...
+    //
+    // polling can be done without connecting by reading the /proc/net/tcp
+    // file and analyzing the data (the field names are defined on the
+    // first line)
+    //
+    // There is the code from netstat.c which parses one of those lines:
+    //
+    //   num = sscanf(line,
+    //   "%d: %64[0-9A-Fa-f]:%X %64[0-9A-Fa-f]:%X %X %lX:%lX %X:%lX %lX %d %d %ld %512s\n",
+    //       &d, local_addr, &local_port, rem_addr, &rem_port, &state,
+    //       &txq, &rxq, &timer_run, &time_len, &retr, &uid, &timeout, &inode, more);
+    //
+    try
+    {
+        // if the connection fails, we cannot have either of the following
+        // fields so the catch() makes sure to avoid them
+        //
+        int port(9042);
+        QString const port_str(snap_dbproxy_conf["cassandra_port"]);
+        if(!port_str.isEmpty())
+        {
+            bool ok(false);
+            port = port_str.toInt(&ok, 10);
+            if(!ok
+            || port <= 0
+            || port > 65535)
+            {
+                SNAP_LOG_ERROR( "Invalid cassandra_port specification in snapdbproxy.conf (invalid number, smaller than 1 or larger than 65535)" );
+                port = 0;
+            }
+        }
+        if(port > 0)
+        {
+            auto session( QtCassandra::QCassandraSession::create() );
+            session->connect(snap_dbproxy_conf["cassandra_host_list"], port);
+            if( !session->isConnected() )
+            {
+                SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list and cassandra_port in snapdbproxy.conf!" );
+            }
+            else
+            {
+                auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
+                meta->loadSchema();
+                auto const & keyspaces( meta->getKeyspaces() );
+                QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+                if( keyspaces.find(context_name) == std::end(keyspaces) )
+                {
+                    // no context yet, offer to create the context
+                    //
+                    snap_manager::status_t const create_context(
+                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                , get_plugin_name()
+                                , "cassandra_create_context"
+                                , context_name
+                                );
+                    server_status.set_field(create_context);
+                }
+                else
+                {
+                    // database is available and context is available,
+                    // offer to create the tables (it should be automatic
+                    // though, but this way we can click on this one last
+                    // time before installing a website)
+                    //
+                    snap_manager::status_t const create_tables(
+                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                , get_plugin_name()
+                                , "cassandra_create_tables"
+                                , context_name
+                                );
+                    server_status.set_field(create_tables);
+                }
+            }
+        }
+    }
+    catch( std::exception const & e )
+    {
+        SNAP_LOG_ERROR("Caught exception: ")(e.what());
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("Caught unknown exception!");
+    }
+#endif
+}
+
+
+void cassandra::join_cassandra_node(snap::snap_communicator_message const & message)
+{
+    QString const cluster_name(message.get_parameter("cluster_name"));
+    QString const seeds(message.get_parameter("seeds"));
+
+    QString preamble("#!/bin/sh\n");
+
+    preamble += "BUNDLE_UPDATE_CLUSTER_NAME=";
+    preamble += cluster_name;
+    preamble += "\n";
+
+    preamble += "BUNDLE_UPDATE_SEEDS=";
+    preamble += seeds;
+    preamble += "\n";
+
+    QFile script_original(":/manager-plugins/cassandra/join_cassandra_node.sh");
+    if(!script_original.open(QIODevice::ReadOnly))
+    {
+        SNAP_LOG_ERROR("failed to open the join_cassandra_node.sh resouce file.");
+        return;
+    }
+    QByteArray const original(script_original.readAll());
+
+    QByteArray const script(preamble.toUtf8() + original);
+
+    // Put the script in the cache and run it
+    //
+    // TODO: add a /scripts/ sub-directory so all scripts can be found
+    //       there instead of the top directory?
+    //
+    QString const cache_path(f_snap->get_cache_path());
+    std::string const script_filename(std::string(cache_path.toUtf8().data()) + "/join_cassandra_node.sh");
+    snap::file_content output_file(script_filename);
+    output_file.set_content(script.data());
+    output_file.write_all();
+    chmod(script_filename.c_str(), 0700);
+
+    snap::process p("join cassandra node");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+    p.set_command(QString::fromUtf8(script_filename.c_str()));
+    NOTUSED(p.run());           // errors are automatically logged by snap::process
+}
 
 
 SNAP_PLUGIN_END()

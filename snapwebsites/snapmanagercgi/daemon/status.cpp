@@ -38,18 +38,21 @@
 
 // our lib
 //
-#include "lib/plugin_base.h"
+#include "snapmanager/plugin_base.h"
 
 // snapwebsites lib
 //
-#include "chownnm.h"
-#include "log.h"
+#include <snapwebsites/chownnm.h>
+#include <snapwebsites/log.h>
 
 // C lib
 //
 #include <sys/file.h>
 #include <sys/stat.h>
 
+// last entry
+//
+#include <snapwebsites/poison.h>
 
 namespace snap_manager
 {

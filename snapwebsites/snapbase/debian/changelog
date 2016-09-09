@@ -1,3 +1,33 @@
+snapbase (1.0.3.56~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:19 -0700
+
+snapbase (1.0.3.55~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:37 -0700
+
+snapbase (1.0.3.54~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:45 -0700
+
+snapbase (1.0.3.53~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:50 -0700
+
+snapbase (1.0.3.52~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 06 Sep 2016 02:00:51 -0700
+
 snapbase (1.0.3.51~xenial) xenial; urgency=high
 
   * Nightly build.

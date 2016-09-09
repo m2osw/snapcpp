@@ -48,11 +48,16 @@
       <label>Private Network IPs</label>
       <description>Enter the <strong>space separated</strong> list of IPs of all the computers that may access this computer so we can open the corresponding ports in the firewall.</description>
     </field>
+    <field name="secure_ip" type="input">
+      <label>Secure IP</label>
+      <description>Enter the secure IP of this computer if you have one. This is most often the <code>tun0</code> IP address created by OpenVPN. An address such as 10.8.0.34. This field can remain empty if you are not using OpenVPN or if you want to install the firewall before OpenVPN.</description>
+    </field>
   </fields>
   <affected-services>snapmanagerdaemon</affected-services>
   <packages>snapfirewall</packages>
   <postinst>
-    # Setup the firewall IPs and interfaces
+    # Setup the firewall IPs and interfaces.
+    # Wed Sep  7 13:16:27 PDT 2016: Now edits firewall.conf, instead of the main firewall script.
     #
     sed -i.bak \
       -e "s/@BUNDLE_PUBLIC_IP@/$BUNDLE_INSTALLATION_PUBLIC_IP/" \
@@ -61,7 +66,8 @@
       -e "s/@BUNDLE_PRIVATE_INTERFACE@/$BUNDLE_INSTALLATION_PRIVATE_INTERFACE/" \
       -e "s/@BUNDLE_ADMIN_IPS@/$BUNDLE_INSTALLATION_ADMIN_IPS/" \
       -e "s/@BUNDLE_PRIVATE_NETWORK_IPS@/$BUNDLE_INSTALLATION_PRIVATE_NETWORK_IPS/" \
-            /etc/network/firewall
+      -e "s/@BUNDLE_SECURE_IP@/$BUNDLE_INSTALLATION_SECURE_IP/" \
+            /etc/network/firewall.conf
 
       # We need to put "pre-up /etc/network/firewall" in the interfaces
       # file so the firewall comes back on each reboot

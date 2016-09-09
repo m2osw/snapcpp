@@ -1,3 +1,33 @@
+snapinit (1.0.2.56~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:16 -0700
+
+snapinit (1.0.2.55~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:38 -0700
+
+snapinit (1.0.2.54~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:45 -0700
+
+snapinit (1.0.2.53~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:49 -0700
+
+snapinit (1.0.2.52~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 06 Sep 2016 02:00:55 -0700
+
 snapinit (1.0.2.51~xenial) xenial; urgency=high
 
   * Nightly build.

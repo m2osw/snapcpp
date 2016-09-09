@@ -1,3 +1,33 @@
+log4cplus (1.2.0.535~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:18 -0700
+
+log4cplus (1.2.0.534~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:40 -0700
+
+log4cplus (1.2.0.533~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:45 -0700
+
+log4cplus (1.2.0.532~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:50 -0700
+
+log4cplus (1.2.0.531~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 06 Sep 2016 02:00:53 -0700
+
 log4cplus (1.2.0.530~xenial) xenial; urgency=high
 
   * Nightly build.

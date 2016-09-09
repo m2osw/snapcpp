@@ -21,15 +21,15 @@
 
 // our lib
 //
-#include "lib/form.h"
+#include "snapmanager/form.h"
 
 // snapwebsites lib
 //
-#include "chownnm.h"
-#include "log.h"
-#include "mkdir_p.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/chownnm.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkdir_p.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 // Qt5
 //
@@ -41,7 +41,7 @@
 
 // last entry
 //
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 namespace
@@ -228,7 +228,10 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
     //
     QStringList exts    = {"conf"}; //{"key","crt","conf"};
     QStringList filters;
-    for( auto const &ext : exts ) { filters << QString("*.%1").arg(ext); }
+    for( auto const &ext : exts )
+    {
+        filters << QString("*.%1").arg(ext);
+    }
 
     QDir keys_path;
     keys_path.setPath( "/etc/openvpn/easy-rsa/keys/" );
@@ -247,16 +250,16 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
 
         // create a field for this one, it worked
         //
-        for( auto const &ext : exts )
+        for( auto const & ext : exts )
         {
             QFile file( QString("%1/%2.%3")
                 .arg(info.path())
                 .arg(info.baseName())
                 .arg(ext)
                 );
-            if( file.open( QIODevice::ReadOnly| QIODevice::Text ) )
+            if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
             {
-                QString const name = QString("%1.%2").arg(info.baseName()).arg(ext);
+                QString const name(QString("%1.%2").arg(info.baseName()).arg(ext));
                 QTextStream in(&file);
                 snap_manager::status_t const ctl
                     ( snap_manager::status_t::state_t::STATUS_STATE_INFO
@@ -268,7 +271,7 @@ void vpn::on_retrieve_status(snap_manager::server_status & server_status)
             }
             else
             {
-                QString const errmsg = QString("Cannot open '%1' for reading!").arg(info.filePath());
+                QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
                 SNAP_LOG_ERROR(qPrintable(errmsg));
                 //throw vpn_exception( errmsg );
             }
@@ -485,24 +488,20 @@ bool vpn::apply_setting ( QString const & button_name
 
     if( field_name == CLIENT_ADDNEW_NAME )
     {
-        QFile create_script( "/tmp/create_client_certs.sh" );
+        // TODO: use variable for "/var/lib/snapwebsites"
+        //
+        QFile create_script( "/var/lib/snapwebsites/create_client_certs.sh" );
         //
         // Overwrite the script every time
         //
         create_script.remove();
-        if( !QFile::copy( ":/create_client_certs.sh", create_script.fileName() ) )
+        if( !QFile::copy( ":/manager-plugins/vpn/create_client_certs.sh", create_script.fileName() ) )
         {
-            QString const errmsg = QString("Cannot copy create_client_certs.sh file!");
-            SNAP_LOG_ERROR(qPrintable(errmsg));
+            SNAP_LOG_ERROR("Cannot copy \"")(create_script.fileName())("\" file!");
             return false;
         }
         //
-        create_script.setPermissions
-                ( create_script.permissions()
-                | QFileDevice::ExeOwner
-                | QFileDevice::ExeUser
-                | QFileDevice::ExeGroup
-                );
+        create_script.setPermissions(create_script.permissions() | QFileDevice::ExeOwner);
 
         QStringList clients;
         //

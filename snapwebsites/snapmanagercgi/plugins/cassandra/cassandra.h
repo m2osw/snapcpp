@@ -16,12 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "lib/manager.h"
-#include "lib/plugin_base.h"
+#include "snapmanager/manager.h"
+#include "snapmanager/plugin_base.h"
 
 #include <snapwebsites/plugins.h>
-
-//#include <QDomDocument>
 
 namespace snap
 {
@@ -78,11 +76,16 @@ public:
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);
     void                    on_handle_affected_services(std::set<QString> & affected_services);
+    void                    on_communication_ready();
+    void                    on_add_plugin_commands(snap::snap_string_list & understood_commands);
+    void                    on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed);
 
 private:
-    void                    retrieve_parameter(snap_manager::server_status & server_status, std::string const & content, std::string const & parameter_name);
+    void                    get_cassandra_info(snap::snap_communicator_message & status);
+    void                    join_cassandra_node(snap::snap_communicator_message const & message);
 
     snap_manager::manager * f_snap = nullptr;
+    bool                    f_joining = false;
 };
 
 } // namespace cassandra

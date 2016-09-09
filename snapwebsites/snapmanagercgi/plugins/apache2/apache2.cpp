@@ -21,15 +21,15 @@
 
 // our lib
 //
-#include "lib/form.h"
+#include "snapmanager/form.h"
 
 // snapwebsites lib
 //
-#include "file_content.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "process.h"
+#include <snapwebsites/file_content.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
 
 // C++ lib
 //
@@ -37,7 +37,7 @@
 
 // last entry
 //
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(apache2, 1, 0)

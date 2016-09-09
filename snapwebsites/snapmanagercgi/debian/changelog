@@ -1,20 +1,40 @@
-snapmanagercgi (1.0.16.4~xenial) xenial; urgency=high
+snapmanagercgi (1.0.21.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Mon, 05 Sep 2016 15:35:14 -0700
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:15 -0700
 
-snapmanagercgi (1.0.16.3~xenial) xenial; urgency=high
+snapmanagercgi (1.0.21.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Somehow some messages for local processes make it to other
+    servers.
 
- -- Build Server <build@m2osw.com>  Mon, 05 Sep 2016 02:00:54 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Sep 2016 12:36:39 -0700
 
-snapmanagercgi (1.0.16.2~xenial) xenial; urgency=high
+snapmanagercgi (1.0.20.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Need to open the input file before reading from it.
 
- -- Build Server <build@m2osw.com>  Sun, 04 Sep 2016 02:00:51 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Sep 2016 09:19:39 -0700
+
+snapmanagercgi (1.0.19.0~xenial) xenial; urgency=high
+
+  * Fixed the sending of the CASSANDRAQUERY message.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 07 Sep 2016 09:52:41 -0700
+
+snapmanagercgi (1.0.18.0~xenial) xenial; urgency=high
+
+  * Okay, there is a synchronization problem. I added a sleep() as a
+    temporary hack until we do better...
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 06 Sep 2016 02:00:54 -0700
+
+snapmanagercgi (1.0.17.0~xenial) xenial; urgency=high
+
+  * Trying to understand why apt-get update returns 100 by no error messages.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 06 Sep 2016 02:00:54 -0700
 
 snapmanagercgi (1.0.16.1~xenial) xenial; urgency=high
 
@@ -39,66 +59,6 @@ snapmanagercgi (1.0.13.1~xenial) xenial; urgency=high
   * Added dns plugin.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Sep 2016 18:19:18 -0700
-
-snapmanagercgi (1.0.12.10~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 03 Sep 2016 15:06:50 -0700
-
-snapmanagercgi (1.0.12.9~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 03 Sep 2016 11:45:38 -0700
-
-snapmanagercgi (1.0.12.8~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 03 Sep 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.12.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 02 Sep 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.12.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 01 Sep 2016 15:50:31 -0700
-
-snapmanagercgi (1.0.12.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 01 Sep 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.12.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 31 Aug 2016 02:00:53 -0700
-
-snapmanagercgi (1.0.12.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 30 Aug 2016 02:00:52 -0700
-
-snapmanagercgi (1.0.12.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Mon, 29 Aug 2016 14:35:10 -0700
-
-snapmanagercgi (1.0.12.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Mon, 29 Aug 2016 12:53:46 -0700
 
 snapmanagercgi (1.0.12.0~xenial) xenial; urgency=high
 

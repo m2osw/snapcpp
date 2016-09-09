@@ -1,43 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Until we get snapfirewall to dynamically setup all the rules, here we
 # have a simple script that pushes the ip?tables.rules files to the kernel.
 #
 set -e
 
-# Setup your public (Internet) IP address here
-#
-# For example: 8.8.8.8 and eth0 or enp0s1
-#
-PUBLIC_IP="@BUNDLE_PUBLIC_IP@"
-PUBLIC_INTERFACE="@BUNDLE_PUBLIC_INTERFACE@"
-
-# Setup your private (Internet) IP address here
-#
-# For example: 10.1.1.1 or 192.168.2.2 and eth1 or enp0s3
-#
-PRIVATE_IP="@BUNDLE_PRIVATE_IP@"
-PRIVATE_INTERFACE="@BUNDLE_PRIVATE_INTERFACE@"
-
-# Edit these files to change the firewall settings
-#
-IP4TABLES_CONFIG=/etc/network/ip4tables.rules
-IP6TABLES_CONFIG=/etc/network/ip6tables.rules
-
-# List of space separated IP addresses for your administrators
-#
-# If your computers are remote, make sure to use your static IP
-# addresses. If your computers are on your private network, use
-# private addresses.
-#
-ADMIN_IPS="@BUNDLE_ADMIN_IPS@"
-
-# List of space separated IP addresses to other private network computers
-#
-# These are expected to all be private addresses.
-#
-PRIVATE_NETWORK_IPS="@BUNDLE_PRIVATE_NETWORK_IPS@"
-
+source /etc/network/firewall.conf
 
 # Make sure the user entered all the parameters as expected
 # If installed from the bundle, this will be automatic
@@ -47,7 +15,8 @@ if test "${PUBLIC_IP#*BUNDLE_PUBLIC_IP}" != "${PUBLIC_IP}" \
      || test "${PRIVATE_IP#*BUNDLE_PRIVATE_IP}" != "${PRIVATE_IP}" \
      || test "${PRIVATE_INTERFACE#*BUNDLE_PRIVATE_INTERFACE}" != "${PRIVATE_INTERFACE}" \
      || test "${ADMIN_IPS#*BUNDLE_ADMIN_IPS}" != "${ADMIN_IPS}" \
-     || test "${PRIVATE_NETWORK_IPS#*BUNDLE_PRIVATE_NETWORK_IPS}" != "${PRIVATE_NETWORK_IPS}"
+     || test "${PRIVATE_NETWORK_IPS#*BUNDLE_PRIVATE_NETWORK_IPS}" != "${PRIVATE_NETWORK_IPS}" \
+     || test "${SECURE_IP#*BUNDLE_SECURE_IP}" != "${SECURE_IP}"
 then
 	echo "One or more of the firewall variables was not properly updated yet. Firewal NOT setup!"
 	exit 1;
@@ -63,6 +32,19 @@ grep -v '^[[:space:]]*\(\#.*\)\?$' $IP4TABLES_CONFIG \
 	      -e "s/@PRIVATE_IP@/$PRIVATE_IP/" \
 	      -e "s/@PUBLIC_INTERFACE@/$PUBLIC_INTERFACE/" \
 	      -e "s/@PRIVATE_INTERFACE@/$PRIVATE_INTERFACE/" \
+	| awk -vSECURE_IP="${SECURE_IP}" \
+		'{
+			if(/@SECURE_IP@/) {
+				if(length(SECURE_IP) > 0) {
+					copy=$0
+					gsub(/@SECURE_IP@/, SECURE_IP, copy)
+					print copy
+				}
+			}
+			else {
+				print;
+			}
+		}' \
 	| awk -vADMIN_IPS="${ADMIN_IPS}" \
 		'BEGIN {
 			split(ADMIN_IPS, array);

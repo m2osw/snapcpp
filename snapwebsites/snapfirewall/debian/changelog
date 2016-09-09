@@ -1,3 +1,39 @@
+snapfirewall (1.0.4.3~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:18 -0700
+
+snapfirewall (1.0.4.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:35 -0700
+
+snapfirewall (1.0.4.1~xenial) xenial; urgency=high
+
+  * Moved firewall variable definitions into a new file: /etc/network/firewall.conf
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 13:01:55 -0700
+
+snapfirewall (1.0.3.23~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:42 -0700
+
+snapfirewall (1.0.3.22~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:52 -0700
+
+snapfirewall (1.0.3.21~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 06 Sep 2016 02:00:55 -0700
+
 snapfirewall (1.0.3.20~xenial) xenial; urgency=high
 
   * Nightly build.

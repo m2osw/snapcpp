@@ -29,6 +29,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "process.h"
 #include "qdomhelpers.h"
 #include "qdomxpath.h"
 #include "string_pathinfo.h"
@@ -641,7 +642,11 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     {
         QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
         f_snap->replace_configuration_value(filename, "RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
-        NOTUSED(system("systemctl daemon-reload"));
+        snap::process p("reload daemon");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("systemctl");
+        p.add_argument("daemon-reload");
+        NOTUSED(p.run());
         return true;
     }
 
@@ -649,7 +654,11 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     {
         QString const filename(QString("/lib/systemd/system/%1.timer").arg(service_name));
         f_snap->replace_configuration_value(filename, "OnUnitActiveSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
-        NOTUSED(system("systemctl daemon-reload"));
+        snap::process p("reload daemon");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("systemctl");
+        p.add_argument("daemon-reload");
+        NOTUSED(p.run());
         return true;
     }
 
@@ -657,7 +666,11 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     {
         QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
         f_snap->replace_configuration_value(filename, "Nice", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
-        NOTUSED(system("systemctl daemon-reload"));
+        snap::process p("reload daemon");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("systemctl");
+        p.add_argument("daemon-reload");
+        NOTUSED(p.run());
         return true;
     }
 

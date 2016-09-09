@@ -1,3 +1,33 @@
+snapcgi (1.0.0.138~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:15 -0700
+
+snapcgi (1.0.0.137~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 09:19:38 -0700
+
+snapcgi (1.0.0.136~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 07 Sep 2016 09:52:42 -0700
+
+snapcgi (1.0.0.135~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 07 Sep 2016 02:00:51 -0700
+
+snapcgi (1.0.0.134~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 06 Sep 2016 02:00:54 -0700
+
 snapcgi (1.0.0.133~xenial) xenial; urgency=high
 
   * Nightly build.

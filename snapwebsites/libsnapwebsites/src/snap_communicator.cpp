@@ -669,6 +669,10 @@ QString const & snap_communicator_message::get_server() const
  * This is particularly useful when you need to send a reply to a
  * specific daemon that sent you a message.
  *
+ * The name can be set to ".", which means send to a local service
+ * only, whether it is available or not. This option can be used
+ * to avoid/prevent sending a message to other computers.
+ *
  * The name can be set to "*", which is useful to broadcast the message
  * to all servers even if the destination service name is
  * "snapcommunicator".
@@ -685,7 +689,8 @@ void snap_communicator_message::set_server(QString const & server)
     {
         // this name can be empty and it supports lowercase
         //
-        if(server != "*")
+        if(server != "."
+        && server != "*")
         {
             verify_name(server, true);
         }
@@ -2318,7 +2323,7 @@ void snap_communicator::snap_inter_thread_message_connection::close()
 
 /** \brief Poll the connection in the child.
  *
- * There can be only one snap_communicator, therefore, the threa
+ * There can be only one snap_communicator, therefore, the thread
  * cannot make use of it since it is only for the main application.
  * This poll() function can be used by the child to wait on the
  * connection.

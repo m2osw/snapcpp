@@ -56,7 +56,8 @@ namespace
 {
 
 
-char const *    g_conf_filename = "/etc/network/firewall";
+char const *    g_conf_filename   = "/etc/network/firewall.conf";
+char const *    g_firewall_script = "/etc/network/firewall";
 
 
 //void file_descriptor_deleter(int * fd)
@@ -243,6 +244,7 @@ void firewall::on_retrieve_status(snap_manager::server_status & server_status)
         retrieve_settings_field(server_status, "PRIVATE_INTERFACE");
         retrieve_settings_field(server_status, "ADMIN_IPS");
         retrieve_settings_field(server_status, "PRIVATE_NETWORK_IPS");
+        retrieve_settings_field(server_status, "SECURE_IP");
     }
 }
 
@@ -535,6 +537,31 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
         return true;
     }
 
+    if(s.get_field_name() == "secure_ip")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Secure IP"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "Enter the secure IP of this computer if you have one."
+                         " This is most often the <code>tun0</code> IP address"
+                         " created by OpenVPN. An address such as 10.8.0.34."
+                         " This field can remain empty if you are not using"
+                         " OpenVPN on your private network."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     return false;
 }
 
@@ -632,6 +659,17 @@ bool firewall::apply_setting(QString const & button_name, QString const & field_
         return true;
     }
 
+    if(field_name == "secure_ip")
+    {
+        affected_services.insert("firewall-reload");
+        NOTUSED(f_snap->replace_configuration_value(
+                      g_conf_filename
+                    , "SECURE_IP"
+                    , new_value
+                    , snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST));
+        return true;
+    }
+
     return false;
 }
 
@@ -649,7 +687,7 @@ void firewall::on_handle_affected_services(std::set<QString> & affected_services
         //
         snap::process p("reload firewall");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
-        p.set_command("/etc/network/firewall");
+        p.set_command(g_firewall_script);
         NOTUSED(p.run());           // errors are automatically logged by snap::process
     }
 }

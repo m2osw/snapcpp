@@ -8,7 +8,7 @@ if test "$1" != "--refresh-only"
 then
 	# Use the full path even if the cd worked to make 100% sure we are
 	# not deleting the wrong files
-	rm /var/www/debian/xenial/*
+	rm -f /var/www/debian/xenial/*
 
 	# Copy the files from the build output
 	if test "$1" = "--tristan"

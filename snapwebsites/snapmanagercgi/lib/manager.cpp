@@ -15,7 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "manager.h"
+// ourselves
+//
+#include "snapmanager/manager.h"
 
 // snapwebsites lib
 //
@@ -34,7 +36,9 @@
 //
 #include <sstream>
 
-#include "poison.h"
+// last entry
+//
+#include <snapwebsites/poison.h>
 
 
 /** \file
@@ -571,6 +575,12 @@ QString const & manager::get_data_path() const
 }
 
 
+QString const & manager::get_cache_path() const
+{
+    return f_cache_path;
+}
+
+
 QString const & manager::get_bundles_path() const
 {
     return f_bundles_path;
@@ -586,6 +596,13 @@ QString const & manager::get_reboot_required_path() const
 bool manager::stop_now_prima() const
 {
     return false;
+}
+
+
+void manager::forward_message(snap::snap_communicator_message const & message)
+{
+    snap::NOTUSED(message);
+    throw std::logic_error("forward_message() called on the wrong object (i.e. it is not implemented.)");
 }
 
 

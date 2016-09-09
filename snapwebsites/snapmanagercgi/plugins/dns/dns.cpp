@@ -21,15 +21,15 @@
 
 // our lib
 //
-#include "lib/form.h"
+#include "snapmanager/form.h"
 
 // snapwebsites lib
 //
-#include "chownnm.h"
-#include "log.h"
-#include "mkdir_p.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/chownnm.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkdir_p.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 // Qt5
 //
@@ -41,7 +41,7 @@
 
 // last entry
 //
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 namespace
