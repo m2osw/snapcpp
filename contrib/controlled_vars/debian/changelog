@@ -1,3 +1,15 @@
+controlledvars (1.4.16.511~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 02:00:45 -0700
+
+controlledvars (1.4.16.510~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 17:43:43 -0700
+
 controlledvars (1.4.16.509~xenial) xenial; urgency=high
 
   * Nightly build.

@@ -1,3 +1,15 @@
+snapinit (1.0.2.61~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 02:00:45 -0700
+
+snapinit (1.0.2.60~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 17:43:43 -0700
+
 snapinit (1.0.2.59~xenial) xenial; urgency=high
 
   * Nightly build.
