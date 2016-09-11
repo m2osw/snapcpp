@@ -424,14 +424,19 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery::pointer_t 
 {
     size_t const count(order.parameterCount());
 
-    if( order.consistencyLevel() != QtCassandra::CONSISTENCY_LEVEL_QUORUM)
-    {
-        SNAP_LOG_WARNING("Consistency ")
-                        (order.consistencyLevel())
-                        (" instead of the usually expected QUORUM for [")
-                        (order.cql())
-                        ("]");
-    }
+    // This generates way too many logs. It's like all the orders that
+    // should not have ONE do have ONE instead of QUORUM. For now we
+    // force QUORUM in the QCassandraQuery class instead of worrying of
+    // where the bug really is. This will work just fine for us, which is
+    // why we do it this way.
+    //if( order.consistencyLevel() != QtCassandra::CONSISTENCY_LEVEL_QUORUM)
+    //{
+    //    SNAP_LOG_WARNING("Consistency ")
+    //                    (order.consistencyLevel())
+    //                    (" instead of the usually expected QUORUM for [")
+    //                    (order.cql())
+    //                    ("]");
+    //}
 
     // CQL order
     q->query( order.cql(), count );
