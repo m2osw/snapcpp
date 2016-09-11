@@ -1,3 +1,9 @@
+snaplayout (1.0.0.144~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 12:09:30 -0700
+
 snaplayout (1.0.0.143~xenial) xenial; urgency=high
 
   * Nightly build.
