@@ -76,7 +76,6 @@ add_library(${PROJECT_NAME} SHARED
     CassTools.cpp
     QCassandra.cpp
     QCassandraCell.cpp
-    QCassandraConsistencyLevel.cpp
     QCassandraContext.cpp
     QCassandraLock.cpp
     QCassandraOrder.cpp

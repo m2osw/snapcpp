@@ -228,33 +228,39 @@ void QCassandraQuery::setStatementConsistency()
         return;
     }
 
-    if( f_consistencyLevel == CONSISTENCY_LEVEL_DEFAULT )
-    {
-        // Don't set the level, leave the statement at system default.
-        return;
-    }
+    //if( f_consistencyLevel == CONSISTENCY_LEVEL_DEFAULT )
+    //{
+    //    // Don't set the level, leave the statement at system default.
+    //    return;
+    //}
+
+    // At this time, except for a very few cases which probably do not
+    // matter, we always want to use QUORUM so here we always force
+    // QUORUM which makes it a lot easier.
+    //
 
     /* Unsuppored consistency levels
        CASS_CONSISTENCY_SERIAL
        CASS_CONSISTENCY_LOCAL_SERIAL
        CASS_CONSISTENCY_LOCAL_ONE
     */
-    CassConsistency consist( CASS_CONSISTENCY_UNKNOWN );
+    //CassConsistency consist( CASS_CONSISTENCY_UNKNOWN );
+    CassConsistency const consist( CASS_CONSISTENCY_QUORUM );
 
-    if     ( CONSISTENCY_LEVEL_ONE          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ONE;          
-    else if( CONSISTENCY_LEVEL_QUORUM       == f_consistencyLevel ) consist = CASS_CONSISTENCY_QUORUM;       
-    else if( CONSISTENCY_LEVEL_LOCAL_QUORUM == f_consistencyLevel ) consist = CASS_CONSISTENCY_LOCAL_QUORUM; 
-    else if( CONSISTENCY_LEVEL_EACH_QUORUM  == f_consistencyLevel ) consist = CASS_CONSISTENCY_EACH_QUORUM;  
-    else if( CONSISTENCY_LEVEL_ALL          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ALL;          
-    else if( CONSISTENCY_LEVEL_ANY          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ANY;          
-    else if( CONSISTENCY_LEVEL_TWO          == f_consistencyLevel ) consist = CASS_CONSISTENCY_TWO;          
-    else if( CONSISTENCY_LEVEL_THREE        == f_consistencyLevel ) consist = CASS_CONSISTENCY_THREE;        
-    else throw std::runtime_error( "Unsupported consistency level!" );
+    //if     ( CONSISTENCY_LEVEL_ONE          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ONE;          
+    //else if( CONSISTENCY_LEVEL_QUORUM       == f_consistencyLevel ) consist = CASS_CONSISTENCY_QUORUM;       
+    //else if( CONSISTENCY_LEVEL_LOCAL_QUORUM == f_consistencyLevel ) consist = CASS_CONSISTENCY_LOCAL_QUORUM; 
+    //else if( CONSISTENCY_LEVEL_EACH_QUORUM  == f_consistencyLevel ) consist = CASS_CONSISTENCY_EACH_QUORUM;  
+    //else if( CONSISTENCY_LEVEL_ALL          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ALL;          
+    //else if( CONSISTENCY_LEVEL_ANY          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ANY;          
+    //else if( CONSISTENCY_LEVEL_TWO          == f_consistencyLevel ) consist = CASS_CONSISTENCY_TWO;          
+    //else if( CONSISTENCY_LEVEL_THREE        == f_consistencyLevel ) consist = CASS_CONSISTENCY_THREE;        
+    //else throw std::runtime_error( "Unsupported consistency level!" );
 
-    if( consist == CASS_CONSISTENCY_UNKNOWN )
-    {
-        throw std::runtime_error( "This should never happen! Consistency has not been set!" );
-    }
+    //if( consist == CASS_CONSISTENCY_UNKNOWN )
+    //{
+    //    throw std::runtime_error( "This should never happen! Consistency has not been set!" );
+    //}
 
     cass_statement_set_consistency( f_queryStmt.get(), consist );
 }
