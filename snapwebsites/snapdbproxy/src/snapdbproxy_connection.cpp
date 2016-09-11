@@ -424,6 +424,15 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery::pointer_t 
 {
     size_t const count(order.parameterCount());
 
+    if( order.consistencyLevel() != QtCassandra::CONSISTENCY_LEVEL_QUORUM)
+    {
+        SNAP_LOG_WARNING("Consistency ")
+                        (order.consistencyLevel())
+                        (" instead of the usually expected QUORUM for [")
+                        (order.cql())
+                        ("]");
+    }
+
     // CQL order
     q->query( order.cql(), count );
 
