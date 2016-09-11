@@ -1923,7 +1923,7 @@ void list::on_register_backend_cron(server::backend_action_set & actions)
  * recompute lists in one go.
  *
  * \code
- * sendbackend http://example.com -a list::processalllists
+ * snapbackend http://example.com -a list::processalllists
  * \endcode
  *
  * The "processlist" expects a URL parameter set to the page to be
@@ -1936,7 +1936,7 @@ void list::on_register_backend_cron(server::backend_action_set & actions)
  * without doing such. The URL may just include the path.
  *
  * \code
- * sendbackend http://example.com -a list::processlist -p URL=journal/201508
+ * snapbackend http://example.com -a list::processlist -p URL=journal/201508
  * \endcode
  *
  * The "list::resetlists" goes through the pages marked as lists and delete
@@ -1945,7 +1945,7 @@ void list::on_register_backend_cron(server::backend_action_set & actions)
  * of just a few changes.
  *
  * \code
- * sendbackend http://example.com -a list::resetlists
+ * snapbackend http://example.com -a list::resetlists
  * \endcode
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
