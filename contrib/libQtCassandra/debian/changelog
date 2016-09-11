@@ -1,20 +1,9 @@
-libqtcassandra (0.6.2.3~xenial) xenial; urgency=high
+libqtcassandra (0.6.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Force QUORUM everywhere. At this point without it we get many
+    unexpected errors.
 
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 12:09:30 -0700
-
-libqtcassandra (0.6.2.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 02:00:44 -0700
-
-libqtcassandra (0.6.2.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 17:43:44 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Sep 2016 12:09:30 -0700
 
 libqtcassandra (0.6.2.0~xenial) xenial; urgency=high
 
