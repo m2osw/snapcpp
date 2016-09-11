@@ -16,22 +16,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-//#include "cache_control.h"
-//#include "snap_uri.h"
-//#include "snap_signals.h"
-//#include "snap_exception.h"
-//#include "snap_version.h"
-//#include "http_cookie.h"
-//#include "udp_client_server.h"
-
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
-//#include <QtCassandra/QCassandra.h>
-//#include <QtCassandra/QCassandraContext.h>
-
-//#include <stdlib.h>
-
 #include <QString>
 
 namespace snap
@@ -103,21 +87,19 @@ public:
     static int64_t                  minimum(int64_t const a, int64_t const b);
 
 private:
-    typedef controlled_vars::auto_init<int64_t, -1>    m1int64_t;
-
     // in alphabetical order
-    controlled_vars::zint64_t       f_max_age;
-    m1int64_t                       f_max_stale;
-    m1int64_t                       f_min_fresh;
-    controlled_vars::tlbool_t       f_must_revalidate;
-    controlled_vars::flbool_t       f_no_cache;
-    controlled_vars::flbool_t       f_no_store;
-    controlled_vars::flbool_t       f_no_transform;
-    controlled_vars::flbool_t       f_only_if_cached;
-    controlled_vars::flbool_t       f_private;
-    controlled_vars::flbool_t       f_proxy_revalidate;
-    controlled_vars::flbool_t       f_public;
-    m1int64_t                       f_s_maxage;
+    int64_t                         f_max_age = 0;
+    int64_t                         f_max_stale = -1;
+    int64_t                         f_min_fresh = -1;
+    bool                            f_must_revalidate = true;
+    bool                            f_no_cache = false;
+    bool                            f_no_store = false;
+    bool                            f_no_transform = false;
+    bool                            f_only_if_cached = false;
+    bool                            f_private = false;
+    bool                            f_proxy_revalidate = false;
+    bool                            f_public = false;
+    int64_t                         f_s_maxage = -1;
 };
 
 
