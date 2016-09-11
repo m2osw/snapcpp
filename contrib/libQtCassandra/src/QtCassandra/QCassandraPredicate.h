@@ -73,7 +73,6 @@ protected:
     consistency_level_t	f_consistencyLevel;
 
     virtual void appendQuery( QString& query, int& bind_count ) = 0;
-    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num ) = 0;
     virtual void bindOrder( QCassandraOrder& order ) = 0;
 };
 
@@ -102,7 +101,6 @@ protected:
     friend class QCassandraRowRangePredicate;
 
     virtual void appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
-    virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
     virtual void bindOrder( QCassandraOrder& /*order*/                              ) {}
 };
 
@@ -121,7 +119,6 @@ protected:
     QByteArray  f_cellKey;
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
     virtual void bindOrder( QCassandraOrder& order );
 };
 
@@ -156,7 +153,6 @@ protected:
     controlled_vars::fbool_t    f_index; // whether predicate is used as an index
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
     virtual void bindOrder( QCassandraOrder& order );
 };
 
@@ -176,7 +172,6 @@ public:
     void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cellPred = pred; }
 
     virtual void appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
-    virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
     virtual void bindOrder( QCassandraOrder& /*order*/                              ) {}
 
 protected:
@@ -196,7 +191,6 @@ public:
     void              setRowKey(const QByteArray& row_key) { f_rowKey= row_key; }
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
     virtual void bindOrder( QCassandraOrder& order );
 
 protected:
@@ -218,7 +212,6 @@ public:
     void              setEndRowKey(const QByteArray& row_key)   { f_endRowKey = row_key;   }
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
     virtual void bindOrder( QCassandraOrder& order );
 
 protected:

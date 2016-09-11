@@ -104,6 +104,8 @@ private:
 
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
+    QCassandraContext(QCassandraContext const &) = delete;
+    QCassandraContext & operator = (QCassandraContext const &) = delete;
 
     void resetSchema();
     void parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );

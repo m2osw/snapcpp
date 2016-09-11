@@ -70,33 +70,33 @@ struct ConsistencyLevel
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_DEFAULT = -1;
 
-/** \brief Write to one computer.
+/** \brief Read/Write to one computer.
  *
- * Write the data to the one computer we're connected to. Do not
+ * Read/Write the data to the one computer we're connected to. Do not
  * duplicate the data.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_ONE =
     ConsistencyLevel::ONE;
 
-/** \brief Write to a quorum of computers.
+/** \brief Read/Write to a quorum of computers.
  *
- * Write the data to the total number of all the computers divided
+ * Read/Write the data to the total number of all the computers divided
  * by 2 plus one. This ensures data safety.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_QUORUM =
     ConsistencyLevel::QUORUM;
 
-/** \brief Write to a quorum of local computers.
+/** \brief Read/Write to a quorum of local computers.
  *
- * Write the data to the total number of local computers divided by 2
+ * Read/Write the data to the total number of local computers divided by 2
  * plus one. This ensures data safety.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_LOCAL_QUORUM =
     ConsistencyLevel::LOCAL_QUORUM;
 
-/** \brief Write to a quorum of computers in each data center.
+/** \brief Read/Write to a quorum of computers in each data center.
  *
- * Write the data to the total number of computers divided by 2
+ * Read/Write the data to the total number of computers divided by 2
  * plus one in each data center. This ensures data safety in all
  * the data centers instead of just the entire set of computers.
  *
@@ -106,32 +106,32 @@ const cassandra_consistency_level_t CONSISTENCY_LEVEL_LOCAL_QUORUM =
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_EACH_QUORUM =
     ConsistencyLevel::EACH_QUORUM;
 
-/** \brief Write to all computers.
+/** \brief Read/Write to all computers.
  *
- * Write the data to all the computers.
+ * Read/Write the data to all the computers.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_ALL =
     ConsistencyLevel::ALL;
 
-/** \brief Write to any computer.
+/** \brief Read/Write to any computer.
  *
- * Write the data to any computer. If the computer we are connected
+ * Read/Write the data to any computer. If the computer we are connected
  * to is too slow or filled up, then another may be selected for
  * this data.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_ANY =
     ConsistencyLevel::ANY;
 
-/** \brief Write to two computers.
+/** \brief Read/Write to two computers.
  *
- * Write the data to two computers.
+ * Read/Write the data to two computers.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_TWO =
     ConsistencyLevel::TWO;
 
-/** \brief Write to three computers.
+/** \brief Read/Write to three computers.
  *
- * Write the data to three computers.
+ * Read/Write the data to three computers.
  */
 const cassandra_consistency_level_t CONSISTENCY_LEVEL_THREE =
     ConsistencyLevel::THREE;

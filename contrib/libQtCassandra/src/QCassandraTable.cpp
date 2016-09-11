@@ -678,10 +678,26 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         //
 //std::cerr << "query=[" << query_string.toUtf8().data() << "]" << std::endl;
 
+        // setup the consistency level
+        consistency_level_t consistency_level( f_context->parentCassandra()->defaultConsistencyLevel() );
+        if( row_predicate )
+        {
+            consistency_level = row_predicate->consistencyLevel();
+            if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
+            {
+                consistency_level = row_predicate->cellPredicate()->consistencyLevel();
+                if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
+                {
+                    consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+                }
+            }
+        }
+
         // create a CURSOR
         QCassandraOrder select_rows;
         select_rows.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_DECLARE);
         select_rows.setColumnCount(3);
+        select_rows.setConsistencyLevel(consistency_level);
 
         //
         if( row_predicate )
@@ -1294,6 +1310,13 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
         .arg(timestamp)
         );
 
+    // setup the consistency level
+    consistency_level_t consistency_level( value.consistencyLevel() );
+    if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
+    {
+        consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+    }
+
     // define TTL only if the user defined it (Cassandra uses a 'null' when
     // undefined and that's probably better than having either a really large
     // value or 0 if that would work as 'permanent' in Cassandra.)
@@ -1305,7 +1328,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
     QCassandraOrder insert_value;
     insert_value.setCql( query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
-    insert_value.setConsistencyLevel( value.consistencyLevel() );
+    insert_value.setConsistencyLevel( consistency_level );
 
     insert_value.addParameter( row_key );
     insert_value.addParameter( column_key );
@@ -1342,9 +1365,16 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
                          .arg(f_context->contextName())
                          .arg(f_tableName) );
 
+    // setup the consistency level
+    consistency_level_t consistency_level( value.consistencyLevel() );
+    if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
+    {
+        consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+    }
+
     QCassandraOrder get_value;
     get_value.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_ROWS);
-    get_value.setConsistencyLevel( value.consistencyLevel() );
+    get_value.setConsistencyLevel( consistency_level );
 
     get_value.addParameter( row_key );
     get_value.addParameter( column_key );
@@ -1370,7 +1400,10 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
 /** \brief Count columns.
  *
  * This function counts a the number of columns that match a specified
- * column_predicate.
+ * \p column_predicate.
+ *
+ * If you want to use a different consistency, also indicate such in
+ * the \p column_predicate parameter.
  *
  * \param[in] row_key  The row for which this data is being counted.
  * \param[in] column_predicate  The predicate to use to count the cells.
@@ -1389,9 +1422,19 @@ int32_t QCassandraTable::getCellCount
             .arg(f_tableName)
             );
 
+        // setup the consistency level
+        consistency_level_t consistency_level( column_predicate
+                                ? column_predicate->consistencyLevel().value()
+                                : CONSISTENCY_LEVEL_DEFAULT );
+        if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
+        {
+            consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+        }
+
         QCassandraOrder cell_count;
         cell_count.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_ROWS);
-        cell_count.setPagingSize(column_predicate->count());
+        cell_count.setPagingSize(column_predicate ? column_predicate->count() : 100);
+        cell_count.setConsistencyLevel(consistency_level);
         QCassandraOrderResult cell_count_result(f_proxy->sendOrder(cell_count));
         if(!cell_count_result.succeeded()
         || cell_count_result.resultCount() != 1)
@@ -1467,6 +1510,7 @@ void QCassandraTable::remove( const QByteArray& row_key )
 
     QCassandraOrder drop_cell;
     drop_cell.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS);
+    drop_cell.setConsistencyLevel(f_context->parentCassandra()->defaultConsistencyLevel());
     drop_cell.setTimestamp(QCassandra::timeofday()); // make sure it gets deleted no matter when it was created
     drop_cell.addParameter(row_key);
     QCassandraOrderResult const drop_cell_result(f_proxy->sendOrder(drop_cell));

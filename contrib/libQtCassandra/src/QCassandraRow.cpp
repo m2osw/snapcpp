@@ -38,6 +38,8 @@
 
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraTable.h"
+#include "QtCassandra/QCassandraContext.h"
+#include "QtCassandra/QCassandra.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -300,6 +302,17 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         auto row_predicate = std::make_shared<QCassandraRowKeyPredicate>();
         row_predicate->setRowKey( f_key );
 
+        // setup the consistency level
+        consistency_level_t consistency_level( f_table->f_context->parentCassandra()->defaultConsistencyLevel() );
+        if( column_predicate )
+        {
+            consistency_level = column_predicate->consistencyLevel();
+            if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
+            {
+                    consistency_level = f_table->f_context->parentCassandra()->defaultConsistencyLevel();
+            }
+        }
+
         // prepare the CQL order
         QString query_string( QString("SELECT column1,value FROM %1.%2")
                        .arg(f_table->contextName())
@@ -317,6 +330,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
 //std::cerr << "query=[" << query_string.toUtf8().data() << "]" << std::endl;
         QCassandraOrder select_cells;
         select_cells.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_DECLARE);
+        select_cells.setConsistencyLevel( consistency_level );
         select_cells.setColumnCount(2);
 
         row_predicate->bindOrder( select_cells );

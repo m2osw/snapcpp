@@ -52,6 +52,7 @@ namespace QtCassandra
  */
 const QChar QCassandraCellPredicate::first_char = QChar('\0');
 
+
 /** \brief Define the last possible character in a column key.
  *
  * This character can be used to define the very last character
@@ -72,17 +73,10 @@ void QCassandraCellKeyPredicate::appendQuery( QString& query, int& bind_count )
     bind_count++;
 }
 
-void QCassandraCellKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
-{
-    q->bindByteArray( bind_num++, f_cellKey );
-    q->setConsistencyLevel(f_consistencyLevel);
-}
-
 
 void QCassandraCellKeyPredicate::bindOrder( QCassandraOrder& order )
 {
     order.addParameter( f_cellKey );
-    order.setConsistencyLevel(f_consistencyLevel);
 }
 
 
@@ -108,21 +102,6 @@ void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count 
     }
 }
 
-void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
-{
-    if(!f_startCellKey.isEmpty())
-    {
-        q->bindByteArray( bind_num++, f_startCellKey );
-    }
-
-    if(!f_endCellKey.isEmpty())
-    {
-        q->bindByteArray( bind_num++, f_endCellKey );
-    }
-
-    q->setConsistencyLevel(f_consistencyLevel);
-}
-
 
 void QCassandraCellRangePredicate::bindOrder( QCassandraOrder& order )
 {
@@ -135,8 +114,6 @@ void QCassandraCellRangePredicate::bindOrder( QCassandraOrder& order )
     {
         order.addParameter( f_endCellKey );
     }
-
-    order.setConsistencyLevel(f_consistencyLevel);
 }
 
 
@@ -149,19 +126,10 @@ void QCassandraRowKeyPredicate::appendQuery( QString& query, int& bind_count )
 }
 
 
-void QCassandraRowKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
-{
-    q->bindByteArray( bind_num++, f_rowKey );
-    f_cellPred->bindQuery( q, bind_num );
-    q->setConsistencyLevel(f_consistencyLevel);  // TODO: is that one correct? If the cell predicate already has a consistency?
-}
-
-
 void QCassandraRowKeyPredicate::bindOrder( QCassandraOrder& order)
 {
     order.addParameter( f_rowKey );
     f_cellPred->bindOrder( order );
-    order.setConsistencyLevel( f_consistencyLevel );  // TODO: is that one correct? If the cell predicate already has a consistency?
 }
 
 
@@ -174,21 +142,11 @@ void QCassandraRowRangePredicate::appendQuery( QString& query, int& bind_count )
 }
 
 
-void QCassandraRowRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
-{
-    q->bindByteArray( bind_num++, f_startRowKey );
-    q->bindByteArray( bind_num++, f_endRowKey   );
-    f_cellPred->bindQuery( q, bind_num );
-    q->setConsistencyLevel(f_consistencyLevel);  // TODO: is that one correct? If the cell predicate already has a consistency?
-}
-
-
 void QCassandraRowRangePredicate::bindOrder( QCassandraOrder& order )
 {
     order.addParameter( f_startRowKey );
     order.addParameter( f_endRowKey );
     f_cellPred->bindOrder( order );
-    order.setConsistencyLevel( f_consistencyLevel );  // TODO: is that one correct? If the cell predicate already has a consistency?
 }
 
 
