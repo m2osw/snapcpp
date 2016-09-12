@@ -16,13 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap_locale.h"
+#include "qunicodestring.h"
 
 #include "../content/content.h"
 
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_used.h"
-#include "qunicodestring.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkgmtime.h>
+#include <snapwebsites/not_used.h>
 
 #include <unicode/datefmt.h>
 #include <unicode/errorcode.h>
@@ -30,7 +30,7 @@
 #include <unicode/smpdtfmt.h>
 #include <unicode/timezone.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(locale, 1, 0)

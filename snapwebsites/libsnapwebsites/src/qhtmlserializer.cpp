@@ -24,11 +24,12 @@
 //
 // Also unfortunate, Qt does not provide such a class.
 
-#include "qhtmlserializer.h"
+#include "snapwebsites/qhtmlserializer.h"
 
 #include <stdexcept>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output, bool const is_html)
     : f_namepool(namepool)

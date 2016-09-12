@@ -15,13 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snap_initialize_website.h"
+#include "snapwebsites/snap_initialize_website.h"
 
-#include "log.h"
-#include "tcp_client_server.h"
-#include "snapwebsites.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/tcp_client_server.h"
+#include "snapwebsites/snapwebsites.h"
 
 #include <sstream>
+
+#include "snapwebsites/poison.h"
+
 
 namespace snap
 {
@@ -247,7 +250,7 @@ QString snap_initialize_website::snap_initialize_website_runner::next_message()
     snap_thread::snap_lock lock(f_mutex);
     if(f_message_queue.empty())
     {
-        return "";
+        return QString();
     }
     QString const msg(f_message_queue.front());
     f_message_queue.pop_front();

@@ -17,18 +17,18 @@
 
 // ourselves
 //
-#include "snap_communicator.h"
+#include <snapwebsites/snap_communicator.h>
 
 // our lib
 //
-#include "addr.h"
-#include "chownnm.h"
-#include "loadavg.h"
-#include "log.h"
-#include "mkdir_p.h"
-#include "not_used.h"
-#include "snapwebsites.h"
-#include "tokenize_string.h"
+#include <snapwebsites/addr.h>
+#include <snapwebsites/chownnm.h>
+#include <snapwebsites/loadavg.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkdir_p.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/tokenize_string.h>
 
 // Qt lib
 //
@@ -47,8 +47,9 @@
 #include <pwd.h>
 #include <sys/resource.h>
 
-
-#include "poison.h"
+// included last
+//
+#include <snapwebsites/poison.h>
 
 
 /** \file

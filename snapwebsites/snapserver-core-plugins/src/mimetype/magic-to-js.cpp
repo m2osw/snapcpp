@@ -17,9 +17,9 @@
 
 #include "magic-to-js.h"
 
-#include "not_reached.h"
-#include "not_used.h"
-#include "snapwebsites.h"
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/snapwebsites.h>
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_fauto_init.h>

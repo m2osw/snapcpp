@@ -24,18 +24,18 @@
 #include "../mimetype/mimetype.h"
 #include "../permissions/permissions.h"
 
-#include "dbutils.h"
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qdomreceiver.h"
-#include "qdomxpath.h"
-#include "qxmlmessagehandler.h"
-#include "snap_image.h"
-#include "snap_lock.h"
-#include "xslt.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkgmtime.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qdomreceiver.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/qxmlmessagehandler.h>
+#include <snapwebsites/snap_image.h>
+#include <snapwebsites/snap_lock.h>
+#include <snapwebsites/xslt.h>
 
 #include <libtld/tld.h>
 
@@ -45,7 +45,7 @@
 #include <QFile>
 #include <QFileInfo>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(editor, 1, 0)

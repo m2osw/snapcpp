@@ -29,11 +29,11 @@
 
 #include "javascript.h"
 
-#include "plugins.h"
-#include "snap_version.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "log.h"
+#include <snapwebsites/plugins.h>
+#include <snapwebsites/snap_version.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/log.h>
 
 #include <QScriptEngine>
 #include <QScriptProgram>
@@ -41,7 +41,8 @@
 #include <QScriptClassPropertyIterator>
 #include <QSharedPointer>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
+
 
 SNAP_PLUGIN_START(javascript, 1, 0)
 

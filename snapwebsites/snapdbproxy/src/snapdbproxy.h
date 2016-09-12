@@ -39,26 +39,22 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// our lib
+// snapwebsites lib
 //
-#include "snapwebsites.h"
-#include "snap_communicator.h"
-#include "snap_thread.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/snap_communicator.h>
+#include <snapwebsites/snap_thread.h>
 
-// 3rd party libs
+// advgetopt lib
+//
+#include <advgetopt/advgetopt.h>
+
+// QtCassandra lib
 //
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 #include <QtCassandra/QCassandraOrder.h>
 #include <QtCassandra/QCassandraProxy.h>
-#include <advgetopt/advgetopt.h>
-
-// C++ libs
-//
-
-// system
-//
-#include <poll.h>
 
 
 class snapdbproxy;

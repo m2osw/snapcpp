@@ -28,7 +28,7 @@ Copyright (c) 2012-2016
 Changes made by Alexis Wilke so the model works in Qt 4.8 and with Snap.
 */
 
-#include "qdomnodemodel.h"
+#include "snapwebsites/qdomnodemodel.h"
 
 #include <QDomNode>
 #include <QDomDocument>
@@ -38,7 +38,8 @@ Changes made by Alexis Wilke so the model works in Qt 4.8 and with Snap.
 #include <QVariant>
 #include <QDebug>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 class MyDomNode: public QDomNode
 {

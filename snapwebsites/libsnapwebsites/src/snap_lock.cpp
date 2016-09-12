@@ -15,19 +15,20 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snap_lock.h"
+#include "snapwebsites/snap_lock.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qstring_stream.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/qstring_stream.h"
 
 #include <iostream>
 
 #include <unistd.h>
 #include <sys/syscall.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 /** \file
  * \brief Implementation of the Snap Lock class.

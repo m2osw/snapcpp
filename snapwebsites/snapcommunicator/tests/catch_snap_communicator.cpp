@@ -24,15 +24,22 @@
 
 #include "snap_tests.h"
 
-#include "snap_communicator.h"
+// snapwebsites lib
+//
+#include <snapwebsites/snap_communicator.h>
 
-#include <sstream>
-
+// C lib
+//
 #include <string.h>
 #include <signal.h>
 #include <sys/prctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+// C++ lib
+//
+#include <sstream>
+
 
 namespace
 {

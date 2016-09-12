@@ -22,11 +22,10 @@
 // as expected.
 //
 
-#include "snap_exception.h"
-
-#include "log.h"
-#include "qstring_stream.h"
-#include "not_reached.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snap_exception.h>
 
 #include <iostream>
 

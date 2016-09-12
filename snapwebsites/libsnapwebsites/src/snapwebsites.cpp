@@ -15,16 +15,15 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snapwebsites.h"
+#include "snapwebsites/snapwebsites.h"
 
-#include "log.h"
-#include "not_used.h"
-#include "signal.h"
-#include "snap_backend.h"
-#include "snap_cassandra.h"
-#include "snap_lock.h"
-#include "snap_tables.h"
-#include "tcp_client_server.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/snap_backend.h"
+#include "snapwebsites/snap_cassandra.h"
+#include "snapwebsites/snap_lock.h"
+#include "snapwebsites/snap_tables.h"
+#include "snapwebsites/tcp_client_server.h"
 
 #include <sstream>
 
@@ -41,7 +40,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 /** \file
@@ -950,7 +949,7 @@ void server::config(int argc, char * argv[])
 
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
-    f_parameters.set_parameter_default("listen", "0.0.0.0:4004");
+    f_parameters.set_parameter_default("listen", "127.0.0.1:4004");
     f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH), "/usr/lib/snapwebsites/plugins");
     f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH), "/usr/lib/snapwebsites/tables");
     f_parameters.set_parameter_default("qs_action", "a");
@@ -2281,7 +2280,7 @@ void server::listen()
     }
 
     // get the address/port info
-    QString addr("0.0.0.0");
+    QString addr("127.0.0.1");
     int port(4004);
     tcp_client_server::get_addr_port(f_parameters["listen"], addr, port, "tcp");
 

@@ -29,10 +29,10 @@
 
 #include "snapmanagerdaemon.h"
 
-#include "addr.h"
-#include "mkdir_p.h"
-#include "not_used.h"
-#include "tokenize_string.h"
+#include <snapwebsites/addr.h>
+#include <snapwebsites/mkdir_p.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/tokenize_string.h>
 
 #include <sstream>
 

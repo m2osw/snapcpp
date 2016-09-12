@@ -33,7 +33,7 @@
 project(snapwebsites)
 
 # Put the version in the header file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites/version.h )
 
 
 option( SNAP_NO_FORK OFF "Set to suppress snapserver's inate forking [for debugging purposes only--not for release!]" )
@@ -60,6 +60,7 @@ qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    snapwebsites/version.h.in                   # libsnapwebsites version
     addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
     cache_control.cpp                           # parse / handle Cache-Control settings
     chownnm.cpp                                 # chown using user and group names instead of uid/gid
@@ -142,11 +143,11 @@ install(
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites
-    FILES_MATCHING PATTERN "*.h"
+    DESTINATION include
+    FILES_MATCHING PATTERN "snapwebsites/*.h"
 )
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites/version.h
     DESTINATION include/snapwebsites
 )
 

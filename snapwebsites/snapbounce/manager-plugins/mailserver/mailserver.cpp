@@ -19,34 +19,24 @@
 //
 #include "mailserver.h"
 
-// our lib
+// snapmanager lib
 //
-#include "snapmanager/form.h"
+#include <snapmanager/form.h>
 
 // snapwebsites lib
 //
-//#include "join_strings.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-//#include "qdomhelpers.h"
-//#include "qdomxpath.h"
-//#include "snap_cassandra.h"
-//#include "string_pathinfo.h"
-//#include "tokenize_string.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 // Qt lib
 //
 #include <QFile>
 #include <QProcess>
 
-// C lib
-//
-//#include <sys/file.h>
-
 // last entry
 //
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(mailserver, 1, 0)

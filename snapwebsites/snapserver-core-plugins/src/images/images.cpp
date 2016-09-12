@@ -20,15 +20,15 @@
 #include "../listener/listener.h"
 #include "../messages/messages.h"
 
-#include "dbutils.h"
-#include "log.h"
-#include "not_used.h"
-#include "snap_image.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/snap_image.h>
 
 #include <iostream>
 #include <algorithm>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(images, 1, 0)

@@ -27,9 +27,9 @@
  *      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "snap_expr.h"
-#include "qstring_stream.h"
-#include "snapwebsites.h"
+#include <snapwebsites/snap_expr.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snapwebsites.h>
 
 #include <advgetopt.h>
 
@@ -41,7 +41,7 @@
 #include <QFile>
 #include <QTextCodec>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 advgetopt::getopt::option const g_options[] =

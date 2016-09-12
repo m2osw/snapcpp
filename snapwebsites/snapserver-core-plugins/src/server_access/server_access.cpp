@@ -19,15 +19,15 @@
 
 #include "../messages/messages.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "snap_utf8.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/snap_utf8.h>
 
 #include <iostream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(server_access, 1, 0)

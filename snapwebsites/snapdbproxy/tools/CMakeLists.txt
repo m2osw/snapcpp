@@ -78,4 +78,28 @@ install(
 )
 
 
+#######################################
+## Snap Install Website
+#######################################
+
+project(snapinstallwebsite)
+
+add_executable(${PROJECT_NAME}
+    snapinstallwebsite.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
 # vim: ts=4 sw=4 et

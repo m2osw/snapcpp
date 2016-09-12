@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+#include <snapwebsites/snapwebsites.h>
 
 #include <controlled_vars/controlled_vars_limited_need_init.h>
 

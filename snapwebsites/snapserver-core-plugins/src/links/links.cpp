@@ -21,15 +21,15 @@
 //       it may be that content and links should be merged (oh well!) TBD
 #include "../content/content.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
 #include <QtCore/QDebug>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(links, 1, 0)

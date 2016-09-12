@@ -15,17 +15,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "xslt.h"
+#include "snapwebsites/xslt.h"
 
-#include "snapwebsites.h"
-#include "log.h"
-#include "qdomreceiver.h"
-#include "qhtmlserializer.h"
-#include "qxmlmessagehandler.h"
+#include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/qdomreceiver.h"
+#include "snapwebsites/qhtmlserializer.h"
+#include "snapwebsites/qxmlmessagehandler.h"
 
 #include <QXmlQuery>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 namespace snap
 {

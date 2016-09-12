@@ -17,20 +17,19 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-#include "dbutils.h"
+#include "snapwebsites/dbutils.h"
 
-#include "snap_exception.h"
-#include "qstring_stream.h"
-#include "log.h"
-#include "mkgmtime.h"
-#include "snap_string_list.h"
+#include "snapwebsites/snap_exception.h"
+#include "snapwebsites/qstring_stream.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/mkgmtime.h"
+#include "snapwebsites/snap_string_list.h"
 
 #include <iostream>
 
 #include <uuid/uuid.h>
 
-#include "poison.h"
-
+#include "snapwebsites/poison.h"
 
 
 namespace snap

@@ -52,10 +52,6 @@ find_package( SnapDoxygen )
 
 SnapGetVersion( SNAPDBPROXY ${CMAKE_CURRENT_SOURCE_DIR} )
 
-include_directories(
-    ${QTCASSANDRA_INCLUDE_DIRS}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-)
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
@@ -63,6 +59,11 @@ include_directories( SYSTEM
 set( QT_LIBRARIES
     Qt5::Core
     Qt5::Xml
+)
+include_directories(
+    ${QTCASSANDRA_INCLUDE_DIRS}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
 add_subdirectory( conf            )

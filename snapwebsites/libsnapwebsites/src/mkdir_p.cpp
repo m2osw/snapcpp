@@ -15,18 +15,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "mkdir_p.h"
+#include "snapwebsites/mkdir_p.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "snap_exception.h"
-#include "snap_string_list.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/snap_exception.h"
+#include "snapwebsites/snap_string_list.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 namespace snap

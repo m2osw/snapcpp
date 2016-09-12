@@ -15,10 +15,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "compression.h"
+#include "snapwebsites/compression.h"
 
-#include "log.h"
-#include "not_used.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_used.h"
 
 #include <QMap>
 
@@ -27,7 +27,8 @@
 #include <zlib.h>
 #pragma GCC diagnostic pop
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 namespace snap
 {

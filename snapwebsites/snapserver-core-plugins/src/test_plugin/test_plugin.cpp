@@ -22,14 +22,15 @@
 #include "../output/output.h"
 #include "../server_access/server_access.h"
 
-#include "dbutils.h"
-#include "log.h"
-#include "not_used.h"
-#include "qhtmlserializer.h"
-#include "qxmlmessagehandler.h"
-#include "xslt.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qhtmlserializer.h>
+#include <snapwebsites/qxmlmessagehandler.h>
+#include <snapwebsites/xslt.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
+
 
 SNAP_PLUGIN_START(test_plugin, 1, 0)
 

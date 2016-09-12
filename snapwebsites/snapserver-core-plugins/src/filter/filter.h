@@ -18,7 +18,7 @@
 
 #include "../content/content.h"
 
-#include "not_reached.h"
+#include <snapwebsites/not_reached.h>
 
 namespace snap
 {

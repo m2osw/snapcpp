@@ -17,12 +17,12 @@
 
 //#define SHOW_COMMANDS
 
-#include "snap_expr.h"
+#include "snapwebsites/snap_expr.h"
 
-#include "snapwebsites.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "log.h"
+#include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/log.h"
 
 #include <controlled_vars/controlled_vars_limited_need_init.h>
 
@@ -30,7 +30,7 @@
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 namespace snap

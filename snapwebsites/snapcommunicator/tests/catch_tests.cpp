@@ -31,7 +31,7 @@
 
 #include "snap_tests.h"
 
-#include "qstring_stream.h"
+#include <snapwebsites/qstring_stream.h>
 
 #include <cstring>
 

@@ -24,17 +24,17 @@
 #include "../permissions/permissions.h"
 #include "../shorturl/shorturl.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomxpath.h"
-#include "snap_lock.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/snap_lock.h>
 
 #include <iostream>
 
 #include <QDateTime>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 /** \file

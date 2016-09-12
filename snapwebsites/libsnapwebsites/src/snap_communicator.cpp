@@ -20,13 +20,13 @@
 #define _GNU_SOURCE
 #endif
 
-#include "snap_communicator.h"
+#include "snapwebsites/snap_communicator.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qstring_stream.h"
-#include "string_replace.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/qstring_stream.h"
+#include "snapwebsites/string_replace.h"
 
 #include <sstream>
 #include <limits>
@@ -41,7 +41,8 @@
 #include <sys/syscall.h>
 #include <sys/time.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 /** \file
  * \brief Implementation of the Snap Communicator class.

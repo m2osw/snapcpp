@@ -34,19 +34,9 @@
 
 // our lib
 //
-#include "snapwebsites.h"
-#include "snap_communicator.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/snap_communicator.h>
 
-// 3rd party libs
-//
-//#include <QtCore>
-//#include <QtCassandra/QCassandra.h>
-//#include <controlled_vars/controlled_vars.h>
-//#include <advgetopt/advgetopt.h>
-
-// system
-//
-//#include <memory>
 
 class snaplock;
 

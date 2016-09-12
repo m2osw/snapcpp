@@ -21,8 +21,8 @@
 
 #include "../test_plugin_suite/test_plugin_suite.h"
 
-#include "snap_backend.h"
-#include "snap_expr.h"
+#include <snapwebsites/snap_backend.h>
+#include <snapwebsites/snap_expr.h>
 
 
 namespace snap

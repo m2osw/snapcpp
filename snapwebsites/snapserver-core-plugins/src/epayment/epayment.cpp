@@ -19,13 +19,13 @@
 
 #include "../editor/editor.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(epayment, 1, 0)

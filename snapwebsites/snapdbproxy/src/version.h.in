@@ -19,9 +19,8 @@
 /** \file
  * \brief Version header.
  *
- * This header file defines the snapwebsites library version information.
- *
- * See the snapwebsites.cpp/.h for other details.
+ * This header file defines the version of the various software generated
+ * in the snapdbproxy environment.
  */
 
 #define    SNAPDBPROXY_VERSION_MAJOR   @SNAPDBPROXY_VERSION_MAJOR@

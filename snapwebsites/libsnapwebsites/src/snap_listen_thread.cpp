@@ -16,11 +16,13 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "snap_listen_thread.h"
-#include "log.h"
+#include "snapwebsites/snap_listen_thread.h"
+#include "snapwebsites/log.h"
 
 #include <vector>
 #include <algorithm>
+
+#include "snapwebsites/poison.h"
 
 
 namespace snap

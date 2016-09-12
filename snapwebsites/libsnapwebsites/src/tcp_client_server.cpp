@@ -15,11 +15,11 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "tcp_client_server.h"
+#include "snapwebsites/tcp_client_server.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
 
 #include <sstream>
 
@@ -31,7 +31,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 namespace tcp_client_server
 {

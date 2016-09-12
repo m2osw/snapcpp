@@ -15,20 +15,20 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snap_child.h"
+#include "snapwebsites/snap_child.h"
 
-#include "compression.h"
-#include "http_strings.h"
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qlockfile.h"
-#include "snap_image.h"
-#include "snap_utf8.h"
-#include "snapwebsites.h"
-#include "snap_lock.h"
-#include "snap_magic.h"
+#include "snapwebsites/compression.h"
+#include "snapwebsites/http_strings.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/mkgmtime.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/qdomhelpers.h"
+#include "snapwebsites/qlockfile.h"
+#include "snapwebsites/snap_image.h"
+#include "snapwebsites/snap_utf8.h"
+#include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/snap_lock.h"
+#include "snapwebsites/snap_magic.h"
 
 #include <QtSerialization/QSerialization.h>
 #include <libtld/tld.h>
@@ -43,8 +43,7 @@
 
 #include <QDirIterator>
 
-#include "poison.h"
-
+#include "snapwebsites/poison.h"
 
 
 namespace snap

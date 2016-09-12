@@ -27,18 +27,7 @@
 
 #include "editor.h"
 
-//#include "compression.h"
-//#include "dbutils.h"
-//#include "log.h"
-//
-//#include <csspp/assembler.h>
-//#include <csspp/compiler.h>
-//#include <csspp/exceptions.h>
-//#include <csspp/parser.h>
-//
-//#include <iostream>
-
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(editor)

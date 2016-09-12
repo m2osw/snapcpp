@@ -17,11 +17,11 @@
 
 #include "search.h"
 
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(search, 1, 0)

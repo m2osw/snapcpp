@@ -36,12 +36,12 @@
 
 #include "../users/users.h"
 
-#include "http_strings.h"
-#include "log.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
+#include <snapwebsites/http_strings.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(oauth2, 1, 0)

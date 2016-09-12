@@ -50,12 +50,12 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 find_package( SnapDoxygen )
 
-include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-)
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
+)
+include_directories(
+    ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 set( QT_LIBRARIES
     Qt5::Core

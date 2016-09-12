@@ -28,10 +28,10 @@
 
 #include "content.h"
 
-#include "dbutils.h"
-#include "log.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(content)

@@ -39,9 +39,10 @@
  * Modifications:  Fixed tm_isdst usage - 27 August 2008 Craig Howland.
  */
 
+#include "snapwebsites/mkgmtime.h"
+
 #include <stdlib.h>
 #include <time.h>
-#include "mkgmtime.h"
 
 #define _SEC_IN_MINUTE 60L
 #define _SEC_IN_HOUR 3600L

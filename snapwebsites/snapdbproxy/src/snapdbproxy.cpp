@@ -46,9 +46,9 @@
 
 // snapwebsites lib
 //
-#include "log.h"
-#include "qstring_stream.h"
-#include "dbutils.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/dbutils.h>
 
 // 3rd party libs
 //

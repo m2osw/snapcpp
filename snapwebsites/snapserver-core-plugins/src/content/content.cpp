@@ -38,16 +38,16 @@
 
 //#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h there
 
-#include "compression.h"
-#include "dbutils.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "snap_magic.h"
-#include "snap_image.h"
-#include "snap_lock.h"
-#include "snap_version.h"
+#include <snapwebsites/compression.h>
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/snap_magic.h>
+#include <snapwebsites/snap_image.h>
+#include <snapwebsites/snap_lock.h>
+#include <snapwebsites/snap_version.h>
 
 #include <iostream>
 
@@ -56,7 +56,7 @@
 #include <QFile>
 #include <QTextStream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(content, 1, 0)

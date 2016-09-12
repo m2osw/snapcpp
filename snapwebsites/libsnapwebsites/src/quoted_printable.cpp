@@ -15,14 +15,15 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "quoted_printable.h"
+#include "snapwebsites/quoted_printable.h"
 
-#include "not_reached.h"
+#include "snapwebsites/not_reached.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 namespace quoted_printable
 {

@@ -24,7 +24,7 @@
 
 #include <proc/sysinfo.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(memory, 1, 0)

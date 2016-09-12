@@ -63,11 +63,11 @@
 // SCRIPT_NAME=/cgi-bin/snap.cgi
 //
 
-#include "addr.h"
-#include "log.h"
-#include "not_reached.h"
-#include "snapwebsites.h"
-#include "tcp_client_server.h"
+#include <snapwebsites/addr.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/tcp_client_server.h>
 
 #include <advgetopt/advgetopt.h>
 

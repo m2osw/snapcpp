@@ -17,12 +17,12 @@
 
 // ouselves
 //
-#include "loadavg.h"
+#include "snapwebsites/loadavg.h"
 
 // our lib
 //
-#include "addr.h"
-#include "log.h"
+#include "snapwebsites/addr.h"
+#include "snapwebsites/log.h"
 
 // C lib
 //
@@ -35,6 +35,8 @@
 // C++ lib
 //
 #include <memory>
+
+#include "snapwebsites/poison.h"
 
 
 namespace snap

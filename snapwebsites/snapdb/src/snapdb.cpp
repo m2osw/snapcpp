@@ -40,19 +40,10 @@
 
 // snapwebsites library
 //
-#include "dbutils.h"
-#include "qstring_stream.h"
-#include "snapwebsites.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/qstring_stream.h>
 
-// 3rd party libs
-//
-#include <QtCore>
-#include <QtSql>
-#include <QtCassandra/QCassandraSchema.h>
-#include <controlled_vars/controlled_vars_need_init.h>
-#include <advgetopt/advgetopt.h>
-
-// system
+// C++ lib
 //
 #include <algorithm>
 #include <fstream>
@@ -60,6 +51,11 @@
 #include <ios>
 #include <iostream>
 #include <sstream>
+
+// last include
+//
+#include <snapwebsites/poison.h>
+
 
 namespace
 {

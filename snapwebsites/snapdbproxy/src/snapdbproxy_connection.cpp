@@ -42,26 +42,29 @@
 
 // our lib
 //
-#include "log.h"
-#include "not_used.h"
-#include "qstring_stream.h"
-#include "dbutils.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/dbutils.h>
 
-// 3rd party libs
+// advgetopt lib
 //
-#include <QtCore>
-#include <QtCassandra/QCassandra.h>
-#include <QtCassandra/QCassandraSchema.h>
 #include <advgetopt/advgetopt.h>
 
-// system (C++)
+// QtCassandra lib
+//
+#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraSchema.h>
+
+// C++ lib
 //
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 
-// OS libs
+// C lib
 //
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 

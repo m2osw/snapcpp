@@ -17,12 +17,12 @@
 
 #include "mimetype.h"
 
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(mimetype, 1, 0)

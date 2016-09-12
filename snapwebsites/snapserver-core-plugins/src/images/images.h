@@ -19,8 +19,8 @@
 #include "../path/path.h"
 #include "../versions/versions.h"
 
-#include "snapwebsites.h"
-#include "snap_backend.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/snap_backend.h>
 
 #include <Magick++.h>
 

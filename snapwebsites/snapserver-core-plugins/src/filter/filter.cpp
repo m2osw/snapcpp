@@ -20,18 +20,18 @@
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 
-#include "log.h"
-#include "not_used.h"
-#include "qdomxpath.h"
-#include "qdomhelpers.h"
-#include "qstring_stream.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qstring_stream.h>
 
 #include <iostream>
 #include <cctype>
 
 #include <QTextStream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(filter, 1, 0)

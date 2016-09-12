@@ -21,7 +21,7 @@
 #include "../layout/layout.h"
 #include "../path/path.h"
 
-#include "http_client_server.h"
+#include <snapwebsites/http_client_server.h>
 
 
 /** \file

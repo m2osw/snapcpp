@@ -20,8 +20,8 @@
 
 #include "../test_plugin_suite/test_plugin_suite.h"
 
-#include "snap_backend.h"
-#include "qcaseinsensitivestring.h"
+#include <snapwebsites/snap_backend.h>
+#include <snapwebsites/qcaseinsensitivestring.h>
 
 
 namespace snap

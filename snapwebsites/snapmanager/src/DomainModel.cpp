@@ -25,7 +25,7 @@
 #include <iostream>
 #include <exception>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 using namespace QtCassandra;
 

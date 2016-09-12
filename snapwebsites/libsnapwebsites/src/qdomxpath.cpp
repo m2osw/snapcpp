@@ -15,16 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "qdomxpath.h"
+#include "snapwebsites/qdomxpath.h"
 
-#include "floats.h"
-#include "not_used.h"
-#include "qstring_stream.h"
+#include "snapwebsites/floats.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/qstring_stream.h"
 
 #include <iomanip>
 #include <limits>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 

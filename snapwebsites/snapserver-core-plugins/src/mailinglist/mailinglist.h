@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
-#include "plugins.h"
-#include "snap_child.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/plugins.h>
+#include <snapwebsites/snap_child.h>
 
 #include <QMap>
 #include <QVector>

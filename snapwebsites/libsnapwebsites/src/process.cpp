@@ -17,11 +17,11 @@
 
 // self
 //
-#include "process.h"
+#include "snapwebsites/process.h"
 
 // Our lib
 //
-#include "log.h"
+#include "snapwebsites/log.h"
 
 // C lib
 //
@@ -30,8 +30,7 @@
 #include <proc/readproc.h>
 #include <sys/wait.h>
 
-
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 extern char ** environ;

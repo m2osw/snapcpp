@@ -15,16 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "http_cookie.h"
+#include "snapwebsites/http_cookie.h"
 
-#include "log.h"
-#include "snapwebsites.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/snapwebsites.h"
 
 #include <QtCassandra/QCassandra.h>
 
 #include <sys/time.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 namespace snap

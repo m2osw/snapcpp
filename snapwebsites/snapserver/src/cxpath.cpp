@@ -26,9 +26,9 @@
  *    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "snapwebsites.h"
-#include "not_reached.h"
-#include "qdomxpath.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/qdomxpath.h>
 
 #include <advgetopt.h>
 
@@ -39,7 +39,7 @@
 #include <QFile>
 #pragma GCC diagnostic pop
 
-#include <poison.h>
+#include <snapwebsites/poison.h>
 
 namespace
 {
