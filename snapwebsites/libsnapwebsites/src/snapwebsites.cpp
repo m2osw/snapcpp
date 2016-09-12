@@ -1682,7 +1682,7 @@ void server::udp_rusage(QString const & process_name)
     //
     snap::snap_communicator_message rusage_message;
     rusage_message.set_command("RUSAGE");
-    rusage_message.set_server(f_parameters["server_name"]);
+    rusage_message.set_server(get_server_name().c_str());
     rusage_message.set_service("snapwatchdog");
     rusage_message.add_parameter("cache", "ttl=10");  // cache for at most 10 seconds
     rusage_message.add_parameter("process_name", process_name);
@@ -2259,7 +2259,7 @@ void listener_impl::process_accept()
  */
 void server::listen()
 {
-    SNAP_LOG_INFO("--------------------------------- snapserver started on ")(f_parameters["server_name"]);
+    SNAP_LOG_INFO("--------------------------------- snapserver started on ")(get_server_name());
 
     // offer the user to setup the maximum number of pending connections
     long max_pending_connections(-1);
@@ -2354,7 +2354,7 @@ void server::listen()
     g_connection->f_communicator->add_connection(g_connection->f_messenger);
 
     // the server was successfully started
-    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(f_parameters["server_name"])("\" started.");
+    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(get_server_name())("\" started.");
 
     // run until we get killed
     g_connection->f_communicator->run();

@@ -6869,11 +6869,11 @@ QString snap_child::get_unique_number()
         throw snap_logic_exception("server pointer is nullptr");
     }
 
-    QString lock_path(server->get_parameter("data_path"));
+    QString const data_path(server->get_parameter("data_path"));
 
     quint64 c(0);
     {
-        const QString name(lock_path + "/counter.u64");
+        const QString name(data_path + "/counter.u64");
         QLockFile counter(name);
         if(!counter.open(QIODevice::ReadWrite))
         {
@@ -6895,7 +6895,7 @@ QString snap_child::get_unique_number()
         }
         // close the file now; we do not want to hold the file for too long
     }
-    return QString("%1-%2").arg(server->get_parameter("server_name")).arg(c);
+    return QString("%1-%2").arg(server->get_server_name().c_str()).arg(c);
 }
 
 /** \brief Initialize the plugins.
