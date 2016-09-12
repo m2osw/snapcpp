@@ -34,13 +34,11 @@
 ##       we can rename this project snapmanager instead of snapmanagerdaemon
 project( snapmanagerdaemon )
 
-# Put the version in the header file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapmanagerdaemon.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapmanagerdaemon.h )
-
-include_directories( SYSTEM
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Network_INCLUDE_DIRS}
-    ${Qt5Xml_INCLUDE_DIRS}
+include_directories(
+    SYSTEM
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Network_INCLUDE_DIRS}
+        ${Qt5Xml_INCLUDE_DIRS}
 )
 
 include_directories(
@@ -78,6 +76,5 @@ target_link_libraries( ${PROJECT_NAME}
 
 install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin )
 
-## TODO: add code coverage and unittests
 
 # vim: ts=4 sw=4 et nocindent

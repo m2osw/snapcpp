@@ -46,13 +46,13 @@ endif()
 include_directories(
     SYSTEM
         ${MAGIC_INCLUDE_DIRS}
-        ${LOG4CPLUS_INCLUDE_DIRS}
         ${LIBPROCPS_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
 )
 
 include_directories(
     ${LIBTLD_INCLUDE_DIRS}
+    ${LOG4CPLUS_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
@@ -60,7 +60,6 @@ qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
-    snapwebsites/version.h.in                   # libsnapwebsites version
     addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
     cache_control.cpp                           # parse / handle Cache-Control settings
     chownnm.cpp                                 # chown using user and group names instead of uid/gid

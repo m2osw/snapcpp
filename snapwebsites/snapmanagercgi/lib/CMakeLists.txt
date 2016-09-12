@@ -43,18 +43,12 @@ find_package( Qt5Xml         REQUIRED )
 find_package( Qt5XmlPatterns REQUIRED )
 
 include_directories(
-    SYSTEM
-        #${LOG4CPLUS_INCLUDE_DIR}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
         ${QT_INCLUDES}
 )
 
-include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
-)
-
 add_library( ${PROJECT_NAME} SHARED
-    snapmanager/version.h.in                    # snapmanager-wide version
     form.cpp                                    # Helper classes to generate forms
     installer.cpp                               # Code used to install bundles on a server
     manager.cpp                                 # Implements the core of the watchdog server
