@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapdb.h
+ *      snapwebsites/snapdb/src/snapdb.h
  *
  * Description:
  *      Reads and describes a Snap database. This ease checking out the
@@ -70,6 +70,7 @@ private:
 
     bool confirm_drop_check()    const;
     void drop_context()          const;
+    void drop_table()            const;
     void drop_row()              const;
     void drop_cell()             const;
     bool row_exists()            const;

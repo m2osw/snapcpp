@@ -68,7 +68,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             nullptr,
             nullptr,
-            "Usage: %p [-<opt>] [table [row] [cell] [value]]",
+            "Usage: %p [-<opt>] [table [row [cell [value]]]]",
             advgetopt::getopt::argument_mode_t::help_argument
         },
         {
@@ -116,7 +116,7 @@ namespace
             0,
             "drop-cell",
             nullptr,
-            "drop the specified cell (specify row and cell)",
+            "drop the specified cell (specify table, row, and cell)",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {
@@ -124,7 +124,15 @@ namespace
             0,
             "drop-row",
             nullptr,
-            "drop the specified row (specify row)",
+            "drop the specified row (specify table and row)",
+            advgetopt::getopt::argument_mode_t::no_argument
+        },
+        {
+            '\0',
+            0,
+            "drop-table",
+            nullptr,
+            "drop the specified table (specify table)",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {
@@ -329,14 +337,57 @@ void snapdb::info()
         }
         else
         {
-            std::cerr << "The connection failed!" << std::endl;
+            std::cerr << "error: The connection failed!" << std::endl;
             exit(1);
         }
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "The connection failed! what=" << ex.what() << std::endl;
+        std::cerr << "error: The connection failed! what=" << ex.what() << std::endl;
         exit(1);
+    }
+}
+
+
+void snapdb::drop_table() const
+{
+    if(!f_opt->is_defined("yes-i-know-what-im-doing"))
+    {
+        if(!isatty(STDERR_FILENO))
+        {
+            std::cerr << "error: --drop-table aborted, either do it on your command line or use the --yes-i-know-what-im-doing option." << std::endl;
+            exit(1);
+        }
+        std::cout << "WARNING: You are about to delete a table." << std::endl;
+        std::cout << "Are you absolutely sure you want to do that?" << std::endl;
+        std::cout << "Type \"I know what I'm doing\" and then enter: " << std::flush;
+
+        std::string answer;
+        std::getline(std::cin, answer);
+
+        if(answer != "I know what I'm doing")
+        {
+            std::cerr << "error: aborting as apparently you do not know what you are doing." << std::endl;
+            exit(1);
+        }
+    }
+
+    try
+    {
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
+        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        q->query( QString("DROP TABLE %1.%2;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+        q->start();
+        q->end();
+    }
+    catch( std::exception const & ex )
+    {
+        std::cerr << "Drop table exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
     }
 }
 
@@ -360,7 +411,7 @@ void snapdb::drop_row() const
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Remove row QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -389,7 +440,7 @@ void snapdb::drop_cell() const
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Remove cell QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -415,7 +466,7 @@ bool snapdb::row_exists() const
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Row exists QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -448,7 +499,7 @@ void snapdb::display_tables() const
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Display tables exception caught! what=" << ex.what() << std::endl;
         exit(1);
     }
 }
@@ -456,6 +507,12 @@ void snapdb::display_tables() const
 
 void snapdb::display_rows() const
 {
+    if( f_opt->is_defined("drop-table") )
+    {
+        drop_table();
+        return;
+    }
+
     try
     {
         snap::dbutils du( f_table, f_row );
@@ -479,7 +536,7 @@ void snapdb::display_rows() const
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Display rows QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -521,7 +578,7 @@ void snapdb::display_rows_wildcard() const
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Display rows wildcard QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
