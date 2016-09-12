@@ -21,11 +21,6 @@
 #include "not_used.h"
 #include "qstring_stream.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_no_init.h>
-#include <controlled_vars/controlled_vars_no_enum_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <iomanip>
 #include <limits>
 
@@ -719,7 +714,6 @@ public:
         ATOMIC_TYPE_NODE_SET
         //ATOMIC_TYPE_CONTEXT
     };
-    typedef controlled_vars::limited_auto_enum_init<type_t, type_t::ATOMIC_TYPE_UNDEFINED, type_t::ATOMIC_TYPE_NODE_SET, type_t::ATOMIC_TYPE_UNDEFINED> safe_type_t;
 
     /** \brief Initialize the atomic value.
      *
@@ -1279,15 +1273,15 @@ public:
 
 
 protected:
-    safe_type_t                 f_type;
+    type_t                      f_type = type_t::ATOMIC_TYPE_UNDEFINED;
 
 private:
-    //controlled_vars::rbool_t    f_boolean; -- save some space by using integer 0 or 1
-    controlled_vars::rint64_t   f_integer;
+    //bool                        f_boolean = false; -- save some space by using integer 0 or 1
+    int64_t                     f_integer = 0;
     // definition? http://www.w3.org/2002/ws/databinding/patterns/6/09/PrecisionDecimal/
     //QDecimal                    f_decimal; // a 32:32 fix number (we need a fixed number class!)
-    controlled_vars::rfloat_t   f_single;
-    controlled_vars::rdouble_t  f_double;
+    float                       f_single = 0.0f;
+    double                      f_double = 0.0;
     QString                     f_string;
 };
 
@@ -8488,7 +8482,7 @@ private:
     const QChar *               f_in;
     token_t                     f_unget_token;
     token_t                     f_last_token;
-    controlled_vars::zuint32_t  f_label_counter;
+    uint32_t                    f_label_counter = 0;
     label_offsets_t             f_labels;
     future_labels_t             f_future_labels;
     QString                     f_end_label;
@@ -8496,7 +8490,7 @@ private:
 
     // execution environment
     //QDomXPath::node_vector_t    f_result;
-    controlled_vars::rint32_t   f_program_start_offset;
+    int32_t                     f_program_start_offset = -1;
     QDomXPath::program_t        f_program;
     function_vector_t           f_functions;
 };
