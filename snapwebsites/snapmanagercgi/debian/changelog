@@ -1,50 +1,8 @@
-snapmanagercgi (1.0.28.8~xenial) xenial; urgency=high
+snapmanagercgi (1.0.29.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Bumped version to get my test system to upgrade properly.
 
- -- Build Server <build@m2osw.com>  Tue, 13 Sep 2016 09:51:23 -0700
-
-snapmanagercgi (1.0.28.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 12 Sep 2016 02:00:44 -0700
-
-snapmanagercgi (1.0.28.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 15:44:21 -0700
-
-snapmanagercgi (1.0.28.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 13:17:30 -0700
-
-snapmanagercgi (1.0.28.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 12:09:29 -0700
-
-snapmanagercgi (1.0.28.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 02:00:45 -0700
-
-snapmanagercgi (1.0.28.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 17:43:46 -0700
-
-snapmanagercgi (1.0.28.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 02:00:55 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Sep 2016 11:59:22 -0700
 
 snapmanagercgi (1.0.28.0~xenial) xenial; urgency=high
 

@@ -1,74 +1,14 @@
-snapcommunicator (1.0.8.11~xenial) xenial; urgency=high
+snapcommunicator (1.0.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Bumped version to get my test system to upgrade properly.
 
- -- Build Server <build@m2osw.com>  Tue, 13 Sep 2016 09:51:23 -0700
-
-snapcommunicator (1.0.8.10~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 12 Sep 2016 02:00:44 -0700
-
-snapcommunicator (1.0.8.9~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 15:44:22 -0700
-
-snapcommunicator (1.0.8.8~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 13:17:27 -0700
-
-snapcommunicator (1.0.8.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 12:09:29 -0700
-
-snapcommunicator (1.0.8.6~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 02:00:42 -0700
-
-snapcommunicator (1.0.8.5~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 17:43:44 -0700
-
-snapcommunicator (1.0.8.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 10 Sep 2016 02:00:51 -0700
-
-snapcommunicator (1.0.8.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 09 Sep 2016 02:00:56 -0700
-
-snapcommunicator (1.0.8.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 17:47:08 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Sep 2016 11:59:22 -0700
 
 snapcommunicator (1.0.8.1~xenial) xenial; urgency=high
 
   * Trying out "--with systemd" in rules file.
 
  -- Doug Barbieri <doug@dooglio.net>  Mon, 05 Sep 2016 17:46:33 -0700
-
-snapcommunicator (1.0.7.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 08 Sep 2016 14:23:18 -0700
 
 snapcommunicator (1.0.7.0~xenial) xenial; urgency=high
 
