@@ -18,6 +18,7 @@ use Storable;
 
 my $cache_file   = shift;
 my $distribution = shift;
+my $change_msg   = "Nightly build."
 
 my %options;
 
@@ -47,29 +48,43 @@ for my $project (keys %DIRHASH)
     #
     my @fields = changelog_parse(%options);
     my $name;
+    my $dist;
+    my $urgency;
     my $version;
+    my $changes;
     foreach my $f (@fields)
     {
-        $name    = $f->{"Source"}  if exists $f->{"Source"};
-        $version = $f->{"Version"} if exists $f->{"Version"};
+        $name    = $f->{"Source"}       if exists $f->{"Source"};
+        $dist    = $f->{"Distribution"} if exists $f->{"Distribution"};
+        $version = $f->{"Version"}      if exists $f->{"Version"};
+        $urgency = $f->{"Urgency"}      if exists $f->{"Urgency"};
+        $changes = $f->{"Changes"}      if exists $f->{"Changes"};
     }
 
     # Increment the version
     #
     $version =~ s/~.*$//;
+    my $newvers
     if( $version =~ m/^(\d*).(\d+).(\d+)$/ )
     {
-        $version = "$1.$2.$3.1";
+        $newvers = "$1.$2.$3.1";
     }
     elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)$/ )
     {
         my $num = $4+1;
-        $version = "$1.$2.$3.$num";
+        $newvers = "$1.$2.$3.$num";
     }
 
-    # Write a new changelog entry with the new version
-    #
-    system "dch --newversion $version~$distribution --urgency high --distribution $distribution Nightly build.";
+    if( $changes =~ m/\* $change_msg./ )
+    {
+        system "sed -i.bak -e 's/$name ($version) $dist; urgency=$urgency/$name ($newvers) $distribution; urgency=$urgency/'";
+    }
+    else()
+    {
+        # Write a new changelog entry with the new version
+        #
+        system "dch --newversion $newvers~$distribution --urgency high --distribution $distribution $change_msg";
+    }
 }
 
 # vim: ts=4 sw=4 et
