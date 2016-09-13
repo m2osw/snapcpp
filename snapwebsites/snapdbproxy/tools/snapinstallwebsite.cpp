@@ -17,10 +17,11 @@
 
 #include "version.h"
 
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
 #include <snapwebsites/snap_initialize_website.h>
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_config.h>
-#include <snapwebsites/not_used.h>
 
 
 
@@ -107,6 +108,9 @@ int main(int argc, char * argv[])
 {
     advgetopt::getopt opt(argc, argv, g_snapinstallwebsite_options, g_configuration_files, "SNAPINSTALLWEBSITE_OPTIONS");
 
+    snap::logging::set_progname(argv[0]);
+    snap::logging::configure_console();
+
     if(opt.is_defined("help"))
     {
         opt.usage(advgetopt::getopt::status_t::no_error, "snapdbproxy");
@@ -130,6 +134,8 @@ int main(int argc, char * argv[])
         snap::NOTREACHED();
     }
 
+    SNAP_LOG_INFO("Get snapserver info.");
+
     // read the snapserver IP:port information directly from the "snapserver"
     // configuration file
     //
@@ -144,21 +150,36 @@ int main(int argc, char * argv[])
     int snap_port(4004);
     tcp_client_server::get_addr_port(config["listen"], snap_host, snap_port, "tcp");
 
+    SNAP_LOG_INFO("snapserver is at ")(snap_host)(":")(snap_port)(".");
+
     // we need the URL:port to initialize the new website
     //
     //url, site_port
     QString const url(QString::fromUtf8(opt.get_string("domain").c_str()));
     if(url.isEmpty())
     {
-        throw snap::snapwebsites_exception_invalid_parameters("domain cannot be empty and must be specified.");
+        std::cerr << "error: domain cannot be empty and must be specified." << std::endl;
+        exit(1);
+        snap::NOTREACHED();
     }
 
     int const site_port(opt.get_long("port", 0, 0, 65535));
+
+    SNAP_LOG_INFO("website is at ")(url)(":")(site_port)(".");
 
     // create a snap_initialize_website object and listen for messages
     // up until is_done() returns true
     //
     snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, url, site_port));
+
+    SNAP_LOG_INFO("start website initializer.");
+
+    if(!initialize_website->start_process())
+    {
+        SNAP_LOG_INFO("start_process() failed. Existing immediately.");
+        exit(1);
+        snap::NOTREACHED();
+    }
 
     for(;;)
     {
@@ -169,7 +190,8 @@ int main(int argc, char * argv[])
             {
                 break;
             }
-            std::cout << status << std::endl;
+            SNAP_LOG_INFO(status);
+std::cout << "Also use cout, just in case: " << status << std::endl;
         }
 
         if(initialize_website->is_done())
@@ -188,4 +210,3 @@ int main(int argc, char * argv[])
 
 
 // vim: ts=4 sw=4 et
-

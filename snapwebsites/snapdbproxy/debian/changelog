@@ -1,3 +1,11 @@
+snapdbproxy (1.0.8.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Actually start the website initialization thread.
+  * Removed the throw and replaced it with cerr + exit(1).
+  * Added logging.
+
+ -- Build Server <build@m2osw.com>  Tue, 13 Sep 2016 16:10:44 -0700
+
 snapdbproxy (1.0.7.0~xenial) xenial; urgency=high
 
   * SNAP-110: The delay of the timer used to reconnect in case we lose the
