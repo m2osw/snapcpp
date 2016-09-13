@@ -795,6 +795,18 @@ void snapdb::set_cell() const
 
 void snapdb::exec()
 {
+    // the drop table is a "very slow" operation which times out every
+    // time unless you allow for a very long timeout
+    //
+    if(!f_table.isEmpty()
+    && f_row.isEmpty()
+    && f_opt->is_defined("drop-table"))
+    {
+        // we put 5 minutes in this case... very slow!!!
+        //
+        f_session->setTimeout(5 * 60 * 60 * 1000);
+    }
+
     f_session->connect( f_host, f_port );
 
     if(f_table.isEmpty())
