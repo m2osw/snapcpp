@@ -1,26 +1,11 @@
-snapdbproxy (1.0.6.4~xenial) xenial; urgency=high
+snapdbproxy (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: The delay of the timer used to reconnect in case we lose the
+    connection to snapdbproxy (or never got one from the start) was never
+    set. I also added the code that increases that delay (doubling it) on
+    each attempt from 1s to 5 min.
 
  -- Build Server <build@m2osw.com>  Mon, 12 Sep 2016 02:00:44 -0700
-
-snapdbproxy (1.0.6.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 11 Sep 2016 15:44:21 -0700
-
-snapdbproxy (1.0.6.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 13:17:28 -0700
-
-snapdbproxy (1.0.6.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 11 Sep 2016 12:09:31 -0700
 
 snapdbproxy (1.0.6.0~xenial) xenial; urgency=high
 

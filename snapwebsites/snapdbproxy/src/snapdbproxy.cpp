@@ -674,6 +674,12 @@ void snapdbproxy::process_timeout()
         //
         f_no_cassandra_sent = false;
 
+        // reset the delay to 1 second
+        // (we use 1.25 so that way we will have 1s, 2s, 5s, 10s, 20s, etc.
+        // and 5 is a multiple of 300s which is 5 minutes)
+        //
+        f_cassandra_connect_timer_index = 1.25f;
+
         cassandra_ready();
     }
     catch(std::runtime_error const &)
@@ -715,6 +721,16 @@ void snapdbproxy::no_cassandra()
     // make sure the timer is on when we do not have a Cassandra connection
     //
     f_timer->set_enable(true);
+
+    // try again soon
+    //
+    f_timer->set_timeout_delay(static_cast<int>(f_cassandra_connect_timer_index) * 1000000LL);
+    if(f_cassandra_connect_timer_index < 300.0f)
+    {
+        // increase the delay between attempts up to 5 min.
+        //
+        f_cassandra_connect_timer_index *= 2.0f;
+    }
 }
 
 
