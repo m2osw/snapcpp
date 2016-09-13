@@ -80,6 +80,7 @@ private:
 };
 
 
+void writeTag(QWriter& w, const QString& name, const bool data);
 void writeTag(QWriter& w, const QString& name, const qint8 data);
 void writeTag(QWriter& w, const QString& name, const quint8 data);
 void writeTag(QWriter& w, const QString& name, const qint16 data);
