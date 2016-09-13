@@ -818,6 +818,7 @@ QString path_info_t::get_revision_key() const
             if(f_revision_key.isEmpty())
             {
                 // the revision is still undefined...
+                SNAP_LOG_FATAL("get_revision_key() request failed for \"")(f_cpath)("\", revision for \"")(f_key)("\" not defined.");
                 throw content_exception_data_missing(QString("get_revision_key() request failed for \"%1\", revision for \"%2\" not defined.").arg(f_cpath).arg(f_key));
             }
         }
@@ -854,6 +855,7 @@ QString path_info_t::get_draft_key(int64_t user_identifier) const
 #pragma GCC diagnostic pop
         {
             // the branch is still undefined...
+            SNAP_LOG_FATAL("get_draft_key() request failed for \"")(f_cpath)("\", no branch defined.");
             throw content_exception_data_missing(QString("get_draft_key() request failed for \"%1\", no branch defined").arg(f_cpath));
         }
 
@@ -885,6 +887,7 @@ QString path_info_t::get_suggestion_key(int64_t suggestion) const
 #pragma GCC diagnostic pop
         {
             // the branch is still undefined...
+            SNAP_LOG_FATAL("get_suggestion_key() request failed for \"")(f_cpath)("\", no branch defined.");
             throw content_exception_data_missing(QString("get_suggestion_key() request failed for \"%1\", no branch defined").arg(f_cpath));
         }
 
