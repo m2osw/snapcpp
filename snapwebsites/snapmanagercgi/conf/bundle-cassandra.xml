@@ -68,19 +68,77 @@
       # you the ability to later change rcp_address to 0.0.0.0 without having
       # to worry about anything else.
       #
-      sed -i.bak \
+      # Also, remove all of the default encryption stuff since we are going to
+      # overwrite all of this with the plugin.
+      #
+      perl -0777 -i.bak -p
         -e "s/^cluster_name: .*/cluster_name: '$BUNDLE_INSTALLATION_CLUSTER_NAME'/" \
         -e "s/- seeds: \".*\"/- seeds: \"$BUNDLE_INSTALLATION_SEEDS\"/" \
         -e "s/^listen_address: .*/listen_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^rpc_address: .*/rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/broadcast_rpc_address: .*/broadcast_rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^endpoint_snitch: .*/endpoint_snitch: GossipingPropertyFileSnitch/" \
+        -e "s/^server_encryption_options:\n.*internode_encryption:.*\n.*keystore:.*\n.*keystore_password:.*\n.*truststore:.*\n.*truststore_password:.*\n//"
+        -e "s/^client_encryption_options:\n.*enabled:.*\n.*# If enabled.*\n.*optional:.*\n.*keystore:.*\n.*keystore_password:.*\n.*truststore:.*\n.*truststore_password:.*\n//"
               /etc/cassandra/cassandra.yaml
-
-      # restart cassandra
-      #
-      systemctl start cassandra
     fi
+
+    ########################################################
+    # From: https://datastax.github.io/cpp-driver/topics/security/ssl/
+    #
+    if ! [ -d /etc/cassandra/ssl ]
+    then
+      cat &gt;&gt; /etc/cassandra/cassandra.yaml &lt;&lt;EOF
+
+########################################################
+# `date`: added encryption options for client and server
+#
+server_encryption_options:
+    internode_encryption: all
+    keystore: /etc/cassandra/ssl/keystore.jks
+    keystore_password: cassandra
+    truststore: /etc/cassandra/ssl/truststore.jks
+    truststore_password: cassandra
+#
+client_encryption_options:
+    enabled: true
+    optional: false
+    keystore: /etc/cassandra/ssl/keystore.jks
+    keystore_password: cassandra
+    truststore: /etc/cassandra/ssl/truststore.jks
+    truststore_password: cassandra
+EOF
+
+      mkdir -p /etc/cassandra/ssl
+      cd /etc/cassandra/ssl
+
+      keytool -noprompt -genkeypair -keyalg RSA \
+        -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
+        -validity 36500 \
+        -keystore keystore.jks \
+        -storepass cassandra \
+        -keypass cassandra \
+        -dname "CN=${BUNDLE_INSTALLATION_LISTEN_ADDRESS}, OU=Cassandra Backend, O=Made To Order Software Corp, L=Orangevale, ST=California, C=US"
+
+      keytool -export -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
+        -file node-${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.cer \
+        -keystore keystore.jks
+
+      keytool -import -v -trustcacerts \
+        -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
+        -file node-${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.cer \
+        -keystore truststore.jks
+
+      keytool -exportcert -rfc -noprompt \
+        -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
+        -keystore keystore.jks \
+        -storepass cassandra \
+        -file /var/lib/snapwebsites/cassandra-client-${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.pem
+    fi
+
+    # restart cassandra
+    #
+    systemctl start cassandra
   </postinst>
 </bundle>
 <!--
