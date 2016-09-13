@@ -2721,9 +2721,9 @@ bool editor::validate_editor_post_for_widget_impl(
         }
 
     private:
-        QString const &                     f_value;
-        mutable controlled_vars::fbool_t    f_stripped_value_defined;
-        mutable QString                     f_stripped_value;
+        QString const &         f_value;
+        mutable bool            f_stripped_value_defined = false;
+        mutable QString         f_stripped_value;
     };
     value_handler_t value_handler(value);
 
@@ -4163,9 +4163,9 @@ QString editor::format_uri(QString const & format, content::path_info_t & ipath,
         }
 
     private:
-        editor *                    f_editor;
+        editor *                    f_editor = nullptr;
         QString const &             f_format;
-        controlled_vars::zint32_t   f_pos;
+        int32_t                     f_pos = 0;
         editor_uri_token            f_token_info;
         QString                     f_result;
     };

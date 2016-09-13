@@ -132,7 +132,6 @@ public:
         EXPR_VARIABLE_TYPE_STRING,
         EXPR_VARIABLE_TYPE_BINARY
     };
-    typedef controlled_vars::limited_auto_enum_init<variable_type_t, variable_type_t::EXPR_VARIABLE_TYPE_NULL, variable_type_t::EXPR_VARIABLE_TYPE_BINARY, variable_type_t::EXPR_VARIABLE_TYPE_NULL> safe_variable_type_t;
 
                                         variable_t(QString const & name = "");
 
@@ -170,7 +169,7 @@ public:
 
 private:
     QString                             f_name;
-    safe_variable_type_t                f_type;
+    variable_type_t                     f_type = variable_type_t::EXPR_VARIABLE_TYPE_NULL;
     QtCassandra::QCassandraValue        f_value;
 };
 
@@ -234,7 +233,7 @@ public:
 
 private:
     expr_node_functions_map_t   f_functions;
-    controlled_vars::flbool_t   f_has_internal_functions;
+    bool                        f_has_internal_functions = false;
 };
 
 

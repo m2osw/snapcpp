@@ -24,8 +24,6 @@
 #include "snapwebsites/snap_expr.h"
 #include "snapwebsites/snap_listen_thread.h"
 
-#include <controlled_vars/controlled_vars_limited_need_enum_init.h>
-
 #include <advgetopt/advgetopt.h>
 
 #include <QTranslator>
@@ -158,7 +156,7 @@ public:
     bool            has_error() const;
 
 private:
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
     bool                        f_log = false;
     bool                        f_error = false;
 };
@@ -220,8 +218,8 @@ public:
                         accessible_flag_t(accessible_flag_t const & rhs) = delete;
                         accessible_flag_t & operator = (accessible_flag_t const & rhs) = delete;
 
-        controlled_vars::fbool_t    f_accessible;
-        controlled_vars::fbool_t    f_secure;
+        bool            f_accessible = false;
+        bool            f_secure = false;
     };
 
     static pointer_t    instance();

@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../robotstxt/robotstxt.h"
+
 
 namespace snap
 {
@@ -128,14 +131,11 @@ public:
         bool                        operator < (url_info const & rhs) const;
 
     private:
-        typedef controlled_vars::auto_init<time_t, 0>   ztime_t;
-        typedef controlled_vars::auto_init<int, 604800> weekly_t;
-
-        QString                     f_uri;                  // the page URI
-        controlled_vars::mfloat_t   f_priority;             // 0.001 to 1.0, default 0.5
-        ztime_t                     f_last_modification;    // Unix date when it was last modified
-        weekly_t                    f_frequency;            // number of seconds between modifications
-        url_image::vector_t         f_images;               // an array of images
+        QString                     f_uri;                      // the page URI
+        float                       f_priority = 0.5f;          // 0.001 to 1.0, default 0.5
+        time_t                      f_last_modification = 0;    // Unix date when it was last modified
+        int                         f_frequency = 604800;       // number of seconds between modifications
+        url_image::vector_t         f_images;                   // an array of images
     };
     typedef std::vector<url_info>        url_info_list_t;
 
@@ -174,7 +174,7 @@ private:
     void                    generate_one_sitemap(int32_t const position, size_t & index);
     void                    generate_sitemap_index(int32_t position);
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
     url_info_list_t         f_url_info;
 };
 

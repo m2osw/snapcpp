@@ -969,7 +969,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         }
 
     private:
-        zpsnap_child_t          f_snap;
+        snap_child *            f_snap = nullptr;
         snap_child::http_code_t f_err_code;
         QString const &         f_err_name;
         QString const &         f_err_description;

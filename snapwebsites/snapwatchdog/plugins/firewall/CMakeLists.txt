@@ -33,7 +33,6 @@ project(plugin_firewall)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    #${CONTROLLEDVARS_INCLUDE_DIRS}
     ${snapwatchdog_SOURCE_DIR}
 )
 
@@ -41,11 +40,6 @@ include_directories(
 add_library(firewall SHARED
     firewall.cpp
 )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( firewall make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS firewall LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

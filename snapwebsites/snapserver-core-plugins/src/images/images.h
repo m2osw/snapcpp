@@ -16,12 +16,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../path/path.h"
 #include "../versions/versions.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_backend.h>
 
+// Magick lib
+//
 #include <Magick++.h>
 
 
@@ -135,11 +141,11 @@ private:
 
     struct func_t
     {
-        char const *    f_command_name;
-        size_t          f_min_params;
-        size_t          f_max_params;
-        size_t          f_min_stack;
-        bool            (images::*f_command)(parameters_t & params);
+        char const *    f_command_name = nullptr;
+        size_t          f_min_params = 0;
+        size_t          f_max_params = 0;
+        size_t          f_min_stack = 0;
+        bool            (images::*f_command)(parameters_t & params) = nullptr;
     };
 
     virtual_path_t      check_virtual_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);

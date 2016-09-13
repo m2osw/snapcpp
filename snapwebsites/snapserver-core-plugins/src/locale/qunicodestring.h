@@ -16,9 +16,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// Qt lib
+//
 #include <QString>
+
+// C lib
+//
 #include <unicode/unistr.h>
+
+// C++ lib
+//
 #include <string>
+
 
 /** \file
  * \brief Simplify the use of the UnicodeString with QString support.

@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../robotstxt/robotstxt.h"
+
 
 namespace snap
 {
@@ -96,7 +99,7 @@ private:
     bool                                    create_file(content::path_info_t & file_ipath);
     bool                                    load_xsl_file(QString const & filename, QString & xsl);
 
-    zpsnap_child_t                          f_snap;
+    snap_child *                            f_snap = nullptr;
     QtCassandra::QCassandraRow::pointer_t   f_snap_software_description_settings_row;
     content::path_info_t::pointer_t         f_table_of_content_ipath;
     QString                                 f_snap_software_description_parser_catalog_xsl;

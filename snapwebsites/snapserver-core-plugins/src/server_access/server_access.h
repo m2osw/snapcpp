@@ -16,8 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../content/content.h"
 #include "../test_plugin_suite/test_plugin_suite.h"
+
 
 namespace snap
 {
@@ -110,11 +113,11 @@ private:
     // tests
     SNAP_TEST_PLUGIN_TEST_DECL(test_ajax)
 
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
     QDomDocument                f_ajax;
-    controlled_vars::fbool_t    f_ajax_initialized;
-    controlled_vars::fbool_t    f_ajax_output;
-    controlled_vars::fbool_t    f_success;
+    bool                        f_ajax_initialized = false;
+    bool                        f_ajax_output = false;
+    bool                        f_success = false;
     QString                     f_ajax_redirect;
     QString                     f_ajax_target;
     data_map_t                  f_ajax_data;

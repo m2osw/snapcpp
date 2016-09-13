@@ -1917,7 +1917,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        // (i.e. controlled_vars, C++ cassandra driver...)
+        // (i.e. libtld, C++ cassandra driver...)
         SNAP_LOG_FATAL("snap_backend::process_backend_uri(): std::exception caught: ")(std_except.what());
     }
     catch( ... )

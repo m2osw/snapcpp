@@ -3427,7 +3427,7 @@ void content::on_save_content()
     class restore_flag_t
     {
     public:
-        restore_flag_t(controlled_vars::fbool_t & flag)
+        restore_flag_t(bool & flag)
             : f_flag(flag)
         {
             f_flag = true;
@@ -3439,7 +3439,7 @@ void content::on_save_content()
         }
 
     private:
-        controlled_vars::fbool_t &  f_flag;
+        bool &  f_flag;
     };
 
     restore_flag_t raii_updating(f_updating);

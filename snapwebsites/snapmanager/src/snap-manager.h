@@ -158,7 +158,7 @@ private:
     QPointer<QLineEdit>             f_sites_parameter_name;
     QString                         f_sites_org_parameter_value;
     QPointer<QLineEdit>             f_sites_parameter_value;
-    controlled_vars::zint32_t       f_sites_org_parameter_type;
+    int32_t                         f_sites_org_parameter_type = 0;
     QPointer<QComboBox>             f_sites_parameter_type;
     QPointer<QPushButton>           f_sites_new;
     QPointer<QPushButton>           f_sites_save;
@@ -175,11 +175,11 @@ private:
 
     // snap server
     QString                         f_snap_host;
-    controlled_vars::zint32_t       f_snap_port;
+    int32_t                         f_snap_port = 0;
 
     // cassandra data
     QString                                     f_cassandra_host;
-    controlled_vars::zint32_t                   f_cassandra_port;
+    int32_t                                     f_cassandra_port = 0;
     QtCassandra::QCassandraSession::pointer_t   f_session;
     QStringList                                 f_domains_to_check;
 

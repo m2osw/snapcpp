@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../links/links.h"
-
-#include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 
 namespace snap
@@ -371,9 +371,9 @@ private:
     void                            clear(bool keep_parameters = false);
 
     // auto-initialized
-    content *                       f_content_plugin;
-    zpsnap_child_t                  f_snap;
-    controlled_vars::fbool_t        f_initialized;
+    content *                       f_content_plugin = nullptr;
+    snap_child *                    f_snap = nullptr;
+    bool                            f_initialized = false;
 
     // user specified
     QString                         f_key;
@@ -381,7 +381,7 @@ private:
     QString                         f_cpath;
     mutable snap_string_list        f_segments;
     QString                         f_real_cpath;
-    controlled_vars::fbool_t        f_main_page;
+    bool                            f_main_page = false;
     parameters_t                    f_parameters;
 
     // generated internally
@@ -451,7 +451,6 @@ public:
         COMMAND_RESET,                  // no parameters
         COMMAND_WARNING                 // + warning message
     };
-    typedef controlled_vars::limited_auto_enum_init<command_t, command_t::COMMAND_UNKNOWN, command_t::COMMAND_DEFAULT_VALUE, command_t::COMMAND_UNKNOWN> safe_command_t;
 
     enum class mode_t : int32_t
     {
@@ -459,7 +458,6 @@ public:
         SEARCH_MODE_EACH,             // return a list of QCassandraValue's of all the entire tree
         SEARCH_MODE_PATHS             // return a list of paths (for debug purposes usually)
     };
-    typedef controlled_vars::limited_auto_enum_init<mode_t, mode_t::SEARCH_MODE_FIRST, mode_t::SEARCH_MODE_PATHS, mode_t::SEARCH_MODE_FIRST> safe_mode_t;
 
     typedef QVector<QtCassandra::QCassandraValue> search_result_t;
     typedef QMap<QString, QString> variables_t;
@@ -488,10 +486,10 @@ public:
         path_info_t &       get_ipath() const { return const_cast<path_info_t &>(f_path_info); }
 
     private:
-        safe_command_t                  f_cmd;
+        command_t                       f_cmd = command_t::COMMAND_UNKNOWN;
         QtCassandra::QCassandraValue    f_value;
         QDomElement                     f_element;
-        controlled_vars::ptr_auto_init<search_result_t> f_result;
+        search_result_t *               f_result = nullptr;
         path_info_t                     f_path_info;
     };
     typedef QVector<cmd_info_t> cmd_info_vector_t;
@@ -516,7 +514,7 @@ private:
     char const *        f_filename;
     char const *        f_function;
     int                 f_line;
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
     cmd_info_vector_t   f_program;
 };
 
@@ -601,8 +599,8 @@ private:
                         permission_flag(permission_flag const & rhs) = delete;
     permission_flag &   operator = (permission_flag const & rhs) = delete;
 
-    controlled_vars::tbool_t    f_allowed;
-    QString                     f_reason;
+    bool                f_allowed = true;
+    QString             f_reason;
 };
 
 
@@ -624,7 +622,6 @@ public:
         PARAM_TYPE_INT32,
         PARAM_TYPE_INT64
     };
-    typedef controlled_vars::limited_auto_enum_init<param_type_t, param_type_t::PARAM_TYPE_STRING, param_type_t::PARAM_TYPE_INT64, param_type_t::PARAM_TYPE_STRING> safe_param_type_t;
 
     // WARNING: these are saved in the database which is why we directly
     //          assign values DO NOT CHANGE THE VALUES
@@ -789,9 +786,9 @@ private:
     {
         QString                     f_name;
         QMap<QString, QString>      f_data; // [locale] = <html>
-        param_revision_t            f_revision_type;
-        controlled_vars::fbool_t    f_overwrite;
-        safe_param_type_t           f_type;
+        param_revision_t            f_revision_type = param_revision_t::PARAM_REVISION_GLOBAL;
+        bool                        f_overwrite = false;
+        param_type_t                f_type = param_type_t::PARAM_TYPE_STRING;
     };
     typedef QMap<QString, content_param>    content_params_t;
 
@@ -815,7 +812,7 @@ private:
         content_links_t             f_links;
         content_links_t             f_remove_links;
         content_attachments_t       f_attachments;
-        controlled_vars::fbool_t    f_saved;
+        bool                        f_saved = false;
     };
     typedef QMap<QString, content_block_t>  content_block_map_t;
     typedef content_links_t content_block_t::* content_block_links_offset_t;
@@ -844,7 +841,7 @@ private:
     void        backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
     void        backend_action_rebuild_index();
 
-    zpsnap_child_t                                  f_snap;
+    snap_child *                                    f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;
     QtCassandra::QCassandraTable::pointer_t         f_secret_table;
     QtCassandra::QCassandraTable::pointer_t         f_processing_table;
@@ -853,8 +850,8 @@ private:
     QtCassandra::QCassandraTable::pointer_t         f_revision_table;
     QtCassandra::QCassandraTable::pointer_t         f_files_table;
     content_block_map_t                             f_blocks;
-    controlled_vars::zint32_t                       f_file_index;
-    controlled_vars::fbool_t                        f_updating;
+    int32_t                                         f_file_index = 0;
+    bool                                            f_updating = false;
     QMap<QString, bool>                             f_added_javascripts;
     javascript_ref_map_t                            f_javascripts;
     QMap<QString, bool>                             f_added_css;

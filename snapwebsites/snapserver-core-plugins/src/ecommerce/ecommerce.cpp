@@ -767,11 +767,6 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
         QString const cart_code(main_uri.query_option("cart"));
         struct product_t
         {
-            product_t()
-                : f_quantity(1.0)
-            {
-            }
-
             void clear()
             {
                 f_attributes.clear();
@@ -780,13 +775,13 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                 f_quantity = 1.0;
             }
 
-            typedef controlled_vars::limited_auto_init<uint32_t, 0, 0x10FFFF, '*'> operation_t;
-            typedef controlled_vars::fauto_init<double> quantity_t; // always initialized to 0.0 because a template parameter cannot be a double
+            typedef uint32_t    operation_t;
+            typedef double      quantity_t;
 
             snap_string_list    f_attributes;
             QString             f_product;
-            operation_t         f_operation;
-            quantity_t          f_quantity;
+            operation_t         f_operation = '*';
+            quantity_t          f_quantity = 1.0;
         };
         product_t product;
         std::vector<product_t> product_list;
@@ -1031,7 +1026,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                         case '=':
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-                            if(it->f_quantity.value() == 0.0)
+                            if(it->f_quantity == 0.0)
 #pragma GCC diagnostic pop
                             {
                                 // remove the item from the cart

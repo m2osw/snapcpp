@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../path/path.h"
+
 
 namespace snap
 {
@@ -80,7 +83,7 @@ private:
     void                    get_icon(content::path_info_t & cpath, content::field_search::search_result_t & result);
     void                    save_clicked_icon();
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
 };
 
 

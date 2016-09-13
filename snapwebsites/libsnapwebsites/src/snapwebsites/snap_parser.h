@@ -18,10 +18,6 @@
 
 #include "snapwebsites/snap_exception.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <QVariant>
 #include <QVector>
 #include <QSharedPointer>
@@ -154,7 +150,6 @@ public:
 
         LEXER_ERROR_max
     };
-    typedef controlled_vars::limited_auto_enum_init<lexer_error_t, lexer_error_t::LEXER_ERROR_NONE, static_cast<lexer_error_t>(static_cast<int>(lexer_error_t::LEXER_ERROR_max) - 1), lexer_error_t::LEXER_ERROR_NONE> controlled_error_t;
 
                     lexer() { f_pos = f_input.begin(); }
     bool            eoi() const { return f_pos == f_input.end(); }
@@ -172,11 +167,11 @@ private:
 
     QString                         f_input;
     QString::const_iterator         f_pos;
-    controlled_vars::zuint32_t      f_line;
+    uint32_t                        f_line = 0;
     keywords_map_t                  f_keywords;
-    controlled_error_t              f_error_code;
+    lexer_error_t                   f_error_code = lexer_error_t::LEXER_ERROR_NONE;
     QString                         f_error_message;
-    controlled_vars::zuint32_t      f_error_line;
+    uint32_t                        f_error_line = 0;
 };
 
 class keyword
@@ -384,7 +379,7 @@ public:
     QSharedPointer<parser_user_data> get_user_data() const { return f_user_data; }
 
 private:
-    controlled_vars::zint32_t           f_line;
+    int32_t                             f_line = 0;
     vector_token_t                      f_tokens;
     QSharedPointer<parser_user_data>    f_user_data;
 };

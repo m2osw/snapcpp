@@ -16,12 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../filter/filter.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
 #include "../javascript/javascript.h"
 
-#include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 namespace snap
 {
@@ -115,7 +116,7 @@ private:
 
     typedef std::map<QString, bool> compression_extensions_map_t;
 
-    zpsnap_child_t                  f_snap;
+    snap_child *                    f_snap = nullptr;
     compression_extensions_map_t    f_compression_extensions;
 };
 

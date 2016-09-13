@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// snapwebsites lib
+//
 #include "snapwebsites/cache_control.h"
 #include "snapwebsites/http_cookie.h"
 #include "snapwebsites/snap_signals.h"
@@ -23,13 +25,16 @@
 #include "snapwebsites/snap_version.h"
 #include "snapwebsites/udp_client_server.h"
 
-#include <controlled_vars/controlled_vars_need_init.h>
-
+// QtCassandra lib
+//
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
 
+// Qt lib
+//
 #include <QBuffer>
 #include <QDomDocument>
+
 
 namespace snap
 {
@@ -87,8 +92,6 @@ public:
 class permission_error_callback;
 class server;
 
-typedef controlled_vars::auto_init<pid_t>   zpid_t;
-typedef controlled_vars::auto_init<int, -1> zfile_descriptor_t;
 
 
 class snap_child
@@ -239,13 +242,13 @@ public:
         QString                     f_filename;
         QString                     f_original_mime_type;
         QString                     f_mime_type;
-        controlled_vars::zint64_t   f_creation_time;        // time_t
-        controlled_vars::zint64_t   f_modification_time;    // time_t
+        int64_t                     f_creation_time = 0;        // time_t
+        int64_t                     f_modification_time = 0;    // time_t
         QByteArray                  f_data;
-        controlled_vars::zuint32_t  f_size;
-        controlled_vars::zuint32_t  f_index;
-        controlled_vars::zuint32_t  f_image_width;
-        controlled_vars::zuint32_t  f_image_height;
+        uint32_t                    f_size = 0;
+        uint32_t                    f_index = 0;
+        uint32_t                    f_image_width = 0;
+        uint32_t                    f_image_height = 0;
     };
     // map indexed by filename
     typedef QMap<QString, post_file_t> post_file_map_t;
@@ -280,6 +283,7 @@ public:
     typedef QVector<locale_info_t> locale_info_vector_t;
 
     typedef int header_mode_t;
+    static header_mode_t const HEADER_MODE_UNDEFINED    = 0x0000;
     static header_mode_t const HEADER_MODE_NO_ERROR     = 0x0001;
     static header_mode_t const HEADER_MODE_REDIRECT     = 0x0002;
     static header_mode_t const HEADER_MODE_ERROR        = 0x0004;
@@ -295,8 +299,7 @@ public:
         COMPRESSION_BZ2,
         COMPRESSION_SDCH
     };
-    typedef controlled_vars::limited_auto_enum_init<compression_t, compression_t::COMPRESSION_INVALID, compression_t::COMPRESSION_DEFLATE, compression_t::COMPRESSION_UNDEFINED> safe_compression_t;
-    typedef QVector<safe_compression_t> compression_vector_t;
+    typedef QVector<compression_t> compression_vector_t;
 
                                 snap_child(server_pointer_t s);
     virtual                     ~snap_child();
@@ -417,13 +420,13 @@ protected:
     snap_string_list            init_plugins(bool const add_defaults);
 
     server_pointer_t                            f_server;
-    controlled_vars::flbool_t                   f_is_child;
-    zpid_t                                      f_child_pid;
-    zfile_descriptor_t                          f_socket;
+    bool                                        f_is_child = false;
+    pid_t                                       f_child_pid = 0;
+    int                                         f_socket = -1;
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraContext::pointer_t   f_context;
-    controlled_vars::mint64_t                   f_start_date; // time request arrived
-    controlled_vars::flbool_t                   f_ready; // becomes true just before the server::execute() call
+    int64_t                                     f_start_date = 0; // time request arrived
+    bool                                        f_ready = false; // becomes true just before the server::execute() call
     environment_map_t                           f_env;
     snap_uri                                    f_uri;
     QString                                     f_site_key;
@@ -433,7 +436,7 @@ private:
     struct http_header_t
     {
         QString         f_header;
-        header_mode_t   f_modes;
+        header_mode_t   f_modes = HEADER_MODE_UNDEFINED;
     };
     typedef QMap<QString, http_header_t>    header_map_t;
     typedef QMap<QString, http_cookie>      cookie_map_t;
@@ -454,30 +457,30 @@ private:
     void                        output_cookies();
 
     QtCassandra::QCassandraTable::pointer_t     f_site_table;
-    controlled_vars::flbool_t                   f_new_content;
-    controlled_vars::flbool_t                   f_is_being_initialized;
+    bool                                        f_new_content = false;
+    bool                                        f_is_being_initialized = false;
     environment_map_t                           f_post;
     post_file_map_t                             f_files;
     environment_map_t                           f_browser_cookies;
-    controlled_vars::flbool_t                   f_has_post;
-    mutable controlled_vars::flbool_t           f_fixed_server_protocol;
+    bool                                        f_has_post = false;
+    mutable bool                                f_fixed_server_protocol = false;
     QString                                     f_domain_key;
     QString                                     f_website_key;
     QString                                     f_site_key_with_slash;
     QBuffer                                     f_output;
     header_map_t                                f_header;
     cookie_map_t                                f_cookies;
-    controlled_vars::flbool_t                   f_ignore_cookies;
-    controlled_vars::flbool_t                   f_died; // die() was already called once
+    bool                                        f_ignore_cookies = false;
+    bool                                        f_died = false; // die() was already called once
     QString                                     f_language;
     QString                                     f_country;
     QString                                     f_language_key;
-    controlled_vars::flbool_t                   f_original_timezone_defined;
+    bool                                        f_original_timezone_defined = false;
     QString                                     f_original_timezone;
-    controlled_vars::flbool_t                   f_plugins_locales_was_not_ready;
+    bool                                        f_plugins_locales_was_not_ready = false;
     locale_info_vector_t                        f_plugins_locales;
     locale_info_vector_t                        f_browser_locales;
-    controlled_vars::flbool_t                   f_working_branch;
+    bool                                        f_working_branch = false;
     snap_version::version_number_t              f_branch;
     snap_version::version_number_t              f_revision;
     QString                                     f_revision_key;

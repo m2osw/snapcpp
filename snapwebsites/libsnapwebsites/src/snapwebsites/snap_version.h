@@ -19,11 +19,6 @@
 #include "snapwebsites/snap_exception.h"
 #include "snapwebsites/qstring_stream.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-#include <controlled_vars/controlled_vars_ptr_auto_init.h>
-
 #include <QVector>
 
 
@@ -70,7 +65,62 @@ static basic_version_number_t const SPECIAL_VERSION_FIRST_REVISION    = 0;
 static basic_version_number_t const SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-5);
 static basic_version_number_t const SPECIAL_VERSION_MAX               = static_cast<basic_version_number_t>(-1);
 
-typedef controlled_vars::limited_auto_init<basic_version_number_t, SPECIAL_VERSION_MIN, SPECIAL_VERSION_MAX, SPECIAL_VERSION_UNDEFINED> version_number_t;
+static basic_version_number_t const SPECIAL_VERSION_DEFAULT           = SPECIAL_VERSION_UNDEFINED;
+
+class version_number_t
+{
+public:
+    version_number_t()
+        //: f_version(SPECIAL_VERSION_UNDEFINED) -- auto-init
+    {
+    }
+
+    version_number_t(basic_version_number_t const v)
+        : f_version(v)
+    {
+    }
+
+    version_number_t & operator = (basic_version_number_t const v)
+    {
+        f_version = v;
+        return *this;
+    }
+
+    operator basic_version_number_t () const
+    {
+        return f_version;
+    }
+
+    version_number_t & operator -- ()
+    {
+        --f_version;
+        return *this;
+    }
+
+    version_number_t & operator ++ ()
+    {
+        --f_version;
+        return *this;
+    }
+
+    version_number_t operator -- (int)
+    {
+        version_number_t const copy(*this);
+        --f_version;
+        return copy;
+    }
+
+    version_number_t operator ++ (int)
+    {
+        version_number_t const copy(*this);
+        --f_version;
+        return copy;
+    }
+
+private:
+    basic_version_number_t          f_version = SPECIAL_VERSION_UNDEFINED;
+};
+
 typedef QVector<version_number_t> version_numbers_vector_t;
 
 enum class operator_t
@@ -83,7 +133,6 @@ enum class operator_t
     /* <= */ OPERATOR_EARLIER_OR_EQUAL,
     /* >= */ OPERATOR_LATER_OR_EQUAL
 };
-typedef controlled_vars::limited_auto_enum_init<operator_t, operator_t::OPERATOR_UNORDERED, operator_t::OPERATOR_LATER_OR_EQUAL, operator_t::OPERATOR_UNORDERED> safe_operator_t;
 
 
 char const * find_extension(QString const & filename, char const ** extensions);
@@ -125,7 +174,7 @@ public:
     QString const &         get_error() const { return f_error; }
 
 private:
-    safe_operator_t         f_operator;
+    operator_t              f_operator = operator_t::OPERATOR_UNORDERED;
     QString                 f_error;
 };
 
@@ -232,18 +281,16 @@ public:
     name::vector_t const &      get_browsers() const { return f_browsers; }
     QString const &             get_description() const { return f_description; }
     dependency_vector_t const & get_depends() const { return f_depends; }
-    bool                        is_defined() const { return f_data; }
+    bool                        is_defined() const { return f_data != nullptr; }
     bool                        is_valid() const;
     QString const &             get_error() const { return f_error; }
 
 private:
-    typedef controlled_vars::ptr_auto_init<char const>    zpdata_t;
-
     int                         getc();
     QString                     get_line();
 
-    zpdata_t                    f_data;
-    zpdata_t                    f_end;
+    char const *                f_data = nullptr;
+    char const *                f_end = nullptr;
 
     name                        f_name;
     name                        f_layout;

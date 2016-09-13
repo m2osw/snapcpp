@@ -16,9 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../content/content.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/not_reached.h>
+
 
 namespace snap
 {
@@ -62,7 +67,7 @@ public:
     // TODO: change that to a class with private vars...
     struct parameter_t
     {
-        token_t                 f_type;
+        token_t                 f_type = token_t::TOK_UNDEFINED;
         QString                 f_name;
         QString                 f_value;
 
@@ -129,9 +134,9 @@ public:
     {
         QString                     f_name;
         QVector<parameter_t>        f_parameters;
-        controlled_vars::fbool_t    f_found;
-        controlled_vars::fbool_t    f_error;
-        controlled_vars::fbool_t    f_name_used;
+        bool                        f_found = false;
+        bool                        f_error = false;
+        bool                        f_name_used = false;
         QString                     f_replacement;
 
         bool is_namespace(char const *name)
@@ -354,8 +359,8 @@ public:
         QString const &             get_end_marker_uri_title() const;
 
     private:
-        controlled_vars::zint32_t   f_words;            // max. # of words
-        controlled_vars::zint32_t   f_tags;             // max. # of tags
+        int32_t                     f_words = 0;        // max. # of words
+        int32_t                     f_tags = 0;         // max. # of tags
         QString                     f_end_marker;       // i.e. usually "..." or "[...]" or a "read more" link
         QString                     f_end_marker_uri;   // main page URI
         QString                     f_end_marker_uri_title;
@@ -404,7 +409,7 @@ public:
 private:
     void                content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
 };
 
 } // namespace filter

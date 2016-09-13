@@ -41,7 +41,6 @@ find_package( Qt5Core REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${AS2JS_INCLUDE_DIRS}
 )
 
@@ -77,11 +76,6 @@ target_link_libraries( epayment_paypal
     Qt5::Core
     ${AS2JS_LIBRARIES}
 )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( epayment_paypal make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS epayment_paypal LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

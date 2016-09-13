@@ -114,9 +114,9 @@
  * \code
  *     // declaration and initial values of global variables
  *     namespace {
- *         int num_threads = 100;
- *         std::vector<controlled_vars::fbool_t> entering;
- *         std::vector<controlled_vars::zuint32_t> tickets;
+ *         int                   num_threads = 100;
+ *         std::vector<bool>     entering;
+ *         std::vector<uint32_t> tickets;
  *     }
  *
  *     // initialize the vectors
@@ -344,7 +344,7 @@
  * {
  *   SnapLock lock("some name");
  *
- *   // do protect work here...
+ *   // do protected work here...
  * }
  * \endcode
  */

@@ -54,7 +54,7 @@ private:
     typedef std::deque<word_t>  word_list_t; // TODO: look into reusing the snap_thread queue instead of our own reimplementation
     word_list_t                 f_word_list;
 
-    controlled_vars::flbool_t   f_stop_received;
+    bool                        f_stop_received = false;
 };
 
 }

@@ -26,12 +26,18 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
+// log4cplus wants to be compatible with old compilers and thus uses
+// std::auto_ptr<>() which throws an error in our code
+//
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <log4cplus/configurator.h>
 #include <log4cplus/logger.h>
 #include <log4cplus/fileappender.h>
 #include <log4cplus/consoleappender.h>
 #include <log4cplus/syslogappender.h>
 #include <log4cplus/socketappender.h>
+#pragma GCC diagnostic pop
 
 #include <QFileInfo>
 

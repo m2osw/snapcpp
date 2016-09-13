@@ -259,7 +259,7 @@ QString const & sitemapxml::url_image::get_license_uri() const
  */
 sitemapxml::url_info::url_info()
     //: f_uri("") -- auto-init
-    : f_priority(0.5f)
+    //: f_priority(0.5f) -- auto-inif
     //, f_last_modification() -- auto-init
     //, f_frequency() -- auto-init
 {

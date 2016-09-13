@@ -15,16 +15,22 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
 #include "snapwebsites/snap_parser.h"
 
+// snapwebsites lib
+//
 #include "snapwebsites/log.h"
 #include "snapwebsites/qstring_stream.h"
 
-#include <controlled_vars/controlled_vars_no_init.h>
-
+// Qt lib
+//
 #include <QList>
 #include <QPointer>
 
+// last include
+//
 #include "snapwebsites/poison.h"
 
 
@@ -1786,15 +1792,15 @@ struct parser_state
 
 #endif
 
-    controlled_vars::flbool_t       f_lock;
+    bool                            f_lock = false;
 
     int32_t                         f_line = -1;
-    parser_state *                  f_parent;
+    parser_state *                  f_parent = nullptr;
     state_array_t                   f_children;
 
-    choices *                       f_choices;
-    controlled_vars::zint32_t       f_rule;
-    controlled_vars::zint32_t       f_position;
+    choices *                       f_choices = nullptr;
+    int32_t                         f_rule = 0;
+    int32_t                         f_position = 0;
 
     QSharedPointer<token_node>      f_node;
     state_array_t                   f_add_on_reduce;
@@ -1974,7 +1980,7 @@ bool grammar::parse(lexer& input, choices& start)
                         // to avoid infinite loop; recurvise rules are used
                         // only when the concern rule gets reduced
                         // the child position is always 0 here (it's a new child)
-                        controlled_vars::flbool_t recursive;
+                        bool recursive(false);
 //                        token_t const child_token_id(child_ref.get_token().get_id());
 //                        if(child_token_id == token_t::TOKEN_ID_CHOICES_ENUM)
 //                        {

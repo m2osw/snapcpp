@@ -40,10 +40,12 @@
 #include "qstring_stream.h"
 #include "dbutils.h"
 
-// our libs
+// advgetopt libs
 //
-#include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
+
+// Qt lib
+//
 #include <QtCassandra/QCassandra.h>
 
 // system
@@ -220,33 +222,33 @@ public:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    QCassandra::pointer_t           f_cassandra;
-    QString                         f_host;
-    controlled_vars::mint32_t       f_port;
-    controlled_vars::mint32_t       f_count;
-    QString                         f_context;
-    QString                         f_table;
-    QString                         f_row;
-    QString                         f_cell;
-    QString                         f_value;
-    getopt_ptr_t                    f_opt;
-
     void display_tables() const;
     void display_rows() const;
     void display_rows_wildcard() const;
     void display_columns() const;
     void display_cell() const;
     void set_cell() const;
+
+    QCassandra::pointer_t           f_cassandra;
+    QString                         f_host = "localhost";
+    int32_t                         f_port = 4042;
+    int32_t                         f_count = 100;
+    QString                         f_context = "snap_websites";
+    QString                         f_table = "sites";
+    QString                         f_row;
+    QString                         f_cell;
+    QString                         f_value;
+    getopt_ptr_t                    f_opt;
 };
 
 
 snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
-    , f_host("localhost")           // default
-    , f_port(4042)                  // default
-    , f_count(100)                  // default
-    , f_context("snap_websites")    // default
-    , f_table("sites")              // forced to "sites" by default
+    //, f_host("localhost")           // default
+    //, f_port(4042)                  // default
+    //, f_count(100)                  // default
+    //, f_context("snap_websites")    // default
+    //, f_table("sites")              // forced to "sites" by default
     //, f_row("") -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, nullptr ) )
 {

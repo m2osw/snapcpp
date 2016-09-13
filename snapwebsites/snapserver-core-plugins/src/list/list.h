@@ -16,11 +16,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../layout/layout.h"
 #include "../filter/filter.h"
 
 #include "../test_plugin_suite/test_plugin_suite.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/snap_backend.h>
 #include <snapwebsites/snap_expr.h>
 
@@ -214,8 +218,8 @@ public:
         }
 
     private:
-        list *              f_list_plugin;
-        priority_t          f_priority;
+        list *              f_list_plugin = nullptr;
+        priority_t          f_priority = LIST_PRIORITY_NEW_PAGE;
     };
 
     class safe_start_date_offset_t
@@ -234,8 +238,8 @@ public:
         }
 
     private:
-        list *              f_list_plugin;
-        int64_t             f_start_date_offset;
+        list *              f_list_plugin = nullptr;
+        int64_t             f_start_date_offset = 0;
     };
 
                         list();

@@ -15,22 +15,34 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
 #include "filter.h"
 
+// other plugins
+//
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomxpath.h>
 #include <snapwebsites/qdomhelpers.h>
 #include <snapwebsites/qstring_stream.h>
 
+// C++ lib
+//
 #include <iostream>
 #include <cctype>
 
+// Qt lib
+//
 #include <QTextStream>
 
+// last entry
+//
 #include <snapwebsites/poison.h>
 
 
@@ -1013,8 +1025,8 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
             , f_filter(f)
             , f_ipath(ipath)
             , f_xml(xml)
-            , f_index(0)
-            , f_extra_index(0)
+            //, f_index(0)
+            //, f_extra_index(0)
             , f_text(text)
             //, f_result("") -- auto-init
             //, f_token("") -- auto-init
@@ -1433,18 +1445,18 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
             }
         }
 
-        snap_child *                f_snap;
-        filter *                    f_filter;
+        snap_child *                f_snap = nullptr;
+        filter *                    f_filter = nullptr;
         content::path_info_t        f_ipath;
         QDomDocument                f_xml;
-        controlled_vars::mint32_t   f_index;
-        controlled_vars::mint32_t   f_extra_index;
+        int32_t                     f_index = 0;
+        int32_t                     f_extra_index = 0;
         QString                     f_text;
         QString                     f_result;
         QString                     f_token;
         QString                     f_replacement;
         QString                     f_extra_input;
-        controlled_vars::mlbool_t   f_support_edit;
+        bool                        f_support_edit = true;
     };
 
     text_t t(f_snap, this, txt_filt.get_ipath(), txt_filt.get_xml_document(), txt_filt.get_text(), txt_filt.get_support_edit());

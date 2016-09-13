@@ -62,11 +62,11 @@ uint32_t chunk_name(unsigned char a, unsigned char b, unsigned char c, unsigned 
 
 snap_image_buffer_t::snap_image_buffer_t(snap_image *owner)
     : f_owner(owner)
-    //, f_buffer(NULL) -- auto-init
+    //, f_buffer(nullptr) -- auto-init
 {
 }
 
-QString const& snap_image_buffer_t::get_mime_type() const
+QString const & snap_image_buffer_t::get_mime_type() const
 {
     return f_mime_type;
 }
@@ -156,7 +156,7 @@ void snap_image_buffer_t::set_bits(int bits)
     f_bits = bits;
 }
 
-unsigned char *snap_image_buffer_t::get_buffer() const
+unsigned char * snap_image_buffer_t::get_buffer() const
 {
     return f_buffer.data();
 }

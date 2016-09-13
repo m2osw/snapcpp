@@ -21,11 +21,6 @@
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/snapwebsites.h>
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_fauto_init.h>
-#include <controlled_vars/controlled_vars_limited_need_init.h>
-#include <controlled_vars/controlled_vars_need_init.h>
-
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -215,37 +210,36 @@ public:
             TOKEN_TYPE_FLOAT,       // floating point ('.' is the trigger)
             TOKEN_TYPE_COMMAND      // !:<command> a string with "command"
         };
-        typedef controlled_vars::limited_need_init<type_t, type_t::TOKEN_TYPE_EOT, type_t::TOKEN_TYPE_FLOAT> safe_type_t;
         typedef char            character_t;
         typedef std::string     string_t;
         typedef int64_t         integer_t;
         typedef double          float_t;
 
                         token_t()
-                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_EOT))
+                            : f_type(type_t::TOKEN_TYPE_EOT)
                         {
                         }
 
                         token_t(character_t character)
-                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_CHARACTER))
+                            : f_type(type_t::TOKEN_TYPE_CHARACTER)
                             , f_character(character)
                         {
                         }
 
                         token_t(string_t string, bool is_string = true)
-                            : f_type(static_cast<int32_t>(is_string ? type_t::TOKEN_TYPE_STRING : type_t::TOKEN_TYPE_COMMAND))
+                            : f_type(is_string ? type_t::TOKEN_TYPE_STRING : type_t::TOKEN_TYPE_COMMAND)
                             , f_string(string)
                         {
                         }
 
                         token_t(integer_t integer)
-                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_INTEGER))
+                            : f_type(type_t::TOKEN_TYPE_INTEGER)
                             , f_integer(integer)
                         {
                         }
 
                         token_t(float_t floating_point)
-                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_FLOAT))
+                            : f_type(type_t::TOKEN_TYPE_FLOAT)
                             , f_float(floating_point)
                         {
                         }
@@ -258,13 +252,13 @@ public:
         float_t         get_float() const { return f_float; }
 
     private:
-        safe_type_t                 f_type;
+        type_t                      f_type = type_t::TOKEN_TYPE_EOT;
 
         // TODO: redefine controlled vars with the typedef's of this class
-        controlled_vars::zchar_t    f_character;
+        char                        f_character = 0;
         std::string                 f_string;
-        controlled_vars::zint64_t   f_integer;
-        controlled_vars::zdouble_t  f_float;
+        int64_t                     f_integer = 0;
+        double                      f_float = 0.0;
     };
 
                     lexer(filenames_t fn);
@@ -284,9 +278,9 @@ private:
     token_t         get_number_token(mode_t mode, int c);
 
     filenames_t                     f_filenames;
-    controlled_vars::mint32_t       f_fpos;
-    controlled_vars::mint32_t       f_line;
-    controlled_vars::tbool_t        f_start_of_line;
+    size_t                          f_fpos = 0;
+    int32_t                         f_line = 1;
+    bool                            f_start_of_line = true;
     std::shared_ptr<std::ifstream>  f_file; // current stream
     std::vector<char>               f_unget;
 };
@@ -395,10 +389,11 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
  */
 lexer::lexer(filenames_t fn)
     : f_filenames(fn)
-    , f_fpos(0)
-    //, f_file(nullptr) -- auto-init
-    , f_line(1)
+    //, f_fpos(0) -- auto-init
+    //, f_line(1) -- auto-init
     //, f_start_of_line(true)
+    //, f_file(nullptr) -- auto-init
+    //, f_unget() -- auto-init
 {
     if(fn.size() > 0)
     {
@@ -1090,13 +1085,9 @@ public:
             ENTRY_TYPE_NAME,
             ENTRY_TYPE_USE
         };
-        typedef controlled_vars::limited_auto_init<type_t, type_t::ENTRY_TYPE_UNKNOWN, type_t::ENTRY_TYPE_DEFAULT, type_t::ENTRY_TYPE_UNKNOWN> safe_type_t;
 
-        typedef lexer::token_t::integer_t                   integer_t;
-        typedef controlled_vars::auto_init<integer_t, 0>    zinteger_t;
-
-        typedef lexer::token_t::float_t                     float_t;
-        typedef controlled_vars::fauto_init<float_t>        zfloat_t;
+        typedef lexer::token_t::integer_t       integer_t;
+        typedef lexer::token_t::float_t         float_t;
 
         // string & search flags
         static integer_t const  ENTRY_FLAG_COMPACT_BLANK        = 0x00000001; // W
@@ -1145,7 +1136,7 @@ public:
         void                set_offset(integer_t offset) { f_offset = offset; }
         integer_t           get_offset() const { return f_offset; }
 
-        void                set_type(type_t type) { f_type = static_cast<int32_t>(type); }
+        void                set_type(type_t type) { f_type = type; }
         type_t              get_type() const { return f_type; }
 
         void                set_mask(integer_t mask) { f_mask = mask; }
@@ -1163,7 +1154,7 @@ public:
         std::string         get_mimetype() const { return f_mimetype; }
 
         void                set_integer(integer_t integer) { f_integer = integer; }
-        zinteger_t          get_integer() const { return f_integer; }
+        integer_t           get_integer() const { return f_integer; }
 
         void                set_float(float_t flt) { f_float = flt; }
         float_t             get_float() const { return f_float; }
@@ -1172,16 +1163,16 @@ public:
         std::string         get_string() const { return f_string; }
 
     private:
-        zinteger_t          f_level;        // number of > at the start (0+)
-        zinteger_t          f_offset;       // no support for indirections at this point (it's not that complicated, just time consuming to make sure it works right.)
-        safe_type_t         f_type;         // see enum
-        zinteger_t          f_mask;         // defined with the type as in: "long&0xF0F0F0F0"
-        zinteger_t          f_maxlength;    // search/<maxlength>
-        zinteger_t          f_flags;        // [p]string/<flags>, and NOT (!)
-        std::string         f_mimetype;     // a string found after the !:mimetype ...
-        zinteger_t          f_integer;      // compare with this integer
-        zfloat_t            f_float;        // compare with this float
-        std::string         f_string;       // compare with this string (may include '\0')
+        integer_t           f_level = 0;        // number of > at the start (0+)
+        integer_t           f_offset = 0;       // no support for indirections at this point (it's not that complicated, just time consuming to make sure it works right.)
+        type_t              f_type = type_t::ENTRY_TYPE_UNKNOWN;         // see enum
+        integer_t           f_mask = 0;         // defined with the type as in: "long&0xF0F0F0F0"
+        integer_t           f_maxlength = 0;    // search/<maxlength>
+        integer_t           f_flags = 0;        // [p]string/<flags>, and NOT (!)
+        std::string         f_mimetype;         // a string found after the !:mimetype ...
+        integer_t           f_integer = 0;      // compare with this integer
+        float_t             f_float = 0.0;      // compare with this float
+        std::string         f_string;           // compare with this string (may include '\0')
     };
     typedef std::vector<entry_t::pointer_t>    entry_vector_t;
 

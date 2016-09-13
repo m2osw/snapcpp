@@ -32,21 +32,6 @@
 #include "snapwebsites/poison.h"
 
 
-namespace QtSerialization {
-/** \brief Convert basic data from a string to a field of type qint8.
- *
- * This template specialization is used to convert a string to a field
- * of type bool defined in the user class.
- *
- * \param[out] field  The reference to the field where the converted data is saved.
- * \param[in] data  The data to convert and save in \p field.
- */
-template<>
-void convertData<controlled_vars::flbool_t>(controlled_vars::flbool_t& field, const QString& data)
-{
-    field = data.toInt() != 0;
-}
-} // namespace QtSerialization
 
 
 namespace snap
@@ -1251,7 +1236,7 @@ QString snap_uri::path(bool encoded) const
     if(encoded)
     {
         QString output;
-        controlled_vars::tlbool_t first;
+        bool first(true);
         for(snap_string_list::const_iterator it(f_path.begin());
                     it != f_path.end(); ++it)
         {
@@ -2111,7 +2096,7 @@ void domain_variable::read(QtSerialization::QReader& r)
     QtSerialization::QFieldString name(comp, "domain_variable::name", f_name);
     QtSerialization::QFieldString value(comp, "domain_variable::value", f_value);
     QtSerialization::QFieldString default_value(comp, "domain_variable::default", f_default);
-    QtSerialization::QFieldBasicType<controlled_vars::flbool_t> required(comp, "domain_variable::required", f_required);
+    QtSerialization::QFieldBasicType<bool> required(comp, "domain_variable::required", f_required);
     r.read(comp);
 }
 
@@ -2721,7 +2706,7 @@ void website_variable::read(QtSerialization::QReader& r)
     QtSerialization::QFieldString name(comp, "website_variable::name", f_name);
     QtSerialization::QFieldString value(comp, "website_variable::value", f_value);
     QtSerialization::QFieldString default_value(comp, "website_variable::default", f_default);
-    QtSerialization::QFieldBasicType<controlled_vars::flbool_t> required(comp, "website_variable::required", f_required);
+    QtSerialization::QFieldBasicType<bool> required(comp, "website_variable::required", f_required);
     r.read(comp);
 }
 

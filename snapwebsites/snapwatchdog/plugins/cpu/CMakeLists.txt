@@ -42,7 +42,6 @@ include_directories(
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${snapwatchdog_SOURCE_DIR}
 )
 
@@ -63,11 +62,6 @@ target_link_libraries(cpu
     Qt5::Xml
     ${PROCPS_LIBRARIES}
 )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( cpu make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS cpu LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

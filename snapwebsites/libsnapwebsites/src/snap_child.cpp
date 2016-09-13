@@ -2682,7 +2682,7 @@ pid_t snap_child::fork_child()
         {
             // the snap_logic_exception is not a snap_exception
             // and other libraries may generate other exceptions
-            // (i.e. controlled_vars, C++ cassandra driver...)
+            // (i.e. libtld, C++ cassandra driver...)
             SNAP_LOG_FATAL("snap_child::fork_child(): std::exception caught: ")(std_except.what());
             exit(1);
             NOTREACHED();
@@ -2823,7 +2823,7 @@ bool snap_child::process(int socket)
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        // (i.e. controlled_vars, C++ cassandra driver...)
+        // (i.e. libtld, C++ cassandra driver...)
         SNAP_LOG_FATAL("snap_child::process(): std::exception caught: ")(std_except.what());
     }
     catch( ... )
@@ -3589,28 +3589,28 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
 #endif
 
     private:
-        mutable zpsnap_child_t      f_snap;
-        controlled_vars::zint32_t   f_socket;
-        //controlled_vars::zchar_t    f_unget;
-        controlled_vars::tbool_t    f_running;
-        controlled_vars::fbool_t    f_started;
+        mutable snap_child *        f_snap = nullptr;
+        int32_t                     f_socket = -1;
+        //char                        f_unget = 0;
+        bool                        f_running = true;
+        bool                        f_started = false;
 
         environment_map_t &         f_env;
         environment_map_t &         f_browser_cookies;
         QString                     f_name;
         QString                     f_value;
 
-        controlled_vars::fbool_t    f_has_post;
+        bool                        f_has_post = false;
         environment_map_t &         f_post;
         post_file_map_t &           f_files;
-        controlled_vars::tbool_t    f_post_first;
-        controlled_vars::tbool_t    f_post_header;
+        bool                        f_post_first = true;
+        bool                        f_post_header = true;
         QByteArray                  f_post_line;
         QByteArray                  f_post_content;
         QByteArray                  f_boundary;
         QByteArray                  f_end_boundary;
         environment_map_t           f_post_environment;
-        controlled_vars::zuint32_t  f_post_index;
+        uint32_t                    f_post_index = 0;
     };
 
     // reset the old environment

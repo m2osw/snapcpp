@@ -89,7 +89,6 @@ class snap_uri
 public:
     // types used by this class
     typedef QMap<QString, QString>    snap_uri_options_t;
-    typedef controlled_vars::limited_auto_init<int32_t, 0, 65535, 80> snap_uri_port_t;
 
     // constructors
                         snap_uri();
@@ -174,7 +173,7 @@ private:
     QString                         f_protocol;
     QString                         f_username;
     QString                         f_password;
-    snap_uri_port_t                 f_port;
+    int                             f_port = 80;
     QString                         f_domain;
     QString                         f_top_level_domain;
     snap_string_list                f_sub_domains;
@@ -511,7 +510,7 @@ private:
      * \sa get_required()
      * \sa set_required()
      */
-    controlled_vars::flbool_t f_required;
+    bool f_required = false;
 };
 
 
@@ -845,7 +844,7 @@ private:
     QString                     f_name;
     QString                     f_value;
     QString                     f_default;
-    controlled_vars::flbool_t   f_required;
+    bool                        f_required = false;
 };
 
 

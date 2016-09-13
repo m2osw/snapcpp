@@ -41,7 +41,6 @@ find_package( Qt5Core REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
@@ -68,11 +67,6 @@ add_library(mimetype SHARED
 )
 
 target_link_libraries( mimetype Qt5::Core )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( mimetype make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS mimetype LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
@@ -156,7 +150,6 @@ add_executable( ${PROJECT_NAME}
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 target_link_libraries( ${PROJECT_NAME}
     ${SNAPWEBSITES_LIBRARIES}

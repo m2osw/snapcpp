@@ -16,9 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <snapwebsites/snapwebsites.h>
-
+// other plugins
+//
 #include "../test_plugin_suite/test_plugin_suite.h"
+
+// snapwebsites lib
+//
+#include <snapwebsites/snapwebsites.h>
 
 
 namespace snap
@@ -207,7 +211,7 @@ public:
     void verify_name(QString const & vname);
 
 private:
-    controlled_vars::fbool_t        f_unique;
+    bool                            f_unique = false;
     QString                         f_name;
     QString                         f_key;
     snap_version::version_number_t  f_branch;
@@ -238,7 +242,7 @@ private:
 
     link_context(::snap::snap_child *snap, link_info const & info, const int count);
 
-    zpsnap_child_t                                  		f_snap;
+    snap_child *                                    		f_snap = nullptr;
     link_info                                       		f_info;
     QtCassandra::QCassandraRow::pointer_t           		f_row;
     QtCassandra::QCassandraCellRangePredicate::pointer_t    f_column_predicate;
@@ -305,7 +309,7 @@ private:
     SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_delete)
     SNAP_TEST_PLUGIN_TEST_DECL(test_multiple_multiple_create_delete)
 
-    zpsnap_child_t                                  f_snap;
+    snap_child *                                    f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t         f_links_table;
     QtCassandra::QCassandraTable::pointer_t         f_branch_table;
 };

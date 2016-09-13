@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../editor/editor.h"
+
 
 /** \file
  * \brief Header of the locale widgets plugin.
@@ -55,13 +58,15 @@ namespace locale_widgets
 class locale_widgets : public plugins::plugin
 {
 public:
+    // TODO: this seems to be duplicated from `class locale`
+    //
     // the ICU library only gives us the timezone full name,
     // continent and city all the other parameters will be empty
     struct timezone_info_t
     {
         QString         f_2country;         // 2 letter country code
-        int64_t         f_longitude;        // city longitude
-        int64_t         f_latitude;         // city latitude
+        int64_t         f_longitude = 0;    // city longitude
+        int64_t         f_latitude = 0;     // city latitude
         QString         f_timezone_name;    // the full name of the timezone as is
         QString         f_continent;        // one of the 5 continents and a few other locations
         QString         f_country_or_state; // likely empty (Used for Argentina, Kentucky, Indiana...)
@@ -93,7 +98,7 @@ public:
 private:
     void                        content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
 };
 
 

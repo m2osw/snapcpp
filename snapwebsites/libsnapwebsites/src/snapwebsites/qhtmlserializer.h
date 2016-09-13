@@ -16,6 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef _QHTMLSERIALIZER_H
 #define _QHTMLSERIALIZER_H
+
+// Qt lib
+//
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <QAbstractXmlReceiver>
@@ -24,7 +27,6 @@
 #include <QVector>
 #pragma GCC diagnostic pop
 
-#include <controlled_vars/controlled_vars_limited_need_enum_init.h>
 
 class QHtmlSerializer : public QAbstractXmlReceiver
 {
@@ -57,7 +59,7 @@ private:
     QBuffer *                   f_output;
     html_serializer_status_t    f_status;
     QVector<QString>            f_element_stack;
-    controlled_vars::mlbool_t   f_is_html; // ignore HTML empty tags
+    bool                        f_is_html = true; // ignore HTML empty tags
 };
 
 #endif

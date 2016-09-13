@@ -341,7 +341,7 @@ void server_access::ajax_output()
             messages::messages::message const & msg(messages->get_message(i));
             switch(msg.get_type())
             {
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_ERROR:
                 type = "error";
                 if(f_success)
                 {
@@ -353,15 +353,15 @@ void server_access::ajax_output()
                 }
                 break;
 
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_WARNING:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_WARNING:
                 type = "warning";
                 break;
 
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_INFO:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_INFO:
                 type = "info";
                 break;
 
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_DEBUG:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_DEBUG:
                 type = "debug";
                 break;
 

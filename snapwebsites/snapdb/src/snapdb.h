@@ -82,10 +82,10 @@ private:
     void set_cell()              const;
 
     QtCassandra::QCassandraSession::pointer_t   f_session;
-    QString                                     f_host;
-    int32_t                                     f_port = -1;
-    int32_t                                     f_count = -1;
-    QString                                     f_context;
+    QString                                     f_host = "localhost";
+    int32_t                                     f_port = 9042;
+    int32_t                                     f_count = 100;
+    QString                                     f_context = "snap_websites";
     QString                                     f_table;
     QString                                     f_row;
     QString                                     f_cell;

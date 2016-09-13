@@ -18,9 +18,6 @@
 
 #include "snapwebsites/tcp_client_server.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <map>
 #include <vector>
 
@@ -84,20 +81,18 @@ public:
     void            set_body(std::string const& body);
 
 private:
-    typedef controlled_vars::auto_init<int32_t, -1>     m1port_t;
-
     std::string                 f_host;
     std::string                 f_command;
     std::string                 f_path;
-    m1port_t                    f_port;
+    int32_t                     f_port = -1;
     header_t                    f_headers;
     header_t                    f_post;
     std::string                 f_body;
     std::vector<attachment_t>   f_attachments;  // not used yet (Also look in a way that allows us to avoid an extra copy)
-    controlled_vars::flbool_t   f_has_body;
-    controlled_vars::flbool_t   f_has_data;
-    controlled_vars::flbool_t   f_has_post;
-    controlled_vars::flbool_t   f_has_attachment; // not used yet
+    bool                        f_has_body = false;
+    bool                        f_has_data = false;
+    bool                        f_has_post = false;
+    bool                        f_has_attachment = false; // not used yet
 };
 
 
@@ -132,15 +127,13 @@ public:
     void            set_response(std::string const & response);
 
 private:
-    typedef controlled_vars::limited_auto_enum_init<protocol_t, protocol_t::UNKNOWN, protocol_t::HTTP_1_1, protocol_t::UNKNOWN> zprotocol_t;
-
     friend http_client;
 
     void            read_response(tcp_client_server::bio_client::pointer_t connection);
 
     std::string                 f_original_header;
-    zprotocol_t                 f_protocol;
-    controlled_vars::zint32_t   f_response_code;
+    protocol_t                  f_protocol = protocol_t::UNKNOWN;
+    int32_t                     f_response_code = 0;
     std::string                 f_http_message;
     header_t                    f_header;
     std::string                 f_response;
@@ -162,12 +155,10 @@ public:
     http_response::pointer_t    send_request(http_request const & request);
 
 private:
-    typedef controlled_vars::auto_init<int32_t, -1>     m1port_t;
-
-    controlled_vars::tlbool_t                   f_keep_alive;
+    bool                                        f_keep_alive = true;
     tcp_client_server::bio_client::pointer_t    f_connection;
     std::string                                 f_host;
-    m1port_t                                    f_port;
+    int32_t                                     f_port = -1;
 };
 
 

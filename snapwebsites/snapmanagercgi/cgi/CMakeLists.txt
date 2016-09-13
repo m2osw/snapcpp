@@ -44,7 +44,6 @@ include_directories(
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${snapmanager_SOURCE_DIR}
 )
 

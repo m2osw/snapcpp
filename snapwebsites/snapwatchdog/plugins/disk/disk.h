@@ -73,7 +73,7 @@ public:
     void                on_process_watch(QDomDocument doc);
 
 private:
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
 };
 
 } // namespace disk

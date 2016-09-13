@@ -21,15 +21,6 @@
 #include "snapwebsites/not_reached.h"
 #include "snapwebsites/snap_exception.h"
 
-// controlled_vars lib
-//
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-#include <controlled_vars/controlled_vars_need_init.h>
-#include <controlled_vars/controlled_vars_ptr_auto_init.h>
-#include <controlled_vars/controlled_vars_ptr_need_init.h>
-
 // C++ lib
 //
 #include <memory>

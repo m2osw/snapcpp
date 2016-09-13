@@ -27,12 +27,12 @@ namespace snap
 
 
 
-snap_pipe::snap_pipe(QString const& command, mode_t mode)
+snap_pipe::snap_pipe(QString const & command, mode_t mode)
     : f_command(command)
-    , f_mode(static_cast<int>(mode))
-    , f_file(popen(f_command.toUtf8().data(), mode == mode_t::PIPE_MODE_IN ? "w" : "r"))
+    , f_mode(mode)
+    , f_file(popen(f_command.toUtf8().data(), mode_t::PIPE_MODE_IN == mode ? "w" : "r"))
 {
-    if(!f_file)
+    if(f_file == nullptr)
     {
         throw snap_pipe_exception_cannot_open(QString("popen(\"%1\", \"%2\" failed to start command")
                                                 .arg(f_command).arg(mode == mode_t::PIPE_MODE_IN ? "w" : "r"));
@@ -62,18 +62,18 @@ snap_pipe::mode_t snap_pipe::get_mode() const
 int snap_pipe::close_pipe()
 {
     int r(-1);
-    if(f_file)
+    if(f_file != nullptr)
     {
-        if(ferror(f_file.get()))
+        if(ferror(f_file))
         {
             // must return -1 on error
-            pclose(f_file.get());
+            pclose(f_file);
         }
         else
         {
-            r = pclose(f_file.get());
+            r = pclose(f_file);
         }
-        f_file.reset();
+        f_file = nullptr;
     }
     return r;
 }
@@ -90,7 +90,7 @@ std::ostream::int_type snap_pipe::overflow(int_type c)
 
     if(c != EOF)
     {
-        if(fputc(static_cast<int>(c), f_file.get()) == EOF)
+        if(fputc(static_cast<int>(c), f_file) == EOF)
         {
             return EOF;
         }
@@ -108,7 +108,7 @@ std::ostream::int_type snap_pipe::underflow()
     }
 #endif
 
-    int c(fgetc(f_file.get()));
+    int c(fgetc(f_file));
     if(c < 0 || c > 255)
     {
         throw snap_pipe_exception_cannot_read(QString("snap_pipe::underflow(): fgetc() returned an error (%1)").arg(c));
@@ -120,13 +120,13 @@ std::ostream::int_type snap_pipe::underflow()
 
 //int snap_pipe::write(char const *buf, size_t size)
 //{
-//    return fwrite(buf, 1, size, f_file.get());
+//    return fwrite(buf, 1, size, f_file);
 //}
 //
 //
 //int snap_pipe::read(char *buf, size_t size)
 //{
-//    return fread(buf, 1, size, f_file.get());
+//    return fread(buf, 1, size, f_file);
 //}
 
 

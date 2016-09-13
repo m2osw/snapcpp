@@ -20,9 +20,6 @@
 
 #include "snapwebsites/snap_string_list.h"
 
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <unistd.h>
 
 
@@ -67,7 +64,7 @@ public:
 
 
 // compression level is a percent (a number from 0 to 100)
-typedef controlled_vars::limited_auto_init<int, 0, 100, 50> level_t;
+typedef int         level_t;
 
 // all compressors derive from this class
 class compressor_t
@@ -96,7 +93,6 @@ public:
             FILE_TYPE_REGULAR,
             FILE_TYPE_DIRECTORY
         };
-        typedef controlled_vars::limited_auto_enum_init<type_t, type_t::FILE_TYPE_REGULAR, type_t::FILE_TYPE_DIRECTORY, type_t::FILE_TYPE_REGULAR> safe_type_t;
 
         void                set_type(type_t type);
         void                set_data(QByteArray const & data);
@@ -117,7 +113,7 @@ public:
         time_t              get_mtime() const;
 
     private:
-        safe_type_t         f_type;
+        type_t              f_type = type_t::FILE_TYPE_REGULAR;
         QByteArray          f_data;
         QString             f_filename;
         QString             f_user;

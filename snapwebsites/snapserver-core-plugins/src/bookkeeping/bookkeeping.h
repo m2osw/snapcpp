@@ -16,8 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../path/path.h"
 #include "../editor/editor.h"
+
 
 namespace snap
 {
@@ -101,7 +104,7 @@ private:
 
     bool                    create_new_client(content::path_info_t & ipath);
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
 };
 
 

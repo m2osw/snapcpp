@@ -209,6 +209,17 @@ compressor_t * get_compressor(QString const & compressor_name)
  */
 QByteArray compress(QString& compressor_name, const QByteArray& input, level_t level, bool text)
 {
+    // clamp the level, just in case
+    //
+    if(level < 0)
+    {
+        level = 0;
+    }
+    else if(level > 100)
+    {
+        level = 100;
+    }
+
     // nothing to compress if empty or too small a level
     if(input.size() == 0 || level < 5)
     {
@@ -332,6 +343,17 @@ public:
 
     virtual QByteArray compress(QByteArray const & input, level_t level, bool text)
     {
+        // clamp the level, just in case
+        //
+        if(level < 0)
+        {
+            level = 0;
+        }
+        else if(level > 100)
+        {
+            level = 100;
+        }
+
         // transform the 0 to 100 level to the standard 1 to 9 in zlib
         int const zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
         // initialize the zlib stream

@@ -203,7 +203,7 @@ char const * get_name(name_t name)
  */
 
 
-/** \var controlled_vars::zbool_t link_info::f_unique;
+/** \var bool link_info::f_unique;
  * \brief Unique (one) or not (many) links.
  *
  * This flag is used to tell the link system whether the link is

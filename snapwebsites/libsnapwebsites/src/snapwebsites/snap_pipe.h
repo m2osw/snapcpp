@@ -69,7 +69,6 @@ public:
         PIPE_MODE_IN,   // you will be writing to the command (<<)
         PIPE_MODE_OUT   // you will be reading from the command (>>)
     };
-    typedef controlled_vars::limited_auto_init<mode_t, mode_t::PIPE_MODE_IN, mode_t::PIPE_MODE_OUT, mode_t::PIPE_MODE_IN> zmode_t;
 
                                 snap_pipe(QString const & command, mode_t mode);
                                 ~snap_pipe();
@@ -83,19 +82,17 @@ public:
     mode_t                      get_mode() const;
 
 protected:
-    virtual int_type overflow(int_type c);
-    virtual int_type underflow();
+    virtual int_type            overflow(int_type c) override;
+    virtual int_type            underflow() override;
 
 private:
-    typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
-
     // you are not expected to use those
     //int                         write(char const *buf, size_t size);
     //int                         read(char *buf, size_t size);
 
     QString                     f_command;
-    zmode_t                     f_mode;
-    zpfile_t                    f_file;
+    mode_t                      f_mode = mode_t::PIPE_MODE_IN;
+    FILE *                      f_file = nullptr;
 };
 
 

@@ -18,8 +18,6 @@
 
 #include "snapwebsites/snap_exception.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-
 #include <QVector>
 #include <QSharedPointer>
 
@@ -98,12 +96,12 @@ private:
     QString                             f_mime_type;
     QString                             f_format_version;
     QString                             f_resolution_unit;
-    controlled_vars::zint32_t           f_xres;
-    controlled_vars::zint32_t           f_yres;
-    controlled_vars::zint32_t           f_width;
-    controlled_vars::zint32_t           f_height;
-    controlled_vars::zint32_t           f_depth; // 1 or 3 or 4
-    controlled_vars::zint32_t           f_bits;
+    int32_t                             f_xres = 0;
+    int32_t                             f_yres = 0;
+    int32_t                             f_width = 0;
+    int32_t                             f_height = 0;
+    int32_t                             f_depth = 0; // 1 or 3 or 4
+    int32_t                             f_bits = 0;
     QSharedPointer<unsigned char>       f_buffer;
 };
 typedef QSharedPointer<snap_image_buffer_t>     smart_snap_image_buffer_t;

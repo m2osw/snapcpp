@@ -424,7 +424,7 @@ void snap_software_description::on_backend_process()
         }
 
     private:
-        zpsnap_child_t                          f_snap;
+        snap_child *                f_snap = nullptr;
     };
 
     restore_path_t rp(f_snap);

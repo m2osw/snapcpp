@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../layout/layout.h"
+
 
 namespace snap
 {
@@ -105,8 +108,10 @@ public:
 
         static check_flag_t const   CHECK_HTTP_USER_AGENT   = 0x0001;
 
-        // define with all the default CHECKs we want to run
-        typedef controlled_vars::auto_init<check_flag_t, CHECK_HTTP_USER_AGENT> safe_check_flag_t;
+        static check_flag_t const   CHECK_DEFAULTS = CHECK_HTTP_USER_AGENT;
+
+        // default to SESSION_INFO_SECURE
+        static int32_t const        DEFAULT_TIME_TO_LIVE = 300;
 
                             session_info();
 
@@ -150,27 +155,21 @@ public:
         static char const * session_type_to_string(session_info_type_t type);
 
     private:
-        // default to SESSION_INFO_SECURE
-        typedef controlled_vars::limited_auto_init<session_info_type_t, session_info_type_t::SESSION_INFO_SECURE, session_info_type_t::SESSION_INFO_USER, session_info_type_t::SESSION_INFO_SECURE> auto_session_info_type_t;
-        typedef controlled_vars::auto_init<int32_t, 300> time_to_live_t;
-        typedef controlled_vars::auto_init<time_t, 0> ztime_t;
-        typedef controlled_vars::auto_init<session_id_t, 0> zsession_id_t;
-
-        auto_session_info_type_t    f_type;
-        zsession_id_t               f_session_id;
+        session_info_type_t         f_type = session_info_type_t::SESSION_INFO_SECURE;
+        session_id_t                f_session_id = 0;
         QString                     f_session_key;
-        controlled_vars::zint32_t   f_session_random;
+        int32_t                     f_session_random = 0;
         QString                     f_plugin_owner;
         QString                     f_page_path;
         QString                     f_object_path; // exact path to user, form, etc.
         QString                     f_user_agent;
         QString                     f_remote_addr;
-        time_to_live_t              f_time_to_live;
-        ztime_t                     f_time_limit;
-        ztime_t                     f_login_limit;
-        controlled_vars::zint64_t   f_date;
-        controlled_vars::zint64_t   f_creation_date;
-        safe_check_flag_t           f_check_flags;
+        int32_t                     f_time_to_live = DEFAULT_TIME_TO_LIVE;
+        time_t                      f_time_limit = 0;
+        time_t                      f_login_limit = 0;
+        int64_t                     f_date = 0;
+        int64_t                     f_creation_date = 0;
+        check_flag_t                f_check_flags = CHECK_DEFAULTS;
     };
 
                             sessions();
@@ -206,7 +205,7 @@ private:
 
     QtCassandra::QCassandraTable::pointer_t get_sessions_table();
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
 };
 
 } // namespace sessions

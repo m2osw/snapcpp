@@ -16,12 +16,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../epayment/epayment.h"
 #include "../epayment_creditcard/epayment_creditcard.h"
 #include "../filter/filter.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/http_client_server.h>
 
 
@@ -168,13 +172,13 @@ private:
     std::string                 create_unique_request_id(QString const & main_id);
     void                        log_error(http_client_server::http_response::pointer_t response, QtCassandra::QCassandraRow::pointer_t row);
 
-    zpsnap_child_t                              f_snap;
+    snap_child *                                f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t     f_epayment_stripe_table;
-    controlled_vars::flbool_t                   f_debug_defined;
-    controlled_vars::flbool_t                   f_debug;
-    controlled_vars::flbool_t                   f_maximum_repeat_failures_defined;
-    controlled_vars::flbool_t                   f_stripe_key_defined[2]; // 0- live, 1- test
-    controlled_vars::zint64_t                   f_maximum_repeat_failures;
+    bool                                        f_debug_defined = false;
+    bool                                        f_debug = false;
+    bool                                        f_maximum_repeat_failures_defined = false;
+    bool                                        f_stripe_key_defined[2] = { false, false }; // 0- live, 1- test
+    int64_t                                     f_maximum_repeat_failures = 0;
     QString                                     f_stripe_key[2]; // 0- live, 1- test
 };
 

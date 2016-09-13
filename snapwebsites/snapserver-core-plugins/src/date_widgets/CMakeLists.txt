@@ -36,7 +36,6 @@ find_package( Qt5Core REQUIRED )
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${LIBTLD_INCLUDE_DIRS}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
 
@@ -72,11 +71,6 @@ add_library(date_widgets SHARED
 )
 
 target_link_libraries( date_widgets Qt5::Core )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( date_widgets make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS date_widgets LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

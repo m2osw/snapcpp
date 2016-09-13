@@ -1995,7 +1995,7 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
  */
 int quick_find_version_in_source::getc()
 {
-    if(f_data.get() >= f_end.get())
+    if(f_data >= f_end)
     {
         return EOF;
     }

@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../path/path.h"
 
 
@@ -112,7 +114,7 @@ private:
     bool                check_for_uncompressed_file(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
     bool                check_for_minified_js_or_css(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info, QString const & extension);
 
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
 };
 
 
