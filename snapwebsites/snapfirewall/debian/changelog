@@ -1,3 +1,9 @@
+snapfirewall (1.0.5.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:07 -0700
+
 snapfirewall (1.0.5.0~xenial) xenial; urgency=high
 
   * SNAP-110: Bumped version to get my test system to upgrade properly.
