@@ -4427,7 +4427,7 @@ void snap_communicator_server::read_neighbors()
                     // in case we are already running we want to also add
                     // the corresponding connection
                     //
-                    f_remote_snapcommunicators->add_remote_communicator(s);
+                    f_remote_snapcommunicators->add_remote_communicator(line);
                 }
             }
         }
