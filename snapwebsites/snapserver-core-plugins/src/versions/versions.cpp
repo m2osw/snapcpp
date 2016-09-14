@@ -20,10 +20,10 @@
 #include "../users/users.h"
 #include "../permissions/permissions.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "process.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
 
 #include <csspp/csspp.h>
 #include <libtld/tld.h>
@@ -31,7 +31,7 @@
 
 #include <iostream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(versions, 1, 0)

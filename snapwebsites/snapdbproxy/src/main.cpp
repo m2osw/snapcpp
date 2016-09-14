@@ -46,7 +46,8 @@
 
 // snapwebsites lib
 //
-#include "log.h"
+#include <snapwebsites/log.h>
+
 
 /** \brief Define whether the standard output stream is a TTY.
  *

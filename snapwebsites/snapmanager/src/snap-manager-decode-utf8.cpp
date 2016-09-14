@@ -16,7 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap-manager-decode-utf8.h"
-#include "snapwebsites.h"
+
+#include <snapwebsites/snapwebsites.h>
+
 #include <stdio.h>
 
 snap_manager_decode_utf8::snap_manager_decode_utf8(QWidget *snap_parent)

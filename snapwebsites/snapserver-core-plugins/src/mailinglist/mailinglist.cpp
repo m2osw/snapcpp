@@ -19,10 +19,10 @@
 
 #include "../content/content.h"
 
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(mailinglist, 1, 0)

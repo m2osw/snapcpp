@@ -15,16 +15,15 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snapwebsites.h"
+#include "snapwebsites/snapwebsites.h"
 
-#include "log.h"
-#include "not_used.h"
-#include "signal.h"
-#include "snap_backend.h"
-#include "snap_cassandra.h"
-#include "snap_lock.h"
-#include "snap_tables.h"
-#include "tcp_client_server.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/snap_backend.h"
+#include "snapwebsites/snap_cassandra.h"
+#include "snapwebsites/snap_lock.h"
+#include "snapwebsites/snap_tables.h"
+#include "snapwebsites/tcp_client_server.h"
 
 #include <sstream>
 
@@ -41,7 +40,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 /** \file
@@ -950,7 +949,7 @@ void server::config(int argc, char * argv[])
 
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
-    f_parameters.set_parameter_default("listen", "0.0.0.0:4004");
+    f_parameters.set_parameter_default("listen", "127.0.0.1:4004");
     f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH), "/usr/lib/snapwebsites/plugins");
     f_parameters.set_parameter_default(get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH), "/usr/lib/snapwebsites/tables");
     f_parameters.set_parameter_default("qs_action", "a");
@@ -1682,7 +1681,7 @@ void server::udp_rusage(QString const & process_name)
     //
     snap::snap_communicator_message rusage_message;
     rusage_message.set_command("RUSAGE");
-    rusage_message.set_server(f_parameters["server_name"]);
+    rusage_message.set_server(get_server_name().c_str());
     rusage_message.set_service("snapwatchdog");
     rusage_message.add_parameter("cache", "ttl=10");  // cache for at most 10 seconds
     rusage_message.add_parameter("process_name", process_name);
@@ -2259,7 +2258,7 @@ void listener_impl::process_accept()
  */
 void server::listen()
 {
-    SNAP_LOG_INFO("--------------------------------- snapserver started on ")(f_parameters["server_name"]);
+    SNAP_LOG_INFO("--------------------------------- snapserver started on ")(get_server_name());
 
     // offer the user to setup the maximum number of pending connections
     long max_pending_connections(-1);
@@ -2281,7 +2280,7 @@ void server::listen()
     }
 
     // get the address/port info
-    QString addr("0.0.0.0");
+    QString addr("127.0.0.1");
     int port(4004);
     tcp_client_server::get_addr_port(f_parameters["listen"], addr, port, "tcp");
 
@@ -2354,7 +2353,7 @@ void server::listen()
     g_connection->f_communicator->add_connection(g_connection->f_messenger);
 
     // the server was successfully started
-    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(f_parameters["server_name"])("\" started.");
+    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(get_server_name())("\" started.");
 
     // run until we get killed
     g_connection->f_communicator->run();

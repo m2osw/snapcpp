@@ -24,18 +24,18 @@
 #include "../mimetype/mimetype.h"
 #include "../permissions/permissions.h"
 
-#include "dbutils.h"
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qdomreceiver.h"
-#include "qdomxpath.h"
-#include "qxmlmessagehandler.h"
-#include "snap_image.h"
-#include "snap_lock.h"
-#include "xslt.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkgmtime.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qdomreceiver.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/qxmlmessagehandler.h>
+#include <snapwebsites/snap_image.h>
+#include <snapwebsites/snap_lock.h>
+#include <snapwebsites/xslt.h>
 
 #include <libtld/tld.h>
 
@@ -45,7 +45,7 @@
 #include <QFile>
 #include <QFileInfo>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(editor, 1, 0)
@@ -2721,9 +2721,9 @@ bool editor::validate_editor_post_for_widget_impl(
         }
 
     private:
-        QString const &                     f_value;
-        mutable controlled_vars::fbool_t    f_stripped_value_defined;
-        mutable QString                     f_stripped_value;
+        QString const &         f_value;
+        mutable bool            f_stripped_value_defined = false;
+        mutable QString         f_stripped_value;
     };
     value_handler_t value_handler(value);
 
@@ -4163,9 +4163,9 @@ QString editor::format_uri(QString const & format, content::path_info_t & ipath,
         }
 
     private:
-        editor *                    f_editor;
+        editor *                    f_editor = nullptr;
         QString const &             f_format;
-        controlled_vars::zint32_t   f_pos;
+        int32_t                     f_pos = 0;
         editor_uri_token            f_token_info;
         QString                     f_result;
     };

@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../content/content.h"
+
 
 namespace snap
 {
@@ -56,7 +59,7 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                owner_update(int64_t variables_timestamp);
 
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
 };
 
 } // namespace taxonomy

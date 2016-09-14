@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapdb.h
+ *      snapwebsites/snapdb/src/snapdb.h
  *
  * Description:
  *      Reads and describes a Snap database. This ease checking out the
@@ -38,13 +38,12 @@
 
 // our lib
 //
-#include "snapwebsites.h"
+#include <snapwebsites/snapwebsites.h>
 
 // 3rd party libs
 //
 #include <QtCore>
 #include <QtCassandra/QCassandraSession.h>
-#include <controlled_vars/controlled_vars.h>
 #include <advgetopt/advgetopt.h>
 
 // system
@@ -69,19 +68,9 @@ public:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    QtCassandra::QCassandraSession::pointer_t f_session;
-    QString                                   f_host;
-    controlled_vars::mint32_t                 f_port;
-    controlled_vars::mint32_t                 f_count;
-    QString                                   f_context;
-    QString                                   f_table;
-    QString                                   f_row;
-    QString                                   f_cell;
-    QString                                   f_value;
-    getopt_ptr_t                              f_opt;
-
     bool confirm_drop_check()    const;
     void drop_context()          const;
+    void drop_table()            const;
     void drop_row()              const;
     void drop_cell()             const;
     bool row_exists()            const;
@@ -91,6 +80,17 @@ private:
     void display_columns()       const;
     void display_cell()          const;
     void set_cell()              const;
+
+    QtCassandra::QCassandraSession::pointer_t   f_session;
+    QString                                     f_host = "localhost";
+    int32_t                                     f_port = 9042;
+    int32_t                                     f_count = 100;
+    QString                                     f_context = "snap_websites";
+    QString                                     f_table;
+    QString                                     f_row;
+    QString                                     f_cell;
+    QString                                     f_value;
+    getopt_ptr_t                                f_opt;
 };
 
 // vim: ts=4 sw=4 et

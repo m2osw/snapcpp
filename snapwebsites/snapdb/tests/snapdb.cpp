@@ -48,7 +48,6 @@
 #include <QtCore>
 #include <QtSql>
 #include <QtCassandra/QCassandra.h>
-#include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
 
 // system
@@ -167,10 +166,10 @@ using namespace QtCassandra;
 
 snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
-    , f_host("localhost") // default
-    , f_port(4042) //default to connect to snapdbproxy
-    , f_count(100)
-    , f_context("snap_websites")
+    //, f_host("localhost") -- auto-init
+    //, f_port(4042) -- auto-init -- default to connect to snapdbproxy
+    //, f_count(100) -- auto-init
+    //, f_context("snap_websites") -- auto-init
     //, f_table("") -- auto-init
     //, f_row("") -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, nullptr ) )

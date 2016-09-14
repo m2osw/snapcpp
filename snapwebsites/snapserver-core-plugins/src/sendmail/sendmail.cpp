@@ -21,16 +21,16 @@
 #include "../output/output.h"
 #include "../users/users.h"
 
-#include "http_strings.h"
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_used.h"
-#include "process.h"
-#include "qdomhelpers.h"
-#include "qdomxpath.h"
-#include "quoted_printable.h"
-#include "snap_magic.h"
-#include "snap_pipe.h"
+#include <snapwebsites/http_strings.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkgmtime.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/quoted_printable.h>
+#include <snapwebsites/snap_magic.h>
+#include <snapwebsites/snap_pipe.h>
 
 #include <libtld/tld.h>
 #include <QtCassandra/QCassandraValue.h>
@@ -43,7 +43,7 @@
 
 #include <QFile>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(sendmail, 1, 0)

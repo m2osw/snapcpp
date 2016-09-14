@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../content/content.h"
+
 
 namespace snap
 {
@@ -112,8 +115,8 @@ public:
     void                add_restore_link_to_signature_for(QString const page_path);
 
 private:
-    zpsnap_child_t                  f_snap;
-    controlled_vars::zint64_t       f_last_modified;
+    snap_child *                    f_snap = nullptr;
+    int64_t                         f_last_modified = 0;
     snap_string_list                f_add_restore_link_to_signature;
 };
 

@@ -38,16 +38,16 @@
 
 //#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h there
 
-#include "compression.h"
-#include "dbutils.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "snap_magic.h"
-#include "snap_image.h"
-#include "snap_lock.h"
-#include "snap_version.h"
+#include <snapwebsites/compression.h>
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/snap_magic.h>
+#include <snapwebsites/snap_image.h>
+#include <snapwebsites/snap_lock.h>
+#include <snapwebsites/snap_version.h>
 
 #include <iostream>
 
@@ -56,7 +56,7 @@
 #include <QFile>
 #include <QTextStream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(content, 1, 0)
@@ -3427,7 +3427,7 @@ void content::on_save_content()
     class restore_flag_t
     {
     public:
-        restore_flag_t(controlled_vars::fbool_t & flag)
+        restore_flag_t(bool & flag)
             : f_flag(flag)
         {
             f_flag = true;
@@ -3439,7 +3439,7 @@ void content::on_save_content()
         }
 
     private:
-        controlled_vars::fbool_t &  f_flag;
+        bool &  f_flag;
     };
 
     restore_flag_t raii_updating(f_updating);

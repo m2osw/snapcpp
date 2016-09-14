@@ -24,13 +24,13 @@
 // client won't be able to connect.
 //
 
-#include "snap_communicator.h"
+#include <snapwebsites/snap_communicator.h>
 
 #include "snap_tests.h"
 
-#include "log.h"
-#include "qstring_stream.h"
-#include "not_reached.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/not_reached.h>
 
 #include <fcntl.h>
 #include <netinet/tcp.h>

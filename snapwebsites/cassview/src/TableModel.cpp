@@ -16,17 +16,28 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
+// ourselves
+//
 #include "TableModel.h"
+
+// snapwebsites lib
+//
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
 
+// Qt lib
+//
 #include <QSettings>
 #include <QVariant>
 
+// C++ lib
+//
 #include <iostream>
 #include <exception>
 
-#include "poison.h"
+// included last
+//
+#include <snapwebsites/poison.h>
 
 using namespace QtCassandra;
 

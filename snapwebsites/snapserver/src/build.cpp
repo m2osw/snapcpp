@@ -19,6 +19,8 @@
 // as it just tries to start the build.sh and does not offer any specific
 // feature outside of that.
 
+#include <snapwebsites/not_used.h>
+
 #include <pwd.h>
 #include <grp.h>
 #include <unistd.h>
@@ -26,7 +28,9 @@
 
 #include <iostream>
 
-#include "not_used.h"
+// We are using fprintf() on purpose... see comment below
+//#include <snapwebsites/poison.h>
+
 
 void output(int code
           , char const * page_title

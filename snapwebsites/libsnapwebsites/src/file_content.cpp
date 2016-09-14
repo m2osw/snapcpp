@@ -17,11 +17,11 @@
 
 // ourselves
 //
-#include "file_content.h"
+#include "snapwebsites/file_content.h"
 
 // snapwebsites lib
 //
-#include "log.h"
+#include "snapwebsites/log.h"
 
 // C lib
 //
@@ -30,6 +30,10 @@
 // C++ lib
 //
 #include <fstream>
+
+// include last
+//
+#include "snapwebsites/poison.h"
 
 
 namespace snap

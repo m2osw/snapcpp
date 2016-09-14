@@ -77,12 +77,12 @@
 #include "../messages/messages.h"
 #include "../server_access/server_access.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qstring_stream.h"
-#include "snap_lock.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snap_lock.h>
 
 #include <iostream>
 
@@ -91,7 +91,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(users, 1, 0)

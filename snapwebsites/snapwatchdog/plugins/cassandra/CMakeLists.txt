@@ -35,7 +35,6 @@ find_package( Qt5Core REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    #${CONTROLLEDVARS_INCLUDE_DIRS}
     ${snapwatchdog_SOURCE_DIR}
 )
 
@@ -44,12 +43,6 @@ add_library(cassandra SHARED
     cassandra.cpp
 )
 
-#target_link_libraries( cassandra Qt5::Core )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( cassandra make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS cassandra LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

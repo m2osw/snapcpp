@@ -37,7 +37,6 @@ find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
@@ -56,18 +55,12 @@ message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(firewall
     #${AS2JS_LIBRARIES}
-    #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
     #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     #${LOG4CPLUS_LIBRARY}
     #${SNAPWEBSITES_LIBRARIES}
     #${LIBTLD_LIBRARIES}
 )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( firewall make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS
@@ -77,13 +70,10 @@ install(
         ${PLUGIN_INSTALL_DIR}
 )
 
-file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 install(
-    FILES
-        ${HEADER_FILES}
-
-    DESTINATION
-        include/snapmanager/plugins/firewall
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapmanager/plugins/firewall
+    FILES_MATCHING PATTERN "*.h"
 )
 
 # vim: ts=4 sw=4 et

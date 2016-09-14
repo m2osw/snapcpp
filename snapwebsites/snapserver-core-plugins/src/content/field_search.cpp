@@ -24,10 +24,10 @@
 
 #include "content.h"
 
-#include "log.h"
-#include "qdomhelpers.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/qdomhelpers.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(content)
@@ -1270,9 +1270,9 @@ void field_search::run()
                 }
 
                 QString const               f_child_name;
-                controlled_vars::zuint32_t  f_pos;
-                controlled_vars::muint32_t  f_length;
-                controlled_vars::fbool_t    f_keep_result;
+                uint32_t                    f_pos = 0;
+                uint32_t                    f_length = -1;
+                bool                        f_keep_result = false;
             };
 
             if(!f_result.isEmpty() && !f_element.isNull())
@@ -1664,21 +1664,21 @@ void field_search::run()
             }
         }
 
-        content *                                       f_content_plugin;
-        char const *                                    f_filename;
-        char const *                                    f_function;
-        int                                             f_line;
-        zpsnap_child_t                                  f_snap;
-        cmd_info_vector_t&                              f_program;
-        safe_mode_t                                     f_mode;
+        content *                                       f_content_plugin = nullptr;
+        char const *                                    f_filename = nullptr;
+        char const *                                    f_function = nullptr;
+        int                                             f_line = 0;
+        snap_child *                                    f_snap = nullptr;
+        cmd_info_vector_t &                             f_program;
+        mode_t                                          f_mode = mode_t::SEARCH_MODE_FIRST;
         QString const                                   f_site_key;
         QString                                         f_revision_owner;
         QString                                         f_field_name;
         QString                                         f_self;
         QtCassandra::QCassandraTable::pointer_t         f_current_table;
         QDomElement                                     f_element;
-        controlled_vars::fbool_t                        f_found_self;
-        controlled_vars::fbool_t                        f_saved;
+        bool                                            f_found_self = false;
+        bool                                            f_saved = false;
         search_result_t                                 f_result;
         variables_t                                     f_variables;
         path_info_t                                     f_path_info;

@@ -21,15 +21,15 @@
 #include "../permissions/permissions.h"
 #include "../shorturl/shorturl.h"
 
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
 #include <qrencode.h>
 #include <Magick++.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(qrcode, 1, 0)

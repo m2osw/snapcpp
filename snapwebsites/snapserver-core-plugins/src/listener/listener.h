@@ -69,7 +69,7 @@ public:
 private:
     void                        content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
 };
 
 

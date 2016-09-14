@@ -15,27 +15,33 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "log.h"
+#include "snapwebsites/log.h"
 
-#include "not_reached.h"
-#include "not_used.h"
-#include "snap_exception.h"
-#include "snapwebsites.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/snap_exception.h"
+#include "snapwebsites/snapwebsites.h"
 
 #include <syslog.h>
 
 #include <boost/algorithm/string/replace.hpp>
 
+// log4cplus wants to be compatible with old compilers and thus uses
+// std::auto_ptr<>() which throws an error in our code
+//
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <log4cplus/configurator.h>
 #include <log4cplus/logger.h>
 #include <log4cplus/fileappender.h>
 #include <log4cplus/consoleappender.h>
 #include <log4cplus/syslogappender.h>
 #include <log4cplus/socketappender.h>
+#pragma GCC diagnostic pop
 
 #include <QFileInfo>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 /** \file

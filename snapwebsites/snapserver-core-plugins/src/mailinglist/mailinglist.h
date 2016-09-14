@@ -16,13 +16,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
-#include "plugins.h"
-#include "snap_child.h"
+// snapwebsites lib
+//
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/plugins.h>
+#include <snapwebsites/snap_child.h>
 
+// Qt lib
+//
 #include <QMap>
 #include <QVector>
 #include <QByteArray>
+
 
 namespace snap
 {
@@ -56,14 +61,14 @@ public:
         virtual QString next();
 
     private:
-        mailinglist *                                        f_parent;
-        const QString                                        f_name;
-        QtCassandra::QCassandraTable::pointer_t              f_table;
-        QtCassandra::QCassandraRow::pointer_t                f_row;
-        QtCassandra::QCassandraCellRangePredicate::pointer_t f_column_predicate;
-        QtCassandra::QCassandraCells                         f_cells;
-        QtCassandra::QCassandraCells::const_iterator         f_c;
-        controlled_vars::fbool_t                             f_done;
+        mailinglist *                                           f_parent = nullptr;
+        QString const                                           f_name;
+        QtCassandra::QCassandraTable::pointer_t                 f_table;
+        QtCassandra::QCassandraRow::pointer_t                   f_row;
+        QtCassandra::QCassandraCellRangePredicate::pointer_t    f_column_predicate;
+        QtCassandra::QCassandraCells                            f_cells;
+        QtCassandra::QCassandraCells::const_iterator            f_c;
+        bool                                                    f_done = false;
     };
 
                         mailinglist();
@@ -85,7 +90,7 @@ public:
 private:
     void                content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
 };
 
 } // namespace mailinglist

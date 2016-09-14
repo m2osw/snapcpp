@@ -17,10 +17,10 @@
 
 #include "test_plugin_suite.h"
 
-#include "log.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 SNAP_PLUGIN_START(test_plugin_suite, 1, 0)
 

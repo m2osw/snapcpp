@@ -24,7 +24,7 @@
 
 #include <QtCore>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 using namespace QtCassandra;
 

@@ -46,6 +46,9 @@ if(CATCH_FOUND)
 
     project(test_snap_communicator)
 
+    include_directories(
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src
+    )
     add_executable(${PROJECT_NAME}
         # Main
         ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h

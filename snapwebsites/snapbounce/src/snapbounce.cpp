@@ -21,27 +21,37 @@
 // When signaled, it will terminate those services cleanly.
 /////////////////////////////////////////////////////////////////////////////////
 
-#include "snapwebsites.h"
-#include "snap_cassandra.h"
-#include "snap_config.h"
-#include "snap_exception.h"
-#include "snap_thread.h"
-#include "log.h"
-#include "not_reached.h"
+// snapwebsites lib
+//
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snap_cassandra.h>
+#include <snapwebsites/snap_config.h>
+#include <snapwebsites/snap_exception.h>
+#include <snapwebsites/snap_thread.h>
+#include <snapwebsites/snapwebsites.h>
 
+// contrib lib
+//
 #include <advgetopt/advgetopt.h>
-
 #include <QtCassandra/QCassandraContext.h>
 #include <QtCassandra/QCassandraTable.h>
 
+// Qt lib
+//
 #include <QFile>
 #include <QTime>
 
+// C lib
+//
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <uuid/uuid.h>
 
+// C++ lib
+//
 #include <exception>
 #include <memory>
 #include <vector>
@@ -49,7 +59,9 @@
 #include <fstream>
 #include <algorithm>
 
-#include "qstring_stream.h"
+// included last
+//
+#include <snapwebsites/poison.h>
 
 
 

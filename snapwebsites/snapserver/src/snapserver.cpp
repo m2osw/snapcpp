@@ -15,10 +15,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snapwebsites.h"
-#include "snap_exception.h"
-#include "log.h"
-#include "not_reached.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/snap_exception.h>
+#include <snapwebsites/snapwebsites.h>
 
 
 int main(int argc, char *argv[])

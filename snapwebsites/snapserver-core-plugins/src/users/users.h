@@ -16,9 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../filter/filter.h"
 #include "../sessions/sessions.h"
 #include "../path/path.h"
+
 
 namespace snap
 {
@@ -260,7 +263,7 @@ public:
         QString const &         get_uri() const;
 
     private:
-        snap_child *                    f_snap;
+        snap_child *                    f_snap = nullptr;
         mutable content::path_info_t    f_user_ipath;
         QString                         f_password_policy;
         QString                         f_user_key;
@@ -377,14 +380,14 @@ private:
     void                    content_update(int64_t variables_timestamp);
     void                    token_user_count(filter::filter::token_info_t & token);
 
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
 
-    QString                     f_user_key;                     // user email address (may not be logged in)
-    controlled_vars::fbool_t    f_user_logged_in;               // user is logged in only if this is true
-    controlled_vars::fbool_t    f_administrative_logged_in;     // user is logged in and has administrative rights if this is true
-    bool                        f_has_user_messages = false;    // whether there were messages when on_detach_from_session() was called
-    QString                     f_user_changing_password_key;   // not quite logged in user
-    std::shared_ptr<sessions::sessions::session_info> f_info;   // user, logged in or anonymous, cookie related information
+    QString                     f_user_key;                         // user email address (may not be logged in)
+    bool                        f_user_logged_in = false;           // user is logged in only if this is true
+    bool                        f_administrative_logged_in = false; // user is logged in and has administrative rights if this is true
+    bool                        f_has_user_messages = false;        // whether there were messages when on_detach_from_session() was called
+    QString                     f_user_changing_password_key;       // not quite logged in user
+    std::shared_ptr<sessions::sessions::session_info> f_info;       // user, logged in or anonymous, cookie related information
 };
 
 } // namespace users

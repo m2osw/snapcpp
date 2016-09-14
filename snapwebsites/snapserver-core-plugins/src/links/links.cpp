@@ -21,15 +21,15 @@
 //       it may be that content and links should be merged (oh well!) TBD
 #include "../content/content.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
 #include <QtCore/QDebug>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(links, 1, 0)
@@ -203,7 +203,7 @@ char const * get_name(name_t name)
  */
 
 
-/** \var controlled_vars::zbool_t link_info::f_unique;
+/** \var bool link_info::f_unique;
  * \brief Unique (one) or not (many) links.
  *
  * This flag is used to tell the link system whether the link is

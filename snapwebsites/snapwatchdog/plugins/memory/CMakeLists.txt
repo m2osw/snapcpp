@@ -42,7 +42,6 @@ include_directories(
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    #${CONTROLLEDVARS_INCLUDE_DIRS}
     ${snapwatchdog_SOURCE_DIR}
 )
 
@@ -62,11 +61,6 @@ target_link_libraries(memory
     Qt5::Core
     Qt5::Xml
 )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( memory make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS memory LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

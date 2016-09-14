@@ -8,9 +8,8 @@
 # SNAPWEBSITES_DEFINITIONS  - Compiler switches required for using SnapWebsites (none)
 
 # Search include directory
-find_path( SNAPWEBSITES_INCLUDE_DIR snapwebsites/snap_version.h
+find_path( SNAPWEBSITES_INCLUDE_DIR snapwebsites/snapwebsites.h
     PATHS $ENV{SNAPWEBSITES_INCLUDE_DIR}
-    PATH_SUFFIXES snapwebsites
 )
 
 # Search library
@@ -22,7 +21,7 @@ find_library( SNAPWEBSITES_LIBRARY snapwebsites
 mark_as_advanced( SNAPWEBSITES_INCLUDE_DIR SNAPWEBSITES_LIBRARY )
 
 # Define the plurial versions
-set( SNAPWEBSITES_INCLUDE_DIRS ${SNAPWEBSITES_INCLUDE_DIR} ${SNAPWEBSITES_INCLUDE_DIR}/snapwebsites )
+set( SNAPWEBSITES_INCLUDE_DIRS ${SNAPWEBSITES_INCLUDE_DIR} )
 set( SNAPWEBSITES_LIBRARIES    ${SNAPWEBSITES_LIBRARY}     )
 
 include( FindPackageHandleStandardArgs )

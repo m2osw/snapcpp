@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+// snapwebsites lib
+//
+#include <snapwebsites/snapwebsites.h>
 
-#include <controlled_vars/controlled_vars_limited_need_init.h>
 
 namespace snap
 {
@@ -75,20 +76,19 @@ public:
             : public QtSerialization::QSerializationObject
     {
     public:
-        enum class message_type_enum_t
+        enum class message_type_t
         {
             MESSAGE_TYPE_ERROR,
             MESSAGE_TYPE_WARNING,
             MESSAGE_TYPE_INFO,
             MESSAGE_TYPE_DEBUG
         };
-        typedef controlled_vars::limited_need_enum_init<message_type_enum_t, message_type_enum_t::MESSAGE_TYPE_ERROR, message_type_enum_t::MESSAGE_TYPE_DEBUG> message_type_t;
 
                             message();
                             message(message_type_t t, QString const & title, QString const & body);
                             message(message const & rhs);
 
-        message_type_enum_t get_type() const;
+        message_type_t      get_type() const;
         int                 get_id() const;
         QString const &     get_title() const;
         QString const &     get_body() const;
@@ -102,8 +102,8 @@ public:
         void                serialize(QtSerialization::QWriter & w) const;
 
     private:
-        message_type_t              f_type;
-        controlled_vars::mint32_t   f_id;
+        message_type_t              f_type = message_type_t::MESSAGE_TYPE_DEBUG;
+        int32_t                     f_id = -1;
         QString                     f_title;
         QString                     f_body;
         QString                     f_widget_name;
@@ -140,10 +140,10 @@ public:
     QString             serialize() const;
 
 private:
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
     QVector<message>            f_messages;
-    controlled_vars::zint32_t   f_error_count;
-    controlled_vars::zint32_t   f_warning_count;
+    int32_t                     f_error_count = 0;
+    int32_t                     f_warning_count = 0;
 };
 
 } // namespace messages

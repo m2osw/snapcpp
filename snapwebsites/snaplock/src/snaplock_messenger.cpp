@@ -44,7 +44,7 @@
 
 // our lib
 //
-#include "log.h"
+#include <snapwebsites/log.h>
 
 
 

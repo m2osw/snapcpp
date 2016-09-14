@@ -56,6 +56,7 @@ set( CMAKE_MODULE_PATH
 )
 
 find_package( AdvGetOpt        REQUIRED )
+find_package( As2Js 0.1.0      REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )

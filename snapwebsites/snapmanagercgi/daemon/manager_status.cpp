@@ -36,12 +36,12 @@
 //
 #include "snapmanagerdaemon.h"
 
-// our lib
+// snapwebsites lib
 //
-#include "log.h"
-#include "process.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/process.h>
 
-// C++
+// C++ lib
 //
 #include <algorithm>
 

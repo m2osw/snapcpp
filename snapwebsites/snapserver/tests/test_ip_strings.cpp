@@ -15,8 +15,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "not_reached.h"
-#include "tcp_client_server.h"
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/tcp_client_server.h>
 
 #include <map>
 #include <string>

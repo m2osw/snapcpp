@@ -331,6 +331,22 @@ QWriter::QTag::~QTag()
 }
 
 
+/** \brief Help function used to serialize a bool field.
+ *
+ * This function is a helper function used to serialize a
+ * field of type bool.
+ *
+ * \param[in] w  The QWriter where the field is written.
+ * \param[in] name  The name of the field saved in the 'n' attribute
+ *                  of the \<v> tag.
+ * \param[in] data  The field data.
+ */
+void writeTag(QWriter& w, const QString& name, const bool data)
+{
+    w.writeTag(name, QString("%1").arg(data ? 1 : 0));
+}
+
+
 /** \brief Help function used to serialize a qint8 field.
  *
  * This function is a helper function used to serialize a

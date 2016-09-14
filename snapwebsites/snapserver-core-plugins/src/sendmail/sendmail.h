@@ -16,12 +16,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../users/users.h"
 
 #include "../test_plugin_suite/test_plugin_suite.h"
 
-#include "snap_backend.h"
-#include "qcaseinsensitivestring.h"
+// snapwebsites lib
+//
+#include <snapwebsites/snap_backend.h>
+#include <snapwebsites/qcaseinsensitivestring.h>
 
 
 namespace snap
@@ -183,9 +187,9 @@ public:
             void                    serialize(QtSerialization::QWriter & w) const;
 
         private:
-            header_map_t                    f_header;
-            QByteArray                      f_data;
-            controlled_vars::fbool_t        f_is_sub_attachment;
+            header_map_t            f_header;
+            QByteArray              f_data;
+            bool                    f_is_sub_attachment = false;
             QVector<QSharedPointer<email_attachment> >  f_sub_attachments; // for HTML data (images, css, ...)
         };
         typedef QVector<email_attachment> attachment_vector_t;
@@ -225,7 +229,7 @@ public:
         QString                     f_site_key;
         QString                     f_email_path;
         QString                     f_email_key; // set on post_email()
-        controlled_vars::mint64_t   f_time;
+        int64_t                     f_time = -1;
         header_map_t                f_header;
         attachment_vector_t         f_attachment;
         parameter_map_t             f_parameter;

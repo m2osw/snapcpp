@@ -25,10 +25,10 @@
 
 #include "content.h"
 
-#include "log.h"
-#include "not_reached.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(content)

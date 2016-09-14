@@ -16,8 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../layout/layout.h"
 #include "../path/path.h"
+
 
 namespace snap
 {
@@ -96,7 +99,7 @@ private:
     void                    application_login();
     void                    die(snap_child::http_code_t err_code, oauth2_error_t err_oauth2, QString err_name, QString const & err_description, QString const & err_details, QString const & err_help_uri);
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
 };
 
 } // namespace oauth2

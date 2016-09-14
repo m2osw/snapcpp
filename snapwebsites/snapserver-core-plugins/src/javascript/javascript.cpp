@@ -29,11 +29,11 @@
 
 #include "javascript.h"
 
-#include "plugins.h"
-#include "snap_version.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "log.h"
+#include <snapwebsites/plugins.h>
+#include <snapwebsites/snap_version.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/log.h>
 
 #include <QScriptEngine>
 #include <QScriptProgram>
@@ -41,7 +41,8 @@
 #include <QScriptClassPropertyIterator>
 #include <QSharedPointer>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
+
 
 SNAP_PLUGIN_START(javascript, 1, 0)
 
@@ -235,7 +236,7 @@ public:
         : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value)
         , f_javascript(js)
         , f_engine(engine)
-        , f_pos(-1)
+        //, f_pos(-1) -- auto-init
         , f_object(object_value)
         , f_plugin(plugin)
     {
@@ -301,7 +302,7 @@ public:
 private:
     javascript *                f_javascript;
     QScriptEngine *             f_engine;
-    controlled_vars::mint32_t   f_pos;
+    int32_t                     f_pos = -1;
     QScriptValue                f_object;
     javascript_dynamic_plugin * f_plugin;
 };
@@ -406,7 +407,7 @@ public:
         : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value)
         , f_javascript(js)
         , f_engine(engine)
-        , f_pos(-1)
+        //, f_pos(-1) -- auto-init
         , f_object(object_value)
     {
     }
@@ -478,7 +479,7 @@ public:
 private:
     javascript *                f_javascript;
     QScriptEngine *             f_engine;
-    controlled_vars::mint32_t   f_pos;
+    int32_t                     f_pos = -1;
     QScriptValue                f_object;
 };
 

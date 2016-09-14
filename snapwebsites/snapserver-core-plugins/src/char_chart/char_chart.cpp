@@ -19,13 +19,13 @@
 
 #include "../output/output.h"
 
-#include "not_used.h"
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
 #include <QDebug>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(char_chart, 1, 0)

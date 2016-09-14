@@ -33,13 +33,22 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "snap_image.h"
-#include "snapwebsites.h"
+// snapwebsites lib
+//
+#include <snapwebsites/snap_image.h>
+#include <snapwebsites/snapwebsites.h>
 
+// advgetopt lib
+//
 #include <advgetopt.h>
 
+// Qt lib
+//
 #include <QFile>
 #include <QTextCodec>
+
+// C++ lib
+//
 #include <iostream>
 
 

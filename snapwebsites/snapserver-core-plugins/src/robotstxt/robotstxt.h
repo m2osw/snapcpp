@@ -16,8 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../layout/layout.h"
 #include "../path/path.h"
+
 
 namespace snap
 {
@@ -110,10 +113,10 @@ private:
         QString     f_field;
         QString     f_value;
     };
-    typedef std::vector<robots_field_t> robots_field_array_t;
-    typedef std::map<const QString, robots_field_array_t> robots_txt_t;
+    typedef std::vector<robots_field_t>                     robots_field_array_t;
+    typedef std::map<const QString, robots_field_array_t>   robots_txt_t;
 
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
     robots_txt_t        f_robots_txt;
 
     QString             f_robots_path; // path that the cache represents

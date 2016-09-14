@@ -49,7 +49,7 @@ private:
     QPointer<QLineEdit>                         f_website_url;
     QPointer<QLineEdit>                         f_port;
     snap::snap_initialize_website::pointer_t    f_initialize_website;
-    controlled_vars::zint32_t                   f_timer_id;
+    int32_t                                     f_timer_id = 0;
 };
 
 

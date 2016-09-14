@@ -38,7 +38,7 @@
 #include <snapwebsites/snapwebsites.h>
 
 #include <advgetopt/advgetopt.h>
-#include <controlled_vars/controlled_vars_need_init.h>
+
 #include <QtCassandra/QCassandraSchema.h>
 #include <QtCassandra/QCassandraSession.h>
 #include <QtCassandra/QCassandraQuery.h>
@@ -59,7 +59,6 @@
 #include <QTextStream>
 #include <QXmlInputSource>
 
-using namespace QtCassandra;
 
 
 namespace
@@ -273,7 +272,7 @@ private:
 
     // Common attributes
     //
-    QCassandraSession::pointer_t    f_session;
+    QtCassandra::QCassandraSession::pointer_t f_session;
     fileinfo_list_t                 f_fileinfo_list;
     getopt_ptr_t                    f_opt;
     bool                            f_verbose = false;
@@ -281,7 +280,7 @@ private:
 
 
 snap_layout::snap_layout(int argc, char * argv[])
-    : f_session( QCassandraSession::create() )
+    : f_session( QtCassandra::QCassandraSession::create() )
     //, f_fileinfo_list -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, "SNAPSERVER_OPTIONS" ) )
     , f_verbose(f_opt->is_defined("verbose"))
@@ -730,7 +729,7 @@ bool snap_layout::tableExists( const QString& table_name ) const
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto meta( QCassandraSchema::SessionMeta::create(f_session) );
+        auto meta( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
         meta->loadSchema();
         const auto& tables( meta->getKeyspaces().at(context_name)->getTables() );
         return tables.find(table_name) != tables.end();
@@ -751,7 +750,7 @@ bool snap_layout::rowExists( const QString& table_name, const QByteArray& row_ke
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT COUNT(*) FROM %1.%2 WHERE key = ?;")
                 .arg(context_name)
                 .arg(table_name)
@@ -777,7 +776,7 @@ bool snap_layout::cellExists( const QString& table_name, const QByteArray& row_k
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT COUNT(*) FROM %1.%2 WHERE key = ? AND column1 = ?;")
                 .arg(context_name)
                 .arg(table_name)
@@ -962,10 +961,10 @@ void snap_layout::add_files()
             {
                 // the row already exists, try getting the area
                 //QtCassandra::QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
-                QCassandraValue existing;
+                QtCassandra::QCassandraValue existing;
                 try
                 {
-                    auto q( QCassandraQuery::create(f_session) );
+                    auto q( QtCassandra::QCassandraQuery::create(f_session) );
                     q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
                     int bind = 0;
                     q->bindString( bind++, row_name  );
@@ -1029,7 +1028,7 @@ void snap_layout::add_files()
 
         try
         {
-            auto q( QCassandraQuery::create(f_session) );
+            auto q( QtCassandra::QCassandraQuery::create(f_session) );
             q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? and column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindByteArray( bind++, content            );
@@ -1058,10 +1057,10 @@ void snap_layout::add_files()
     {
         // mtimes holds times in seconds, convert to microseconds
         const int64_t last_updated(i.value() * 1000000);
-        QCassandraValue existing_last_updated;
+        QtCassandra::QCassandraValue existing_last_updated;
         try
         {
-            auto q( QCassandraQuery::create(f_session) );
+            auto q( QtCassandra::QCassandraQuery::create(f_session) );
             q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindByteArray( bind++, i.key().toUtf8()  );
@@ -1084,7 +1083,7 @@ void snap_layout::add_files()
         {
             if( existing_last_updated.nullValue() || existing_last_updated.int64Value() < last_updated )
             {
-                auto q( QCassandraQuery::create(f_session) );
+                auto q( QtCassandra::QCassandraQuery::create(f_session) );
                 q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? and column1 = ?;").arg(context_name) );
                 int bind = 0;
                 q->bindInt64    ( bind++, last_updated      );
@@ -1175,7 +1174,7 @@ void snap_layout::set_theme()
         {
             // remove the theme definition
             //table->row(key)->dropCell(field);
-            auto q( QCassandraQuery::create(f_session) );
+            auto q( QtCassandra::QCassandraQuery::create(f_session) );
             q->query( QString("DELETE FROM %1.content WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindString( bind++, key   );
@@ -1191,7 +1190,7 @@ void snap_layout::set_theme()
             // TODO: add a test so we can transform a simple string to a valid
             //       JavaScript string
             //table->row(key)->cell(field)->setValue(theme);
-            auto q( QCassandraQuery::create(f_session) );
+            auto q( QtCassandra::QCassandraQuery::create(f_session) );
             q->query( QString("UPDATE %1.content SET value = ? WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindString( bind++, theme );
@@ -1252,7 +1251,7 @@ void snap_layout::remove_theme()
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("DELETE FROM %1.layout WHERE key = ?;").arg(context_name) );
         int bind = 0;
         q->bindString( bind++, row_name );
@@ -1346,7 +1345,7 @@ void snap_layout::extract_file()
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( QtCassandra::QCassandraQuery::create(f_session) );
         q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
         int bind = 0;
         q->bindByteArray( bind++, row_name.toUtf8() );

@@ -21,18 +21,18 @@
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
-#include "dbutils.h"
-#include "http_strings.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/http_strings.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
 #include <QFile>
 #include <QLocale>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(attachment, 1, 0)
@@ -969,7 +969,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         }
 
     private:
-        zpsnap_child_t          f_snap;
+        snap_child *            f_snap = nullptr;
         snap_child::http_code_t f_err_code;
         QString const &         f_err_name;
         QString const &         f_err_description;

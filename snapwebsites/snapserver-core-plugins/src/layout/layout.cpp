@@ -22,24 +22,24 @@
 #include "../taxonomy/taxonomy.h"
 #include "../path/path.h"
 
-#include "log.h"
-#include "qdomreceiver.h"
-#include "qhtmlserializer.h"
-#include "qxmlmessagehandler.h"
-#include "qdomhelpers.h"
-#include "qstring_stream.h"
-#include "qdomxpath.h"
-//#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
-#include "not_reached.h"
-#include "not_used.h"
-#include "xslt.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/qdomreceiver.h>
+#include <snapwebsites/qhtmlserializer.h>
+#include <snapwebsites/qxmlmessagehandler.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/qdomxpath.h>
+//#include <snapwebsites/qdomnodemodel.h> -- at this point the DOM Node Model seems bogus.
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/xslt.h>
 
 #include <iostream>
 #include <fstream>
 
 #include <QFile>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(layout, 1, 0)

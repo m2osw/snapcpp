@@ -22,7 +22,7 @@
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomhelpers.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(network, 1, 0)

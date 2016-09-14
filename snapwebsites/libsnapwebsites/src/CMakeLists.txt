@@ -33,7 +33,7 @@
 project(snapwebsites)
 
 # Put the version in the header file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites/version.h )
 
 
 option( SNAP_NO_FORK OFF "Set to suppress snapserver's inate forking [for debugging purposes only--not for release!]" )
@@ -46,13 +46,13 @@ endif()
 include_directories(
     SYSTEM
         ${MAGIC_INCLUDE_DIRS}
-        ${LOG4CPLUS_INCLUDE_DIRS}
         ${LIBPROCPS_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
 )
 
 include_directories(
     ${LIBTLD_INCLUDE_DIRS}
+    ${LOG4CPLUS_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
@@ -142,11 +142,11 @@ install(
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites
-    FILES_MATCHING PATTERN "*.h"
+    DESTINATION include
+    FILES_MATCHING PATTERN "snapwebsites/*.h"
 )
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites/version.h
     DESTINATION include/snapwebsites
 )
 

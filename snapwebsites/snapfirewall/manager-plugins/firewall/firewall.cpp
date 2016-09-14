@@ -21,20 +21,20 @@
 
 // our lib
 //
-#include "snapmanager/form.h"
+#include <snapmanager/form.h>
 
 // snapwebsites lib
 //
-#include "file_content.h"
-#include "join_strings.h"
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "process.h"
-#include "qdomhelpers.h"
-#include "qdomxpath.h"
-#include "string_pathinfo.h"
-#include "tokenize_string.h"
+#include <snapwebsites/file_content.h>
+#include <snapwebsites/join_strings.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/string_pathinfo.h>
+#include <snapwebsites/tokenize_string.h>
 
 // Qt lib
 //
@@ -46,7 +46,7 @@
 
 // last entry
 //
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(firewall, 1, 0)

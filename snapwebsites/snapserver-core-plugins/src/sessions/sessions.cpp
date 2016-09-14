@@ -161,9 +161,10 @@
 
 #include "../output/output.h"
 
-#include "plugins.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/plugins.h>
 
 #include <QtCassandra/QCassandraValue.h>
 
@@ -171,8 +172,7 @@
 
 #include <openssl/rand.h>
 
-#include "log.h"
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(sessions, 1, 1)
@@ -326,8 +326,7 @@ sessions::session_info::session_info()
  */
 void sessions::session_info::set_session_type(session_info_type_t type)
 {
-    // TODO: get controlled_vars to support enumerations
-    f_type = static_cast<int>(type);
+    f_type = type;
 }
 
 
@@ -1092,7 +1091,7 @@ int32_t sessions::session_info::get_ttl(int64_t now) const
             // the default time to live is five minutes
             // as defined in the time_to_live_t controlled variable.
             //
-            timestamp = now + time_to_live_t();
+            timestamp = now + DEFAULT_TIME_TO_LIVE;
         }
         else
         {

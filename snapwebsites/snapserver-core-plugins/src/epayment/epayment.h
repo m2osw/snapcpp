@@ -16,10 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../content/content.h"
 
-#include <controlled_vars/controlled_vars_fauto_init.h>
-#include <controlled_vars/controlled_vars_limited_need_init.h>
 
 /** \file
  * \brief Header of the epayment plugin.
@@ -144,7 +144,6 @@ public:
         TYPE_INTEGER,
         TYPE_FLOAT
     };
-    typedef controlled_vars::limited_need_enum_init<type_t, type_t::TYPE_STRING, type_t::TYPE_FLOAT> safe_type_t;
 
     void                clear();
 
@@ -181,10 +180,10 @@ private:
         double          get_float_value() const;
 
     private:
-        safe_type_t                 f_type;
-        QString                     f_string;
-        controlled_vars::zint64_t   f_integer;
-        controlled_vars::zdouble_t  f_float;
+        type_t          f_type = type_t::TYPE_FLOAT;
+        QString         f_string;
+        int64_t         f_integer = 0;
+        double          f_float = 0.0;
     };
 
     // name / value
@@ -196,12 +195,6 @@ private:
         VERIFICATION_VALID,
         VERIFICATION_INVALID
     };
-    typedef controlled_vars::limited_auto_enum_init<
-                verification_t,
-                verification_t::VERIFICATION_NOT_DONE,
-                verification_t::VERIFICATION_INVALID,
-                verification_t::VERIFICATION_NOT_DONE>
-                        safe_verification_t;
 
     // constructor is private so that way users cannot create a product directly
     // (see epayment_product_list::add_product(...) below)
@@ -211,9 +204,9 @@ private:
 
     // when checking parameters from the database, keep those pointers for
     // later fast reference
-    mutable safe_verification_t                         f_verified;
+    mutable verification_t                              f_verified = verification_t::VERIFICATION_NOT_DONE;
     mutable content::path_info_t                        f_product_ipath;
-    mutable content::content *                          f_content_plugin;
+    mutable content::content *                          f_content_plugin = nullptr;
     mutable QtCassandra::QCassandraTable::pointer_t     f_revision_table;
     mutable QtCassandra::QCassandraRow::pointer_t       f_revision_row;
 };
@@ -274,8 +267,6 @@ public:
     static frequency_t const    FREQUENCY_MONTH = 4;
     static frequency_t const    FREQUENCY_YEAR = 5;
 
-    typedef controlled_vars::limited_need_init<frequency_t, FREQUENCY_DAY, FREQUENCY_YEAR> safe_frequency_t;
-
                             recurring_t();
                             recurring_t(QString const & field);
 
@@ -298,9 +289,9 @@ public:
     bool                    operator != (recurring_t const & rhs) const;
 
 private:
-    repeat_t                f_repeat;
-    interval_t              f_interval;
-    safe_frequency_t        f_frequency;
+    repeat_t                f_repeat = INFINITE_REPEAT;
+    interval_t              f_interval = 1;
+    frequency_t             f_frequency = FREQUENCY_MONTH;
 };
 
 
@@ -336,7 +327,7 @@ public:
 private:
     void                        content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
 };
 
 

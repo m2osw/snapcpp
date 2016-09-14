@@ -15,20 +15,20 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snap_child.h"
+#include "snapwebsites/snap_child.h"
 
-#include "compression.h"
-#include "http_strings.h"
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qlockfile.h"
-#include "snap_image.h"
-#include "snap_utf8.h"
-#include "snapwebsites.h"
-#include "snap_lock.h"
-#include "snap_magic.h"
+#include "snapwebsites/compression.h"
+#include "snapwebsites/http_strings.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/mkgmtime.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/qdomhelpers.h"
+#include "snapwebsites/qlockfile.h"
+#include "snapwebsites/snap_image.h"
+#include "snapwebsites/snap_utf8.h"
+#include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/snap_lock.h"
+#include "snapwebsites/snap_magic.h"
 
 #include <QtSerialization/QSerialization.h>
 #include <libtld/tld.h>
@@ -43,8 +43,7 @@
 
 #include <QDirIterator>
 
-#include "poison.h"
-
+#include "snapwebsites/poison.h"
 
 
 namespace snap
@@ -2683,7 +2682,7 @@ pid_t snap_child::fork_child()
         {
             // the snap_logic_exception is not a snap_exception
             // and other libraries may generate other exceptions
-            // (i.e. controlled_vars, C++ cassandra driver...)
+            // (i.e. libtld, C++ cassandra driver...)
             SNAP_LOG_FATAL("snap_child::fork_child(): std::exception caught: ")(std_except.what());
             exit(1);
             NOTREACHED();
@@ -2824,7 +2823,7 @@ bool snap_child::process(int socket)
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        // (i.e. controlled_vars, C++ cassandra driver...)
+        // (i.e. libtld, C++ cassandra driver...)
         SNAP_LOG_FATAL("snap_child::process(): std::exception caught: ")(std_except.what());
     }
     catch( ... )
@@ -3590,28 +3589,28 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
 #endif
 
     private:
-        mutable zpsnap_child_t      f_snap;
-        controlled_vars::zint32_t   f_socket;
-        //controlled_vars::zchar_t    f_unget;
-        controlled_vars::tbool_t    f_running;
-        controlled_vars::fbool_t    f_started;
+        mutable snap_child *        f_snap = nullptr;
+        int32_t                     f_socket = -1;
+        //char                        f_unget = 0;
+        bool                        f_running = true;
+        bool                        f_started = false;
 
         environment_map_t &         f_env;
         environment_map_t &         f_browser_cookies;
         QString                     f_name;
         QString                     f_value;
 
-        controlled_vars::fbool_t    f_has_post;
+        bool                        f_has_post = false;
         environment_map_t &         f_post;
         post_file_map_t &           f_files;
-        controlled_vars::tbool_t    f_post_first;
-        controlled_vars::tbool_t    f_post_header;
+        bool                        f_post_first = true;
+        bool                        f_post_header = true;
         QByteArray                  f_post_line;
         QByteArray                  f_post_content;
         QByteArray                  f_boundary;
         QByteArray                  f_end_boundary;
         environment_map_t           f_post_environment;
-        controlled_vars::zuint32_t  f_post_index;
+        uint32_t                    f_post_index = 0;
     };
 
     // reset the old environment
@@ -6869,11 +6868,11 @@ QString snap_child::get_unique_number()
         throw snap_logic_exception("server pointer is nullptr");
     }
 
-    QString lock_path(server->get_parameter("data_path"));
+    QString const data_path(server->get_parameter("data_path"));
 
     quint64 c(0);
     {
-        const QString name(lock_path + "/counter.u64");
+        const QString name(data_path + "/counter.u64");
         QLockFile counter(name);
         if(!counter.open(QIODevice::ReadWrite))
         {
@@ -6895,7 +6894,7 @@ QString snap_child::get_unique_number()
         }
         // close the file now; we do not want to hold the file for too long
     }
-    return QString("%1-%2").arg(server->get_parameter("server_name")).arg(c);
+    return QString("%1-%2").arg(server->get_server_name().c_str()).arg(c);
 }
 
 /** \brief Initialize the plugins.

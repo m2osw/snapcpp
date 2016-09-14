@@ -26,13 +26,14 @@
 #include "../permissions/permissions.h"
 #include "../users/users.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "xslt.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/xslt.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
+
 
 SNAP_PLUGIN_START(timetracker, 1, 0)
 

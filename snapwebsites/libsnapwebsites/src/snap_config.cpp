@@ -17,13 +17,13 @@
 
 // ourselves
 //
-#include "snap_config.h"
+#include "snapwebsites/snap_config.h"
 
 // our lib
 //
-#include "log.h"
-#include "not_reached.h"
-#include "snap_thread.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/snap_thread.h"
 
 // Qt lib
 #include <QFile>
@@ -38,8 +38,9 @@
 #include <syslog.h>
 #include <unistd.h>
 
-
-#include "poison.h"
+// included last
+//
+#include "snapwebsites/poison.h"
 
 
 namespace snap

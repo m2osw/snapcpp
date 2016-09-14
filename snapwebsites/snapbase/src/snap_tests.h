@@ -25,7 +25,7 @@
  */
 
 // include the version and a few other things
-#include <snapwebsites.h>
+#include <snapwebsites/snapwebsites.h>
 
 #include <catch.hpp>
 

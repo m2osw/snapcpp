@@ -16,10 +16,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../form/form.h"
 #include "../users/users.h"
 #include "../server_access/server_access.h"
 #include "../javascript/javascript.h"
+
 
 namespace snap
 {
@@ -342,7 +345,7 @@ private:
     bool                widget_is_secret(QDomElement widget);
     void                retrieve_original_field(content::path_info_t & ipath);
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions
     QString                 f_value_to_validate;    // for the JavaScript, the value of the field being checked right now (from either the POST, Draft, or Database)
     value_map_t             f_post_values;          // in part for JavaScript, also caches all the values sent by the user

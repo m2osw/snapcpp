@@ -15,11 +15,11 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "cache_control.h"
+#include "snapwebsites/cache_control.h"
 
-#include "http_strings.h"
-#include "log.h"
-#include "not_reached.h"
+#include "snapwebsites/http_strings.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
 
 
 namespace snap

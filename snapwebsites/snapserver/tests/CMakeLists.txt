@@ -38,13 +38,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_custom_target( test_prereqs DEPENDS make_controlled_vars_headers )
-else()
-    add_custom_target( test_prereqs )
-endif()
-
 set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
 
 ##
@@ -69,7 +62,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_snap_parser.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -86,7 +78,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_unix_timestamp.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
@@ -95,7 +86,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_entity_filter.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -112,7 +102,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_ip_strings.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -128,7 +117,6 @@ if(CATCH_FOUND)
     ##add_executable(test_snap_udp_message
     ##    test_snap_udp_message.cpp
     ##)
-    ##add_dependencies( test_snap_udp_message test_prereqs )
     ##target_link_libraries(test_snap_udp_message
     ##    ${SNAPWEBSITES_LIBRARIES}
     ##    ${QTCASSANDRA_LIBRARIES}
@@ -142,7 +130,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_quoted_printable.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -159,7 +146,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_snap_child_date_parser.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -176,7 +162,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_snap_version.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -198,7 +183,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_snap_exception.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -219,7 +203,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_shutdown_server.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -235,7 +218,6 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_shutdown_client.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}

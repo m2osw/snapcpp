@@ -39,26 +39,22 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// our lib
+// snapwebsites lib
 //
-#include "snapwebsites.h"
-#include "snap_communicator.h"
-#include "snap_thread.h"
+#include <snapwebsites/snapwebsites.h>
+#include <snapwebsites/snap_communicator.h>
+#include <snapwebsites/snap_thread.h>
 
-// 3rd party libs
+// advgetopt lib
+//
+#include <advgetopt/advgetopt.h>
+
+// QtCassandra lib
 //
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 #include <QtCassandra/QCassandraOrder.h>
 #include <QtCassandra/QCassandraProxy.h>
-#include <advgetopt/advgetopt.h>
-
-// C++ libs
-//
-
-// system
-//
-#include <poll.h>
 
 
 class snapdbproxy;
@@ -84,12 +80,9 @@ public:
      * system and forward it to whichever computer that requested the
      * information.
      *
-     * \todo
-     * For now we try once per second until it works. We should extend
-     * the delay between failures after a little while and up to a
-     * long delay such as once every 10 or even 15 minutes.
-     *
      * \param[in] cs  The snap communicator server we are listening for.
+     *
+     * \sa process_timeout()
      */
     snapdbproxy_timer(snapdbproxy * proxy)
         : snap_timer(0)  // run immediately
@@ -257,6 +250,7 @@ private:
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     bool                                        f_no_cassandra_sent = false;
+    float                                       f_cassandra_connect_timer_index = 1.25f;
     QtCassandra::QCassandraSession::pointer_t   f_session;
 
     std::vector<snapdbproxy_thread::pointer_t>  f_connections;

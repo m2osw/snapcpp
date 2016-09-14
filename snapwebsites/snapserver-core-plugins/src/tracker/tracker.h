@@ -16,7 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+// other plugins
+//
+#include <snapwebsites/snapwebsites.h>
 
 
 namespace snap
@@ -95,7 +97,7 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                on_backend_tracking_data();
 
-    zpsnap_child_t                          f_snap;
+    snap_child *                            f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t f_tracker_table;
     QString                                 f_email;
     QDomDocument                            f_doc;

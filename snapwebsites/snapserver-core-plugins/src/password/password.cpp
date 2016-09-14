@@ -21,11 +21,11 @@
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "fuzzy_string_compare.h"
-#include "snap_lock.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/fuzzy_string_compare.h>
+#include <snapwebsites/snap_lock.h>
 
 #include <algorithm>
 #include <iostream>
@@ -34,7 +34,7 @@
 
 #include <QChar>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 /** \file

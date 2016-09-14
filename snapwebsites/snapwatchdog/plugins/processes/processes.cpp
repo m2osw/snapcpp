@@ -25,7 +25,7 @@
 
 #include <QRegExp>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(processes, 1, 0)

@@ -15,16 +15,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "snap_backend.h"
+#include "snapwebsites/snap_backend.h"
 
-#include "snapwebsites.h"
-#include "log.h"
-#include "not_used.h"
-#include "snap_lock.h"
+#include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/snap_lock.h"
 
 #include <wait.h>
 #include <fcntl.h>
 #include <sys/resource.h>
+
+#include "snapwebsites/poison.h"
 
 
 namespace snap
@@ -1915,7 +1917,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        // (i.e. controlled_vars, C++ cassandra driver...)
+        // (i.e. libtld, C++ cassandra driver...)
         SNAP_LOG_FATAL("snap_backend::process_backend_uri(): std::exception caught: ")(std_except.what());
     }
     catch( ... )

@@ -15,18 +15,19 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "http_client_server.h"
+#include "snapwebsites/http_client_server.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "snap_uri.h"
-#include "snapwebsites.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/snap_uri.h"
+#include "snapwebsites/snapwebsites.h"
 
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
+
 
 namespace http_client_server
 {

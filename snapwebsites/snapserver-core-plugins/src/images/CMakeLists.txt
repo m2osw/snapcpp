@@ -51,7 +51,6 @@ include_directories(
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
@@ -73,11 +72,6 @@ target_link_libraries( images
     Qt5::Core
     ${ImageMagick_LIBRARIES}
 )
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( images make_controlled_vars_headers )
-endif()
 
 install(
     TARGETS images LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}

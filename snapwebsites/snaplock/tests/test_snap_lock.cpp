@@ -83,20 +83,20 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// our lib
+// snapwebsites lib
 //
-#include <snap_lock.h>
-#include <snapwebsites.h>
+#include <snapwebsites/snap_lock.h>
+#include <snapwebsites/snapwebsites.h>
 
-// other libs
+// QtCassandra lib
 //
 #include <QtCassandra/QCassandraSession.h>
 
-// c++
+// C++ lib
 //
 #include <iostream>
 
-// system
+// C lib
 //
 #include <unistd.h>
 #include <sys/wait.h>

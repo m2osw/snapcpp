@@ -23,19 +23,19 @@
 #include "../locale/snap_locale.h"
 #include "../path/path.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qdomxpath.h"
-#include "qhtmlserializer.h"
-#include "qxmlmessagehandler.h"
-#include "xslt.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/qhtmlserializer.h>
+#include <snapwebsites/qxmlmessagehandler.h>
+#include <snapwebsites/xslt.h>
 
 #include <QFile>
 #include <QTextStream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(feed, 1, 0)

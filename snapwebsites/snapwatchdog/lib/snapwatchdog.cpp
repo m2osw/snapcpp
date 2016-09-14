@@ -40,7 +40,7 @@
 #include <sys/wait.h>
 
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 /** \file
@@ -440,7 +440,7 @@ void watchdog_server::show_version()
  */
 void watchdog_server::watchdog()
 {
-    SNAP_LOG_INFO("------------------------------------ snapwatchdog started on ")(get_parameter("server_name"));
+    SNAP_LOG_INFO("------------------------------------ snapwatchdog started on ")(get_server_name());
 
     init_parameters();
 

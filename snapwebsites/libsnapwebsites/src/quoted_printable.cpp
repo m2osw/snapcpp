@@ -15,14 +15,12 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "quoted_printable.h"
+#include "snapwebsites/quoted_printable.h"
 
-#include "not_reached.h"
+#include "snapwebsites/not_reached.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+#include "snapwebsites/poison.h"
 
-#include "poison.h"
 
 namespace quoted_printable
 {
@@ -241,11 +239,11 @@ std::string encode(std::string const & input, int flags)
         }
 
     private:
-        controlled_vars::zint32_t   f_flags;
-        controlled_vars::zchar_t    f_buffer;
-        std::string                 f_result;
-        controlled_vars::zint32_t   f_line;
-        controlled_vars::flbool_t   f_cr;
+        int32_t         f_flags = 0;
+        char            f_buffer = 0;
+        std::string     f_result;
+        int32_t         f_line = 0;
+        bool            f_cr = false;
     };
 
     result r(input.length(), flags);

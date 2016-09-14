@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../layout/layout.h"
 
 
@@ -147,7 +149,7 @@ public:
 
         void                    get_cache_table();
 
-        zpsnap_child_t                  f_snap;
+        snap_child *                    f_snap = nullptr;
         QString                         f_user_path;
         content::path_info_t &          f_ipath;
         QString                         f_action;
@@ -156,10 +158,10 @@ public:
         QString                         f_user_cache_key;
         req_sets_t                      f_plugin_permissions;
         QString                         f_plugin_cache_key;
-        controlled_vars::fbool_t        f_using_user_cache;
-        controlled_vars::fbool_t        f_user_cache_reset;
-        controlled_vars::fbool_t        f_using_plugin_cache;
-        controlled_vars::fbool_t        f_plugin_cache_reset;
+        bool                            f_using_user_cache = false;
+        bool                            f_user_cache_reset = false;
+        bool                            f_using_plugin_cache = false;
+        bool                            f_plugin_cache_reset = false;
     };
 
                             permissions();
@@ -214,9 +216,9 @@ private:
     void                    recursive_add_plugin_permissions(QString const & plugin_name, QString const & key, sets_t & sets);
     void                    check_permissions(QString const & email, QString const & page, QString const & action, QString const & status);
 
-    zpsnap_child_t              f_snap;
+    snap_child *                f_snap = nullptr;
     QString                     f_login_status;
-    controlled_vars::fbool_t    f_has_user_path;
+    bool                        f_has_user_path = false;
     QString                     f_user_path;
     std::map<QString, bool>     f_valid_actions;
 };

@@ -17,9 +17,9 @@
 
 #include "messages.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
@@ -27,7 +27,7 @@
 
 #include <iostream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(messages, 1, 0)
@@ -36,7 +36,7 @@ SNAP_PLUGIN_START(messages, 1, 0)
 namespace
 {
 
-controlled_vars::zint32_t        g_message_id;
+int32_t        g_message_id = 0;
 
 } // noname namespace
 
@@ -76,7 +76,7 @@ const char * get_name(name_t name)
  * by the QVector implementation.
  */
 messages::message::message()
-    : f_type(message_type_enum_t::MESSAGE_TYPE_ERROR)
+    : f_type(message_type_t::MESSAGE_TYPE_ERROR)
     , f_id(++g_message_id)
     //, f_title("") -- auto-init
     //, f_body("") -- auto-init
@@ -136,7 +136,7 @@ messages::message::message(message const & rhs)
  *
  * \return One of the message enumeration code.
  */
-messages::message::message_type_enum_t messages::message::get_type() const
+messages::message::message_type_t messages::message::get_type() const
 {
     return f_type;
 }
@@ -229,7 +229,7 @@ void messages::message::set_widget_name(QString const & widget_name)
 void messages::message::unserialize(QtSerialization::QReader & r)
 {
     QtSerialization::QComposite comp;
-    int32_t type(static_cast<int32_t>(static_cast<message_type_enum_t>(message_type_enum_t::MESSAGE_TYPE_ERROR)));
+    int32_t type(static_cast<int32_t>(static_cast<message_type_t>(message_type_t::MESSAGE_TYPE_ERROR)));
     QtSerialization::QFieldInt32 tag_type(comp, "type", type);
     int32_t id(0);
     QtSerialization::QFieldInt32 tag_id(comp, "id", id);
@@ -237,7 +237,7 @@ void messages::message::unserialize(QtSerialization::QReader & r)
     QtSerialization::QFieldString tag_body(comp, "body", f_body);
     r.read(comp);
 
-    f_type = static_cast<message_type_enum_t>(type);
+    f_type = static_cast<message_type_t>(type);
     f_id = id;
 }
 
@@ -270,7 +270,7 @@ void messages::message::readTag(QString const & name, QtSerialization::QReader &
 void messages::message::serialize(QtSerialization::QWriter & w) const
 {
     QtSerialization::QWriter::QTag tag(w, "message");
-    QtSerialization::writeTag(w, "type", static_cast<int32_t>(static_cast<message_type_enum_t>(f_type)));
+    QtSerialization::writeTag(w, "type", static_cast<int32_t>(static_cast<message_type_t>(f_type)));
     QtSerialization::writeTag(w, "id", static_cast<int32_t>(f_id));
     QtSerialization::writeTag(w, "title", f_title);
     QtSerialization::writeTag(w, "body", f_body);
@@ -455,7 +455,7 @@ messages::message & messages::set_http_error(snap_child::http_code_t err_code, Q
     QString status(QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name));
     f_snap->set_header("Status", status);
 
-    message msg(message::message_type_enum_t::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name), err_description);
+    message msg(message::message_type_t::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name), err_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -494,7 +494,7 @@ messages::message & messages::set_error(QString err_name, QString const & err_de
     logging::log_security_t sec(err_security ? logging::log_security_t::LOG_SECURITY_SECURE : logging::log_security_t::LOG_SECURITY_NONE);
     SNAP_LOG_ERROR(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
 
-    message msg(message::message_type_enum_t::MESSAGE_TYPE_ERROR, err_name, err_description);
+    message msg(message::message_type_t::MESSAGE_TYPE_ERROR, err_name, err_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -531,7 +531,7 @@ messages::message & messages::set_warning(QString warning_name, QString const & 
     // log the warning
     SNAP_LOG_WARNING(warning_details)(" (")(warning_name)(": ")(warning_description)(")");
 
-    message msg(message::message_type_enum_t::MESSAGE_TYPE_WARNING, warning_name, warning_description);
+    message msg(message::message_type_t::MESSAGE_TYPE_WARNING, warning_name, warning_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -565,7 +565,7 @@ messages::message & messages::set_info(QString info_name, QString const & info_d
 
     SNAP_LOG_INFO("(")(info_name)(": ")(info_description)(")");
 
-    message msg(message::message_type_enum_t::MESSAGE_TYPE_INFO, info_name, info_description);
+    message msg(message::message_type_t::MESSAGE_TYPE_INFO, info_name, info_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -599,7 +599,7 @@ messages::message & messages::set_debug(QString debug_name, QString const & debu
 
     SNAP_LOG_DEBUG("(")(debug_name)(": ")(debug_description)(")");
 
-    message msg(message::message_type_enum_t::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
+    message msg(message::message_type_t::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }

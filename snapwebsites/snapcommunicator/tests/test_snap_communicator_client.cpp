@@ -26,11 +26,10 @@
  * messages to send.
  */
 
-#include "snap_communicator.h"
-
 #include "snap_tests.h"
 
-#include "snapwebsites.h"
+#include <snapwebsites/snap_communicator.h>
+#include "snapwebsites/snapwebsites.h"
 
 #include <sstream>
 

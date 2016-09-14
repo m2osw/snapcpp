@@ -16,12 +16,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../epayment/epayment.h"
 #include "../filter/filter.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
 
-#include "http_client_server.h"
+#include <snapwebsites/http_client_server.h>
 
 
 /** \file
@@ -168,12 +170,12 @@ private:
     int8_t                      get_maximum_repeat_failures();
     std::string                 create_unique_request_id(QString const  & main_id);
 
-    zpsnap_child_t                              f_snap;
+    snap_child *                                f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t     f_epayment_paypal_table;
-    controlled_vars::flbool_t                   f_debug_defined;
-    controlled_vars::flbool_t                   f_debug;
-    controlled_vars::flbool_t                   f_maximum_repeat_failures_defined;
-    controlled_vars::zint64_t                   f_maximum_repeat_failures;
+    bool                                        f_debug_defined = false;
+    bool                                        f_debug = false;
+    bool                                        f_maximum_repeat_failures_defined = false;
+    int64_t                                     f_maximum_repeat_failures = 0;
 };
 
 

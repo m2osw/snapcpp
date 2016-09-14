@@ -40,12 +40,13 @@
 //
 #include "snapwebsites.h"
 
-// 3rd party libs
+// advgetopt lib
 //
-#include <QtCore>
-#include <QtCassandra/QCassandra.h>
-#include <controlled_vars/controlled_vars.h>
 #include <advgetopt/advgetopt.h>
+
+// Qt lib
+//
+#include <QtCassandra/QCassandra.h>
 
 // system
 //
@@ -70,14 +71,14 @@ public:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    QtCassandra::QCassandra::pointer_t f_cassandra;
-    QString                            f_host;
-    controlled_vars::mint32_t          f_port;
-    controlled_vars::mint32_t          f_count;
-    QString                            f_context;
-    QString                            f_table;
-    QString                            f_row;
-    getopt_ptr_t                       f_opt;
+    QtCassandra::QCassandra::pointer_t  f_cassandra;
+    QString                             f_host = "localhost";
+    int32_t                             f_port = 9042;
+    int32_t                             f_count = 100;
+    QString                             f_context = "snap_websites";
+    QString                             f_table;
+    QString                             f_row;
+    getopt_ptr_t                        f_opt;
 
     bool confirm_drop_check() const;
     void display_tables() const;

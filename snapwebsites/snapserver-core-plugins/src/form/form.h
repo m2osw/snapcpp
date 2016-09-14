@@ -16,11 +16,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
 
+// Qt lib
+//
 #include <QtCassandra/QCassandraTable.h>
 #include <QDomDocument>
+
 
 namespace snap
 {
@@ -123,8 +128,8 @@ private:
     void                        auto_save_form(QString const & owner, content::path_info_t & ipath, auto_save_types_t const & auto_save_type, QDomDocument xml_form);
     void                        auto_fill_form(QDomDocument xml_form);
 
-    zpsnap_child_t              f_snap;
-    controlled_vars::fbool_t    f_form_initialized;
+    snap_child *                f_snap = nullptr;
+    bool                        f_form_initialized = false;
     QDomDocument                f_form_elements;
     QDomElement                 f_form_stylesheet;
     QString                     f_form_elements_string;

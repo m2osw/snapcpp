@@ -22,8 +22,8 @@
 // as expected.
 //
 
-#include "snap_version.h"
-#include "qstring_stream.h"
+#include <snapwebsites/snap_version.h>
+#include <snapwebsites/qstring_stream.h>
 
 #include <QStringList>
 

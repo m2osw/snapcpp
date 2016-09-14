@@ -28,10 +28,10 @@
 
 #include "content.h"
 
-#include "dbutils.h"
-#include "log.h"
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/log.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(content)
@@ -564,7 +564,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
         QtCassandra::QCassandraTable::pointer_t     f_branch_table;
         QtCassandra::QCassandraTable::pointer_t     f_revision_table;
         cloned_tree_t                               f_clones;
-        controlled_vars::tbool_t                    f_result;
+        bool                                        f_result = true;
     };
 
     sub_function f(this, source, destination, f_snap->get_start_date());

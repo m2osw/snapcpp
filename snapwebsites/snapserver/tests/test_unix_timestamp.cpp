@@ -18,7 +18,7 @@
 
 #pragma GCC diagnostic ignored "-Wformat"
 
-#include "plugins.h"
+#include <snapwebsites/plugins.h>
 
 #include <stdio.h>
 #include <stdlib.h>

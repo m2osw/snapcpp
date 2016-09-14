@@ -17,20 +17,20 @@
 
 //#define SHOW_COMMANDS
 
-#include "snap_expr.h"
+#include "snapwebsites/snap_expr.h"
 
-#include "snapwebsites.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "log.h"
+#include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/not_reached.h"
+#include "snapwebsites/not_used.h"
+#include "snapwebsites/log.h"
 
-#include <controlled_vars/controlled_vars_limited_need_init.h>
-
+// QtSerialization lib
+//
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
 
-#include "poison.h"
+#include "snapwebsites/poison.h"
 
 
 namespace snap
@@ -435,7 +435,10 @@ QString variable_t::to_string() const
 using namespace parser;
 
 
-class expr_node : public expr_node_base, public parser_user_data, public QtSerialization::QSerializationObject
+class expr_node
+        : public expr_node_base
+        , public parser_user_data
+        , public QtSerialization::QSerializationObject
 {
 public:
     static int const LIST_TEST_NODE_MAJOR_VERSION = 1;
@@ -492,7 +495,6 @@ public:
         // Variable
         NODE_TYPE_VARIABLE
     };
-    typedef controlled_vars::limited_need_enum_init<node_type_t, node_type_t::NODE_TYPE_UNKNOWN, node_type_t::NODE_TYPE_VARIABLE> safe_node_type_t;
 
     static char const *type_names[static_cast<size_t>(node_type_t::NODE_TYPE_VARIABLE) + 1];
 
@@ -1664,13 +1666,6 @@ public:
 
             input(variable_t::variable_vector_t const& sub_results)
                 : f_sub_results(sub_results)
-                //, f_position(0) -- auto-init
-                , f_index(1)
-                //, f_format(...) -- initialized below
-                //, f_result("") -- auto-init
-                , f_last(EOF)
-                , f_flags(0)
-                //, f_count(0) -- auto-init
             {
                 f_format = sub_results[0].get_string("format() function format string");
             }
@@ -1984,13 +1979,13 @@ public:
 
             variable_t::variable_vector_t const &   f_sub_results;
             QString                                 f_format;
-            controlled_vars::zint32_t               f_position;
-            controlled_vars::mint32_t               f_index;
+            int32_t                                 f_position = 0;
+            int32_t                                 f_index = 1;
             QString                                 f_result;
-            int                                     f_last;
-            int                                     f_flags;
-            controlled_vars::zint32_t               f_width;
-            controlled_vars::zint32_t               f_precision;
+            int                                     f_last = EOF;
+            int                                     f_flags = 0;
+            int32_t                                 f_width = 0;
+            int32_t                                 f_precision = 0;
         };
         input in(sub_results);
         in.parse();
@@ -3550,7 +3545,7 @@ private:
 #endif
     }
 
-    safe_node_type_t        f_type;
+    node_type_t             f_type = node_type_t::NODE_TYPE_VARIABLE;
 
     QString                 f_name;
     variable_t              f_variable;

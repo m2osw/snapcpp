@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../editor/editor.h"
+
 
 namespace snap
 {
@@ -217,7 +220,7 @@ private:
     void                on_path_execute__blacklist_new_passwords(content::path_info_t & ipath);
     void                on_path_execute__blacklist_remove_passwords(content::path_info_t & ipath);
 
-    zpsnap_child_t                          f_snap;
+    snap_child *                            f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t f_password_table;
     bool                                    f_added_policy = false;
 };

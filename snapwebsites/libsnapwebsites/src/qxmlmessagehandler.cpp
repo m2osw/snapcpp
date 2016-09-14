@@ -15,16 +15,24 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "qxmlmessagehandler.h"
+// ourselves
+//
+#include "snapwebsites/qxmlmessagehandler.h"
 
-#include "qstring_stream.h"
-#include "log.h"
-#include "snap_exception.h"
+// snapwebsites lib
+//
+#include "snapwebsites/qstring_stream.h"
+#include "snapwebsites/log.h"
+#include "snapwebsites/snap_exception.h"
 
+// Qt lib
+//
 #include <QDomDocument>
 #include <QFile>
 
-#include "poison.h"
+// included last
+//
+#include "snapwebsites/poison.h"
 
 namespace snap
 {

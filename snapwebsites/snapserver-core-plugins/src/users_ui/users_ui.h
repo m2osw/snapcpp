@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../form/form.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
@@ -123,7 +125,7 @@ private:
     void                    verify_password(content::path_info_t & cpath);
     void                    forgot_password_email(QString const & email, QString const & user_key);
 
-    zpsnap_child_t          f_snap;
+    snap_child *            f_snap = nullptr;
     QString                 f_user_changing_password_key;   // not quite logged in user
     bool                    f_user_changing_password_key_clear = true;
 };

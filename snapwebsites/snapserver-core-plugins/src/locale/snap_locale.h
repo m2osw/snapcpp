@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+// other plugins
+//
+#include <snapwebsites/snapwebsites.h>
+
 
 /** \file
  * \brief Header of the locale plugin.
@@ -101,8 +104,8 @@ public:
     struct timezone_info_t
     {
         QString         f_2country;         // 2 letter country code
-        int64_t         f_longitude;        // city longitude
-        int64_t         f_latitude;         // city latitude
+        int64_t         f_longitude = 0;    // city longitude
+        int64_t         f_latitude = 0;     // city latitude
         QString         f_timezone_name;    // the full name of the timezone as is
         QString         f_continent;        // one of the 5 continents and a few other locations
         QString         f_country_or_state; // likely empty (Used for Argentina, Kentucky, Indiana...)
@@ -142,11 +145,11 @@ public:
     time_t                      parse_time(QString const & time_str, parse_error_t & errcode);
 
 private:
+    snap_child *                f_snap = nullptr;
     locale_list_t               f_locale_list;
     timezone_list_t             f_timezone_list;
     QString                     f_current_locale;
     QString                     f_current_timezone;
-    zpsnap_child_t              f_snap;
 };
 
 

@@ -15,17 +15,27 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
 #include "disk.h"
 
-#include "not_used.h"
+// snapwatchdog lib
+//
 #include "snapwatchdog.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/mounts.h>
 #include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/not_used.h>
 
+// C lib
+//
 #include <sys/statvfs.h>
 
-#include "poison.h"
+// last entry
+//
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(disk, 1, 0)

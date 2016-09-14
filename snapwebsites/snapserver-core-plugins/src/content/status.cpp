@@ -24,9 +24,9 @@
 
 #include "content.h"
 
-#include "log.h"
+#include <snapwebsites/log.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(content)

@@ -20,13 +20,13 @@
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 
-#include "log.h"
-#include "mkgmtime.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qdomxpath.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/mkgmtime.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomxpath.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(date_widgets, 1, 0)

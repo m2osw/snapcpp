@@ -36,10 +36,10 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// 3rd party libs
+// Qt lib
 //
 #include <QtCore>
-#include <controlled_vars/controlled_vars.h>
+
 
 class snapTableList
 {

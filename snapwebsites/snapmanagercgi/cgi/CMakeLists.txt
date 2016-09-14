@@ -1,6 +1,6 @@
 #
 # File:
-#      snapmanagercgi/CMakeLists.txt
+#      snapwebsites/snapmanagercgi/CMakeLists.txt
 #
 # Description:
 #      The Snap! Manager CGI to manage a Snap! cluster from your
@@ -31,13 +31,11 @@
 #
 project( snamanagercgi )
 
-# Put the version in the header file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapmanagercgi.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapmanagercgi.h )
-
-include_directories( SYSTEM
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Network_INCLUDE_DIRS}
-    ${Qt5Xml_INCLUDE_DIRS}
+include_directories(
+    SYSTEM
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Network_INCLUDE_DIRS}
+        ${Qt5Xml_INCLUDE_DIRS}
 )
 
 include_directories(
@@ -46,7 +44,6 @@ include_directories(
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${snapmanager_SOURCE_DIR}
 )
 
@@ -75,6 +72,5 @@ target_link_libraries( ${PROJECT_NAME}
 
 install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib/cgi-bin )
 
-## TODO: add code coverage, doxygen and unittests
 
 # vim: ts=4 sw=4 et nocindent

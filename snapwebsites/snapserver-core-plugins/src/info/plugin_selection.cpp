@@ -20,12 +20,12 @@
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 
-#include "log.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "xslt.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/xslt.h>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_EXTENSION_START(info)

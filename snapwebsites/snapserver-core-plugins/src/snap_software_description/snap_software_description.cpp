@@ -39,16 +39,16 @@
 #include "../list/list.h"
 #include "../shorturl/shorturl.h"
 
-#include "http_strings.h"
-#include "log.h"
-#include "not_used.h"
-#include "qdomhelpers.h"
-#include "qdomxpath.h"
-#include "xslt.h"
+#include <snapwebsites/http_strings.h>
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/qdomxpath.h>
+#include <snapwebsites/xslt.h>
 
 #include <QFile>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(snap_software_description, 1, 0)
@@ -424,7 +424,7 @@ void snap_software_description::on_backend_process()
         }
 
     private:
-        zpsnap_child_t                          f_snap;
+        snap_child *                f_snap = nullptr;
     };
 
     restore_path_t rp(f_snap);

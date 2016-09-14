@@ -16,7 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// other plugins
+//
 #include "../content/content.h"
+
 
 namespace snap
 {
@@ -91,7 +94,7 @@ private:
     void                generate_feeds();
     void                mark_attachment_as_feed(snap::content::attachment_file & attachment);
 
-    zpsnap_child_t      f_snap;
+    snap_child *        f_snap = nullptr;
     QString             f_feed_parser_xsl;
 };
 

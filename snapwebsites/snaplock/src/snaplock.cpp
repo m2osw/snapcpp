@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplock.cpp
+ *      snapwebsites/snaplock/src/snaplock.cpp
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers
@@ -38,15 +38,14 @@
 
 // our lib
 //
-#include "log.h"
-#include "qstring_stream.h"
-#include "dbutils.h"
-#include "snap_lock.h"
-#include "snap_string_list.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/dbutils.h>
+#include <snapwebsites/snap_lock.h>
+#include <snapwebsites/snap_string_list.h>
 
-// 3rd party libs
+// advgetopt lib
 //
-#include <QtCore>
 #include <advgetopt/advgetopt.h>
 
 // C++ lib

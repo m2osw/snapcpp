@@ -21,13 +21,13 @@
 #include "../messages/messages.h"
 #include "../server_access/server_access.h"
 
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
+#include <snapwebsites/log.h>
+#include <snapwebsites/not_reached.h>
+#include <snapwebsites/not_used.h>
 
 #include <iostream>
 
-#include "poison.h"
+#include <snapwebsites/poison.h>
 
 
 SNAP_PLUGIN_START(output, 1, 0)
@@ -616,19 +616,19 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
             messages::messages::message const & msg(messages_plugin->get_message(i));
             switch(msg.get_type())
             {
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_ERROR:
                 type = "error";
                 break;
 
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_WARNING:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_WARNING:
                 type = "warning";
                 break;
 
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_INFO:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_INFO:
                 type = "info";
                 break;
 
-            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_DEBUG:
+            case messages::messages::message::message_type_t::MESSAGE_TYPE_DEBUG:
                 type = "debug";
                 break;
 
