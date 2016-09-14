@@ -10,6 +10,7 @@
 #
 die "usage: SnapBuildIncVers.pl [cache filename] [dist]\n" unless $#ARGV == 1;
 
+use strict;
 use Cwd;
 use Dpkg::Changelog::Parse;
 use Dpkg::Control::Info;
@@ -18,7 +19,7 @@ use Storable;
 
 my $cache_file   = shift;
 my $distribution = shift;
-my $change_msg   = "Nightly build."
+my $change_msg   = "Nightly build.";
 
 my %options;
 
@@ -64,7 +65,7 @@ for my $project (keys %DIRHASH)
     # Increment the version
     #
     $version =~ s/~.*$//;
-    my $newvers
+    my $newvers;
     if( $version =~ m/^(\d*).(\d+).(\d+)$/ )
     {
         $newvers = "$1.$2.$3.1";
@@ -75,15 +76,26 @@ for my $project (keys %DIRHASH)
         $newvers = "$1.$2.$3.$num";
     }
 
-    if( $changes =~ m/\* $change_msg./ )
+    my @lines = split /\n/, $changes;
+    my $prepend_newchange = 1;
+    for my $line (@lines)
     {
-        system "sed -i.bak -e 's/$name ($version) $dist; urgency=$urgency/$name ($newvers) $distribution; urgency=$urgency/'";
+        if( $line =~ m/^  \* $change_msg/ )
+        {
+            $prepend_newchange = 0;
+            last;
+        }
     }
-    else()
+
+    if( $prepend_newchange == 1 )
     {
         # Write a new changelog entry with the new version
         #
         system "dch --newversion $newvers~$distribution --urgency high --distribution $distribution $change_msg";
+    }
+    else
+    {
+        system "sed -i.bak -e 's/$name ($version~$distribution) $dist; urgency=$urgency/$name ($newvers~$distribution) $distribution; urgency=$urgency/' debian/changelog";
     }
 }
 
