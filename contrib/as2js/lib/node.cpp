@@ -38,8 +38,6 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 #include    "as2js/message.h"
 
-#include    <controlled_vars/controlled_vars_auto_enum_init.h>
-
 #include    <algorithm>
 #include    <sstream>
 #include    <iomanip>

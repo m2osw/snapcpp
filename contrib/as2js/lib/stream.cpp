@@ -141,7 +141,7 @@ Input::char_t DecodingFilterUTF8::get_char()
     }
 
     size_t l(0);
-    zas_char_t c;
+    as_char_t c(0);
     if(b >= 0xC0 && b <= 0xDF)
     {
         l = 2;

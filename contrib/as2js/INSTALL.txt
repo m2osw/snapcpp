@@ -23,5 +23,4 @@ The project has requirements:
   . snapCMakeModules
   . g++
   . advgetopt
-  . controlled_vars
 

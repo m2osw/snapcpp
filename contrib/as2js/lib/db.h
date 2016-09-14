@@ -84,7 +84,7 @@ public:
         String const                f_element_name;
         String                      f_type;
         String                      f_filename;
-        Position::zcounter_t        f_line;
+        Position::counter_t         f_line = Position::DEFAULT_COUNTER;
 
         JSON::JSONValue::pointer_t  f_element;
     };

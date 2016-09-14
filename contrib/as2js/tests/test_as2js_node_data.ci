@@ -1673,8 +1673,6 @@ class test_callback : public as2js::MessageCallback
 {
 public:
     test_callback()
-        : f_expected_message_level(as2js::message_level_t::MESSAGE_LEVEL_OFF)
-        , f_expected_error_code(as2js::err_code_t::AS_ERR_NONE)
     {
         as2js::Message::set_message_callback(this);
         g_warning_count = as2js::Message::warning_count();
@@ -1721,18 +1719,19 @@ public:
         f_got_called = true;
     }
 
-    controlled_vars::tlbool_t                               f_expected_call;
-    controlled_vars::flbool_t                               f_got_called;
-    controlled_vars::need_enum_init<as2js::message_level_t> f_expected_message_level;
-    controlled_vars::need_enum_init<as2js::err_code_t>      f_expected_error_code;
-    as2js::Position                                         f_expected_pos;
-    std::string                                             f_expected_message; // UTF-8 string
-    static controlled_vars::zint32_t                        g_warning_count;
-    static controlled_vars::zint32_t                        g_error_count;
+    bool                        f_expected_call = true;
+    bool                        f_got_called = false;
+    as2js::message_level_t      f_expected_message_level = as2js::message_level_t::MESSAGE_LEVEL_OFF;
+    as2js::err_code_t           f_expected_error_code = as2js::err_code_t::AS_ERR_NONE;
+    as2js::Position             f_expected_pos;
+    std::string                 f_expected_message; // UTF-8 string
+
+    static int32_t              g_warning_count;
+    static int32_t              g_error_count;
 };
 
-controlled_vars::zint32_t   test_callback::g_warning_count;
-controlled_vars::zint32_t   test_callback::g_error_count;
+int32_t   test_callback::g_warning_count = 0;
+int32_t   test_callback::g_error_count = 0;
 
 
 void output_str(std::ostream & out, as2js::String str)

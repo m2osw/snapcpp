@@ -48,7 +48,7 @@ find_package( SnapDoxygen )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for advgetopt!")
-    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
+    add_definitions( -DDEBUG -D_DEBUG )
 else()
     message("Debug is turned OFF")
     add_definitions( -DNDEBUG )

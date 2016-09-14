@@ -107,7 +107,7 @@ private:
 
     QCassandraProxy::pointer_t              f_proxy;
     QCassandraContext::pointer_t            f_current_context;
-    mutable controlled_vars::flbool_t       f_contexts_read;
+    mutable bool                            f_contexts_read = false;
     QCassandraContexts                      f_contexts;
     QString                                 f_cluster_name;
     QString                                 f_protocol_version;

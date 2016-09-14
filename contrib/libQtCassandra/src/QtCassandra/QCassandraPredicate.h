@@ -40,9 +40,6 @@
 #include "QtCassandra/QCassandraOrder.h"
 #include "QtCassandra/QCassandraQuery.h"
 
-#include <controlled_vars/controlled_vars_auto_enum_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-
 #include <QByteArray>
 #include <QRegExp>
 #include <QString>
@@ -52,7 +49,7 @@
 namespace QtCassandra
 {
 
-typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
+typedef int32_t cassandra_count_t; // usually defaults to 100
 
 class QCassandraPredicate
 {
@@ -69,7 +66,7 @@ public:
     void                setConsistencyLevel( consistency_level_t level )	{ f_consistencyLevel = level; }
 
 protected:
-    cassandra_count_t   f_count;
+    cassandra_count_t   f_count = 100;
     consistency_level_t	f_consistencyLevel;
 
     virtual void appendQuery( QString& query, int& bind_count ) = 0;
@@ -149,8 +146,8 @@ public:
 protected:
     QByteArray                  f_startCellKey;
     QByteArray                  f_endCellKey;
-    controlled_vars::fbool_t    f_reversed;
-    controlled_vars::fbool_t    f_index; // whether predicate is used as an index
+    bool                        f_reversed = false;
+    bool                        f_index = false; // whether predicate is used as an index
 
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindOrder( QCassandraOrder& order );

@@ -16,7 +16,6 @@ then
 fi
 
 HOST="$1"
-shift
 
 if test -z "$HOST"
 then
@@ -40,42 +39,35 @@ then
     exit 1
 fi
 
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing antihammering
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing backend
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing branch
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing cache
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing content
+echo "***"
+echo "*** Note that this process is so slow that you are likely to get"
+echo "*** various types of timeout errors."
+echo "***"
+
+# TODO: gather the list of tables using snapdb and remove "domains"
+#       and "websites" from that list
+
+for name in antihammering backend branch cache content emails epayment_paypal \
+            epayment_stripe files firewall layout links list listref \
+            mailinglist password processing revision secret serverstats \
+            sessions shorturl sites test_results tracker users
+do
+    echo "Deleting $name..."
+    snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing "$name"
+done
+
+# We do not delete domains and websites so we do not have to setup those
+# again...
 #snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing domains
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing emails
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing epayment_paypal
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing epayment_stripe
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing files
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing firewall
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing layout
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing links
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing list
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing listref
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing mailinglist
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing password
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing processing
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing revision
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing secret
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing serverstats
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing sessions
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing shorturl
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing sites
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing test_results
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing tracker
-snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing users
 #snapdb --host "$HOST" --drop-table --yes-i-know-what-im-doing websites
 
 echo "Done."
 echo
-echo "Now you may recreate the table, empty, with the command:"
+echo "Now you may recreate the tables, empty, with the command:"
 echo "         snapcreatetables"
 echo
 echo "Then later reinstall the websites with:"
-echo "         snapinstallweb --domain <your-[sub-]domain> --port <80|443>"
+echo "         snapinstallwebsite --domain <your-[sub-]domain> --port <80|443>"
 echo
 
 # vim: ts=4 sw=4 et

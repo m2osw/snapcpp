@@ -75,9 +75,20 @@ public:
     {
     }
 
+    version_number_t(version_number_t const & rhs)
+        : f_version(rhs.f_version)
+    {
+    }
+
     version_number_t(basic_version_number_t const v)
         : f_version(v)
     {
+    }
+
+    version_number_t & operator = (version_number_t const & rhs)
+    {
+        f_version = rhs.f_version;
+        return *this;
     }
 
     version_number_t & operator = (basic_version_number_t const v)
@@ -99,7 +110,7 @@ public:
 
     version_number_t & operator ++ ()
     {
-        --f_version;
+        ++f_version;
         return *this;
     }
 
@@ -113,7 +124,7 @@ public:
     version_number_t operator ++ (int)
     {
         version_number_t const copy(*this);
-        --f_version;
+        ++f_version;
         return copy;
     }
 

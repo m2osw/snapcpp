@@ -40,8 +40,6 @@ SOFTWARE.
 #include    "as2js/json.h"
 #include    "as2js/message.h"
 
-#include    <controlled_vars/controlled_vars_auto_enum_init.h>
-
 #include    <cstring>
 
 
@@ -65,7 +63,7 @@ char const *g_rc_directories[] =
     nullptr
 };
 
-controlled_vars::fbool_t    g_home_initialized;
+bool                        g_home_initialized = false;
 String                      g_home;
 
 }

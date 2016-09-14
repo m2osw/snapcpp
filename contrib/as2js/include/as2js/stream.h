@@ -38,8 +38,6 @@ SOFTWARE.
 #include    "string.h"
 #include    "position.h"
 
-#include    <controlled_vars/controlled_vars_ptr_auto_init.h>
-
 #include    <memory>
 #include    <vector>
 #include    <fstream>
@@ -85,7 +83,7 @@ protected:
     as_char_t               next_char(as_char_t c);
 
 private:
-    zas_char_t              f_lead_surrogate;
+    as_char_t               f_lead_surrogate = 0;
 };
 
 
@@ -216,7 +214,7 @@ protected:
 
 private:
     String                  f_str;
-    String::zsize_type_t    f_pos;
+    String::size_type       f_pos = 0;
 };
 
 

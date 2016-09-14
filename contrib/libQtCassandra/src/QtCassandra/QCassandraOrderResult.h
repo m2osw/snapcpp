@@ -37,14 +37,6 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 
-//#include <controlled_vars/controlled_vars_auto_init.h>
-//#include <controlled_vars/controlled_vars_limited_auto_init.h>
-//#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-//#include <QString>
-//#include <QByteArray>
-//#include <memory>
-//#include <stdint.h>
-
 
 namespace QtCassandra
 {

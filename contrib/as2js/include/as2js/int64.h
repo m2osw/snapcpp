@@ -37,7 +37,7 @@ SOFTWARE.
 
 #include    "compare.h"
 
-#include    <controlled_vars/controlled_vars_auto_init.h>
+#include    <cstdint>
 
 
 namespace as2js
@@ -86,7 +86,7 @@ public:
                     }
 
 private:
-    controlled_vars::auto_init<int64_type>        f_int;
+    int64_type      f_int = 0;
 };
 
 

@@ -39,8 +39,6 @@ SOFTWARE.
 #include    "int64.h"
 #include    "float64.h"
 
-#include    <controlled_vars/controlled_vars_need_enum_init.h>
-
 #include    <sstream>
 
 
@@ -208,9 +206,9 @@ public:
     static int          error_count();
 
 private:
-    controlled_vars::need_enum_init<message_level_t>    f_message_level;
-    controlled_vars::need_enum_init<err_code_t>         f_error_code;
-    Position                                            f_position;
+    message_level_t     f_message_level = message_level_t::MESSAGE_LEVEL_OFF;
+    err_code_t          f_error_code = err_code_t::AS_ERR_NONE;
+    Position            f_position;
 };
 
 

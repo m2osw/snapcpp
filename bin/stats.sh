@@ -1,20 +1,8 @@
 #!/bin/sh
 
 cloc --autoconf --by-file-by-lang \
-	advgetopt \
-	as2js \
-	cassview \
-	controlled_vars \
-	csspp \
-	googlerank \
-	iplock \
-	libQtCassandra \
-	libQtSerialization \
-	libtld \
-	snapCMakeModules \
-	snapmanager \
-	snapwatchdog \
+	cmake \
+	contrib \
 	snapwebsites \
-	zipios \
 		>statistics.txt
 

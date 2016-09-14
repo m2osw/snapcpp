@@ -75,6 +75,7 @@
         -e "s/^rpc_address: .*/rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/broadcast_rpc_address: .*/broadcast_rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^endpoint_snitch: .*/endpoint_snitch: GossipingPropertyFileSnitch/" \
+        -e "s/^auto_snapshot: .*/auto_snapshot: false/" \
               /etc/cassandra/cassandra.yaml
 
       # restart cassandra

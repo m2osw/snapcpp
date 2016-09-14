@@ -41,10 +41,7 @@
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraSchema.h"
 
-#include <controlled_vars/controlled_vars_auto_enum_init.h>
-
-// GNU does not officially offer cstdint yet
-#include <stdint.h>
+#include <cstdint>
 #include <memory>
 
 namespace QtCassandra
@@ -136,7 +133,7 @@ private:
 
     QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t	f_schema;
 
-    controlled_vars::zbool_t                    f_from_cassandra;
+    bool                                        f_from_cassandra = false;
     std::shared_ptr<QCassandraContext>          f_context;
     QString										f_tableName;
     QCassandraRows                              f_rows;

@@ -40,12 +40,12 @@ SOFTWARE.
 #include    "float64.h"
 #include    "position.h"
 
-#include    <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
+#include    <limits>
 #include    <bitset>
 #include    <map>
 #include    <memory>
 #include    <vector>
+
 
 namespace as2js
 {
@@ -71,7 +71,7 @@ public:
 
     static depth_t const        MATCH_NOT_FOUND = 0;
     static depth_t const        MATCH_HIGHEST_DEPTH = 1;
-    static depth_t const        MATCH_LOWEST_DEPTH = INT_MAX / 2;
+    static depth_t const        MATCH_LOWEST_DEPTH = std::numeric_limits<int>::max() / 2;
 
     // the node type is often referenced as a token
     enum class node_t
@@ -257,7 +257,6 @@ public:
 
         NODE_max     // mark the limit
     };
-    typedef controlled_vars::limited_auto_enum_init<node_t, node_t::NODE_EOF, node_t::NODE_max, node_t::NODE_UNKNOWN> safe_node_t;
 
     // some nodes use flags, all of which are managed in one bitset
     //
@@ -575,8 +574,8 @@ public:
     //String                      type_node_to_string() const;
 
 private:
-    typedef std::vector<controlled_vars::zint32_t>  param_depth_t;
-    typedef std::vector<controlled_vars::zuint32_t> param_index_t;
+    typedef std::vector<int32_t>    param_depth_t;
+    typedef std::vector<uint32_t>   param_index_t;
 
     // verify different parameters
     void                        verify_flag(flag_t f) const;
@@ -588,41 +587,41 @@ private:
     void                        display_data(std::ostream& out) const;
 
     // define the node type
-    safe_node_t                     f_type;
-    weak_pointer_t                  f_type_node;
-    flag_set_t                      f_flags;
-    pointer_t                       f_attribute_node;
-    attribute_set_t                 f_attributes;
-    safe_node_t                     f_switch_operator;
+    node_t                      f_type = node_t::NODE_UNKNOWN;
+    weak_pointer_t              f_type_node;
+    flag_set_t                  f_flags;
+    pointer_t                   f_attribute_node;
+    attribute_set_t             f_attributes;
+    node_t                      f_switch_operator = node_t::NODE_UNKNOWN;
 
     // whether this node is currently locked
-    controlled_vars::zint32_t       f_lock;
+    int32_t                     f_lock = 0;
 
     // location where the node was found (filename, line #, etc.)
-    Position                        f_position;
+    Position                    f_position;
 
     // data of this node
-    Int64                           f_int;
-    Float64                         f_float;
-    String                          f_str;
+    Int64                       f_int;
+    Float64                     f_float;
+    String                      f_str;
 
     // function parameters
-    param_depth_t                   f_param_depth;
-    param_index_t                   f_param_index;
+    param_depth_t               f_param_depth;
+    param_index_t               f_param_index;
 
     // parent children node tree handling
-    weak_pointer_t                  f_parent;
-    controlled_vars::zint32_t       f_offset;        // offset (index) in parent array of children -- set by compiler, should probably be removed...
-    vector_of_pointers_t            f_children;
-    weak_pointer_t                  f_instance;
+    weak_pointer_t              f_parent;
+    int32_t                     f_offset = 0;   // offset (index) in parent array of children -- set by compiler, should probably be removed...
+    vector_of_pointers_t        f_children;
+    weak_pointer_t              f_instance;
 
     // goto nodes
-    weak_pointer_t                  f_goto_enter;
-    weak_pointer_t                  f_goto_exit;
+    weak_pointer_t              f_goto_enter;
+    weak_pointer_t              f_goto_exit;
 
     // other connections between nodes
-    vector_of_weak_pointers_t       f_variables;
-    map_of_weak_pointers_t          f_labels;
+    vector_of_weak_pointers_t   f_variables;
+    map_of_weak_pointers_t      f_labels;
 };
 
 typedef std::vector<Node::pointer_t>    node_pointer_vector_t;

@@ -37,9 +37,10 @@
 
 #include "QCassandraValue.h"
 #include "QCassandraConsistencyLevel.h"
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include <QObject>
 #include <QMap>
+
 #include <memory>
 
 
@@ -92,7 +93,7 @@ private:
 
     std::shared_ptr<QCassandraRow>      f_row;
     QByteArray                          f_key;
-    mutable controlled_vars::flbool_t   f_cached;
+    mutable bool                        f_cached = false;
     QCassandraValue                     f_value;
 };
 

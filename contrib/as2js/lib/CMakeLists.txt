@@ -35,7 +35,6 @@ project(libas2js)
 include_directories(
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
 add_library( as2js SHARED

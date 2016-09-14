@@ -47,15 +47,12 @@ namespace as2js
 // our character type, yes, it also becomes as String::value_type
 // but at least this way we control the size outside of the class
 typedef int32_t                                         as_char_t;
-typedef controlled_vars::auto_init<as_char_t, 0>        zas_char_t;
 
 // Our String type is a UCS-4 compatible string type
 // Unfortunately, under MS-Windows wstring is 16 bits
 class String : public std::basic_string<as_char_t>
 {
 public:
-    typedef controlled_vars::auto_init<size_type, 0>    zsize_type_t;
-
     // Unicode BOM character
     static as_char_t const  STRING_BOM = 0xFEFF;
     // Represents a continuation character (i.e. '\' + LineTerminatorSequence)

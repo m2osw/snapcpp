@@ -51,12 +51,12 @@ public:
     QCassandraLock
         ( QCassandraContext::pointer_t context
         , const QString& object_name = ""
-        , cassandra_consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM
+        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM
         );
     QCassandraLock
         ( QCassandraContext::pointer_t context
         , const QByteArray& object_key
-        , cassandra_consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM
+        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM
         );
     virtual ~QCassandraLock();
 
@@ -67,12 +67,12 @@ public:
 private:
     void internal_init(const QByteArray& object_name);
 
-    QCassandraContext::pointer_t   f_context;
-    cassandra_consistency_level_t  f_consistency;
-    QCassandraTable::pointer_t     f_table;
-    QByteArray                     f_object_name;
-    QByteArray                     f_ticket_id;
-    controlled_vars::flbool_t      f_locked;
+    QCassandraContext::pointer_t    f_context;
+    consistency_level_t             f_consistency = CONSISTENCY_LEVEL_QUORUM;
+    QCassandraTable::pointer_t      f_table;
+    QByteArray                      f_object_name;
+    QByteArray                      f_ticket_id;
+    bool                            f_locked = false;
 };
 
 } // namespace QtCassandra

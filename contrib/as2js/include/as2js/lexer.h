@@ -68,8 +68,6 @@ private:
     static char_type_t const    CHAR_HEXDIGIT        = 0x0020;
     static char_type_t const    CHAR_INVALID         = 0x8000;   // such as 0xFFFE & 0xFFFF
 
-    typedef controlled_vars::auto_init<char_type_t, CHAR_NO_FLAGS>  zchar_type_t;
-
     void                        get_token();
     Input::char_t               getc();
     void                        ungetc(Input::char_t c);
@@ -87,10 +85,10 @@ private:
     std::vector<Input::char_t>  f_unget;
     Input::pointer_t            f_input;
     Options::pointer_t          f_options;
-    zchar_type_t                f_char_type;    // type of the last character read
+    char_type_t                 f_char_type = CHAR_NO_FLAGS;    // type of the last character read
     Position                    f_position;     // position just before reading a token
 
-    Node::safe_node_t           f_result_type;
+    Node::node_t                f_result_type = Node::node_t::NODE_UNKNOWN;
     String                      f_result_string;
     Int64                       f_result_int64;
     Float64                     f_result_float64;

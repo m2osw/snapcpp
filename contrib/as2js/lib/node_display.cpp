@@ -36,8 +36,6 @@ SOFTWARE.
 #include    "as2js/node.h"
 #include    "as2js/os_raii.h"
 
-#include    <controlled_vars/controlled_vars_auto_enum_init.h>
-
 #include    <iomanip>
 
 
@@ -536,7 +534,7 @@ void Node::display(std::ostream& out, int indent, char c) const
         }
 
         std::ostream&               f_out;
-        controlled_vars::tbool_t    f_first;
+        bool                        f_first = true;
         attribute_set_t             f_attributes;
     } display_attr(out, f_attributes);
 
