@@ -49,7 +49,6 @@ set( CMAKE_AUTOMOC             TRUE )
 ##
 find_package( As2Js              REQUIRED )
 find_package( CassandraCppDriver REQUIRED )
-find_package( ControlledVars     REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( Qt5Core   	     REQUIRED )
 find_package( Qt5Xml    	     REQUIRED )
@@ -59,13 +58,16 @@ find_package( SnapDoxygen )
 ##
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
-include_directories( SYSTEM ${Qt5Core_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS} )
+include_directories(
+    SYSTEM
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Xml_INCLUDE_DIRS}
+)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${CMAKE_BINARY_DIR}
-    ${CONTROLLEDVARS_INCLUDE_DIR}
 )
 
 option( RUN_TESTS "Enable CTest support and turn on the 'test' make target." OFF )

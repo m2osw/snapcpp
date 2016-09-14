@@ -62,8 +62,8 @@ public:
     bool                validOrder() const;
     void                setValidOrder(bool const valid);
 
-    cassandra_consistency_level_t consistencyLevel() const;
-    void                setConsistencyLevel(cassandra_consistency_level_t consistency_level);
+    consistency_level_t consistencyLevel() const;
+    void                setConsistencyLevel(consistency_level_t consistency_level);
 
     int64_t             timestamp() const;
     void                setTimestamp(int64_t const user_timestamp);
@@ -99,7 +99,7 @@ private:
     bool                            f_blocking = true;
     bool                            f_clear_cluster_description = false;
     type_of_result_t                f_type_of_result = type_of_result_t::TYPE_OF_RESULT_SUCCESS;
-    cassandra_consistency_level_t   f_consistency_level = CONSISTENCY_LEVEL_ONE; // TBD: can we get the QCassandra default automatically?
+    consistency_level_t             f_consistency_level = CONSISTENCY_LEVEL_ONE; // TBD: can we get the QCassandra default automatically?
     int64_t                         f_timestamp = 0;
     int32_t                         f_timeout_ms = 0;
     int8_t                          f_column_count = 1;

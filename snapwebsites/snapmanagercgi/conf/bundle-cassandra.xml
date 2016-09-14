@@ -78,6 +78,7 @@
         -e "s/^rpc_address: .*/rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/broadcast_rpc_address: .*/broadcast_rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^endpoint_snitch: .*/endpoint_snitch: GossipingPropertyFileSnitch/" \
+        -e "s/^auto_snapshot: .*/auto_snapshot: false/" \
         -e "s/^server_encryption_options:\n.*internode_encryption:.*\n.*keystore:.*\n.*keystore_password:.*\n.*truststore:.*\n.*truststore_password:.*\n//"
         -e "s/^client_encryption_options:\n.*enabled:.*\n.*# If enabled.*\n.*optional:.*\n.*keystore:.*\n.*keystore_password:.*\n.*truststore:.*\n.*truststore_password:.*\n//"
               /etc/cassandra/cassandra.yaml

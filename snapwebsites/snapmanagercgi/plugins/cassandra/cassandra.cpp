@@ -332,6 +332,7 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
         create_field(server_status, info, get_plugin_name(), "listen_address"       );
         create_field(server_status, info, get_plugin_name(), "rpc_address"          );
         create_field(server_status, info, get_plugin_name(), "broadcast_rpc_address");
+        create_field(server_status, info, get_plugin_name(), "auto_snapshot"        );
 
         // also add a "join a cluster" field
         //
@@ -565,6 +566,53 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
         return true;
     }
 
+    if(s.get_field_name() == "auto_snapshot")
+    {
+        // in case it is not marked as INFO, it is "not editable" (we are
+        // unsure of the current file format)
+        //
+        if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_WARNING)
+        {
+            return false;
+        }
+
+        // the broadcast RCP address
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        QString const user_name(s.get_field_name().mid(8));
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Cassandra Auto-Snapshot"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "Cassandra says that you should set this parameter to \"true\"."
+                         " However, when to true, the DROP TABLE and TRUNCATE commands"
+                         " become extremely slow because the database creates a snapshot"
+                         " of the table before dropping or truncating it. We change this"
+                         " parameter to \"false\" by default because if you DROP TABLE or"
+                         " TRUNCATE by mistake, you probably have a bigger problem."
+                         " Also, we offer a \"snapbackup\" tool which should be more than"
+                         " enough to save all the data from all the tables. And somehow,"
+                         " \"snapbackup\" goes a huge whole lot faster. (although if you"
+                         " start having a really large database, you could end up not"
+                         " being able to use \"snapbackup\" at all... once you reach"
+                         " that limit, you may want to turn the auto_snapshot feature"
+                         " back on."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name() == "join_a_cluster")
     {
         // the name of the computer to connect to
@@ -724,6 +772,23 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       g_cassandra_yaml
                     , field_name
                     , use_default ? "localhost" : new_value
+                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                    );
+        return true;
+    }
+
+    if(field_name == "auto_snapshot")
+    {
+        affected_services.insert("cassandra-restart");
+
+        f_snap->replace_configuration_value(
+                      g_cassandra_yaml
+                    , field_name
+                    , use_default ? "false" : new_value
                     ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST

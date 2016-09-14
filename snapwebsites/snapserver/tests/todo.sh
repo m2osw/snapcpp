@@ -36,7 +36,7 @@ find . -type f -exec grep XXX {} \; | wc -l >>$OUTPUT
 echo "TBD: questions that need testing to be answered" >>$OUTPUT
 find . -type f -exec grep TBD {} \; | wc -l >>$OUTPUT
 
-echo "FIXME: things that we do not control inside snapwebsites (Especially the controlled_vars of enumerations)" >>$OUTPUT
+echo "FIXME: things that we do not control inside snapwebsites" >>$OUTPUT
 find . -type f -exec grep FIXME {} \; | wc -l >>$OUTPUT
 
 echo "todo: long term, nice to have things defined in Doxygen" >>$OUTPUT

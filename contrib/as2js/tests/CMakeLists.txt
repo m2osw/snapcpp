@@ -72,7 +72,6 @@ include_directories(
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/lib
     ${as2js_compiler_SOURCE_DIR}/src
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${ADVGETOPT_INCLUDE_DIRS}
 )
 add_executable(${PROJECT_NAME}
@@ -193,7 +192,6 @@ include_directories(
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/lib
     ${as2js_compiler_SOURCE_DIR}/src
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${ADVGETOPT_INCLUDE_DIRS}
 )
 add_executable(${PROJECT_NAME}
@@ -293,7 +291,6 @@ include(CheckCXXAbstractClass)
 unset(BUILT_ABSTRACT_DECODING_FILTER CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
-        ${CONTROLLEDVARS_INCLUDE_DIRS}
         ${ADVGETOPT_INCLUDE_DIRS}
         ${as2js_compiler_BINARY_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/include
@@ -317,7 +314,6 @@ endif()
 unset(BUILT_ABSTRACT_DECODING_FILTER_UTF16 CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
-        ${CONTROLLEDVARS_INCLUDE_DIRS}
         ${ADVGETOPT_INCLUDE_DIRS}
         ${as2js_compiler_BINARY_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/include
@@ -341,7 +337,6 @@ endif()
 unset(BUILT_ABSTRACT_INPUT CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
-        ${CONTROLLEDVARS_INCLUDE_DIRS}
         ${ADVGETOPT_INCLUDE_DIRS}
         ${as2js_compiler_BINARY_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/include
@@ -365,7 +360,6 @@ endif()
 unset(BUILT_ABSTRACT_INPUT_RETRIEVER CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
-        ${CONTROLLEDVARS_INCLUDE_DIRS}
         ${ADVGETOPT_INCLUDE_DIRS}
         ${as2js_compiler_BINARY_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/include
@@ -389,7 +383,6 @@ endif()
 unset(BUILT_ABSTRACT_OUTPUT CACHE)
 set(
     CMAKE_REQUIRED_INCLUDES 
-        ${CONTROLLEDVARS_INCLUDE_DIRS}
         ${ADVGETOPT_INCLUDE_DIRS}
         ${as2js_compiler_BINARY_DIR}/include
         ${as2js_compiler_SOURCE_DIR}/include

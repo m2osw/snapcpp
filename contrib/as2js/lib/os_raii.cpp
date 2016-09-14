@@ -80,7 +80,7 @@ namespace as2js
  */
 raii_stream_flags::raii_stream_flags(std::ios_base & s)
     : f_stream(&s)
-    , f_flags(static_cast<mfmtflags_t::primary_type_t>(s.flags()))
+    , f_flags(s.flags())
     , f_precision(s.precision())
     , f_width(s.width())
 {
@@ -124,7 +124,7 @@ void raii_stream_flags::restore()
         f_stream->flags(f_flags);
         f_stream->precision(f_precision);
         f_stream->width(f_width);
-        f_stream.reset();
+        f_stream = nullptr;
     }
 }
 

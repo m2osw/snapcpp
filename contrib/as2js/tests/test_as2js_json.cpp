@@ -229,7 +229,7 @@ struct test_data_t
 {
     as2js::Position                     f_pos;
     as2js::JSON::JSONValue::pointer_t   f_value;
-    controlled_vars::zuint32_t          f_count;
+    uint32_t                            f_count = 0;
 };
 
 
@@ -558,21 +558,21 @@ public:
 
     struct expected_t
     {
-        controlled_vars::tlbool_t   f_call;
-        as2js::message_level_t      f_message_level;
-        as2js::err_code_t           f_error_code;
+        bool                        f_call = true;
+        as2js::message_level_t      f_message_level = as2js::message_level_t::MESSAGE_LEVEL_OFF;
+        as2js::err_code_t           f_error_code = as2js::err_code_t::AS_ERR_NONE;
         as2js::Position             f_pos;
         std::string                 f_message; // UTF-8 string
     };
 
     std::vector<expected_t>     f_expected;
 
-    static controlled_vars::zint32_t   g_warning_count;
-    static controlled_vars::zint32_t   g_error_count;
+    static int32_t              g_warning_count;
+    static int32_t              g_error_count;
 };
 
-controlled_vars::zint32_t   test_callback::g_warning_count;
-controlled_vars::zint32_t   test_callback::g_error_count;
+int32_t   test_callback::g_warning_count = 0;
+int32_t   test_callback::g_error_count = 0;
 
 
 bool is_identifier_char(int32_t const c)

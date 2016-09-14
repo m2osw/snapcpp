@@ -39,8 +39,6 @@ SOFTWARE.
 #include    "as2js/stream.h"
 #include    "as2js/options.h"
 
-#include    <controlled_vars/controlled_vars_need_init.h>
-
 
 namespace as2js
 {
@@ -77,7 +75,6 @@ public:
     int                         compile(Node::pointer_t& root);
 
 private:
-    typedef controlled_vars::need_init<time_t>      mtime_t;
     typedef uint32_t                                search_error_t;
     typedef uint32_t                                search_flag_t;
 
@@ -223,11 +220,11 @@ private:
     void                while_directive(Node::pointer_t& while_node);
     void                with(Node::pointer_t& with_node);
 
-    mtime_t                     f_time;         // time when the compiler is created
+    time_t                      f_time = 0;     // time when the compiler is created
     Options::pointer_t          f_options;
     Node::pointer_t             f_program;
     InputRetriever::pointer_t   f_input_retriever;
-    controlled_vars::auto_init<search_error_t, 0>  f_err_flags;    // when searching a name and it doesn't get resolve, emit these errors
+    search_error_t              f_err_flags = 0;// when searching a name and it doesn't get resolve, emit these errors
     Node::pointer_t             f_scope;        // with() and use namespace list
     module_map_t                f_modules;      // already loaded files (external modules)
 };

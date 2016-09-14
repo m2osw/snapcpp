@@ -1424,7 +1424,7 @@ int32_t QCassandraTable::getCellCount
 
         // setup the consistency level
         consistency_level_t consistency_level( column_predicate
-                                ? column_predicate->consistencyLevel().value()
+                                ? column_predicate->consistencyLevel()
                                 : CONSISTENCY_LEVEL_DEFAULT );
         if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
         {

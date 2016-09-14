@@ -35,7 +35,6 @@ project(advgetopt)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/advgetopt.h.in ${CMAKE_CURRENT_BINARY_DIR}/advgetopt.h )
 
 include_directories(
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
 )

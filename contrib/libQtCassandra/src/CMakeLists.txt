@@ -104,11 +104,6 @@ set_target_properties( QtCassandra PROPERTIES
     SOVERSION ${LIBQTCASSANDRA_VERSION_MAJOR}
 )
 
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_dependencies( ${PROJECT_NAME} controlled_vars.h )
-endif()
-
 install(
     TARGETS QtCassandra LIBRARY DESTINATION lib
 )

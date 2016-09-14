@@ -117,7 +117,7 @@ void QCassandraOrder::setValidOrder(bool const valid)
  *
  * \return The order consistency level.
  */
-cassandra_consistency_level_t QCassandraOrder::consistencyLevel() const
+consistency_level_t QCassandraOrder::consistencyLevel() const
 {
     return f_consistency_level;
 }
@@ -129,7 +129,7 @@ cassandra_consistency_level_t QCassandraOrder::consistencyLevel() const
  *
  * \param[in] consistency_level  The new consistency level.
  */
-void QCassandraOrder::setConsistencyLevel(cassandra_consistency_level_t consistency_level)
+void QCassandraOrder::setConsistencyLevel(consistency_level_t consistency_level)
 {
     f_consistency_level = consistency_level;
 }
@@ -439,7 +439,7 @@ bool QCassandraOrder::decodeOrder(unsigned char const * encoded_order, size_t si
 
     // get the consistency level
     //
-    f_consistency_level = static_cast<cassandra_consistency_level_t>(decoder.signedCharValue());
+    f_consistency_level = static_cast<consistency_level_t>(decoder.signedCharValue());
 
     // get the CQL string (expected to be in UTF-8)
     //

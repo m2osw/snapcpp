@@ -191,7 +191,6 @@ int main(int argc, char * argv[])
                 break;
             }
             SNAP_LOG_INFO(status);
-std::cout << "Also use cout, just in case: " << status << std::endl;
         }
 
         if(initialize_website->is_done())

@@ -16,8 +16,6 @@
 //
 #pragma once
 
-#include <controlled_vars/controlled_vars_need_init.h>
-
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
@@ -28,6 +26,7 @@
 #include <memory>
 #include <queue>
 #include <vector>
+
 
 namespace QtCassandra
 {

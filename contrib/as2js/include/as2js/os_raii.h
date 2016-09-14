@@ -37,10 +37,6 @@ SOFTWARE.
 
 #include    <ios>
 
-#include    <controlled_vars/controlled_vars_need_init.h>
-#include    <controlled_vars/controlled_vars_need_enum_init.h>
-#include    <controlled_vars/controlled_vars_ptr_need_init.h>
-
 namespace as2js
 {
 
@@ -54,14 +50,10 @@ public:
     void                    restore();
 
 private:
-    typedef controlled_vars::ptr_need_init<std::ios_base>               mpstream_t;
-    typedef controlled_vars::need_enum_init<std::ios_base::fmtflags>    mfmtflags_t;
-    typedef controlled_vars::need_init<std::streamsize>                 mstreamsize_t;
-
-    mpstream_t              f_stream;
-    mfmtflags_t             f_flags;
-    mstreamsize_t           f_precision;
-    mstreamsize_t           f_width;
+    std::ios_base *         f_stream = nullptr;
+    std::ios_base::fmtflags f_flags = std::ios_base::fmtflags();
+    std::streamsize         f_precision = 0;
+    std::streamsize         f_width = 0;
 };
 
 

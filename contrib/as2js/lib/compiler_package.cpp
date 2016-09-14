@@ -43,8 +43,6 @@ SOFTWARE.
 #include    "db.h"
 #include    "rc.h"
 
-#include    <controlled_vars/controlled_vars_auto_enum_init.h>
-
 #include    <algorithm>
 
 #include    <dirent.h>
@@ -89,7 +87,7 @@ Database::pointer_t         g_db;
 
 // whether the database was loaded (true) or not (false)
 //
-controlled_vars::fbool_t    g_db_loaded;
+bool                        g_db_loaded = false;
 
 // Search for a named element:
 // <package name>{.<package name>}.<class, function, variable name>
