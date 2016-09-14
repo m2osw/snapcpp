@@ -63,6 +63,11 @@ done
 
 echo "Done."
 echo
+echo "WARNING: if you had \"snapdbproxy\" running before the deletion"
+echo "         remember that it caches the Meta Data. That means it will"
+echo "         believe the tables are still there until restarted."
+echo
+echo "Then later reinstall the websites with:"
 echo "Now you may recreate the tables, empty, with the command:"
 echo "         snapcreatetables"
 echo
