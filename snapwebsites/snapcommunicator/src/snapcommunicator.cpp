@@ -4423,6 +4423,11 @@ void snap_communicator_server::read_neighbors()
                 {
                     QString const line(QString::fromUtf8(buf, r).trimmed());
                     f_all_neighbors[line] = true;
+
+                    // in case we are already running we want to also add
+                    // the corresponding connection
+                    //
+                    f_remote_snapcommunicators->add_remote_communicator(line);
                 }
             }
         }
