@@ -10,6 +10,7 @@
 #
 die "usage: SnapBuildIncVers.pl [cache filename] [dist]\n" unless $#ARGV == 1;
 
+use strict;
 use Cwd;
 use Dpkg::Changelog::Parse;
 use Dpkg::Control::Info;
@@ -18,6 +19,7 @@ use Storable;
 
 my $cache_file   = shift;
 my $distribution = shift;
+my $change_msg   = "Nightly build.";
 
 my %options;
 
@@ -47,29 +49,54 @@ for my $project (keys %DIRHASH)
     #
     my @fields = changelog_parse(%options);
     my $name;
+    my $dist;
+    my $urgency;
     my $version;
+    my $changes;
     foreach my $f (@fields)
     {
-        $name    = $f->{"Source"}  if exists $f->{"Source"};
-        $version = $f->{"Version"} if exists $f->{"Version"};
+        $name    = $f->{"Source"}       if exists $f->{"Source"};
+        $dist    = $f->{"Distribution"} if exists $f->{"Distribution"};
+        $version = $f->{"Version"}      if exists $f->{"Version"};
+        $urgency = $f->{"Urgency"}      if exists $f->{"Urgency"};
+        $changes = $f->{"Changes"}      if exists $f->{"Changes"};
     }
 
     # Increment the version
     #
     $version =~ s/~.*$//;
+    my $newvers;
     if( $version =~ m/^(\d*).(\d+).(\d+)$/ )
     {
-        $version = "$1.$2.$3.1";
+        $newvers = "$1.$2.$3.1";
     }
     elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)$/ )
     {
         my $num = $4+1;
-        $version = "$1.$2.$3.$num";
+        $newvers = "$1.$2.$3.$num";
     }
 
-    # Write a new changelog entry with the new version
-    #
-    system "dch --newversion $version~$distribution --urgency high --distribution $distribution Nightly build.";
+    my @lines = split /\n/, $changes;
+    my $prepend_newchange = 1;
+    for my $line (@lines)
+    {
+        if( $line =~ m/^  \* $change_msg/ )
+        {
+            $prepend_newchange = 0;
+            last;
+        }
+    }
+
+    if( $prepend_newchange == 1 )
+    {
+        # Write a new changelog entry with the new version
+        #
+        system "dch --newversion $newvers~$distribution --urgency high --distribution $distribution $change_msg";
+    }
+    else
+    {
+        system "sed -i.bak -e 's/$name ($version~$distribution) $dist; urgency=$urgency/$name ($newvers~$distribution) $distribution; urgency=$urgency/' debian/changelog";
+    }
 }
 
 # vim: ts=4 sw=4 et
