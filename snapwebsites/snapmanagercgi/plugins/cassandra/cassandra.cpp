@@ -301,11 +301,11 @@ void cassandra::bootstrap(snap_child * snap)
         throw snap_logic_exception("snap pointer does not represent a valid manager object.");
     }
 
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, retrieve_status, _1);
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, handle_affected_services, _1);
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, add_plugin_commands, _1);
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, process_plugin_message, _1, _2);
-    SNAP_LISTEN0(cassandra, "server", snap_manager::manager, communication_ready);
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, retrieve_status,          _1     );
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, handle_affected_services, _1     );
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, add_plugin_commands,      _1     );
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, process_plugin_message,   _1, _2 );
+    SNAP_LISTEN0 ( cassandra, "server", snap_manager::manager, communication_ready              );
 }
 
 
