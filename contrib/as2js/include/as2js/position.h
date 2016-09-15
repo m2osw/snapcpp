@@ -46,8 +46,8 @@ namespace as2js
 class Position
 {
 public:
-    typedef int32_t     counter_t;
-    typedef controlled_vars::auto_init<counter_t, 1>    zcounter_t;
+    typedef int32_t         counter_t;
+    static counter_t const  DEFAULT_COUNTER = 1;
 
 //                        Position();
 //                        Position(Position const& rhs);
@@ -56,7 +56,7 @@ public:
 
     void                set_filename(String const& filename);
     void                set_function(String const& function);
-    void                reset_counters(counter_t line = 1);
+    void                reset_counters(counter_t line = DEFAULT_COUNTER);
     void                new_page();
     void                new_paragraph();
     void                new_line();
@@ -71,10 +71,10 @@ public:
 private:
     String              f_filename;
     String              f_function;
-    zcounter_t          f_page;
-    zcounter_t          f_page_line;
-    zcounter_t          f_paragraph;
-    zcounter_t          f_line;
+    counter_t           f_page = DEFAULT_COUNTER;
+    counter_t           f_page_line = DEFAULT_COUNTER;
+    counter_t           f_paragraph = DEFAULT_COUNTER;
+    counter_t           f_line = DEFAULT_COUNTER;
 };
 
 std::ostream& operator << (std::ostream& out, Position const& pos);

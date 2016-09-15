@@ -168,7 +168,8 @@ private:
     QtCassandra::QCassandraTable::pointer_t     f_firewall_table;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
-    messenger::pointer_t                         f_messenger;
+    bool                                        f_firewall_up = false;
+    messenger::pointer_t                        f_messenger;
     wakeup_timer::pointer_t                     f_wakeup_timer;
 };
 
@@ -666,6 +667,8 @@ void snap_firewall::setup_firewall()
         }
     }
 
+    f_firewall_up = true;
+
     // send a "FIREWALLUP" message to let others know that the firewall
     // is up
     //
@@ -677,7 +680,6 @@ void snap_firewall::setup_firewall()
     firewallup_message.set_command("FIREWALLUP");
     firewallup_message.set_service(".");
     f_messenger->send_message(firewallup_message);
-
 }
 
 
@@ -842,7 +844,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
     QString const command(message.get_command());
 
-// TODO: make use of a switch()
+// TODO: make use of a switch() or even better: a map a la snapinit
 
     if(command == "BLOCK")
     {
@@ -1005,6 +1007,22 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
             f_cassandra.disconnect();
             f_firewall_table.reset();
         }
+
+        return;
+    }
+
+    if(command == "FIREWALLSTATUS")
+    {
+        // someone is asking us whether we are ready, reply with
+        // the corresponding answer and make sure not to cache
+        // the answer because it could change later (i.e. snapfirewall
+        // restarts, for example.)
+        //
+        snap::snap_communicator_message firewallup_message;
+        firewallup_message.reply_to(message);
+        firewallup_message.set_command(f_firewall_up ? "FIREWALLUP" : "FIREWALLDOWN");
+        firewallup_message.add_parameter("cache", "no");
+        f_messenger->send_message(firewallup_message);
 
         return;
     }

@@ -78,6 +78,9 @@ void Position::set_function(String const& function)
  * This function resets all the counters to 1 except for the line which
  * is set to the specified \p line parameter (which defaults to 1.)
  *
+ * \exception exception_internal_error
+ * This exception is raised if the \p line prameter is smaller than 1.
+ *
  * \param[in] line  The line number to start with. Defaults to 1.
  */
 void Position::reset_counters(counter_t line)
@@ -87,9 +90,9 @@ void Position::reset_counters(counter_t line)
         throw exception_internal_error("the line parameter of the position object cannot be less than 1");
     }
 
-    f_page = 1;
-    f_page_line = 1;
-    f_paragraph = 1;
+    f_page = DEFAULT_COUNTER;
+    f_page_line = DEFAULT_COUNTER;
+    f_paragraph = DEFAULT_COUNTER;
     f_line = line;
 }
 
@@ -102,8 +105,8 @@ void Position::reset_counters(counter_t line)
 void Position::new_page()
 {
     ++f_page;
-    f_page_line = 1;
-    f_paragraph = 1;
+    f_page_line = DEFAULT_COUNTER;
+    f_paragraph = DEFAULT_COUNTER;
 }
 
 

@@ -36,10 +36,7 @@ rm -fr BUILD snapCMakeModules 3rdParty
 mkdir BUILD
 
 # Make sure we have a build folder at the top
-if test "$project" != "controlled_vars"
-then
-	mkdir -p BUILD/$project/doc
-fi
+mkdir -p BUILD/$project/doc
 
 ln -s ../snapCMakeModules .
 if test "$project" = "libQtCassandra"
@@ -79,15 +76,12 @@ echo "----"
 cp -i $project-*.tar.gz ../../packages/.
 mv -vf $project-*.tar.gz ../../BUILD/$project/.
 
-if test "$project" != "controlled_vars"
+if test -d doc
 then
-	if test -d doc
-	then
-		cp -i doc/*$project-doc-*.tar.gz ../../packages/.
-		mv -vf doc/*$project-doc-*.tar.gz ../../BUILD/$project/doc/.
-	else
-		echo "*** WARNING *** -- no doc folder found, no documentation was extracted"
-	fi
+	cp -i doc/*$project-doc-*.tar.gz ../../packages/.
+	mv -vf doc/*$project-doc-*.tar.gz ../../BUILD/$project/doc/.
+else
+	echo "*** WARNING *** -- no doc folder found, no documentation was extracted"
 fi
 
 cd ..

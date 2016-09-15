@@ -515,6 +515,28 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         return;
     }
 
+    if( command == "CASSANDRAKEY" )
+    {
+        QDir key_path("/var/lib/snapwebsites/cassandra-keys/");
+        if( !key_path.exists() )
+        {
+            key_path.mkdir(".");
+        }
+        //
+        QFile file( QString("%1/%2.pem")
+                   .arg(key_path.path())
+                   .arg(message.get_parameter("ip"));
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return false;
+        }
+
+        QTextStream out( &file );
+        out << message.get_parameter("key");
+    }
+
     if(command == "LOG")
     {
         // logrotate just rotated the logs, we have to reconfigure
@@ -571,7 +593,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAKEY,CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         f_messenger->send_message(reply);
         return;
@@ -643,6 +665,33 @@ void snapdbproxy::process_connection(int const s)
 }
 
 
+void snapdbproxy::add_ssl_keys()
+{
+    QDir keys_path;
+    keys_path.setPath( "/var/lib/snapwebsites/cassandra-keys/" );
+    keys_path.setNameFilters( { "*.pem" } );
+    keys_path.setSorting( QDir::Name );
+    keys_path.setFilter( QDir::Files );
+
+    for( QFileInfo const &info : keys_path.entryInfoList() )
+    {
+        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        {
+            QString const name(info.filePath());
+            QTextStream in(&file);
+            //
+            f_session->add_ssl_key( in.readAll() );
+        }
+        else
+        {
+            QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            //throw vpn_exception( errmsg );
+        }
+    }
+}
+
+
 /** \brief Attempt to connect to the Cassandra cluster.
  *
  * This function calls connect() in order to create a network connection
@@ -664,6 +713,7 @@ void snapdbproxy::process_timeout()
         // need to monitor those connections.
         //
         f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
+        //f_session->add_ssl_key();
 
         // the connection succeeded, turn off the timer we do not need
         // it for now...
@@ -674,11 +724,11 @@ void snapdbproxy::process_timeout()
         //
         f_no_cassandra_sent = false;
 
-        // reset the delay to 1 second
-        // (we use 1.25 so that way we will have 1s, 2s, 5s, 10s, 20s, etc.
-        // and 5 is a multiple of 300s which is 5 minutes)
+        // reset the delay to about 1 second
+        // (we use 1.625 so that way we will have 1s, 3s, 7s, 15s, 30s, 60s
+        // and thus 1 minute.)
         //
-        f_cassandra_connect_timer_index = 1.25f;
+        f_cassandra_connect_timer_index = 1.625f;
 
         cassandra_ready();
     }
@@ -687,9 +737,6 @@ void snapdbproxy::process_timeout()
         // the connection failed, keep the timeout enabled and try again
         // on the next tick
         //
-        // TODO: increase the timeout delay so we do not swamp the
-        //       network with useless attempts
-
         no_cassandra();
     }
 }
@@ -724,10 +771,10 @@ void snapdbproxy::no_cassandra()
 
     // try again soon
     //
-    f_timer->set_timeout_delay(static_cast<int>(f_cassandra_connect_timer_index) * 1000000LL);
-    if(f_cassandra_connect_timer_index < 300.0f)
+    f_timer->set_timeout_delay(static_cast<int64_t>(f_cassandra_connect_timer_index) * 1000000LL);
+    if(f_cassandra_connect_timer_index < 60.0f)
     {
-        // increase the delay between attempts up to 5 min.
+        // increase the delay between attempts up to 1 min.
         //
         f_cassandra_connect_timer_index *= 2.0f;
     }

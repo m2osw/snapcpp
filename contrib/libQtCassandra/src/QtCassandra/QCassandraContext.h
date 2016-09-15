@@ -37,8 +37,6 @@
 
 #include "QtCassandra/QCassandraTable.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-
 #include <memory>
 
 namespace QtCassandra
@@ -99,8 +97,8 @@ public:
     std::shared_ptr<QCassandra> parentCassandra() const;
 
 private:
-    typedef controlled_vars::auto_init<int32_t, 5> lock_timeout_t;
-    typedef controlled_vars::auto_init<int32_t, 60> lock_ttl_t;
+    typedef int32_t lock_timeout_t; // default to 5
+    typedef int32_t lock_ttl_t;     // default to 60
 
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
@@ -130,9 +128,9 @@ private:
     QCassandraTables                   			f_tables;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;
-    mutable controlled_vars::flbool_t           f_lock_accessed;
-    lock_timeout_t                              f_lock_timeout;
-    lock_ttl_t                                  f_lock_ttl;
+    mutable bool                                f_lock_accessed = false;
+    lock_timeout_t                              f_lock_timeout = 5;
+    lock_ttl_t                                  f_lock_ttl = 60;
 };
 
 typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;

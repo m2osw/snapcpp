@@ -670,7 +670,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
         }
 
         String          f_string;
-        zas_char_t      f_lead_surrogate;
+        as_char_t       f_lead_surrogate = 0;
     };
 
     out o;

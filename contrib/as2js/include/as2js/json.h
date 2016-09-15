@@ -37,8 +37,6 @@ SOFTWARE.
 
 #include    "as2js/lexer.h"
 
-#include    <controlled_vars/controlled_vars_auto_enum_init.h>
-
 
 namespace as2js
 {
@@ -89,7 +87,6 @@ public:
             JSON_TYPE_STRING,
             JSON_TYPE_TRUE
         };
-        typedef controlled_vars::limited_auto_enum_init<type_t, type_t::JSON_TYPE_UNKNOWN, type_t::JSON_TYPE_TRUE, type_t::JSON_TYPE_UNKNOWN> safe_type_t;
 
                             JSONValue(Position const& position);  // null
                             JSONValue(Position const& position, Int64 integer);
@@ -125,9 +122,9 @@ public:
         };
         friend class saving_t;
 
-        safe_type_t const           f_type;
+        type_t const                f_type;  // no need for a default since it is a const it has to be initialized in all constructors
         Position                    f_position;
-        controlled_vars::fbool_t    f_saving;
+        bool                        f_saving = false;
 
         Int64                       f_integer;
         Float64                     f_float;

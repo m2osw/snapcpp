@@ -37,10 +37,6 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <QString>
 #include <QByteArray>
 
@@ -990,17 +986,16 @@ private:
 class QCassandraValue //: public QObject -- values are copyable and not named
 {
 public:
-    static const int32_t TTL_PERMANENT = 0;
+    static const int32_t    TTL_PERMANENT = 0;
 
     // TTL must be positive, although Cassandra allows 0 as "permanent"
-    typedef controlled_vars::limited_auto_init<int32_t, 0, INT_MAX, TTL_PERMANENT> cassandra_ttl_t;
+    typedef int32_t         cassandra_ttl_t;
 
-    enum def_timestamp_mode_t {
+    enum timestamp_mode_t {
         TIMESTAMP_MODE_CASSANDRA,
         TIMESTAMP_MODE_AUTO,
         TIMESTAMP_MODE_DEFINED
     };
-    typedef controlled_vars::limited_auto_enum_init<def_timestamp_mode_t, TIMESTAMP_MODE_CASSANDRA, TIMESTAMP_MODE_DEFINED, TIMESTAMP_MODE_AUTO> timestamp_mode_t;
 
     // CASSANDRA_VALUE_TYPE_BINARY (empty buffer)
     QCassandraValue();
@@ -1143,10 +1138,10 @@ private:
     template<class T> QCassandraValue& operator = (std::shared_ptr<T>);
 
     QByteArray                  f_value;
-    cassandra_ttl_t             f_ttl;
-    consistency_level_t         f_consistency_level;
-    timestamp_mode_t            f_timestamp_mode;
-    controlled_vars::zint64_t   f_timestamp;
+    cassandra_ttl_t             f_ttl = TTL_PERMANENT;
+    consistency_level_t         f_consistency_level = CONSISTENCY_LEVEL_DEFAULT;
+    timestamp_mode_t            f_timestamp_mode = TIMESTAMP_MODE_AUTO;
+    int64_t                     f_timestamp = 0;
 };
 
 

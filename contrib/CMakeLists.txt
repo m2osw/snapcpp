@@ -55,32 +55,19 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
         -DLOG4CPLUS_QT5=OFF
 )
 
-ConfigureMakeProject( PROJECT_NAME iplock
-)
+ConfigureMakeProject( PROJECT_NAME iplock )
 
-ConfigureMakeProject( PROJECT_NAME controlled_vars
-)
+#ConfigureMakeProject( PROJECT_NAME controlled_vars )
 
-ConfigureMakeProject( PROJECT_NAME libtld
-)
+ConfigureMakeProject( PROJECT_NAME libtld )
 
-ConfigureMakeProject( PROJECT_NAME advgetopt
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-)
+ConfigureMakeProject( PROJECT_NAME advgetopt )
 
-ConfigureMakeProject( PROJECT_NAME as2js
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-)
+ConfigureMakeProject( PROJECT_NAME as2js )
 
-ConfigureMakeProject( PROJECT_NAME csspp
-)
+ConfigureMakeProject( PROJECT_NAME csspp )
 
-ConfigureMakeProject( PROJECT_NAME libQtCassandra
-        CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-)
+ConfigureMakeProject( PROJECT_NAME libQtCassandra )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization )
 

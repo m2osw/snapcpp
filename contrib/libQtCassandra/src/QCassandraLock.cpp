@@ -45,7 +45,7 @@ namespace QtCassandra
 
 // make sure that we use the correct size for pid_t
 // (at this time we use a UInt32 value)
-CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
+static_assert(sizeof(pid_t) <= sizeof(uint32_t), "sizeof(pid_t) has to fit in sizeof(uint32_t) or the code here is incorrect.");
 
 /** \class QCassandraLock
  * \brief Lock mechanism using only Cassandra.
@@ -164,8 +164,8 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  *     // declaration and initial values of global variables
  *     namespace {
  *         int num_threads = 100;
- *         std::vector<controlled_vars::fbool_t> entering;
- *         std::vector<controlled_vars::zuint32_t> tickets;
+ *         std::vector<bool> entering;
+ *         std::vector<uint32_t> tickets;
  *     }
  *
  *     // initialize the vectors
@@ -539,7 +539,7 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  * \param[in] object_name  The name of the object to be locked as a QString.
  * \param[in] consistency_level  The level to use for the lock, defaults to QUORUM.
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t consistency_level )
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, consistency_level_t consistency_level )
     : f_context(context)
     , f_consistency(consistency_level)
       //f_table(NULL) -- auto-init
@@ -590,7 +590,7 @@ QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QStri
  * \sa lock()
  * \sa unlock()
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t consistency_level )
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, consistency_level_t consistency_level )
     : f_context(context)
     , f_consistency(consistency_level)
       //f_table(NULL) -- auto-init
@@ -699,7 +699,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     class autoDrop
     {
     public:
-        autoDrop(const QCassandraRow::pointer_t row, const QByteArray& cell, const cassandra_consistency_level_t consistency_level)
+        autoDrop(const QCassandraRow::pointer_t row, const QByteArray& cell, const consistency_level_t consistency_level)
             : f_row(row)
             , f_cell(cell)
             , f_consistency(consistency_level)

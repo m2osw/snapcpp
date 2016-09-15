@@ -27,7 +27,7 @@
 # THE SOFTWARE.
 #
 # Build command for now:
-#   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-3.5/Modules -DCONTROLLEDVARS_INCLUDE_DIR=../dist/include ../../as2js)
+#   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-3.5/Modules ../../as2js)
 #
 # Build with DEBUG turned on using this definition:
 #   -DCMAKE_BUILD_TYPE=Debug
@@ -76,13 +76,12 @@ endif()
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 #
 find_package( AdvGetOpt        REQUIRED )
-find_package( ControlledVars   REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for as2js!")
-    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
+    add_definitions( -DDEBUG -D_DEBUG )
 else()
     message("Debug is turned OFF")
     add_definitions( -DNDEBUG )

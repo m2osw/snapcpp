@@ -35,8 +35,6 @@ SOFTWARE.
 
 */
 
-#include    <controlled_vars/controlled_vars_auto_init.h>
-
 #include    <vector>
 #include    <memory>
 
@@ -77,7 +75,6 @@ public:
     };
 
     typedef int64_t                 option_value_t;
-    typedef controlled_vars::auto_init<option_value_t, 0>   zoption_value_t;
 
                                     Options();
 
@@ -85,7 +82,7 @@ public:
     option_value_t                  get_option(option_t option);
 
 private:
-    std::vector<zoption_value_t>    f_options;
+    std::vector<option_value_t>     f_options;
 };
 
 

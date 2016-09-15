@@ -78,6 +78,7 @@
         -e "s/^rpc_address: .*/rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/broadcast_rpc_address: .*/broadcast_rpc_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
         -e "s/^endpoint_snitch: .*/endpoint_snitch: GossipingPropertyFileSnitch/" \
+        -e "s/^auto_snapshot: .*/auto_snapshot: false/" \
         -e "s/^server_encryption_options:\n.*internode_encryption:.*\n.*keystore:.*\n.*keystore_password:.*\n.*truststore:.*\n.*truststore_password:.*\n//"
         -e "s/^client_encryption_options:\n.*enabled:.*\n.*# If enabled.*\n.*optional:.*\n.*keystore:.*\n.*keystore_password:.*\n.*truststore:.*\n.*truststore_password:.*\n//"
               /etc/cassandra/cassandra.yaml
@@ -109,7 +110,8 @@ client_encryption_options:
     truststore_password: cassandra
 EOF
 
-      mkdir -p /etc/cassandra/ssl
+      mkdir -p /etc/cassandra/ssl/
+      mkdir -p /var/lib/snapwebsites/cassandra-keys/
       cd /etc/cassandra/ssl
 
       keytool -noprompt -genkeypair -keyalg RSA \
@@ -133,7 +135,7 @@ EOF
         -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
         -keystore keystore.jks \
         -storepass cassandra \
-        -file /var/lib/snapwebsites/cassandra-client-${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.pem
+        -file /var/lib/snapwebsites/cassandra-keys/${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.pem
     fi
 
     # restart cassandra
