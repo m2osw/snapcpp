@@ -49,8 +49,6 @@ if(CATCH_FOUND)
     ##
     project(test_snap_cgi)
     add_executable(test_snap_cgi
-        #${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
-        #${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
         test_snap_cgi.cpp
     )
     # while developing you may need to set LD_LIBRARY_PATH

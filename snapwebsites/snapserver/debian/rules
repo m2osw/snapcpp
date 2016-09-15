@@ -11,3 +11,15 @@
 
 %:
 	dh $@ --with systemd --parallel
+
+
+# By default CMAKE_PREFIX_PATH is empty; here it gets used to access the
+# test src files as defined by snapbase/src/snap_test*
+#
+# However, this is incorrect because the CMAKE_PREFIX_PATH can actually
+# be more than one path, see:
+#
+#    https://cmake.org/cmake/help/v3.3/variable/CMAKE_PREFIX_PATH.html
+#
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_PREFIX_PATH=/usr
