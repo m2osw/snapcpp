@@ -847,7 +847,8 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_UPGRADE
+                ,   snap_manager::form::FORM_BUTTON_UPGRADE
+                  | snap_manager::form::FORM_BUTTON_UPGRADE_EVERYWHERE
                 );
 
         snap::snap_string_list counts(s.get_value().split(";"));
@@ -1034,7 +1035,8 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     // once in a while packages get an update, the upgrade button appears
     // and when clicked this funtion gets called
     //
-    if(button_name == "upgrade")
+    if(button_name == "upgrade"
+    || button_name == "upgrade_everywhere")
     {
         NOTUSED(f_snap->upgrader());
         //f_snap->reset_aptcheck(); -- this is too soon, the upgrader() call

@@ -557,6 +557,7 @@ int manager_cgi::process_post()
                 "uninstall",
                 "reboot",
                 "upgrade",
+                "upgrade_everywhere",
                 "refresh"
             };
     auto const & button_it(std::find_first_of(
@@ -728,10 +729,16 @@ int manager_cgi::process_post()
         // setup the message to send to other snapmanagerdaemons
         //
         snap::snap_communicator_message modify_settings;
-        if(button_name == "save_everywhere")
+        if(button_name == "save_everywhere"
+        || button_name == "upgrade_everywhere")
         {
             // save everywhere means sending to all snapmanagerdaemons
             // anywhere in the cluster
+            //
+            // the upgrade_everywhere will first run an update then an
+            // upgrade so it will upgrade any computer that's not 100%
+            // up to date in one go (WARNING: this is not what we want
+            // in the end but for now, that's really practical!)
             //
             modify_settings.set_service("*");
         }
