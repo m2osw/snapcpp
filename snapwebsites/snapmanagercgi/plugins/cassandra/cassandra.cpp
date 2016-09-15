@@ -719,6 +719,10 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         affected_services.insert("cassandra-restart");
 
+        // IMPORTANT: this field is preceeded by spaces and a dash character
+        //            which we want to keep in the configuration file, so we
+        //            use the trim_left parameter for that purpose
+        //
         f_snap->replace_configuration_value(
                       g_cassandra_yaml
                     , field_name
@@ -728,6 +732,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                    , " -"
                     );
         return true;
     }
