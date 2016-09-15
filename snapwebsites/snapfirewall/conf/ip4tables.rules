@@ -63,6 +63,8 @@
 # Apache
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 80 -d @PUBLIC_IP@ --syn -j ACCEPT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 80 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
 
 # LAN (TCP/UDP)
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m tcp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ --syn -j ACCEPT
