@@ -1,6 +1,7 @@
 snapmanagercgi (1.0.32.0~xenial) xenial; urgency=high
 
-  * SNAP-110: Fixed the handling of the comment for broadcast_rpc_address and auto_snapshot.
+  * SNAP-110: Fixed the handling of the comment for broadcast_rpc_address
+    and auto_snapshot.
 
  -- Alexis Wilke <alexis@m2osw.com>  Thu, 15 Sep 2016 13:55:07 -0700
 
