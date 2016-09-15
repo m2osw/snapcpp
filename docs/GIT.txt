@@ -55,4 +55,15 @@ git reset HEAD path/to/unwanted_file
 git commit -c ORIG_HEAD
 
 
+# Handling branches
+#
+# More details available on this page (and next/previous)
+#    https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
+#
+git branch "branch-name"       # creates a new branch
+git checkout "branch-name"     # switch between branches
+git merge "branch-name"        # merge <name> in current branch
+git branch -d "branch-name"    # delete a branch
+
+
 # vim: syntax=sh
