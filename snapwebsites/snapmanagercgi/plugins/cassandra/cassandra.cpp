@@ -914,6 +914,7 @@ void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_comma
 {
     understood_commands << "CASSANDRAQUERY";
     understood_commands << "CASSANDRAFIELDS";
+    understood_commands << "CASSANDRAKEYS";         // Send our public key to the requesting server...
 }
 
 
@@ -958,6 +959,37 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
         f_snap->forward_message(cassandra_status);
 
         processed = true;
+    }
+    else if( command == "CASSANDRAKEYS" )
+    {
+        // /var/lib/snapwebsites/cassandra-keys/${IP}.pem
+        QDir keys_path;
+        keys_path.setPath( "/var/lib/snapwebsites/cassandra-keys/" );
+        keys_path.setNameFilters( { "*.pem" } );
+        keys_path.setSorting( QDir::Name );
+        keys_path.setFilter( QDir::Files );
+
+        for( QFileInfo const &info : keys_path.entryInfoList() )
+        {
+            if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+            {
+                QString const name(info.filePath());
+                QTextStream in(&file);
+                //
+                snap::snap_communicator_message cmd;
+                cmd.set_command("CASSANDRAKEY");
+                cmd.set_service(".");
+                cmd.add_parameter("key", in.readAll()    );
+                cmd.add_parameter("ip" , info.baseName() );
+                f_messenger->send_message(cmd);
+            }
+            else
+            {
+                QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                //throw vpn_exception( errmsg );
+            }
+        }
     }
 }
 

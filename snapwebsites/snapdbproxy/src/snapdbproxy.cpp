@@ -515,6 +515,28 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         return;
     }
 
+    if( command == "CASSANDRAKEY" )
+    {
+        QDir key_path("/var/lib/snapwebsites/cassandra-keys/");
+        if( !key_path.exists() )
+        {
+            key_path.mkdir(".");
+        }
+        //
+        QFile file( QString("%1/%2.pem")
+                   .arg(key_path.path())
+                   .arg(message.get_parameter("ip"));
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return false;
+        }
+
+        QTextStream out( &file );
+        out << message.get_parameter("key");
+    }
+
     if(command == "LOG")
     {
         // logrotate just rotated the logs, we have to reconfigure
@@ -571,7 +593,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAKEY,CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         f_messenger->send_message(reply);
         return;
@@ -643,6 +665,33 @@ void snapdbproxy::process_connection(int const s)
 }
 
 
+void snapdbproxy::add_ssl_keys()
+{
+    QDir keys_path;
+    keys_path.setPath( "/var/lib/snapwebsites/cassandra-keys/" );
+    keys_path.setNameFilters( { "*.pem" } );
+    keys_path.setSorting( QDir::Name );
+    keys_path.setFilter( QDir::Files );
+
+    for( QFileInfo const &info : keys_path.entryInfoList() )
+    {
+        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        {
+            QString const name(info.filePath());
+            QTextStream in(&file);
+            //
+            f_session->add_ssl_key( in.readAll() );
+        }
+        else
+        {
+            QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            //throw vpn_exception( errmsg );
+        }
+    }
+}
+
+
 /** \brief Attempt to connect to the Cassandra cluster.
  *
  * This function calls connect() in order to create a network connection
@@ -664,6 +713,7 @@ void snapdbproxy::process_timeout()
         // need to monitor those connections.
         //
         f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
+        //f_session->add_ssl_key();
 
         // the connection succeeded, turn off the timer we do not need
         // it for now...
