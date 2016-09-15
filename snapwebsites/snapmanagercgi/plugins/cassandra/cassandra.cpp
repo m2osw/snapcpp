@@ -782,6 +782,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
                     );
         return true;
     }
@@ -799,6 +800,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
                     );
         return true;
     }
