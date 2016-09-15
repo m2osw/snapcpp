@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.31.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the replacement of a variable when it may be commented.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 15 Sep 2016 13:39:07 -0700
+
 snapmanagercgi (1.0.30.0~xenial) xenial; urgency=high
 
   * SNAP-110: Applied fix so we can change the "seeds" cassandra.yaml field.

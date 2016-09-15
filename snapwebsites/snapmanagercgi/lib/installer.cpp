@@ -1100,13 +1100,14 @@ bool manager::replace_configuration_value(
                     {
                         // remove the introducing '#' and space characters if any
                         //
-                        if(*start == '#')
+                        if(*trimmed_start == '#')
                         {
-                            ++start;
-                            while(isspace(*start) || *start == '#')
+                            ++trimmed_start;
+                            while(isspace(*trimmed_start) || *trimmed_start == '#')
                             {
-                                ++start;
+                                ++trimmed_start;
                             }
+                            len = s - trimmed_start;
                         }
                     }
 
