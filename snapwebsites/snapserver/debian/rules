@@ -21,5 +21,9 @@
 #
 #    https://cmake.org/cmake/help/v3.3/variable/CMAKE_PREFIX_PATH.html
 #
+# See SNAP-444
+#
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_PREFIX_PATH=/usr
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release \
+			-DCMAKE_PREFIX_PATH=/usr
+

@@ -11,3 +11,7 @@
 
 %:
 	dh $@ --parallel
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+

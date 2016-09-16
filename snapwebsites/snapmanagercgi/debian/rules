@@ -16,6 +16,11 @@ override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
 
 # Add the 's' flag to the daemon to make sure we can run as root
+#
+# TODO: This is probably not required anymore since we start the
+#       `snapmanagerdaemon` from a .service and we can start it
+#       as root, automatically.
+#
 override_dh_fixperms:
 	dh_fixperms
 	chmod u+s debian/snapmanagerdaemon/usr/bin/snapmanagerdaemon
