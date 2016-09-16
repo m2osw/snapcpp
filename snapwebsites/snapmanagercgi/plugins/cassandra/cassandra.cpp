@@ -50,6 +50,8 @@ SNAP_PLUGIN_START(cassandra, 1, 0)
 namespace
 {
 
+const QString g_ssl_keys_dir = "/var/lib/snapwebsites/cassandra-keys/";
+
 char const * g_cassandra_yaml = "/etc/cassandra/cassandra.yaml";
 
 
@@ -964,7 +966,7 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
     {
         // /var/lib/snapwebsites/cassandra-keys/${IP}.pem
         QDir keys_path;
-        keys_path.setPath( "/var/lib/snapwebsites/cassandra-keys/" );
+        keys_path.setPath( g_ssl_keys_dir );
         keys_path.setNameFilters( { "*.pem" } );
         keys_path.setSorting( QDir::Name );
         keys_path.setFilter( QDir::Files );

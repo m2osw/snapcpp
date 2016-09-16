@@ -64,6 +64,8 @@
 
 namespace
 {
+    const QString g_ssl_keys_dir = "/var/lib/snapwebsites/cassandra-keys/";
+
     const std::vector<std::string> g_configuration_files; // Empty
 
     const advgetopt::getopt::option g_snapdbproxy_options[] =
@@ -517,24 +519,36 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
     if( command == "CASSANDRAKEY" )
     {
-        QDir key_path("/var/lib/snapwebsites/cassandra-keys/");
+        QDir key_path(g_ssl_keys_dir);
         if( !key_path.exists() )
         {
             key_path.mkdir(".");
         }
         //
-        QFile file( QString("%1/%2.pem")
+        QString full_path( QString("%1/%2.pem")
                    .arg(key_path.path())
-                   .arg(message.get_parameter("ip"));
-        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+                   .arg(message.get_parameter("ip"))
+                   );
+
         {
-            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            return false;
+            QFile file( full_path );
+            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+            {
+                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                return false;
+            }
+
+            QTextStream out( &file );
+            out << message.get_parameter("key");
         }
 
-        QTextStream out( &file );
-        out << message.get_parameter("key");
+        if( f_session && f_session->isConnected() )
+        {
+            // Also add this to the current SSL object.
+            //
+            f_session->add_ssl_cert_file( full_path );
+        }
     }
 
     if(command == "LOG")
@@ -665,28 +679,28 @@ void snapdbproxy::process_connection(int const s)
 }
 
 
+/** \brief Add trusted SSL keys we got from the Cassandra nodes
+ */
 void snapdbproxy::add_ssl_keys()
 {
+    f_session->reset_ssl_keys();
+
     QDir keys_path;
-    keys_path.setPath( "/var/lib/snapwebsites/cassandra-keys/" );
+    keys_path.setPath( g_ssl_keys_dir );
     keys_path.setNameFilters( { "*.pem" } );
     keys_path.setSorting( QDir::Name );
     keys_path.setFilter( QDir::Files );
 
     for( QFileInfo const &info : keys_path.entryInfoList() )
     {
-        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        try
         {
-            QString const name(info.filePath());
-            QTextStream in(&file);
-            //
-            f_session->add_ssl_key( in.readAll() );
+            f_session->add_ssl_cert_file( info.filePath() );
         }
-        else
+        catch( const std::exception& x )
         {
-            QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            //throw vpn_exception( errmsg );
+            SNAP_LOG_ERROR(x.what());
+            //throw snapdbproxy_exception( errmsg );
         }
     }
 }
@@ -706,6 +720,11 @@ void snapdbproxy::process_timeout()
 {
     try
     {
+        // First, add the trusted SSL cert keys to the session
+        // if they exist.
+        //
+        add_ssl_keys();
+
         // connect to Cassandra
         //
         // The Cassandra C/C++ driver is responsible to actually create
@@ -713,7 +732,6 @@ void snapdbproxy::process_timeout()
         // need to monitor those connections.
         //
         f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
-        //f_session->add_ssl_key();
 
         // the connection succeeded, turn off the timer we do not need
         // it for now...

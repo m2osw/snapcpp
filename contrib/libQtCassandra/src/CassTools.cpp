@@ -93,6 +93,11 @@ void sessionDeleter::operator()(CassSession* p) const
     cass_session_free(p);
 }
 
+void sessionDeleter::operator()(CassSsl* p) const
+{
+    cass_ssl_free(p);
+}
+
 void statementDeleter::operator()(CassStatement* p) const
 {
     cass_statement_free(p);
