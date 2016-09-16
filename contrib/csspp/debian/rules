@@ -12,6 +12,9 @@
 %:
 	dh $@ --parallel
 
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+
 override_dh_auto_test:
-	@echo "Skipping tests in build process for now (until we have time to make them work right in this environment.)"
+	@echo "Skipping tests in build process for now (until we have time to make them work right in the build environment.)"
 
