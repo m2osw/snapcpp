@@ -57,3 +57,5 @@ So, you will have something like this:
 Note that we include these parameters in our sample file (snap-apache2.conf)
 so you should be ready to go. Just make sure to endit the filenames.
 
+
+_This file is part of the [snapcpp project][http://snapwebsites.org/]._

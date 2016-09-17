@@ -126,3 +126,6 @@ heard, they now do support the `fork()` functionality.
 
 Submit bug reports and patches on
 [github](https://github.com/m2osw/snapcpp/issues).
+
+
+_This file is part of the [snapcpp project][http://snapwebsites.org/]._
