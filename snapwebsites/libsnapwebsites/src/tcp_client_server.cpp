@@ -914,7 +914,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
                 throw tcp_client_server_initialization_error("failed initializing an SSL_CTX object");
             }
 
-            // allow up to 4 certificate in the chain otherwise fail
+            // allow up to 4 certificates in the chain otherwise fail
             // (this is not a very strong security feature though)
             // TODO: allow user to specify the depth
             SSL_CTX_set_verify_depth(ssl_ctx.get(), 4);
@@ -996,8 +996,12 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             //      of the certificate, etc.
             if(SSL_get_verify_result(ssl) != X509_V_OK)
             {
-                ERR_print_errors_fp(stderr);
-                throw tcp_client_server_initialization_error("peer certificate could not be verified");
+                if(mode != mode_t::MODE_SECURE)
+                {
+                    ERR_print_errors_fp(stderr);
+                    throw tcp_client_server_initialization_error("peer certificate could not be verified");
+                }
+                SNAP_LOG_WARNING("connecting with SSL but certificate verification failed.");
             }
 
             // it worked, save the results

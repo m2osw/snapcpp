@@ -121,6 +121,8 @@ private:
 };
 
 
+// Create/manage certificates details:
+// https://help.ubuntu.com/lts/serverguide/certificates-and-security.html
 class bio_client
 {
 public:
@@ -129,8 +131,8 @@ public:
     enum class mode_t
     {
         MODE_PLAIN,             // avoid SSL/TLS
-        MODE_SECURE,            // WARNING: may return a non-secure connection
-        MODE_ALWAYS_SECURE      // fails if cannot be secure
+        MODE_SECURE,            // WARNING: may return a non-verified connection
+        MODE_ALWAYS_SECURE      // fails if cannot be 100% secure
     };
 
                         bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
