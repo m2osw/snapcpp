@@ -19,5 +19,5 @@ override_dh_auto_configure:
 #
 override_dh_fixperms:
 	dh_fixperms
-	chmod go-rwx debian/snapmanagerdaemon/etc/apache2/ssl-snap
+	chmod go-rwx debian/snapcgi/etc/apache2/ssl-snap
 
