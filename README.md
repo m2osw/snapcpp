@@ -128,4 +128,4 @@ Submit bug reports and patches on
 [github](https://github.com/m2osw/snapcpp/issues).
 
 
-_This file is part of the [snapcpp project][http://snapwebsites.org/]._
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._
