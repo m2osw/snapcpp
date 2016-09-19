@@ -1663,7 +1663,7 @@ void users_ui::process_forgot_password_form()
                 // once we sent the new code, we can send the user back
                 // to the verify form
                 messages::messages::instance()->set_info(
-                    "New Verification Email Send",
+                    "New Verification Email Sent",
                     "We just sent you a new verification email. Please check your account and follow the verification link or copy and paste your verification code below."
                 );
                 f_snap->page_redirect("new-password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
@@ -2119,7 +2119,7 @@ void users_ui::process_verify_resend_form()
                     // once we sent the new code, we can send the user back
                     // to the verify form
                     messages::messages::instance()->set_info(
-                        "New Verification Email Send",
+                        "New Verification Email Sent",
                         "We just sent you a new verification email. Please check your account and follow the verification link or copy and paste your verification code below."
                     );
                     f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
