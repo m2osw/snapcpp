@@ -791,7 +791,7 @@ void snap_backend::process_action()
     // somewhat fake being a child (we are not here)
     f_is_child = true;
     f_child_pid = getpid();
-    f_socket = -1;
+    f_client.reset();
 
     // define a User-Agent for all backends
     // TBD: should that be a parameter in the .conf file?

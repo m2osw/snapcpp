@@ -23,6 +23,7 @@
 #include "snapwebsites/snap_signals.h"
 #include "snapwebsites/snap_uri.h"
 #include "snapwebsites/snap_version.h"
+#include "snapwebsites/tcp_client_server.h"
 #include "snapwebsites/udp_client_server.h"
 
 // QtCassandra lib
@@ -304,7 +305,7 @@ public:
                                 snap_child(server_pointer_t s);
     virtual                     ~snap_child();
 
-    bool                        process(int socket);
+    bool                        process(tcp_client_server::bio_client::pointer_t client);
     pid_t                       get_child_pid() const;
     void                        kill();
     status_t                    check_status();
@@ -422,7 +423,7 @@ protected:
     server_pointer_t                            f_server;
     bool                                        f_is_child = false;
     pid_t                                       f_child_pid = 0;
-    int                                         f_socket = -1;
+    tcp_client_server::bio_client::pointer_t    f_client;
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     int64_t                                     f_start_date = 0; // time request arrived

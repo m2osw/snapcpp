@@ -2713,11 +2713,11 @@ pid_t snap_child::fork_child()
  * If the fork() call fails (returning -1) then the parent process
  * writes an HTTP error in the socket (503 Service Unavailable).
  *
- * \param[in] socket  The socket connecting this child to the client.
+ * \param[in] client  The client connection to attach to this child.
  *
  * \return true if the child process was successfully created.
  */
-bool snap_child::process(int socket)
+bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
 {
     if(f_is_child)
     {
@@ -2762,7 +2762,7 @@ bool snap_child::process(int socket)
         return true;
     }
 
-    f_socket = socket;
+    f_client = client;
 
     try
     {
@@ -2990,9 +2990,9 @@ void snap_child::read_environment()
     class read_env
     {
     public:
-        read_env(snap_child * snap, int socket, environment_map_t & env, environment_map_t & browser_cookies, environment_map_t & post, post_file_map_t & files)
+        read_env(snap_child * snap, tcp_client_server::bio_client::pointer_t client, environment_map_t & env, environment_map_t & browser_cookies, environment_map_t & post, post_file_map_t & files)
             : f_snap(snap)
-            , f_socket(socket)
+            , f_client(client)
             //, f_unget('\0') -- auto-init
             //, f_running(true) -- auto-init
             //, f_started(false) -- auto-init
@@ -3036,7 +3036,7 @@ void snap_child::read_environment()
             // this read blocks, so we read just 1 char. because we
             // want to stop calling read() as soon as possible (otherwise
             // we would be blocked here forever)
-            if(read(f_socket, &c, 1) != 1)
+            if(f_client->read(&c, 1) != 1)
             {
                 int const e(errno);
                 die(QString("I/O error, errno: %1").arg(e));
@@ -3590,7 +3590,8 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
 
     private:
         mutable snap_child *        f_snap = nullptr;
-        int32_t                     f_socket = -1;
+        tcp_client_server::bio_client::pointer_t
+                                    f_client;
         //char                        f_unget = 0;
         bool                        f_running = true;
         bool                        f_started = false;
@@ -3618,7 +3619,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
     f_post.clear();
     f_files.clear();
 
-    read_env r(this, f_socket, f_env, f_browser_cookies, f_post, f_files);
+    read_env r(this, f_client, f_env, f_browser_cookies, f_post, f_files);
 #ifdef DEBUG
     r.output_debug_log();
 #endif
@@ -3653,13 +3654,13 @@ void snap_child::mark_for_initialization()
  */
 void snap_child::write(char const * data, ssize_t size)
 {
-    if(f_socket == -1)
+    if(f_client)
     {
         // this happens from backends that do not have snap.cgi running
         return;
     }
 
-    if(::write(f_socket, data, size) != size)
+    if(f_client->write(data, size) != size)
     {
         SNAP_LOG_FATAL("error while sending data to a client.");
         // XXX throw? we cannot call die() because die() calls write()!
@@ -5715,11 +5716,7 @@ QString snap_child::cookie(QString const & name) const
 void snap_child::exit(int code)
 {
     // make sure the socket data is pushed to the caller
-    if(f_socket != -1)
-    {
-        close(f_socket);
-        f_socket = -1;
-    }
+    f_client.reset();
 
     // after we close the socket the answer is sent to the client so
     // we can take a little time to gather some statistics.

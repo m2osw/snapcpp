@@ -82,12 +82,14 @@ public:
                                     addr();
                                     addr(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol);
                                     addr(std::string const & ap, char const * protocol);
+                                    addr(std::string const & address, int const port, char const * protocol);
                                     addr(struct sockaddr_in const & in);
                                     addr(struct sockaddr_in6 const & in6);
 
     static vector_t                 get_local_addresses();
 
     void                            set_addr_port(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol);
+    void                            set_addr_port(std::string const & address, int const port, char const * protocol);
     void                            set_from_socket(int s);
     void                            set_ipv4(struct sockaddr_in const & in);
     void                            set_ipv6(struct sockaddr_in6 const & in6);

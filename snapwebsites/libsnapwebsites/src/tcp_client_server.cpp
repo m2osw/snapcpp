@@ -117,7 +117,7 @@ void bio_initialize()
     ERR_load_crypto_strings();
     ERR_load_SSL_strings();
 
-    // TODO: define a way to only define safe algorithm
+    // TODO: define a way to only define safe algorithms?
     //       (it looks like we can force TLSv1 below at least)
     OpenSSL_add_all_algorithms();
 
@@ -887,8 +887,8 @@ int tcp_server::get_last_accepted_socket() const
  * \param[in] mode  Whether to use SSL when connecting.
  */
 bio_client::bio_client(std::string const & addr, int port, mode_t mode)
-    //: f_bio(nullptr) -- auto-init
-    //, f_ssl_ctx(nullptr) -- auto-init
+    //: f_ssl_ctx(nullptr) -- auto-init
+    //, f_bio(nullptr) -- auto-init
 {
     if(port < 0 || port >= 65536)
     {
@@ -907,11 +907,14 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
     case mode_t::MODE_ALWAYS_SECURE:
         {
             // Use TLS v1 only as all versions of SSL are flawed...
+            // (see below the SSL_CTX_set_options() for additional details
+            // about that since here it does indeed say SSLv23...)
+            //
             std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(SSLv23_client_method()), ssl_ctx_deleter);
             if(!ssl_ctx)
             {
                 ERR_print_errors_fp(stderr);
-                throw tcp_client_server_initialization_error("failed initializing an SSL_CTX object");
+                throw tcp_client_server_initialization_error("failed creating an SSL_CTX object");
             }
 
             // allow up to 4 certificates in the chain otherwise fail
@@ -925,7 +928,22 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_COMPRESSION);
 
             // limit the number of ciphers the connection can use
-            SSL_CTX_set_cipher_list(ssl_ctx.get(), "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
+            if(mode == mode_t::MODE_SECURE)
+            {
+                // this is used by local connections and we get a very strong
+                // algorithm anyway, but at this point I do not know why it
+                // does not work with the limited list below...
+                //
+                // TODO: test with adding DH support in the server then
+                //       maybe (probably) that the "HIGH" will work for
+                //       this entry too...
+                //
+                SSL_CTX_set_cipher_list(ssl_ctx.get(), "ALL");
+            }
+            else
+            {
+                SSL_CTX_set_cipher_list(ssl_ctx.get(), "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
+            }
 
             // load root certificates (correct path for Ubuntu?)
             // TODO: allow client to set the path to certificates
@@ -944,6 +962,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             }
 
             // verify that the connection worked
+            //
             SSL * ssl(nullptr);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -959,6 +978,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             // allow automatic retries in case the connection somehow needs
             // an SSL renegotiation (maybe we should turn that off for cases
             // where we connect to a secure payment gateway?)
+            //
             SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
             // TODO: other SSL initialization?
@@ -985,6 +1005,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
 
             // verify that the peer certificate was signed by a
             // recognized root authority
+            //
             if(SSL_get_peer_certificate(ssl) == nullptr)
             {
                 ERR_print_errors_fp(stderr);
@@ -994,6 +1015,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             // XXX: check that the call below is similar to the example
             //      usage of SSL_CTX_set_verify() which checks the name
             //      of the certificate, etc.
+            //
             if(SSL_get_verify_result(ssl) != X509_V_OK)
             {
                 if(mode != mode_t::MODE_SECURE)
@@ -1005,10 +1027,15 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             }
 
             // it worked, save the results
-            f_ssl_ctx = ssl_ctx;
-            f_bio = bio;
+            //
+            f_ssl_ctx.swap(ssl_ctx);
+            f_bio.swap(bio);
 
             // secure connection ready
+            char const * cipher_name(SSL_get_cipher(ssl));
+            int cipher_bits(0);
+            SSL_get_cipher_bits(ssl, &cipher_bits);
+            SNAP_LOG_DEBUG("connected with SSL cipher \"")(cipher_name)("\" representing ")(cipher_bits)(" bits of encryption.");
         }
         break;
 
@@ -1042,6 +1069,39 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
         }
         break;
 
+    }
+}
+
+
+/** \brief Create a BIO client object from an actual BIO pointer.
+ *
+ * This function is called by the server whenever it accepts a new BIO
+ * connection. The server then can return the bio_client object instead
+ * of a BIO object.
+ *
+ * \param[in] bio  The BIO pointer representing a BIO connection with a client.
+ */
+bio_client::bio_client(std::shared_ptr<BIO> bio)
+    //: f_ssl_ctx(nullptr) -- auto-init
+    : f_bio(bio)
+{
+    if(bio)
+    {
+        // TODO: somehow this does not seem to give us any information
+        //       about the cipher and other details...
+        //
+        SSL * ssl(nullptr);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        BIO_get_ssl(bio.get(), &ssl);
+#pragma GCC diagnostic pop
+        if(ssl != nullptr)
+        {
+            char const * cipher_name(SSL_get_cipher(ssl));
+            int cipher_bits(0);
+            SSL_get_cipher_bits(ssl, &cipher_bits);
+            SNAP_LOG_DEBUG("accepted BIO client with SSL cipher \"")(cipher_name)("\" representing ")(cipher_bits)(" bits of encryption.");
+        }
     }
 }
 
@@ -1390,7 +1450,11 @@ int bio_client::read_line(std::string & line)
  */
 int bio_client::write(char const * buf, size_t size)
 {
-    SNAP_LOG_TRACE("bio_client::write(): buf=")(buf)(", size=")(size);
+#ifdef _DEBUG
+    // This write is useful when developing APIs against 3rd party
+    // servers, otherwise, it's just too much debug
+    //SNAP_LOG_TRACE("bio_client::write(): buf=")(buf)(", size=")(size);
+#endif
     if(!f_bio)
     {
         return -1;
@@ -1418,6 +1482,356 @@ int bio_client::write(char const * buf, size_t size)
     BIO_flush(f_bio.get());
     return r;
 }
+
+
+
+
+
+
+
+
+
+// ========================= BIO SERVER =========================
+
+
+/** \class bio_server
+ * \brief Create a BIO server, bind it, and listen for connections.
+ *
+ * This class is a server socket implementation used to listen for
+ * connections that are to use TLS encryptions.
+ *
+ * The bind address must be available for the server initialization
+ * to succeed.
+ *
+ * The BIO extension is from the OpenSSL library and it allows the server
+ * to allow connections using SSL (TLS really now a day). The server
+ * expects to be given information about a certificate and a private
+ * key to function. You may also use the server in a non-secure manner
+ * (without the TLS layer) so you do not need to implement two instances
+ * of your server, one with bio_server and one with tcp_server.
+ */
+
+
+
+
+/** \brief Contruct a bio_server object.
+ *
+ * The bio_server constructor initializes a BIO server and listens
+ * for connections from the specified address and port.
+ *
+ * The \p certificate and \p private_key filenames are expected to point
+ * to a PEM file (.pem extension) that include the encryption information.
+ *
+ * The certificate file may include a chain in which case the whole chain
+ * will be taken in account.
+ *
+ * \warning
+ * Currently the max_connections parameter is pretty much ignored since
+ * there is no way to pass that paramter down to the BIO interface. In
+ * that code they use the SOMAXCONN definition which under Linux is
+ * defined at 128 (Ubuntu 16.04.1). See:
+ * /usr/include/x86_64-linux-gnu/bits/socket.h
+ *
+ * \param[in] addr_port  The address and port defined in a snap_addr object.
+ * \param[in] max_connections  The number of connections to keep in the listen queue.
+ * \param[in] reuse_addr  Whether to mark the socket with the SO_REUSEADDR flag.
+ * \param[in] certificate  The server certificate filename (PEM).
+ * \param[in] private_key  The server private key filename (PEM).
+ * \param[in] mode  The mode used to create the listening socket.
+ */
+bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, bool reuse_addr, std::string const & certificate, std::string const & private_key, mode_t mode)
+    : f_max_connections(max_connections <= 0 ? MAX_CONNECTIONS : max_connections)
+    //, f_bio(nullptr) -- auto-init
+    //, f_ssl_ctx(nullptr) -- auto-init
+    //, f_keepalive(true) -- auto-init
+{
+    if(f_max_connections < 5)
+    {
+        f_max_connections = 5;
+    }
+    else if(f_max_connections > 1000)
+    {
+        f_max_connections = 1000;
+    }
+
+    bio_initialize();
+
+    switch(mode)
+    {
+    case mode_t::MODE_SECURE:
+        {
+            // the following code is based on the example shown in the man page
+            //
+            //        man BIO_f_ssl
+            //
+            if(certificate.empty()
+            || private_key.empty())
+            {
+                throw tcp_client_server_parameter_error("with MODE_SECURE you must specify a certificate and a private_key filename");
+            }
+
+            std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(SSLv23_server_method()), ssl_ctx_deleter);
+            if(!ssl_ctx)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed creating an SSL_CTX server object");
+            }
+
+            SSL_CTX_set_cipher_list(ssl_ctx.get(), "ALL");//"HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
+
+            // Assign the certificate to the SSL context
+            //
+            // TBD: we may want to use SSL_CTX_use_certificate_file() instead
+            //      (i.e. not the "chained" version)
+            //
+            if(!SSL_CTX_use_certificate_chain_file(ssl_ctx.get(), certificate.c_str()))
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing an SSL_CTX server object certificate");
+            }
+
+            // Assign the private key to the SSL context
+            //
+            if(!SSL_CTX_use_PrivateKey_file(ssl_ctx.get(), private_key.c_str(), SSL_FILETYPE_PEM))
+            {
+                // on failure, try again again with the RSA version, just in case
+                // (probably useless?)
+                //
+                if(!SSL_CTX_use_RSAPrivateKey_file(ssl_ctx.get(), private_key.c_str(), SSL_FILETYPE_PEM))
+                {
+                    ERR_print_errors_fp(stderr);
+                    throw tcp_client_server_initialization_error("failed initializing an SSL_CTX server object private key");
+                }
+            }
+
+            // Verify that the private key and certifcate are a match
+            //
+            if(!SSL_CTX_check_private_key(ssl_ctx.get()))
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing an SSL_CTX server object private key");
+            }
+
+            // create a BIO connection with SSL
+            //
+            std::unique_ptr<BIO, void (*)(BIO *)> bio(BIO_new_ssl(ssl_ctx.get(), 0), bio_deleter);
+            if(!bio)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing a BIO server object");
+            }
+
+            // get the SSL pointer, which generally means that the BIO
+            // allocate succeeded fully, so we can set auto-retry
+            //
+            SSL * ssl(nullptr);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            BIO_get_ssl(bio.get(), &ssl);
+#pragma GCC diagnostic pop
+            if(ssl == nullptr)
+            {
+                // TBD: does this mean we would have a plain connection?
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed connecting BIO object with SSL_CTX object");
+            }
+
+            // allow automatic retries in case the connection somehow needs
+            // an SSL renegotiation (maybe we should turn that off for cases
+            // where we connect to a secure payment gateway?)
+            //
+            SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+
+            // create a listening connection
+            //
+            std::shared_ptr<BIO> listen(BIO_new_accept(addr_port.get_ipv4or6_string(true).c_str()), bio_deleter);
+            if(!listen)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing a BIO server object");
+            }
+
+            BIO_set_bind_mode(listen.get(), reuse_addr ? BIO_BIND_REUSEADDR : BIO_BIND_NORMAL);
+
+            // Attach the SSL bio to the listening BIO, this means whenever
+            // a new connection is accepted, it automatically attaches it to
+            // an SSL connection
+            //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            BIO_set_accept_bios(listen.get(), bio.get());
+#pragma GCC diagnostic pop
+
+            // WARNING: the listen object takes ownership of the `bio`
+            //          pointer and thus we have to make sure that we
+            //          do not keep it in our unique_ptr<>().
+            //
+            snap::NOTUSED(bio.release());
+
+            // Actually call bind() and listen() on the socket
+            //
+            // IMPORTANT NOTE: The BIO_do_accept() is overloaded, it does
+            // two things: (a) it bind() + listen() when called the very
+            // first time (i.e. the call right here); (b) it actually
+            // accepts a client connection
+            //
+            int const r(BIO_do_accept(listen.get()));
+            if(r <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing the BIO server socket to listen for client connections");
+            }
+
+            // it worked, save the results
+            f_ssl_ctx.swap(ssl_ctx);
+            f_listen.swap(listen);
+
+            // secure connection ready
+        }
+        break;
+
+    case mode_t::MODE_PLAIN:
+        {
+            std::shared_ptr<BIO> listen(BIO_new_accept(addr_port.get_ipv4or6_string(true).c_str()));
+            if(!listen)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing a BIO server object");
+            }
+
+            BIO_set_bind_mode(listen.get(), BIO_BIND_REUSEADDR);
+
+            // Actually call bind() and listen() on the socket
+            //
+            // IMPORTANT NOTE: The BIO_do_accept() is overloaded, it does
+            // two things: (a) it bind() + listen() when called the very
+            // first time (i.e. the call right here); (b) it actually
+            // accepts a client connection
+            //
+            int const r(BIO_do_accept(listen.get()));
+            if(r <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing the BIO server socket to listen for client connections");
+            }
+
+            // it worked, save the results
+            //
+            f_listen.swap(listen);
+        }
+        break;
+
+    }
+}
+
+
+/** \brief Tell you whether the server uses a secure BIO or not.
+ *
+ * This function checks whether the BIO is using encryption (true)
+ * or is a plain connection (false).
+ *
+ * \return true if the BIO was created in secure mode.
+ */
+bool bio_server::is_secure() const
+{
+    return static_cast<bool>(f_ssl_ctx);
+}
+
+
+/** \brief Get the listening socket.
+ *
+ * This function returns the file descriptor of the listening socket.
+ * By default the socket is in blocking mode.
+ *
+ * \return The listening socket file descriptor.
+ */
+int bio_server::get_socket() const
+{
+    if(f_listen)
+    {
+        int c;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        BIO_get_fd(f_listen.get(), &c);
+#pragma GCC diagnostic pop
+        return c;
+    }
+
+    return -1;
+}
+
+
+/** \brief Retrieve one new connection.
+ *
+ * This function will wait until a new connection arrives and returns a
+ * new bio_client object for each new connection.
+ *
+ * If the socket is made non-blocking then the function may return without
+ * a bio_client object (i.e. a null pointer instead.)
+ *
+ * \return A shared pointer to a newly allocated bio_client object.
+ */
+bio_client::pointer_t bio_server::accept()
+{
+    // TBD: does one call to BIO_do_accept() accept at most one connection
+    //      at a time or could it be that 'r' will be set to 2, 3, 4...
+    //      as more connections get accepted?
+    //
+    int const r(BIO_do_accept(f_listen.get()));
+    if(r <= 0)
+    {
+        // TBD: should we instead return an empty shared pointer in this case?
+        //
+        ERR_print_errors_fp(stderr);
+        throw tcp_client_server_runtime_error("failed accepting a new BIO");
+    }
+
+    // retrieve the new connection by "popping it"
+    //
+    std::shared_ptr<BIO> bio(BIO_pop(f_listen.get()), bio_deleter);
+    if(!bio)
+    {
+        ERR_print_errors_fp(stderr);
+        throw tcp_client_server_runtime_error("failed retrieving the accepted BIO");
+    }
+
+    // mark the new connection with the SO_KEEPALIVE flag
+    if(f_keepalive)
+    {
+        // if this fails, we ignore the error, but still log the event
+        int optval(1);
+        socklen_t const optlen(sizeof(optval));
+        if(setsockopt(get_socket(), SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+        {
+            SNAP_LOG_WARNING("bio_server::accept(): an error occurred trying to mark accepted socket with SO_KEEPALIVE.");
+        }
+    }
+
+    return bio_client::pointer_t(new bio_client(bio));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ========================= HELPER FUNCTIONS =========================
+
 
 
 /** \brief Check wether a string represents an IPv4 address.

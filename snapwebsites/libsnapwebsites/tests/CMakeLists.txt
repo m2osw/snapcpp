@@ -29,11 +29,14 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-add_subdirectory(ip)
+add_subdirectory(ip)	# IP address/ports related
+add_subdirectory(cs)	# Client/Server related
+
 
 # By default "os" tests are turned off. These are used to test an OS feature
 # before writing an actual implementation. Most of these can generally be
 # considered throw away. Plus, they do not test the code in the library.
 #
 #add_subdirectory(os)
+
 

@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include <snapwebsites/addr.h>
+
 #include <QString>
 
 #include <stdexcept>
@@ -24,6 +26,7 @@
 #include <arpa/inet.h>
 
 // BIO versions of the TCP client/server
+// TODO: move to an impl
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -121,6 +124,8 @@ private:
 };
 
 
+class bio_server;
+
 // Create/manage certificates details:
 // https://help.ubuntu.com/lts/serverguide/certificates-and-security.html
 class bio_client
@@ -153,8 +158,41 @@ public:
     int                 write(char const * buf, size_t size);
 
 private:
-    std::shared_ptr<BIO>        f_bio;
+    friend bio_server;
+
+                        bio_client(std::shared_ptr<BIO> bio);
+
     std::shared_ptr<SSL_CTX>    f_ssl_ctx;
+    std::shared_ptr<BIO>        f_bio;
+};
+
+
+// try `man BIO_f_ssl` or go to:
+// https://www.openssl.org/docs/manmaster/crypto/BIO_f_ssl.html
+class bio_server
+{
+public:
+    typedef std::shared_ptr<bio_server>     pointer_t;
+
+    static int const    MAX_CONNECTIONS = 50;
+
+    enum class mode_t
+    {
+        MODE_PLAIN,             // no encryption
+        MODE_SECURE             // use TLS encryption
+    };
+
+                            bio_server(snap_addr::addr const & addr_port, int max_connections, bool reuse_addr, std::string const & certificate, std::string const & private_key, mode_t mode);
+
+    bool                    is_secure() const;
+    int                     get_socket() const;
+    bio_client::pointer_t   accept();
+
+private:
+    int                         f_max_connections = MAX_CONNECTIONS;
+    std::shared_ptr<SSL_CTX>    f_ssl_ctx;
+    std::shared_ptr<BIO>        f_listen;
+    bool                        f_keepalive = true;
 };
 
 

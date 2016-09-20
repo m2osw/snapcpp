@@ -317,7 +317,7 @@ private:
 
     static void                             sighandler( int sig );
 
-    void                                    process_connection(int socket);
+    void                                    process_connection(tcp_client_server::bio_client::pointer_t client);
     void                                    stop_thread_func();
     void                                    stop(bool quitting);
 

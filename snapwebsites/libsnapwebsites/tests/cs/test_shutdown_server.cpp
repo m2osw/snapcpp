@@ -27,12 +27,10 @@
 // this test).
 //
 
-#include "snap_tests.h"
-
-#include <snapwebsites/snap_communicator.h>
 #include <snapwebsites/log.h>
-#include <snapwebsites/qstring_stream.h>
 #include <snapwebsites/not_reached.h>
+#include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snap_communicator.h>
 
 #include <unistd.h>
 
@@ -85,8 +83,8 @@ class client_connection
         : public snap::snap_communicator::snap_tcp_server_client_message_connection
 {
 public:
-    client_connection(int socket)
-        : snap_tcp_server_client_message_connection(socket)
+    client_connection(tcp_client_server::bio_client::pointer_t client)
+        : snap_tcp_server_client_message_connection(client)
     {
         set_name("client");
     }
@@ -185,7 +183,8 @@ class listener
         : public snap::snap_communicator::snap_tcp_server_connection
 {
 public:
-    listener() : snap_tcp_server_connection(snap_test::host(), 4030, 10, true, false)
+    listener()
+        : snap_tcp_server_connection("127.0.0.1", 4030, "", "", tcp_client_server::bio_server::mode_t::MODE_PLAIN, 10, true)
     {
         set_name("listener");
     }
@@ -194,12 +193,12 @@ public:
     {
         SNAP_LOG_INFO("server received accept");
 
-        int const new_socket(accept());
-        if(new_socket < 0)
+        tcp_client_server::bio_client::pointer_t new_client(accept());
+        if(!new_client)
         {
             throw std::runtime_error("accept failed");
         }
-        client_connection::pointer_t connection(new client_connection(new_socket));
+        client_connection::pointer_t connection(new client_connection(new_client));
         if(!snap::snap_communicator::instance()->add_connection(connection))
         {
             throw std::runtime_error("could not add connection");
@@ -212,6 +211,7 @@ int main(int /*argc*/, char * /*argv*/[])
 {
     snap::logging::set_progname("test_shutdown_server");
     snap::logging::configure_console();
+    snap::logging::set_log_output_level(snap::logging::log_level_t::LOG_LEVEL_TRACE);
 
     g_parent_pid = getpid();
 

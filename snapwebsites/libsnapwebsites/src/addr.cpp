@@ -145,6 +145,30 @@ addr::addr(std::string const & ap, std::string const & default_address, int cons
 }
 
 
+/** \brief Initialize a new addr object with an address and a port.
+ *
+ * If you already have an address and a port defined separatly, then
+ * you can use this function to initialize the addr object.
+ *
+ * If the \p address string is empty, then the function saves the
+ * port and returns immediately.
+ *
+ * \param[in] address  The address to save in this object or "".
+ * \param[in] port  The port to save along this address.
+ * \param[in] protocol  The name of the protocol ("tcp", "udp", or nullptr)
+ */
+addr::addr(std::string const & address, int const port, char const * protocol)
+{
+    if(address.empty())
+    {
+        f_address.sin6_port = htons(port);
+        return;
+    }
+
+    set_addr_port(address, port, protocol);
+}
+
+
 /** \brief Initialize the addr object with the specified address and protocol.
  *
  * This function parses the \p ap string as an IP address optionally
@@ -214,6 +238,33 @@ addr::addr(struct sockaddr_in6 const & in6)
  */
 void addr::set_addr_port(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol)
 {
+    // break up the address and port
+    //
+    QString address(default_address.c_str());
+    int port(default_port);
+    tcp_client_server::get_addr_port(ap.c_str(), address, port, protocol);
+
+    set_addr_port(address.toUtf8().data(), port, protocol);
+}
+
+
+/** \brief Set the address and port with the address defined as a string.
+ *
+ * This function saves the specified address as port to this addr object.
+ *
+ * \exception addr_invalid_argument_exception
+ * This exception is raised if the address cannot be parsed by
+ * the system getaddrinfo() function. IPv6 addresses cannot include
+ * square brackets when calling this function. This exception is
+ * also raised if the type of address is not recognized (i.e. we
+ * only support IPv4 and IPv6 addresses.)
+ *
+ * \param[in] address  The address to convert to binary.
+ * \param[in] port  The port to attach to the addr object.
+ * \param[in] protocol  The name of the protocol ("tcp", "udp", or nullptr)
+ */
+void addr::set_addr_port(std::string const & address, int const port, char const * protocol)
+{
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_NUMERICSERV | AI_ADDRCONFIG | AI_V4MAPPED;
@@ -237,29 +288,21 @@ void addr::set_addr_port(std::string const & ap, std::string const & default_add
     }
     // else -- should we have a default?
 
-    // break up the address and port
-    //
-    QString address(default_address.c_str());
-    int port(default_port);
-    tcp_client_server::get_addr_port(ap.c_str(), address, port, protocol);
-
-    // now addr is just the address and we can convert that to binary
-
-    QByteArray address_utf8(address.toUtf8());
-
     QString port_str(QString("%1").arg(port));
     QByteArray port_str_utf8(port_str.toUtf8());
 
-    struct addrinfo * addrlist;
+    // now addr is just the address and we can convert that to binary
+    struct addrinfo * addrlist(nullptr);
     errno = 0;
-    int const r(getaddrinfo(address_utf8.data(), port_str_utf8.data(), &hints, &addrlist));
+    int const r(getaddrinfo(address.c_str(), port_str_utf8.data(), &hints, &addrlist));
     if(r != 0)
     {
         // break on invalid addresses
         //
         int const e(errno); // if r == EAI_SYSTEM, then 'errno' is consistent here
-        throw addr_invalid_argument_exception(QString("invalid address in %1, error %2 -- %3 (errno: %4 -- %5.")
-                            .arg(ap.c_str())
+        throw addr_invalid_argument_exception(QString("invalid address in %1:%2, error %3 -- %4 (errno: %5 -- %6.")
+                            .arg(QString::fromUtf8(address.c_str()))
+                            .arg(port)
                             .arg(r)
                             .arg(gai_strerror(r))
                             .arg(e)
