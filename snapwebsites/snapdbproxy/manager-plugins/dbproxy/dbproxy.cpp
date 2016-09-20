@@ -231,6 +231,17 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(host_list);
     }
 
+    {
+        bool const use_ssl = snap_dbproxy_conf["cassandra_use_ssl"] == "true";
+        snap_manager::status_t const use_ssl_switch(
+                      snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "cassandra_use_ssl"
+                    , use_ssl? "true": "false"
+                    );
+        server_status.set_field(use_ssl_switch);
+    }
+
     try
     {
         // if the connection fails, we cannot have either of the following
@@ -353,6 +364,33 @@ bool dbproxy::display_value(QDomElement parent, snap_manager::status_t const & s
         return true;
     }
 
+    if(s.get_field_name() == "cassandra_use_ssl")
+    {
+        // the list if frontend snapmanagers that are to receive statuses
+        // of the cluster computers; may be just one computer; should not
+        // be empty; shows a text input field
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Cassandra connections should use SSL:"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "Specify 'true' or 'false."
+                         " If 'true' is specified, then snapdbproxy will expect SSL certs to be delivered via"
+                         " the cassandra snapmanager plugin."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name() == "cassandra_create_context")
     {
         // the list if frontend snapmanagers that are to receive statuses
@@ -453,6 +491,30 @@ bool dbproxy::apply_setting(QString const & button_name, QString const & field_n
         snap_dbproxy_conf["cassandra_host_list"] = new_value;
 
         return f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_host_list", new_value);
+    }
+
+    if(field_name == "cassandra_use_ssl")
+    {
+        // to make use of the new list, make sure to restart
+        //
+        affected_services.insert("snapdbproxy");
+
+        // fix the value in memory
+        //
+        snap_config snap_dbproxy_conf(g_configuration_filename);
+        snap_dbproxy_conf["cassandra_use_ssl"] = new_value;
+
+        bool const config_set = f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_use_ssl", new_value);
+        if( config_set )
+        {
+            // Send restart message to snapdbproxy, because we changed the configuration.
+            //
+            snap::snap_communicator_message cmd;
+            cmd.set_service("snapdbproxy");         // TODO: Is this correct?
+            cmd.set_command("RELOADCONFIG");
+            f_snap->forward_message(cmd);
+        }
+        return config_set;
     }
 
     if(field_name == "cassandra_create_context")

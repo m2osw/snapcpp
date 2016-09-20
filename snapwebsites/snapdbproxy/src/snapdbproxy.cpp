@@ -64,7 +64,7 @@
 
 namespace
 {
-    const QString g_ssl_keys_dir = "/var/lib/snapwebsites/cassandra-keys/";
+    const QString g_ssl_keys_dir = "/var/lib/snapwebsites/snapdbproxy/";
 
     const std::vector<std::string> g_configuration_files; // Empty
 
@@ -349,6 +349,23 @@ std::string snapdbproxy::server_name() const
 }
 
 
+/** \brief Use SSL for Cassandra connections
+ *
+ * This checks the configuration settings for "cassandra_use_ssl".
+ * If present and set to "true", this method returns true, false
+ * otherwise.
+ */
+bool snapdbproxy::use_ssl() const
+{
+    if( f_config.has_parameter("cassandra_use_ssl") )
+    {
+        return f_config["cassandra_use_ssl"] == "true";
+    }
+
+    return false;
+}
+
+
 /** \brief Start the Snap! Communicator and wait for events.
  *
  * This function initializes the snapdbproxy object further and then
@@ -527,7 +544,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         //
         QString full_path( QString("%1/%2.pem")
                    .arg(key_path.path())
-                   .arg(message.get_parameter("ip"))
+                   .arg(message.get_parameter("listen_address"))
                    );
 
         {
@@ -543,12 +560,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
             out << message.get_parameter("key");
         }
 
-        if( f_session && f_session->isConnected() )
-        {
-            // Also add this to the current SSL object.
-            //
-            f_session->add_ssl_cert_file( full_path );
-        }
+        return;
     }
 
     if(command == "LOG")
@@ -582,12 +594,26 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
     {
         f_ready = true;
 
-        // Snap! Communicator received our REGISTER command
-        //
-        if(f_session->isConnected())
+        if( use_ssl() )
         {
-            cassandra_ready();
+            // Ask for server certs first from each snapmanager cassandra plugin on the system:
+            //
+            snap::snap_communicator_message request;
+            request.set_command("CASSANDRAKEYS");
+            request.set_service("*");
+            request.add_parameter("cache", "ttl=60");
+            f_messenger->send_message(request);
         }
+        else
+        {
+            // Snap! Communicator received our REGISTER command
+            //
+            if(f_session->isConnected())
+            {
+                cassandra_ready();
+            }
+        }
+
         return;
     }
 
@@ -723,7 +749,10 @@ void snapdbproxy::process_timeout()
         // First, add the trusted SSL cert keys to the session
         // if they exist.
         //
-        add_ssl_keys();
+        if( use_ssl() )
+        {
+            add_ssl_keys();
+        }
 
         // connect to Cassandra
         //

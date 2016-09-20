@@ -50,7 +50,7 @@ SNAP_PLUGIN_START(cassandra, 1, 0)
 namespace
 {
 
-const QString g_ssl_keys_dir = "/var/lib/snapwebsites/cassandra-keys/";
+const QString g_ssl_keys_dir = "/etc/cassandra/ssl/public";
 
 char const * g_cassandra_yaml = "/etc/cassandra/cassandra.yaml";
 
@@ -84,7 +84,11 @@ public:
         return f_cassandra_configuration.exists();
     }
 
-    std::string retrieve_parameter(bool & found, std::string const & parameter_name)
+    std::string retrieve_parameter 
+        ( bool & found
+        , std::string const & parameter_name
+        , std::string const & section_name = std::string()
+        )
     {
         found = false;
 
@@ -92,15 +96,25 @@ public:
         //
         std::string const & content = f_cassandra_configuration.get_content();
 
+        std::string::size_type const section_pos = section_name.empty()
+            : 0
+            ? snap_manager::manager::search_parameter( content, parameter_name + ":", 0, true )
+            ;
+
         // search for the parameter
         //
-        std::string::size_type const pos(snap_manager::manager::search_parameter(content, parameter_name + ":", 0, true));
+        std::string::size_type const pos(snap_manager::manager::search_parameter(content, parameter_name + ":", section_pos, true));
+
+        int const start_of_line = section_name.empty()
+            ? 0
+            : 4
+            ;
 
         // make sure that there is nothing "weird" before that name
         // (i.e. "rpc_address" and "broadcast_rpc_address")
         //
         if(pos != std::string::size_type(-1)
-        && (pos == 0
+        && (pos == start_of_line
         || content[pos - 1] == '\r'
         || content[pos - 1] == '\n'
         || content[pos - 1] == '\t'
@@ -361,6 +375,34 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
                             , replication_factor);
             server_status.set_field(conf_field);
         }
+
+        // Present the server SSL option (to allow node-to-node encryption).
+        //
+        bool found(false);
+        std::string const use_server_ssl( info.retrieve_parameter( found, "internode_encryption", "server_encryption_options" ) );
+        if(found)
+        {
+            snap_manager::status_t const conf_field(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "use_server_ssl"
+                            , use_server_ssl);
+            server_status.set_field(conf_field);
+        }
+
+        // Present the clien SSL option (to allow client-to-server encryption).
+        //
+        found =false;
+        std::string const use_client_ssl( info.retrieve_parameter( found, "enabled", "client_encryption_options" ) );
+        if(found)
+        {
+            snap_manager::status_t const conf_field(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "use_client_ssl"
+                            , use_client_ssl);
+            server_status.set_field(conf_field);
+        }
     }
     else if(info.exists())
     {
@@ -418,7 +460,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra 'ClusterName'"
                         , s.get_field_name()
@@ -452,7 +493,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Seeds"
                         , s.get_field_name()
@@ -486,7 +526,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Listen Address"
                         , s.get_field_name()
@@ -520,7 +559,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra RPC Address"
                         , s.get_field_name()
@@ -554,7 +592,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Broadcast RPC Address"
                         , s.get_field_name()
@@ -589,7 +626,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Auto-Snapshot"
                         , s.get_field_name()
@@ -628,7 +664,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
 
         // TODO: get the list of names and show as a dropdown
         //
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Enter the server_name of the computer to join:"
                         , s.get_field_name()
@@ -659,7 +694,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Enter the replication factor (RF):"
                         , s.get_field_name()
@@ -669,6 +703,56 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                          " This option let you change the factor. It must be run on a computer with"
                          " a Cassandra node. Make sure you do not enter a number larger than the"
                          " total number of nodes or your cluster will be stuck.<p>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "use_server_ssl")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Turn on server-to-server encryption (true or false):"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>By default, Cassandra communicates in the clear on the listening address."
+                          " When you turn on this flag, server to server encryption will be turned on between"
+                          " nodes. Also, if it is not already created, a server key pair will be created also,"
+                          " and the trusted keys will be exchanged with each node on the network.<p>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "use_client_ssl")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Turn on client-to-server encryption (true or false):"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>By default, Cassandra communicates in the clear on the listening address."
+                          " When you turn on this flag, client to server encryption will be turned on between"
+                          " clients and nodes. If it is not already present, a trusted client key will be generated."
+                          " <i>snapdbproxy</i> will then query the nodes it's connected to and request the keys.<p>"
                         ));
         f.add_widget(field);
 
@@ -831,6 +915,20 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
         return true;
     }
 
+    if( field_name == "use_server_ssl" )
+    {
+        // Modify values and generate keys if enabled for server_encryption_options.
+        // Disable if user turns them off.
+        return true;
+    }
+
+    if( field_name == "use_client_ssl" )
+    {
+        // Modify values and generate keys if enabled for client_encryption_options.
+        // Disable if user turns them off.
+        return true;
+    }
+
     return false;
 }
 
@@ -979,11 +1077,12 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
                 QTextStream in(&file);
                 //
                 snap::snap_communicator_message cmd;
+                cmd.reply_to(message);
                 cmd.set_command("CASSANDRAKEY");
-                cmd.set_service(".");
-                cmd.add_parameter("key", in.readAll()    );
-                cmd.add_parameter("ip" , info.baseName() );
-                f_messenger->send_message(cmd);
+                cmd.add_parameter( "key"   , in.readAll()    );
+                cmd.add_parameter( "cache" , "ttl=60"        );
+                get_cassandra_info(cmd);
+                f_snap->forward_message(cmd);
             }
             else
             {
@@ -991,6 +1090,17 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
                 SNAP_LOG_ERROR(qPrintable(errmsg));
                 //throw vpn_exception( errmsg );
             }
+        }
+
+        // Now that we've sent all of the keys, tell snapdbproxy to reload
+        //
+        {
+            snap::snap_communicator_message cmd;
+            cmd.reply_to(message);
+            cmd.set_command("RELOADCONFIG");
+            cmd.add_parameter( "cache" , "ttl=60" );
+            //get_cassandra_info(cmd); // TODO: do I need this?!
+            f_snap->forward_message(cmd);
         }
     }
 }
@@ -1028,6 +1138,15 @@ void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
     if(found)
     {
         status.add_parameter("seeds", QString::fromUtf8(seeds.c_str()));
+    }
+
+    // Add listen_address as well, so we can know what IP to use
+    //
+    found = false;
+    std::string const listen_address(info.retrieve_parameter(found, "listen_address"));
+    if(found)
+    {
+        status.add_parameter("listen_address", QString::fromUtf8(listen_address.c_str()));
     }
 
 #if 0

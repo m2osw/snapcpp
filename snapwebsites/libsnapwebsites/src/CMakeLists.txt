@@ -59,7 +59,76 @@ qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
     snap.qrc
 )
 
+set( HEADERS
+    snapwebsites/addr.h
+    snapwebsites/cache_control.h
+    snapwebsites/chownnm.h
+    snapwebsites/compression.h
+    snapwebsites/dbutils.h
+    snapwebsites/file_content.h
+    snapwebsites/floats.h
+    snapwebsites/fuzzy_string_compare.h
+    snapwebsites/http_client_server.h
+    snapwebsites/http_cookie.h
+    snapwebsites/http_strings.h
+    snapwebsites/inet_helpers.h
+    snapwebsites/join_strings.h
+    snapwebsites/loadavg.h
+    snapwebsites/lockfile.h
+    snapwebsites/log.h
+    snapwebsites/minmax.h
+    snapwebsites/mkdir_p.h
+    snapwebsites/mkgmtime.h
+    snapwebsites/mounts.h
+    snapwebsites/not_reached.h
+    snapwebsites/not_used.h
+    snapwebsites/plugins.h
+    snapwebsites/poison.h
+    snapwebsites/process.h
+    snapwebsites/qcaseinsensitivestring.h
+    snapwebsites/qdomhelpers.h
+    snapwebsites/qdomnodemodel.h
+    snapwebsites/qdomreceiver.h
+    snapwebsites/qdomxpath.h
+    snapwebsites/qhtmlserializer.h
+    snapwebsites/qlockfile.h
+    snapwebsites/qstring_stream.h
+    snapwebsites/quoted_printable.h
+    snapwebsites/qxmlmessagehandler.h
+    snapwebsites/reverse_cstring.h
+    snapwebsites/snap_backend.h
+    snapwebsites/snap_cassandra.h
+    snapwebsites/snap_child.h
+    snapwebsites/snap_communicator.h
+    snapwebsites/snap_config.h
+    snapwebsites/snap_exception.h
+    snapwebsites/snap_expr.h
+    snapwebsites/snap_image.h
+    snapwebsites/snap_initialize_website.h
+    snapwebsites/snap_listen_thread.h
+    snapwebsites/snap_lock.h
+    snapwebsites/snap_magic.h
+    snapwebsites/snap_parser.h
+    snapwebsites/snap_pipe.h
+    snapwebsites/snap_signals.h
+    snapwebsites/snap_string_list.h
+    snapwebsites/snap_tables.h
+    snapwebsites/snap_thread.h
+    snapwebsites/snap_uri.h
+    snapwebsites/snap_utf8.h
+    snapwebsites/snap_version.h
+    snapwebsites/snapwebsites.h
+    snapwebsites/string_pathinfo.h
+    snapwebsites/string_replace.h
+    snapwebsites/tcp_client_server.h
+    snapwebsites/tokenize_string.h
+    snapwebsites/udp_client_server.h
+    snapwebsites/version.h.in
+    snapwebsites/xslt.h
+)
+
 add_library( ${PROJECT_NAME} SHARED
+    ${HEADERS}
     addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
     cache_control.cpp                           # parse / handle Cache-Control settings
     chownnm.cpp                                 # chown using user and group names instead of uid/gid
