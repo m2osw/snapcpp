@@ -59,7 +59,8 @@ then
     then
         openssl req -newkey rsa:2048 \
            -nodes -keyout $SNAPSSL/snapcommunicator.key \
-           -x509 -days 3650 -out $SNAPSSL/snapcommunicator.crt
+           -x509 -days 3650 -out $SNAPSSL/snapcommunicator.crt \
+           -subj "/C=US/ST=California/L=Sacramento/O=Snap/OU=Website/CN=snap.website"
     fi
 fi
 
