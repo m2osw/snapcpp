@@ -1,8 +1,8 @@
-snapcommunicator (1.0.10.6~xenial) xenial; urgency=high
+snapcommunicator (1.0.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-443: Updated the openssl reg command to use -subj.
 
- -- Build Server <build@m2osw.com>  Wed, 14 Sep 2016 16:33:21 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 14:12:49 -0700
 
 snapcommunicator (1.0.10.0~xenial) xenial; urgency=high
 
