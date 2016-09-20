@@ -86,6 +86,9 @@ private:
     QString                 get_replication_factor();
     void                    set_replication_factor(QString const & replication_factor);
 
+    void					set_server_ssl( bool const enabled );
+    void					set_client_ssl( bool const enabled );
+
     snap_manager::manager * f_snap = nullptr;
     bool                    f_joining = false;
 };
