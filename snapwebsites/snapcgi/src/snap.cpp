@@ -430,12 +430,42 @@ int snap_cgi::process()
                     << body;
         return false;
     }
+
+    // check whether the user set use_ssl to false, if so we want to use
+    // a plain connection to snapserver
+    //
+    bool secure(true);
+    if(f_opt.is_defined("use_ssl"))
+    {
+        std::string const & use_ssl(f_opt.get_string("use_ssl"));
+        if(use_ssl == "false")
+        {
+            secure = false;
+        }
+        else if(use_ssl != "true")
+        {
+            SNAP_LOG_WARNING("\"use_ssl\" parameter is set to unknown value \"")(use_ssl)("\". Using \"true\" instead.");
+        }
+    }
+    if(secure
+    && f_address == "127.0.0.1")
+    {
+        // avoid SSL if we are connecting locally ("lo" interface is secure)
+        //
+        secure = false;
+    }
+
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 
-    SNAP_LOG_DEBUG("f_address=")(f_address.c_str())(", f_port=")(f_port);
+    SNAP_LOG_DEBUG("f_address=")(f_address)(", f_port=")(f_port);
 #endif
-    tcp_client_server::tcp_client socket(f_address, f_port);
+    tcp_client_server::bio_client socket(
+                  f_address
+                , f_port
+                , secure
+                        ? tcp_client_server::bio_client::mode_t::MODE_SECURE
+                        : tcp_client_server::bio_client::mode_t::MODE_PLAIN);
 
     std::string var;
     auto send_data([this, &var, &socket, request_method]()

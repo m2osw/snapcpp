@@ -53,8 +53,8 @@ install(
 ## snapcommunicator itself is not listed as a service otherwise.
 ##
 install(
-    FILES 
-        README.txt
+    FILES
+        README.md
 
     DESTINATION
         share/snapwebsites/services

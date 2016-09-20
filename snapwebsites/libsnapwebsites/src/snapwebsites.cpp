@@ -2141,10 +2141,11 @@ void server::stop(bool quitting)
  * This function is an implementation of the snap server so we can
  * handle new connections from various clients.
  */
-class listener_impl : public snap_communicator::snap_tcp_server_connection
+class listener_impl
+        : public snap_communicator::snap_tcp_server_connection
 {
 public:
-                                listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr);
+                                listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr);
 
     // snap_communicator::snap_tcp_server_connection implementation
     virtual void                process_accept();
@@ -2170,13 +2171,24 @@ private:
  * \param[in] s  The server we are listening for.
  * \param[in] addr  The address to listen on. Most often it is 0.0.0.0.
  * \param[in] port  The port to listen on.
+ * \param[in] certificate  The filename to a PEM file with a certificate.
+ * \param[in] private_key  The filename to a PEM file with the private key.
  * \param[in] max_connections  The maximum number of connections to keep
  *            waiting; if more arrive, refuse them until we are done with
  *            some existing connections.
  * \param[in] reuse_addr  Whether to let the OS reuse that socket immediately.
  */
-listener_impl::listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr)
-    : snap_tcp_server_connection(addr, port, "", "", tcp_client_server::bio_server::mode_t::MODE_PLAIN, max_connections, reuse_addr)
+listener_impl::listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr)
+    : snap_tcp_server_connection(
+                      addr
+                    , port
+                    , certificate
+                    , private_key
+                    , (certificate.empty() && private_key.empty()) || addr == "127.0.0.1"
+                            ? tcp_client_server::bio_server::mode_t::MODE_PLAIN
+                            : tcp_client_server::bio_server::mode_t::MODE_SECURE
+                    , max_connections
+                    , reuse_addr)
     , f_server(s)
 {
     non_blocking();
@@ -2297,6 +2309,11 @@ void server::listen()
         }
     }
 
+    // get the SSL certificate and private key paths
+    //
+    std::string const certificate(f_parameters["ssl_certificate"]);
+    std::string const private_key(f_parameters["ssl_private_key"]);
+
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
@@ -2324,7 +2341,7 @@ void server::listen()
     // auto-close is set to false because the accept() is not directly used
     // on the tcp_server object
     //
-    g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, max_pending_connections, true));
+    g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, certificate, private_key, max_pending_connections, true));
     g_connection->f_listener->set_name("server listener");
     g_connection->f_listener->set_priority(30);
     g_connection->f_communicator->add_connection(g_connection->f_listener);

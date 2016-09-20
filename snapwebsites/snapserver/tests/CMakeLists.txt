@@ -194,40 +194,6 @@ if(CATCH_FOUND)
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-    ##
-    ## Test a client/server via snap_communicator to see whether shutdown()
-    ## has the same effect in the parent as it has in the client
-    ##
-    project(test_shutdown_server)
-    add_executable( ${PROJECT_NAME}
-        ${SNAP_TESTS}
-        test_shutdown_server.cpp
-    )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
-    project(test_shutdown_client)
-    add_executable( ${PROJECT_NAME}
-        ${SNAP_TESTS}
-        test_shutdown_client.cpp
-    )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
 else(CATCH_FOUND)
 
     # You may use 'apt-get install catch' under Ubuntu

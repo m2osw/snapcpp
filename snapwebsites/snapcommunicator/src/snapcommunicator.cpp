@@ -1429,8 +1429,8 @@ public:
      * \param[in] server_name  The name of the server we are running on
      *                         (i.e. generally your hostname.)
      */
-    service_connection(snap_communicator_server::pointer_t cs, int socket, QString const & server_name)
-        : snap_tcp_server_client_message_connection(socket)
+    service_connection(snap_communicator_server::pointer_t cs, tcp_client_server::bio_client::pointer_t client, QString const & server_name)
+        : snap_tcp_server_client_message_connection(client)
         , base_connection(cs)
         , f_server_name(server_name)
         //, f_address(get_client_addr_port(), "tcp")   // TODO: see if we could instead have a get address which returns a sockaddr_in[6] or even have the snap_addr::addr in our tcp_client_server classes
@@ -1594,16 +1594,30 @@ public:
      * The listener creates a new TCP server to listen for incoming
      * TCP connection.
      *
+     * \warning
+     * At this time the \p max_connections parameter is ignored.
+     *
      * \param[in] addr  The address to listen on. Most often it is 0.0.0.0.
      * \param[in] port  The port to listen on.
+     * \param[in] certificate  The filename of a PEM file with a certificate.
+     * \param[in] private_key  The filename of a PEM file with a private key.
      * \param[in] max_connections  The maximum number of connections to keep
      *            waiting; if more arrive, refuse them until we are done with
      *            some existing connections.
      * \param[in] local  Whether this connection expects local services only.
      * \param[in] server_name  The name of the server running this instance.
      */
-    listener(snap_communicator_server::pointer_t cs, std::string const & addr, int port, int max_connections, bool local, QString const & server_name)
-        : snap_tcp_server_connection(addr, port, max_connections, true, false)
+    listener(snap_communicator_server::pointer_t cs, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool local, QString const & server_name)
+        : snap_tcp_server_connection(
+                          addr
+                        , port
+                        , certificate
+                        , private_key
+                        , certificate.empty() && private_key.empty()
+                                ? tcp_client_server::bio_server::mode_t::MODE_PLAIN
+                                : tcp_client_server::bio_server::mode_t::MODE_SECURE
+                        , max_connections
+                        , true)
         , f_communicator_server(cs)
         , f_local(local)
         , f_server_name(server_name)
@@ -1616,8 +1630,8 @@ public:
         // a new client just connected, create a new service_connection
         // object and add it to the snap_communicator object.
         //
-        int const new_socket(accept());
-        if(new_socket < 0)
+        tcp_client_server::bio_client::pointer_t const new_client(accept());
+        if(new_client == nullptr)
         {
             // an error occurred, report in the logs
             int const e(errno);
@@ -1625,14 +1639,14 @@ public:
             return;
         }
 
-        service_connection::pointer_t connection(new service_connection(f_communicator_server, new_socket, f_server_name));
+        service_connection::pointer_t connection(new service_connection(f_communicator_server, new_client, f_server_name));
 
         // TBD: is that a really weak test?
         //
         // TODO: use the snap::addr class and use the type of IP address
         //       instead of what we have here
         //
-        // XXX: add support for IPv6
+        // XXX: add support for IPv6 (automatic with snap::addr?)
         //
         std::string const addr(connection->get_client_addr());
         if(f_local)
@@ -1936,6 +1950,7 @@ void snap_communicator_server::init()
     // local
     {
         // TODO: convert to use the 'addr' class instead
+        //       and properly accept all local addresses (i.e. 127.0.0.0/8)
         QString addr("127.0.0.1");
         int port(4040);
         tcp_client_server::get_addr_port(f_server->get_parameter("local_listen"), addr, port, "tcp");
@@ -1947,7 +1962,7 @@ void snap_communicator_server::init()
 
         // make this listener the local listener
         //
-        f_local_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, true, f_server_name));
+        f_local_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, std::string(), std::string(), max_pending_connections, true, f_server_name));
         f_local_listener->set_name("snap communicator local listener");
         f_communicator->add_connection(f_local_listener);
     }
@@ -1961,8 +1976,15 @@ void snap_communicator_server::init()
         //
         if(listen_addr.get_network_type() != snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK)
         {
+            // remote connections may make use of SSL, check whether there
+            // are certificate and private key files defined (by default
+            // there are)
+            //
+            std::string const certificate(f_server->get_parameter("ssl_certificate").toUtf8().data());
+            std::string const private_key(f_server->get_parameter("ssl_private_key").toUtf8().data());
+
             f_public_ip = listen_addr.get_ipv4or6_string();
-            f_listener.reset(new listener(shared_from_this(), f_public_ip, listen_addr.get_port(), max_pending_connections, false, f_server_name));
+            f_listener.reset(new listener(shared_from_this(), f_public_ip, listen_addr.get_port(), certificate, private_key, max_pending_connections, false, f_server_name));
             f_listener->set_name("snap communicator listener");
             f_communicator->add_connection(f_listener);
         }

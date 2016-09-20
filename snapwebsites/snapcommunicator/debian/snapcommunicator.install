@@ -1,4 +1,5 @@
 usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
-conf/snapcommunicator.properties conf/snapcommunicator.conf etc/snapwebsites/
+conf/snapcommunicator.properties conf/snapcommunicator.conf etc/snapwebsites/.
+conf/ssl-README.md etc/snapwebsites/ssl/.

@@ -1171,11 +1171,7 @@ pid_t watchdog_child::get_child_pid() const
 void watchdog_child::exit(int code)
 {
     // make sure the socket data is pushed to the caller
-    if(f_socket != -1)
-    {
-        close(f_socket);
-        f_socket = -1;
-    }
+    f_client.reset();
 
     server::exit(code);
     NOTREACHED();

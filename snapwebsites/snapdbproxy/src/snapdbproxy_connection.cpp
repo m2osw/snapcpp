@@ -110,12 +110,12 @@ pid_t gettid()
 
 
 
-snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int & s, QString const & cassandra_host_list, int cassandra_port)
+snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t client, QString const & cassandra_host_list, int cassandra_port)
     : snap_runner("snapdbproxy_connection")
     //, f_proxy()
     , f_session(session)
     //, f_cursors() -- auto-init
-    , f_socket(s)
+    , f_client(client)
     , f_cassandra_host_list(cassandra_host_list)
     , f_cassandra_port(cassandra_port)
 {
@@ -143,12 +143,12 @@ void snapdbproxy_connection::run()
     // let the other process push the whole order before moving forward
     //sched_yield();
 
-    int const socket_on_entry(f_socket);
-    SNAP_LOG_TRACE("starting new snapdbproxy connection thread (")(f_socket)(").");
+    int const socket_on_entry(f_client ? f_client->get_socket() : -1);
+    SNAP_LOG_TRACE("starting new snapdbproxy connection thread (socket: ")(socket_on_entry)(").");
 
     try
     {
-        do
+        while(f_client != nullptr);
         {
             // wait for an order
             //
@@ -209,18 +209,16 @@ void snapdbproxy_connection::run()
                 //
                 if(order.validOrder())
                 {
-                    SNAP_LOG_TRACE("snapdbproxy connection socket is gone (")(f_socket)(").");
+                    SNAP_LOG_TRACE("snapdbproxy connection socket is gone (")(f_client ? f_client->get_socket() : -1)(").");
                 }
                 else
                 {
-                    SNAP_LOG_TRACE("snapdbproxy received an invalid order (")(f_socket)(").");
+                    SNAP_LOG_TRACE("snapdbproxy received an invalid order (")(f_client ? f_client->get_socket() : -1)(").");
                 }
 
-                snap::NOTUSED(::close(f_socket));
-                f_socket = -1;
+                f_client.reset();
             }
         }
-        while(f_socket != -1);
     }
     catch(std::exception const & e)
     {
@@ -269,7 +267,7 @@ void snapdbproxy_connection::run()
  */
 ssize_t snapdbproxy_connection::read(void * buf, size_t count)
 {
-    if(f_socket == -1)
+    if(f_client == nullptr)
     {
         return -1L;
     }
@@ -286,7 +284,7 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
     size_t size(0);
     for(;;)
     {
-        ssize_t const r(::read(f_socket, buf, count));
+        ssize_t const r(f_client->read(reinterpret_cast<char *>(buf), count));
         if(r < 0)
         {
             int const e(errno);
@@ -311,7 +309,7 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
             // (this is when we receive a return value of 0)
             //
             struct pollfd fd;
-            fd.fd = f_socket;
+            fd.fd = f_client->get_socket();
             fd.events = POLLIN | POLLPRI | POLLRDHUP | POLLHUP;
             snap::NOTUSED(poll(&fd, 1, 0));
             if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
@@ -359,7 +357,7 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
  */
 ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
 {
-    if(f_socket == -1)
+    if(f_client == nullptr)
     {
         return -1L;
     }
@@ -376,7 +374,7 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
     size_t size(0);
     for(;;)
     {
-        ssize_t const r(::write(f_socket, buf, count));
+        ssize_t const r(::write(f_client->get_socket(), buf, count));
         if(r < 0)
         {
             int const e(errno);
@@ -401,7 +399,7 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
             // (this is when we receive a return value of 0)
             //
             struct pollfd fd;
-            fd.fd = f_socket;
+            fd.fd = f_client->get_socket();
             fd.events = POLLOUT | POLLRDHUP | POLLHUP;
             snap::NOTUSED(poll(&fd, 1, 0));
             if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
@@ -419,7 +417,10 @@ void snapdbproxy_connection::kill()
     // parent thread wants to quit, tell the child to exit ASAP
     // by partially shutting down the socket
     //
-    snap::NOTUSED(::shutdown(f_socket, SHUT_RD));
+    if(f_client != nullptr)
+    {
+        snap::NOTUSED(::shutdown(f_client->get_socket(), SHUT_RD));
+    }
 }
 
 
@@ -496,8 +497,7 @@ void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const &
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        snap::NOTUSED(::close(f_socket));
-        f_socket = -1;
+        f_client.reset();
     }
 }
 
@@ -527,8 +527,7 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
 
     if(!f_proxy.sendResult(*this, result))
     {
-        snap::NOTUSED(::close(f_socket));
-        f_socket = -1;
+        f_client.reset();
     }
 }
 
@@ -577,8 +576,7 @@ void snapdbproxy_connection::fetch_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        snap::NOTUSED(::close(f_socket));
-        f_socket = -1;
+        f_client.reset();
     }
 }
 
@@ -599,8 +597,7 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        snap::NOTUSED(::close(f_socket));
-        f_socket = -1;
+        f_client.reset();
     }
 
     // now actually do the clean up
@@ -639,8 +636,7 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        snap::NOTUSED(::close(f_socket));
-        f_socket = -1;
+        f_client.reset();
     }
 }
 
@@ -681,8 +677,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        snap::NOTUSED(::close(f_socket));
-        f_socket = -1;
+        f_client.reset();
     }
 }
 
