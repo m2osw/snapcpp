@@ -1,3 +1,9 @@
+snapdbproxy (1.0.12.0~xenial) xenial; urgency=high
+
+  * SNAP-450: Reintroduced the f_socket so kill() works safely.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 20 Sep 2016 23:00:09 -0700
+
 snapdbproxy (1.0.11.0~xenial) xenial; urgency=high
 
   * SNAP-450: Removed debug trace and fixed the while() by removing the comma.

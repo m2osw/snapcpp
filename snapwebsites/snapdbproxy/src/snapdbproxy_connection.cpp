@@ -116,6 +116,7 @@ snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::p
     , f_session(session)
     //, f_cursors() -- auto-init
     , f_client(client)
+    , f_socket(f_client->get_socket())
     , f_cassandra_host_list(cassandra_host_list)
     , f_cassandra_port(cassandra_port)
 {
@@ -141,9 +142,11 @@ snapdbproxy_connection::~snapdbproxy_connection()
 void snapdbproxy_connection::run()
 {
     // let the other process push the whole order before moving forward
+    // (this made no difference in the potential slowness on various
+    // computers so I did not keep it)
     //sched_yield();
 
-    int const socket_on_entry(f_client ? f_client->get_socket() : -1);
+    int const socket_on_entry(f_socket);
     SNAP_LOG_TRACE("starting new snapdbproxy connection thread (socket: ")(socket_on_entry)(").");
 
     try
@@ -209,13 +212,14 @@ void snapdbproxy_connection::run()
                 //
                 if(order.validOrder())
                 {
-                    SNAP_LOG_TRACE("snapdbproxy connection socket is gone (")(f_client ? f_client->get_socket() : -1)(").");
+                    SNAP_LOG_TRACE("snapdbproxy connection socket is gone (")(f_client != nullptr ? f_client->get_socket() : -1)(").");
                 }
                 else
                 {
-                    SNAP_LOG_TRACE("snapdbproxy received an invalid order (")(f_client ? f_client->get_socket() : -1)(").");
+                    SNAP_LOG_TRACE("snapdbproxy received an invalid order (")(f_client != nullptr ? f_client->get_socket() : -1)(").");
                 }
 
+                f_socket = -1;
                 f_client.reset();
             }
         }
@@ -418,9 +422,16 @@ void snapdbproxy_connection::kill()
     // parent thread wants to quit, tell the child to exit ASAP
     // by partially shutting down the socket
     //
-    if(f_client != nullptr)
+    if(f_socket != -1)
     {
-        snap::NOTUSED(::shutdown(f_client->get_socket(), SHUT_RD));
+        // Note: when we reach this function the socket may have been closed
+        //       already, the shutdown will just fail (note however that we
+        //       are safe from shutting down another socket since we just
+        //       checked whether it was not -1 so we did not accept another
+        //       socket in between and f_socket will either still be opened
+        //       or -1)
+        //
+        snap::NOTUSED(::shutdown(f_socket, SHUT_RD));
     }
 }
 
@@ -498,6 +509,7 @@ void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const &
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        f_socket = -1;
         f_client.reset();
     }
 }
@@ -528,6 +540,7 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
 
     if(!f_proxy.sendResult(*this, result))
     {
+        f_socket = -1;
         f_client.reset();
     }
 }
@@ -577,6 +590,7 @@ void snapdbproxy_connection::fetch_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        f_socket = -1;
         f_client.reset();
     }
 }
@@ -598,6 +612,7 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        f_socket = -1;
         f_client.reset();
     }
 
@@ -637,6 +652,7 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        f_socket = -1;
         f_client.reset();
     }
 }
@@ -678,6 +694,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
+        f_socket = -1;
         f_client.reset();
     }
 }

@@ -56,6 +56,10 @@
 #include <QtCassandra/QCassandraOrder.h>
 #include <QtCassandra/QCassandraProxy.h>
 
+// C++
+//
+#include <atomic>
+
 
 class snapdbproxy;
 
@@ -176,6 +180,7 @@ private:
     QtCassandra::QCassandraSession::pointer_t   f_session;
     std::vector<cursor_t>                       f_cursors;
     tcp_client_server::bio_client::pointer_t    f_client;
+    std::atomic<int>                            f_socket /* = -1*/;
     QString                                     f_cassandra_host_list = "localhost";
     int                                         f_cassandra_port = 9042;
 };
