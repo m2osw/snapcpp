@@ -16,6 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// make sure we use OpenSSL with multi-thread support
+// (TODO: move to .cpp once we have the impl!)
+#define OPENSSL_THREAD_DEFINES
+
 #include <snapwebsites/addr.h>
 
 #include <QString>
@@ -56,6 +60,12 @@ class tcp_client_server_initialization_error : public tcp_client_server_runtime_
 {
 public:
     tcp_client_server_initialization_error(std::string const & errmsg) : tcp_client_server_runtime_error(errmsg) {}
+};
+
+class tcp_client_server_initialization_missing_error : public tcp_client_server_runtime_error
+{
+public:
+    tcp_client_server_initialization_missing_error(std::string const & errmsg) : tcp_client_server_runtime_error(errmsg) {}
 };
 
 

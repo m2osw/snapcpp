@@ -34,6 +34,10 @@
 #include "snapwebsites/poison.h"
 
 
+#ifndef OPENSSL_THREADS
+#error "OPENSSL_THREADS is not defined. Snap! requires support for multiple threads in OpenSSL."
+#endif
+
 namespace tcp_client_server
 {
 
@@ -83,6 +87,154 @@ public:
 };
 
 
+/** \brief Data handled by each lock.
+ *
+ * This function holds the data handled on a per lock basis.
+ * Even if your daemon is not using multiple threads, this
+ * is likely to kick in.
+ */
+class crypto_lock_t
+{
+public:
+    typedef std::vector<crypto_lock_t>  vector_t;
+
+                        crypto_lock_t()
+                        {
+                            pthread_mutex_init(&f_mutex, nullptr);
+                        }
+
+                        ~crypto_lock_t()
+                        {
+                            pthread_mutex_destroy(&f_mutex);
+                        }
+
+    void                lock()
+                        {
+                            pthread_mutex_lock(&f_mutex);
+                        }
+
+    void                unlock()
+                        {
+                            pthread_mutex_unlock(&f_mutex);
+                        }
+
+private:
+    pthread_mutex_t     f_mutex = pthread_mutex_t();
+};
+
+
+/** \brief The vector of locks.
+ *
+ * This function is initialized by the crypto_thread_setup().
+ *
+ * It is defined as a pointer in case someone was to try to access this
+ * pointer before entering main().
+ */
+crypto_lock_t::vector_t *   g_locks = nullptr;
+
+
+/** \brief Retrieve the system thread identifier.
+ *
+ * This function is used by the OpenSSL library to attach an internal thread
+ * identifier (\p tid) to a system thread identifier.
+ *
+ * \param[in] tid  The crypto internal thread identifier.
+ */
+void pthreads_thread_id(CRYPTO_THREADID * tid)
+{
+    CRYPTO_THREADID_set_numeric(tid, static_cast<unsigned long>(pthread_self()));
+}
+
+
+/** \brief Handle locks and unlocks.
+ *
+ * This function is a callback used to lock and unlock mutexes as required.
+ *
+ * \param[in] mode  Whether lock or unlock in read or write mode.
+ * \param[in] type  The "type" of lock (i.e. the index).
+ * \param[in] file  The filename of the source asking for a lock/unlock.
+ * \param[in] line  The line number in file where the call was made.
+ */
+void pthreads_locking_callback(int mode, int type, char const * file, int line)
+{
+    snap::NOTUSED(file);
+    snap::NOTUSED(line);
+
+    if(g_locks == nullptr)
+    {
+        throw tcp_client_server_initialization_missing_error("g_locks was not initialized");
+    }
+
+/*
+# ifdef undef
+    BIO_printf(bio_err, "thread=%4d mode=%s lock=%s %s:%d\n",
+               CRYPTO_thread_id(),
+               (mode & CRYPTO_LOCK) ? "l" : "u",
+               (type & CRYPTO_READ) ? "r" : "w", file, line);
+# endif
+    if (CRYPTO_LOCK_SSL_CERT == type)
+            BIO_printf(bio_err,"(t,m,f,l) %ld %d %s %d\n",
+                       CRYPTO_thread_id(),
+                       mode,file,line);
+*/
+
+    // Note: at this point we ignore READ | WRITE because we do not have
+    //       such a concept with a simple mutex; we could take those in
+    //       account with a semaphore though.
+    //
+    if((mode & CRYPTO_LOCK) != 0)
+    {
+        (*g_locks)[type].lock();
+    }
+    else
+    {
+        (*g_locks)[type].unlock();
+    }
+}
+
+
+/** \brief This function is called once on initialization.
+ *
+ * This function is called when the bio_initialize() function. It is
+ * expected that the bio_initialize() function is called once by the
+ * main thread before any other thread has a chance to do so.
+ */
+void crypto_thread_setup()
+{
+    if(g_locks != nullptr)
+    {
+        throw tcp_client_server_initialization_error("crypto_thread_setup() called for the second time. This usually means two threads are initializing the BIO environment simultaneously.");
+    }
+
+    g_locks = new crypto_lock_t::vector_t(CRYPTO_num_locks());
+
+    CRYPTO_THREADID_set_callback(pthreads_thread_id);
+    CRYPTO_set_locking_callback(pthreads_locking_callback);
+}
+
+
+/** \brief This function cleans up the thread setup.
+ *
+ * This function could be called to clean up the setup created to support
+ * multiple threads running with the OpenSSL library.
+ *
+ * \note
+ * At this time this function never gets called.
+ */
+void thread_cleanup()
+{
+    CRYPTO_set_locking_callback(nullptr);
+
+    delete g_locks;
+    g_locks = nullptr;
+}
+
+
+
+
+
+
+
 /** \brief Whether the bio_initialize() function was already called.
  *
  * This flag is used to know whether the bio_initialize() function was
@@ -114,14 +266,21 @@ void bio_initialize()
 
     // TBD: should we call the load string functions only when we
     //      are about to generate an error?
+    //
     ERR_load_crypto_strings();
     ERR_load_SSL_strings();
 
     // TODO: define a way to only define safe algorithms?
-    //       (it looks like we can force TLSv1 below at least)
+    //       (it looks like we can force TLSv1.2 below at least)
+    //
     OpenSSL_add_all_algorithms();
 
     // TBD: need a PRNG seeding before creating a new SSL context?
+
+    // then initialize the library so it works in a multithreaded
+    // environment
+    //
+    crypto_thread_setup();
 }
 
 
@@ -170,7 +329,7 @@ void bio_log_errors()
         // we do not duplicate the [pid] and "error" but include all the
         // other fields
         //
-        SNAP_LOG_ERROR("[")
+        SNAP_LOG_ERROR(" OpenSSL: [")
                       (bio_errno)
                       ("]:[")
                       (lib_name)
