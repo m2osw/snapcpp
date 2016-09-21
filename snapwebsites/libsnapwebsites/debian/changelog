@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.8.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Add test to see whether the error occurs over and over again.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:34:49 -0700
+
 libsnapwebsites (1.1.7.0~xenial) xenial; urgency=high
 
   * SNAP-447: Handle case where the error queue never gets empty.

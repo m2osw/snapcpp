@@ -294,7 +294,9 @@ void bio_log_errors()
     // allow for up to 5 errors in one go, but we have a HUGE problem
     // at this time as in some cases the same error is repeated forever
     //
-    for(int cnt(0); cnt < 5; ++cnt)
+    //for(int cnt(0); cnt < 5; ++cnt)
+    SNAP_LOG_ERROR("A new BIO error occurred...");
+    for(;;)
     {
         char const * filename(nullptr);
         int line(0);
