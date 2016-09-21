@@ -1,3 +1,10 @@
+snapcommunicator (1.0.14.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Actually made the GOSSIP and remote connections use SSL when
+    required to be that way.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 12:34:49 -0700
+
 snapcommunicator (1.0.13.0~xenial) xenial; urgency=high
 
   * SNAP-110: Noticed that the f_local_services string was never set.
