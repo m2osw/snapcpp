@@ -4377,7 +4377,7 @@ QString snap_communicator_server::get_services_heard_of() const
  */
 void snap_communicator_server::add_neighbors(QString const & new_neighbors)
 {
-SNAP_LOG_WARNING("Add neighbor: ")(neighbor);
+SNAP_LOG_WARNING("Add neighbor: ")(new_neighbors);
     // first time initialize and read the cache file
     //
     read_neighbors();
