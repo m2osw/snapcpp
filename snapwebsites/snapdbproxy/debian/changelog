@@ -1,3 +1,10 @@
+snapdbproxy (1.0.10.0~xenial) xenial; urgency=high
+
+  * SNAP-450: Added some debug to try to understand why it uses 100% CPU
+    on my test VM (local connections on 4042 it seems).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 20 Sep 2016 21:55:09 -0700
+
 snapdbproxy (1.0.9.0~xenial) xenial; urgency=high
 
   * SNAP-450: Bump version to see that the latest works properly.

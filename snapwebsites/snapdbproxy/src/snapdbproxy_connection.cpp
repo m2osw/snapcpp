@@ -150,6 +150,8 @@ void snapdbproxy_connection::run()
     {
         while(f_client != nullptr);
         {
+SNAP_LOG_TRACE("snapdbproxy_connection::run() looping again...");
+sleep(1);
             // wait for an order
             //
             QtCassandra::QCassandraOrder order(f_proxy.receiveOrder(*this));
@@ -316,9 +318,12 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
             {
                 // this happens all the time so we just use a trace on it
                 // (at first it was an error)
+                //
                 SNAP_LOG_TRACE("snapdbproxy_connection::read() attempted to read from a socket that is closed.");
                 return -1L;
             }
+SNAP_LOG_TRACE("snapdbproxy_connection::read() poll() returned...");
+sleep(1);
         }
     }
 }
