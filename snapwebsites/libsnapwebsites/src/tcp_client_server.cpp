@@ -125,6 +125,70 @@ void bio_initialize()
 }
 
 
+/** \brief Get all the error messages and output them in our logs.
+ *
+ * This function reads all existing errors from the OpenSSL library
+ * and send them to our logs.
+ */
+void bio_log_errors()
+{
+    for(;;)
+    {
+        char const * filename(nullptr);
+        int line(0);
+        char const * data(nullptr);
+        int flags(0);
+        unsigned long bio_errno(ERR_get_error_line_data(&filename, &line, &data, &flags));
+        if(bio_errno == 0)
+        {
+            // no more errors
+            //
+            return;
+        }
+
+        // get corresponding messages too
+        //
+        // Note: current OpenSSL documentation on Ubuntu says errmsg[]
+        //       should be at least 120 characters BUT the code actually
+        //       use a limit of 256...
+        //
+        char errmsg[256];
+        ERR_error_string_n(bio_errno, errmsg, sizeof(errmsg) / sizeof(errmsg[0]));
+        // WARNING: the ERR_error_string() function is NOT multi-thread safe
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        char const * lib_name(ERR_lib_error_string(ERR_GET_LIB(bio_errno)));
+        char const * func_name(ERR_func_error_string(ERR_GET_FUNC(bio_errno)));
+#pragma GCC diagnostic pop
+        char const * reason(ERR_reason_error_string(ERR_GET_REASON(bio_errno)));
+
+        // the format used by the OpenSSL library is as follow:
+        //
+        //     [pid]:error:[error code]:[library name]:[function name]:[reason string]:[file name]:[line]:[optional text message]
+        //
+        // we do not duplicate the [pid] and "error" but include all the
+        // other fields
+        //
+        SNAP_LOG_ERROR("[")
+                      (bio_errno)
+                      ("]:[")
+                      (lib_name)
+                      ("]:[")
+                      (func_name)
+                      ("]:[")
+                      (reason)
+                      ("]:[")
+                      (filename)
+                      ("]:[")
+                      (line)
+                      ("]:[")
+                      ((flags & ERR_TXT_STRING) != 0 && data != nullptr ? data : "(no details)")
+                      ("]");
+    }
+}
+
+
 /** \brief Free a BIO object.
  *
  * This deleter is used to make sure that the BIO object gets freed
@@ -913,7 +977,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(SSLv23_client_method()), ssl_ctx_deleter);
             if(!ssl_ctx)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed creating an SSL_CTX object");
             }
 
@@ -949,7 +1013,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             // TODO: allow client to set the path to certificates
             if(SSL_CTX_load_verify_locations(ssl_ctx.get(), NULL, "/etc/ssl/certs") != 1)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed loading verification certificates in an SSL_CTX object");
             }
 
@@ -957,7 +1021,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             std::shared_ptr<BIO> bio(BIO_new_ssl_connect(ssl_ctx.get()), bio_deleter);
             if(!bio)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing a BIO object");
             }
 
@@ -971,7 +1035,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             if(ssl == nullptr)
             {
                 // TBD: does this mean we would have a plain connection?
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed connecting BIO object with SSL_CTX object");
             }
 
@@ -992,14 +1056,14 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             // connect to the server (open the socket)
             if(BIO_do_connect(bio.get()) <= 0)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed connecting BIO object to server");
             }
 
             // encryption handshake
             if(BIO_do_handshake(bio.get()) != 1)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed establishing a secure BIO connection with server");
             }
 
@@ -1008,7 +1072,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             //
             if(SSL_get_peer_certificate(ssl) == nullptr)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("peer failed presenting a certificate for security verification");
             }
 
@@ -1020,7 +1084,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             {
                 if(mode != mode_t::MODE_SECURE)
                 {
-                    ERR_print_errors_fp(stderr);
+                    bio_log_errors();
                     throw tcp_client_server_initialization_error("peer certificate could not be verified");
                 }
                 SNAP_LOG_WARNING("connecting with SSL but certificate verification failed.");
@@ -1045,7 +1109,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             std::shared_ptr<BIO> bio(BIO_new(BIO_s_connect()), bio_deleter);
             if(!bio)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing a BIO object");
             }
 
@@ -1058,7 +1122,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             // connect to the server (open the socket)
             if(BIO_do_connect(bio.get()) <= 0)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed connecting BIO object to server");
             }
 
@@ -1351,7 +1415,7 @@ int bio_client::read(char * buf, size_t size)
     {
         // the BIO is not implemented
         // XXX: do we have to set errno?
-        ERR_print_errors_fp(stderr);
+        bio_log_errors();
         return -1;
     }
     if(r == -1 || r == 0)
@@ -1362,7 +1426,7 @@ int bio_client::read(char * buf, size_t size)
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
         // XXX: do we have to set errno?
-        ERR_print_errors_fp(stderr);
+        bio_log_errors();
         return -1;
     }
     return r;
@@ -1465,7 +1529,7 @@ int bio_client::write(char const * buf, size_t size)
     {
         // the BIO is not implemented
         // XXX: do we have to set errno?
-        ERR_print_errors_fp(stderr);
+        bio_log_errors();
         return -1;
     }
     if(r == -1 || r == 0)
@@ -1476,7 +1540,7 @@ int bio_client::write(char const * buf, size_t size)
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
         // XXX: do we have to set errno?
-        ERR_print_errors_fp(stderr);
+        bio_log_errors();
         return -1;
     }
     BIO_flush(f_bio.get());
@@ -1573,7 +1637,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(SSLv23_server_method()), ssl_ctx_deleter);
             if(!ssl_ctx)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed creating an SSL_CTX server object");
             }
 
@@ -1586,7 +1650,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             //
             if(!SSL_CTX_use_certificate_chain_file(ssl_ctx.get(), certificate.c_str()))
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing an SSL_CTX server object certificate");
             }
 
@@ -1599,7 +1663,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
                 //
                 if(!SSL_CTX_use_RSAPrivateKey_file(ssl_ctx.get(), private_key.c_str(), SSL_FILETYPE_PEM))
                 {
-                    ERR_print_errors_fp(stderr);
+                    bio_log_errors();
                     throw tcp_client_server_initialization_error("failed initializing an SSL_CTX server object private key");
                 }
             }
@@ -1608,7 +1672,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             //
             if(!SSL_CTX_check_private_key(ssl_ctx.get()))
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing an SSL_CTX server object private key");
             }
 
@@ -1617,7 +1681,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             std::unique_ptr<BIO, void (*)(BIO *)> bio(BIO_new_ssl(ssl_ctx.get(), 0), bio_deleter);
             if(!bio)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing a BIO server object");
             }
 
@@ -1632,7 +1696,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             if(ssl == nullptr)
             {
                 // TBD: does this mean we would have a plain connection?
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed connecting BIO object with SSL_CTX object");
             }
 
@@ -1647,7 +1711,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             std::shared_ptr<BIO> listen(BIO_new_accept(addr_port.get_ipv4or6_string(true).c_str()), bio_deleter);
             if(!listen)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing a BIO server object");
             }
 
@@ -1678,7 +1742,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             int const r(BIO_do_accept(listen.get()));
             if(r <= 0)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing the BIO server socket to listen for client connections");
             }
 
@@ -1695,7 +1759,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             std::shared_ptr<BIO> listen(BIO_new_accept(addr_port.get_ipv4or6_string(true).c_str()));
             if(!listen)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing a BIO server object");
             }
 
@@ -1711,7 +1775,7 @@ bio_server::bio_server(snap_addr::addr const & addr_port, int max_connections, b
             int const r(BIO_do_accept(listen.get()));
             if(r <= 0)
             {
-                ERR_print_errors_fp(stderr);
+                bio_log_errors();
                 throw tcp_client_server_initialization_error("failed initializing the BIO server socket to listen for client connections");
             }
 
@@ -1782,7 +1846,7 @@ bio_client::pointer_t bio_server::accept()
     {
         // TBD: should we instead return an empty shared pointer in this case?
         //
-        ERR_print_errors_fp(stderr);
+        bio_log_errors();
         throw tcp_client_server_runtime_error("failed accepting a new BIO");
     }
 
@@ -1791,7 +1855,7 @@ bio_client::pointer_t bio_server::accept()
     std::shared_ptr<BIO> bio(BIO_pop(f_listen.get()), bio_deleter);
     if(!bio)
     {
-        ERR_print_errors_fp(stderr);
+        bio_log_errors();
         throw tcp_client_server_runtime_error("failed retrieving the accepted BIO");
     }
 
