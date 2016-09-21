@@ -265,10 +265,10 @@ void bio_initialize()
     SSL_library_init();
 
     // TBD: should we call the load string functions only when we
-    //      are about to generate an error?
+    //      are about to generate the first error?
     //
-    //ERR_load_crypto_strings();
-    //ERR_load_SSL_strings();
+    ERR_load_crypto_strings();
+    ERR_load_SSL_strings();
     SSL_load_error_strings();
 
     // TODO: define a way to only define safe algorithms?
@@ -295,7 +295,6 @@ void bio_log_errors()
     // allow for up to 5 errors in one go, but we have a HUGE problem
     // at this time as in some cases the same error is repeated forever
     //
-    SNAP_LOG_ERROR("A new BIO error occurred...");
     for(;;)
     {
         char const * filename(nullptr);
@@ -337,7 +336,7 @@ void bio_log_errors()
         // we do not duplicate the [pid] and "error" but include all the
         // other fields
         //
-        SNAP_LOG_ERROR(" OpenSSL: [")
+        SNAP_LOG_ERROR("OpenSSL: [")
                       (bio_errno) // should be shown in hex...
                       ("/")
                       (lib_num)
@@ -1591,7 +1590,6 @@ int bio_client::read(char * buf, size_t size)
     if(r <= -2)
     {
         // the BIO is not implemented
-SNAP_LOG_WARNING("should r <= -2 be fatal and close the connection?! r == ")(r);
         bio_log_errors();
         errno = EIO;
         return -1;
@@ -1600,17 +1598,14 @@ SNAP_LOG_WARNING("should r <= -2 be fatal and close the connection?! r == ")(r);
     {
         if(BIO_should_retry(f_bio.get()))
         {
-SNAP_LOG_WARNING("we get r == -1 or 0 but system says to retry... r == ")(r);
             errno = EAGAIN;
             return 0;
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
-SNAP_LOG_WARNING("we got r == -1 or 0 -- retry later? ")(r);
         bio_log_errors();
         errno = EIO;
         return -1;
     }
-SNAP_LOG_WARNING("we data from pipe r == ")(r);
     return r;
 }
 
@@ -1637,7 +1632,7 @@ SNAP_LOG_WARNING("we data from pipe r == ")(r);
  *
  * \return The number of bytes read from the socket, or -1 on errors.
  *         If the function returns 0 or more, then the \p line parameter
- *         represents the characters read on the network.
+ *         represents the characters read on the network without the '\n'.
  *
  * \sa read()
  */
@@ -1711,7 +1706,6 @@ int bio_client::write(char const * buf, size_t size)
     if(r <= -2)
     {
         // the BIO is not implemented
-SNAP_LOG_WARNING("WRITE: should r <= -2 be fatal and close the connection?! r == ")(r);
         bio_log_errors();
         errno = EIO;
         return -1;
@@ -1720,18 +1714,15 @@ SNAP_LOG_WARNING("WRITE: should r <= -2 be fatal and close the connection?! r ==
     {
         if(BIO_should_retry(f_bio.get()))
         {
-SNAP_LOG_WARNING("WRITE: got to retry... r == ")(r);
             errno = EAGAIN;
             return 0;
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
-SNAP_LOG_WARNING("WRITE: got an ephemeral error? r == ")(r);
         bio_log_errors();
         errno = EIO;
         return -1;
     }
     BIO_flush(f_bio.get());
-SNAP_LOG_WARNING("WRITE: got actual data!!! r == ")(r);
     return r;
 }
 
@@ -2037,7 +2028,6 @@ bio_client::pointer_t bio_server::accept()
         bio_log_errors();
         throw tcp_client_server_runtime_error("failed accepting a new BIO");
     }
-SNAP_LOG_WARNING("BIO_do_accept() worked!");
 
     // retrieve the new connection by "popping it"
     //
@@ -2047,7 +2037,6 @@ SNAP_LOG_WARNING("BIO_do_accept() worked!");
         bio_log_errors();
         throw tcp_client_server_runtime_error("failed retrieving the accepted BIO");
     }
-SNAP_LOG_WARNING("BIO_pop() worked!");
 
     // mark the new connection with the SO_KEEPALIVE flag
     if(f_keepalive)
@@ -2061,7 +2050,6 @@ SNAP_LOG_WARNING("BIO_pop() worked!");
         }
     }
 
-SNAP_LOG_WARNING("return a new client...");
     return bio_client::pointer_t(new bio_client(bio));
 }
 
