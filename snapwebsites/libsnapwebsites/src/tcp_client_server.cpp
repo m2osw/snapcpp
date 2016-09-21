@@ -294,7 +294,6 @@ void bio_log_errors()
     // allow for up to 5 errors in one go, but we have a HUGE problem
     // at this time as in some cases the same error is repeated forever
     //
-    //for(int cnt(0); cnt < 5; ++cnt)
     SNAP_LOG_ERROR("A new BIO error occurred...");
     for(;;)
     {
@@ -1327,6 +1326,9 @@ bio_client::bio_client(std::shared_ptr<BIO> bio)
         // TODO: somehow this does not seem to give us any information
         //       about the cipher and other details...
         //
+        //       this is because it is (way) too early, we did not even
+        //       receive the HELLO yet!
+        //
         SSL * ssl(nullptr);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -1588,6 +1590,7 @@ int bio_client::read(char * buf, size_t size)
     {
         // the BIO is not implemented
         // XXX: do we have to set errno?
+SNAP_LOG_WARNING("should r <= -2 be fatal and close the connection?! r == ")(r);
         bio_log_errors();
         return -1;
     }
@@ -1595,13 +1598,16 @@ int bio_client::read(char * buf, size_t size)
     {
         if(BIO_should_retry(f_bio.get()))
         {
+SNAP_LOG_WARNING("we get r == -1 or 0 but system says to retry... r == ")(r);
             return 0;
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
         // XXX: do we have to set errno?
+SNAP_LOG_WARNING("we got r == -1 or 0 -- retry later? ")(r);
         bio_log_errors();
         return -1;
     }
+SNAP_LOG_WARNING("we data from pipe r == ")(r);
     return r;
 }
 
@@ -1702,6 +1708,7 @@ int bio_client::write(char const * buf, size_t size)
     {
         // the BIO is not implemented
         // XXX: do we have to set errno?
+SNAP_LOG_WARNING("WRITE: should r <= -2 be fatal and close the connection?! r == ")(r);
         bio_log_errors();
         return -1;
     }
@@ -1709,14 +1716,17 @@ int bio_client::write(char const * buf, size_t size)
     {
         if(BIO_should_retry(f_bio.get()))
         {
+SNAP_LOG_WARNING("WRITE: got to retry... r == ")(r);
             return 0;
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
         // XXX: do we have to set errno?
+SNAP_LOG_WARNING("WRITE: got an ephemeral error? r == ")(r);
         bio_log_errors();
         return -1;
     }
     BIO_flush(f_bio.get());
+SNAP_LOG_WARNING("WRITE: got actual data!!! r == ")(r);
     return r;
 }
 
@@ -2022,6 +2032,7 @@ bio_client::pointer_t bio_server::accept()
         bio_log_errors();
         throw tcp_client_server_runtime_error("failed accepting a new BIO");
     }
+SNAP_LOG_WARNING("BIO_do_accept() worked!");
 
     // retrieve the new connection by "popping it"
     //
@@ -2031,6 +2042,7 @@ bio_client::pointer_t bio_server::accept()
         bio_log_errors();
         throw tcp_client_server_runtime_error("failed retrieving the accepted BIO");
     }
+SNAP_LOG_WARNING("BIO_pop() worked!");
 
     // mark the new connection with the SO_KEEPALIVE flag
     if(f_keepalive)
@@ -2044,6 +2056,7 @@ bio_client::pointer_t bio_server::accept()
         }
     }
 
+SNAP_LOG_WARNING("return a new client...");
     return bio_client::pointer_t(new bio_client(bio));
 }
 
