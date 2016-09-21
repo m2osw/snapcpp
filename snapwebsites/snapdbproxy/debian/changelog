@@ -1,3 +1,9 @@
+snapdbproxy (1.1.0.1~xenial) xenial; urgency=high
+
+  * SNAP-440: added support for SSL to Cassandra.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:43 -0700
+
 snapdbproxy (1.0.8.5~xenial) xenial; urgency=high
 
   * Nightly build.

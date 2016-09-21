@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.0.1~xenial) xenial; urgency=high
+
+  * SNAP-440: added SSL support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:11 -0700
+
 snapmanagercgi (1.0.29.5~xenial) xenial; urgency=high
 
   * Nightly build.
