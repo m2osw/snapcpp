@@ -1,3 +1,9 @@
+snapcommunicator (1.0.15.0~xenial) xenial; urgency=high
+
+  * SNAP-352: Added test to eventually see why forgetting an IP fails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 16:20:49 -0700
+
 snapcommunicator (1.0.14.0~xenial) xenial; urgency=high
 
   * SNAP-443: Actually made the GOSSIP and remote connections use SSL when

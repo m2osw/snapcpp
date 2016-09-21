@@ -4377,6 +4377,7 @@ QString snap_communicator_server::get_services_heard_of() const
  */
 void snap_communicator_server::add_neighbors(QString const & new_neighbors)
 {
+SNAP_LOG_WARNING("Add neighbor: ")(neighbor);
     // first time initialize and read the cache file
     //
     read_neighbors();
@@ -4425,6 +4426,7 @@ void snap_communicator_server::add_neighbors(QString const & new_neighbors)
  */
 void snap_communicator_server::remove_neighbor(QString const & neighbor)
 {
+SNAP_LOG_WARNING("Forgetting neighbor: ")(neighbor);
     // remove the IP from the neighbors.txt file if still present there
     //
     if(f_all_neighbors.contains(neighbor))
