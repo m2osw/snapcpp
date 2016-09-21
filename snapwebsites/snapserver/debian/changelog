@@ -1,3 +1,9 @@
+snapserver (1.0.5.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Fixed the script testing whether a key was already generated.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 17:05:49 -0700
+
 snapserver (1.0.4.0~xenial) xenial; urgency=high
 
   * SNAP-443: Updated the openssl reg command to use -subj.

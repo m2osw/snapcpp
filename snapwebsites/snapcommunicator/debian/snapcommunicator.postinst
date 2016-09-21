@@ -55,7 +55,7 @@ then
     #
     SNAPSSL=/etc/snapwebsites/ssl
     if test ! -f $SNAPSSL/snapcommunicator.key \
-           -o -f $SNAPSSL/snapcommunicator.crt
+         -o ! -f $SNAPSSL/snapcommunicator.crt
     then
         openssl req -newkey rsa:2048 \
            -nodes -keyout $SNAPSSL/snapcommunicator.key \

@@ -27,7 +27,7 @@ then
     #
     SNAPSSL=/etc/snapwebsites/ssl
     if test ! -f $SNAPSSL/snapserver.key \
-           -o -f $SNAPSSL/snapserver.crt
+         -o ! -f $SNAPSSL/snapserver.crt
     then
         openssl req -newkey rsa:2048 \
            -nodes -keyout $SNAPSSL/snapserver.key \
