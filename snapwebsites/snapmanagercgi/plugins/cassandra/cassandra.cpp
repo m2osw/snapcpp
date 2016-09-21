@@ -593,7 +593,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                         , s.get_field_name()
                         , s.get_value()
                         , "Cassandra says that you should set this parameter to \"true\"."
-                         " However, when to true, the DROP TABLE and TRUNCATE commands"
+                         " However, when set to true, the DROP TABLE and TRUNCATE commands"
                          " become extremely slow because the database creates a snapshot"
                          " of the table before dropping or truncating it. We change this"
                          " parameter to \"false\" by default because if you DROP TABLE or"
