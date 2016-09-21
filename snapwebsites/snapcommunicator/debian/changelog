@@ -1,3 +1,9 @@
+snapcommunicator (1.0.12.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 21 Sep 2016 02:00:49 -0700
+
 snapcommunicator (1.0.12.0~xenial) xenial; urgency=high
 
   * SNAP-443: Fixed the script testing whether a key was already generated.
