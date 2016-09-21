@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.6.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-447: Handle case where the error queue never gets empty.
+  * SNAP-447: Show the broken up numbers so it makes it easy to read.
 
- -- Build Server <build@m2osw.com>  Wed, 21 Sep 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:08:49 -0700
 
 libsnapwebsites (1.1.6.0~xenial) xenial; urgency=high
 

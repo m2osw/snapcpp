@@ -291,7 +291,10 @@ void bio_initialize()
  */
 void bio_log_errors()
 {
-    for(;;)
+    // allow for up to 5 errors in one go, but we have a HUGE problem
+    // at this time as in some cases the same error is repeated forever
+    //
+    for(int cnt(0); cnt < 5; ++cnt)
     {
         char const * filename(nullptr);
         int line(0);
@@ -317,10 +320,13 @@ void bio_log_errors()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-        char const * lib_name(ERR_lib_error_string(ERR_GET_LIB(bio_errno)));
-        char const * func_name(ERR_func_error_string(ERR_GET_FUNC(bio_errno)));
+        int const lib_num(ERR_GET_LIB(bio_errno));
+        int const func_num(ERR_GET_FUNC(bio_errno));
 #pragma GCC diagnostic pop
-        char const * reason(ERR_reason_error_string(ERR_GET_REASON(bio_errno)));
+        char const * lib_name(ERR_lib_error_string(lib_num));
+        char const * func_name(ERR_func_error_string(func_num));
+        int const reason_num(ERR_GET_REASON(bio_errno));
+        char const * reason(ERR_reason_error_string(reason_num));
 
         // the format used by the OpenSSL library is as follow:
         //
@@ -330,7 +336,13 @@ void bio_log_errors()
         // other fields
         //
         SNAP_LOG_ERROR(" OpenSSL: [")
-                      (bio_errno)
+                      (bio_errno) // should be shown in hex...
+                      ("/")
+                      (lib_num)
+                      ("|")
+                      (func_num)
+                      ("|")
+                      (reason_num)
                       ("]:[")
                       (lib_name)
                       ("]:[")
