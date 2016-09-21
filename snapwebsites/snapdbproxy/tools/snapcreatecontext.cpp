@@ -84,7 +84,7 @@ int main(int argc, char * argv[])
 
         // connect to the Cassandra cluster
         //
-        if( config["use_ssl"] == "true" )
+        if( config["cassandra_use_ssl"] == "true" )
         {
             session->add_ssl_keys();
         }

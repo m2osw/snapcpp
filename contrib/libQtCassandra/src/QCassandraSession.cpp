@@ -279,6 +279,7 @@ void QCassandraSession::add_ssl_trusted_cert( const QString& cert )
     if( !f_ssl )
     {
         f_ssl.reset( cass_ssl_new(), CassTools::sslDeleter() );
+        cass_ssl_set_verify_flags( f_ssl.get(), CASS_SSL_VERIFY_PEER_CERT | CASS_SSL_VERIFY_PEER_IDENTITY );
     }
 
     // Add the trusted certificate (or chain) to the driver
