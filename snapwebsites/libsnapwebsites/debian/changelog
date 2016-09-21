@@ -1,8 +1,14 @@
+libsnapwebsites (1.1.10.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Actually set errno in bio_client because we check it later.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 10:36:49 -0700
+
 libsnapwebsites (1.1.9.0~xenial) xenial; urgency=high
 
   * SNAP-447: Adding debug in the read() of the client.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:34:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:59:49 -0700
 
 libsnapwebsites (1.1.8.0~xenial) xenial; urgency=high
 

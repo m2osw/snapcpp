@@ -3681,6 +3681,12 @@ void snap_communicator::snap_tcp_server_client_connection::close()
  */
 int snap_communicator::snap_tcp_server_client_connection::get_socket() const
 {
+    if(f_client == nullptr)
+    {
+        // client connection was closed
+        //
+        return -1;
+    }
     return f_client->get_socket();
 }
 

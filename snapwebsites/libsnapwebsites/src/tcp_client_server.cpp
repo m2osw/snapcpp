@@ -267,8 +267,9 @@ void bio_initialize()
     // TBD: should we call the load string functions only when we
     //      are about to generate an error?
     //
-    ERR_load_crypto_strings();
-    ERR_load_SSL_strings();
+    //ERR_load_crypto_strings();
+    //ERR_load_SSL_strings();
+    SSL_load_error_strings();
 
     // TODO: define a way to only define safe algorithms?
     //       (it looks like we can force TLSv1.2 below at least)
@@ -1582,6 +1583,7 @@ int bio_client::read(char * buf, size_t size)
 {
     if(!f_bio)
     {
+        errno = EBADF;
         return -1;
     }
 
@@ -1589,9 +1591,9 @@ int bio_client::read(char * buf, size_t size)
     if(r <= -2)
     {
         // the BIO is not implemented
-        // XXX: do we have to set errno?
 SNAP_LOG_WARNING("should r <= -2 be fatal and close the connection?! r == ")(r);
         bio_log_errors();
+        errno = EIO;
         return -1;
     }
     if(r == -1 || r == 0)
@@ -1599,12 +1601,13 @@ SNAP_LOG_WARNING("should r <= -2 be fatal and close the connection?! r == ")(r);
         if(BIO_should_retry(f_bio.get()))
         {
 SNAP_LOG_WARNING("we get r == -1 or 0 but system says to retry... r == ")(r);
+            errno = EAGAIN;
             return 0;
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
-        // XXX: do we have to set errno?
 SNAP_LOG_WARNING("we got r == -1 or 0 -- retry later? ")(r);
         bio_log_errors();
+        errno = EIO;
         return -1;
     }
 SNAP_LOG_WARNING("we data from pipe r == ")(r);
@@ -1700,6 +1703,7 @@ int bio_client::write(char const * buf, size_t size)
 #endif
     if(!f_bio)
     {
+        errno = EBADF;
         return -1;
     }
 
@@ -1707,9 +1711,9 @@ int bio_client::write(char const * buf, size_t size)
     if(r <= -2)
     {
         // the BIO is not implemented
-        // XXX: do we have to set errno?
 SNAP_LOG_WARNING("WRITE: should r <= -2 be fatal and close the connection?! r == ")(r);
         bio_log_errors();
+        errno = EIO;
         return -1;
     }
     if(r == -1 || r == 0)
@@ -1717,12 +1721,13 @@ SNAP_LOG_WARNING("WRITE: should r <= -2 be fatal and close the connection?! r ==
         if(BIO_should_retry(f_bio.get()))
         {
 SNAP_LOG_WARNING("WRITE: got to retry... r == ")(r);
+            errno = EAGAIN;
             return 0;
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
-        // XXX: do we have to set errno?
 SNAP_LOG_WARNING("WRITE: got an ephemeral error? r == ")(r);
         bio_log_errors();
+        errno = EIO;
         return -1;
     }
     BIO_flush(f_bio.get());
