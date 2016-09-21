@@ -59,7 +59,6 @@
 
 namespace
 {
-    const QString g_ssl_keys_dir = "/var/lib/snapwebsites/snapdbproxy/";
     const std::vector<std::string> g_configuration_files; // Empty
 
     const advgetopt::getopt::option g_snapdb_options[] =
@@ -328,7 +327,7 @@ void snapdb::add_ssl_keys()
         return;
     }
 
-    f_session->add_ssl_keys( g_ssl_keys_dir );
+    f_session->add_ssl_keys();
 }
 
 void snapdb::info()

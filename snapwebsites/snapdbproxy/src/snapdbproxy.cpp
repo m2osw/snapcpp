@@ -64,7 +64,6 @@
 
 namespace
 {
-    const QString g_ssl_keys_dir = "/var/lib/snapwebsites/snapdbproxy/";
 
     const std::vector<std::string> g_configuration_files; // Empty
 
@@ -536,7 +535,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
     if( command == "CASSANDRAKEY" )
     {
-        QDir key_path(g_ssl_keys_dir);
+        QDir key_path(f_session->get_keys_path());
         if( !key_path.exists() )
         {
             // Make sure the key path exists...if not,
@@ -547,7 +546,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // Open the file...
         QString const full_path( QString("%1/client_%2.pem")
-                                 .arg(g_ssl_keys_dir)
+                                 .arg(f_session->get_keys_path())
                                  .arg(message.get_parameter("listen_address"))
                                  );
         QFile file( full_path );
@@ -733,7 +732,7 @@ void snapdbproxy::process_timeout()
         //
         if( use_ssl() )
         {
-            f_session->add_ssl_keys( g_ssl_keys_dir );
+            f_session->add_ssl_keys();
         }
 
         // connect to Cassandra

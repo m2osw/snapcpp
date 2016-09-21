@@ -170,8 +170,8 @@ void QCassandraSession::connect( const QStringList& host_list, const int port )
 
     cass_cluster_set_port                        ( f_cluster.get(), port );
     cass_cluster_set_request_timeout             ( f_cluster.get(), static_cast<unsigned>(f_timeout) );
-    cass_cluster_set_write_bytes_high_water_mark ( f_cluster.get(), f_highWaterMark );
-    cass_cluster_set_write_bytes_low_water_mark  ( f_cluster.get(), f_lowWaterMark  );
+    cass_cluster_set_write_bytes_high_water_mark ( f_cluster.get(), f_high_water_mark );
+    cass_cluster_set_write_bytes_low_water_mark  ( f_cluster.get(), f_low_water_mark  );
 
     // Attach the SSL server trusted certificate if
     // it exists.
@@ -266,11 +266,13 @@ void QCassandraSession::reset_ssl_keys()
 }
 
 
-/** \brief Add trusted SSL cert file to SSL object.
+/** \brief Add trusted certificate (public SSL key)
+ *
+ * This adds a certificate to the CassSsl object for the session.
  *
  * If the CassSsl object has not been created yet, then it is created
  * first. When the session is connected is when it is added into the
- * session. Until then, it hangs out and waits.
+ * session.
  */
 void QCassandraSession::add_ssl_trusted_cert( const QString& cert )
 {
@@ -296,6 +298,16 @@ void QCassandraSession::add_ssl_trusted_cert( const QString& cert )
 }
 
 
+/** \brief Add trusted SSL cert file to SSL object.
+ *
+ * This adds a certificate from file to the CassSsl object for the session.
+ *
+ * If the CassSsl object has not been created yet, then it is created
+ * first. When the session is connected is when it is added into the
+ * session.
+ *
+ * /sa add_ssl_trusted_cert()
+ */
 void QCassandraSession::add_ssl_cert_file( const QString& filename )
 {
     QFile file( filename );
@@ -313,12 +325,38 @@ void QCassandraSession::add_ssl_cert_file( const QString& filename )
 }
 
 
-void QCassandraSession::add_ssl_keys( const QString& path )
+/** \brief Return the current value of the path to the SSL keys.
+ *
+ * \sa set_keys_path()
+ */
+QString const& QCassandraSession::get_keys_path() const
+{
+    return f_keys_path;
+}
+
+
+/** \brief Set the path from where the SSL keys are to be read.
+ *
+ * \sa get_keys_path(), add_ssl_keys()
+ */
+void QCassandraSession::set_keys_path( QString const& path )
+{
+    f_keys_path = path;
+}
+
+
+/** \brief Add each trusted certificate available to the CassSsl object.
+ *
+ * Iterates the keys path and adds each ".pem" file found.
+ *
+ * \sa set_keys_path()
+ */
+void QCassandraSession::add_ssl_keys()
 {
     reset_ssl_keys();
 
     QDir keys_path;
-    keys_path.setPath( path );
+    keys_path.setPath( f_keys_path );
     keys_path.setNameFilters( { "*.pem" } );
     keys_path.setSorting( QDir::Name );
     keys_path.setFilter( QDir::Files );
@@ -457,31 +495,31 @@ int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
 
 uint32_t QCassandraSession::highWaterMark() const
 {
-    return f_highWaterMark;
+    return f_high_water_mark;
 }
 
 
 uint32_t QCassandraSession::lowWaterMark() const
 {
-    return f_lowWaterMark;
+    return f_low_water_mark;
 }
 
 void QCassandraSession::setHighWaterMark( uint32_t val )
 {
-    f_highWaterMark = val;
+    f_high_water_mark = val;
     if( f_cluster )
     {
-        cass_cluster_set_write_bytes_high_water_mark( f_cluster.get(), f_highWaterMark );
+        cass_cluster_set_write_bytes_high_water_mark( f_cluster.get(), f_high_water_mark );
     }
 }
 
 
 void QCassandraSession::setLowWaterMark( uint32_t val )
 {
-    f_lowWaterMark = val;
+    f_low_water_mark = val;
     if( f_cluster )
     {
-        cass_cluster_set_write_bytes_low_water_mark( f_cluster.get(), f_lowWaterMark );
+        cass_cluster_set_write_bytes_low_water_mark( f_cluster.get(), f_low_water_mark );
     }
 }
 

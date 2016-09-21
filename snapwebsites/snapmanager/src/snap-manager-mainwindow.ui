@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_connections">
        <attribute name="title">
@@ -54,14 +54,14 @@ p, li { white-space: pre-wrap; }
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
             <layout class="QGridLayout" name="gridLayout">
-             <item row="1" column="1">
+             <item row="1" column="2">
               <widget class="QLineEdit" name="snapServerHost">
                <property name="text">
                 <string>127.0.0.1</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="2" column="2">
               <widget class="QLineEdit" name="snapServerPort">
                <property name="text">
                 <string>4004</string>
@@ -82,7 +82,7 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
+             <item row="0" column="2">
               <widget class="QLabel" name="label_13">
                <property name="text">
                 <string>Snap! Server</string>
@@ -125,14 +125,14 @@ p, li { white-space: pre-wrap; }
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
             <layout class="QGridLayout" name="gridLayout_1">
-             <item row="1" column="1">
+             <item row="1" column="3">
               <widget class="QLineEdit" name="cassandraHost">
                <property name="text">
                 <string>localhost</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="2" column="3">
               <widget class="QLineEdit" name="cassandraPort">
                <property name="text">
                 <string>9042</string>
@@ -153,13 +153,27 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
+             <item row="0" column="3">
               <widget class="QLabel" name="label_3">
                <property name="text">
                 <string>Cassandra</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_15">
+               <property name="text">
+                <string>Use SSL</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QCheckBox" name="useSSLCB">
+               <property name="text">
+                <string/>
                </property>
               </widget>
              </item>
@@ -557,7 +571,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>971</width>
-     <height>25</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

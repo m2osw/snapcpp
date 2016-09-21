@@ -106,7 +106,9 @@ public:
     void disconnect();
     bool isConnected() const;
 
-    void add_ssl_keys( const QString& path );
+    QString const& get_keys_path() const;
+    void           set_keys_path( QString const& path );
+    void           add_ssl_keys();
 
     CassTools::cluster_pointer_t cluster()    const;
     CassTools::session_pointer_t session()    const;
@@ -131,9 +133,10 @@ private:
     CassTools::session_pointer_t        f_session;
     CassTools::ssl_pointer_t            f_ssl;
     CassTools::future_pointer_t         f_connection;
-    CassTools::timeout_t                f_timeout       = DEFAULT_TIMEOUT; // 12s
-    uint32_t                            f_highWaterMark = 65536;
-    uint32_t                            f_lowWaterMark  = 0;
+    CassTools::timeout_t                f_timeout         = DEFAULT_TIMEOUT; // 12s
+    uint32_t                            f_high_water_mark = 65536;
+    uint32_t                            f_low_water_mark  = 0;
+    QString                             f_keys_path       = "/var/lib/snapwebsites/keys/";
 };
 
 

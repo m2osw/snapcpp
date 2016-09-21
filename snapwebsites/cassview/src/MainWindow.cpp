@@ -89,7 +89,7 @@ void MainWindow::connectCassandra()
     {
         if( settings.value( "use_ssl", true ).toBool() )
         {
-            f_session->add_ssl_keys( "/var/lib/snapwebsites/snapdbproxy/" );
+            f_session->add_ssl_keys();
         }
 
         f_session->connect( host, port );
