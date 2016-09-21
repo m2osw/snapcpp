@@ -1,8 +1,8 @@
-snapcommunicator (1.0.12.1~xenial) xenial; urgency=high
+snapcommunicator (1.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Noticed that the f_local_services string was never set.
 
- -- Build Server <build@m2osw.com>  Wed, 21 Sep 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 11:11:49 -0700
 
 snapcommunicator (1.0.12.0~xenial) xenial; urgency=high
 

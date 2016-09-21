@@ -1917,6 +1917,12 @@ void snap_communicator_server::init()
                 QString const key(QString::fromUtf8(basename, end - basename));
                 f_local_services_list[key] = true;
             }
+
+            // the list of local services cannot (currently) change while
+            // snapcommunicator is running so generate the corresponding
+            // string once
+            //
+            f_local_services = f_local_services_list.keys().join(",");
         }
     }
 
