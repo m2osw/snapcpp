@@ -228,7 +228,6 @@ private:
     void                        stop(bool quitting);
     void                        no_cassandra();
     void                        cassandra_ready();
-    void                        add_ssl_keys();
 
     static pointer_t                            g_instance;
 

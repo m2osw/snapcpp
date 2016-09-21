@@ -82,59 +82,6 @@
               /etc/cassandra/cassandra.yaml
     fi
 
-    ########################################################
-    # From: https://datastax.github.io/cpp-driver/topics/security/ssl/
-    #
-    if ! [ -d /etc/cassandra/ssl ]
-    then
-      cat &gt;&gt; /etc/cassandra/cassandra.yaml &lt;&lt;EOF
-
-########################################################
-# `date`: added encryption options for client and server
-#
-server_encryption_options:
-    internode_encryption: all
-    keystore: /etc/cassandra/ssl/keystore.jks
-    keystore_password: cassandra
-    truststore: /etc/cassandra/ssl/truststore.jks
-    truststore_password: cassandra
-#
-client_encryption_options:
-    enabled: true
-    optional: false
-    keystore: /etc/cassandra/ssl/keystore.jks
-    keystore_password: cassandra
-    truststore: /etc/cassandra/ssl/truststore.jks
-    truststore_password: cassandra
-EOF
-
-      mkdir -p /etc/cassandra/ssl/public
-      cd /etc/cassandra/ssl
-
-      keytool -noprompt -genkeypair -keyalg RSA \
-        -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
-        -validity 36500 \
-        -keystore keystore.jks \
-        -storepass cassandra \
-        -keypass cassandra \
-        -dname "CN=${BUNDLE_INSTALLATION_LISTEN_ADDRESS}, OU=Cassandra Backend, O=Made To Order Software Corp, L=Orangevale, ST=California, C=US"
-
-      keytool -export -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
-        -file node-${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.cer \
-        -keystore keystore.jks
-
-      keytool -import -v -trustcacerts \
-        -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
-        -file node-${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.cer \
-        -keystore truststore.jks
-
-      keytool -exportcert -rfc -noprompt \
-        -alias node.${BUNDLE_INSTALLATION_LISTEN_ADDRESS} \
-        -keystore keystore.jks \
-        -storepass cassandra \
-        -file public/${BUNDLE_INSTALLATION_LISTEN_ADDRESS}.pem
-    fi
-
     # restart cassandra
     #
     systemctl start cassandra

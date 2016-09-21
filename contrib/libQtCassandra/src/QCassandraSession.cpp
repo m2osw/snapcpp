@@ -296,7 +296,7 @@ void QCassandraSession::add_ssl_trusted_cert( const QString& cert )
 }
 
 
-void QCassandraSession::add_ssl_cert_file( const QString& filename );
+void QCassandraSession::add_ssl_cert_file( const QString& filename )
 {
     QFile file( filename );
     if( !file.open( QIODevice::ReadOnly | QIODevice::Text ) )
@@ -310,6 +310,31 @@ void QCassandraSession::add_ssl_cert_file( const QString& filename );
 
     QTextStream in(&file);
     add_ssl_trusted_cert( in.readAll() );
+}
+
+
+void QCassandraSession::add_ssl_keys( const QString& path )
+{
+    reset_ssl_keys();
+
+    QDir keys_path;
+    keys_path.setPath( path );
+    keys_path.setNameFilters( { "*.pem" } );
+    keys_path.setSorting( QDir::Name );
+    keys_path.setFilter( QDir::Files );
+
+    for( QFileInfo const &info : keys_path.entryInfoList() )
+    {
+        try
+        {
+            add_ssl_cert_file( info.filePath() );
+        }
+        catch( const std::exception& x )
+        {
+            std::cerr << "snapdb: could not add ssl keys! Error: " << x.what() << std::endl;
+            throw;
+        }
+    }
 }
 
 

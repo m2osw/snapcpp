@@ -539,26 +539,36 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         QDir key_path(g_ssl_keys_dir);
         if( !key_path.exists() )
         {
+            // Make sure the key path exists...if not,
+            // then create it.
+            //
             key_path.mkdir(".");
         }
-        //
-        QString full_path( QString("%1/%2.pem")
-                   .arg(key_path.path())
-                   .arg(message.get_parameter("listen_address"))
-                   );
 
+        // Open the file...
+        QString const full_path( QString("%1/client_%2.pem")
+                                 .arg(g_ssl_keys_dir)
+                                 .arg(message.get_parameter("listen_address"))
+                                 );
+        QFile file( full_path );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
         {
-            QFile file( full_path );
-            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
-            {
-                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-                SNAP_LOG_ERROR(qPrintable(errmsg));
-                return false;
-            }
-
-            QTextStream out( &file );
-            out << message.get_parameter("key");
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return;
         }
+        //
+        // ...and stream the file out to disk
+        //
+        QTextStream out( &file );
+        out << message.get_parameter("key");
+
+        // Force a restart, now that we have a new key
+        //
+        // TODO: I would like a better way to do this. It would be nice
+        // to know how many keys to expect first, *then* do a restart.
+        f_force_restart = true;
+        stop(false);
 
         return;
     }
@@ -596,7 +606,8 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         if( use_ssl() )
         {
-            // Ask for server certs first from each snapmanager cassandra plugin on the system:
+            // Ask for server certs first from each snapmanager cassandra
+            // throughout the entire cluster.
             //
             snap::snap_communicator_message request;
             request.set_command("CASSANDRAKEYS");
@@ -604,14 +615,12 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
             request.add_parameter("cache", "ttl=60");
             f_messenger->send_message(request);
         }
-        else
+
+        // Snap! Communicator received our REGISTER command
+        //
+        if(f_session->isConnected())
         {
-            // Snap! Communicator received our REGISTER command
-            //
-            if(f_session->isConnected())
-            {
-                cassandra_ready();
-            }
+            cassandra_ready();
         }
 
         return;
@@ -705,33 +714,6 @@ void snapdbproxy::process_connection(int const s)
 }
 
 
-/** \brief Add trusted SSL keys we got from the Cassandra nodes
- */
-void snapdbproxy::add_ssl_keys()
-{
-    f_session->reset_ssl_keys();
-
-    QDir keys_path;
-    keys_path.setPath( g_ssl_keys_dir );
-    keys_path.setNameFilters( { "*.pem" } );
-    keys_path.setSorting( QDir::Name );
-    keys_path.setFilter( QDir::Files );
-
-    for( QFileInfo const &info : keys_path.entryInfoList() )
-    {
-        try
-        {
-            f_session->add_ssl_cert_file( info.filePath() );
-        }
-        catch( const std::exception& x )
-        {
-            SNAP_LOG_ERROR(x.what());
-            //throw snapdbproxy_exception( errmsg );
-        }
-    }
-}
-
-
 /** \brief Attempt to connect to the Cassandra cluster.
  *
  * This function calls connect() in order to create a network connection
@@ -751,7 +733,7 @@ void snapdbproxy::process_timeout()
         //
         if( use_ssl() )
         {
-            add_ssl_keys();
+            f_session->add_ssl_keys( g_ssl_keys_dir );
         }
 
         // connect to Cassandra

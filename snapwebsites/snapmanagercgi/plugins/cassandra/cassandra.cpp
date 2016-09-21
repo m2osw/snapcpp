@@ -33,7 +33,9 @@
 
 // Qt lib
 //
+#include <QDir>
 #include <QFile>
+#include <QTextStream>
 
 // C++ lib
 //
@@ -50,16 +52,17 @@ SNAP_PLUGIN_START(cassandra, 1, 0)
 namespace
 {
 
-const QString g_ssl_keys_dir = "/etc/cassandra/ssl/public";
-
-char const * g_cassandra_yaml = "/etc/cassandra/cassandra.yaml";
+const QString g_ssl_keys_dir        = "/etc/cassandra/ssl/";
+const QString g_cassandra_yaml      = "/etc/cassandra/cassandra.yaml";
+const QString g_keystore_password   = "qZ0LK74eiPecWcTQJCX2";
+const QString g_truststore_password = "fu87kxWq4ktrkuZqVLQX";
 
 
 class cassandra_info
 {
 public:
     cassandra_info()
-        : f_cassandra_configuration(g_cassandra_yaml)
+        : f_cassandra_configuration(g_cassandra_yaml.toUtf8().data())
     {
     }
 
@@ -97,15 +100,15 @@ public:
         std::string const & content = f_cassandra_configuration.get_content();
 
         std::string::size_type const section_pos = section_name.empty()
-            : 0
-            ? snap_manager::manager::search_parameter( content, parameter_name + ":", 0, true )
+            ? 0
+            : snap_manager::manager::search_parameter( content, parameter_name + ":", 0, true )
             ;
 
         // search for the parameter
         //
         std::string::size_type const pos(snap_manager::manager::search_parameter(content, parameter_name + ":", section_pos, true));
 
-        int const start_of_line = section_name.empty()
+        std::string::size_type const start_of_line = section_name.empty()
             ? 0
             : 4
             ;
@@ -386,7 +389,7 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
                               snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
                             , "use_server_ssl"
-                            , use_server_ssl);
+                            , use_server_ssl.c_str());
             server_status.set_field(conf_field);
         }
 
@@ -400,7 +403,7 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
                               snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
                             , "use_client_ssl"
-                            , use_client_ssl);
+                            , use_client_ssl.c_str());
             server_status.set_field(conf_field);
         }
     }
@@ -772,9 +775,6 @@ void cassandra::set_server_ssl( bool const enabled )
     QFile yaml_file( g_cassandra_yaml );
     yaml_file.copy( g_cassandra_yaml + ".bak" );
 
-    QString const keystore_password   = "qZ0LK74eiPecWcTQJCX2";
-    QString const truststore_password = "fu87kxWq4ktrkuZqVLQX";
-
     f_snap->replace_configuration_value(
                   g_cassandra_yaml
                 , "server_encryption_options::internode_encryption"
@@ -798,7 +798,7 @@ void cassandra::set_server_ssl( bool const enabled )
     f_snap->replace_configuration_value(
                   g_cassandra_yaml
                 , "server_encryption_options::keystore_password"
-                , keystore_password
+                , g_keystore_password
                 ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
@@ -818,7 +818,7 @@ void cassandra::set_server_ssl( bool const enabled )
     f_snap->replace_configuration_value(
                   g_cassandra_yaml
                 , "server_encryption_options::truststore_password"
-                , truststore_password
+                , g_truststore_password
                 ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
@@ -862,7 +862,7 @@ void cassandra::set_client_ssl( bool const enabled )
     f_snap->replace_configuration_value(
                   g_cassandra_yaml
                 , "client_encryption_options::keystore_password"
-                , keystore_password
+                , g_keystore_password
                 ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
@@ -882,24 +882,33 @@ void cassandra::set_client_ssl( bool const enabled )
     f_snap->replace_configuration_value(
                   g_cassandra_yaml
                 , "client_encryption_options::truststore_password"
-                , truststore_password
+                , g_truststore_password
                 ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
                   | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                 );
-    QDir ssl_dir("/etc/cassandra/ssl");
-    ssl_dir.mkdir(".");
 }
 
 
 void cassandra::generate_keys()
 {
+    cassandra_info info;
+    //
+    // check whether the configuration file exists, if not then do not
+    // bother, Cassandra is not even installed
+    //
+    if( !info.read_configuration() )
+    {
+        SNAP_LOG_ERROR("Cannot read Cassandra configuration! Not generating keys!");
+        return;
+    }
+
     bool found = false;
     std::string const listen_address( info.retrieve_parameter(found, "listen_address") );
     if( !found )
     {
-        SNAP_LOG_ERROR("listen_address is not defined in your cassandra.yaml! Cannot generate keys!");
+        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys!");
         return;
     }
 
@@ -924,9 +933,9 @@ void cassandra::generate_keys()
        " -dname \"CN=%4, OU=Cassandra Backend, O=Made To Order Software Corp, L=Orangevale, ST=California, C=US\""
        )
           .arg(ssl_dir.path())
-          .arg(truststore_password)
-          .arg(keystore_password)
-          .arg(listen_address)
+          .arg(g_truststore_password)
+          .arg(g_keystore_password)
+          .arg(listen_address.c_str())
           ;
 
      command_list << QString
@@ -958,12 +967,12 @@ void cassandra::generate_keys()
        " -file client.pem"
        )
           .arg(ssl_dir.path())
-          .arg(truststore_password)
+          .arg(g_truststore_password)
        ;
 
     for( auto const& cmd : command_list )
     {
-        if( system( cmd ) != 0 )
+        if( system( cmd.toUtf8().data() ) != 0 )
         {
             SNAP_LOG_ERROR("Cannot execute command '")(qPrintable(cmd))("'!");
         }
@@ -1125,7 +1134,8 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         // Modify values and generate keys if enabled for server_encryption_options.
         // Disable if user turns them off.
-        set_server_ssl( new_value );
+        set_server_ssl( new_value == "enabled" );
+        generate_keys();
         return true;
     }
 
@@ -1133,7 +1143,8 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         // Modify values and generate keys if enabled for client_encryption_options.
         // Disable if user turns them off.
-        set_client_ssl( new_value );
+        set_client_ssl( new_value == "enabled" );
+        generate_keys();
         return true;
     }
 
@@ -1270,45 +1281,24 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
     }
     else if( command == "CASSANDRAKEYS" )
     {
-        // /var/lib/snapwebsites/cassandra-keys/${IP}.pem
-        QDir keys_path;
-        keys_path.setPath( g_ssl_keys_dir );
-        keys_path.setNameFilters( { "*.pem" } );
-        keys_path.setSorting( QDir::Name );
-        keys_path.setFilter( QDir::Files );
-
-        for( QFileInfo const &info : keys_path.entryInfoList() )
+        QFile file( g_ssl_keys_dir + "client.pem" );
+        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
         {
-            if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
-            {
-                QString const name(info.filePath());
-                QTextStream in(&file);
-                //
-                snap::snap_communicator_message cmd;
-                cmd.reply_to(message);
-                cmd.set_command("CASSANDRAKEY");
-                cmd.add_parameter( "key"   , in.readAll()    );
-                cmd.add_parameter( "cache" , "ttl=60"        );
-                get_cassandra_info(cmd);
-                f_snap->forward_message(cmd);
-            }
-            else
-            {
-                QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
-                SNAP_LOG_ERROR(qPrintable(errmsg));
-                //throw vpn_exception( errmsg );
-            }
-        }
-
-        // Now that we've sent all of the keys, tell snapdbproxy to reload
-        //
-        {
+            QTextStream in(&file);
+            //
             snap::snap_communicator_message cmd;
             cmd.reply_to(message);
-            cmd.set_command("RELOADCONFIG");
-            cmd.add_parameter( "cache" , "ttl=60" );
-            //get_cassandra_info(cmd); // TODO: do I need this?!
+            cmd.set_command("CASSANDRAKEY");
+            cmd.add_parameter( "key"   , in.readAll()    );
+            cmd.add_parameter( "cache" , "ttl=60"        );
+            get_cassandra_info(cmd);
             f_snap->forward_message(cmd);
+        }
+        else
+        {
+            QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            //throw vpn_exception( errmsg );
         }
     }
 }

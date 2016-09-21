@@ -63,7 +63,7 @@ public:
     virtual                 ~cassandra() override;
 
     // plugins::plugin implementation
-    static cassandra *        instance();
+    static cassandra *      instance();
     virtual QString         description() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
@@ -86,8 +86,9 @@ private:
     QString                 get_replication_factor();
     void                    set_replication_factor(QString const & replication_factor);
 
-    void					set_server_ssl( bool const enabled );
-    void					set_client_ssl( bool const enabled );
+    void                    set_server_ssl( bool const enabled );
+    void                    set_client_ssl( bool const enabled );
+    void                    generate_keys();
 
     snap_manager::manager * f_snap = nullptr;
     bool                    f_joining = false;

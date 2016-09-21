@@ -106,9 +106,7 @@ public:
     void disconnect();
     bool isConnected() const;
 
-    void reset_ssl_keys();
-    void add_ssl_trusted_cert( const QString& cert     );
-    void add_ssl_cert_file   ( const QString& filename );
+    void add_ssl_keys( const QString& path );
 
     CassTools::cluster_pointer_t cluster()    const;
     CassTools::session_pointer_t session()    const;
@@ -124,6 +122,10 @@ public:
 
 private:
     QCassandraSession();
+
+    void reset_ssl_keys();
+    void add_ssl_trusted_cert( const QString& cert     );
+    void add_ssl_cert_file   ( const QString& filename );
 
     CassTools::cluster_pointer_t        f_cluster;
     CassTools::session_pointer_t        f_session;

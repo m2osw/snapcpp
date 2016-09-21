@@ -87,6 +87,11 @@ void MainWindow::connectCassandra()
     int     const port( settings.value( "cassandra_port" ).toInt()    );
     try
     {
+        if( settings.value( "use_ssl", true ).toBool() )
+        {
+            f_session->add_ssl_keys( "/var/lib/snapwebsites/snapdbproxy/" );
+        }
+
         f_session->connect( host, port );
         //
         //qDebug() << "Working on Cassandra Cluster Named"    << f_session->clusterName();

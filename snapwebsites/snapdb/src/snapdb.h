@@ -68,6 +68,7 @@ public:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
+    void add_ssl_keys();
     bool confirm_drop_check()    const;
     void drop_context()          const;
     void drop_table()            const;
