@@ -1,3 +1,10 @@
+snapcommunicator (1.0.16.0~xenial) xenial; urgency=high
+
+  * Fixed the addr computation in snapcommunicator, I was taking the port!
+  * Fixed a couple of messages.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 21:16:49 -0700
+
 snapcommunicator (1.0.15.0~xenial) xenial; urgency=high
 
   * SNAP-352: Added test to eventually see why forgetting an IP fails.

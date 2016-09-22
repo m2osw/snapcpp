@@ -4,10 +4,8 @@ libsnapwebsites (1.1.12.0~xenial) xenial; urgency=high
     connection would not properly remove the thread signal from the
     snap communicator list of connections, so it could still be triggered
     after the permanent connection entry was long gone.
-  * Fixed the addr computation in snapcommunicator, I was taking the port!
-  * Fixed a couple of messages.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 10:51:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 20:16:49 -0700
 
 libsnapwebsites (1.1.11.0~xenial) xenial; urgency=high
 
