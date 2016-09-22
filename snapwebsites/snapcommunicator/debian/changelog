@@ -1,3 +1,9 @@
+snapcommunicator (1.0.19.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 22 Sep 2016 02:00:48 -0700
+
 snapcommunicator (1.0.19.0~xenial) xenial; urgency=high
 
   * SNAP-443: Removed a line of debug.
