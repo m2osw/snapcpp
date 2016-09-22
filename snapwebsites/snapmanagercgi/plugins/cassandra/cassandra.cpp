@@ -25,6 +25,7 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/chownnm.h>
 #include <snapwebsites/file_content.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
@@ -40,6 +41,7 @@
 // C++ lib
 //
 #include <fstream>
+#include <sys/stat.h>
 
 // last entry
 //
@@ -101,7 +103,7 @@ public:
 
         std::string::size_type const section_pos = section_name.empty()
             ? 0
-            : snap_manager::manager::search_parameter( content, parameter_name + ":", 0, true )
+            : snap_manager::manager::search_parameter( content, section_name + ":", 0, true )
             ;
 
         // search for the parameter
@@ -724,11 +726,11 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                 );
 
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Turn on server-to-server encryption (true or false):"
+                          "Turn on server-to-server encryption (none, all, dc:<name>, rack:<name>):"
                         , s.get_field_name()
                         , s.get_value()
                         , "<p>By default, Cassandra communicates in the clear on the listening address."
-                          " When you turn on this flag, server to server encryption will be turned on between"
+                          " When you change this option to anything except 'none', 'server to server'' encryption will be turned on between"
                           " nodes. Also, if it is not already created, a server key pair will be created also,"
                           " and the trusted keys will be exchanged with each node on the network.<p>"
                         ));
@@ -912,15 +914,24 @@ void cassandra::generate_keys()
         return;
     }
 
-    QDir ssl_dir("/etc/cassandra/ssl");
+    char const * sd = "/etc/cassandra/ssl";
+    QDir ssl_dir(sd);
     if( ssl_dir.exists() )
     {
         SNAP_LOG_TRACE("/etc/cassandra/ssl already exists, so we do nothing.");
         return;
     }
 
-    ssl_dir.mkdir(".");
+    // Create the directory, make sure it's in the snapwebsites group,
+    // and make it so we have full access to it, but nothing for the rest
+    // of the world.
+    //
+    ssl_dir.mkdir( sd );
+    snap::chownnm( sd, "root", "snapwebsites" );
+    ::chmod( sd, 0770 );
 
+    // Now generate the keys...
+    //
     QStringList command_list;
     command_list << QString
        (
@@ -964,7 +975,7 @@ void cassandra::generate_keys()
        " -alias node"
        " -keystore %1/keystore.jks"
        " -storepass %2"
-       " -file client.pem"
+       " -file %1/client.pem"
        )
           .arg(ssl_dir.path())
           .arg(g_truststore_password)
@@ -1134,8 +1145,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         // Modify values and generate keys if enabled for server_encryption_options.
         // Disable if user turns them off.
-        set_server_ssl( new_value == "enabled" );
-        generate_keys();
+        set_server_ssl( new_value != "none" );
         return true;
     }
 
@@ -1144,7 +1154,6 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
         // Modify values and generate keys if enabled for client_encryption_options.
         // Disable if user turns them off.
         set_client_ssl( new_value == "enabled" );
-        generate_keys();
         return true;
     }
 
@@ -1226,6 +1235,18 @@ void cassandra::on_communication_ready()
     //cassandra_query.set_command("CASSANDRAQUERY");
     //get_cassandra_info(cassandra_query);
     //f_snap->forward_message(cassandra_query);
+
+    // Request all of the server keys from all of the nodes
+    //
+    snap::snap_communicator_message cassandra_query;
+    cassandra_query.set_service("*");
+    cassandra_query.set_command("CASSANDRASERVERKEYS");
+    get_cassandra_info(cassandra_query);
+    f_snap->forward_message(cassandra_query);
+
+    // Make sure server keys are generated.
+    //
+    generate_keys();
 }
 
 
@@ -1234,6 +1255,7 @@ void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_comma
     understood_commands << "CASSANDRAQUERY";
     understood_commands << "CASSANDRAFIELDS";
     understood_commands << "CASSANDRAKEYS";         // Send our public key to the requesting server...
+    understood_commands << "CASSANDRASERVERKEYS";   // Send our node key to the requesting server...
 }
 
 
@@ -1281,6 +1303,8 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
     }
     else if( command == "CASSANDRAKEYS" )
     {
+        // A client requested the public key for authentication.
+        //
         QFile file( g_ssl_keys_dir + "client.pem" );
         if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
         {
@@ -1289,6 +1313,51 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
             snap::snap_communicator_message cmd;
             cmd.reply_to(message);
             cmd.set_command("CASSANDRAKEY");
+            cmd.add_parameter( "key"   , in.readAll()    );
+            cmd.add_parameter( "cache" , "ttl=60"        );
+            get_cassandra_info(cmd);
+            f_snap->forward_message(cmd);
+        }
+        else
+        {
+            QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            //throw vpn_exception( errmsg );
+        }
+    }
+    else if( command == "CASSANDRASERVERKEY" )
+    {
+        // Open the file...
+        QString const full_path( QString("%1%2.pem")
+                                 .arg(g_ssl_keys_dir)
+                                 .arg(message.get_parameter("listen_address"))
+                                 );
+        QFile file( full_path );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(qPrintable(errmsg));
+            return;
+        }
+        //
+        // ...and stream the file out to disk so we have the node key for
+        // node-to-node SSL connections.
+        //
+        QTextStream out( &file );
+        out << message.get_parameter("key");
+    }
+    else if( command == "CASSANDRASERVERKEYS" )
+    {
+        // Send the node key for the requesting peer.
+        //
+        QFile file( g_ssl_keys_dir + "node.cer" );
+        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        {
+            QTextStream in(&file);
+            //
+            snap::snap_communicator_message cmd;
+            cmd.reply_to(message);
+            cmd.set_command("CASSANDRASERVERKEY");
             cmd.add_parameter( "key"   , in.readAll()    );
             cmd.add_parameter( "cache" , "ttl=60"        );
             get_cassandra_info(cmd);
