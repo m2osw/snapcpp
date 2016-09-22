@@ -519,14 +519,18 @@ void getopt::reset(int argc
                     std::replace(name.begin(), name.end(), '-', '_');
                     if(opt_by_long_name.find(name) == opt_by_long_name.end())
                     {
-                        usage(status_t::error, "unknown options \"%s\" found in configuration file \"%s\" on line %d",
+                        usage(status_t::error, "unknown option \"%s\" found in configuration file \"%s\" on line %d",
                                         name.c_str(), filename.c_str(), line);
                         /*NOTREACHED*/
                     }
                 }
                 if((opts[opt_by_long_name[name.c_str()]].f_flags & GETOPT_FLAG_CONFIGURATION_FILE) == 0)
                 {
-                    usage(status_t::error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
+                    // in configuration files we are expected to use '_' so
+                    // print an error with such
+                    //
+                    std::replace(name.begin(), name.end(), '-', '_');
+                    usage(status_t::error, "option \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
                     /*NOTREACHED*/
                 }
                 if(*s == '=')
