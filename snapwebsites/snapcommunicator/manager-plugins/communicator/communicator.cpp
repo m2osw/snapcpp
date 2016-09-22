@@ -103,6 +103,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD:
         return "Unit::After";
 
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_FORGET_NEIGHBOR:
+        return "forget_neighbors";
+
     case name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS:
         return "my_address";
 
@@ -256,6 +259,13 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
                     , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)
                     , snap_communicator_conf[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)]);
         server_status.set_field(neighbors);
+
+        snap_manager::status_t const forget_neighbor(
+                      snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_FORGET_NEIGHBOR)
+                    , "");
+        server_status.set_field(forget_neighbor);
     }
 
 
@@ -372,6 +382,31 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
         return true;
     }
 
+    if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_FORGET_NEIGHBOR))
+    {
+        // the list if frontend snapmanagers that are to receive statuses
+        // of the cluster computers; may be just one computer; should not
+        // be empty; shows a text input field
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "One neighbor to remove (IP:Port):"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "This object is here to allow you to actually really remove a neighbor. Once neighbors were shared on the cluster, there are copies everywhere. So the easest way is to use this field and enter the IP address and the port. For example: \"10.8.0.1:4040\" (the default port is 4040)."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name() == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER))
     {
         snap_manager::form f(
@@ -474,6 +509,18 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
         affected_services.insert("snapcommunicator");
 
         NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
+        return true;
+    }
+
+    if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_FORGET_NEIGHBOR))
+    {
+        // remove neighbors by sending a FORGET message
+        //
+        snap::snap_communicator_message forget;
+        forget.set_command("FORGET");
+        forget.add_parameter("ip", new_value);
+        f_snap->forward_message(forget);
+
         return true;
     }
 

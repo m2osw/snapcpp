@@ -4429,15 +4429,7 @@ void snap_communicator_server::add_neighbors(QString const & new_neighbors)
  */
 void snap_communicator_server::remove_neighbor(QString const & neighbor)
 {
-    QString neighbors;
-    for(sorted_list_of_strings_t::const_iterator it(f_all_neighbors.begin());
-            it != f_all_neighbors.end(); ++it)
-    {
-        neighbors += ", " + it.key();
-    }
-    neighbors = neighbors.mid(2);
-
-    SNAP_LOG_DEBUG("Forgetting neighbor: ")(neighbor)(f_all_neighbors.contains(neighbor) ? " (exists)" : "")(" from ")(neighbors);
+    SNAP_LOG_DEBUG("Forgetting neighbor: ")(neighbor)(f_all_neighbors.contains(neighbor) ? " (exists)" : "");
 
     // remove the IP from the neighbors.txt file if still present there
     //
@@ -4517,7 +4509,6 @@ void snap_communicator_server::read_neighbors()
  */
 void snap_communicator_server::save_neighbors()
 {
-SNAP_LOG_WARNING("attempt saving neighbors to \"")(f_neighbors_cache_filename)("\".");
     if(f_neighbors_cache_filename.isEmpty())
     {
         throw std::logic_error("Somehow save_neighbors() was called when f_neighbors_cache_filename was not set yet.");

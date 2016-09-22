@@ -1,3 +1,10 @@
+snapcommunicator (1.0.19.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Removed a line of debug.
+  * Added an field to the communicator plugin for snapcommunicator.cgi.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 22:45:49 -0700
+
 snapcommunicator (1.0.18.0~xenial) xenial; urgency=high
 
   * Still not saving, trying to view the list of neighbors.
