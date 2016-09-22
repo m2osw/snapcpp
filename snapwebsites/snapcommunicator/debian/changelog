@@ -1,5 +1,11 @@
 snapcommunicator (1.0.17.0~xenial) xenial; urgency=high
 
+  * Still not saving, trying to view the list of neighbors.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 22:45:49 -0700
+
+snapcommunicator (1.0.17.0~xenial) xenial; urgency=high
+
   * Adding another debug message to try to understand why the save does not
     happen.
 
