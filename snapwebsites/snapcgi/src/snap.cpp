@@ -439,13 +439,13 @@ int snap_cgi::process()
         return false;
     }
 
-    // check whether the user set use_ssl to false, if so we want to use
+    // check whether the user set use-ssl to false, if so we want to use
     // a plain connection to snapserver
     //
     bool secure(true);
-    if(f_opt.is_defined("use_ssl"))
+    if(f_opt.is_defined("use-ssl"))
     {
-        std::string const & use_ssl(f_opt.get_string("use_ssl"));
+        std::string const & use_ssl(f_opt.get_string("use-ssl"));
         if(use_ssl == "false")
         {
             secure = false;
@@ -466,8 +466,8 @@ int snap_cgi::process()
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 
-    SNAP_LOG_DEBUG("f_address=")(f_address)(", f_port=")(f_port);
 #endif
+    SNAP_LOG_DEBUG("f_address=")(f_address)(", f_port=")(f_port)(", secure=")(secure ? "true" : "false");
     tcp_client_server::bio_client socket(
                   f_address
                 , f_port
