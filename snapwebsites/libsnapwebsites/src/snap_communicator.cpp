@@ -4343,8 +4343,8 @@ public:
     public:
         typedef std::shared_ptr<thread_done_signal>   pointer_t;
 
-        thread_done_signal(snap_tcp_client_permanent_message_connection_impl * client)
-            : f_client(client)
+        thread_done_signal(snap_tcp_client_permanent_message_connection_impl * parent_impl)
+            : f_parent_impl(parent_impl)
         {
             set_name("snap_tcp_client_permanent_message_connection_impl::thread_done_signal");
         }
@@ -4360,11 +4360,11 @@ public:
         {
             snap_thread_done_signal::process_read();
 
-            f_client->thread_done();
+            f_parent_impl->thread_done();
         }
 
     private:
-        snap_tcp_client_permanent_message_connection_impl *  f_client;
+        snap_tcp_client_permanent_message_connection_impl *  f_parent_impl;
     };
 
     class runner
@@ -4580,6 +4580,13 @@ public:
         // that we do not have a thread running
         //
         f_thread.stop();
+
+        // in this case we may still have an instance of the f_thread_done
+        // which linger around, we want it out
+        //
+        // Note: the call is safe even if the f_thread_done is null
+        //
+        snap_communicator::instance()->remove_connection(f_thread_done);
 
         // although the message variable is deleted, it would not get
         // removed from the snap communicator if we were not doing

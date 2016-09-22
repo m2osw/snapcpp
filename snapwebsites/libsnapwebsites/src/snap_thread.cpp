@@ -781,11 +781,11 @@ snap_thread::snap_thread(QString const & name, snap_runner * runner)
     //, f_thread_attr(...) -- see below
     //, f_exception() -- auto-init
 {
-    if(!f_runner)
+    if(f_runner == nullptr)
     {
         throw snap_thread_exception_invalid_error("runner missing in snap_thread() constructor");
     }
-    if(f_runner->f_thread)
+    if(f_runner->f_thread != nullptr)
     {
         throw snap_thread_exception_in_use_error("this runner (" + name + ") is already is use");
     }

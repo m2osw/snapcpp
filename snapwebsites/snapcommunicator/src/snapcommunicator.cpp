@@ -1368,7 +1368,9 @@ void remote_communicator_connections::forget_remote_connection(QString const & a
     int const pos(addr.indexOf(':'));
     if(pos > 0)
     {
-        addr = addr.mid(pos + 1);
+        // forget about the port if present
+        //
+        addr = addr.mid(0, pos);
     }
     auto it(f_smaller_ips.find(addr));
     if(it != f_smaller_ips.end())
@@ -4426,7 +4428,8 @@ SNAP_LOG_WARNING("Add neighbor: ")(new_neighbors);
  */
 void snap_communicator_server::remove_neighbor(QString const & neighbor)
 {
-SNAP_LOG_WARNING("Forgetting neighbor: ")(neighbor);
+    SNAP_LOG_DEBUG("Forgetting neighbor: ")(neighbor);
+
     // remove the IP from the neighbors.txt file if still present there
     //
     if(f_all_neighbors.contains(neighbor))
@@ -4807,7 +4810,7 @@ remote_snap_communicator::remote_snap_communicator(snap_communicator_server::poi
 
 remote_snap_communicator::~remote_snap_communicator()
 {
-    SNAP_LOG_DEBUG("deleting remote_snap_communicator connection")(f_address.get_ipv4or6_string(true, true));
+    SNAP_LOG_DEBUG("deleting remote_snap_communicator connection: ")(f_address.get_ipv4or6_string(true, true));
 }
 
 
