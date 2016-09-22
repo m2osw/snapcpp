@@ -1,3 +1,9 @@
+snapcgi (1.0.5.0~xenial) xenial; urgency=high
+
+  * SNAP-443: The parameter also needs to be mark as "part of configuration".
+
+ -- Alexis Wilke <build@m2osw.com>  Fri, 22 Sep 2016 13:06:48 -0700
+
 snapcgi (1.0.4.0~xenial) xenial; urgency=high
 
   * SNAP-443: Had to add the "use_ssl" option to the command line options.

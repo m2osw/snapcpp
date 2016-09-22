@@ -108,8 +108,8 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "log_config",
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "log-config",
             "/etc/snapwebsites/snapcgilog.properties",
             "Full path of log configuration file",
             advgetopt::getopt::argument_mode_t::optional_argument
@@ -124,8 +124,8 @@ namespace
         },
         {
             '\0',
-            0,
-            "use_ssl",
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "use-ssl",
             nullptr,
             "Whether SSL should be used to connect to snapserver. Set to \"true\" or \"false\".",
             advgetopt::getopt::argument_mode_t::required_argument
@@ -184,8 +184,8 @@ snap_cgi::snap_cgi( int argc, char * argv[] )
         exit(1);
     }
 
-    // read log_config and setup the logger
-    std::string logconfig(f_opt.get_string("log_config"));
+    // read log-config and setup the logger
+    std::string logconfig(f_opt.get_string("log-config"));
     snap::logging::configure_conffile( logconfig.c_str() );
 }
 
