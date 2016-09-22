@@ -1,4 +1,4 @@
-snapcommunicator (1.0.17.0~xenial) xenial; urgency=high
+snapcommunicator (1.0.18.0~xenial) xenial; urgency=high
 
   * Still not saving, trying to view the list of neighbors.
 
