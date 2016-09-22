@@ -1,3 +1,9 @@
+snapcgi (1.0.4.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Had to add the "use_ssl" option to the command line options.
+
+ -- Alexis Wilke <build@m2osw.com>  Fri, 22 Sep 2016 12:17:48 -0700
+
 snapcgi (1.0.3.0~xenial) xenial; urgency=high
 
   * SNAP-443: Bumping version so I can test snap.cgi.

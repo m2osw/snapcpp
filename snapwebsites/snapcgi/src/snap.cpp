@@ -124,6 +124,14 @@ namespace
         },
         {
             '\0',
+            0,
+            "use_ssl",
+            nullptr,
+            "Whether SSL should be used to connect to snapserver. Set to \"true\" or \"false\".",
+            advgetopt::getopt::argument_mode_t::required_argument
+        },
+        {
+            '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
