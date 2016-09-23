@@ -2116,8 +2116,11 @@ void server::stop(bool quitting)
     {
         std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
 
-        if(quitting)
+        if(!quitting)
         {
+            // snapcommunicator is not quitting, so we also want to unregister
+            // to make sure everything works as expected
+            //
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapserver");
