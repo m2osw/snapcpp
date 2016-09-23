@@ -267,7 +267,7 @@ QtCassandra::QCassandraTable::pointer_t tracker::get_tracker_table()
 {
     if(!f_tracker_table)
     {
-        f_tracker_table = f_snap->create_table(get_name(name_t::SNAP_NAME_TRACKER_TABLE), "Website tracker table.");
+        f_tracker_table = f_snap->get_table(get_name(name_t::SNAP_NAME_TRACKER_TABLE));
     }
     return f_tracker_table;
 }

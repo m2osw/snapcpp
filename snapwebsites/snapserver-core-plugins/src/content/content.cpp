@@ -714,7 +714,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_content_table()
 {
     if(!f_content_table)
     {
-        f_content_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_TABLE), "Website content table.");
+        f_content_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_TABLE));
     }
     return f_content_table;
 }
@@ -757,7 +757,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_secret_table()
 {
     if(!f_secret_table)
     {
-        f_secret_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE), "Website secret table.");
+        f_secret_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE));
     }
     return f_secret_table;
 }
@@ -783,7 +783,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_processing_table()
 {
     if(!f_processing_table)
     {
-        f_processing_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE), "Website processing table.");
+        f_processing_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE));
     }
     return f_processing_table;
 }
@@ -812,7 +812,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_cache_table()
 {
     if(!f_cache_table)
     {
-        f_cache_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_CACHE_TABLE), "Website cache table.");
+        f_cache_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_CACHE_TABLE));
     }
     return f_cache_table;
 }
@@ -870,7 +870,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_branch_table()
 {
     if(!f_branch_table)
     {
-        f_branch_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_BRANCH_TABLE), "Website branch table.");
+        f_branch_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_BRANCH_TABLE));
     }
     return f_branch_table;
 }
@@ -914,7 +914,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_revision_table()
 {
     if(!f_revision_table)
     {
-        f_revision_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE), "Website revision table.");
+        f_revision_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE));
     }
     return f_revision_table;
 }
@@ -943,7 +943,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_files_table()
 {
     if(!f_files_table)
     {
-        f_files_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_FILES_TABLE), "List of all the files ever uploaded to all the websites.");
+        f_files_table = f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_FILES_TABLE));
     }
     return f_files_table;
 }

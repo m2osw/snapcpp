@@ -302,7 +302,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
  */
 QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
 {
-    return f_snap->create_table(get_name(name_t::SNAP_NAME_LAYOUT_TABLE), "Layouts table.");
+    return f_snap->get_table(get_name(name_t::SNAP_NAME_LAYOUT_TABLE));
 }
 
 

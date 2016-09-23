@@ -1677,7 +1677,7 @@ void sendmail::bootstrap(snap_child * snap)
  */
 QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
 {
-    return f_snap->create_table(get_name(name_t::SNAP_NAME_SENDMAIL_EMAILS_TABLE), "E-Mails table.");
+    return f_snap->get_table(get_name(name_t::SNAP_NAME_SENDMAIL_EMAILS_TABLE));
 }
 
 

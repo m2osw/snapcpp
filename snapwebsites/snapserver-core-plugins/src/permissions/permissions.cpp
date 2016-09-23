@@ -77,7 +77,7 @@ name_t login_status_from_string(QString const & status)
     }
     else
     {
-        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitory, returning_visitor, returning_registered, or registered");
+        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitor, returning_visitor, returning_registered, or registered");
     }
 }
 
@@ -2518,7 +2518,7 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  * This function registers this plugin as supporting the following
  * actions:
  *
- * \li "makeroot" and "makeadministrator"
+ * \li "permissions::makeroot" and "permissions::makeadministrator"
  *
  * After an installation and a user was created on the website, the server
  * is ready to create a root user. The "makeroot" action is used for that
@@ -2538,9 +2538,16 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  *
  * \code
  * # For an administrator, make sure to specify the website
- * snapbackend http://www.example.com [--config snapserver.conf] --servername <name> --param ROOT_USER_EMAIL=joe@example.com --action permissions::makeadministrator
+ * snapbackend http://www.example.com \
+ *             [--config /etc/snapwebsites] \
+ *             --action permissions::makeadministrator \
+ *             --param ROOT_USER_EMAIL=joe@example.com
+ *
  * # For a root user, you do not need to specify the website, but probably should too
- * snapbackend [http://www.example.com] [--config snapserver.conf] --servername <name> --param ROOT_USER_EMAIL=joe@example.com --action permissions::makeroot
+ * snapbackend [http://www.example.com] \
+ *             [--config /etc/snapwebsites] \
+ *             --action permissions::makeroot \
+ *             --param ROOT_USER_EMAIL=joe@example.com
  * \endcode
  *
  * If you have problems with it (it does not seem to work,) try with
@@ -2553,7 +2560,7 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  * which we cannot have (i.e. "permissions" need to know about
  * "users"... so we would end up with a looping dependency.)
  *
- * \li "checkpermissions"
+ * \li "permissions::checkpermissions"
  *
  * Once a user created an account on a website, it can be difficult to
  * know what permissions that user has. The snapbackend can be used for

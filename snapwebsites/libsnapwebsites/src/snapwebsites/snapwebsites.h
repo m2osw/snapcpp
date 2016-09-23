@@ -257,7 +257,6 @@ public:
     void                set_parameter( QString const & param_name, QString const & value );
     void                prepare_qtapp( int argc, char * argv[] );
     bool                check_cassandra(QString const & mandatory_table);
-    QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
     void                detach();
     void                listen();
     void                backend();

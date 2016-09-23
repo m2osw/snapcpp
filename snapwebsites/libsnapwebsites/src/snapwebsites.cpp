@@ -1484,75 +1484,76 @@ bool server::check_cassandra(QString const & mandatory_table)
 }
 
 
-/** \brief Create a table in the specified context.
- *
- * The function checks whether the named table exists, if not it
- * creates it with default parameters. The result is a shared pointer
- * to the table in question.
- *
- * By default tables are just created in the Cassandra node you are
- * connected with. In order to use the table, it has to have been
- * propagated. This is done with a synchronization call. That call
- * is performed by this very function the first time a table is
- * queried if that table was created in an earlier call to this
- * function, then the synchronization function gets called and blocks
- * the process until the table was propagated. The current initialization
- * process expects the create_table() to be called a first time when
- * your plugin initial_update() is called, then called again once the
- * table is necessary. Therefore, this create_table() uses a 'call me
- * twice' scheme where the second call ensures the synchrony.
- *
- * \todo
- * Provide a structure that includes the different table parameters instead of
- * using hard coded defaults.
- *
- * \param[in] context  The context in which the table is to be created.
- * \param[in] table_name  The name of the new table, if it exists, nothing happens.
- * \param[in] comment  A comment about the new table.
- */
-QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment)
-{
-    // does table exist?
-    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-    if(!table)
-    {
-        // table is not there yet, create it
-        table = context->table(table_name);
-
-        QtCassandra::QCassandraSchema::Value compaction;
-        auto& compaction_map(compaction.map());
-        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-        compaction_map["min_threshold"] = QVariant(4);
-        compaction_map["max_threshold"] = QVariant(22);
-
-        auto& table_fields(table->fields());
-        table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
-        //
-        // about potential problems in regard to Gargbage Collection see:
-        //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
-        //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
-        //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
-        //
-        // Garbage Collection of 1 day (could be a lot shorter for several
-        // tables such as the "list", "backend" and "antihammering"
-        // tables... we will have to fix that once we have our proper per
-        // table definitions)
-        table_fields["gc_grace_seconds"]            = QVariant(86400);
-        table_fields["compaction"]                  = compaction;
-
-        table->create();
-
-        f_created_table[table_name] = true;
-    }
-    else if(f_created_table.contains(table_name))
-    {
-        // one single synchronization call for all the tables created
-        // thus far is enough.
-        f_created_table.clear();
-    }
-    return table;
-}
+///** \brief Create a table in the specified context.
+// *
+// * The function checks whether the named table exists, if not it
+// * creates it with default parameters. The result is a shared pointer
+// * to the table in question.
+// *
+// * By default tables are just created in the Cassandra node you are
+// * connected with. In order to use the table, it has to have been
+// * propagated. This is done with a synchronization call. That call
+// * is performed by this very function the first time a table is
+// * queried if that table was created in an earlier call to this
+// * function, then the synchronization function gets called and blocks
+// * the process until the table was propagated. The current initialization
+// * process expects the create_table() to be called a first time when
+// * your plugin initial_update() is called, then called again once the
+// * table is necessary. Therefore, this create_table() uses a 'call me
+// * twice' scheme where the second call ensures the synchrony.
+// *
+// * \todo
+// * Provide a structure that includes the different table parameters instead of
+// * using hard coded defaults.
+// *
+// * \param[in] context  The context in which the table is to be created.
+// * \param[in] table_name  The name of the new table, if it exists, nothing happens.
+// * \param[in] comment  A comment about the new table.
+// */
+//        QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
+//QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment)
+//{
+//    // does table exist?
+//    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+//    if(!table)
+//    {
+//        // table is not there yet, create it
+//        table = context->table(table_name);
+//
+//        QtCassandra::QCassandraSchema::Value compaction;
+//        auto& compaction_map(compaction.map());
+//        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+//        compaction_map["min_threshold"] = QVariant(4);
+//        compaction_map["max_threshold"] = QVariant(22);
+//
+//        auto& table_fields(table->fields());
+//        table_fields["comment"]                     = QVariant(comment);
+//        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
+//        //
+//        // about potential problems in regard to Gargbage Collection see:
+//        //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
+//        //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
+//        //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
+//        //
+//        // Garbage Collection of 1 day (could be a lot shorter for several
+//        // tables such as the "list", "backend" and "antihammering"
+//        // tables... we will have to fix that once we have our proper per
+//        // table definitions)
+//        table_fields["gc_grace_seconds"]            = QVariant(86400);
+//        table_fields["compaction"]                  = compaction;
+//
+//        table->create();
+//
+//        f_created_table[table_name] = true;
+//    }
+//    else if(f_created_table.contains(table_name))
+//    {
+//        // one single synchronization call for all the tables created
+//        // thus far is enough.
+//        f_created_table.clear();
+//    }
+//    return table;
+//}
 
 
 /** \brief Detach the server unless in foreground mode.

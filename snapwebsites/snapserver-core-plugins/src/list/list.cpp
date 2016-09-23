@@ -1361,7 +1361,7 @@ QtCassandra::QCassandraTable::pointer_t list::get_list_table()
 {
     if(!f_list_table)
     {
-        f_list_table = f_snap->create_table(get_name(name_t::SNAP_NAME_LIST_TABLE), "Website list table.");
+        f_list_table = f_snap->get_table(get_name(name_t::SNAP_NAME_LIST_TABLE));
     }
     return f_list_table;
 }
@@ -1389,7 +1389,7 @@ QtCassandra::QCassandraTable::pointer_t list::get_listref_table()
 {
     if(!f_listref_table)
     {
-        f_listref_table = f_snap->create_table(get_name(name_t::SNAP_NAME_LIST_TABLE_REF), "Website list reference table.");
+        f_listref_table = f_snap->get_table(get_name(name_t::SNAP_NAME_LIST_TABLE_REF));
     }
     return f_listref_table;
 }

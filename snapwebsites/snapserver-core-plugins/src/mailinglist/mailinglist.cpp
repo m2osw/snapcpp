@@ -301,7 +301,7 @@ void mailinglist::bootstrap(snap_child * snap)
  */
 QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
 {
-    return f_snap->create_table(get_name(name_t::SNAP_NAME_MAILINGLIST_TABLE), "Mailing list table.");
+    return f_snap->get_table(get_name(name_t::SNAP_NAME_MAILINGLIST_TABLE));
 }
 
 

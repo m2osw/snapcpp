@@ -947,9 +947,9 @@ void snap_backend::process_tick()
             {
                 SNAP_LOG_WARNING("snap_backend::process_tick(): not yet connected to snapdbproxy.");
             }
-            else if(f_emit_warning)
+            else if(f_emit_warning_about_missing_sites)
             {
-                f_emit_warning = false;
+                f_emit_warning_about_missing_sites = false;
 
                 // the whole table is still missing after 5 minutes!
                 // in this case it is an error instead of a fatal error
@@ -1214,6 +1214,7 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         // we lost Cassandra, disconnect from snapdbproxy until we
         // get CASSANDRAREADY again
         //
+        f_auto_retry_cassandra = false;
         disconnect_cassandra();
 
         return;
@@ -1223,6 +1224,12 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
     {
         // connect to Cassandra
         //
+        // IMPORTANT NOTE: We are likely to receive two of these events
+        //                 in a raw (i.e. the broadcast version and the
+        //                 one specifically sent to this or that
+        //                 specifically running backend)
+        //
+        f_auto_retry_cassandra = true;
         if(!connect_cassandra(false))
         {
             SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy");
@@ -1556,15 +1563,37 @@ bool snap_backend::is_ready(QString const & uri)
 {
     if(!f_cassandra)
     {
-        return false;
+        if(f_auto_retry_cassandra
+        && getpid() == f_parent_pid)
+        {
+            // we received the CASSANDRAREADY message, but did not
+            // get a valid connection yet, try again (only in the
+            // parent though as the child has one chance and if it
+            // fails it just exists)
+            //
+            if(!connect_cassandra(false))
+            {
+                SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy");
+
+                disconnect_cassandra();
+                return false;
+            }
+        }
+        else
+        {
+            // we are in the NOCASSANDRA to CASSANDRAREADY window
+            return false;
+        }
     }
 
     if(!f_sites_table)
     {
         f_context->clearCache();
 
-        // we directly call the findTable() because the server code caches
-        // the pointer otherwise...
+        // get the "sites" table
+        //
+        // we do the findTable() here otherwise we'd have to try/catch
+        // which is slow, not really clean, etc.
         //
         f_sites_table = f_context->findTable(get_name(name_t::SNAP_NAME_SITES));
         if(!f_sites_table)
@@ -1573,8 +1602,9 @@ bool snap_backend::is_ready(QString const & uri)
             return false;
         }
 
-        // create backend table
-        f_backend_table = create_table(get_name(name_t::SNAP_NAME_BACKEND), "List of sites to run backends against.");
+        // get the "backend" table
+        //
+        f_backend_table = get_table(get_name(name_t::SNAP_NAME_BACKEND));
     }
 
     if(uri.isEmpty())
@@ -1802,7 +1832,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
         f_sites_table.reset();
         f_backend_table.reset();
         f_cassandra.reset(); // here all the remaining QCassandra objects should all get deleted
-        NOTUSED(connect_cassandra(true)); // since we pass 'true', the returned value will always be true
+        NOTUSED(connect_cassandra(true)); // since we pass 'true', the function either dies or returns true
 
         if(!is_ready(uri))
         {

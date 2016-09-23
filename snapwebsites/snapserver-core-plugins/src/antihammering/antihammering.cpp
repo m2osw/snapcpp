@@ -260,7 +260,7 @@ QtCassandra::QCassandraTable::pointer_t antihammering::get_antihammering_table()
 {
     if(!f_antihammering_table)
     {
-        f_antihammering_table = f_snap->create_table(get_name(name_t::SNAP_NAME_ANTIHAMMERING_TABLE), "Data about users for hammering detection and to compute anti-hammering measures");
+        f_antihammering_table = f_snap->get_table(get_name(name_t::SNAP_NAME_ANTIHAMMERING_TABLE));
     }
     return f_antihammering_table;
 }

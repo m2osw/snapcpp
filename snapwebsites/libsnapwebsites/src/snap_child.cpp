@@ -3018,7 +3018,7 @@ void snap_child::read_environment()
         {
             f_snap->die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Unstable network connection",
-                QString("an error occured while reading the environment from the socket in the server child process (%1).").arg(details));
+                QString("an error occurred while reading the environment from the socket in the server child process (%1).").arg(details));
             NOTREACHED();
         }
 
@@ -4121,7 +4121,12 @@ bool snap_child::connect_cassandra(bool child)
     {
         if(!child)
         {
-            return false;
+            SNAP_LOG_DEBUG("snap_child::connect_cassandra() already considered connected.");
+
+            // here we return true since the Cassandra connection is
+            // already in place, valid and well
+            //
+            return true;
         }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database is being initialized more than once.",
@@ -4158,6 +4163,7 @@ bool snap_child::connect_cassandra(bool child)
         f_cassandra.reset();
         if(!child)
         {
+            SNAP_LOG_WARNING("snap_child::connect_cassandra() could not connect to snapdbproxy.");
             return false;
         }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
@@ -4182,6 +4188,7 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
         f_cassandra.reset();
         if(!child)
         {
+            SNAP_LOG_WARNING("snap_child::connect_cassandra() could not read the context.");
             return false;
         }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
@@ -4208,29 +4215,47 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
 void snap_child::disconnect_cassandra()
 {
     snap_expr::expr::set_cassandra_context(nullptr);
+
+    // we must get rid of the site table otherwise it will hold a shared
+    // pointer to the context and the context to the QtCassandra object
+    //
+    reset_sites_table();
+
     f_context.reset();
     f_cassandra.reset();
 }
 
 
-/** \brief Create a table.
+/** \brief Retrieve the pointer to a table.
  *
- * This function is generally used by plugins to create indexes for the data
- * they manage.
+ * This function is generally used by plugins to retrieve tables they
+ * use to manage their data.
  *
- * The function can be called even if the table already exists.
+ * \exception snap_child_exception_no_cassandra
+ * If this function gets called when the Cassandra context is not yet
+ * defined, this exception is raised.
+ *
+ * \exception snap_child_exception_table_missing
+ * The table must already exists or this exception is raised. Tables
+ * are created by running the snapcreatetables tool before starting
+ * the snapserver.
  *
  * \param[in] table_name  The name of the table to create.
- * \param[in] comment  The comment to attach to the table.
  */
-QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const & table_name, QString const & comment)
+QtCassandra::QCassandraTable::pointer_t snap_child::get_table(QString const & table_name)
 {
-    server::pointer_t server( f_server.lock() );
-    if(!server)
+    if(f_context == nullptr)
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        throw snap_child_exception_no_cassandra("table \"" + table_name + "\" cannot be determined, we have no QCassandraContext.");
     }
-    return server->create_table(f_context, table_name, comment);
+
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    if(table == nullptr)
+    {
+        throw snap_child_exception_table_missing("table \"" + table_name + "\" does not exist.");
+    }
+
+    return table;
 }
 
 
@@ -5235,7 +5260,7 @@ void snap_child::site_redirect()
     // TBD -- should we also redirect the f_domain_key and f_website_key?
 
     // the site table is the old one, we want to switch to the new one
-    reset_site_table();
+    reset_sites_table();
 }
 
 
@@ -5249,13 +5274,13 @@ void snap_child::site_redirect()
  * The next time a user calls the set_site_parameter() or get_site_parameter()
  * a new site table object is created and filled as required.
  */
-void snap_child::reset_site_table()
+void snap_child::reset_sites_table()
 {
-    if(f_site_table)
+    if(f_sites_table)
     {
-        f_site_table->clearCache();
+        f_sites_table->clearCache();
     }
-    f_site_table.reset();
+    f_sites_table.reset();
 }
 
 
@@ -5902,7 +5927,7 @@ void snap_child::improve_signature(QString const & path, QDomDocument doc, QDomE
 QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name)
 {
     // retrieve site table if not there yet
-    if(!f_site_table)
+    if(!f_sites_table)
     {
         QString const table_name(get_name(name_t::SNAP_NAME_SITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
@@ -5912,16 +5937,16 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name
             QtCassandra::QCassandraValue value;
             return value;
         }
-        f_site_table = table;
+        f_sites_table = table;
     }
 
-    if(!f_site_table->exists(f_site_key))
+    if(!f_sites_table->exists(f_site_key))
     {
         // an empty value is considered to be a null value
         QtCassandra::QCassandraValue value;
         return value;
     }
-    QtCassandra::QCassandraRow::pointer_t row(f_site_table->row(f_site_key));
+    QtCassandra::QCassandraRow::pointer_t row(f_sites_table->row(f_site_key));
     if(!row->exists(name))
     {
         // an empty value is considered to be a null value
@@ -5950,19 +5975,11 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name
 void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value)
 {
     // retrieve site table if not there yet
-    if(!f_site_table)
+    if(!f_sites_table)
     {
-        server::pointer_t server( f_server.lock() );
-        if(!server)
-        {
-            throw snap_logic_exception("server pointer is nullptr");
-        }
-
-        // create
-        server->create_table(f_context, get_name(name_t::SNAP_NAME_SITES), "List of sites with their global parameters.");
-
-        // get the pointer after synchronization
-        f_site_table = server->create_table(f_context, get_name(name_t::SNAP_NAME_SITES), "List of sites with their global parameters.");
+        // get a pointer to the "sites" table
+        //
+        f_sites_table = get_table(get_name(name_t::SNAP_NAME_SITES));
 
         // mandatory field if this is not the first field being written
         //
@@ -5970,11 +5987,11 @@ void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandr
         //       website gets to create this table...
         if(name != get_name(name_t::SNAP_NAME_CORE_SITE_NAME))
         {
-            f_site_table->row(f_site_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
+            f_sites_table->row(f_site_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
         }
     }
 
-    f_site_table->row(f_site_key)->cell(name)->setValue(value);
+    f_sites_table->row(f_site_key)->cell(name)->setValue(value);
 }
 
 

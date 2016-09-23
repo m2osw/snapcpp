@@ -537,7 +537,7 @@ void users::bootstrap(snap_child * snap)
  */
 QtCassandra::QCassandraTable::pointer_t users::get_users_table()
 {
-    return f_snap->create_table(get_name(name_t::SNAP_NAME_USERS_TABLE), "Global users table.");
+    return f_snap->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE));
 }
 
 
