@@ -110,7 +110,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
             "log-config",
-            "/etc/snapwebsites/snapcgilog.properties",
+            "/etc/snapwebsites/logger/snapcgi.properties",
             "Full path of log configuration file",
             advgetopt::getopt::argument_mode_t::optional_argument
         },

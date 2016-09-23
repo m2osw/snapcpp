@@ -175,7 +175,7 @@ protected:
     advgetopt::getopt::pointer_t    f_opt;
     snap::snap_config               f_config;
     QString                         f_server_name;
-    QString                         f_log_conf = "/etc/snapwebsites/snapmanager.properties";
+    QString                         f_log_conf = "/etc/snapwebsites/logger/snapmanager.properties";
     QString                         f_data_path = "/var/lib/snapwebsites";
     QString                         f_cluster_status_path = f_data_path + "/cluster-status";
     QString                         f_bundles_path = f_data_path + "/bundles";

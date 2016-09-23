@@ -150,7 +150,7 @@ advgetopt::getopt::option const g_manager_options[] =
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "log-config",
-        "/etc/snapwebsites/snapmanager.properties",
+        "/etc/snapwebsites/logger/snapmanagerdaemon.properties",
         "Full path of log configuration file.",
         advgetopt::getopt::argument_mode_t::optional_argument
     },
