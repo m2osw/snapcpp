@@ -8,16 +8,23 @@ then
     PACKAGENAME=snapcommunicator
 
     # delete a cache file
+    #
     rm -f /var/cache/snapwebsites/neighbors.txt
 
     # delete the logs
+    #
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 
     # delete the snapcommunicator SSL files
+    #
     SNAPSSL=/etc/snapwebsites/ssl
     rm -f $SNAPSSL/snapcommunicator.key
     rm -f $SNAPSSL/snapcommunicator.crt
+
+    # delete the SSL directory, but leave it if non-empty
+    #
+    rmdir --ignore-fail-on-non-empty /etc/snapwebsites/ssl
 fi
 
 #DEBHELPER#

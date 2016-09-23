@@ -40,7 +40,7 @@ then
         fi
     fi
 
-    # delete the settings dir, but leave it if non-empty
+    # delete the settings directory, but leave it if non-empty
     #
     rmdir --ignore-fail-on-non-empty /etc/snapwebsites
 
