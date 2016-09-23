@@ -50,33 +50,33 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snapmanager_exception : public snap::snap_exception
 {
 public:
-    snapmanager_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapmanager_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapmanager_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapmanager_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapmanager_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapmanager_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
 };
 
 class snapmanager_exception_cannot_load_plugins : public snapmanager_exception
 {
 public:
-    snapmanager_exception_cannot_load_plugins(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_cannot_load_plugins(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_cannot_load_plugins(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_cannot_load_plugins(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_cannot_load_plugins(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_cannot_load_plugins(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
 class snapmanager_exception_invalid_parameters : public snapmanager_exception
 {
 public:
-    snapmanager_exception_invalid_parameters(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_invalid_parameters(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_invalid_parameters(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_invalid_parameters(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_invalid_parameters(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_invalid_parameters(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
 class snapmanager_exception_undefined : public snapmanager_exception
 {
 public:
-    snapmanager_exception_undefined(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_undefined(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_undefined(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_undefined(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_undefined(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_undefined(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
 
@@ -104,6 +104,7 @@ replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SPACE_AFTER  
 replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_HASH_COMMENT    =  0x0040;
 replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_SECTION         =  0x0080;
 replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST =  0x0100;
+replace_configuration_value_t const    REPLACE_CONFIGURATION_VALUE_TRIM_RESULT     =  0x0200;
 
 
 class manager
@@ -150,7 +151,7 @@ public:
     int                             package_status(std::string const & package_name, std::string & output);
     QString                         count_packages_that_can_be_updated(bool check_cache);
     std::vector<std::string>        read_filenames(std::string const & pattern) const;
-    bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, replace_configuration_value_t const flags = REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP);
+    bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, replace_configuration_value_t const flags = REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP, QString const & trim_left = {});
 
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
     SNAP_SIGNAL_WITH_MODE(handle_affected_services, (std::set<QString> & affected_services), (affected_services), NEITHER);

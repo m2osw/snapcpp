@@ -37,65 +37,65 @@ namespace snap
 class snap_thread_exception : public snap_exception
 {
 public:
-    snap_thread_exception(char const *        whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snap_thread_exception(std::string const & whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snap_thread_exception(QString const &     whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    explicit snap_thread_exception(char const *        whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    explicit snap_thread_exception(std::string const & whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    explicit snap_thread_exception(QString const &     whatmsg) : snap_exception("snap_thread", whatmsg) {}
 };
 
 class snap_thread_exception_not_started : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_started(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_started(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_started(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_started(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_started(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_started(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_in_use_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_in_use_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_in_use_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_in_use_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_in_use_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_in_use_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_in_use_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_not_locked_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_locked_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_locked_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_locked_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_locked_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_not_locked_once_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_locked_once_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_once_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_once_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_locked_once_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_locked_once_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_not_locked_once_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_mutex_failed_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_mutex_failed_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_mutex_failed_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_mutex_failed_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_mutex_failed_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_mutex_failed_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_mutex_failed_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_invalid_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_invalid_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_invalid_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_invalid_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_invalid_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_invalid_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_invalid_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_system_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_system_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_system_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_system_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_system_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_system_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    explicit snap_thread_exception_system_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 

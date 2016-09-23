@@ -23,7 +23,6 @@
 #include "snapwebsites/snap_cassandra.h"
 #include "snapwebsites/snap_lock.h"
 #include "snapwebsites/snap_tables.h"
-#include "snapwebsites/tcp_client_server.h"
 
 #include <sstream>
 
@@ -1485,75 +1484,76 @@ bool server::check_cassandra(QString const & mandatory_table)
 }
 
 
-/** \brief Create a table in the specified context.
- *
- * The function checks whether the named table exists, if not it
- * creates it with default parameters. The result is a shared pointer
- * to the table in question.
- *
- * By default tables are just created in the Cassandra node you are
- * connected with. In order to use the table, it has to have been
- * propagated. This is done with a synchronization call. That call
- * is performed by this very function the first time a table is
- * queried if that table was created in an earlier call to this
- * function, then the synchronization function gets called and blocks
- * the process until the table was propagated. The current initialization
- * process expects the create_table() to be called a first time when
- * your plugin initial_update() is called, then called again once the
- * table is necessary. Therefore, this create_table() uses a 'call me
- * twice' scheme where the second call ensures the synchrony.
- *
- * \todo
- * Provide a structure that includes the different table parameters instead of
- * using hard coded defaults.
- *
- * \param[in] context  The context in which the table is to be created.
- * \param[in] table_name  The name of the new table, if it exists, nothing happens.
- * \param[in] comment  A comment about the new table.
- */
-QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment)
-{
-    // does table exist?
-    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-    if(!table)
-    {
-        // table is not there yet, create it
-        table = context->table(table_name);
-
-        QtCassandra::QCassandraSchema::Value compaction;
-        auto& compaction_map(compaction.map());
-        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-        compaction_map["min_threshold"] = QVariant(4);
-        compaction_map["max_threshold"] = QVariant(22);
-
-        auto& table_fields(table->fields());
-        table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
-        //
-        // about potential problems in regard to Gargbage Collection see:
-        //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
-        //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
-        //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
-        //
-        // Garbage Collection of 1 day (could be a lot shorter for several
-        // tables such as the "list", "backend" and "antihammering"
-        // tables... we will have to fix that once we have our proper per
-        // table definitions)
-        table_fields["gc_grace_seconds"]            = QVariant(86400);
-        table_fields["compaction"]                  = compaction;
-
-        table->create();
-
-        f_created_table[table_name] = true;
-    }
-    else if(f_created_table.contains(table_name))
-    {
-        // one single synchronization call for all the tables created
-        // thus far is enough.
-        f_created_table.clear();
-    }
-    return table;
-}
+///** \brief Create a table in the specified context.
+// *
+// * The function checks whether the named table exists, if not it
+// * creates it with default parameters. The result is a shared pointer
+// * to the table in question.
+// *
+// * By default tables are just created in the Cassandra node you are
+// * connected with. In order to use the table, it has to have been
+// * propagated. This is done with a synchronization call. That call
+// * is performed by this very function the first time a table is
+// * queried if that table was created in an earlier call to this
+// * function, then the synchronization function gets called and blocks
+// * the process until the table was propagated. The current initialization
+// * process expects the create_table() to be called a first time when
+// * your plugin initial_update() is called, then called again once the
+// * table is necessary. Therefore, this create_table() uses a 'call me
+// * twice' scheme where the second call ensures the synchrony.
+// *
+// * \todo
+// * Provide a structure that includes the different table parameters instead of
+// * using hard coded defaults.
+// *
+// * \param[in] context  The context in which the table is to be created.
+// * \param[in] table_name  The name of the new table, if it exists, nothing happens.
+// * \param[in] comment  A comment about the new table.
+// */
+//        QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
+//QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment)
+//{
+//    // does table exist?
+//    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+//    if(!table)
+//    {
+//        // table is not there yet, create it
+//        table = context->table(table_name);
+//
+//        QtCassandra::QCassandraSchema::Value compaction;
+//        auto& compaction_map(compaction.map());
+//        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+//        compaction_map["min_threshold"] = QVariant(4);
+//        compaction_map["max_threshold"] = QVariant(22);
+//
+//        auto& table_fields(table->fields());
+//        table_fields["comment"]                     = QVariant(comment);
+//        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
+//        //
+//        // about potential problems in regard to Gargbage Collection see:
+//        //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
+//        //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
+//        //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
+//        //
+//        // Garbage Collection of 1 day (could be a lot shorter for several
+//        // tables such as the "list", "backend" and "antihammering"
+//        // tables... we will have to fix that once we have our proper per
+//        // table definitions)
+//        table_fields["gc_grace_seconds"]            = QVariant(86400);
+//        table_fields["compaction"]                  = compaction;
+//
+//        table->create();
+//
+//        f_created_table[table_name] = true;
+//    }
+//    else if(f_created_table.contains(table_name))
+//    {
+//        // one single synchronization call for all the tables created
+//        // thus far is enough.
+//        f_created_table.clear();
+//    }
+//    return table;
+//}
 
 
 /** \brief Detach the server unless in foreground mode.
@@ -2116,19 +2116,29 @@ void server::stop(bool quitting)
     {
         std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
 
-        if(quitting)
+        if(!quitting)
         {
+            // snapcommunicator is not quitting, so we also want to unregister
+            // to make sure everything works as expected
+            //
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapserver");
             std::static_pointer_cast<messenger>(g_connection->f_messenger)->send_message(cmd);
+
+            // f_messenger is expected to HUP after this
+        }
+        else
+        {
+            // snapcommunicator is quitting so we can lose that connection now
+            //
+            g_connection->f_communicator->remove_connection(g_connection->f_messenger);
         }
     }
 
     {
         g_connection->f_communicator->remove_connection(g_connection->f_listener);
         g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
-        //g_connection->f_communicator->remove_connection(g_connection->f_messenger); -- will HUP once done
     }
 }
 
@@ -2142,10 +2152,11 @@ void server::stop(bool quitting)
  * This function is an implementation of the snap server so we can
  * handle new connections from various clients.
  */
-class listener_impl : public snap_communicator::snap_tcp_server_connection
+class listener_impl
+        : public snap_communicator::snap_tcp_server_connection
 {
 public:
-                                listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close);
+                                listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr);
 
     // snap_communicator::snap_tcp_server_connection implementation
     virtual void                process_accept();
@@ -2171,15 +2182,24 @@ private:
  * \param[in] s  The server we are listening for.
  * \param[in] addr  The address to listen on. Most often it is 0.0.0.0.
  * \param[in] port  The port to listen on.
+ * \param[in] certificate  The filename to a PEM file with a certificate.
+ * \param[in] private_key  The filename to a PEM file with the private key.
  * \param[in] max_connections  The maximum number of connections to keep
  *            waiting; if more arrive, refuse them until we are done with
  *            some existing connections.
  * \param[in] reuse_addr  Whether to let the OS reuse that socket immediately.
- * \param[in] auto_close  Whether to automatically close the socket once more
- *            needed anymore.
  */
-listener_impl::listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
-    : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
+listener_impl::listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr)
+    : snap_tcp_server_connection(
+                      addr
+                    , port
+                    , certificate
+                    , private_key
+                    , (certificate.empty() && private_key.empty()) || addr == "127.0.0.1"
+                            ? tcp_client_server::bio_server::mode_t::MODE_PLAIN
+                            : tcp_client_server::bio_server::mode_t::MODE_SECURE
+                    , max_connections
+                    , reuse_addr)
     , f_server(s)
 {
     non_blocking();
@@ -2199,8 +2219,8 @@ void listener_impl::process_accept()
 {
     // a new client just connected
     //
-    int const new_socket(accept());
-    if(new_socket < 0)
+    tcp_client_server::bio_client::pointer_t const new_client(accept());
+    if(!new_client)
     {
         // TBD: should we call process_error() instead? problem is this
         //      listener would be removed from the list of connections...
@@ -2210,21 +2230,11 @@ void listener_impl::process_accept()
         return;
     }
 
-    // we just have a socket and the keepalive() function in the
-    // snap_connection requires... a snap_connection object.
-    //
-    int optval(1);
-    socklen_t const optlen(sizeof(optval));
-    if(setsockopt(new_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
-    {
-        SNAP_LOG_WARNING("listener_impl::process_accept(): an error occurred trying to mark socket with SO_KEEPALIVE.");
-    }
-
     // process the new connection, which means create a child process
     // and run the necessary code to return an HTML page, a document,
     // robots.txt, etc.
     //
-    f_server->process_connection(new_socket);
+    f_server->process_connection(new_client);
 }
 
 
@@ -2310,6 +2320,11 @@ void server::listen()
         }
     }
 
+    // get the SSL certificate and private key paths
+    //
+    std::string const certificate(f_parameters["ssl_certificate"]);
+    std::string const private_key(f_parameters["ssl_private_key"]);
+
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
@@ -2337,7 +2352,7 @@ void server::listen()
     // auto-close is set to false because the accept() is not directly used
     // on the tcp_server object
     //
-    g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, max_pending_connections, true, false));
+    g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, certificate, private_key, max_pending_connections, true));
     g_connection->f_listener->set_name("server listener");
     g_connection->f_listener->set_priority(30);
     g_connection->f_communicator->add_connection(g_connection->f_listener);
@@ -2374,9 +2389,9 @@ void server::listen()
  * This function processes an incoming connection from a client.
  * This connection is from the snap.cgi to the snapserver.
  *
- * \param[in] socket  The socket which represents the new connection.
+ * \param[in] client  The client which represents the new connection.
  */
-void server::process_connection(int socket)
+void server::process_connection(tcp_client_server::bio_client::pointer_t client)
 {
     snap_child * child;
 
@@ -2395,10 +2410,7 @@ void server::process_connection(int socket)
                       "\n"
                       "<h1>503 Service Unavailable</h1>\n"
                       "<p>Snap cannot find Cassandra at the moment.</p>\n");
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-        write(socket, err.c_str(), err.size());
-#pragma GCC diagnostic pop
+        NOTUSED(client->write(err.c_str(), err.size()));
     }
     else
     {
@@ -2412,7 +2424,7 @@ void server::process_connection(int socket)
             f_children_waiting.pop_back();
         }
 
-        if(child->process(socket))
+        if(child->process(client))
         {
             // this child is now busy
             f_children_running.push_back(child);
@@ -2432,16 +2444,9 @@ void server::process_connection(int socket)
                           "\n"
                           "<h1>503 Service Unavailable</h1>\n"
                           "<p>Server cannot start child process.</p>\n");
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-            write(socket, err.c_str(), err.size());
-#pragma GCC diagnostic pop
+            NOTUSED(client->write(err.c_str(), err.size()));
         }
     }
-
-    // since we do not create any object holding this socket, we have
-    // to close it here... (the child has a dup() of it already)
-    close(socket);
 }
 
 

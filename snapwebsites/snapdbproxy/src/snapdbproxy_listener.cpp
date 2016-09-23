@@ -63,17 +63,15 @@
  * \li recv() -- a UDP message was received
  *
  * \param[in] s  The server we are listening for.
- * \param[in] addr  The address to listen on. Most often it is 0.0.0.0.
+ * \param[in] addr  The address to listen on. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on.
  * \param[in] max_connections  The maximum number of connections to keep
  *            waiting; if more arrive, refuse them until we are done with
  *            some existing connections.
  * \param[in] reuse_addr  Whether to let the OS reuse that socket immediately.
- * \param[in] auto_close  Whether to automatically close the socket once more
- *            needed anymore.
  */
-snapdbproxy_listener::snapdbproxy_listener(snapdbproxy * proxy, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
-    : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
+snapdbproxy_listener::snapdbproxy_listener(snapdbproxy * proxy, std::string const & addr, int port, int max_connections, bool reuse_addr)
+    : snap_tcp_server_connection(addr, port, "", "", tcp_client_server::bio_server::mode_t::MODE_PLAIN, max_connections, reuse_addr)
     , f_snapdbproxy(proxy)
 {
     set_name("snapdb proxy listener");
@@ -95,8 +93,8 @@ void snapdbproxy_listener::process_accept()
 {
     // a new client just connected
     //
-    int const new_socket(accept());
-    if(new_socket < 0)
+    tcp_client_server::bio_client::pointer_t new_client(accept());
+    if(new_client == nullptr)
     {
         // TBD: should we call process_error() instead? problem is this
         //      listener would be removed from the list of connections...
@@ -106,21 +104,11 @@ void snapdbproxy_listener::process_accept()
         return;
     }
 
-    // we just have a socket and the keepalive() function in the
-    // snap_connection requires... a snap_connection object.
-    //
-    int optval(1);
-    socklen_t const optlen(sizeof(optval));
-    if(setsockopt(new_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
-    {
-        SNAP_LOG_WARNING("snapdbproxy_listener::process_accept(): an error occurred trying to mark socket with SO_KEEPALIVE.");
-    }
-
     // process the new connection, which means create a child process
     // and run the necessary code to return an HTML page, a document,
     // robots.txt, etc.
     //
-    f_snapdbproxy->process_connection(new_socket);
+    f_snapdbproxy->process_connection(new_client);
 }
 
 

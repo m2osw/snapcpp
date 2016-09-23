@@ -2713,11 +2713,11 @@ pid_t snap_child::fork_child()
  * If the fork() call fails (returning -1) then the parent process
  * writes an HTTP error in the socket (503 Service Unavailable).
  *
- * \param[in] socket  The socket connecting this child to the client.
+ * \param[in] client  The client connection to attach to this child.
  *
  * \return true if the child process was successfully created.
  */
-bool snap_child::process(int socket)
+bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
 {
     if(f_is_child)
     {
@@ -2762,7 +2762,7 @@ bool snap_child::process(int socket)
         return true;
     }
 
-    f_socket = socket;
+    f_client = client;
 
     try
     {
@@ -2990,9 +2990,9 @@ void snap_child::read_environment()
     class read_env
     {
     public:
-        read_env(snap_child * snap, int socket, environment_map_t & env, environment_map_t & browser_cookies, environment_map_t & post, post_file_map_t & files)
+        read_env(snap_child * snap, tcp_client_server::bio_client::pointer_t client, environment_map_t & env, environment_map_t & browser_cookies, environment_map_t & post, post_file_map_t & files)
             : f_snap(snap)
-            , f_socket(socket)
+            , f_client(client)
             //, f_unget('\0') -- auto-init
             //, f_running(true) -- auto-init
             //, f_started(false) -- auto-init
@@ -3018,7 +3018,7 @@ void snap_child::read_environment()
         {
             f_snap->die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Unstable network connection",
-                QString("an error occured while reading the environment from the socket in the server child process (%1).").arg(details));
+                QString("an error occurred while reading the environment from the socket in the server child process (%1).").arg(details));
             NOTREACHED();
         }
 
@@ -3036,7 +3036,7 @@ void snap_child::read_environment()
             // this read blocks, so we read just 1 char. because we
             // want to stop calling read() as soon as possible (otherwise
             // we would be blocked here forever)
-            if(read(f_socket, &c, 1) != 1)
+            if(f_client->read(&c, 1) != 1)
             {
                 int const e(errno);
                 die(QString("I/O error, errno: %1").arg(e));
@@ -3590,7 +3590,8 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
 
     private:
         mutable snap_child *        f_snap = nullptr;
-        int32_t                     f_socket = -1;
+        tcp_client_server::bio_client::pointer_t
+                                    f_client;
         //char                        f_unget = 0;
         bool                        f_running = true;
         bool                        f_started = false;
@@ -3618,7 +3619,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
     f_post.clear();
     f_files.clear();
 
-    read_env r(this, f_socket, f_env, f_browser_cookies, f_post, f_files);
+    read_env r(this, f_client, f_env, f_browser_cookies, f_post, f_files);
 #ifdef DEBUG
     r.output_debug_log();
 #endif
@@ -3653,13 +3654,13 @@ void snap_child::mark_for_initialization()
  */
 void snap_child::write(char const * data, ssize_t size)
 {
-    if(f_socket == -1)
+    if(!f_client)
     {
         // this happens from backends that do not have snap.cgi running
         return;
     }
 
-    if(::write(f_socket, data, size) != size)
+    if(f_client->write(data, size) != size)
     {
         SNAP_LOG_FATAL("error while sending data to a client.");
         // XXX throw? we cannot call die() because die() calls write()!
@@ -4120,7 +4121,12 @@ bool snap_child::connect_cassandra(bool child)
     {
         if(!child)
         {
-            return false;
+            SNAP_LOG_DEBUG("snap_child::connect_cassandra() already considered connected.");
+
+            // here we return true since the Cassandra connection is
+            // already in place, valid and well
+            //
+            return true;
         }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database is being initialized more than once.",
@@ -4157,6 +4163,7 @@ bool snap_child::connect_cassandra(bool child)
         f_cassandra.reset();
         if(!child)
         {
+            SNAP_LOG_WARNING("snap_child::connect_cassandra() could not connect to snapdbproxy.");
             return false;
         }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
@@ -4181,6 +4188,7 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
         f_cassandra.reset();
         if(!child)
         {
+            SNAP_LOG_WARNING("snap_child::connect_cassandra() could not read the context.");
             return false;
         }
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
@@ -4207,29 +4215,47 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
 void snap_child::disconnect_cassandra()
 {
     snap_expr::expr::set_cassandra_context(nullptr);
+
+    // we must get rid of the site table otherwise it will hold a shared
+    // pointer to the context and the context to the QtCassandra object
+    //
+    reset_sites_table();
+
     f_context.reset();
     f_cassandra.reset();
 }
 
 
-/** \brief Create a table.
+/** \brief Retrieve the pointer to a table.
  *
- * This function is generally used by plugins to create indexes for the data
- * they manage.
+ * This function is generally used by plugins to retrieve tables they
+ * use to manage their data.
  *
- * The function can be called even if the table already exists.
+ * \exception snap_child_exception_no_cassandra
+ * If this function gets called when the Cassandra context is not yet
+ * defined, this exception is raised.
+ *
+ * \exception snap_child_exception_table_missing
+ * The table must already exists or this exception is raised. Tables
+ * are created by running the snapcreatetables tool before starting
+ * the snapserver.
  *
  * \param[in] table_name  The name of the table to create.
- * \param[in] comment  The comment to attach to the table.
  */
-QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const & table_name, QString const & comment)
+QtCassandra::QCassandraTable::pointer_t snap_child::get_table(QString const & table_name)
 {
-    server::pointer_t server( f_server.lock() );
-    if(!server)
+    if(f_context == nullptr)
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        throw snap_child_exception_no_cassandra("table \"" + table_name + "\" cannot be determined, we have no QCassandraContext.");
     }
-    return server->create_table(f_context, table_name, comment);
+
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    if(table == nullptr)
+    {
+        throw snap_child_exception_table_missing("table \"" + table_name + "\" does not exist.");
+    }
+
+    return table;
 }
 
 
@@ -5234,7 +5260,7 @@ void snap_child::site_redirect()
     // TBD -- should we also redirect the f_domain_key and f_website_key?
 
     // the site table is the old one, we want to switch to the new one
-    reset_site_table();
+    reset_sites_table();
 }
 
 
@@ -5248,13 +5274,13 @@ void snap_child::site_redirect()
  * The next time a user calls the set_site_parameter() or get_site_parameter()
  * a new site table object is created and filled as required.
  */
-void snap_child::reset_site_table()
+void snap_child::reset_sites_table()
 {
-    if(f_site_table)
+    if(f_sites_table)
     {
-        f_site_table->clearCache();
+        f_sites_table->clearCache();
     }
-    f_site_table.reset();
+    f_sites_table.reset();
 }
 
 
@@ -5715,11 +5741,7 @@ QString snap_child::cookie(QString const & name) const
 void snap_child::exit(int code)
 {
     // make sure the socket data is pushed to the caller
-    if(f_socket != -1)
-    {
-        close(f_socket);
-        f_socket = -1;
-    }
+    f_client.reset();
 
     // after we close the socket the answer is sent to the client so
     // we can take a little time to gather some statistics.
@@ -5905,7 +5927,7 @@ void snap_child::improve_signature(QString const & path, QDomDocument doc, QDomE
 QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name)
 {
     // retrieve site table if not there yet
-    if(!f_site_table)
+    if(!f_sites_table)
     {
         QString const table_name(get_name(name_t::SNAP_NAME_SITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
@@ -5915,16 +5937,16 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name
             QtCassandra::QCassandraValue value;
             return value;
         }
-        f_site_table = table;
+        f_sites_table = table;
     }
 
-    if(!f_site_table->exists(f_site_key))
+    if(!f_sites_table->exists(f_site_key))
     {
         // an empty value is considered to be a null value
         QtCassandra::QCassandraValue value;
         return value;
     }
-    QtCassandra::QCassandraRow::pointer_t row(f_site_table->row(f_site_key));
+    QtCassandra::QCassandraRow::pointer_t row(f_sites_table->row(f_site_key));
     if(!row->exists(name))
     {
         // an empty value is considered to be a null value
@@ -5953,19 +5975,11 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name
 void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value)
 {
     // retrieve site table if not there yet
-    if(!f_site_table)
+    if(!f_sites_table)
     {
-        server::pointer_t server( f_server.lock() );
-        if(!server)
-        {
-            throw snap_logic_exception("server pointer is nullptr");
-        }
-
-        // create
-        server->create_table(f_context, get_name(name_t::SNAP_NAME_SITES), "List of sites with their global parameters.");
-
-        // get the pointer after synchronization
-        f_site_table = server->create_table(f_context, get_name(name_t::SNAP_NAME_SITES), "List of sites with their global parameters.");
+        // get a pointer to the "sites" table
+        //
+        f_sites_table = get_table(get_name(name_t::SNAP_NAME_SITES));
 
         // mandatory field if this is not the first field being written
         //
@@ -5973,11 +5987,11 @@ void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandr
         //       website gets to create this table...
         if(name != get_name(name_t::SNAP_NAME_CORE_SITE_NAME))
         {
-            f_site_table->row(f_site_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
+            f_sites_table->row(f_site_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
         }
     }
 
-    f_site_table->row(f_site_key)->cell(name)->setValue(value);
+    f_sites_table->row(f_site_key)->cell(name)->setValue(value);
 }
 
 

@@ -67,7 +67,8 @@ private:
     int                                     f_not_ready_counter = 0;
     bool                                    f_cron_action = false;
     bool                                    f_stop_received = false;
-    bool                                    f_emit_warning = true;
+    bool                                    f_auto_retry_cassandra = false;
+    bool                                    f_emit_warning_about_missing_sites = true;
     bool                                    f_pinged = false;
     bool                                    f_global_lock = false;
 };

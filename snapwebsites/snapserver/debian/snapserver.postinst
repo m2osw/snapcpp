@@ -20,6 +20,20 @@ then
     then
         echo "notice: snapcreatetables failed."
     fi
+
+    # generate a private key and a certificate for remote snap.cgi to
+    # connect to this snapserver installation using SSL; this key
+    # will work for 3650 days (about 10 years)
+    #
+    SNAPSSL=/etc/snapwebsites/ssl
+    if test ! -f $SNAPSSL/snapserver.key \
+         -o ! -f $SNAPSSL/snapserver.crt
+    then
+        openssl req -newkey rsa:2048 \
+           -nodes -keyout $SNAPSSL/snapserver.key \
+           -x509 -days 3650 -out $SNAPSSL/snapserver.crt \
+           -subj "/C=US/ST=California/L=Sacramento/O=Snap/OU=Website/CN=snap.website"
+    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent

@@ -16,14 +16,14 @@
 :OUTPUT ACCEPT [0:0]
 
 :bad_tcp_packets - [0:0]
-:bad_robots - [0:0]
+:unwanted - [0:0]
 
 
 #########
 # INPUT #
 #########
 -A INPUT -j bad_tcp_packets
--A INPUT -j bad_robots
+-A INPUT -j unwanted
 
 # local network
 -A INPUT -i lo -s 127.0.0.1 -j ACCEPT
@@ -63,6 +63,8 @@
 # Apache
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 80 -d @PUBLIC_IP@ --syn -j ACCEPT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 80 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
 
 # LAN (TCP/UDP)
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m tcp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ --syn -j ACCEPT
@@ -121,9 +123,9 @@
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
-##############
-# bad_robots #
-##############
+############
+# unwanted #
+############
 # This queue is for Snap! to add robots that are doing DoS attacks
 # and other annoying robots
 

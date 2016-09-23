@@ -10,7 +10,7 @@ libqtcassandra (0.6.5.1~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:58:30 -0700
 
-libqtcassandra (0.6.4.5~xenial) xenial; urgency=high
+libqtcassandra (0.6.4.11~xenial) xenial; urgency=high
 
   * Nightly build.
 

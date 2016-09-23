@@ -1,8 +1,55 @@
-libsnapwebsites (1.1.5.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.12.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Thu, 22 Sep 2016 13:48:57 -0700
+ -- Build Server <build@m2osw.com>  Thu, 22 Sep 2016 02:00:48 -0700
+
+libsnapwebsites (1.1.12.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Applied a fix to the permanent connection. The background
+    connection would not properly remove the thread signal from the
+    snap communicator list of connections, so it could still be triggered
+    after the permanent connection entry was long gone.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 20:16:49 -0700
+
+libsnapwebsites (1.1.11.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Removed debug messages.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 10:51:49 -0700
+
+libsnapwebsites (1.1.10.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Actually set errno in bio_client because we check it later.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 10:36:49 -0700
+
+libsnapwebsites (1.1.9.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Adding debug in the read() of the client.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:59:49 -0700
+
+libsnapwebsites (1.1.8.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Add test to see whether the error occurs over and over again.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:34:49 -0700
+
+libsnapwebsites (1.1.7.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Handle case where the error queue never gets empty.
+  * SNAP-447: Show the broken up numbers so it makes it easy to read.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 09:08:49 -0700
+
+libsnapwebsites (1.1.6.0~xenial) xenial; urgency=high
+
+  * SNAP-450: Added support for proper interthread locking in handling of
+    the BIO, SSL, CTX, etc. objects from the OpenSSL library.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 21:08:49 -0700
 
 libsnapwebsites (1.1.5.1~xenial) xenial; urgency=high
 
@@ -10,7 +57,13 @@ libsnapwebsites (1.1.5.1~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:58:03 -0700
 
-libsnapwebsites (1.1.4.5~xenial) xenial; urgency=high
+libsnapwebsites (1.1.5.0~xenial) xenial; urgency=high
+
+  * SNAP-447: Create a function to send OpenSSL errors to our log.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 17:05:49 -0700
+
+libsnapwebsites (1.1.4.8~xenial) xenial; urgency=high
 
   * Nightly build.
 

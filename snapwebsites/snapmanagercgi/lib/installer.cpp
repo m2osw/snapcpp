@@ -776,7 +776,130 @@ void manager::reboot(bool reboot)
 }
 
 
-bool manager::replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, replace_configuration_value_t const flags)
+/** \brief Replace one configuration value in a configuration file.
+ *
+ * This function replaces the value of the specified field \p field_name
+ * with the new specified value \p new_value.
+ *
+ * The configuration file being tweaked is named \p filename. This is
+ * expected to be the full path to the file.
+ *
+ * The \p flags can be used to tweak how the value is defined, especially,
+ * whether it uses a colon or an equal sign, whether the value should be
+ * quoted, etc.
+ *
+ * The \p trim_left strings allows you to ignore any number of characters
+ * on the left side of the parameter name you are looking for. If you use
+ * the \p trim_left parameter, you probably also want to use the
+ * snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST flag otherwise
+ * it will possible create the parameter with an invalid set of such
+ * characters. Note that the "trimmed" characters are trimmed to compare
+ * the \p field_name parameter with the field name found in the file. It
+ * otherwise remains in the output file.
+ *
+ * The available flags are:
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_NO_FLAGS
+ *
+ * No flags specified; this can be used as a default if none of the
+ * other flag values are required.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+ *
+ * Create a backup of filename (with .bak appended) if the file
+ * already exists.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE
+ *
+ * Save the value in double quotes. The \p new_value parameter is expected
+ * to not already include double quotes.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
+ *
+ * Save the value in single quotes. The \p new_value parameter is expected
+ * to not already include single quotes.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
+ *
+ * Replace the value if it exists. If the value is not found in the
+ * existing file, it does not get added to the file (which is the
+ * default when this flag is not specified.)
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
+ *
+ * The field name and the value are separated by a colon instead of
+ * an equal if you use that flag. Note that this function will not
+ * replace an existing equal with a colon, or an existing colon with
+ * an equal sign. It has to be the correct version. If you may have
+ * either, you probably want to use
+ * snap_manager::REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST alongside.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
+ *
+ * Make sure there is a space after the equal sign (or colon if you
+ * specified snap_manager::REPLACE_CONFIGURATION_VALUE_COLON). The
+ * space does not need to already be there, it will be added if
+ * it were missing before.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
+ *
+ * The variable may be commented out. If the input starts with a
+ * hash character, then it gets removed along with spaces up to
+ * the non-hash or space character. If that represents your variable
+ * then the hashes and spaces get removed and the new value saved.
+ *
+ * If you need to support other characters for comments (i.e. the
+ * semicolon is used in .ini files, for example) then you may be
+ * able to use the \p trim_left parameter with the
+ * snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT flag.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
+ *
+ * This file format uses .ini like sections: names defined between
+ * square brackets that define what looks like a namespace. To search
+ * and replace in a specific section, make sure to include the section
+ * name in the \p field_name parameter. For example:
+ *
+ * \code
+ * # For a file with:
+ * [Unit]
+ * After=network
+ * ...
+ *
+ * // Use field_name such as:
+ * replace_configuration_value(..., "Unit::After", ...);
+ * \endcode
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST
+ *
+ * This flag is used to make sure we do not create a new configuration
+ * file if none exist. But default a new .conf file gets created if
+ * none exist at the time this function gets called.
+ *
+ * \li snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
+ *
+ * When the \p trim_left parameter matches various characters on the left
+ * side of the field name, those characters do not get removed from the
+ * output. This flag can be used to have those characters removed, which
+ * is similar to trimming comment introducer characters such as ';'.
+ *
+ * \param[in] filename  The name of the configuration file being edited.
+ * \param[in] field_name  The name of the field being updated.
+ * \param[in] new_value  The new value for that field.
+ * \param[in] flags  A set of flags to tweak the behavior of the function.
+ * \param[in] trim_left  Whether we ignore some characters to the left of
+ *                       the field name (in the file.)
+ *
+ * \return true if the function encountered no problem. If the "must exist"
+ *         flag was used, the function may return true when the field was
+ *         not updated nor appened.
+ */
+bool manager::replace_configuration_value(
+                  QString const & filename
+                , QString const & field_name
+                , QString const & new_value
+                , replace_configuration_value_t const flags
+                , QString const & trim_left)
 {
     QString const equal((flags & REPLACE_CONFIGURATION_VALUE_COLON) != 0 ? ":" : "=");
     QString const quote((flags & REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE) == 0
@@ -814,8 +937,14 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
     QByteArray const utf8_line(line.toUtf8());
 
     // add a new line character at the end of that line
+    //
     QString const section_line(section + "\n");
     QByteArray const utf8_section_line(section_line.toUtf8());
+
+    // get a UTF-8 version of trim_left although really we only check bytes
+    // not UTF-8 characters...
+    //
+    QByteArray const utf8_trim_left(trim_left.toUtf8());
 
     // make sure to create the file if it does not exist
     // we expect the filename parameter to be something like
@@ -919,20 +1048,11 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
             {
                 // length without the '\n'
                 //
-                if((flags & REPLACE_CONFIGURATION_VALUE_HASH_COMMENT) != 0)
-                {
-                    // remove the '#' and spaces if any
-                    //
-                    if(*start == '#')
-                    {
-                        ++start;
-                        while(isspace(*start) || *start == '#')
-                        {
-                            ++start;
-                        }
-                    }
-                }
                 size_t len(s - start);
+
+                // at this time, sections cannot be uncommented by this function
+                //
+                char const * trimmed_start(start);
                 if(!section_utf8.isEmpty())
                 {
                     if(len >= static_cast<size_t>(section_utf8.size())
@@ -974,13 +1094,47 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                         }
                     }
                 }
+                else
+                {
+                    if((flags & REPLACE_CONFIGURATION_VALUE_HASH_COMMENT) != 0)
+                    {
+                        // remove the introducing '#' and space characters if any
+                        //
+                        if(*trimmed_start == '#')
+                        {
+                            ++trimmed_start;
+                            while(isspace(*trimmed_start) || *trimmed_start == '#')
+                            {
+                                ++trimmed_start;
+                            }
+                            len = s - trimmed_start;
+                        }
+                    }
+
+                    if(!trim_left.isEmpty())
+                    {
+                        for(; trimmed_start < s && strchr(utf8_trim_left, *trimmed_start) != nullptr; ++trimmed_start);
+                        len = s - trimmed_start;
+                    }
+                }
                 if(in_section
                 && len >= static_cast<size_t>(field_name_utf8.size())
-                && strncmp(start, field_name_utf8.data(), field_name_utf8.size()) == 0)
+                && strncmp(trimmed_start, field_name_utf8.data(), field_name_utf8.size()) == 0)
                 {
                     // we found the field the user is asking to update
                     //
                     found_field = true;
+                    if(trimmed_start > start
+                    && (flags & REPLACE_CONFIGURATION_VALUE_TRIM_RESULT) == 0)
+                    {
+                        ssize_t const trimmed_len(trimmed_start - start);
+                        if(::write(fd, start, trimmed_len) != trimmed_len)
+                        {
+                            int const e(errno);
+                            SNAP_LOG_ERROR("writing of new line to \"")(filename)("\" failed (errno: ")(e)(", ")(strerror(e))(")");
+                            return false;
+                        }
+                    }
                     if(::write(fd, utf8_line.data(), utf8_line.size()) != utf8_line.size())
                     {
                         int const e(errno);
@@ -990,9 +1144,10 @@ bool manager::replace_configuration_value(QString const & filename, QString cons
                 }
                 else
                 {
-                    // include the '\n'
+                    // recalculate length and include the '\n'
+                    // (we MUST recalculate in case the string was left trimmed
                     //
-                    ++len;
+                    len = s - start + 1;
                     if(::write(fd, start, len) != static_cast<ssize_t>(len))
                     {
                         int const e(errno);

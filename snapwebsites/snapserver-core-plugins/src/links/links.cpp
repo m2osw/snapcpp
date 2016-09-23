@@ -853,7 +853,7 @@ QtCassandra::QCassandraTable::pointer_t links::get_links_table()
     // retrieve links index table if not there yet
     if(!f_links_table)
     {
-        f_links_table = f_snap->create_table(get_name(name_t::SNAP_NAME_LINKS_TABLE), "Links index table.");
+        f_links_table = f_snap->get_table(get_name(name_t::SNAP_NAME_LINKS_TABLE));
     }
     return f_links_table;
 }

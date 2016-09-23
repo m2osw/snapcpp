@@ -26,18 +26,18 @@ namespace snap
 class snap_string_list_exception : public snap_exception
 {
 public:
-    snap_string_list_exception(const char *        whatmsg) : snap_exception("snap_string_list", whatmsg) {}
-    snap_string_list_exception(const std::string & whatmsg) : snap_exception("snap_string_list", whatmsg) {}
-    snap_string_list_exception(const QString &     whatmsg) : snap_exception("snap_string_list", whatmsg) {}
+    explicit snap_string_list_exception(const char *        whatmsg) : snap_exception("snap_string_list", whatmsg) {}
+    explicit snap_string_list_exception(const std::string & whatmsg) : snap_exception("snap_string_list", whatmsg) {}
+    explicit snap_string_list_exception(const QString &     whatmsg) : snap_exception("snap_string_list", whatmsg) {}
 };
 
 
 class snap_string_list_exception_out_of_range : public snap_string_list_exception
 {
 public:
-    snap_string_list_exception_out_of_range(const char *        whatmsg) : snap_string_list_exception(whatmsg) {}
-    snap_string_list_exception_out_of_range(const std::string & whatmsg) : snap_string_list_exception(whatmsg) {}
-    snap_string_list_exception_out_of_range(const QString &     whatmsg) : snap_string_list_exception(whatmsg) {}
+    explicit snap_string_list_exception_out_of_range(const char *        whatmsg) : snap_string_list_exception(whatmsg) {}
+    explicit snap_string_list_exception_out_of_range(const std::string & whatmsg) : snap_string_list_exception(whatmsg) {}
+    explicit snap_string_list_exception_out_of_range(const QString &     whatmsg) : snap_string_list_exception(whatmsg) {}
 };
 
 

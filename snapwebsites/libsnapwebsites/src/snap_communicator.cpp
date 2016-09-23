@@ -3412,7 +3412,7 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_hup()
  *
  * \param[in] addr  The address to connect to.
  * \param[in] port  The port to connect to.
- * \param[in] mode  Use this mode to connect as (PLAIN or SECURE).
+ * \param[in] mode  Use this mode to connect as (PLAIN, ALWAYS_SECURE or SECURE).
  * \param[in] blocking  Whether to keep the socket blocking or make it
  *                      non-blocking.
  */
@@ -3488,15 +3488,58 @@ void snap_communicator::snap_tcp_client_message_connection::send_message(snap_co
  * This function is used to initialize a server connection, a TCP/IP
  * listener which can accept() new connections.
  *
- * \param[in] communicator  The snap communicator controlling this connection.
+ * The connection uses a \p mode parameter which can be set to MODE_PLAIN,
+ * in which case the \p certificate and \p private_key parameters are
+ * ignored, or MODE_SECURE.
+ *
+ * This connection supports secure SSL communication using a certificate
+ * and a private key. These have to be specified as filenames. The
+ * `snapcommunicator` daemon makes use of files defined under
+ * "/etc/snapwebsites/ssl/..." by default.
+ *
+ * These files are created using this command line:
+ *
+ * \code
+ * openssl req \
+ *     -newkey rsa:2048 -nodes -keyout ssl-test.key \
+ *     -x509 -days 3650 -out ssl-test.crt
+ * \endcode
+ *
+ * Then pass "ssl-test.crt" as the certificate and "ssl-test.key"
+ * as the private key.
+ *
+ * \todo
+ * Add support for DH connections. Since our snapcommunicator connections
+ * are mostly private, it should not be a huge need at this point, though.
+ *
+ * \todo
+ * Add support for verified certificates. Right now we do not create
+ * signed certificates. This does not prevent fully secure transactions,
+ * it just cannot verify that the computer on the other side is correct.
+ *
+ * \warning
+ * The \p max_connections parameter is currently ignored because the
+ * BIO implementation does not give you an API to change that parameter.
+ * That being said, they default to the maximum number that the Linux
+ * kernel will accept so it should be just fine.
+ *
  * \param[in] addr  The address to listen on. It may be set to "0.0.0.0".
  * \param[in] port  The port to listen on.
+ * \param[in] certificate  The filename to a .pem file.
+ * \param[in] private_key  The filename to a .pem file.
+ * \param[in] mode  The mode to use to open the connection (PLAIN or SECURE.)
  * \param[in] max_connections  The number of connections to keep in the listen queue.
  * \param[in] reuse_addr  Whether to mark the socket with the SO_REUSEADDR flag.
- * \param[in] auto_close  Automatically close the client socket in accept and the destructor.
  */
-snap_communicator::snap_tcp_server_connection::snap_tcp_server_connection(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
-    : tcp_server(addr, port, max_connections, reuse_addr, auto_close)
+snap_communicator::snap_tcp_server_connection::snap_tcp_server_connection(
+                  std::string const & addr
+                , int port
+                , std::string const & certificate
+                , std::string const & private_key
+                , mode_t mode
+                , int max_connections
+                , bool reuse_addr)
+    : bio_server(snap_addr::addr(addr, port, "tcp"), max_connections, reuse_addr, certificate, private_key, mode)
 {
 }
 
@@ -3527,7 +3570,7 @@ bool snap_communicator::snap_tcp_server_connection::is_listener() const
  */
 int snap_communicator::snap_tcp_server_connection::get_socket() const
 {
-    return tcp_server::get_socket();
+    return bio_server::get_socket();
 }
 
 
@@ -3548,11 +3591,10 @@ int snap_communicator::snap_tcp_server_connection::get_socket() const
  *
  * The destructor will automatically close that socket on destruction.
  *
- * \param[in] communicator  The snap communicator controlling this connection.
- * \param[in] socket  The socket that acecpt() returned.
+ * \param[in] client  The client that acecpt() returned.
  */
-snap_communicator::snap_tcp_server_client_connection::snap_tcp_server_client_connection(int socket)
-    : f_socket(socket < 0 ? -1 : socket)
+snap_communicator::snap_tcp_server_client_connection::snap_tcp_server_client_connection(tcp_client_server::bio_client::pointer_t client)
+    : f_client(client)
 {
 }
 
@@ -3579,12 +3621,12 @@ snap_communicator::snap_tcp_server_client_connection::~snap_tcp_server_client_co
  */
 ssize_t snap_communicator::snap_tcp_server_client_connection::read(void * buf, size_t count)
 {
-    if(f_socket == -1)
+    if(!f_client)
     {
         errno = EBADF;
         return -1;
     }
-    return ::read(f_socket, buf, count);
+    return f_client->read(reinterpret_cast<char *>(buf), count);
 }
 
 
@@ -3610,12 +3652,12 @@ ssize_t snap_communicator::snap_tcp_server_client_connection::read(void * buf, s
  */
 ssize_t snap_communicator::snap_tcp_server_client_connection::write(void const * buf, size_t count)
 {
-    if(f_socket == -1)
+    if(!f_client)
     {
         errno = EBADF;
         return -1;
     }
-    return ::write(f_socket, buf, count);
+    return f_client->write(reinterpret_cast<char const *>(buf), count);
 }
 
 
@@ -3629,15 +3671,7 @@ ssize_t snap_communicator::snap_tcp_server_client_connection::write(void const *
  */
 void snap_communicator::snap_tcp_server_client_connection::close()
 {
-    if(f_socket != -1)
-    {
-        if(::close(f_socket) != 0)
-        {
-            int const e(errno);
-            SNAP_LOG_ERROR("closing socket generated error: ")(e);
-        }
-        f_socket = -1;
-    }
+    f_client.reset();
 }
 
 
@@ -3647,7 +3681,13 @@ void snap_communicator::snap_tcp_server_client_connection::close()
  */
 int snap_communicator::snap_tcp_server_client_connection::get_socket() const
 {
-    return f_socket;
+    if(f_client == nullptr)
+    {
+        // client connection was closed
+        //
+        return -1;
+    }
+    return f_client->get_socket();
 }
 
 
@@ -3881,11 +3921,10 @@ bool snap_communicator::snap_tcp_server_client_connection::define_address()
  * the function marks the socket as non-blocking. This is important for
  * the reader and writer capabilities.
  *
- * \param[in] communicator  The snap communicator controlling this connection.
- * \param[in] socket  The socket to be used for reading and writing.
+ * \param[in] client  The client to be used for reading and writing.
  */
-snap_communicator::snap_tcp_server_client_buffer_connection::snap_tcp_server_client_buffer_connection(int socket)
-    : snap_tcp_server_client_connection(socket)
+snap_communicator::snap_tcp_server_client_buffer_connection::snap_tcp_server_client_buffer_connection(tcp_client_server::bio_client::pointer_t client)
+    : snap_tcp_server_client_connection(client)
 {
     non_blocking();
 }
@@ -4088,17 +4127,16 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_hup()
  * This is the most useful client in our Snap! Communicator
  * as it directly sends and receives messages.
  *
- * \param[in] communicator  The communicator connected with this client.
- * \param[in] socket  The in/out socket.
+ * \param[in] client  The client representing the in/out socket.
  */
-snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection(int socket)
-    : snap_tcp_server_client_buffer_connection(socket)
+snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection(tcp_client_server::bio_client::pointer_t client)
+    : snap_tcp_server_client_buffer_connection(client)
 {
     // TODO: somehow the port seems wrong (i.e. all connections return the same port)
 
     struct sockaddr_storage address = (sockaddr_storage());
     socklen_t length(sizeof(address));
-    if(getpeername(socket, reinterpret_cast<struct sockaddr *>(&address), &length) != 0)
+    if(getpeername(client->get_socket(), reinterpret_cast<struct sockaddr *>(&address), &length) != 0)
     {
         int const e(errno);
         SNAP_LOG_ERROR("getpeername() failed retrieving IP address (errno: ")(e)(" -- ")(strerror(e))(").");
@@ -4261,9 +4299,9 @@ public:
         : public snap_communicator::snap_tcp_server_client_message_connection
     {
     public:
-        messenger(snap_communicator::snap_tcp_client_permanent_message_connection * client, int socket)
-            : snap_tcp_server_client_message_connection(socket)
-            , f_client(client)
+        messenger(snap_communicator::snap_tcp_client_permanent_message_connection * parent, tcp_client_server::bio_client::pointer_t client)
+            : snap_tcp_server_client_message_connection(client)
+            , f_parent(parent)
         {
             set_name("snap_tcp_client_permanent_message_connection_impl::messenger");
         }
@@ -4272,31 +4310,31 @@ public:
         virtual void process_error()
         {
             snap_tcp_server_client_message_connection::process_error();
-            f_client->process_error();
+            f_parent->process_error();
         }
 
         // snap_connection implementation
         virtual void process_hup()
         {
             snap_tcp_server_client_message_connection::process_hup();
-            f_client->process_hup();
+            f_parent->process_hup();
         }
 
         // snap_connection implementation
         virtual void process_invalid()
         {
             snap_tcp_server_client_message_connection::process_invalid();
-            f_client->process_invalid();
+            f_parent->process_invalid();
         }
 
         // snap_tcp_server_client_message_connection implementation
         virtual void process_message(snap_communicator_message const & message)
         {
-            f_client->process_message(message);
+            f_parent->process_message(message);
         }
 
     private:
-        snap_communicator::snap_tcp_client_permanent_message_connection *  f_client;
+        snap_communicator::snap_tcp_client_permanent_message_connection *  f_parent;
     };
 
     class thread_done_signal
@@ -4305,8 +4343,8 @@ public:
     public:
         typedef std::shared_ptr<thread_done_signal>   pointer_t;
 
-        thread_done_signal(snap_tcp_client_permanent_message_connection_impl * client)
-            : f_client(client)
+        thread_done_signal(snap_tcp_client_permanent_message_connection_impl * parent_impl)
+            : f_parent_impl(parent_impl)
         {
             set_name("snap_tcp_client_permanent_message_connection_impl::thread_done_signal");
         }
@@ -4322,24 +4360,24 @@ public:
         {
             snap_thread_done_signal::process_read();
 
-            f_client->thread_done();
+            f_parent_impl->thread_done();
         }
 
     private:
-        snap_tcp_client_permanent_message_connection_impl *  f_client;
+        snap_tcp_client_permanent_message_connection_impl *  f_parent_impl;
     };
 
     class runner
         : public snap_thread::snap_runner
     {
     public:
-        runner(snap_tcp_client_permanent_message_connection_impl * client_impl, std::string const & address, int port, tcp_client_server::bio_client::mode_t mode)
+        runner(snap_tcp_client_permanent_message_connection_impl * parent_impl, std::string const & address, int port, tcp_client_server::bio_client::mode_t mode)
             : snap_runner("background snap_tcp_client_permanent_message_connection for asynchroneous connections")
-            , f_client_impl(client_impl)
+            , f_parent_impl(parent_impl)
             , f_address(address)
             , f_port(port)
             , f_mode(mode)
-            , f_socket(-1)
+            //, f_client(nullptr) -- auto-init
             //, f_last_error("") -- auto-init
         {
         }
@@ -4356,7 +4394,7 @@ public:
 
             // tell the main thread that we are done
             //
-            f_client_impl->trigger_thread_done();
+            f_parent_impl->trigger_thread_done();
         }
 
 
@@ -4384,12 +4422,6 @@ public:
                 // object otherwise...)
                 //
                 f_tcp_connection.reset(new tcp_client_server::bio_client(f_address, f_port, f_mode));
-
-                // we make a copy of the socket because we may
-                // be using a thread and the variable has to be
-                // atomic, which f_socket is
-                //
-                f_socket = f_tcp_connection->get_socket();
             }
             catch(tcp_client_server::tcp_client_server_runtime_error const & e)
             {
@@ -4398,7 +4430,7 @@ public:
                 // WARNING: our logger is not multi-thread safe
                 //SNAP_LOG_ERROR("connection to ")(f_address)(":")(f_port)(" failed with: ")(e.what());
                 f_last_error = e.what();
-                f_socket = -1;
+                f_tcp_connection.reset();
             }
         }
 
@@ -4434,23 +4466,29 @@ public:
         }
 
 
-        /** \brief Retrieve the socket allocated and connected by the thread.
+        /** \brief Retrieve the client allocated and connected by the thread.
          *
-         * This functio returns the socket resulting from connection
-         * attempt of the background thread.
+         * This functio returns the TCP connection object resulting from
+         * connection attempts of the background thread.
          *
-         * If the socket is -1, then you may get the error message
+         * If the pointer is null, then you may get the error message
          * using the get_last_error() function.
          *
-         * \note
-         * The socket is an atomic variable so it is safe to check it
-         * between threads without any additional memory barrier.
+         * You can get the client TCP connection pointer once. After that
+         * you always get a null pointer.
          *
-         * \return The connection socket.
+         * \note
+         * This function is guarded so the pointer and the object it
+         * points to will be valid in another thread that retrieves it.
+         *
+         * \return The connection pointer.
          */
-        int get_socket() const
+        tcp_client_server::bio_client::pointer_t release_client()
         {
-            return f_socket;
+            snap_thread::snap_lock lock(f_mutex);
+            tcp_client_server::bio_client::pointer_t tcp_connection;
+            tcp_connection.swap(f_tcp_connection);
+            return tcp_connection;
         }
 
 
@@ -4493,17 +4531,15 @@ public:
         void close()
         {
             f_tcp_connection.reset();
-            f_socket = -1;
         }
 
 
     private:
-        snap_tcp_client_permanent_message_connection_impl * f_client_impl;
+        snap_tcp_client_permanent_message_connection_impl * f_parent_impl;
         std::string const                                   f_address;
         int const                                           f_port;
         tcp_client_server::bio_client::mode_t const         f_mode;
         tcp_client_server::bio_client::pointer_t            f_tcp_connection;
-        std::atomic<int>                                    f_socket; // = -1 -- must be done in constructor
         std::string                                         f_last_error;
     };
 
@@ -4523,8 +4559,8 @@ public:
      * \param[in] port  The port we are to connect to.
      * \param[in] mode  The mode used to connect.
      */
-    snap_tcp_client_permanent_message_connection_impl(snap_communicator::snap_tcp_client_permanent_message_connection * client, std::string const & address, int port, tcp_client_server::bio_client::mode_t mode)
-        : f_client(client)
+    snap_tcp_client_permanent_message_connection_impl(snap_communicator::snap_tcp_client_permanent_message_connection * parent, std::string const & address, int port, tcp_client_server::bio_client::mode_t mode)
+        : f_parent(parent)
         //, f_thread_done() -- auto-init
         , f_thread_runner(this, address, port, mode)
         , f_thread("background connection handler thread", &f_thread_runner)
@@ -4544,6 +4580,13 @@ public:
         // that we do not have a thread running
         //
         f_thread.stop();
+
+        // in this case we may still have an instance of the f_thread_done
+        // which linger around, we want it out
+        //
+        // Note: the call is safe even if the f_thread_done is null
+        //
+        snap_communicator::instance()->remove_connection(f_thread_done);
 
         // although the message variable is deleted, it would not get
         // removed from the snap communicator if we were not doing
@@ -4664,7 +4707,8 @@ public:
         //
         snap_communicator::instance()->remove_connection(f_thread_done);
 
-        if(f_thread_runner.get_socket() == -1)
+        tcp_client_server::bio_client::pointer_t client(f_thread_runner.release_client());
+        if(!client)
         {
             // we will access the f_last_error member of the thread runner
             // which may not be available to the main thread yet, calling
@@ -4678,11 +4722,11 @@ public:
 
             // signal that an error occurred
             //
-            f_client->process_connection_failed(f_thread_runner.get_last_error());
+            f_parent->process_connection_failed(f_thread_runner.get_last_error());
         }
         else
         {
-            f_messenger.reset(new messenger(f_client, f_thread_runner.get_socket()));
+            f_messenger.reset(new messenger(f_parent, client));
 
             // add the messenger to the communicator
             //
@@ -4698,7 +4742,7 @@ public:
 
             // let the client know we are now connected
             //
-            f_client->process_connected();
+            f_parent->process_connected();
         }
     }
 
@@ -4809,7 +4853,7 @@ public:
 
 
 private:
-    snap_communicator::snap_tcp_client_permanent_message_connection *   f_client;
+    snap_communicator::snap_tcp_client_permanent_message_connection *   f_parent;
     thread_done_signal::pointer_t                                       f_thread_done;
     runner                                                              f_thread_runner;
     snap::snap_thread                                                   f_thread;

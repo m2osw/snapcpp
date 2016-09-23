@@ -40,17 +40,17 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snapserver_manager_exception : public snap_exception
 {
 public:
-    snapserver_manager_exception(char const *        what_msg) : snap_exception("snapserver_manager", what_msg) {}
-    snapserver_manager_exception(std::string const & what_msg) : snap_exception("snapserver_manager", what_msg) {}
-    snapserver_manager_exception(QString const &     what_msg) : snap_exception("snapserver_manager", what_msg) {}
+    explicit snapserver_manager_exception(char const *        what_msg) : snap_exception("snapserver_manager", what_msg) {}
+    explicit snapserver_manager_exception(std::string const & what_msg) : snap_exception("snapserver_manager", what_msg) {}
+    explicit snapserver_manager_exception(QString const &     what_msg) : snap_exception("snapserver_manager", what_msg) {}
 };
 
 class snapserver_manager_exception_invalid_argument : public snapserver_manager_exception
 {
 public:
-    snapserver_manager_exception_invalid_argument(char const *        what_msg) : snapserver_manager_exception(what_msg) {}
-    snapserver_manager_exception_invalid_argument(std::string const & what_msg) : snapserver_manager_exception(what_msg) {}
-    snapserver_manager_exception_invalid_argument(QString const &     what_msg) : snapserver_manager_exception(what_msg) {}
+    explicit snapserver_manager_exception_invalid_argument(char const *        what_msg) : snapserver_manager_exception(what_msg) {}
+    explicit snapserver_manager_exception_invalid_argument(std::string const & what_msg) : snapserver_manager_exception(what_msg) {}
+    explicit snapserver_manager_exception_invalid_argument(QString const &     what_msg) : snapserver_manager_exception(what_msg) {}
 };
 
 

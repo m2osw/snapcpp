@@ -108,8 +108,8 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "log_config",
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "log-config",
             "/etc/snapwebsites/snapcgilog.properties",
             "Full path of log configuration file",
             advgetopt::getopt::argument_mode_t::optional_argument
@@ -121,6 +121,14 @@ namespace
             nullptr,
             "Show this help screen.",
             advgetopt::getopt::argument_mode_t::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "use-ssl",
+            nullptr,
+            "Whether SSL should be used to connect to snapserver. Set to \"true\" or \"false\".",
+            advgetopt::getopt::argument_mode_t::required_argument
         },
         {
             '\0',
@@ -176,8 +184,8 @@ snap_cgi::snap_cgi( int argc, char * argv[] )
         exit(1);
     }
 
-    // read log_config and setup the logger
-    std::string logconfig(f_opt.get_string("log_config"));
+    // read log-config and setup the logger
+    std::string logconfig(f_opt.get_string("log-config"));
     snap::logging::configure_conffile( logconfig.c_str() );
 }
 
@@ -430,12 +438,42 @@ int snap_cgi::process()
                     << body;
         return false;
     }
+
+    // check whether the user set use-ssl to false, if so we want to use
+    // a plain connection to snapserver
+    //
+    bool secure(true);
+    if(f_opt.is_defined("use-ssl"))
+    {
+        std::string const & use_ssl(f_opt.get_string("use-ssl"));
+        if(use_ssl == "false")
+        {
+            secure = false;
+        }
+        else if(use_ssl != "true")
+        {
+            SNAP_LOG_WARNING("\"use_ssl\" parameter is set to unknown value \"")(use_ssl)("\". Using \"true\" instead.");
+        }
+    }
+    if(secure
+    && f_address == "127.0.0.1")
+    {
+        // avoid SSL if we are connecting locally ("lo" interface is secure)
+        //
+        secure = false;
+    }
+
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 
-    SNAP_LOG_DEBUG("f_address=")(f_address.c_str())(", f_port=")(f_port);
 #endif
-    tcp_client_server::tcp_client socket(f_address, f_port);
+    SNAP_LOG_DEBUG("f_address=")(f_address)(", f_port=")(f_port)(", secure=")(secure ? "true" : "false");
+    tcp_client_server::bio_client socket(
+                  f_address
+                , f_port
+                , secure
+                        ? tcp_client_server::bio_client::mode_t::MODE_SECURE
+                        : tcp_client_server::bio_client::mode_t::MODE_PLAIN);
 
     std::string var;
     auto send_data([this, &var, &socket, request_method]()

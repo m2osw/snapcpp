@@ -43,17 +43,17 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snapwatchdog_exception : public snap_exception
 {
 public:
-    snapwatchdog_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapwatchdog_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapwatchdog_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapwatchdog_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapwatchdog_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapwatchdog_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
 };
 
 class snapwatchdog_exception_invalid_parameters : public snapwatchdog_exception
 {
 public:
-    snapwatchdog_exception_invalid_parameters(char const *        whatmsg) : snapwatchdog_exception(whatmsg) {}
-    snapwatchdog_exception_invalid_parameters(std::string const & whatmsg) : snapwatchdog_exception(whatmsg) {}
-    snapwatchdog_exception_invalid_parameters(QString const &     whatmsg) : snapwatchdog_exception(whatmsg) {}
+    explicit snapwatchdog_exception_invalid_parameters(char const *        whatmsg) : snapwatchdog_exception(whatmsg) {}
+    explicit snapwatchdog_exception_invalid_parameters(std::string const & whatmsg) : snapwatchdog_exception(whatmsg) {}
+    explicit snapwatchdog_exception_invalid_parameters(QString const &     whatmsg) : snapwatchdog_exception(whatmsg) {}
 };
 
 

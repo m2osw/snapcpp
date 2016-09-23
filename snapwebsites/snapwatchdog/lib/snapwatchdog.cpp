@@ -731,15 +731,15 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         f_stopping = true;
         g_messenger->mark_done();
 
-        // someone asking us to stop snap_init; this means we want to stop
-        // all the services that snap_init started; if we have a
-        // snapcommunicator, then we use that to send the STOP signal to
-        // all services at once
+        // if not snapcommunicator is not quitting, send an UNREGISTER
         //
-        snap_communicator_message unregister;
-        unregister.set_command("UNREGISTER");
-        unregister.add_parameter("service", "snapwatchdog");
-        g_messenger->send_message(unregister);
+        if(command != "QUITTING")
+        {
+            snap_communicator_message unregister;
+            unregister.set_command("UNREGISTER");
+            unregister.add_parameter("service", "snapwatchdog");
+            g_messenger->send_message(unregister);
+        }
 
         g_communicator->remove_connection(g_tick_timer);
         if(f_processes.empty())
@@ -1171,11 +1171,7 @@ pid_t watchdog_child::get_child_pid() const
 void watchdog_child::exit(int code)
 {
     // make sure the socket data is pushed to the caller
-    if(f_socket != -1)
-    {
-        close(f_socket);
-        f_socket = -1;
-    }
+    f_client.reset();
 
     server::exit(code);
     NOTREACHED();

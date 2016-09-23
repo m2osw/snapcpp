@@ -99,16 +99,17 @@ class form
 public:
     typedef uint32_t    button_t;
 
-    static button_t const       FORM_BUTTON_NONE            = 0x00000000;
-    static button_t const       FORM_BUTTON_RESET           = 0x00000001;
-    static button_t const       FORM_BUTTON_SAVE            = 0x00000002;
-    static button_t const       FORM_BUTTON_SAVE_EVERYWHERE = 0x00000004;
-    static button_t const       FORM_BUTTON_RESTORE_DEFAULT = 0x00000008;
-    static button_t const       FORM_BUTTON_INSTALL         = 0x00000010;
-    static button_t const       FORM_BUTTON_UNINSTALL       = 0x00000020;
-    static button_t const       FORM_BUTTON_REBOOT          = 0x00000040;
-    static button_t const       FORM_BUTTON_UPGRADE         = 0x00000080;
-    static button_t const       FORM_BUTTON_REFRESH         = 0x00000100;
+    static button_t const       FORM_BUTTON_NONE               = 0x00000000;
+    static button_t const       FORM_BUTTON_RESET              = 0x00000001;
+    static button_t const       FORM_BUTTON_SAVE               = 0x00000002;
+    static button_t const       FORM_BUTTON_SAVE_EVERYWHERE    = 0x00000004;
+    static button_t const       FORM_BUTTON_RESTORE_DEFAULT    = 0x00000008;
+    static button_t const       FORM_BUTTON_INSTALL            = 0x00000010;
+    static button_t const       FORM_BUTTON_UNINSTALL          = 0x00000020;
+    static button_t const       FORM_BUTTON_REBOOT             = 0x00000040;
+    static button_t const       FORM_BUTTON_UPGRADE            = 0x00000080;
+    static button_t const       FORM_BUTTON_UPGRADE_EVERYWHERE = 0x00000100;
+    static button_t const       FORM_BUTTON_REFRESH            = 0x00000200;
 
                         form(QString const & plugin_name, QString const & field_name, button_t button = FORM_BUTTON_NONE);
 

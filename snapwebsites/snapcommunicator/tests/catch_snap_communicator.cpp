@@ -26,6 +26,7 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/log.h>
 #include <snapwebsites/snap_communicator.h>
 
 // C lib
@@ -181,8 +182,8 @@ TEST_CASE("Client/Server test", "[snap-communicator] [client-server]")
         public:
             typedef std::shared_ptr<client_impl> pointer_t;
 
-            client_impl(int socket)
-                : snap_tcp_server_client_message_connection(socket)
+            client_impl(tcp_client_server::bio_client::pointer_t client)
+                : snap_tcp_server_client_message_connection(client)
             {
             }
 
@@ -286,8 +287,8 @@ std::cerr << QString("%1: SERVER: received command [%2]\n").arg(getpid()).arg(co
         public:
             typedef std::shared_ptr<tcp_listener_impl> pointer_t;
 
-            tcp_listener_impl(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false)
-                : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
+            tcp_listener_impl(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false)
+                : snap_tcp_server_connection(addr, port, "", "", tcp_client_server::bio_server::mode_t::MODE_PLAIN, max_connections, reuse_addr)
             {
                 //non_blocking();
             }
@@ -296,9 +297,19 @@ std::cerr << QString("%1: SERVER: received command [%2]\n").arg(getpid()).arg(co
             {
 std::cerr << QString("%1: SERVER: received client connection\n").arg(getpid());
                 // this is a new client connection
-                int const new_socket(accept());
+                tcp_client_server::bio_client::pointer_t new_client(accept());
+                if(new_client == nullptr)
+                {
+                    // TBD: should we call process_error() instead? problem is this
+                    //      listener would be removed from the list of connections...
+                    //
+                    int const e(errno);
+                    // TODO: shouldn't this be a CATCH() instead?
+                    SNAP_LOG_ERROR("accept() returned an error. (errno: ")(e)(" -- ")(strerror(e))("). No new connection will be created.");
+                    return;
+                }
 
-                f_connection.reset(new client_impl(new_socket));
+                f_connection.reset(new client_impl(new_client));
                 f_connection->set_name("SERVER: connection from client");
                 f_connection->set_listener(shared_from_this());
 

@@ -16,6 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// make sure we use OpenSSL with multi-thread support
+// (TODO: move to .cpp once we have the impl!)
+#define OPENSSL_THREAD_DEFINES
+
+#include <snapwebsites/addr.h>
+
 #include <QString>
 
 #include <stdexcept>
@@ -24,6 +30,7 @@
 #include <arpa/inet.h>
 
 // BIO versions of the TCP client/server
+// TODO: move to an impl
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -53,6 +60,12 @@ class tcp_client_server_initialization_error : public tcp_client_server_runtime_
 {
 public:
     tcp_client_server_initialization_error(std::string const & errmsg) : tcp_client_server_runtime_error(errmsg) {}
+};
+
+class tcp_client_server_initialization_missing_error : public tcp_client_server_runtime_error
+{
+public:
+    tcp_client_server_initialization_missing_error(std::string const & errmsg) : tcp_client_server_runtime_error(errmsg) {}
 };
 
 
@@ -121,6 +134,10 @@ private:
 };
 
 
+class bio_server;
+
+// Create/manage certificates details:
+// https://help.ubuntu.com/lts/serverguide/certificates-and-security.html
 class bio_client
 {
 public:
@@ -129,8 +146,8 @@ public:
     enum class mode_t
     {
         MODE_PLAIN,             // avoid SSL/TLS
-        MODE_SECURE,            // WARNING: may return a non-secure connection
-        MODE_ALWAYS_SECURE      // fails if cannot be secure
+        MODE_SECURE,            // WARNING: may return a non-verified connection
+        MODE_ALWAYS_SECURE      // fails if cannot be 100% secure
     };
 
                         bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
@@ -151,8 +168,41 @@ public:
     int                 write(char const * buf, size_t size);
 
 private:
-    std::shared_ptr<BIO>        f_bio;
+    friend bio_server;
+
+                        bio_client(std::shared_ptr<BIO> bio);
+
     std::shared_ptr<SSL_CTX>    f_ssl_ctx;
+    std::shared_ptr<BIO>        f_bio;
+};
+
+
+// try `man BIO_f_ssl` or go to:
+// https://www.openssl.org/docs/manmaster/crypto/BIO_f_ssl.html
+class bio_server
+{
+public:
+    typedef std::shared_ptr<bio_server>     pointer_t;
+
+    static int const    MAX_CONNECTIONS = 50;
+
+    enum class mode_t
+    {
+        MODE_PLAIN,             // no encryption
+        MODE_SECURE             // use TLS encryption
+    };
+
+                            bio_server(snap_addr::addr const & addr_port, int max_connections, bool reuse_addr, std::string const & certificate, std::string const & private_key, mode_t mode);
+
+    bool                    is_secure() const;
+    int                     get_socket() const;
+    bio_client::pointer_t   accept();
+
+private:
+    int                         f_max_connections = MAX_CONNECTIONS;
+    std::shared_ptr<SSL_CTX>    f_ssl_ctx;
+    std::shared_ptr<BIO>        f_listen;
+    bool                        f_keepalive = true;
 };
 
 

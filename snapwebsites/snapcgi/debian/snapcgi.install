@@ -1,5 +1,6 @@
 usr/lib/*
 usr/share/snapwebsites/*
-conf/snapcgi.conf conf/snapcgi.properties etc/snapwebsites
-conf/snap-apache2.conf conf/000-snap-apache2-default.conf etc/apache2/sites-available
-conf/snap-apache2-ssl-log.conf etc/apache2/conf-available
+conf/snapcgi.conf conf/snapcgi.properties etc/snapwebsites/
+conf/snap-apache2.conf conf/000-snap-apache2-default.conf etc/apache2/sites-available/
+conf/snap-apache2-ssl.conf conf/README.md etc/apache2/ssl-snap/
+conf/snap-apache2-ssl-log.conf etc/apache2/conf-available/

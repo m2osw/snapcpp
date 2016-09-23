@@ -359,7 +359,7 @@ QtCassandra::QCassandraTable::pointer_t epayment_stripe::get_epayment_stripe_tab
 {
     if(!f_epayment_stripe_table)
     {
-        f_epayment_stripe_table = f_snap->create_table(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_TABLE), "Website epayment_stripe table.");
+        f_epayment_stripe_table = f_snap->get_table(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_TABLE));
     }
     return f_epayment_stripe_table;
 }

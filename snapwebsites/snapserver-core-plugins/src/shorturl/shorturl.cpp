@@ -294,7 +294,7 @@ QtCassandra::QCassandraTable::pointer_t shorturl::get_shorturl_table()
 {
     if(!f_shorturl_table)
     {
-        f_shorturl_table = f_snap->create_table(get_name(name_t::SNAP_NAME_SHORTURL_TABLE), "Short URL management table.");
+        f_shorturl_table = f_snap->get_table(get_name(name_t::SNAP_NAME_SHORTURL_TABLE));
     }
     return f_shorturl_table;
 }

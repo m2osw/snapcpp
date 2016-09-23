@@ -670,7 +670,7 @@ QtCassandra::QCassandraTable::pointer_t password::get_password_table()
 {
     if(!f_password_table)
     {
-        f_password_table = f_snap->create_table(get_name(name_t::SNAP_NAME_PASSWORD_TABLE), "Website password table.");
+        f_password_table = f_snap->get_table(get_name(name_t::SNAP_NAME_PASSWORD_TABLE));
     }
     return f_password_table;
 }

@@ -29,33 +29,33 @@ namespace snap
 class snap_pipe_exception : public snap_exception
 {
 public:
-    snap_pipe_exception(const char *        whatmsg) : snap_exception("snap_pipe", whatmsg) {}
-    snap_pipe_exception(const std::string & whatmsg) : snap_exception("snap_pipe", whatmsg) {}
-    snap_pipe_exception(const QString &     whatmsg) : snap_exception("snap_pipe", whatmsg) {}
+    explicit snap_pipe_exception(const char *        whatmsg) : snap_exception("snap_pipe", whatmsg) {}
+    explicit snap_pipe_exception(const std::string & whatmsg) : snap_exception("snap_pipe", whatmsg) {}
+    explicit snap_pipe_exception(const QString &     whatmsg) : snap_exception("snap_pipe", whatmsg) {}
 };
 
 class snap_pipe_exception_cannot_open : public snap_pipe_exception
 {
 public:
-    snap_pipe_exception_cannot_open(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_open(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_open(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_open(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_open(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_open(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
 };
 
 class snap_pipe_exception_cannot_write : public snap_pipe_exception
 {
 public:
-    snap_pipe_exception_cannot_write(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_write(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_write(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_write(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_write(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_write(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
 };
 
 class snap_pipe_exception_cannot_read : public snap_pipe_exception
 {
 public:
-    snap_pipe_exception_cannot_read(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_read(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_read(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_read(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_read(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
+    explicit snap_pipe_exception_cannot_read(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
 };
 
 

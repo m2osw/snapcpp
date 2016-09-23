@@ -10,11 +10,30 @@ snapdbproxy (1.1.0.1~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:43 -0700
 
-snapdbproxy (1.0.8.5~xenial) xenial; urgency=high
+snapdbproxy (1.0.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-450: Reintroduced the f_socket so kill() works safely.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:09 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 20 Sep 2016 23:00:09 -0700
+
+snapdbproxy (1.0.11.0~xenial) xenial; urgency=high
+
+  * SNAP-450: Removed debug trace and fixed the while() by removing the comma.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 20 Sep 2016 22:26:09 -0700
+
+snapdbproxy (1.0.10.0~xenial) xenial; urgency=high
+
+  * SNAP-450: Added some debug to try to understand why it uses 100% CPU
+    on my test VM (local connections on 4042 it seems).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 20 Sep 2016 21:55:09 -0700
+
+snapdbproxy (1.0.9.0~xenial) xenial; urgency=high
+
+  * SNAP-450: Bump version to see that the latest works properly.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 20 Sep 2016 21:36:09 -0700
 
 snapdbproxy (1.0.8.0~xenial) xenial; urgency=high
 

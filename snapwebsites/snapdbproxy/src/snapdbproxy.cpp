@@ -406,7 +406,7 @@ void snapdbproxy::run()
     // make sure that it gets called first in case multiple events
     // arrive simultaneously.
     //
-    f_listener = std::make_shared<snapdbproxy_listener>(this, f_snapdbproxy_addr.toUtf8().data(), f_snapdbproxy_port, f_max_pending_connections, true, false);
+    f_listener = std::make_shared<snapdbproxy_listener>(this, f_snapdbproxy_addr.toUtf8().data(), f_snapdbproxy_port, f_max_pending_connections, true);
     f_communicator->add_connection(f_listener);
 
     // create a messenger to communicate with the Snap Communicator process
@@ -672,9 +672,9 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
  * This function adds a new connection to the snapdbproxy daemon. A
  * connection is a blocking socket handled by a thread.
  *
- * \param[in] s  The socket the connection threads becomes the owner of.
+ * \param[in] client  The client the connection threads becomes the owner of.
  */
-void snapdbproxy::process_connection(int const s)
+void snapdbproxy::process_connection(tcp_client_server::bio_client::pointer_t client)
 {
     // only the main process calls this function so we can take the time
     // to check the f_connections vector and remove dead threads
@@ -705,7 +705,7 @@ void snapdbproxy::process_connection(int const s)
     // (the only case where the socket does not get closed is and
     // std::bad_alloc exception which we do not capture here.)
     //
-    snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>(f_session, s, f_cassandra_host_list, f_cassandra_port));
+    snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>(f_session, client, f_cassandra_host_list, f_cassandra_port));
     if(thread && thread->is_running())
     {
         f_connections.push_back(thread);

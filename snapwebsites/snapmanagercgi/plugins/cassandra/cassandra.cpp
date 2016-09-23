@@ -494,7 +494,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   get_plugin_name()
                 , s.get_field_name()
                 ,   snap_manager::form::FORM_BUTTON_RESET
-                  | snap_manager::form::FORM_BUTTON_SAVE
+                  //| snap_manager::form::FORM_BUTTON_SAVE
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
@@ -521,7 +521,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
             return false;
         }
 
-        // the list of seeds
+        // the address used to listen on client connections
         //
         snap_manager::form f(
                   get_plugin_name()
@@ -554,7 +554,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
             return false;
         }
 
-        // the list of seeds
+        // the address used to listen for RPC calls (CQL)
         //
         snap_manager::form f(
                   get_plugin_name()
@@ -636,7 +636,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                         , s.get_field_name()
                         , s.get_value()
                         , "Cassandra says that you should set this parameter to \"true\"."
-                         " However, when to true, the DROP TABLE and TRUNCATE commands"
+                         " However, when set to true, the DROP TABLE and TRUNCATE commands"
                          " become extremely slow because the database creates a snapshot"
                          " of the table before dropping or truncating it. We change this"
                          " parameter to \"false\" by default because if you DROP TABLE or"
@@ -1031,6 +1031,10 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         affected_services.insert("cassandra-restart");
 
+        // IMPORTANT: this field is preceeded by spaces and a dash character
+        //            which we want to keep in the configuration file, so we
+        //            use the trim_left parameter for that purpose
+        //
         f_snap->replace_configuration_value(
                       g_cassandra_yaml
                     , field_name
@@ -1040,6 +1044,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                    , " -"
                     );
         return true;
     }
@@ -1089,6 +1094,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
                     );
         return true;
     }
@@ -1106,6 +1112,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
                       | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
+                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
                     );
         return true;
     }
@@ -1422,9 +1429,14 @@ void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
     // i.e. we cannot assume that cassandra is not running just because
     // we cannot yet connect to the port...
     //
-    // polling can be done without connecting by reading the /proc/net/tcp
-    // file and analyzing the data (the field names are defined on the
-    // first line)
+    // polling can be done by reading a netfilter socket which can be
+    // optimized to only match the TCP port we're interested in so we
+    // really receive either 0 or 1 response (i.e. socket not present
+    // or socket present)
+    //
+    // polling the old way can be done without connecting by reading the
+    // /proc/net/tcp file and analyzing the data (the field names are
+    // defined on the first line)
     //
     // There is the code from netstat.c which parses one of those lines:
     //

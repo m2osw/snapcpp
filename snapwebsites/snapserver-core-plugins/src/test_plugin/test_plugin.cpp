@@ -301,7 +301,7 @@ QtCassandra::QCassandraTable::pointer_t test_plugin::get_test_results_table()
 {
     if(!f_test_results_table)
     {
-        f_test_results_table = f_snap->create_table(get_name(name_t::SNAP_NAME_TEST_PLUGIN_TEST_RESULTS_TABLE), "Test Plugin test_results table.");
+        f_test_results_table = f_snap->get_table(get_name(name_t::SNAP_NAME_TEST_PLUGIN_TEST_RESULTS_TABLE));
     }
     return f_test_results_table;
 }

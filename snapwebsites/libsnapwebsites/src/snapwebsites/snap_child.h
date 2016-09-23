@@ -23,6 +23,7 @@
 #include "snapwebsites/snap_signals.h"
 #include "snapwebsites/snap_uri.h"
 #include "snapwebsites/snap_version.h"
+#include "snapwebsites/tcp_client_server.h"
 #include "snapwebsites/udp_client_server.h"
 
 // QtCassandra lib
@@ -85,6 +86,22 @@ public:
     explicit snap_child_exception_invalid_email(char const *        whatmsg) : snap_child_exception(whatmsg) {}
     explicit snap_child_exception_invalid_email(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
     explicit snap_child_exception_invalid_email(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+};
+
+class snap_child_exception_no_cassandra : public snap_child_exception
+{
+public:
+    explicit snap_child_exception_no_cassandra(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_cassandra(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_cassandra(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+};
+
+class snap_child_exception_table_missing : public snap_child_exception
+{
+public:
+    explicit snap_child_exception_table_missing(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_table_missing(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_table_missing(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 
@@ -304,7 +321,7 @@ public:
                                 snap_child(server_pointer_t s);
     virtual                     ~snap_child();
 
-    bool                        process(int socket);
+    bool                        process(tcp_client_server::bio_client::pointer_t client);
     pid_t                       get_child_pid() const;
     void                        kill();
     status_t                    check_status();
@@ -322,12 +339,14 @@ public:
     static char const *         get_running_server_version();
     bool                        is_core_plugin(QString const & name) const;
     QString                     get_server_parameter(QString const & name);
-    void                        reset_site_table();
-    QtCassandra::QCassandraValue get_site_parameter(QString const & name);
+    void                        reset_sites_table();
+    QtCassandra::QCassandraValue
+                                get_site_parameter(QString const & name);
     void                        set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value);
     void                        improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
     QString                     error_body(http_code_t err_code, QString const & err_name, QString const & err_description);
-    QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
+    QtCassandra::QCassandraContext::pointer_t
+                                get_context() { return f_context; }
     QString const &             get_domain_key() const { return f_domain_key; }
     QString const &             get_website_key() const { return f_website_key; }
     QString const &             get_site_key() const { return f_site_key; }
@@ -336,7 +355,8 @@ public:
     void                        init_start_date();
     int64_t                     get_start_date() const { return f_start_date; }
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
-    cache_control_settings const & client_cache_control() const;
+    cache_control_settings const &
+                                client_cache_control() const;
     cache_control_settings &    server_cache_control();
     cache_control_settings &    page_cache_control();
     bool                        no_caching() const;
@@ -346,7 +366,8 @@ public:
     bool                        has_header(QString const & name) const;
     QString                     get_header(QString const & name) const;
     QString                     get_unique_number();
-    QtCassandra::QCassandraTable::pointer_t create_table(const QString & table_name, const QString & comment);
+    QtCassandra::QCassandraTable::pointer_t
+                                get_table(QString const & table_name);
     void                        new_content();
     void                        verify_permissions(QString const & path, permission_error_callback & err_callback);
     QString                     default_action(QString uri_path);
@@ -354,11 +375,15 @@ public:
     QString                     get_language();
     QString                     get_country() const;
     QString                     get_language_key();
-    locale_info_vector_t const & get_plugins_locales();
-    locale_info_vector_t const & get_browser_locales() const;
+    locale_info_vector_t const &
+                                get_plugins_locales();
+    locale_info_vector_t const &
+                                get_browser_locales() const;
     bool                        get_working_branch() const;
-    snap_version::version_number_t get_branch() const;
-    snap_version::version_number_t get_revision() const;
+    snap_version::version_number_t
+                                get_branch() const;
+    snap_version::version_number_t
+                                get_revision() const;
     QString                     get_revision_key() const; // <branch>.<revision> as a string (pre-defined)
     compression_vector_t        get_compression() const;
     static void                 canonicalize_path(QString & path);
@@ -368,8 +393,10 @@ public:
     bool                        verify_locale(QString & lang, QString & country, bool generate_errors);
     static bool                 verify_language_name(QString & lang);
     static bool                 verify_country_name(QString & country);
-    static language_name_t const * get_languages();
-    static country_name_t const * get_countries();
+    static language_name_t const *
+                                get_languages();
+    static country_name_t const *
+                                get_countries();
     static bool                 tag_is_inline(char const * tag, int length);
     void                        set_timezone(QString const & timezone);
     void                        set_locale(QString const & locale);
@@ -422,7 +449,7 @@ protected:
     server_pointer_t                            f_server;
     bool                                        f_is_child = false;
     pid_t                                       f_child_pid = 0;
-    int                                         f_socket = -1;
+    tcp_client_server::bio_client::pointer_t    f_client;
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     int64_t                                     f_start_date = 0; // time request arrived
@@ -456,7 +483,7 @@ private:
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 
-    QtCassandra::QCassandraTable::pointer_t     f_site_table;
+    QtCassandra::QCassandraTable::pointer_t     f_sites_table;
     bool                                        f_new_content = false;
     bool                                        f_is_being_initialized = false;
     environment_map_t                           f_post;

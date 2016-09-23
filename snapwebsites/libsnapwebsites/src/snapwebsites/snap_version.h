@@ -97,7 +97,7 @@ public:
         return *this;
     }
 
-    operator basic_version_number_t () const
+    /*explicit*/ operator basic_version_number_t () const
     {
         return f_version;
     }

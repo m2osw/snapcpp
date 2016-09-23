@@ -423,7 +423,7 @@ QtCassandra::QCassandraTable::pointer_t epayment_paypal::get_epayment_paypal_tab
 {
     if(!f_epayment_paypal_table)
     {
-        f_epayment_paypal_table = f_snap->create_table(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_TABLE), "Website epayment_paypal table.");
+        f_epayment_paypal_table = f_snap->get_table(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_TABLE));
     }
     return f_epayment_paypal_table;
 }

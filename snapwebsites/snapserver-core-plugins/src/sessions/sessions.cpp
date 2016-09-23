@@ -1366,7 +1366,7 @@ void sessions::clean_session_table(int64_t variables_timestamp)
  */
 QtCassandra::QCassandraTable::pointer_t sessions::get_sessions_table()
 {
-    return f_snap->create_table(get_name(name_t::SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
+    return f_snap->get_table(get_name(name_t::SNAP_NAME_SESSIONS_TABLE));
 }
 
 

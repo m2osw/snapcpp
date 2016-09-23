@@ -1,8 +1,38 @@
-snapcgi (1.0.1.6~xenial) xenial; urgency=high
+snapcgi (1.0.6.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:11 -0700
+ -- Build Server <build@m2osw.com>  Fri, 23 Sep 2016 02:00:50 -0700
+
+snapcgi (1.0.6.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Verify whether it uses a secure connection or not.
+
+ -- Alexis Wilke <build@m2osw.com>  Fri, 22 Sep 2016 13:06:48 -0700
+
+snapcgi (1.0.5.0~xenial) xenial; urgency=high
+
+  * SNAP-443: The parameter also needs to be mark as "part of configuration".
+
+ -- Alexis Wilke <build@m2osw.com>  Fri, 22 Sep 2016 13:06:48 -0700
+
+snapcgi (1.0.4.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Had to add the "use_ssl" option to the command line options.
+
+ -- Alexis Wilke <build@m2osw.com>  Fri, 22 Sep 2016 12:17:48 -0700
+
+snapcgi (1.0.3.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Bumping version so I can test snap.cgi.
+
+ -- Alexis Wilke <build@m2osw.com>  Fri, 22 Sep 2016 12:17:48 -0700
+
+snapcgi (1.0.2.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Added an SSL configuration file with ciphers, etc.
+
+ -- Alexis Wilke <alexis@dm2osw.com>  Tue, 13 Sep 2016 17:34:11 -0700
 
 snapcgi (1.0.1.0~xenial) xenial; urgency=high
 

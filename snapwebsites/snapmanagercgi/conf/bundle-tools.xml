@@ -9,7 +9,7 @@
   <description>
     <p>Install various tools that we like to have to work remotely on a server.</p>
   </description>
-  <packages>htop</packages>
+  <packages>htop, zip, unzip</packages>
 </bundle>
 <!--
   vim: ts=2 sw=2 et

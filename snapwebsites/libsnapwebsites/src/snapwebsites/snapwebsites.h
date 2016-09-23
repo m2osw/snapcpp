@@ -91,33 +91,33 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snapwebsites_exception : public snap_exception
 {
 public:
-    snapwebsites_exception(char const *        whatmsg) : snap_exception("snapwebsites", whatmsg) {}
-    snapwebsites_exception(std::string const & whatmsg) : snap_exception("snapwebsites", whatmsg) {}
-    snapwebsites_exception(QString const &     whatmsg) : snap_exception("snapwebsites", whatmsg) {}
+    explicit snapwebsites_exception(char const *        whatmsg) : snap_exception("snapwebsites", whatmsg) {}
+    explicit snapwebsites_exception(std::string const & whatmsg) : snap_exception("snapwebsites", whatmsg) {}
+    explicit snapwebsites_exception(QString const &     whatmsg) : snap_exception("snapwebsites", whatmsg) {}
 };
 
 class snapwebsites_exception_invalid_parameters : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_invalid_parameters(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_invalid_parameters(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_invalid_parameters(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_invalid_parameters(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 class snapwebsites_exception_parameter_no_available : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_parameter_no_available(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_parameter_no_available(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_parameter_no_available(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_parameter_no_available(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_parameter_no_available(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_parameter_no_available(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 class snapwebsites_exception_io_error : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_io_error(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_io_error(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_io_error(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_io_error(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_io_error(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_io_error(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 
@@ -257,7 +257,6 @@ public:
     void                set_parameter( QString const & param_name, QString const & value );
     void                prepare_qtapp( int argc, char * argv[] );
     bool                check_cassandra(QString const & mandatory_table);
-    QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
     void                detach();
     void                listen();
     void                backend();
@@ -317,7 +316,7 @@ private:
 
     static void                             sighandler( int sig );
 
-    void                                    process_connection(int socket);
+    void                                    process_connection(tcp_client_server::bio_client::pointer_t client);
     void                                    stop_thread_func();
     void                                    stop(bool quitting);
 

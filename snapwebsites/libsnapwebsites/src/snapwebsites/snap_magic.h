@@ -24,17 +24,17 @@ namespace snap
 class snap_magic_exception : public snap_exception
 {
 public:
-    snap_magic_exception(char const *        whatmsg) : snap_exception("snap_magic", whatmsg) {}
-    snap_magic_exception(std::string const & whatmsg) : snap_exception("snap_magic", whatmsg) {}
-    snap_magic_exception(QString const &     whatmsg) : snap_exception("snap_magic", whatmsg) {}
+    explicit snap_magic_exception(char const *        whatmsg) : snap_exception("snap_magic", whatmsg) {}
+    explicit snap_magic_exception(std::string const & whatmsg) : snap_exception("snap_magic", whatmsg) {}
+    explicit snap_magic_exception(QString const &     whatmsg) : snap_exception("snap_magic", whatmsg) {}
 };
 
 class snap_magic_exception_no_magic : public snap_magic_exception
 {
 public:
-    snap_magic_exception_no_magic(char const *        whatmsg) : snap_magic_exception(whatmsg) {}
-    snap_magic_exception_no_magic(std::string const & whatmsg) : snap_magic_exception(whatmsg) {}
-    snap_magic_exception_no_magic(QString const &     whatmsg) : snap_magic_exception(whatmsg) {}
+    explicit snap_magic_exception_no_magic(char const *        whatmsg) : snap_magic_exception(whatmsg) {}
+    explicit snap_magic_exception_no_magic(std::string const & whatmsg) : snap_magic_exception(whatmsg) {}
+    explicit snap_magic_exception_no_magic(QString const &     whatmsg) : snap_magic_exception(whatmsg) {}
 };
 
 // the actual function that generates a MIME type from a byte array

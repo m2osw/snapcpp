@@ -316,7 +316,7 @@ void configure_console()
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
-    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+    appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
@@ -373,7 +373,7 @@ void configure_logfile( QString const & logfile )
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
-    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+    appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
@@ -423,7 +423,7 @@ void configure_syslog()
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
-    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+    appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
@@ -476,7 +476,7 @@ void configure_server()
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
-    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+    appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();

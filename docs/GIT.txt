@@ -54,5 +54,23 @@ git reset HEAD path/to/unwanted_file
 #...repeat previous command for each file to be removed from the last commit...
 git commit -c ORIG_HEAD
 
+# Remove a commit that was pushed requires the revert command instead
+git revert 123                 # use git log to get the commit-id
+
+
+# Find list of files in a git commit
+git log --stat ["path"]
+
+
+# Handling branches
+#
+# More details available on this page (and next/previous)
+#    https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
+#
+git branch "branch-name"       # creates a new branch
+git checkout "branch-name"     # switch between branches
+git merge "branch-name"        # merge <name> in current branch
+git branch -d "branch-name"    # delete a branch
+
 
 # vim: syntax=sh

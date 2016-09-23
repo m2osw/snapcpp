@@ -27,25 +27,25 @@ namespace snap
 class snap_image_exception : public snap_exception
 {
 public:
-    snap_image_exception(char const *        whatmsg) : snap_exception("snap_image", whatmsg) {}
-    snap_image_exception(std::string const & whatmsg) : snap_exception("snap_image", whatmsg) {}
-    snap_image_exception(QString const &     whatmsg) : snap_exception("snap_image", whatmsg) {}
+    explicit snap_image_exception(char const *        whatmsg) : snap_exception("snap_image", whatmsg) {}
+    explicit snap_image_exception(std::string const & whatmsg) : snap_exception("snap_image", whatmsg) {}
+    explicit snap_image_exception(QString const &     whatmsg) : snap_exception("snap_image", whatmsg) {}
 };
 
 class snap_image_exception_no_buffer : public snap_image_exception
 {
 public:
-    snap_image_exception_no_buffer(char const *        whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_no_buffer(std::string const & whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_no_buffer(QString const &     whatmsg) : snap_image_exception(whatmsg) {}
+    explicit snap_image_exception_no_buffer(char const *        whatmsg) : snap_image_exception(whatmsg) {}
+    explicit snap_image_exception_no_buffer(std::string const & whatmsg) : snap_image_exception(whatmsg) {}
+    explicit snap_image_exception_no_buffer(QString const &     whatmsg) : snap_image_exception(whatmsg) {}
 };
 
 class snap_image_exception_invalid_image : public snap_image_exception
 {
 public:
-    snap_image_exception_invalid_image(char const *        whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_invalid_image(std::string const & whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_invalid_image(QString const &     whatmsg) : snap_image_exception(whatmsg) {}
+    explicit snap_image_exception_invalid_image(char const *        whatmsg) : snap_image_exception(whatmsg) {}
+    explicit snap_image_exception_invalid_image(std::string const & whatmsg) : snap_image_exception(whatmsg) {}
+    explicit snap_image_exception_invalid_image(QString const &     whatmsg) : snap_image_exception(whatmsg) {}
 };
 
 

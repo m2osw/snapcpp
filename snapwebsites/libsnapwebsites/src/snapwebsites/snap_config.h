@@ -32,17 +32,17 @@ namespace snap
 class snap_configurations_exception : public snap_exception
 {
 public:
-    snap_configurations_exception(char const *        what_msg) : snap_exception("snap_configurations", what_msg) {}
-    snap_configurations_exception(std::string const & what_msg) : snap_exception("snap_configurations", what_msg) {}
-    snap_configurations_exception(QString const &     what_msg) : snap_exception("snap_configurations", what_msg) {}
+    explicit snap_configurations_exception(char const *        what_msg) : snap_exception("snap_configurations", what_msg) {}
+    explicit snap_configurations_exception(std::string const & what_msg) : snap_exception("snap_configurations", what_msg) {}
+    explicit snap_configurations_exception(QString const &     what_msg) : snap_exception("snap_configurations", what_msg) {}
 };
 
 class snap_configurations_exception_too_late : public snap_configurations_exception
 {
 public:
-    snap_configurations_exception_too_late(char const *        what_msg) : snap_configurations_exception(what_msg) {}
-    snap_configurations_exception_too_late(std::string const & what_msg) : snap_configurations_exception(what_msg) {}
-    snap_configurations_exception_too_late(QString const &     what_msg) : snap_configurations_exception(what_msg) {}
+    explicit snap_configurations_exception_too_late(char const *        what_msg) : snap_configurations_exception(what_msg) {}
+    explicit snap_configurations_exception_too_late(std::string const & what_msg) : snap_configurations_exception(what_msg) {}
+    explicit snap_configurations_exception_too_late(QString const &     what_msg) : snap_configurations_exception(what_msg) {}
 };
 
 

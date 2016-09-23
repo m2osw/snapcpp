@@ -49,6 +49,19 @@ then
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
+
+    # generate a private key and a certificate for remote snapcommunicators
+    # to connect using SSL; this key will work for 3650 days (about 10 years)
+    #
+    SNAPSSL=/etc/snapwebsites/ssl
+    if test ! -f $SNAPSSL/snapcommunicator.key \
+         -o ! -f $SNAPSSL/snapcommunicator.crt
+    then
+        openssl req -newkey rsa:2048 \
+           -nodes -keyout $SNAPSSL/snapcommunicator.key \
+           -x509 -days 3650 -out $SNAPSSL/snapcommunicator.crt \
+           -subj "/C=US/ST=California/L=Sacramento/O=Snap/OU=Website/CN=snap.website"
+    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent

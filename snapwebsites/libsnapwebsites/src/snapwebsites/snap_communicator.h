@@ -397,15 +397,14 @@ public:
         QString const               f_remote_address;
     };
 
-    // TODO: switch the tcp_server to a bio_server once available
     class snap_tcp_server_connection
         : public snap_connection
-        , public tcp_client_server::tcp_server
+        , public tcp_client_server::bio_server
     {
     public:
         typedef std::shared_ptr<snap_tcp_server_connection>    pointer_t;
 
-                                    snap_tcp_server_connection(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
+                                    snap_tcp_server_connection(std::string const & addr, int port, std::string const & certificate, std::string const & private_key, mode_t mode = mode_t::MODE_PLAIN, int max_connections = -1, bool reuse_addr = false);
 
         // snap_connection implementation
         virtual bool                is_listener() const override;
@@ -419,7 +418,7 @@ public:
     public:
         typedef std::shared_ptr<snap_tcp_server_client_connection>    pointer_t;
 
-                                    snap_tcp_server_client_connection(int socket);
+                                    snap_tcp_server_client_connection(tcp_client_server::bio_client::pointer_t client);
         virtual                     ~snap_tcp_server_client_connection();
 
         void                        close();
@@ -439,7 +438,8 @@ public:
     private:
         bool                        define_address();
 
-        int                         f_socket = -1;
+        tcp_client_server::bio_client::pointer_t
+                                    f_client;
         struct sockaddr_storage     f_address = sockaddr_storage();
         socklen_t                   f_length = 0;
     };
@@ -450,7 +450,7 @@ public:
     public:
         typedef std::shared_ptr<snap_tcp_server_client_buffer_connection>    pointer_t;
 
-                                    snap_tcp_server_client_buffer_connection(int socket);
+                                    snap_tcp_server_client_buffer_connection(tcp_client_server::bio_client::pointer_t client);
 
         // snap::snap_communicator::snap_connection
         virtual bool                is_writer() const override;
@@ -476,7 +476,7 @@ public:
     public:
         typedef std::shared_ptr<snap_tcp_server_client_message_connection>    pointer_t;
 
-                                    snap_tcp_server_client_message_connection(int socket);
+                                    snap_tcp_server_client_message_connection(tcp_client_server::bio_client::pointer_t client);
 
         void                        send_message(snap_communicator_message const & message);
         QString const &             get_remote_address() const;

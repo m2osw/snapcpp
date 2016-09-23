@@ -1,8 +1,66 @@
-snapcommunicator (1.0.10.4~xenial) xenial; urgency=high
+snapcommunicator (1.0.19.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Wed, 14 Sep 2016 16:33:21 -0700
+ -- Build Server <build@m2osw.com>  Thu, 22 Sep 2016 02:00:48 -0700
+
+snapcommunicator (1.0.19.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Removed a line of debug.
+  * Added an field to the communicator plugin for snapcommunicator.cgi.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 22:45:49 -0700
+
+snapcommunicator (1.0.18.0~xenial) xenial; urgency=high
+
+  * Still not saving, trying to view the list of neighbors.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 22:45:49 -0700
+
+snapcommunicator (1.0.17.0~xenial) xenial; urgency=high
+
+  * Adding another debug message to try to understand why the save does not
+    happen.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 22:21:49 -0700
+
+snapcommunicator (1.0.16.0~xenial) xenial; urgency=high
+
+  * Fixed the addr computation in snapcommunicator, I was taking the port!
+  * Fixed a couple of messages.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 21:16:49 -0700
+
+snapcommunicator (1.0.15.0~xenial) xenial; urgency=high
+
+  * SNAP-352: Added test to eventually see why forgetting an IP fails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 16:20:49 -0700
+
+snapcommunicator (1.0.14.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Actually made the GOSSIP and remote connections use SSL when
+    required to be that way.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 12:34:49 -0700
+
+snapcommunicator (1.0.13.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Noticed that the f_local_services string was never set.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Sep 2016 11:11:49 -0700
+
+snapcommunicator (1.0.12.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Fixed the script testing whether a key was already generated.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 17:05:49 -0700
+
+snapcommunicator (1.0.11.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Updated the openssl reg command to use -subj.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 14:12:49 -0700
 
 snapcommunicator (1.0.10.0~xenial) xenial; urgency=high
 
