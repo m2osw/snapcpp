@@ -1,8 +1,8 @@
-snapwatchdog (0.2.5.11~xenial) xenial; urgency=high
+snapwatchdog (0.2.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Moved .properties files under .../logger/.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:10 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 23 Sep 2016 15:09:10 -0700
 
 snapwatchdog (0.2.5.0~xenial) xenial; urgency=high
 

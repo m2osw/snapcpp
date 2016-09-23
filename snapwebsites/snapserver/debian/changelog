@@ -1,3 +1,9 @@
+snapserver (1.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Moved .properties files under .../logger/.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Sep 2016 15:08:49 -0700
+
 snapserver (1.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-443: Properly purge the SSL files on removal.

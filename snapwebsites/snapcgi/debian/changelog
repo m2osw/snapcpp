@@ -1,8 +1,8 @@
-snapcgi (1.0.6.1~xenial) xenial; urgency=high
+snapcgi (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Moved .properties files under .../logger/.
 
- -- Build Server <build@m2osw.com>  Fri, 23 Sep 2016 02:00:50 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 15:04:50 -0700
 
 snapcgi (1.0.6.0~xenial) xenial; urgency=high
 

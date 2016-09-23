@@ -2587,11 +2587,11 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  *
  * \code
  * snapbackend http://www.example.com \
- *          -a permissions::checkpermissions \
- *          -p USER_EMAIL=john@example.com \
- *             PAGE_URI=http://www.example.com/journal/2015/08/13/beautiful-weather \
- *             CHECK_ACTION=view \
- *             LOGIN_STATUS=registered
+ *          --action permissions::checkpermissions \
+ *          --param USER_EMAIL=john@example.com \
+ *                  PAGE_URI=http://www.example.com/journal/2015/08/13/beautiful-weather \
+ *                  CHECK_ACTION=view \
+ *                  LOGIN_STATUS=registered
  * \endcode
  *
  * \note

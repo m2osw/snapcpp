@@ -1,3 +1,9 @@
+snapcommunicator (1.0.23.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Bump version again to make sure I can make it work on my VMs.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Sep 2016 11:00:48 -0700
+
 snapcommunicator (1.0.22.0~xenial) xenial; urgency=high
 
   * SNAP-443: Moving the logger properties to sub-directory logger/.

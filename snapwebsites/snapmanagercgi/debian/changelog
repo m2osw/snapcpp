@@ -1,8 +1,8 @@
-snapmanagercgi (1.0.33.7~xenial) xenial; urgency=high
+snapmanagercgi (1.0.34.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Moved .properties files under .../logger/.
 
- -- Build Server <build@m2osw.com>  Fri, 16 Sep 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 15:08:49 -0700
 
 snapmanagercgi (1.0.33.0~xenial) xenial; urgency=high
 

@@ -1,8 +1,8 @@
-snaplock (1.0.1.11~xenial) xenial; urgency=high
+snaplock (1.0.2.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Moved .properties files under .../logger/.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:10 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 23 Sep 2016 15:07:10 -0700
 
 snaplock (1.0.1.0~xenial) xenial; urgency=high
 
