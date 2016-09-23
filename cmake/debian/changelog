@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-snapcmakemodules (1.0.26.6~xenial) xenial; urgency=high
-=======
 snapcmakemodules (1.0.26.11~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 
