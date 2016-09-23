@@ -40,11 +40,24 @@ install(
         # snap configuration files
         snapcgi.conf
 
-        # misc files
-        snap-apache2.conf
-
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Config files
+##
+install(
+    FILES 
+        # misc files
+        000-snap-apache2-default.conf
+        snap-apache2.conf
+        snap-apache2-ssl.conf
+        snap-apache2-ssl-log.conf
+
+    DESTINATION
+        share/snapwebsites/apache2
 )
 
 

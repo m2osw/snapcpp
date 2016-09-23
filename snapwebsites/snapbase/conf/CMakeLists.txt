@@ -44,6 +44,19 @@ install(
 
 
 #################################################################################
+## Apache2 files
+##
+install(
+    FILES
+        # snap configuration files (shared between snapbackend and snapserver)
+        snap-httpoxy.conf
+
+    DESTINATION
+        share/snapwebsites/apache2
+)
+
+
+#################################################################################
 ## Logger files
 ##
 install(

@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.35.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed up other configuration file installation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 16:52:49 -0700
+
 snapmanagercgi (1.0.34.0~xenial) xenial; urgency=high
 
   * SNAP-110: Moved .properties files under .../logger/.

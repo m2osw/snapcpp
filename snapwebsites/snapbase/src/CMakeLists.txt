@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapwebsites/snapbase/src/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.

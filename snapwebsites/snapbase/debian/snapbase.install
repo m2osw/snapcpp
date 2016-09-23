@@ -1,3 +1,6 @@
+usr/share/snapwebsites/apache2/*
+usr/share/snapwebsites/conf/*
+usr/share/snapwebsites/logger/*
 conf/snapserver.conf etc/snapwebsites/
 conf/loggingserver.properties conf/log.properties conf/logserver.properties etc/snapwebsites/logger/
 conf/README.md etc/snapwebsites/snapwebsites.d/

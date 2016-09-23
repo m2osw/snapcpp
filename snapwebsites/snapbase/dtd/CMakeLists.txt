@@ -1,6 +1,6 @@
 #
 # File:
-#      dtd/CMakeLists.txt
+#      snapwebsites/snapbase/dtd/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.

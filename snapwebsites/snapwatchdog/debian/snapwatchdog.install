@@ -1,4 +1,5 @@
 usr/bin/*
 usr/lib/snapwebsites/manager_plugins/*
+usr/share/snapwebsites/*
 conf/snapwatchdog.conf etc/snapwebsites/
 conf/snapwatchdog.properties etc/snapwebsites/logger/

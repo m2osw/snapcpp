@@ -47,14 +47,12 @@ snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
 ## Config files
 ##
 install(
-    FILES 
+    FILES
         # snap configuration files
         snapmanager.conf
 
         # misc files
         snapmanagercgi-parser.xsl
-        snapmanager-apache2.conf
-        snap-bundles-apache2.conf
 
     DESTINATION
         share/snapwebsites/conf
@@ -62,10 +60,24 @@ install(
 
 
 #################################################################################
+## Apache2 files
+##
+install(
+    FILES
+        # misc files
+        snapmanager-apache2.conf
+        snap-bundles-apache2.conf
+
+    DESTINATION
+        share/snapwebsites/apache2
+)
+
+
+#################################################################################
 ## Logger files
 ##
 install(
-    FILES 
+    FILES
         # log4cplus properties
         snapmanagercgi.properties
         snapmanagerdaemon.properties
