@@ -1,3 +1,9 @@
+snapcgi (1.0.6.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 23 Sep 2016 02:00:50 -0700
+
 snapcgi (1.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-443: Verify whether it uses a secure connection or not.
