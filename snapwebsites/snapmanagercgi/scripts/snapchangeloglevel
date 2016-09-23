@@ -20,7 +20,7 @@ TRACE|DEBUG|INFO|ERROR|FATAL)
 	for p in /etc/snapwebsites/*.properties
 	do
 		sed -i.bak \
-			-e 's/^log4cplus.logger.snap=[^,]*,\(.*\)/log4cplus.logger.snap=TRACE,\1/' \
+			-e "s/^log4cplus.logger.snap=[^,]*,\(.*\)/log4cplus.logger.snap=${LEVEL},\1/" \
 			$p
 	done
 	exit 0
