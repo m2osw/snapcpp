@@ -1,6 +1,6 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      snapwebsites/snapwatchdog/conf/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -37,14 +37,24 @@ snap_validate_xml( bundle-watchdog.xml bundles.xsd )
 ##
 install(
     FILES
-        # log4cplus properties
-        snapwatchdog.properties
-
         # snap watchdog configuration files
         snapwatchdog.conf
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES
+        # log4cplus properties
+        snapwatchdog.properties
+
+    DESTINATION
+        share/snapwebsites/logger
 )
 
 

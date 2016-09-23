@@ -1,6 +1,8 @@
-debian/tmp/usr/lib/cgi-bin/* usr/lib/cgi-bin
+debian/tmp/usr/lib/cgi-bin/* usr/lib/cgi-bin/
 debian/tmp/usr/share/snapwebsites/bundles/bundle-*.xml usr/share/snapwebsites/bundles/
 debian/tmp/usr/share/snapwebsites/html/snapmanager/index.html usr/share/snapwebsites/html/snapmanager/
-conf/snapmanagercgi.properties conf/snapmanagercgi-parser.xsl etc/snapwebsites/
-conf/snapmanager-apache2.conf etc/apache2/sites-available
+conf/snapmanagercgi-parser.xsl etc/snapwebsites/
+conf/snapmanagercgi.properties usr/share/snapwebsites/logger/
+conf/snapmanagercgi.properties etc/snapwebsites/logger/
+conf/snapmanager-apache2.conf etc/apache2/sites-available/
 conf/index.html var/www/snapmanager/public_html/

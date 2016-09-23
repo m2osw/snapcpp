@@ -35,14 +35,24 @@
 ##
 install(
     FILES 
-        # log4cplus properties
-        snapcommunicator.properties
-
         # snap configuration files
         snapcommunicator.conf
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+################################################################################
+## Logger files
+##
+install(
+    FILES 
+        # log4cplus properties
+        snapcommunicator.properties
+
+    DESTINATION
+        share/snapwebsites/logger/
 )
 
 

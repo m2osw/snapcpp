@@ -42,15 +42,12 @@ snap_validate_xml( bundle-tripwire.xml   bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
 
+
 #################################################################################
 ## Config files
 ##
 install(
     FILES 
-        # log4cplus properties
-        snapmanagercgi.properties
-        snapmanagerdaemon.properties
-
         # snap configuration files
         snapmanager.conf
 
@@ -62,6 +59,21 @@ install(
     DESTINATION
         share/snapwebsites/conf
 )
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES 
+        # log4cplus properties
+        snapmanagercgi.properties
+        snapmanagerdaemon.properties
+
+    DESTINATION
+        share/snapwebsites/logger
+)
+
 
 #################################################################################
 ## Save HTML files in their own directory
@@ -86,6 +98,7 @@ install(
     DESTINATION
         share/snapwebsites/xsd
 )
+
 
 #################################################################################
 ## Bundles are also saved under a bundle directory for reference

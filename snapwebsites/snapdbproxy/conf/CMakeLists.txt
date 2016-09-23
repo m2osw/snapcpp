@@ -35,14 +35,24 @@
 ##
 install(
     FILES 
-        # log4cplus properties
-        snapdbproxy.properties
-
         # snap configuration files
         snapdbproxy.conf
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES 
+        # log4cplus properties
+        snapdbproxy.properties
+
+    DESTINATION
+        share/snapwebsites/logger
 )
 
 
