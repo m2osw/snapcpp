@@ -53,13 +53,17 @@ then
     # generate a private key and a certificate for remote snapcommunicators
     # to connect using SSL; this key will work for 3650 days (about 10 years)
     #
+    # here we fix the ownship of the directory (since it is not just
+    # root:root, we cannot really do it in the rules)
+    #
     SNAPSSL=/etc/snapwebsites/ssl
-    if test ! -f $SNAPSSL/snapcommunicator.key \
-         -o ! -f $SNAPSSL/snapcommunicator.crt
+    chown snapwebsites:snapwebsites ${SNAPSSL}
+    if test ! -f ${SNAPSSL}/snapcommunicator.key \
+         -o ! -f ${SNAPSSL}/snapcommunicator.crt
     then
         openssl req -newkey rsa:2048 \
-           -nodes -keyout $SNAPSSL/snapcommunicator.key \
-           -x509 -days 3650 -out $SNAPSSL/snapcommunicator.crt \
+           -nodes -keyout ${SNAPSSL}/snapcommunicator.key \
+           -x509 -days 3650 -out ${SNAPSSL}/snapcommunicator.crt \
            -subj "/C=US/ST=California/L=Sacramento/O=Snap/OU=Website/CN=snap.website"
     fi
 fi

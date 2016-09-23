@@ -32,6 +32,5 @@ override_dh_auto_configure:
 #
 override_dh_fixperms:
 	dh_fixperms
-	chmod go-rwx debian/snapcgi/etc/snapwebsites/ssl
-	chown snapwebsites:snapwebsites debian/snapcgi/etc/snapwebsites/ssl
+	chmod go-rwx debian/snapcommunicator/etc/snapwebsites/ssl
 
