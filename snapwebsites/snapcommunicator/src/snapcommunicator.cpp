@@ -3412,41 +3412,6 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     //
                     f_communicator->remove_connection(connection);
 
-                    // if the unregistering service is snapinit, also
-                    // proceed with a shutdown as if we received a STOP
-                    // we have to do that because we cannot at the same
-                    // time send an UNREGISTER and a STOP message from
-                    // snapinit one after the other knowing that:
-                    //
-                    // 1) we have to send UNREGISTER first
-                    // 2) if we UNREGISTER then we cannot safely use the
-                    //    TCP connection anymore
-                    // 3) so we could send the STOP using the UDP channel,
-                    //    only there is no synchronization so we cannot
-                    //    guarantee that UNREGISTER arrives before the
-                    //    UNREGISTER...
-                    // 4) when snapinit receives STOP, it initiates a
-                    //    shutdown of all services on that computer;
-                    //    it cannot distinguish from different types
-                    //    of STOP signals (i.e. if we were to send a
-                    //    STOP from snapinit to snapcommunicator without
-                    //    first unregistering, we could not know what
-                    //    STOP signal we are getting... the one to shutdown
-                    //    evertything or to just send a STOP to the
-                    //    snapcommunicator service.)
-                    //
-                    // So to break the loop we have to either UNREGISTER
-                    // with a special case, or change the STOP and include
-                    // a special case there. I choose the UNREGISTER because
-                    // it is only understood by snapcommunicator whereas
-                    // STOP is understood by all services so not having
-                    // some special case is safer.
-                    //
-                    //if(save_name == "snapinit")
-                    //{
-                    //    // "false" like a STOP
-                    //    shutdown(false);
-                    //}
                     return;
                 }
             }

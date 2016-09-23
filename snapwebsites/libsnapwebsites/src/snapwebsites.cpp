@@ -2125,13 +2125,20 @@ void server::stop(bool quitting)
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapserver");
             std::static_pointer_cast<messenger>(g_connection->f_messenger)->send_message(cmd);
+
+            // f_messenger is expected to HUP after this
+        }
+        else
+        {
+            // snapcommunicator is quitting so we can lose that connection now
+            //
+            g_connection->f_communicator->remove_connection(g_connection->f_messenger);
         }
     }
 
     {
         g_connection->f_communicator->remove_connection(g_connection->f_listener);
         g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
-        //g_connection->f_communicator->remove_connection(g_connection->f_messenger); -- will HUP once done
     }
 }
 

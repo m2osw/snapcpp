@@ -3654,7 +3654,7 @@ void snap_child::mark_for_initialization()
  */
 void snap_child::write(char const * data, ssize_t size)
 {
-    if(f_client)
+    if(!f_client)
     {
         // this happens from backends that do not have snap.cgi running
         return;
