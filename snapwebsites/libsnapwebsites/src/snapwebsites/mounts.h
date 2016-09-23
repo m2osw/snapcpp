@@ -30,17 +30,17 @@ namespace snap
 class snap_mounts_exception : public snap_exception
 {
 public:
-    snap_mounts_exception(const char *        whatmsg) : snap_exception("snap_mounts", whatmsg) {}
-    snap_mounts_exception(const std::string & whatmsg) : snap_exception("snap_mounts", whatmsg) {}
-    snap_mounts_exception(const QString &     whatmsg) : snap_exception("snap_mounts", whatmsg) {}
+    explicit snap_mounts_exception(const char *        whatmsg) : snap_exception("snap_mounts", whatmsg) {}
+    explicit snap_mounts_exception(const std::string & whatmsg) : snap_exception("snap_mounts", whatmsg) {}
+    explicit snap_mounts_exception(const QString &     whatmsg) : snap_exception("snap_mounts", whatmsg) {}
 };
 
 class snap_mounts_exception_io_error : public snap_mounts_exception
 {
 public:
-    snap_mounts_exception_io_error(const char *        whatmsg) : snap_mounts_exception(whatmsg) {}
-    snap_mounts_exception_io_error(const std::string & whatmsg) : snap_mounts_exception(whatmsg) {}
-    snap_mounts_exception_io_error(const QString &     whatmsg) : snap_mounts_exception(whatmsg) {}
+    explicit snap_mounts_exception_io_error(const char *        whatmsg) : snap_mounts_exception(whatmsg) {}
+    explicit snap_mounts_exception_io_error(const std::string & whatmsg) : snap_mounts_exception(whatmsg) {}
+    explicit snap_mounts_exception_io_error(const QString &     whatmsg) : snap_mounts_exception(whatmsg) {}
 };
 
 

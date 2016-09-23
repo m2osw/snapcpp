@@ -50,33 +50,33 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snapmanager_exception : public snap::snap_exception
 {
 public:
-    snapmanager_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapmanager_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapmanager_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapmanager_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapmanager_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    explicit snapmanager_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
 };
 
 class snapmanager_exception_cannot_load_plugins : public snapmanager_exception
 {
 public:
-    snapmanager_exception_cannot_load_plugins(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_cannot_load_plugins(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_cannot_load_plugins(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_cannot_load_plugins(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_cannot_load_plugins(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_cannot_load_plugins(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
 class snapmanager_exception_invalid_parameters : public snapmanager_exception
 {
 public:
-    snapmanager_exception_invalid_parameters(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_invalid_parameters(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_invalid_parameters(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_invalid_parameters(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_invalid_parameters(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_invalid_parameters(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
 class snapmanager_exception_undefined : public snapmanager_exception
 {
 public:
-    snapmanager_exception_undefined(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_undefined(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
-    snapmanager_exception_undefined(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_undefined(char const *        whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_undefined(std::string const & whatmsg) : snapmanager_exception(whatmsg) {}
+    explicit snapmanager_exception_undefined(QString const &     whatmsg) : snapmanager_exception(whatmsg) {}
 };
 
 

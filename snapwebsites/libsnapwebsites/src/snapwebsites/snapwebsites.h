@@ -91,33 +91,33 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snapwebsites_exception : public snap_exception
 {
 public:
-    snapwebsites_exception(char const *        whatmsg) : snap_exception("snapwebsites", whatmsg) {}
-    snapwebsites_exception(std::string const & whatmsg) : snap_exception("snapwebsites", whatmsg) {}
-    snapwebsites_exception(QString const &     whatmsg) : snap_exception("snapwebsites", whatmsg) {}
+    explicit snapwebsites_exception(char const *        whatmsg) : snap_exception("snapwebsites", whatmsg) {}
+    explicit snapwebsites_exception(std::string const & whatmsg) : snap_exception("snapwebsites", whatmsg) {}
+    explicit snapwebsites_exception(QString const &     whatmsg) : snap_exception("snapwebsites", whatmsg) {}
 };
 
 class snapwebsites_exception_invalid_parameters : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_invalid_parameters(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_invalid_parameters(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_invalid_parameters(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_invalid_parameters(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_invalid_parameters(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 class snapwebsites_exception_parameter_no_available : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_parameter_no_available(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_parameter_no_available(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_parameter_no_available(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_parameter_no_available(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_parameter_no_available(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_parameter_no_available(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 class snapwebsites_exception_io_error : public snapwebsites_exception
 {
 public:
-    snapwebsites_exception_io_error(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_io_error(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
-    snapwebsites_exception_io_error(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_io_error(char const *        whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_io_error(std::string const & whatmsg) : snapwebsites_exception(whatmsg) {}
+    explicit snapwebsites_exception_io_error(QString const &     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
 
