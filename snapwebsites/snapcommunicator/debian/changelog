@@ -1,6 +1,6 @@
-snapcommunicator (1.0.19.2~xenial) xenial; urgency=high
+snapcommunicator (1.0.20.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-443: Applied a fix to correct the ssl directory ownership.
 
  -- Build Server <build@m2osw.com>  Thu, 22 Sep 2016 02:00:48 -0700
 
