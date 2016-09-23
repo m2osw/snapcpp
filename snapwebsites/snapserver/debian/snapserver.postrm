@@ -14,6 +14,11 @@ then
     PACKAGENAME=snapserver
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log
+
+    # delete the snapserver SSL files
+    SNAPSSL=/etc/snapwebsites/ssl
+    rm -f $SNAPSSL/snapserver.key
+    rm -f $SNAPSSL/snapserver.crt
 fi
 
 #DEBHELPER#

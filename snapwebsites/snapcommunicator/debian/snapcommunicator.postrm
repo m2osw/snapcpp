@@ -13,6 +13,11 @@ then
     # delete the logs
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
+
+    # delete the snapcommunicator SSL files
+    SNAPSSL=/etc/snapwebsites/ssl
+    rm -f $SNAPSSL/snapcommunicator.key
+    rm -f $SNAPSSL/snapcommunicator.crt
 fi
 
 #DEBHELPER#
