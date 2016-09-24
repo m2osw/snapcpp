@@ -321,7 +321,7 @@ void manager::init(int argc, char * argv[])
     if( f_opt->is_defined( "--" ) )
     {
         std::cerr << "fatal error: unexpected parameter found on daemon command line." << std::endl;
-        f_opt->usage(f_opt->status_t::error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt->usage(advgetopt::getopt::status_t::error, "Usage: %s -<arg> ...\n", argv[0]);
         snap::NOTREACHED();
     }
 
