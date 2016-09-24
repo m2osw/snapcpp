@@ -17,7 +17,9 @@ many pages about the entire environment. How things work, etc.
 # Licenses
 
 Each project has an Open Source license, however, it changes slightly
-depending on the project. Most of the projects use the GNU GPL or GNU LGPL.
+depending on the project. Most of the projects use the GNU GPL or GNU LGPL
+version 2. You will also find public domain code and MIT or FreeBSD
+licenses.
 
 
 # Getting Started
