@@ -324,7 +324,7 @@ bool versions::versions_tools_impl(filter::filter::token_info_t & token)
     token.f_replacement += "<li>iplock ";
     {
         process p("check iplock version");
-        p.set_mode(p.mode_t::PROCESS_MODE_OUTPUT);
+        p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
         p.set_command("iplock");
         p.add_argument("--version");
         p.run();

@@ -1288,7 +1288,7 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
                     "\n  Sitemap/URL counts: %2/%3"
                     "\n  System: http://snapwebsites.org/"
                     "\n")
-                .arg(f_snap->date_to_string(start_date, f_snap->date_format_t::DATE_FORMAT_HTTP))
+                .arg(f_snap->date_to_string(start_date, snap_child::date_format_t::DATE_FORMAT_HTTP))
                 .arg(position)
                 .arg(count)));
         doc.insertAfter(comment, xml_marker);
@@ -1396,7 +1396,7 @@ void sitemapxml::generate_sitemap_index(int32_t position)
                 "\n  Number of sitemaps: %2"
                 "\n  System: http://snapwebsites.org/"
                 "\n")
-            .arg(f_snap->date_to_string(start_date, f_snap->date_format_t::DATE_FORMAT_HTTP))
+            .arg(f_snap->date_to_string(start_date, snap_child::date_format_t::DATE_FORMAT_HTTP))
             .arg(position)));
     doc.appendChild(comment);
 

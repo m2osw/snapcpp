@@ -2907,7 +2907,7 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
             //stripe_create_request.set_post("default_source", 0); -- we redefine the source
             stripe_create_request.set_post("description", QString("Customer %1 created on %2")
                                 .arg(user_email)
-                                .arg(f_snap->date_to_string(start_date, f_snap->date_format_t::DATE_FORMAT_SHORT))
+                                .arg(f_snap->date_to_string(start_date, snap_child::date_format_t::DATE_FORMAT_SHORT))
                                 .toUtf8().data());
             stripe_create_request.set_post("email", user_email.toUtf8().data());
             stripe_create_request.set_post("metadata[user_id]", customer_key.toUtf8().data()); // can make it easier to find the customer this way

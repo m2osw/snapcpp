@@ -258,7 +258,7 @@ void manager::init(int argc, char * argv[])
     //
     if(f_opt->is_defined("help"))
     {
-        f_opt->usage(f_opt->status_t::no_error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: %s -<arg> ...\n", argv[0]);
         exit(1);
     }
 

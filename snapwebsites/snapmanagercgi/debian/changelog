@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.37.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Removed obj->enum_name::enum_value so Coverity is happy.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 18:56:49 -0700
+
 snapmanagercgi (1.0.36.0~xenial) xenial; urgency=high
 
   * SNAP-110: Noticed that 3 bundle files were not getting installed.

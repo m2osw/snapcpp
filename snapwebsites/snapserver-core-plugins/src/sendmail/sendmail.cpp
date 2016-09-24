@@ -3258,7 +3258,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
             {
                 // TODO: apply safety filters on the subject
                 content::content *c(content::content::instance());
-                f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE), c->param_revision_t::PARAM_REVISION_REVISION).stringValue());
+                f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE), content::content::param_revision_t::PARAM_REVISION_REVISION).stringValue());
             }
         }
         else

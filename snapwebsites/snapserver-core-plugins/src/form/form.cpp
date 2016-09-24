@@ -2190,7 +2190,7 @@ void form::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
     //
     // initialize the session information
     sessions::sessions::session_info info;
-    info.set_session_type(info.session_info_type_t::SESSION_INFO_FORM);
+    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_FORM);
     //info.set_object_path(); -- form sessions are based on paths only, no objects
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
 
@@ -2210,12 +2210,12 @@ void form::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
     else if(session_id_str.startsWith("user/"))
     {
         session_id_str = session_id_str.mid(5);
-        info.set_session_type(info.session_info_type_t::SESSION_INFO_USER);
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USER);
     }
     else if(session_id_str.startsWith("secure/"))
     {
         session_id_str = session_id_str.mid(7);
-        info.set_session_type(info.session_info_type_t::SESSION_INFO_SECURE);
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_SECURE);
     }
     bool ok(false);
     info.set_session_id(session_id_str.toInt(&ok));

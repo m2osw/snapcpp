@@ -3908,8 +3908,8 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
             QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
             int64_t date(value.int64Value());
             token.f_replacement = QString("%1 %2")
-                    .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_SHORT))
-                    .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_TIME));
+                    .arg(f_snap->date_to_string(date, snap_child::date_format_t::DATE_FORMAT_SHORT))
+                    .arg(f_snap->date_to_string(date, snap_child::date_format_t::DATE_FORMAT_TIME));
             // else use was not yet verified
             return;
         }

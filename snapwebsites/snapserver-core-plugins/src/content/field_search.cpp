@@ -1315,11 +1315,11 @@ void field_search::run()
                 QDomElement child;
                 QString v;
                 parser::token_t t(p.get_token(v));
-                while(t != p.token_t::TOKEN_EOF)
+                while(t != parser::token_t::TOKEN_EOF)
                 {
                     // we must have an identifier before attributes or '/'
                     //    <path>
-                    if(t != p.token_t::TOKEN_IDENTIFIER)
+                    if(t != parser::token_t::TOKEN_IDENTIFIER)
                     {
                         throw content_exception_invalid_sequence(QString("syntax error in field name \"%1\", expected a path name got token %2 instead").arg(child_name).arg(static_cast<int>(t)));
                     }
@@ -1329,13 +1329,13 @@ void field_search::run()
                     // start an attribute?
                     //    '['
                     t = p.get_token(v);
-                    while(t == p.token_t::TOKEN_OPEN_ATTR)
+                    while(t == parser::token_t::TOKEN_OPEN_ATTR)
                     {
                         // attribute name
                         //    <name>
                         QString attr_name;
                         t = p.get_token(attr_name);
-                        if(t != p.token_t::TOKEN_IDENTIFIER)
+                        if(t != parser::token_t::TOKEN_IDENTIFIER)
                         {
                             throw content_exception_invalid_sequence("attribute name expected after a '['");
                         }
@@ -1353,12 +1353,12 @@ void field_search::run()
                         //    '='
                         QString attr_value;
                         t = p.get_token(v);
-                        if(t == p.token_t::TOKEN_EQUAL)
+                        if(t == parser::token_t::TOKEN_EQUAL)
                         {
                             // we have a value, we are setting the attribute
                             //     <value>
                             t = p.get_token(attr_value);
-                            if(t != p.token_t::TOKEN_IDENTIFIER)
+                            if(t != parser::token_t::TOKEN_IDENTIFIER)
                             {
                                 throw content_exception_invalid_sequence("attribute name expected after an '='");
                             }
@@ -1376,7 +1376,7 @@ void field_search::run()
 
                         // make sure we have a closing ']'
                         //     ']'
-                        if(t != p.token_t::TOKEN_CLOSE_ATTR)
+                        if(t != parser::token_t::TOKEN_CLOSE_ATTR)
                         {
                             throw content_exception_invalid_sequence(QString("attribute must end with ']' in %1, got token %2").arg(child_name).arg(static_cast<int>(t)));
                         }
@@ -1384,9 +1384,9 @@ void field_search::run()
                         t = p.get_token(v);
                     }
 
-                    if(t != p.token_t::TOKEN_EOF)
+                    if(t != parser::token_t::TOKEN_EOF)
                     {
-                        if(t != p.token_t::TOKEN_SLASH)
+                        if(t != parser::token_t::TOKEN_SLASH)
                         {
                             throw content_exception_invalid_sequence(QString("expect a slash '/' instead of %1 to seperate each child name in \"%2\".").arg(static_cast<int>(t)).arg(child_name));
                         }
@@ -1431,7 +1431,7 @@ void field_search::run()
 
                 case command_t::COMMAND_SAVE_INT64_DATE_AND_TIME:
                     {
-                        QDomText text(doc.createTextNode(f_snap->date_to_string(f_result[0].safeInt64Value(), f_snap->date_format_t::DATE_FORMAT_LONG)));
+                        QDomText text(doc.createTextNode(f_snap->date_to_string(f_result[0].safeInt64Value(), snap_child::date_format_t::DATE_FORMAT_LONG)));
                         child.appendChild(text);
                     }
                     break;
