@@ -1,3 +1,10 @@
+snapserver (1.0.8.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Noticed that 3 bundle files were not getting installed.
+  * Also two were not being checked.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Sep 2016 17:49:49 -0700
+
 snapserver (1.0.7.0~xenial) xenial; urgency=high
 
   * SNAP-110: Moved .properties files under .../logger/.

@@ -1,3 +1,10 @@
+snapmanagercgi (1.0.36.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Noticed that 3 bundle files were not getting installed.
+  * Also two were not being checked.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 17:50:49 -0700
+
 snapmanagercgi (1.0.35.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed up other configuration file installation.
