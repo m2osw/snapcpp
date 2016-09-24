@@ -18,6 +18,7 @@ Build-Depends: cmake,
     qt5-default,
     snapbase-dev (>= 1.0.4.7~xenial),
     snapcmakemodules (>= 1.0.26.7~xenial),
+    libyaml-cpp-dev,
     zip
 Standards-Version: 3.9.4
 Section: admin

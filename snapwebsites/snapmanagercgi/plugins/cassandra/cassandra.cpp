@@ -32,8 +32,13 @@
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/process.h>
 
+// YAML-CPP
+//
+#include <yaml-cpp/yaml.h>
+
 // Qt lib
 //
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
@@ -58,6 +63,36 @@ const QString g_ssl_keys_dir        = "/etc/cassandra/ssl/";
 const QString g_cassandra_yaml      = "/etc/cassandra/cassandra.yaml";
 const QString g_keystore_password   = "qZ0LK74eiPecWcTQJCX2";
 const QString g_truststore_password = "fu87kxWq4ktrkuZqVLQX";
+
+YAML::Node read_node_from_yaml()
+{
+    return YAML::Load( g_cassandra_yaml.toUtf8().data() );
+}
+
+void write_node_to_yaml( const YAML::Node& node )
+{
+    QString const header_comment(
+            QString("Automatically generated file on '%1'. Do not modify!")
+            .arg( QDateTime::currentDateTime().toString( Qt::LocalDate ) ) );
+
+    YAML::Emitter emitter;
+    emitter.SetIndent( 4 );
+    emitter.SetMapFormat( YAML::Flow );
+    emitter << header_comment.toUtf8().data()
+        << node
+        << YAML::Comment("vim: ts=4 sw=4 et");
+
+    QFile file( g_cassandra_yaml );
+    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+    {
+        QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+        SNAP_LOG_ERROR(qPrintable(errmsg));
+        return;
+    }
+    //
+    QTextStream out( &file );
+    out << emitter.c_str();
+}
 
 
 class cassandra_info
@@ -383,29 +418,31 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
 
         // Present the server SSL option (to allow node-to-node encryption).
         //
-        bool found(false);
-        std::string const use_server_ssl( info.retrieve_parameter( found, "internode_encryption", "server_encryption_options" ) );
-        if(found)
+        YAML::Node node = YAML::Load( g_cassandra_yaml.toUtf8().data() );
+        //
         {
-            snap_manager::status_t const conf_field(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+            std::stringstream ss;
+            ss << node["server_encryption_options"]["internode_encryption"];
+            snap_manager::status_t const conf_field
+                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
                             , "use_server_ssl"
-                            , use_server_ssl.c_str());
+                            , ss.str().c_str()
+                            );
             server_status.set_field(conf_field);
         }
 
-        // Present the clien SSL option (to allow client-to-server encryption).
+        // Present the client SSL option (to allow client-to-server encryption).
         //
-        found =false;
-        std::string const use_client_ssl( info.retrieve_parameter( found, "enabled", "client_encryption_options" ) );
-        if(found)
         {
-            snap_manager::status_t const conf_field(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+            std::stringstream ss;
+            ss << node["client_encryption_options"]["enabled"];
+            snap_manager::status_t const conf_field
+                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
                             , get_plugin_name()
                             , "use_client_ssl"
-                            , use_client_ssl.c_str());
+                            , ss.str().c_str()
+                            );
             server_status.set_field(conf_field);
         }
     }
@@ -770,129 +807,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
 }
 
 
-void cassandra::set_server_ssl( bool const enabled )
-{
-    // Make a backup before we modify this extensively.
-    //
-    QFile yaml_file( g_cassandra_yaml );
-    yaml_file.copy( g_cassandra_yaml + ".bak" );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "server_encryption_options::internode_encryption"
-                , enabled? "all": "none"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "server_encryption_options::keystore"
-                , "/etc/cassandra/ssl/keystore.jks"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "server_encryption_options::keystore_password"
-                , g_keystore_password
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "server_encryption_options::truststore"
-                , "/etc/cassandra/ssl/truststore.jks"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "server_encryption_options::truststore_password"
-                , g_truststore_password
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-}
-
-
-void cassandra::set_client_ssl( bool const enabled )
-{
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "client_encryption_options::enabled"
-                , enabled? "true": "false"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "client_encryption_options::optional"
-                , "false"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "client_encryption_options::keystore"
-                , "/etc/cassandra/ssl/keystore.jks"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "client_encryption_options::keystore_password"
-                , g_keystore_password
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "client_encryption_options::truststore"
-                , "/etc/cassandra/ssl/truststore.jks"
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-
-    f_snap->replace_configuration_value(
-                  g_cassandra_yaml
-                , "client_encryption_options::truststore_password"
-                , g_truststore_password
-                ,   snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                  | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                );
-}
-
-
 void cassandra::generate_keys()
 {
     cassandra_info info;
@@ -1010,113 +924,6 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
 
     bool const use_default(button_name == "restore_default");
 
-    if(field_name == "cluster_name")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    );
-        return true;
-    }
-
-    if(field_name == "seeds")
-    {
-        affected_services.insert("cassandra-restart");
-
-        // IMPORTANT: this field is preceeded by spaces and a dash character
-        //            which we want to keep in the configuration file, so we
-        //            use the trim_left parameter for that purpose
-        //
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    , " -"
-                    );
-        return true;
-    }
-
-    if(field_name == "listen_address")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "localhost" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    );
-        return true;
-    }
-
-    if(field_name == "rpc_address")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "localhost" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    );
-        return true;
-    }
-
-    if(field_name == "broadcast_rpc_address")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "localhost" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
-                    );
-        return true;
-    }
-
-    if(field_name == "auto_snapshot")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "false" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
-                    );
-        return true;
-    }
-
     if(field_name == "join_a_cluster")
     {
         if(new_value == f_snap->get_server_name())
@@ -1148,19 +955,70 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
         return true;
     }
 
+    char const* name( field_name.toUtf8().data() );
+    char const* val ( new_value.toUtf8().data()  );
+
+    if( field_name == "cluster_name" || field_name == "seeds" )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if  ( field_name == "listen_address"
+       || field_name == "rpc_address"
+       || field_name == "broadcast_rpc_address"
+        )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = use_default ? "localhost" : val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if(field_name == "auto_snapshot")
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = use_default ? "false" : val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
     if( field_name == "use_server_ssl" )
     {
-        // Modify values and generate keys if enabled for server_encryption_options.
-        // Disable if user turns them off.
-        set_server_ssl( new_value != "none" );
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        YAML::Node seo( full_nodes["server_encryption_options"] );
+        seo["internode_encryption"] = val;
+        seo["keystore"]             = "/etc/cassandra/ssl/keystore.jks";
+        seo["keystore_password"]    = g_keystore_password.toUtf8().data();
+        seo["truststore"]           = "/etc/cassandra/ssl/truststore.jks";
+        seo["truststore_password"]  = g_truststore_password.toUtf8().data();
+
+        write_node_to_yaml( full_nodes );
         return true;
     }
 
     if( field_name == "use_client_ssl" )
     {
-        // Modify values and generate keys if enabled for client_encryption_options.
-        // Disable if user turns them off.
-        set_client_ssl( new_value == "enabled" );
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        auto ceo( full_nodes["client_encryption_options"] );
+        ceo["enabled"]             = val;
+        ceo["optional"]            = "false";
+        ceo["keystore"]            = "/etc/cassandra/ssl/keystore.jks";
+        ceo["keystore_password"]   = g_keystore_password.toUtf8().data();
+        ceo["truststore"]          = "/etc/cassandra/ssl/truststore.jks";
+        ceo["truststore_password"] = g_truststore_password.toUtf8().data();
+
+        write_node_to_yaml( full_nodes );
         return true;
     }
 
@@ -1262,6 +1120,7 @@ void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_comma
     understood_commands << "CASSANDRAQUERY";
     understood_commands << "CASSANDRAFIELDS";
     understood_commands << "CASSANDRAKEYS";         // Send our public key to the requesting server...
+    understood_commands << "CASSANDRASERVERKEY";    // Request public keys from other nodes...
     understood_commands << "CASSANDRASERVERKEYS";   // Send our node key to the requesting server...
 }
 

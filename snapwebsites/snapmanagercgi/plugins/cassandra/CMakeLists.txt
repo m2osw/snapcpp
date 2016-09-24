@@ -55,6 +55,7 @@ target_link_libraries(cassandra
     snapmanager
     ${QT_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
+    yaml-cpp
 )
 
 install(

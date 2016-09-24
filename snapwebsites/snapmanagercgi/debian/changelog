@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.1.1~xenial) xenial; urgency=high
+
+  * SNAP-440: Added YAML-CPP support for parsing the Cassandra conf file.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sat, 24 Sep 2016 15:05:05 -0700
+
 snapmanagercgi (1.1.0.3~xenial) xenial; urgency=high
 
   * Nightly build.
