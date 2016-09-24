@@ -71,7 +71,7 @@
       # Also, remove all of the default encryption stuff since we are going to
       # overwrite all of this with the plugin.
       #
-      perl -0777 -i.bak -p
+      sed -i.orig
         -e "s/^cluster_name: .*/cluster_name: '$BUNDLE_INSTALLATION_CLUSTER_NAME'/" \
         -e "s/- seeds: \".*\"/- seeds: \"$BUNDLE_INSTALLATION_SEEDS\"/" \
         -e "s/^listen_address: .*/listen_address: $BUNDLE_INSTALLATION_LISTEN_ADDRESS/" \
@@ -80,6 +80,7 @@
         -e "s/^endpoint_snitch: .*/endpoint_snitch: GossipingPropertyFileSnitch/" \
         -e "s/^auto_snapshot: .*/auto_snapshot: false/" \
               /etc/cassandra/cassandra.yaml
+      cp /etc/cassandra/cassandra.yaml /etc/cassandra/cassandra.yaml.bak
     fi
 
     # restart cassandra
