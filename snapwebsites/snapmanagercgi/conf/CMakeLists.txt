@@ -34,8 +34,10 @@ project(snapmanagercgi_conf)
 snap_validate_xml( snapmanagercgi-parser.xsl simplified-xslt20.dtd )
 
 snap_validate_xml( bundle-cassandra.xml  bundles.xsd )
+snap_validate_xml( bundle-dns.xml        bundles.xsd )
 snap_validate_xml( bundle-logserver.xml  bundles.xsd )
 snap_validate_xml( bundle-rkhunter.xml   bundles.xsd )
+snap_validate_xml( bundle-ssh.xml        bundles.xsd )
 snap_validate_xml( bundle-swap.xml       bundles.xsd )
 snap_validate_xml( bundle-tools.xml      bundles.xsd )
 snap_validate_xml( bundle-tripwire.xml   bundles.xsd )
@@ -118,8 +120,10 @@ install(
 install(
     FILES
         bundle-cassandra.xml
+        bundle-dns.xml
         bundle-logserver.xml
         bundle-rkhunter.xml
+        bundle-ssh.xml
         bundle-swap.xml
         bundle-tools.xml
         bundle-tripwire.xml
