@@ -556,23 +556,23 @@ QtCassandra::QCassandraTable::pointer_t users::get_users_table()
  * other plugins.
  *
  * \warning
- * The value is read once and cached by this function.
+ * The value is read once and statically cached by this function.
  *
  * \return The duration of the administrative session in seconds.
  */
 int64_t users::get_total_session_duration()
 {
     int64_t const default_total_session_duration(365LL * 24LL * 60LL); // 1 year by default, in minutes
-    static int64_t value(-1);
+    static int64_t cached_duration(-1);
 
-    if(value == -1)
+    if(cached_duration == -1)
     {
         QtCassandra::QCassandraValue const total_session_duration(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION)));
         // value in database is in days
-        value = total_session_duration.safeInt64Value(0, default_total_session_duration) * 60LL;
+        cached_duration = total_session_duration.safeInt64Value(0, default_total_session_duration) * 60LL;
     }
 
-    return value;
+    return cached_duration;
 }
 
 
@@ -589,23 +589,23 @@ int64_t users::get_total_session_duration()
  * other plugins.
  *
  * \warning
- * The value is read once and cached by this function.
+ * The value is read once and statically cached by this function.
  *
  * \return The duration of the administrative session in seconds.
  */
 int64_t users::get_user_session_duration()
 {
     int64_t const default_user_session_duration(5LL * 24LL * 60LL); // 5 days by default, in minutes
-    static int64_t value(-1);
+    static int64_t cached_duration(-1);
 
-    if(value == -1)
+    if(cached_duration == -1)
     {
         QtCassandra::QCassandraValue const user_session_duration(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_USER_SESSION_DURATION)));
         // value in database is in minutes
-        value = user_session_duration.safeInt64Value(0, default_user_session_duration) * 60LL;
+        cached_duration = user_session_duration.safeInt64Value(0, default_user_session_duration) * 60LL;
     }
 
-    return value;
+    return cached_duration;
 }
 
 
@@ -622,23 +622,23 @@ int64_t users::get_user_session_duration()
  * other plugins.
  *
  * \warning
- * The value is read once and cached by this function.
+ * The value is read once and statically cached by this function.
  *
  * \return The duration of the administrative session in seconds.
  */
 int64_t users::get_administrative_session_duration()
 {
     int64_t const default_administrative_session_duration(3LL * 60LL);
-    static int64_t value(-1);
+    static int64_t cached_duration(-1);
 
-    if(value == -1)
+    if(cached_duration == -1)
     {
         QtCassandra::QCassandraValue const administrative_session_duration(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION)));
         // value in database is in minutes
-        value = administrative_session_duration.safeInt64Value(0, default_administrative_session_duration) * 60LL;
+        cached_duration = administrative_session_duration.safeInt64Value(0, default_administrative_session_duration) * 60LL;
     }
 
-    return value;
+    return cached_duration;
 }
 
 
@@ -658,22 +658,22 @@ int64_t users::get_administrative_session_duration()
  * other plugins.
  *
  * \warning
- * The value is read once and cached by this function.
+ * The value is read once and statically cached by this function.
  *
  * \return Whether the administrative session has been soften.
  */
 bool users::get_soft_administrative_session()
 {
     signed char const default_soft_administrative_session(0);
-    static signed char value(-1);
+    static signed char cached_soft_session(-1);
 
-    if(value == -1)
+    if(cached_soft_session == -1)
     {
         QtCassandra::QCassandraValue const soft_administrative_session(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION)));
-        value = soft_administrative_session.safeSignedCharValue(0, default_soft_administrative_session);
+        cached_soft_session = soft_administrative_session.safeSignedCharValue(0, default_soft_administrative_session);
     }
 
-    return value != 0;
+    return cached_soft_session != 0;
 }
 
 
@@ -698,6 +698,7 @@ QString users::get_user_cookie_name()
     {
         // user cookie name not yet assigned or reset so a new name
         // gets assigned
+        //
         unsigned char buf[COOKIE_NAME_SIZE];
         int const r(RAND_bytes(buf, sizeof(buf)));
         if(r != 1)
@@ -710,6 +711,7 @@ QString users::get_user_cookie_name()
         }
         // actually most ASCII characters are allowed, but to be fair, it
         // is not safe to use most so we limit using a simple array
+        //
         char allowed_characters[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.";
         for(int i(0); i < (COOKIE_NAME_SIZE - 2); i += 3)
         {
@@ -720,13 +722,23 @@ QString users::get_user_cookie_name()
             int d((buf[i + 0] >> 6) | ((buf[i + 1] >> 4) & 0x0C) | ((buf[i + 2] >> 2) & 0x30));
             if(i == 0 && a >= 52)
             {
-                a &= 0x1F;
+                a &= 0x1F; // force a letter as character 0
             }
             user_cookie_name += allowed_characters[a];
             user_cookie_name += allowed_characters[b];
             user_cookie_name += allowed_characters[c];
             user_cookie_name += allowed_characters[d];
         }
+
+        // TODO: allow other plugins to prevent certain names?
+        //       (i.e. the cookie_consent_sliktide JavaScript code creates
+        //       a cookie to know that the user consents to use the website
+        //       and we would not want to clash with that cookie.)
+        //
+        //bool interfering(false);
+        //interfering_cookie(user_cookie_name, interfering);
+        //if(interfering) ... generate a new cookie name ...
+
         f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_USER_COOKIE_NAME), user_cookie_name);
     }
     return user_cookie_name;
