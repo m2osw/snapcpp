@@ -1,4 +1,4 @@
-snapcommunicator (1.0.23.0~xenial) xenial; urgency=high
+snapcommunicator (1.0.24.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed up other configuration file installation.
 
