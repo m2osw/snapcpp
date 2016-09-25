@@ -31,7 +31,7 @@ namespace snap
 
 
 snap_initialize_website::snap_initialize_website_runner::snap_initialize_website_runner(snap_initialize_website * parent,
-                                                QString const & snap_host, int snap_port,
+                                                QString const & snap_host, int snap_port, bool secure,
                                                 QString const & website_uri, int destination_port)
     : snap_runner("initialize_website")
     , f_parent(parent)
@@ -39,6 +39,7 @@ snap_initialize_website::snap_initialize_website_runner::snap_initialize_website
     //, f_done() -- auto-init
     , f_snap_host(snap_host)
     , f_snap_port(snap_port)
+    , f_secure(secure)
     , f_website_uri(website_uri)
     , f_destination_port(destination_port)
 {
@@ -62,10 +63,13 @@ void snap_initialize_website::snap_initialize_website_runner::run()
 
 void snap_initialize_website::snap_initialize_website_runner::send_init_command()
 {
-    tcp_client_server::tcp_client::pointer_t socket;
+    tcp_client_server::bio_client::pointer_t socket;
     try
     {
-         socket.reset(new tcp_client_server::tcp_client(f_snap_host.toUtf8().data(), f_snap_port));
+         tcp_client_server::bio_client::mode_t const mode(f_secure
+                    ? tcp_client_server::bio_client::mode_t::MODE_SECURE
+                    : tcp_client_server::bio_client::mode_t::MODE_PLAIN);
+         socket.reset(new tcp_client_server::bio_client(f_snap_host.toUtf8().data(), f_snap_port, mode));
     }
     catch(tcp_client_server::tcp_client_server_runtime_error const&)
     {
@@ -275,9 +279,9 @@ void snap_initialize_website::snap_initialize_website_runner::done()
 
 
 
-snap_initialize_website::snap_initialize_website(QString const& snap_host, int snap_port,
+snap_initialize_website::snap_initialize_website(QString const& snap_host, int snap_port, bool secure,
                                                  QString const& website_uri, int destination_port)
-    : f_website_runner(new snap_initialize_website_runner(this, snap_host, snap_port, website_uri, destination_port))
+    : f_website_runner(new snap_initialize_website_runner(this, snap_host, snap_port, secure, website_uri, destination_port))
     , f_process_thread(new snap_thread("Initialize Website Thread", f_website_runner.get()))
 {
 }

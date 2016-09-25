@@ -1,4 +1,4 @@
-snapdbproxy (1.1.1.1~xenial) xenial; urgency=high
+snapdbproxy (1.1.1.0~xenial) xenial; urgency=high
 
   * SNAP-440: key is properly saved from cassandra plugin.
 
@@ -16,11 +16,11 @@ snapdbproxy (1.1.0.1~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:43 -0700
 
-snapdbproxy (1.0.14.1~xenial) xenial; urgency=high
+snapdbproxy (1.0.15.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-443: Missed updating the snapinstallwebsite tool with SSL support.
 
- -- Build Server <build@m2osw.com>  Sun, 25 Sep 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 12:50:48 -0700
 
 snapdbproxy (1.0.14.0~xenial) xenial; urgency=high
 

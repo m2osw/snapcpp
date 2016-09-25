@@ -128,7 +128,7 @@ int main(int argc, char * argv[])
         if(!opt.is_defined("domain")
         || !opt.is_defined("port"))
         {
-            std::cerr << "error: domain and port are both required." << std::endl;
+            std::cerr << "error: --domain and --port are both required." << std::endl;
             opt.usage(advgetopt::getopt::status_t::error, "snapdbproxy");
             exit(1);
             snap::NOTREACHED();
@@ -150,7 +150,17 @@ int main(int argc, char * argv[])
         int snap_port(4004);
         tcp_client_server::get_addr_port(config["listen"], snap_host, snap_port, "tcp");
 
-        SNAP_LOG_INFO("snapserver is at ")(snap_host)(":")(snap_port)(".");
+        std::string const certificate(config["ssl_certificate"]);
+        std::string const private_key(config["ssl_private_key"]);
+
+        bool secure(!certificate.empty() || !private_key.empty());
+        if(secure
+        && snap_host == "127.0.0.1")
+        {
+            secure = false;
+        }
+
+        SNAP_LOG_INFO("snapserver is at ")(snap_host)(":")(snap_port)(secure ? " using SSL" : "")(".");
 
         // we need the URL:port to initialize the new website
         //
@@ -170,7 +180,7 @@ int main(int argc, char * argv[])
         // create a snap_initialize_website object and listen for messages
         // up until is_done() returns true
         //
-        snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, url, site_port));
+        snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, secure, url, site_port));
 
         SNAP_LOG_INFO("start website initializer.");
 
