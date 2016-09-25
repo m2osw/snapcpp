@@ -1,3 +1,9 @@
+snapdbproxy (1.1.1.1~xenial) xenial; urgency=high
+
+  * SNAP-440: key is properly saved from cassandra plugin.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 25 Sep 2016 12:37:03 -0700
+
 snapdbproxy (1.1.0.4~xenial) xenial; urgency=high
 
   * Nightly build.
