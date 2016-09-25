@@ -1,6 +1,6 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      snapwebsites/snapbase/conf/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.
@@ -35,16 +35,39 @@
 ##
 install(
     FILES
+        # snap configuration files (shared between snapbackend and snapserver)
+        snapserver.conf
+
+    DESTINATION
+        share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Apache2 files
+##
+install(
+    FILES
+        # snap configuration files (shared between snapbackend and snapserver)
+        snap-httpoxy.conf
+
+    DESTINATION
+        share/snapwebsites/apache2
+)
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES
         # log4cplus properties for snapserver and the log4cplus server
         loggingserver.properties
         log.properties
         logserver.properties
 
-        # snap configuration files
-        snapserver.conf
-
     DESTINATION
-        share/snapwebsites/conf
+        share/snapwebsites/logger
 )
 
 

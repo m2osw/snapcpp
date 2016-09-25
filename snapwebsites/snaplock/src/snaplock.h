@@ -224,7 +224,7 @@ private:
     static pointer_t                            f_instance;
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
-    QString                                     f_log_conf = "/etc/snapwebsites/snaplock.properties";
+    QString                                     f_log_conf = "/etc/snapwebsites/logger/snaplock.properties";
     QString                                     f_server_name;
     QString                                     f_service_name = "snaplock";
     QString                                     f_communicator_addr = "localhost";

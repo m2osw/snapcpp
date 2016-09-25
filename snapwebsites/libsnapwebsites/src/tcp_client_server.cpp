@@ -2041,12 +2041,24 @@ bio_client::pointer_t bio_server::accept()
     // mark the new connection with the SO_KEEPALIVE flag
     if(f_keepalive)
     {
-        // if this fails, we ignore the error, but still log the event
-        int optval(1);
-        socklen_t const optlen(sizeof(optval));
-        if(setsockopt(get_socket(), SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+        // retrieve the socket (we do not yet have a bio_client object
+        // so we cannot call a get_socket() function...)
+        //
+        int socket;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        BIO_get_fd(bio.get(), &socket);
+#pragma GCC diagnostic pop
+        if(socket >= 0)
         {
-            SNAP_LOG_WARNING("bio_server::accept(): an error occurred trying to mark accepted socket with SO_KEEPALIVE.");
+            // if this call fails, we ignore the error, but still log the event
+            //
+            int optval(1);
+            socklen_t const optlen(sizeof(optval));
+            if(setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+            {
+                SNAP_LOG_WARNING("bio_server::accept(): an error occurred trying to mark accepted socket with SO_KEEPALIVE.");
+            }
         }
     }
 

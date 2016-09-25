@@ -47,35 +47,35 @@ namespace advgetopt
 class getopt_exception : public std::runtime_error
 {
 public:
-    getopt_exception(const std::string& msg) : runtime_error(msg) {}
+    getopt_exception(std::string const & msg) : runtime_error(msg) {}
 };
 
 // problem with a default argument
 class getopt_exception_default : public getopt_exception
 {
 public:
-    getopt_exception_default(const std::string& msg) : getopt_exception(msg) {}
+    getopt_exception_default(std::string const & msg) : getopt_exception(msg) {}
 };
 
 // trying to get an undefined option
 class getopt_exception_undefined : public getopt_exception
 {
 public:
-    getopt_exception_undefined(const std::string& msg) : getopt_exception(msg) {}
+    getopt_exception_undefined(std::string const & msg) : getopt_exception(msg) {}
 };
 
 // something wrong in the user options
 class getopt_exception_invalid : public getopt_exception
 {
 public:
-    getopt_exception_invalid(const std::string& msg) : getopt_exception(msg) {}
+    getopt_exception_invalid(std::string const & msg) : getopt_exception(msg) {}
 };
 
 // usage() was called and the library was compiled in debug mode
 class getopt_exception_exiting : public getopt_exception
 {
 public:
-    getopt_exception_exiting(const std::string& msg) : getopt_exception(msg) {}
+    getopt_exception_exiting(std::string const & msg) : getopt_exception(msg) {}
 };
 
 
@@ -128,9 +128,9 @@ public:
         argument_mode_t     f_arg_mode = argument_mode_t::no_argument;
     };
 
-                        getopt(int argc, char * argv[], option const * opts, const std::vector<std::string> configuration_files, char const * environment_variable_name);
+                        getopt(int argc, char * argv[], option const * opts, std::vector<std::string> const configuration_files, char const * environment_variable_name);
 
-    void                reset(int argc, char * argv[], option const * opts, const std::vector<std::string> configuration_files, char const * environment_variable_name);
+    void                reset(int argc, char * argv[], option const * opts, std::vector<std::string> const configuration_files, char const * environment_variable_name);
 
     bool                is_defined(std::string const & name) const;
     int                 size(std::string const & name) const;

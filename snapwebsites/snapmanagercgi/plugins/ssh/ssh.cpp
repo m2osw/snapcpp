@@ -460,8 +460,16 @@ bool ssh::apply_setting(QString const & button_name, QString const & field_name,
                 SNAP_LOG_ERROR("we could not create the .ssh directory \"")(ssh_path)("\"");
                 return false;
             }
-            chmod(ssh_path.c_str(), S_IRWXU); // 0700
-            chownnm(q_ssh_path, user_name, user_name);
+            if(chmod(ssh_path.c_str(), S_IRWXU) != 0) // 0700
+            {
+                int const e(errno);
+                SNAP_LOG_WARNING("could not setup the .ssh directory mode, (errno: ")(e)(", ")(strerror(e))(")");
+            }
+            if(chownnm(q_ssh_path, user_name, user_name) != 0)
+            {
+                int const e(errno);
+                SNAP_LOG_WARNING("could not setup the .ssh ownership, (errno: ")(e)(", ")(strerror(e))(")");
+            }
         }
 
         if(button_name == "save")
@@ -474,12 +482,20 @@ bool ssh::apply_setting(QString const & button_name, QString const & field_name,
             {
                 authorized_keys_out << new_value.trimmed().toUtf8().data() << std::endl;
 
-                chmod(authorized_keys_path.c_str(), S_IRUSR | S_IWUSR);
+                if(chmod(authorized_keys_path.c_str(), S_IRUSR | S_IWUSR) != 0)
+                {
+                    int const e(errno);
+                    SNAP_LOG_WARNING("could not setup the authorize_keys file mode, (errno: ")(e)(", ")(strerror(e))(")");
+                }
 
                 // WARNING: we would need to get the default name of the
                 // user main group instead of assuming it is his name
                 //
-                chownnm(QString::fromUtf8(authorized_keys_path.c_str()), user_name, user_name);
+                if(chownnm(QString::fromUtf8(authorized_keys_path.c_str()), user_name, user_name) != 0)
+                {
+                    int const e(errno);
+                    SNAP_LOG_WARNING("could not setup the authorize_keys file mode, (errno: ")(e)(", ")(strerror(e))(")");
+                }
                 return true;
             }
 

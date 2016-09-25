@@ -150,7 +150,7 @@ advgetopt::getopt::option const g_manager_options[] =
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "log-config",
-        "/etc/snapwebsites/snapmanager.properties",
+        "/etc/snapwebsites/logger/snapmanagerdaemon.properties",
         "Full path of log configuration file.",
         advgetopt::getopt::argument_mode_t::optional_argument
     },
@@ -258,7 +258,7 @@ void manager::init(int argc, char * argv[])
     //
     if(f_opt->is_defined("help"))
     {
-        f_opt->usage(f_opt->status_t::no_error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt->usage(advgetopt::getopt::status_t::no_error, "Usage: %s -<arg> ...\n", argv[0]);
         exit(1);
     }
 
@@ -321,7 +321,7 @@ void manager::init(int argc, char * argv[])
     if( f_opt->is_defined( "--" ) )
     {
         std::cerr << "fatal error: unexpected parameter found on daemon command line." << std::endl;
-        f_opt->usage(f_opt->status_t::error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt->usage(advgetopt::getopt::status_t::error, "Usage: %s -<arg> ...\n", argv[0]);
         snap::NOTREACHED();
     }
 

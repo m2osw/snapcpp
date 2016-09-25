@@ -239,7 +239,7 @@ private:
 
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
-    QString                                     f_log_conf = "/etc/snapwebsites/snapdbproxy.properties";
+    QString                                     f_log_conf = "/etc/snapwebsites/logger/snapdbproxy.properties";
     std::string                                 f_server_name;
     QString                                     f_communicator_addr = "127.0.0.1";
     int                                         f_communicator_port = 4040;

@@ -1,6 +1,6 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      snapwebsites/snapcgi/conf/CMakeLists.txt
 #
 # Description:
 #      Install configuration files and samples.
@@ -37,17 +37,40 @@ snap_validate_xml( bundle-frontend.xml bundles.xsd )
 ##
 install(
     FILES 
-        # log4cplus properties
-        snapcgi.properties
-
         # snap configuration files
         snapcgi.conf
 
-        # misc files
-        snap-apache2.conf
-
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Config files
+##
+install(
+    FILES 
+        # misc files
+        000-snap-apache2-default.conf
+        snap-apache2.conf
+        snap-apache2-ssl.conf
+        snap-apache2-ssl-log.conf
+
+    DESTINATION
+        share/snapwebsites/apache2
+)
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES 
+        # log4cplus properties
+        snapcgi.properties
+
+    DESTINATION
+        share/snapwebsites/logger
 )
 
 

@@ -4134,9 +4134,18 @@ snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_cl
 {
     // TODO: somehow the port seems wrong (i.e. all connections return the same port)
 
-    struct sockaddr_storage address = (sockaddr_storage());
+    // make sure the socket is defined and well
+    //
+    int const socket(client->get_socket());
+    if(socket < 0)
+    {
+        SNAP_LOG_ERROR("snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection() called with a closed client connection.");
+        throw std::runtime_error("snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection() called with a closed client connection.");
+    }
+
+    struct sockaddr_storage address = sockaddr_storage();
     socklen_t length(sizeof(address));
-    if(getpeername(client->get_socket(), reinterpret_cast<struct sockaddr *>(&address), &length) != 0)
+    if(getpeername(socket, reinterpret_cast<struct sockaddr *>(&address), &length) != 0)
     {
         int const e(errno);
         SNAP_LOG_ERROR("getpeername() failed retrieving IP address (errno: ")(e)(" -- ")(strerror(e))(").");

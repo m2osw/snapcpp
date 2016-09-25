@@ -1446,7 +1446,13 @@ public:
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
-            value.setBoolValue(~static_cast<int>(sub_results[0].get_value().safeBoolValue()));
+            // this is balently "wrong" as far as the source is concerned
+            // and maybe we should throw instead of accepting such bad code?
+            // (i.e. g++ and Coverity do not like it without the casts so
+            // maybe we ought to throw on such and have the programmer fix
+            // their source) CID 30192
+            //
+            value.setBoolValue(static_cast<bool>(~static_cast<int>(sub_results[0].get_value().safeBoolValue())));
             break;
 
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:

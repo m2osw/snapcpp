@@ -4685,6 +4685,7 @@ void snap_child::canonicalize_website()
             {
                 f_site_key_with_slash += "/";
             }
+SNAP_LOG_WARNING("site key = [")(f_site_key)("] and site key with slash = [")(f_site_key_with_slash)("]");
             return;
         }
     }

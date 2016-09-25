@@ -277,7 +277,7 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         // probably duplicate this code and allow each .properties file to
         // be edited as required
         //
-        snap::snap_config logger_properties("/etc/snapwebsites/snapmanagerdaemon.properties");
+        snap::snap_config logger_properties("/etc/snapwebsites/logger/snapmanagerdaemon.properties");
         std::string const level_appenders(logger_properties["log4cplus.logger.snap"]);
         std::string level("INFO");
         std::string::size_type const pos(level_appenders.find_first_of(','));

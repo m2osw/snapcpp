@@ -86,19 +86,19 @@
  * of macros. These macro, though, do not properly check out all of
  * our flags and levels so you should avoid them for now.
  *
- * To setup the logging system, the snapserver makes use of up to three
+ * To setup the logging system, the snapserver makes use of the following
  * files:
  *
  * \li logserver.properties
  * \li log.properties
  * \li loggingserver.properties
- * \li snapcgilog.properties
+ * \li snapcgi.properties
  *
  * The path and filename of the logserver.properties file is defined
  * in the snapserver.conf file under the variable name log_server
  *
  * \code
- *      log_server=/etc/snapwebsites/logserver.properties
+ *      log_server=/etc/snapwebsites/logger/logserver.properties
  * \endcode
  *
  * The loggingserver may not be running so the snapserver first checks
@@ -107,7 +107,7 @@
  * exactly the file defined in log_config of the snapserver.conf file.
  *
  * \code
- *      log_config=/etc/snapwebsites/log.properties
+ *      log_config=/etc/snapwebsites/logger/log.properties
  * \endcode
  *
  * The loggingserver itself will make use of the loggingserver.properties
@@ -115,7 +115,7 @@
  * The filename and path are given on the command line:
  *
  * \code
- *      loggingserver 9998 /etc/snapwebsites/loggingserver.properties
+ *      loggingserver 9998 /etc/snapwebsites/logger/loggingserver.properties
  * \endcode
  *
  * The backends run just like the snapserver so they get the same logger
@@ -124,10 +124,10 @@
  * The snap.cgi tool, however, has its own setup. It first checks the
  * command line, and if no configuration is defined on the command
  * line it uses the log_config=... parameter from the snapcgi.conf
- * file. The default file is snapcgilog.properties.
+ * file. The default file is snapcgi.properties.
  *
  * \code
- *      log_config=/etc/snapwebsites/snapcgilog.properties
+ *      log_config=/etc/snapwebsites/logger/snapcgi.properties
  * \endcode
  *
  * \sa log4cplus/include/log4cplus/loggingmacros.h
@@ -201,6 +201,30 @@ public:
 };
 
 
+/** \brief Check whether the logger exists.
+ *
+ * Although it should never happens, the alloc_dc() function throws
+ * a logic_error exception if called when it is already initialized.
+ * For this reason we have this function which makes sure that the
+ * exception does not occur (in part because it is called from the
+ * logger destructor)
+ *
+ * \param[in] name  The name of the logger to retrieve.
+ *
+ * \return true if the logger exists, false otherwise.
+ */
+bool logger_exists(char const * name)
+{
+    try
+    {
+        return log4cplus::Logger::exists(name);
+    }
+    catch(std::logic_error const & )
+    {
+        // no logging for this error, we are in the logger and it failed!
+        return false;
+    }
+}
 
 
 }
@@ -945,7 +969,7 @@ logger::~logger()
 
     // TBD: is the exists() call doing anything for us here?
     if( (g_logging_type == logging_type_t::UNCONFIGURED_LOGGER)
-    ||  !log4cplus::Logger::exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
+    ||  !logger_exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
         // if not even configured, return immediately
         if(sll != -1)

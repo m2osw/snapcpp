@@ -1,8 +1,14 @@
-snapserver-core-plugins (1.0.2.12~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.3.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Wed, 14 Sep 2016 02:00:43 -0700
+ -- Build Server <build@m2osw.com>  Sat, 24 Sep 2016 02:00:48 -0700
+
+snapserver-core-plugins (1.0.3.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Removed obj->enum_name::enum_value so Coverity is happy.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Sep 2016 18:57:43 -0700
 
 snapserver-core-plugins (1.0.2.0~xenial) xenial; urgency=high
 

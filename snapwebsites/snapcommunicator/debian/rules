@@ -27,3 +27,10 @@ override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_PREFIX_PATH=/usr
 
+# Make sure the "/etc/snapwebsites/ssl" directory is only accessible
+# by snapwebsites:snapwebsites
+#
+override_dh_fixperms:
+	dh_fixperms
+	chmod go-rwx debian/snapcommunicator/etc/snapwebsites/ssl
+

@@ -1,8 +1,44 @@
-snapcommunicator (1.0.19.4~xenial) xenial; urgency=high
+snapcommunicator (1.0.25.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Thu, 22 Sep 2016 02:00:48 -0700
+ -- Build Server <build@m2osw.com>  Sat, 24 Sep 2016 02:00:49 -0700
+
+snapcommunicator (1.0.25.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Removed obj->enum_name::enum_value so Coverity is happy.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Sep 2016 18:56:48 -0700
+
+snapcommunicator (1.0.24.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed up other configuration file installation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Sep 2016 16:52:48 -0700
+
+snapcommunicator (1.0.23.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Bump version again to make sure I can make it work on my VMs.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Sep 2016 16:00:48 -0700
+
+snapcommunicator (1.0.22.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Moving the logger properties to sub-directory logger/.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Sep 2016 14:00:48 -0700
+
+snapcommunicator (1.0.21.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Properly purge the SSL files on removal.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Sep 2016 11:00:48 -0700
+
+snapcommunicator (1.0.20.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Applied a fix to correct the ssl directory ownership.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 22 Sep 2016 02:00:48 -0700
 
 snapcommunicator (1.0.19.0~xenial) xenial; urgency=high
 

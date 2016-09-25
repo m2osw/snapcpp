@@ -204,14 +204,14 @@ public:
 
 int main(int /*argc*/, char * /*argv*/[])
 {
-    snap::logging::set_progname("test_ssl_server");
-    snap::logging::configure_console();
-    snap::logging::set_log_output_level(snap::logging::log_level_t::LOG_LEVEL_TRACE);
-
-    g_parent_pid = getpid();
-
     try
     {
+        snap::logging::set_progname("test_ssl_server");
+        snap::logging::configure_console();
+        snap::logging::set_log_output_level(snap::logging::log_level_t::LOG_LEVEL_TRACE);
+
+        g_parent_pid = getpid();
+
         listener::pointer_t l(new listener);
         snap::snap_communicator::instance()->add_connection(l);
 
@@ -220,13 +220,15 @@ int main(int /*argc*/, char * /*argv*/[])
 
         SNAP_LOG_INFO("server ready");
         snap::snap_communicator::instance()->run();
+
+        return 0;
     }
     catch( std::exception & e )
     {
         SNAP_LOG_FATAL("Caught exception: \"")(e.what())("\".");
     }
 
-    return 0;
+    return 1;
 }
 
 // vim: ts=4 sw=4 et

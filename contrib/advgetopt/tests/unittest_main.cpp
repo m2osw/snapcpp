@@ -68,27 +68,24 @@ namespace
 int unittest_main(int argc, char * argv[])
 {
     UnitTestCLData configData;
-    Clara::CommandLine<UnitTestCLData> cli;
+    Catch::Clara::CommandLine<UnitTestCLData> cli;
 
-    cli.bind( &UnitTestCLData::help )
-        .describe( "display usage information" )
-        .shortOpt( "?")
-        .shortOpt( "h")
-        .longOpt( "help" );
-    cli.bind( &UnitTestCLData::seed )
-        .describe( "value to seed the randomizer" )
-        .shortOpt( "S")
-        .longOpt( "seed" )
-        .hint("the_seed");
-    cli.bind( &UnitTestCLData::tmp )
-        .describe( "path to a temporary directory" )
-        .shortOpt( "t")
-        .longOpt( "tmp" )
-        .hint( "path" );
-    cli.bind( &UnitTestCLData::version )
-        .describe( "print out the advgetopt library version these unit tests pertain to" )
-        .shortOpt( "V")
-        .longOpt( "version" );
+    cli["-?"]["-h"]["--help"]
+        .describe("display usage information")
+        .bind(&UnitTestCLData::help);
+
+    cli["-S"]["--seed"]
+        .describe("value to seed the randomizer, if not specified, randomize")
+        .bind(&UnitTestCLData::seed, "the seed value");
+
+    cli["-T"]["--tmp"]
+        .describe("path to a temporary directory")
+        .bind(&UnitTestCLData::tmp, "path");
+
+    cli["-V"]["--version"]
+        .describe("print out the advgetopt library version these unit tests pertain to")
+        .bind(&UnitTestCLData::version);
+
     cli.parseInto( argc, argv, configData );
 
     if( configData.help )
@@ -101,7 +98,7 @@ int unittest_main(int argc, char * argv[])
     if( configData.version )
     {
         std::cout << LIBADVGETOPT_VERSION_STRING << std::endl;
-        exit(1);
+        exit(0);
     }
 
     std::vector<std::string> arg_list;
@@ -116,7 +113,7 @@ int unittest_main(int argc, char * argv[])
     if( configData.seed != 0 )
     {
         seed = static_cast<unsigned int>(configData.seed);
-        remove_from_args( arg_list, "--seed", "-s" );
+        remove_from_args( arg_list, "--seed", "-S" );
     }
     srand(seed);
     std::cout << "advgetopt[" << getpid() << "]:unittest: seed is " << seed << std::endl;
@@ -128,7 +125,7 @@ int unittest_main(int argc, char * argv[])
     if( !configData.tmp.empty() )
     {
         unittest::tmp_dir = configData.tmp;
-        remove_from_args( arg_list, "--tmp", "-t" );
+        remove_from_args( arg_list, "--tmp", "-T" );
 
         if(unittest::tmp_dir == "/tmp")
         {
@@ -174,7 +171,18 @@ int unittest_main(int argc, char * argv[])
 
 int main(int argc, char * argv[])
 {
-    return unittest_main(argc, argv);
+    int r(1);
+
+    try
+    {
+        r = unittest_main(argc, argv);
+    }
+    catch(std::logic_error const & e)
+    {
+        std::cerr << "fatal error: caught a logic error in advgetopt unit tests: " << e.what() << "\n";
+    }
+
+    return r;
 }
 
 // vim: ts=4 sw=4 et

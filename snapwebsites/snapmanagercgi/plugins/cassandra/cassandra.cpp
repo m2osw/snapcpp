@@ -1524,7 +1524,16 @@ void cassandra::join_cassandra_node(snap::snap_communicator_message const & mess
     snap::file_content output_file(script_filename);
     output_file.set_content(script.data());
     output_file.write_all();
-    chmod(script_filename.c_str(), 0700);
+    if(chmod(script_filename.c_str(), 0700) != 0)
+    {
+        // TODO:
+        // we should change the creation of the file to make use of
+        // open() so we can specify the permissions at the time the
+        // file is created so it is immediately protected
+        //
+        int const e(errno);
+        SNAP_LOG_WARNING("join cassandra script file mode could not be changed to 700, (errno: ")(e)(", ")(strerror(e))(")");
+    }
 
     snap::process p("join cassandra node");
     p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);

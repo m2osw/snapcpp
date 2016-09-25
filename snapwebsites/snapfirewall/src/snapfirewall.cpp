@@ -159,7 +159,7 @@ private:
 
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
-    QString                                     f_log_conf = "/etc/snapwebsites/snapfirewall.properties";
+    QString                                     f_log_conf = "/etc/snapwebsites/logger/snapfirewall.properties";
     QString                                     f_server_name;
     QString                                     f_communicator_addr = "127.0.0.1";
     int                                         f_communicator_port = 4040;

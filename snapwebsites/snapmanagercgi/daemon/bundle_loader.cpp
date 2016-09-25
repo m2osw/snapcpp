@@ -168,6 +168,10 @@ void bundle_loader::run()
  *
  * This function handles one URI by loading the directory and
  * then loading each bundle defined in the directory.
+ *
+ * \todo
+ * Add some kind of security protection such as an MD5 sum of the file
+ * so we can make more sure it was not tempered with.
  */
 bool bundle_loader::load(std::string const & uri)
 {
@@ -185,9 +189,17 @@ bool bundle_loader::load(std::string const & uri)
     QFile directory_file(directory_filename);
     if(!directory_file.open(QIODevice::ReadOnly))
     {
+        // this can happen if the download failed...
+        //
         return false;
     }
-    doc.setContent(&directory_file, false);
+    if(!doc.setContent(&directory_file, false))
+    {
+        // this should never happen unless we loaded a partial version
+        // of the file (or a hacker was trying to send us invalid data)
+        //
+        return false;
+    }
 
     // Transform the XML file to a list of URIs and load each one of
     // these files

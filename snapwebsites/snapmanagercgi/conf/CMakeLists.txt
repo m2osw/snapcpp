@@ -34,34 +34,60 @@ project(snapmanagercgi_conf)
 snap_validate_xml( snapmanagercgi-parser.xsl simplified-xslt20.dtd )
 
 snap_validate_xml( bundle-cassandra.xml  bundles.xsd )
+snap_validate_xml( bundle-dns.xml        bundles.xsd )
 snap_validate_xml( bundle-logserver.xml  bundles.xsd )
 snap_validate_xml( bundle-rkhunter.xml   bundles.xsd )
+snap_validate_xml( bundle-ssh.xml        bundles.xsd )
 snap_validate_xml( bundle-swap.xml       bundles.xsd )
 snap_validate_xml( bundle-tools.xml      bundles.xsd )
 snap_validate_xml( bundle-tripwire.xml   bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
 
+
 #################################################################################
 ## Config files
 ##
 install(
-    FILES 
-        # log4cplus properties
-        snapmanagercgi.properties
-        snapmanagerdaemon.properties
-
+    FILES
         # snap configuration files
         snapmanager.conf
 
         # misc files
         snapmanagercgi-parser.xsl
-        snapmanager-apache2.conf
-        snap-bundles-apache2.conf
 
     DESTINATION
         share/snapwebsites/conf
 )
+
+
+#################################################################################
+## Apache2 files
+##
+install(
+    FILES
+        # misc files
+        snapmanager-apache2.conf
+        snap-bundles-apache2.conf
+
+    DESTINATION
+        share/snapwebsites/apache2
+)
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES
+        # log4cplus properties
+        snapmanagercgi.properties
+        snapmanagerdaemon.properties
+
+    DESTINATION
+        share/snapwebsites/logger
+)
+
 
 #################################################################################
 ## Save HTML files in their own directory
@@ -87,14 +113,17 @@ install(
         share/snapwebsites/xsd
 )
 
+
 #################################################################################
 ## Bundles are also saved under a bundle directory for reference
 ##
 install(
     FILES
         bundle-cassandra.xml
+        bundle-dns.xml
         bundle-logserver.xml
         bundle-rkhunter.xml
+        bundle-ssh.xml
         bundle-swap.xml
         bundle-tools.xml
         bundle-tripwire.xml

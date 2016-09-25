@@ -28,6 +28,45 @@ snapmanagercgi (1.1.0.1~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:11 -0700
 
+snapmanagercgi (1.0.38.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 25 Sep 2016 02:00:47 -0700
+
+snapmanagercgi (1.0.38.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Applied fixes to lines of code pointed out by Coverity.
+  * Test the return value of the doc.setContent(), chmod(), chownnm(),
+    lseek() functions.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 24 Sep 2016 21:28:48 -0700
+
+snapmanagercgi (1.0.37.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Removed obj->enum_name::enum_value so Coverity is happy.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 18:56:49 -0700
+
+snapmanagercgi (1.0.36.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Noticed that 3 bundle files were not getting installed.
+  * Also two were not being checked.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 17:50:49 -0700
+
+snapmanagercgi (1.0.35.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed up other configuration file installation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 16:52:49 -0700
+
+snapmanagercgi (1.0.34.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Moved .properties files under .../logger/.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 23 Sep 2016 15:08:49 -0700
+
 snapmanagercgi (1.0.33.0~xenial) xenial; urgency=high
 
   * SNAP-110: Made sure we had a rule to setup CMAKE_BUILD_TYPE before we

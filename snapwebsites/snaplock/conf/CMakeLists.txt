@@ -35,14 +35,24 @@
 ##
 install(
     FILES 
-        # log4cplus properties
-        snaplock.properties
-
         # snap configuration files
         snaplock.conf
 
     DESTINATION
         share/snapwebsites/conf
+)
+
+
+#################################################################################
+## Logger files
+##
+install(
+    FILES 
+        # log4cplus properties
+        snaplock.properties
+
+    DESTINATION
+        share/snapwebsites/logger
 )
 
 
