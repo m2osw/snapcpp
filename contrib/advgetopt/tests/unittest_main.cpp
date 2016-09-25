@@ -78,7 +78,7 @@ int unittest_main(int argc, char * argv[])
         .describe("value to seed the randomizer, if not specified, randomize")
         .bind(&UnitTestCLData::seed, "the seed value");
 
-    cli["-t"]["--tmp"]
+    cli["-T"]["--tmp"]
         .describe("path to a temporary directory")
         .bind(&UnitTestCLData::tmp, "path");
 
@@ -98,7 +98,7 @@ int unittest_main(int argc, char * argv[])
     if( configData.version )
     {
         std::cout << LIBADVGETOPT_VERSION_STRING << std::endl;
-        exit(1);
+        exit(0);
     }
 
     std::vector<std::string> arg_list;
@@ -113,7 +113,7 @@ int unittest_main(int argc, char * argv[])
     if( configData.seed != 0 )
     {
         seed = static_cast<unsigned int>(configData.seed);
-        remove_from_args( arg_list, "--seed", "-s" );
+        remove_from_args( arg_list, "--seed", "-S" );
     }
     srand(seed);
     std::cout << "advgetopt[" << getpid() << "]:unittest: seed is " << seed << std::endl;
@@ -125,7 +125,7 @@ int unittest_main(int argc, char * argv[])
     if( !configData.tmp.empty() )
     {
         unittest::tmp_dir = configData.tmp;
-        remove_from_args( arg_list, "--tmp", "-t" );
+        remove_from_args( arg_list, "--tmp", "-T" );
 
         if(unittest::tmp_dir == "/tmp")
         {
