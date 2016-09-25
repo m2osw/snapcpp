@@ -201,6 +201,30 @@ public:
 };
 
 
+/** \brief Check whether the logger exists.
+ *
+ * Although it should never happens, the alloc_dc() function throws
+ * a logic_error exception if called when it is already initialized.
+ * For this reason we have this function which makes sure that the
+ * exception does not occur (in part because it is called from the
+ * logger destructor)
+ *
+ * \param[in] name  The name of the logger to retrieve.
+ *
+ * \return true if the logger exists, false otherwise.
+ */
+bool logger_exists(char const * name)
+{
+    try
+    {
+        return log4cplus::Logger::exists(name);
+    }
+    catch(std::logic_error const & )
+    {
+        // no logging for this error, we are in the logger and it failed!
+        return false;
+    }
+}
 
 
 }
@@ -945,7 +969,7 @@ logger::~logger()
 
     // TBD: is the exists() call doing anything for us here?
     if( (g_logging_type == logging_type_t::UNCONFIGURED_LOGGER)
-    ||  !log4cplus::Logger::exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
+    ||  !logger_exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
         // if not even configured, return immediately
         if(sll != -1)

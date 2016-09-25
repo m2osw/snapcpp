@@ -28,18 +28,7 @@ SET(CATCH_FOUND "NO")
 
 FIND_PATH(CATCH_INCLUDE_DIR
     catch.hpp
-    PATHS
-        ${CMAKE_SOURCE_DIR}/contrib/catch 
-        ${CMAKE_SOURCE_DIR}/contrib
-    NO_DEFAULT_PATH
 )
-
-IF(NOT CATCH_INCLUDE_DIR)
-    # Try again with default paths as per cmake
-    FIND_PATH(CATCH_INCLUDE_DIR
-        catch.hpp
-    )
-ENDIF()
 
 IF(CATCH_INCLUDE_DIR)
     SET(CATCH_FOUND "YES")

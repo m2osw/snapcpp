@@ -1,8 +1,10 @@
-advgetopt (1.1.2.12~xenial) xenial; urgency=high
+advgetopt (1.1.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Applied fixes to lines of code pointed out by Coverity.
+  * Updated the catch / clara implementation to the newest version.
+  * Added a try/catch to the main() function of the tests.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:10 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 24 Sep 2016 21:34:10 -0700
 
 advgetopt (1.1.2.0~xenial) xenial; urgency=high
 

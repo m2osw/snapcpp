@@ -1,5 +1,14 @@
-libsnapwebsites (1.1.12.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.13.0~xenial) xenial; urgency=high
 
+  * SNAP-289: Applied fixes to lines of code pointed out by Coverity.
+  * Suppressed a potential exception from the logger destructor.
+  * Verify that the socket is valid before using it (snap_communicator).
+  * Applied an additional casst in the snap_expr and added a comment.
+  * Fixed a bug in the implementation of the bio_server::accept() function:
+    the socket used was the one from the server and not the new client!
+  * Moved some lines of codes within the try/catch blocks.
+  * Fixed the exit code of the client/server tests to 1 on errors.
+  * Added a try/catch to the ip_test.
   * EX-122: Adding a debug as I am having trouble with an installation.
 
  -- Alexis Wilke <alexis@m2osw.com>  Thu, 24 Sep 2016 12:18:48 -0700

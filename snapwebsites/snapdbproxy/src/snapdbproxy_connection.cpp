@@ -362,11 +362,20 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
  */
 ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
 {
+    // make sure the client is valid
+    //
     if(f_client == nullptr)
     {
         return -1L;
     }
+    int const socket(f_client->get_socket());
+    if(socket < 0)
+    {
+        return -1L;
+    }
 
+    // anything to write?
+    //
     if(count == 0)
     {
         return 0;
@@ -379,7 +388,7 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
     size_t size(0);
     for(;;)
     {
-        ssize_t const r(::write(f_client->get_socket(), buf, count));
+        ssize_t const r(::write(socket, buf, count));
         if(r < 0)
         {
             int const e(errno);
@@ -404,7 +413,7 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
             // (this is when we receive a return value of 0)
             //
             struct pollfd fd;
-            fd.fd = f_client->get_socket();
+            fd.fd = socket;
             fd.events = POLLOUT | POLLRDHUP | POLLHUP;
             snap::NOTUSED(poll(&fd, 1, 0));
             if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)

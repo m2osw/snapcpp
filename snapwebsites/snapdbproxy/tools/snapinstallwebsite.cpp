@@ -106,105 +106,130 @@ namespace
 
 int main(int argc, char * argv[])
 {
-    advgetopt::getopt opt(argc, argv, g_snapinstallwebsite_options, g_configuration_files, "SNAPINSTALLWEBSITE_OPTIONS");
-
-    snap::logging::set_progname(argv[0]);
-    snap::logging::configure_console();
-
-    if(opt.is_defined("help"))
+    try
     {
-        opt.usage(advgetopt::getopt::status_t::no_error, "snapdbproxy");
-        exit(0);
-        snap::NOTREACHED();
-    }
+        advgetopt::getopt opt(argc, argv, g_snapinstallwebsite_options, g_configuration_files, "SNAPINSTALLWEBSITE_OPTIONS");
 
-    if(opt.is_defined("version"))
-    {
-        std::cout << SNAPDBPROXY_VERSION_STRING << std::endl;
-        exit(0);
-        snap::NOTREACHED();
-    }
+        snap::logging::set_progname(argv[0]);
+        snap::logging::configure_console();
 
-    if(!opt.is_defined("domain")
-    || !opt.is_defined("port"))
-    {
-        std::cerr << "error: domain and port are both required." << std::endl;
-        opt.usage(advgetopt::getopt::status_t::error, "snapdbproxy");
-        exit(1);
-        snap::NOTREACHED();
-    }
+        if(opt.is_defined("help"))
+        {
+            opt.usage(advgetopt::getopt::status_t::no_error, "snapdbproxy");
+            exit(0);
+            snap::NOTREACHED();
+        }
 
-    SNAP_LOG_INFO("Get snapserver info.");
+        if(opt.is_defined("version"))
+        {
+            std::cout << SNAPDBPROXY_VERSION_STRING << std::endl;
+            exit(0);
+            snap::NOTREACHED();
+        }
 
-    // read the snapserver IP:port information directly from the "snapserver"
-    // configuration file
-    //
-    snap::snap_config config("snapserver");
-    if(opt.is_defined("config"))
-    {
-        config.set_configuration_path(opt.get_string("config"));
-    }
-    config.set_parameter_default("listen", "127.0.0.1:4004");
+        if(!opt.is_defined("domain")
+        || !opt.is_defined("port"))
+        {
+            std::cerr << "error: domain and port are both required." << std::endl;
+            opt.usage(advgetopt::getopt::status_t::error, "snapdbproxy");
+            exit(1);
+            snap::NOTREACHED();
+        }
 
-    QString snap_host("127.0.0.1");
-    int snap_port(4004);
-    tcp_client_server::get_addr_port(config["listen"], snap_host, snap_port, "tcp");
+        SNAP_LOG_INFO("Get snapserver info.");
 
-    SNAP_LOG_INFO("snapserver is at ")(snap_host)(":")(snap_port)(".");
+        // read the snapserver IP:port information directly from the "snapserver"
+        // configuration file
+        //
+        snap::snap_config config("snapserver");
+        if(opt.is_defined("config"))
+        {
+            config.set_configuration_path(opt.get_string("config"));
+        }
+        config.set_parameter_default("listen", "127.0.0.1:4004");
 
-    // we need the URL:port to initialize the new website
-    //
-    //url, site_port
-    QString const url(QString::fromUtf8(opt.get_string("domain").c_str()));
-    if(url.isEmpty())
-    {
-        std::cerr << "error: domain cannot be empty and must be specified." << std::endl;
-        exit(1);
-        snap::NOTREACHED();
-    }
+        QString snap_host("127.0.0.1");
+        int snap_port(4004);
+        tcp_client_server::get_addr_port(config["listen"], snap_host, snap_port, "tcp");
 
-    int const site_port(opt.get_long("port", 0, 0, 65535));
+        SNAP_LOG_INFO("snapserver is at ")(snap_host)(":")(snap_port)(".");
 
-    SNAP_LOG_INFO("website is at ")(url)(":")(site_port)(".");
+        // we need the URL:port to initialize the new website
+        //
+        //url, site_port
+        QString const url(QString::fromUtf8(opt.get_string("domain").c_str()));
+        if(url.isEmpty())
+        {
+            std::cerr << "error: domain cannot be empty and must be specified." << std::endl;
+            exit(1);
+            snap::NOTREACHED();
+        }
 
-    // create a snap_initialize_website object and listen for messages
-    // up until is_done() returns true
-    //
-    snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, url, site_port));
+        int const site_port(opt.get_long("port", 0, 0, 65535));
 
-    SNAP_LOG_INFO("start website initializer.");
+        SNAP_LOG_INFO("website is at ")(url)(":")(site_port)(".");
 
-    if(!initialize_website->start_process())
-    {
-        SNAP_LOG_INFO("start_process() failed. Existing immediately.");
-        exit(1);
-        snap::NOTREACHED();
-    }
+        // create a snap_initialize_website object and listen for messages
+        // up until is_done() returns true
+        //
+        snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, url, site_port));
 
-    for(;;)
-    {
+        SNAP_LOG_INFO("start website initializer.");
+
+        if(!initialize_website->start_process())
+        {
+            SNAP_LOG_INFO("start_process() failed. Existing immediately.");
+            exit(1);
+            snap::NOTREACHED();
+        }
+
         for(;;)
         {
-            QString const status(initialize_website->get_status());
-            if(status.isEmpty())
+            for(;;)
+            {
+                QString const status(initialize_website->get_status());
+                if(status.isEmpty())
+                {
+                    break;
+                }
+                SNAP_LOG_INFO(status);
+            }
+
+            if(initialize_website->is_done())
             {
                 break;
             }
-            SNAP_LOG_INFO(status);
+
+            // unfortunately, I do not have a non-poll version for this
+            // one yet...
+            //
+            sleep(1);
         }
 
-        if(initialize_website->is_done())
-        {
-            break;
-        }
-
-        // unfortunately, I do not have a non-poll version for this
-        // one yet...
-        //
-        sleep(1);
+        return 0;
+    }
+    catch(advgetopt::getopt_exception const & e)
+    {
+        std::cerr << "error: an advgetopt exception was raised while handling the command line. " << e.what() << std::endl;
+    }
+    catch(snap::snap_exception const & e)
+    {
+        std::cerr << "error: a snap exception was raised. " << e.what() << std::endl;
+    }
+    catch(tcp_client_server::tcp_client_server_logic_error const & e)
+    {
+        std::cerr << "error: a logic (programmer) error TCP client/server exception was raised. " << e.what() << std::endl;
+    }
+    catch(tcp_client_server::tcp_client_server_runtime_error const & e)
+    {
+        std::cerr << "error: a runtime error TCP client/server exception was raised. " << e.what() << std::endl;
+    }
+    catch(std::exception const & e)
+    {
+        std::cerr << "error: a standard exception was caught. " << e.what() << std::endl;
     }
 
-    return 0;
+    return 1;
 }
 
 

@@ -137,12 +137,12 @@ public:
 
 int main(int /*argc*/, char * /*argv*/[])
 {
-    snap::logging::set_progname("test_shutdown_server");
-    snap::logging::configure_console();
-    snap::logging::set_log_output_level(snap::logging::log_level_t::LOG_LEVEL_TRACE);
-
     try
     {
+        snap::logging::set_progname("test_shutdown_server");
+        snap::logging::configure_console();
+        snap::logging::set_log_output_level(snap::logging::log_level_t::LOG_LEVEL_TRACE);
+
         messenger_connection::pointer_t mc(new messenger_connection);
         mc->set_timeout_delay(1LL * 1000000LL);
 
@@ -158,13 +158,19 @@ int main(int /*argc*/, char * /*argv*/[])
         snap::snap_communicator::instance()->run();
 
         SNAP_LOG_INFO("exited run() loop...");
+
+        return 0;
+    }
+    catch( snap::snap_exception const & e )
+    {
+        SNAP_LOG_FATAL("Caught a Snap! exception [")(e.what())("].");
     }
     catch( std::exception const & e )
     {
         SNAP_LOG_FATAL("Caught exception [")(e.what())("].");
     }
 
-    return 0;
+    return 1;
 }
 
 // vim: ts=4 sw=4 et

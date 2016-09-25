@@ -23,6 +23,7 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <iostream>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
