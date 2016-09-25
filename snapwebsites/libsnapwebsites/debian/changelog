@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.15.0~xenial) xenial; urgency=high
+
+  * SNAP-443: Missed updating the snapinstallwebsite tool with SSL support.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 12:49:48 -0700
+
 libsnapwebsites (1.1.14.0~xenial) xenial; urgency=high
 
   * SNAP-426: Wait on the CASSANDRAREADY message before starting the timer.
@@ -72,12 +78,6 @@ libsnapwebsites (1.1.5.0~xenial) xenial; urgency=high
   * SNAP-447: Create a function to send OpenSSL errors to our log.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 20 Sep 2016 17:05:49 -0700
-
-libsnapwebsites (1.1.4.8~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:07 -0700
 
 libsnapwebsites (1.1.4.0~xenial) xenial; urgency=high
 

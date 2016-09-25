@@ -30,7 +30,7 @@ class snap_initialize_website
 public:
     typedef std::shared_ptr<snap_initialize_website>   pointer_t;
 
-                    snap_initialize_website(QString const & snap_host, int snap_port,
+                    snap_initialize_website(QString const & snap_host, int snap_port, bool secure,
                                             QString const & website_uri, int destination_port);
 
     bool            start_process();
@@ -42,7 +42,7 @@ private:
     {
     public:
                         snap_initialize_website_runner(snap_initialize_website * parent,
-                                                       QString const & snap_host, int snap_port,
+                                                       QString const & snap_host, int snap_port, bool secure,
                                                        QString const & website_uri, int destination_port);
 
         // from class snap_thread
@@ -61,6 +61,7 @@ private:
         bool                                f_done = false;
         QString const                       f_snap_host;
         int32_t                             f_snap_port = 0;
+        bool                                f_secure = false;
         QString const                       f_website_uri;
         int32_t                             f_destination_port = 0;
         std::deque<QString>                 f_message_queue; // TODO: look into reusing the message queue from the thread with T = QString!?
