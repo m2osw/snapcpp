@@ -541,11 +541,11 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
             // Make sure the key path exists...if not,
             // then create it.
             //
-            key_path.mkdir(".");
+            key_path.mkdir(f_session->get_keys_path());
         }
 
         // Open the file...
-        QString const full_path( QString("%1/client_%2.pem")
+        QString const full_path( QString("%1client_%2.pem")
                                  .arg(f_session->get_keys_path())
                                  .arg(message.get_parameter("listen_address"))
                                  );
