@@ -177,7 +177,8 @@ void snap_manager_initialize_website::send_request()
     add_status(apache_port);
 
     // now send the request to the server
-    f_initialize_website.reset(new snap::snap_initialize_website(snap_host, snap_port, url, site_port));
+    // TODO: add support for SSL...
+    f_initialize_website.reset(new snap::snap_initialize_website(snap_host, snap_port, false, url, site_port));
 
     // this starts a thread which sends the info to the backend
     // and wait on status messages from the backend.
