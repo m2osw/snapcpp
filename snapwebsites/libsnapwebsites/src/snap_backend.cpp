@@ -247,8 +247,16 @@ tick_timer::tick_timer(snap_backend * sb)
 {
     set_name("snap_backend tick_timer");
 
-    // start right away, but we do not want to use snap_timer(0)
-    // because otherwise we will not get ongoing ticks as expected
+    // prevent tick_timer() from starting, we want to Cassandra
+    // connection to be ready first
+    //
+    set_enable(false);
+
+    // make sure it starts right away once we receive the CASSANDRAREADY
+    // message
+    //
+    // we do not want to use snap_timer(0) because otherwise we will not
+    // get ongoing ticks as expected
     //
     set_timeout_date(snap_communicator::get_current_date());
 }
@@ -1236,6 +1244,12 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
             disconnect_cassandra();
         }
+        else if(g_tick_timer != nullptr && !f_stop_received)
+        {
+            // we are now ready to try running a child process
+            //
+            g_tick_timer->set_enable(true);
+        }
 
         return;
     }
@@ -1309,7 +1323,7 @@ void snap_backend::stop(bool quitting)
 {
     f_stop_received = true;
 
-    if(g_messenger)
+    if(g_messenger != nullptr)
     {
         g_messenger->mark_done();
     }
@@ -1318,12 +1332,12 @@ void snap_backend::stop(bool quitting)
     // one more call to their callbacks which thus still have to
     // check the f_stop_received flag
     //
-    if(g_wakeup_timer)
+    if(g_wakeup_timer != nullptr)
     {
         g_wakeup_timer->set_enable(false);
         g_wakeup_timer->set_timeout_date(-1);
     }
-    if(g_tick_timer)
+    if(g_tick_timer != nullptr)
     {
         g_tick_timer->set_enable(false);
         g_tick_timer->set_timeout_delay(-1);
@@ -1332,7 +1346,7 @@ void snap_backend::stop(bool quitting)
     // unregister if we are still connected to the messenger
     // and Snap! Communicator is not already quitting
     //
-    if(g_messenger && !quitting)
+    if(g_messenger != nullptr && !quitting)
     {
         QString action(f_action);
         int const pos(action.indexOf(':'));
@@ -1349,7 +1363,7 @@ void snap_backend::stop(bool quitting)
 
     // if we still have a child, ask the child to quit first
     //
-    if(g_child_connection)
+    if(g_child_connection != nullptr)
     {
         // propagate the STOP to our current child process
         //
