@@ -1,3 +1,10 @@
+libsnapwebsites (1.1.14.0~xenial) xenial; urgency=high
+
+  * SNAP-426: Wait on the CASSANDRAREADY message before starting the timer.
+    This allows the first tick to happen very quickly instead of 5 min. later.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 24 Sep 2016 23:29:48 -0700
+
 libsnapwebsites (1.1.13.0~xenial) xenial; urgency=high
 
   * SNAP-289: Applied fixes to lines of code pointed out by Coverity.
