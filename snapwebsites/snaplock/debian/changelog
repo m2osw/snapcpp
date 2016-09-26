@@ -1,8 +1,11 @@
-snaplock (1.0.2.2~xenial) xenial; urgency=high
+snaplock (1.0.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-427: Implemented the necessary to avoid lock ups when the snaplock
+    daemon is not running.
+  * If snaplock as a tool cannot even connect to snapcommunicator it also
+    fails quickly instead of try until it connects.
 
- -- Build Server <build@m2osw.com>  Sat, 24 Sep 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 23:35:48 -0700
 
 snaplock (1.0.2.0~xenial) xenial; urgency=high
 

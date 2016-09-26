@@ -3642,6 +3642,35 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             }
         }
 
+        auto transmission_report = [&message, &base, &remote_communicator, &service_conn]()
+        {
+            if(message.has_parameter("transmission_report"))
+            {
+                QString const report(message.get_parameter("transmission_report"));
+                if(report == "failure")
+                {
+                    snap::snap_communicator_message reply;
+                    reply.set_command("TRANSMISSIONREPORT");
+                    reply.add_parameter("status", "failed");
+                    //verify_command(base, reply);
+                    if(remote_communicator)
+                    {
+                        remote_communicator->send_message(reply);
+                    }
+                    else if(service_conn)
+                    {
+                        service_conn->send_message(reply);
+                    }
+                    else
+                    {
+                        // we have to have a remote or service connection here
+                        //
+                        throw snap::snap_exception("No valid connection to send a reply.");
+                    }
+                }
+            }
+        };
+
         if((all_servers || server_name == f_server_name)
         && f_local_services_list.contains(service))
         {
@@ -3698,6 +3727,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 cache_message.f_message = message;
                 f_local_message_cache.push_back(cache_message);
             }
+            transmission_report();
             return;
         }
 
@@ -3709,6 +3739,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             {
                 SNAP_LOG_DEBUG("received event \"")(command)("\" for local service \"")(service)("\", which is not currently registered. Dropping message.");
             }
+            transmission_report();
             return;
         }
     }

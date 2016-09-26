@@ -1763,6 +1763,8 @@ void snaplock::tool_message(snap::snap_communicator_message const & message)
                 list_message.set_command("LISTTICKETS");
                 list_message.set_service("snaplock");
                 list_message.set_server(f_server_name);
+                list_message.add_parameter("cache", "no");
+                list_message.add_parameter("transmission_report", "failure");
                 f_messenger->send_message(list_message);
             }
             return;
@@ -1786,6 +1788,16 @@ void snaplock::tool_message(snap::snap_communicator_message const & message)
             //
             ticket_list(message);
             stop(false);
+            return;
+        }
+        else if(command == "TRANSMISSIONREPORT")
+        {
+            QString const status(message.get_parameter("status"));
+            if(status == "failed")
+            {
+                SNAP_LOG_ERROR("the transmission of our TICKLIST message failed to travel to a snaplock service");
+                stop(false);
+            }
             return;
         }
         break;
