@@ -1316,7 +1316,7 @@ service_status_t manager::service_status(std::string const & service_filename, s
     p1.add_argument("is-enabled");
     p1.add_argument(QString::fromUtf8(service_name.c_str()));
     int const r1(p1.run());
-    SNAP_LOG_INFO("\"is-enabled\" query output (")(r1)("): ")(p1.get_output(true));
+    SNAP_LOG_INFO("\"is-enabled\" query output (")(r1)("): ")(p1.get_output(true).trimmed());
     if(r1 != 0)
     {
         // it is not enabled, so it cannot be active, thus it is disabled
@@ -1330,7 +1330,7 @@ service_status_t manager::service_status(std::string const & service_filename, s
     p2.add_argument("is-active");
     p2.add_argument(QString::fromUtf8(service_name.c_str()));
     int const r2(p2.run());
-    SNAP_LOG_INFO("\"is-active\" query output (")(r2)("): ")(p2.get_output(true));
+    SNAP_LOG_INFO("\"is-active\" query output (")(r2)("): ")(p2.get_output(true).trimmed());
     if(r2 != 0)
     {
         // it is enabled and not active, it could be failed though
