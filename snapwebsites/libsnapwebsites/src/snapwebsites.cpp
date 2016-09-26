@@ -941,7 +941,7 @@ void server::config(int argc, char * argv[])
     // One can change the path with "--config <new path>", but not the
     // filename of the configuration file.
     //
-    if(f_opt->is_defined( "config"))
+    if(f_opt->is_defined("config"))
     {
         f_parameters.set_configuration_path(f_opt->get_string("config"));
     }
