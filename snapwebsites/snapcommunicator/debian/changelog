@@ -1,8 +1,9 @@
-snapcommunicator (1.0.25.2~xenial) xenial; urgency=high
+snapcommunicator (1.0.26.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-438: Removed the error state if the .service does not mention
+    the tun0 interface.
 
- -- Build Server <build@m2osw.com>  Sat, 24 Sep 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 17:49:49 -0700
 
 snapcommunicator (1.0.25.0~xenial) xenial; urgency=high
 
