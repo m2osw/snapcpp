@@ -256,15 +256,27 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                         .arg((static_cast<long long>(info.totalram) + (static_cast<long long>(info.totalhigh) << 32)) * static_cast<long long>(info.mem_unit) / 1024LL)
                         .arg(static_cast<long long>(info.totalswap) * static_cast<long long>(info.mem_unit) / 1024LL));
             snap_manager::status_t::state_t status(snap_manager::status_t::state_t::STATUS_STATE_INFO);
+            struct stat st;
+            bool const has_cassandra(stat("/usr/sbin/cassandra", &st) == 0);
             if(info.totalswap > 0)
             {
                 // there should not be a swap file along Cassandra
                 //
-                struct stat st;
-                if(stat("/usr/sbin/cassandra", &st) == 0)
+                if(has_cassandra)
                 {
                     status = snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT;
                     meminfo += " (WARNING: You have a swap file on a system running Cassandra. This is not recommended.)";
+                }
+            }
+            else
+            {
+                // there should probably be a swap file when Cassandra is
+                // not installed on a machine
+                //
+                if(!has_cassandra)
+                {
+                    status = snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT;
+                    meminfo += " (WARNING: You do not have a swap file on this system. This is recommended on most computers except those running Cassandra.)";
                 }
             }
             snap_manager::status_t const memory(

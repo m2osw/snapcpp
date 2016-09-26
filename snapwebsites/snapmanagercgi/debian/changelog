@@ -1,3 +1,10 @@
+snapmanagercgi (1.0.42.0~xenial) xenial; urgency=high
+
+  * SNAP-326: Highlight the swap file info if considered to be in the wrong
+    state (i.e. there along Cassandra, not there and no Cassandra...)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 26 Sep 2016 15:49:46 -0700
+
 snapmanagercgi (1.0.41.0~xenial) xenial; urgency=high
 
   * SNAP-438: Added proper code to save data in override.conf instead
