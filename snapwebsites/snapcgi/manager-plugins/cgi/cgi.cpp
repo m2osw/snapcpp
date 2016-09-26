@@ -56,10 +56,8 @@ namespace
 // TODO: offer the user a way to change this path?
 //char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapcgi.xml";
 
-// TODO: get that path from the XML instead
 char const * g_configuration_filename = "snapcgi";
 
-// TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcgi.conf";
 
 

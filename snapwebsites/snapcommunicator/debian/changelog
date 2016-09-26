@@ -1,3 +1,9 @@
+snapcommunicator (1.0.27.0~xenial) xenial; urgency=high
+
+  * SNAP-435: Offer a field in snapmanager.cgi to redirect unwanted users.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 19:51:49 -0700
+
 snapcommunicator (1.0.26.0~xenial) xenial; urgency=high
 
   * SNAP-438: Removed the error state if the .service does not mention
