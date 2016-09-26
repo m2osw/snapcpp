@@ -56,6 +56,10 @@ SNAP_PLUGIN_START(self, 1, 0)
 namespace
 {
 
+
+char const * g_configuration_filename = "snapmanager";
+
+
 void file_descriptor_deleter(int * fd)
 {
     if(close(*fd) != 0)
@@ -341,6 +345,16 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(frontend);
     }
 #endif
+
+    {
+        std::string const redirect_unwanted(f_snap->get_parameter("redirect_unwanted"));
+        snap_manager::status_t const bundle(
+                      snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "redirect_unwanted"
+                    , QString::fromUtf8(redirect_unwanted.c_str()));
+        server_status.set_field(bundle);
+    }
 
     {
         std::vector<std::string> const & bundle_uri(f_snap->get_bundle_uri());
@@ -763,6 +777,30 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
     }
 #endif
 
+    if(s.get_field_name() == "redirect_unwanted")
+    {
+        // the list of URIs from which we can download software bundles;
+        // this should not be empty; shows a text input field
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "A URI to redirect unwanted hits"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "Whenever a user who is not in the list of clients=... hits the snapmanager.cgi script, he will be redirected to this URI. Absolutely any URI can be used."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name() == "bundle_uri")
     {
         // the list of URIs from which we can download software bundles;
@@ -1099,6 +1137,21 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
         //       we do that for each service?)
         //
         NOTUSED(f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, value));
+        return true;
+    }
+
+    if(field_name == "redirect_unwanted")
+    {
+        // replace the value in that field so it shows updated in the
+        // interface as well
+        //
+        snap::snap_config snapmanager(g_configuration_filename);
+        snapmanager["redirect_unwanted"] = new_value;
+
+        // we do not need to restart anything because the value is used
+        // by the snapmanager.cgi which is started on each user access
+        //
+        NOTUSED(f_snap->replace_configuration_value("/etc/snapwebsites/snapwebsites.d/snapmanager.conf", field_name, new_value));
         return true;
     }
 

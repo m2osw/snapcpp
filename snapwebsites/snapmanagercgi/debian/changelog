@@ -28,11 +28,19 @@ snapmanagercgi (1.1.0.1~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:11 -0700
 
+snapmanagercgi (1.0.39.0~xenial) xenial; urgency=high
+
+  * SNAP-435: Offer a field in snapmanager.cgi to redirect unwanted users.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 19:51:49 -0700
+
 snapmanagercgi (1.0.38.1~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-432: Added a redirect for users who are not authorized. By default
+    this is turned off. This redirect will only happen if they hit
+    snapmanager.cgi and not the snapmanager "website" (one page really.)
 
- -- Build Server <build@m2osw.com>  Sun, 25 Sep 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 18:19:47 -0700
 
 snapmanagercgi (1.0.38.0~xenial) xenial; urgency=high
 

@@ -555,6 +555,12 @@ snap::snap_string_list const & manager::get_snapmanager_frontend() const
 }
 
 
+std::string manager::get_parameter(std::string const & name) const
+{
+    return f_config[name];
+}
+
+
 std::vector<std::string> const & manager::get_bundle_uri() const
 {
     return f_bundle_uri;

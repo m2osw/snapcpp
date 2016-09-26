@@ -281,12 +281,8 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
 
         {
             std::string const after(config[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD)]);
-            snap_manager::status_t::state_t state(
-                    after.find("sys-devices-virtual-net-tun") == std::string::npos
-                        ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
-                        : snap_manager::status_t::state_t::STATUS_STATE_INFO);
             snap_manager::status_t const field(
-                      state
+                      snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
                     , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER)
                     , QString::fromUtf8(after.c_str())
@@ -296,12 +292,8 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
 
         {
             std::string const require(config[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE_FIELD)]);
-            snap_manager::status_t::state_t state(
-                    require.find("sys-devices-virtual-net-tun") == std::string::npos
-                        ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
-                        : snap_manager::status_t::state_t::STATUS_STATE_INFO);
             snap_manager::status_t const field(
-                      state
+                      snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
                     , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE)
                     , QString::fromUtf8(require.c_str())

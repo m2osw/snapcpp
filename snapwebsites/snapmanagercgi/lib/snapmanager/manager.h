@@ -152,6 +152,7 @@ public:
     QString                         count_packages_that_can_be_updated(bool check_cache);
     std::vector<std::string>        read_filenames(std::string const & pattern) const;
     bool                            replace_configuration_value(QString const & filename, QString const & field_name, QString const & new_value, replace_configuration_value_t const flags = REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP, QString const & trim_left = {});
+    std::string                     get_parameter(std::string const & name) const;
 
     SNAP_SIGNAL_WITH_MODE(retrieve_status, (server_status & status), (status), NEITHER);
     SNAP_SIGNAL_WITH_MODE(handle_affected_services, (std::set<QString> & affected_services), (affected_services), NEITHER);
