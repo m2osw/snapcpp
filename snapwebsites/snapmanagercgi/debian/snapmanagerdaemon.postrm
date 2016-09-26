@@ -10,8 +10,9 @@ rm -f $SERVICES_DIR/snapmanagerdaemon.service
 
 if [ "$1" = "purge" ]
 then
-    # delete the data directory and a cache file
+    # delete the data and cache files
     rm -rf /var/lib/snapwebsites/bundles
+    rm -rf /var/cache/snapwebsites/bundle-script
     rm -f /var/cache/snapwebsites/apt-check.output
 
     # delete the logs if any

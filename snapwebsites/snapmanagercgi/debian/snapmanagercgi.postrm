@@ -4,7 +4,7 @@
 . /usr/share/debconf/confmodule
 
 
-# If snapcgi is not installed, restore the 000-default site
+# If snapcgi is not installed, restore the Apache2 "000-default" site
 #
 if test ! -f /etc/apache2/sites-available/000-snap-apache2-default.conf
 then
