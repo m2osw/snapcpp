@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.39.0~xenial) xenial; urgency=high
+
+  * SNAP-435: Offer a field in snapmanager.cgi to redirect unwanted users.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 19:51:49 -0700
+
 snapmanagercgi (1.0.38.1~xenial) xenial; urgency=high
 
   * SNAP-432: Added a redirect for users who are not authorized. By default
