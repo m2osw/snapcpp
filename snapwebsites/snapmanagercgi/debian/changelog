@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.2.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 25 Sep 2016 20:46:46 -0700
+
 snapmanagercgi (1.1.2.1~xenial) xenial; urgency=high
 
   * SNAP-440: Numerous changes for key negotiation.
