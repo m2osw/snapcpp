@@ -545,9 +545,12 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         }
 
         // Open the file...
+        //
+        QString listen_address_us( message.get_parameter("listen_address") );
+        listen_address_us.replace( '.', '_' );
         QString const full_path( QString("%1client_%2.pem")
                                  .arg(f_session->get_keys_path())
-                                 .arg(message.get_parameter("listen_address"))
+                                 .arg(listen_address_us)
                                  );
         QFile file( full_path );
         if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )

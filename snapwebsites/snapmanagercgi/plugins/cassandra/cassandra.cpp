@@ -830,6 +830,8 @@ void cassandra::generate_keys()
         return;
     }
 
+    SNAP_LOG_TRACE("The directory '")(sd)("' does not exist, so generating Cassandra SSL keys...");
+
     // Create the directory, make sure it's in the snapwebsites group,
     // and make it so we have full access to it, but nothing for the rest
     // of the world.
@@ -908,12 +910,11 @@ void cassandra::generate_keys()
           .arg(g_truststore_password)
        ;
 
-    // Copy the public key to a public-accessable folder
+    // Replace the periods with underscores, so that way it's a
+    // little nicer as part of a file name.
     //
-    QFile::copy ( QString("%1/client.pem").arg(ssl_dir.path())
-                , QString("%1/client_%2.pem").arg(public_dir.path()).arg(listen_address.c_str())
-                );
-
+    QString listen_address_us( listen_address.c_str() );
+    listen_address_us.replace( '.', '_' );
 
     // Export CQLSH-friendly keys.
     //
@@ -943,7 +944,7 @@ void cassandra::generate_keys()
        )
           .arg(ssl_dir.path())
           .arg(public_dir.path())
-          .arg(listen_address.c_str())
+          .arg(listen_address_us)
           .arg(g_truststore_password)
        ;
 
@@ -965,8 +966,21 @@ void cassandra::generate_keys()
     {
         if( system( cmd.toUtf8().data() ) != 0 )
         {
-            SNAP_LOG_ERROR("Cannot execute command '")(qPrintable(cmd))("'!");
+            SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'!");
         }
+    }
+
+    // Copy the public key to a public-accessable folder
+    //
+    // (Do this after we run the above commands, so that the client.pem file
+    // exists. It works better that way, I'm told.)
+    //
+    auto const source_client_pem( QString("%1/client.pem").arg(sd) );
+    auto const dest_client_pem  ( QString("%1/client_%2.pem").arg(pd).arg(listen_address_us) );
+    bool const copied = QFile::copy( source_client_pem, dest_client_pem );
+    if( !copied )
+    {
+        SNAP_LOG_ERROR("Cannot copy [")(source_client_pem)("] to [")(dest_client_pem)("]");
     }
 }
 
