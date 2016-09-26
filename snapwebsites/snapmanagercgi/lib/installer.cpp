@@ -644,7 +644,7 @@ bool manager::installer(QString const & bundle_name, std::string const & command
     {
         // create a <name>.precmd script that we can run
         //
-        std::string path(f_data_path.toUtf8().data());
+        std::string path(f_cache_path.toUtf8().data());
         path += "/bundle-scripts/"; 
         path += bundle_name.toUtf8().data();
         path += ".";
@@ -696,7 +696,7 @@ bool manager::installer(QString const & bundle_name, std::string const & command
     {
         // create a <name>.postinst script that we can run
         //
-        std::string path(f_data_path.toUtf8().data());
+        std::string path(f_cache_path.toUtf8().data());
         path += "/bundle-scripts/"; 
         path += bundle_name.toUtf8().data();
         path += ".";
