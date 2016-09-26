@@ -58,6 +58,10 @@ namespace snap
  * cannot be created because you do not have enough permissions; and
  * (2) the named directory exists in the form of a file.
  *
+ * \todo
+ * The function should offer a way to set the ownership and permissions
+ * of each file.
+ *
  * \bug
  * Many of the default directories that we need to have to run our
  * servers are to be created in directories that are owned by root.

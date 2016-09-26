@@ -1,3 +1,10 @@
+snapmanagercgi (1.0.41.0~xenial) xenial; urgency=high
+
+  * SNAP-438: Added proper code to save data in override.conf instead
+    of directly in the .service file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 26 Sep 2016 13:05:46 -0700
+
 snapmanagercgi (1.0.40.0~xenial) xenial; urgency=high
 
   * SNAP-424: Moved the bundle-scripts folder to the cache instead of the

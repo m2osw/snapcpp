@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.15.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-438: Added proper code to save data in override.conf instead
+    of directly in the .service file.
 
- -- Build Server <build@m2osw.com>  Mon, 26 Sep 2016 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 26 Sep 2016 13:04:46 -0700
 
 libsnapwebsites (1.1.15.0~xenial) xenial; urgency=high
 

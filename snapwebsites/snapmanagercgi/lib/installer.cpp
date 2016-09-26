@@ -41,6 +41,7 @@
 #include <snapwebsites/file_content.h>
 #include <snapwebsites/lockfile.h>
 #include <snapwebsites/log.h>
+#include <snapwebsites/mkdir_p.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/process.h>
 #include <snapwebsites/tokenize_string.h>
@@ -952,6 +953,15 @@ bool manager::replace_configuration_value(
     // not UTF-8 characters...
     //
     QByteArray const utf8_trim_left(trim_left.toUtf8());
+
+    // make sure the parent folders all exist
+    // (this is important for /etc/systemd/systemd/<name> folders which by
+    // default do no exist.)
+    //
+    if(snap::mkdir_p(filename, true) != 0)
+    {
+        return false;
+    }
 
     // make sure to create the file if it does not exist
     // we expect the filename parameter to be something like

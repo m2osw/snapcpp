@@ -1,8 +1,9 @@
-snapbackend (1.0.4.14~xenial) xenial; urgency=high
+snapbackend (1.0.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-438: Added proper code to save data in override.conf instead
+    of directly in the .service file.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:09 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 26 Sep 2016 13:06:09 -0700
 
 snapbackend (1.0.4.0~xenial) xenial; urgency=high
 

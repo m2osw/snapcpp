@@ -250,7 +250,8 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
 
         if(status != snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED)
         {
-            snap_config service_config(std::string("/lib/systemd/system/") + service_info.f_service_name + ".service");
+            snap_config service_config(std::string("/lib/systemd/system/") + service_info.f_service_name + ".service"
+                                     , std::string("/etc/systemd/system/") + service_info.f_service_name + ".service.d/override.conf");
             snap_manager::status_t const nice(snap_manager::status_t::state_t::STATUS_STATE_INFO,
                                       get_plugin_name(),
                                       QString("%1::nice").arg(service_info.f_service_name),
@@ -270,7 +271,8 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
                 // for the delay between runs of the snapbackend as a CRON service
                 // the delay is in the .timer file instead
                 //
-                snap_config timer_config(std::string("/lib/systemd/system/") + service_info.f_service_name + ".timer");
+                snap_config timer_config(std::string("/lib/systemd/system/") + service_info.f_service_name + ".timer"
+                                       , std::string("/etc/systemd/system/") + service_info.f_service_name + ".timer.d/override.conf");
                 snap_manager::status_t const cron(snap_manager::status_t::state_t::STATUS_STATE_INFO,
                                           get_plugin_name(),
                                           QString("%1::cron").arg(service_info.f_service_name),
@@ -279,72 +281,6 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
             }
         }
     }
-
-#if 0
-        bool valid_xml(false);
-        QFile input(service_info.f_service_filename);
-        if(input.open(QIODevice::ReadOnly))
-        {
-            QDomDocument doc;
-            doc.setContent(&input, false);
-
-            // TBD: do we need the search? We expect only one <service> root tag
-            //      with a name, we could just check the name?
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/service[@name=\"%1\"]").arg(service_info.f_service_name)); // the name varies, so do not check it
-            QDomXPath::node_vector_t result(dom_xpath.apply(doc));
-            if(result.size() > 0)
-            {
-                if(result[0].isElement())
-                {
-                    QDomElement service(result[0].toElement());
-                    QString const disabled_attr(service.attribute("disabled"));
-                    snap_manager::status_t const disabled(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                                          get_plugin_name(),
-                                                          QString("%1::disabled").arg(service_info.f_service_name),
-                                                          disabled_attr.isEmpty() ? "enabled" : "disabled");
-                    server_status.set_field(disabled);
-
-                    if(service_info.f_recovery)
-                    {
-                        QDomElement recovery_tag(service.firstChildElement("recovery"));
-                        snap_manager::status_t const recovery(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                                              get_plugin_name(),
-                                                              QString("%1::recovery").arg(service_info.f_service_name),
-                                                              recovery_tag.text());
-                        server_status.set_field(recovery);
-                    }
-                    else
-                    {
-                        QDomElement cron_tag(service.firstChildElement("cron"));
-                        snap_manager::status_t const cron(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                                              get_plugin_name(),
-                                                              QString("%1::cron").arg(service_info.f_service_name),
-                                                              cron_tag.text());
-                        server_status.set_field(cron);
-                    }
-
-                    QDomElement nice_tag(service.firstChildElement("nice"));
-                    snap_manager::status_t const nice(snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                                          get_plugin_name(),
-                                                          QString("%1::nice").arg(service_info.f_service_name),
-                                                          nice_tag.text());
-                    server_status.set_field(nice);
-
-                    valid_xml = true;
-                }
-            }
-        }
-        if(!valid_xml)
-        {
-            snap_manager::status_t const snapbackend(snap_manager::status_t::state_t::STATUS_STATE_ERROR,
-                                                  get_plugin_name(),
-                                                  QString(service_info.f_service_name) + "configuration",
-                                                  QString("Could not read \"%1\" file or it was missing a snapbackend service.")
-                                                        .arg(service_info.f_service_filename));
-            server_status.set_field(snapbackend);
-        }
-#endif
 }
 
 
@@ -640,7 +576,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     //
     if(field == "recovery")
     {
-        QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
+        QString const filename(QString("/etc/systemd/system/%1.service.d/override.conf").arg(service_name));
         f_snap->replace_configuration_value(filename, "RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
@@ -652,7 +588,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
 
     if(field == "cron")
     {
-        QString const filename(QString("/lib/systemd/system/%1.timer").arg(service_name));
+        QString const filename(QString("/etc/systemd/system/%1.timer.d/override.conf").arg(service_name));
         f_snap->replace_configuration_value(filename, "OnUnitActiveSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
@@ -664,8 +600,8 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
 
     if(field == "nice")
     {
-        QString const filename(QString("/lib/systemd/system/%1.service").arg(service_name));
-        f_snap->replace_configuration_value(filename, "Nice", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
+        QString const filename(QString("/etc/systemd/system/%1.service.d/override.conf").arg(service_name));
+        f_snap->replace_configuration_value(filename, "Nice", new_value);
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
         p.set_command("systemctl");

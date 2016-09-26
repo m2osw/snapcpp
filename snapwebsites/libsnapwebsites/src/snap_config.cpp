@@ -102,12 +102,13 @@ bool                                        g_configuration_has_started = false;
 class snap_config_file
 {
 public:
-    typedef std::shared_ptr<snap_config_file>            pointer_t;
+    typedef std::shared_ptr<snap_config_file>       pointer_t;
     typedef std::map<std::string, pointer_t>        map_t;
 
-                        snap_config_file(std::string const & filename);
+                        snap_config_file(std::string const & configuration_filename, std::string const & override_filename);
 
-    std::string const & get_filename() const;
+    std::string const & get_configuration_filename() const;
+    std::string const & get_override_filename() const;
 
     //void                clear();
     void                read_config_file();
@@ -121,7 +122,8 @@ public:
 private:
     void                actual_read_config_file(std::string const & filename, bool quiet);
 
-    std::string const                       f_filename;
+    std::string const                       f_configuration_filename;
+    std::string const                       f_override_filename;
     snap_configurations::parameter_map_t    f_parameters;
 };
 
@@ -143,8 +145,9 @@ snap_config_file::map_t      g_config_files;
  *
  * \param[in] filename  The filename for this configuration file.
  */
-snap_config_file::snap_config_file(std::string const & filename)
-    : f_filename(filename)
+snap_config_file::snap_config_file(std::string const & configuration_filename, std::string const & override_filename)
+    : f_configuration_filename(configuration_filename)
+    , f_override_filename(override_filename)
 {
     // empty
 }
@@ -157,9 +160,22 @@ snap_config_file::snap_config_file(std::string const & filename)
  *
  * \return The filename of this configuration file.
  */
-std::string const & snap_config_file::get_filename() const
+std::string const & snap_config_file::get_configuration_filename() const
 {
-    return f_filename;
+    return f_configuration_filename;
+}
+
+
+/** \brief Get the override_filename of this configuration file.
+ *
+ * This function gets the override_filename of this configuration file as was
+ * defined on the constructor.
+ *
+ * \return The override_filename of this configuration file.
+ */
+std::string const & snap_config_file::get_override_filename() const
+{
+    return f_override_filename;
 }
 
 
@@ -199,21 +215,35 @@ void snap_config_file::read_config_file()
     // if the filename includes any "." or "/", it is not one of our
     // files so we instead load the file as is
     //
-    std::string::size_type const pos(f_filename.find_first_of("./"));
+    std::string::size_type const pos(f_configuration_filename.find_first_of("./"));
     if(pos != std::string::npos)
     {
-        actual_read_config_file(f_filename, true);
+        // we use 'true' (i.e. "keep quiet") here because in some cases
+        // it is normal that the file does not exist
+        //
+        actual_read_config_file(f_configuration_filename, true);
+
+        // give a chance to other configuration files to have one
+        // override
+        //
+        // TODO: later we want to support any number with an "'*' + sort"
+        //       (like apache2 and other daemons do)
+        //
+        if(!f_override_filename.empty())
+        {
+            actual_read_config_file(f_override_filename, true);
+        }
     }
     else
     {
-        actual_read_config_file(g_configurations_path + "/" + f_filename + ".conf", false);
+        actual_read_config_file(g_configurations_path + "/" + f_configuration_filename + ".conf", false);
 
         // second try reading a file of the same name in a sub-directory named
         // "snapwebsites.d"; we have to do it last because we do overwrite
         // parameters (i.e. we keep the very last instance of each parameter
         // read from files.)
         //
-        actual_read_config_file(g_configurations_path + "/snapwebsites.d/" + f_filename + ".conf", true);
+        actual_read_config_file(g_configurations_path + "/snapwebsites.d/" + f_configuration_filename + ".conf", true);
     }
 }
 
@@ -476,24 +506,41 @@ void snap_config_file::set_parameters( snap_configurations::parameter_map_t cons
  *
  * \return The shared pointer to a snap_config_file object.
  */
-snap_config_file::pointer_t get_configuration(std::string const & configuration_filename)
+snap_config_file::pointer_t get_configuration(std::string const & configuration_filename, std::string const & override_filename)
 {
     auto const & it(std::find_if(
                       g_config_files.begin()
                     , g_config_files.end()
                     , [configuration_filename](auto const & configuration)
                     {
-                        return configuration_filename == configuration.second->get_filename();
+                        return configuration_filename == configuration.second->get_configuration_filename();
                     }));
     if(g_config_files.end() == it)
     {
         // we did not find that configuration, it was not yet loaded,
         // load it now
         //
-        snap_config_file::pointer_t conf(std::make_shared<snap_config_file>(configuration_filename));
+        snap_config_file::pointer_t conf(std::make_shared<snap_config_file>(configuration_filename, override_filename));
         g_config_files[configuration_filename] = conf;
         conf->read_config_file();
         return conf;
+    }
+
+    if(it->second->get_override_filename() != override_filename)
+    {
+        // do not allow a configuration file to have varying overrides
+        //
+        std::stringstream ss;
+        ss << "loading configuration file \""
+           << configuration_filename
+           << "\" with two different override filenames: \""
+           << it->second->get_override_filename()
+           << "\" and \""
+           << override_filename
+           << "\"";
+        SNAP_LOG_FATAL(ss.str())(".");
+        syslog( LOG_CRIT, "%s in snap_config.cpp: get_configuration()", ss.str().c_str() );
+        exit(1);
     }
 
     return it->second;
@@ -627,10 +674,10 @@ void snap_configurations::set_configuration_path(std::string const & path)
  *
  * \return A reference to the map of parameters of that configuration file.
  */
-snap_configurations::parameter_map_t const & snap_configurations::get_parameters(std::string const & configuration_filename) const
+snap_configurations::parameter_map_t const & snap_configurations::get_parameters(std::string const & configuration_filename, std::string const & override_filename) const
 {
     snap_thread::snap_lock lock(*g_mutex);
-    auto const config(get_configuration(configuration_filename));
+    auto const config(get_configuration(configuration_filename, override_filename));
     return config->get_parameters();
 }
 
@@ -649,10 +696,10 @@ snap_configurations::parameter_map_t const & snap_configurations::get_parameters
  * \param[in] configuration_filename  The name of the configuration file concerned.
  * \param[in] params  The new parameters.
  */
-void snap_configurations::set_parameters(std::string const & configuration_filename, parameter_map_t const & params)
+void snap_configurations::set_parameters(std::string const & configuration_filename, std::string const & override_filename, parameter_map_t const & params)
 {
     snap_thread::snap_lock lock(*g_mutex);
-    auto const config(get_configuration(configuration_filename));
+    auto const config(get_configuration(configuration_filename, override_filename));
     config->set_parameters(params);
 }
 
@@ -671,10 +718,10 @@ void snap_configurations::set_parameters(std::string const & configuration_filen
  *
  * \return The value of the parameter or the empty string.
  */
-std::string snap_configurations::get_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
+std::string snap_configurations::get_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name) const
 {
     snap_thread::snap_lock lock(*g_mutex);
-    auto const config(get_configuration(configuration_filename));
+    auto const config(get_configuration(configuration_filename, override_filename));
     return config->get_parameter(parameter_name);
 }
 
@@ -693,10 +740,10 @@ std::string snap_configurations::get_parameter(std::string const & configuration
  * \param[in] configuration_filename  The name of the configuration file to read.
  * \param[in] parameter_name  The parameter to check the presence of.
  */
-bool snap_configurations::snap_configurations::has_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
+bool snap_configurations::snap_configurations::has_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name) const
 {
     snap_thread::snap_lock lock(*g_mutex);
-    auto const config(get_configuration(configuration_filename));
+    auto const config(get_configuration(configuration_filename, override_filename));
     return config->has_parameter(parameter_name);
 }
 
@@ -710,10 +757,10 @@ bool snap_configurations::snap_configurations::has_parameter(std::string const &
  * \param[in] parameter_name  The name of the parameter to modify.
  * \param[in] value  The new value of the parameter.
  */
-void snap_configurations::set_parameter(std::string const & configuration_filename, std::string const & parameter_name, std::string const & value)
+void snap_configurations::set_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name, std::string const & value)
 {
     snap_thread::snap_lock lock(*g_mutex);
-    auto const config(get_configuration(configuration_filename));
+    auto const config(get_configuration(configuration_filename, override_filename));
     config->set_parameter(parameter_name, value);
 }
 

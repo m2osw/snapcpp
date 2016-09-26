@@ -59,12 +59,12 @@ public:
     std::string const &     get_configuration_path() const;
     void                    set_configuration_path(std::string const & path);
 
-    parameter_map_t const & get_parameters(std::string const & configuration_filename) const;
-    void                    set_parameters(std::string const & configuration_filename, parameter_map_t const & params);
+    parameter_map_t const & get_parameters(std::string const & configuration_filename, std::string const & override_filename) const;
+    void                    set_parameters(std::string const & configuration_filename, std::string const & override_filename, parameter_map_t const & params);
 
-    std::string             get_parameter(std::string const & configuration_filename, std::string const & parameter_name) const;
-    bool                    has_parameter(std::string const & configuration_filename, std::string const & parameter_name) const;
-    void                    set_parameter(std::string const & configuration_filename, std::string const & parameter_name, std::string const & value);
+    std::string             get_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name) const;
+    bool                    has_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name) const;
+    void                    set_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name, std::string const & value);
 
 private:
                             snap_configurations();
@@ -79,28 +79,29 @@ public:
     class snap_config_parameter_ref
     {
     public:
-                                snap_config_parameter_ref(std::string const & configuration_filename, std::string const & parameter_name)
+                                snap_config_parameter_ref(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name)
                                     : f_config(snap_configurations::get_instance())
                                     , f_configuration_filename(configuration_filename)
+                                    , f_override_filename(override_filename)
                                     , f_parameter_name(parameter_name)
                                 {
                                 }
 
         snap_config_parameter_ref & operator = (char const * value)
                                 {
-                                    f_config->set_parameter(f_configuration_filename, f_parameter_name, value);
+                                    f_config->set_parameter(f_configuration_filename, f_override_filename, f_parameter_name, value);
                                     return *this;
                                 }
 
         snap_config_parameter_ref & operator = (std::string const & value)
                                 {
-                                    f_config->set_parameter(f_configuration_filename, f_parameter_name, value);
+                                    f_config->set_parameter(f_configuration_filename, f_override_filename, f_parameter_name, value);
                                     return *this;
                                 }
 
         snap_config_parameter_ref & operator = (QString const & value)
                                 {
-                                    f_config->set_parameter(f_configuration_filename, f_parameter_name, value.toUtf8().data());
+                                    f_config->set_parameter(f_configuration_filename, f_override_filename, f_parameter_name, value.toUtf8().data());
                                     return *this;
                                 }
 
@@ -108,68 +109,69 @@ public:
                                 {
                                     // get the value from the rhs
                                     //
-                                    std::string const value(rhs.f_config->get_parameter(rhs.f_configuration_filename, rhs.f_parameter_name));
+                                    std::string const value(rhs.f_config->get_parameter(rhs.f_configuration_filename, f_override_filename, rhs.f_parameter_name));
 
                                     // save the value in the lhs
                                     //
-                                    f_config->set_parameter(f_configuration_filename, f_parameter_name, value);
+                                    f_config->set_parameter(f_configuration_filename, f_override_filename, f_parameter_name, value);
 
                                     return *this;
                                 }
 
         bool                    operator == (char const * value)
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name) == value;
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name) == value;
                                 }
 
         bool                    operator == (std::string const & value)
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name) == value;
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name) == value;
                                 }
 
         bool                    operator == (QString const & value)
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name) == value.toUtf8().data();
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name) == value.toUtf8().data();
                                 }
 
         bool                    operator != (char const * value)
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name) != value;
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name) != value;
                                 }
 
         bool                    operator != (std::string const & value)
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name) != value;
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name) != value;
                                 }
 
         bool                    operator != (QString const & value)
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name) != value.toUtf8().data();
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name) != value.toUtf8().data();
                                 }
 
                                 operator std::string () const
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name);
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name);
                                 }
 
                                 operator QString () const
                                 {
-                                    return QString::fromUtf8(f_config->get_parameter(f_configuration_filename, f_parameter_name).c_str());
+                                    return QString::fromUtf8(f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name).c_str());
                                 }
 
         bool                    empty() const
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name).empty();
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name).empty();
                                 }
 
         size_t                  length() const
                                 {
-                                    return f_config->get_parameter(f_configuration_filename, f_parameter_name).length();
+                                    return f_config->get_parameter(f_configuration_filename, f_override_filename, f_parameter_name).length();
                                 }
 
     private:
         snap_configurations::pointer_t  f_config;
         std::string const               f_configuration_filename;
+        std::string const               f_override_filename;
         std::string const               f_parameter_name;
     };
 
@@ -184,6 +186,13 @@ public:
                             {
                             }
 
+                            snap_config(std::string const & configuration_filename, std::string const & override_filename)
+                                : f_config(snap_configurations::get_instance())
+                                , f_configuration_filename(configuration_filename)
+                                , f_override_filename(override_filename)
+                            {
+                            }
+
     // get/set_configuration_filename()
     std::string const &     get_configuration_filename() const
                             {
@@ -193,6 +202,17 @@ public:
     void                    set_configuration_filename(std::string const & configuration_filename)
                             {
                                 f_configuration_filename = configuration_filename;
+                            }
+
+    // get/set_override_filename()
+    std::string const &     get_override_filename() const
+                            {
+                                return f_override_filename;
+                            }
+
+    void                    set_override_filename(std::string const & override_filename)
+                            {
+                                f_override_filename = override_filename;
                             }
 
     // set_configuration_path() -- set path where configuration file(s) are installed
@@ -207,183 +227,199 @@ public:
                             }
 
     // get_parameters() -- retrieve map to all parameters
+    snap_configurations::parameter_map_t const & get_parameters(std::string const & configuration_filename, std::string const & override_filename) const
+                            {
+                                return f_config->get_parameters(configuration_filename, override_filename);
+                            }
+
     snap_configurations::parameter_map_t const & get_parameters(std::string const & configuration_filename) const
                             {
-                                return f_config->get_parameters(configuration_filename);
+                                return f_config->get_parameters(configuration_filename, f_override_filename);
                             }
 
     snap_configurations::parameter_map_t const & get_parameters() const
                             {
-                                return f_config->get_parameters(f_configuration_filename);
+                                return f_config->get_parameters(f_configuration_filename, f_override_filename);
                             }
 
     // set_parameters() -- replace specified parameters
+    void                    set_parameters(std::string const & configuration_filename, std::string const & override_filename, snap_configurations::parameter_map_t const & params)
+                            {
+                                f_config->set_parameters(configuration_filename, override_filename, params);
+                            }
+
     void                    set_parameters(std::string const & configuration_filename, snap_configurations::parameter_map_t const & params)
                             {
-                                f_config->set_parameters(configuration_filename, params);
+                                f_config->set_parameters(configuration_filename, f_override_filename, params);
                             }
 
     void                    set_parameters(snap_configurations::parameter_map_t const & params)
                             {
-                                f_config->set_parameters(f_configuration_filename, params);
+                                f_config->set_parameters(f_configuration_filename, f_override_filename, params);
                             }
 
     // get_parameter() -- retrieve parameter value, specifying the configuration filename or not
+    std::string             get_parameter(std::string const & configuration_filename, std::string const & override_filename, std::string const & parameter_name) const
+                            {
+                                return f_config->get_parameter(configuration_filename, override_filename, parameter_name);
+                            }
+
     std::string             get_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
                             {
-                                return f_config->get_parameter(configuration_filename, parameter_name);
+                                return f_config->get_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     std::string             get_parameter(std::string const & parameter_name) const
                             {
-                                return f_config->get_parameter(f_configuration_filename, parameter_name);
+                                return f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     // has_parameter() -- check whether parameter is defined, specifying the configuration filename or not
     bool                    has_parameter(char const * configuration_filename, char const * parameter_name) const
                             {
-                                return f_config->has_parameter(configuration_filename, parameter_name);
+                                return f_config->has_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     bool                    has_parameter(char const * configuration_filename, std::string const & parameter_name) const
                             {
-                                return f_config->has_parameter(configuration_filename, parameter_name);
+                                return f_config->has_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     bool                    has_parameter(std::string const & configuration_filename, char const * parameter_name) const
                             {
-                                return f_config->has_parameter(configuration_filename, parameter_name);
+                                return f_config->has_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     bool                    has_parameter(std::string const & configuration_filename, std::string const & parameter_name) const
                             {
-                                return f_config->has_parameter(configuration_filename, parameter_name);
+                                return f_config->has_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     bool                    has_parameter(QString const & configuration_filename, QString const & parameter_name) const
                             {
-                                return f_config->has_parameter(configuration_filename.toUtf8().data(), parameter_name.toUtf8().data());
+                                return f_config->has_parameter(configuration_filename.toUtf8().data(), f_override_filename, parameter_name.toUtf8().data());
                             }
 
     bool                    has_parameter(char const * parameter_name) const
                             {
-                                return f_config->has_parameter(f_configuration_filename, parameter_name);
+                                return f_config->has_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     bool                    has_parameter(std::string const & parameter_name) const
                             {
-                                return f_config->has_parameter(f_configuration_filename, parameter_name);
+                                return f_config->has_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     bool                    has_parameter(QString const & parameter_name) const
                             {
-                                return f_config->has_parameter(f_configuration_filename, parameter_name.toUtf8().data());
+                                return f_config->has_parameter(f_configuration_filename, f_override_filename, parameter_name.toUtf8().data());
                             }
 
     // set_parameter() -- set parameter value, specifying the configuration filename or not
     void                    set_parameter(std::string const & configuration_filename, std::string const & parameter_name, std::string const & value)
                             {
-                                f_config->set_parameter(configuration_filename, parameter_name, value);
+                                f_config->set_parameter(configuration_filename, f_override_filename, parameter_name, value);
                             }
 
     void                    set_parameter(std::string const & parameter_name, std::string const & value)
                             {
-                                f_config->set_parameter(f_configuration_filename, parameter_name, value);
+                                f_config->set_parameter(f_configuration_filename, f_override_filename, parameter_name, value);
                             }
 
     // set_parameter_default() -- set parameter value if still undefined, specifying the configuration filename or not
     void                    set_parameter_default(std::string const & configuration_filename, std::string const & parameter_name, std::string const & value)
                             {
-                                if(!f_config->has_parameter(configuration_filename, parameter_name))
+                                if(!f_config->has_parameter(configuration_filename, f_override_filename, parameter_name))
                                 {
-                                    f_config->set_parameter(configuration_filename, parameter_name, value);
+                                    f_config->set_parameter(configuration_filename, f_override_filename, parameter_name, value);
                                 }
                             }
 
     void                    set_parameter_default(std::string const & parameter_name, std::string const & value)
                             {
-                                if(!f_config->has_parameter(f_configuration_filename, parameter_name))
+                                if(!f_config->has_parameter(f_configuration_filename, f_override_filename, parameter_name))
                                 {
-                                    f_config->set_parameter(f_configuration_filename, parameter_name, value);
+                                    f_config->set_parameter(f_configuration_filename, f_override_filename, parameter_name, value);
                                 }
                             }
 
     // f_config() -- get parameter, specifying the configuration filename or not
     std::string             operator () (char const * configuration_filename, char const * parameter_name) const
                             {
-                                return f_config->get_parameter(configuration_filename, parameter_name);
+                                return f_config->get_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     std::string             operator () (char const * configuration_filename, std::string const & parameter_name) const
                             {
-                                return f_config->get_parameter(configuration_filename, parameter_name);
+                                return f_config->get_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     std::string             operator () (std::string const & configuration_filename, char const * parameter_name) const
                             {
-                                return f_config->get_parameter(configuration_filename, parameter_name);
+                                return f_config->get_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     std::string             operator () (std::string const & configuration_filename, std::string const & parameter_name) const
                             {
-                                return f_config->get_parameter(configuration_filename, parameter_name);
+                                return f_config->get_parameter(configuration_filename, f_override_filename, parameter_name);
                             }
 
     QString                 operator () (QString const & configuration_filename, QString const & parameter_name) const
                             {
-                                return QString::fromUtf8(f_config->get_parameter(configuration_filename.toUtf8().data(), parameter_name.toUtf8().data()).c_str());
+                                return QString::fromUtf8(f_config->get_parameter(configuration_filename.toUtf8().data(), f_override_filename, parameter_name.toUtf8().data()).c_str());
                             }
 
     std::string             operator () (char const * parameter_name) const
                             {
-                                return f_config->get_parameter(f_configuration_filename, parameter_name);
+                                return f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     std::string             operator () (std::string const & parameter_name) const
                             {
-                                return f_config->get_parameter(f_configuration_filename, parameter_name);
+                                return f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     QString                 operator () (QString const & parameter_name) const
                             {
-                                return QString::fromUtf8(f_config->get_parameter(f_configuration_filename, parameter_name.toUtf8().data()).c_str());
+                                return QString::fromUtf8(f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name.toUtf8().data()).c_str());
                             }
 
     // f_config[] -- get parameter, only from context configuration
     std::string             operator [] (char const * parameter_name) const
                             {
-                                return f_config->get_parameter(f_configuration_filename, parameter_name);
+                                return f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     std::string             operator [] (std::string const & parameter_name) const
                             {
-                                return f_config->get_parameter(f_configuration_filename, parameter_name);
+                                return f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     QString                 operator [] (QString const & parameter_name) const
                             {
-                                return QString::fromUtf8(f_config->get_parameter(f_configuration_filename, parameter_name.toUtf8().data()).c_str());
+                                return QString::fromUtf8(f_config->get_parameter(f_configuration_filename, f_override_filename, parameter_name.toUtf8().data()).c_str());
                             }
 
     // f_config[] = ... -- set parameter, only to context configuration
     snap_config_parameter_ref operator [] (char const * parameter_name)
                             {
-                                return snap_config_parameter_ref(f_configuration_filename, parameter_name);
+                                return snap_config_parameter_ref(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     snap_config_parameter_ref operator [] (std::string const & parameter_name)
                             {
-                                return snap_config_parameter_ref(f_configuration_filename, parameter_name);
+                                return snap_config_parameter_ref(f_configuration_filename, f_override_filename, parameter_name);
                             }
 
     snap_config_parameter_ref operator [] (QString const & parameter_name)
                             {
-                                return snap_config_parameter_ref(f_configuration_filename, parameter_name.toUtf8().data());
+                                return snap_config_parameter_ref(f_configuration_filename, f_override_filename, parameter_name.toUtf8().data());
                             }
 
 private:
     snap_configurations::pointer_t  f_config;
     std::string                     f_configuration_filename;
+    std::string                     f_override_filename;
 };
 
 
