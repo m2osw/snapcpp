@@ -110,6 +110,9 @@ public:
     void           set_keys_path( QString const& path );
     void           add_ssl_keys();
 
+    void           add_ssl_trusted_cert( const QString& cert     );
+    void           add_ssl_cert_file   ( const QString& filename );
+
     CassTools::cluster_pointer_t cluster()    const;
     CassTools::session_pointer_t session()    const;
     CassTools::future_pointer_t  connection() const;
@@ -126,8 +129,6 @@ private:
     QCassandraSession();
 
     void reset_ssl_keys();
-    void add_ssl_trusted_cert( const QString& cert     );
-    void add_ssl_cert_file   ( const QString& filename );
 
     CassTools::cluster_pointer_t        f_cluster;
     CassTools::session_pointer_t        f_session;
