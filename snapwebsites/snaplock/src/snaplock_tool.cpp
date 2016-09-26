@@ -94,6 +94,27 @@ void snaplock_tool::process_message(snap::snap_communicator_message const & mess
 }
 
 
+/** \brief The connection failed, cancel everything.
+ *
+ * In case of the snaplock tools, we do not want to go on when the connection
+ * fails. But since we derive from the snaplock_messenger, we inherit the
+ * permanent connection which by default goes on "forever".
+ *
+ * This function reimplementation allows us to ignore the error.
+ *
+ * In terms of permanent connection, this is similar to having the f_done
+ * flag set to true.
+ *
+ * \param[in] error_message  An error message about what happened.
+ */
+void snaplock_tool::process_connection_failed(std::string const & error_message)
+{
+    SNAP_LOG_ERROR("The connection to snapcommunicator and/or snaplock failed. ")(error_message);
+
+    snap_timer::process_error();
+}
+
+
 /** \brief The connection was established with Snap! Communicator.
  *
  * Whenever the connection is established with the Snap! Communicator,

@@ -73,6 +73,7 @@ public:
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void                process_message(snap::snap_communicator_message const & message);
+    virtual void                process_connection_failed(std::string const & error_message);
     virtual void                process_connected();
 };
 

@@ -379,7 +379,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "server-name",
             nullptr,
-            "The name of the server that is going to run this instance of snapserver (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
+            "The name of the server that is going to run this instance of snapserver (defined in /etc/snapwebsites/snapcommunicator.conf), this parameter is required.",
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {
@@ -941,7 +941,7 @@ void server::config(int argc, char * argv[])
     // One can change the path with "--config <new path>", but not the
     // filename of the configuration file.
     //
-    if(f_opt->is_defined( "config"))
+    if(f_opt->is_defined("config"))
     {
         f_parameters.set_configuration_path(f_opt->get_string("config"));
     }
@@ -1247,7 +1247,7 @@ void server::verify_server_name(std::string & server_name)
         // more than two dots, the sub-sub-sub...sub-domain is
         // the FQDN
         //
-        SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dot character (.) which is not supported by snap. We assume that indicates the end of the name. If that is not what you expect, edit snapinit.conf and set the name as you want it in server_name=...");
+        SNAP_LOG_WARNING("Hostname \"")(std::string(server_name))("\" includes a dot character (.) which is not supported by snap. We assume that indicates the end of the name. If that is not what you expect, edit snapcommunicator.conf and set the name as you want it in server_name=...");
     }
 
 

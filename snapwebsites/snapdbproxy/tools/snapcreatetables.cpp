@@ -31,8 +31,35 @@ int main(int argc, char * argv[])
 
     try
     {
+        // TODO: get a function in the library so we can support a common
+        //       way to setup the logger (and always support the various
+        //       command line options, the logging server, etc.)
+        //
         snap::logging::set_progname(argv[0]);
-        snap::logging::configure_console();
+        if(isatty(STDERR_FILENO))
+        {
+            snap::logging::configure_console();
+        }
+        else
+        {
+            // as a background process use the snapserver setup
+            // (it is always available because it is in snapbase)
+            //
+            snap::snap_config config("snapserver");
+            //if(f_opt->is_defined("config"))
+            //{
+            //    config.set_configuration_path(f_opt->get_string("config"));
+            //}
+            QString const log_config(config["log_config"]);
+            if(log_config.isEmpty())
+            {
+                snap::logging::configure_console();
+            }
+            else
+            {
+                snap::logging::configure_conffile(log_config);
+            }
+        }
 
         snap::snap_cassandra cassandra;
         cassandra.connect();
