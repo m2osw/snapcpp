@@ -1,3 +1,9 @@
+snapcommunicator (1.0.27.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 26 Sep 2016 02:00:46 -0700
+
 snapcommunicator (1.0.27.0~xenial) xenial; urgency=high
 
   * SNAP-427: Added a transmission_report parameter that we can use at least
