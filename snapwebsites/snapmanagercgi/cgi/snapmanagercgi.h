@@ -75,6 +75,7 @@ public:
     virtual                     ~manager_cgi();
 
     int                         error(char const * code, char const * msg, char const * details);
+    void                        forbidden(std::string details);
     bool                        verify();
     int                         process();
 

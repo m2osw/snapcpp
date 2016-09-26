@@ -131,6 +131,41 @@ int manager_cgi::error(char const * code, char const * msg, char const * details
 }
 
 
+void manager_cgi::forbidden(std::string details)
+{
+    if(details.empty())
+    {
+        details = "No details.";
+    }
+
+    // the administrator has the option to redirect a user instead of
+    // outputing a 403...
+    //
+    if(f_config.has_parameter("redirect_unwanted"))
+    {
+        std::string const uri(f_config["redirect_unwanted"]);
+        if(!uri.empty())
+        {
+            // administrator wants to redirect unwanted users
+            //
+            SNAP_LOG_FATAL("Redirect user to \"")(uri)("\" on error(\"403 Forbidden\", \"You are not allowed on this server.\", \"")(details)("\")");
+
+            std::cout   << "Status: 301"                            << std::endl
+                        << "Location: " << uri                      << std::endl
+                        << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
+                        << "Connection: close"                      << std::endl
+                        << std::endl
+                        ;
+
+            // do not emit an error since we just sent a redirect
+            return;
+        }
+    }
+
+    error("403 Forbidden", "You are not allowed on this server.", details.c_str());
+}
+
+
 /** \brief Verify that the request is acceptable.
  *
  * This function makes sure that the request corresponds to what we
@@ -220,7 +255,7 @@ bool manager_cgi::verify()
     //
     if(!f_config.has_parameter("clients"))
     {
-        error("403 Forbidden", "You are not allowed on this server.", "The clients=... parameter is undefined.");
+        forbidden("The clients=... parameter is undefined.");
         return false;
     }
 
@@ -232,7 +267,7 @@ bool manager_cgi::verify()
         bool found(false);
         for(auto const & c : client_list)
         {
-            snap_addr::addr const client_address((c + ":80").toUtf8().data(), "tcp");
+            snap_addr::addr const client_address((c.trimmed() + ":80").toUtf8().data(), "tcp");
             if(client_address == remote_address)
             {
                 found = true;
@@ -241,7 +276,7 @@ bool manager_cgi::verify()
         }
         if(!found)
         {
-            error("403 Forbidden", "You are not allowed on this server.", ("Your remote address is " + remote_address.get_ipv4or6_string()).c_str());
+            forbidden(("Your remote address is " + remote_address.get_ipv4or6_string()));
             return false;
         }
     }
