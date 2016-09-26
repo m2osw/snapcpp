@@ -1,8 +1,8 @@
-snapfirewall (1.0.6.2~xenial) xenial; urgency=high
+snapfirewall (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Removed the SAVEEVERYWHERE button.
 
- -- Build Server <build@m2osw.com>  Sat, 24 Sep 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 25 Sep 2016 23:59:48 -0700
 
 snapfirewall (1.0.6.0~xenial) xenial; urgency=high
 
