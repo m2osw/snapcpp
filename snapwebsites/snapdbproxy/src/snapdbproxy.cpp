@@ -553,6 +553,13 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
                                  .arg(listen_address_us)
                                  );
         QFile file( full_path );
+        if( file.exists() )
+        {
+            // We already have the file, so ignore this.
+            //
+            return;
+        }
+        //
         if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
         {
             QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
