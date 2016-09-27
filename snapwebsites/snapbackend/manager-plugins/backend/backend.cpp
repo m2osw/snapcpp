@@ -577,7 +577,14 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "recovery")
     {
         QString const filename(QString("/etc/systemd/system/%1.service.d/override.conf").arg(service_name));
-        f_snap->replace_configuration_value(filename, "RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
+        if(f_snap->replace_configuration_value(filename, "Sevice::RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION))
+        {
+            // make sure the cache gets updated
+            //
+            snap_config service_config(std::string("/lib/systemd/system/") + service_name + ".service"
+                                     , std::string("/etc/systemd/system/") + service_name + ".service.d/override.conf");
+            service_config["Sevice::RestartSec"] = new_value;
+        }
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
         p.set_command("systemctl");
@@ -589,7 +596,14 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "cron")
     {
         QString const filename(QString("/etc/systemd/system/%1.timer.d/override.conf").arg(service_name));
-        f_snap->replace_configuration_value(filename, "OnUnitActiveSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST);
+        if(f_snap->replace_configuration_value(filename, "Timer::OnUnitActiveSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION))
+        {
+            // make sure the cache gets updated
+            //
+            snap_config service_config(std::string("/lib/systemd/system/") + service_name + ".timer"
+                                     , std::string("/etc/systemd/system/") + service_name + ".timer.d/override.conf");
+            service_config["Timer::OnUnitActiveSec"] = new_value;
+        }
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
         p.set_command("systemctl");
@@ -601,7 +615,14 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "nice")
     {
         QString const filename(QString("/etc/systemd/system/%1.service.d/override.conf").arg(service_name));
-        f_snap->replace_configuration_value(filename, "Nice", new_value);
+        if(f_snap->replace_configuration_value(filename, "Service::Nice", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION))
+        {
+            // make sure the cache gets updated
+            //
+            snap_config service_config(std::string("/lib/systemd/system/") + service_name + ".service"
+                                     , std::string("/etc/systemd/system/") + service_name + ".service.d/override.conf");
+            service_config["Service::Nice"] = new_value;
+        }
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
         p.set_command("systemctl");

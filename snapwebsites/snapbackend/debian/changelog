@@ -1,3 +1,10 @@
+snapbackend (1.0.6.0~xenial) xenial; urgency=high
+
+  * SNAP-438: Added the SECTION flag, without it the section won't work.
+  * Fixed the cache once a service configuration is changed.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 26 Sep 2016 17:39:09 -0700
+
 snapbackend (1.0.5.0~xenial) xenial; urgency=high
 
   * SNAP-438: Added proper code to save data in override.conf instead
