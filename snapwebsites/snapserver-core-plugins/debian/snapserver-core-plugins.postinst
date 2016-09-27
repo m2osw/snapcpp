@@ -26,7 +26,13 @@ then
 
     # Signal snapdbproxy since we just added new tables
     #
-    snapsignal snapdbproxy/NEWTABLE
+    # Note: test whether snapsignal is installed, it is not mandatory
+    #       for the plugins
+    #
+    if hash snapsignal
+    then
+        snapsignal snapdbproxy/NEWTABLE
+    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent
