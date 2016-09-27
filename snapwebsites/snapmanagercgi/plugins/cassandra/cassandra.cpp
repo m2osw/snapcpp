@@ -65,6 +65,26 @@ const QString g_cassandra_yaml      = "/etc/cassandra/cassandra.yaml";
 const QString g_keystore_password   = "qZ0LK74eiPecWcTQJCX2";
 const QString g_truststore_password = g_keystore_password; //"fu87kxWq4ktrkuZqVLQX";
 
+QString get_local_listen_address()
+{
+    std::string listen_address;
+    try
+    {
+        YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
+        listen_address = node["listen_address"].Scalar();
+    }
+    catch( std::exception const& x )
+    {
+        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys! Reason=[")(x.what())("]");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys!");
+    }
+
+    return listen_address.c_str();
+}
+
 YAML::Node read_node_from_yaml()
 {
     SNAP_LOG_TRACE("read_node_from_yaml()");
@@ -274,6 +294,7 @@ void cassandra::bootstrap(snap_child * snap)
     SNAP_LISTEN0 ( cassandra, "server", snap_manager::manager, communication_ready              );
 }
 
+#if 0
 void output_node( YAML::Node node, int const level = 0 )
 {
     std::string prefix( level+1, ' ' );
@@ -322,6 +343,7 @@ void output_node( YAML::Node node, int const level = 0 )
         return;
     }
 }
+#endif
 
 /** \brief Determine this plugin status data.
  *
@@ -805,40 +827,24 @@ void cassandra::generate_keys()
         return;
     }
 
-    std::string listen_address;
-    try
-    {
-        YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
-        listen_address = node["listen_address"].Scalar();
-    }
-    catch( std::exception const& x )
-    {
-        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys! Reason=[")(x.what())("]");
-        return;
-    }
-    catch( ... )
-    {
-        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys!");
-        return;
-    }
+    QString const listen_address( get_local_listen_address() );
 
-    char const * sd = "/etc/cassandra/ssl";
-    QDir ssl_dir(sd);
+    QDir ssl_dir(g_ssl_keys_dir);
     if( ssl_dir.exists() )
     {
         SNAP_LOG_TRACE("/etc/cassandra/ssl already exists, so we do nothing.");
         return;
     }
 
-    SNAP_LOG_TRACE("The directory '")(sd)("' does not exist, so generating Cassandra SSL keys...");
+    SNAP_LOG_TRACE("The directory '")(g_ssl_keys_dir)("' does not exist, so generating Cassandra SSL keys...");
 
     // Create the directory, make sure it's in the snapwebsites group,
     // and make it so we have full access to it, but nothing for the rest
     // of the world.
     //
-    ssl_dir.mkdir( sd );
-    snap::chownnm( sd, "root", "cassandra" );
-    ::chmod( sd, 0750 );
+    ssl_dir.mkdir( g_ssl_keys_dir );
+    snap::chownnm( g_ssl_keys_dir, "root", "cassandra" );
+    ::chmod( g_ssl_keys_dir.toUtf8().data(), 0750 );
     //
     char const * pd = "/etc/cassandra/public";
     QDir public_dir(pd);
@@ -847,6 +853,12 @@ void cassandra::generate_keys()
         public_dir.mkdir( pd );
         ::chmod( pd, 0755 );
     }
+
+    // Replace the periods with underscores, so that way it's a
+    // little nicer as part of a file name.
+    //
+    QString listen_address_us( listen_address );
+    listen_address_us.replace( '.', '_' );
 
     // Now generate the keys...
     //
@@ -857,7 +869,7 @@ void cassandra::generate_keys()
     command_list << QString
        (
        "keytool -noprompt -genkeypair -keyalg RSA "
-       " -alias      node"
+       " -alias      node%5"
        " -validity   36500"
        " -keystore   %1/keystore.jks"
        " -storepass  %2"
@@ -867,7 +879,8 @@ void cassandra::generate_keys()
           .arg(ssl_dir.path())
           .arg(g_truststore_password)
           .arg(g_keystore_password)
-          .arg(listen_address.c_str())
+          .arg(listen_address)
+          .arg(listen_address_us)
           ;
 
      // Export the node's public key. This will be distributed to the
@@ -875,24 +888,30 @@ void cassandra::generate_keys()
      //
      command_list << QString
        (
-       "keytool -export -alias node"
+       "keytool -export -rfc -alias node%3"
        " -file %1/node.cer"
        " -keystore %1/keystore.jks"
+       " -storepass %2"
        )
           .arg(ssl_dir.path())
+          .arg(g_truststore_password)
+          .arg(listen_address_us)
        ;
 
     // Import our own public node key just incase
     //
-    command_list << QString
-       (
-       "keytool -import -v -trustcacerts "
-       " -alias node"
-       " -file %1/node.cer"
-       " -keystore %1/keystore.jks"
-       )
-          .arg(ssl_dir.path())
-       ;
+    //command_list << QString
+    //   (
+    //   "keytool -import -v -trustcacerts "
+    //   " -alias node%1"
+    //   " -file %2/node.cer"
+    //   " -keystore %2/keystore.jks"
+    //   " -storepass %3"
+    //   )
+    //      .arg(listen_address_us)
+    //      .arg(ssl_dir.path())
+    //      .arg(g_truststore_password)
+    //   ;
 
 
     // Export the client certificate. This will be shared
@@ -901,20 +920,15 @@ void cassandra::generate_keys()
     command_list << QString
        (
        "keytool -exportcert -rfc -noprompt"
-       " -alias node"
-       " -keystore %1/keystore.jks"
-       " -storepass %2"
-       " -file %1/client.pem"
+       " -alias node%1"
+       " -keystore %2/keystore.jks"
+       " -file %2/client.pem"
+       " -storepass %3"
        )
+          .arg(listen_address_us)
           .arg(ssl_dir.path())
           .arg(g_truststore_password)
        ;
-
-    // Replace the periods with underscores, so that way it's a
-    // little nicer as part of a file name.
-    //
-    QString listen_address_us( listen_address.c_str() );
-    listen_address_us.replace( '.', '_' );
 
     // Export CQLSH-friendly keys.
     //
@@ -948,20 +962,6 @@ void cassandra::generate_keys()
           .arg(g_truststore_password)
        ;
 
-    // Doesn't seem to be needed for CQLSH
-    //
-    //command_list << QString
-    //   (
-    //   "openssl pkcs12"
-    //   " -in %1/node.p12"
-    //   " -nodes -nocerts"
-    //   " -out %1/node.key.pem"
-    //   " -passin pass:%2"
-    //   )
-    //      .arg(ssl_dir.path())
-    //      .arg(g_truststore_password)
-    //   ;
-
     for( auto const& cmd : command_list )
     {
         if( system( cmd.toUtf8().data() ) != 0 )
@@ -975,7 +975,7 @@ void cassandra::generate_keys()
     // (Do this after we run the above commands, so that the client.pem file
     // exists. It works better that way, I'm told.)
     //
-    auto const source_client_pem( QString("%1/client.pem").arg(sd) );
+    auto const source_client_pem( QString("%1client.pem").arg(g_ssl_keys_dir) );
     auto const dest_client_pem  ( QString("%1/client_%2.pem").arg(pd).arg(listen_address_us) );
     bool const copied = QFile::copy( source_client_pem, dest_client_pem );
     if( !copied )
@@ -1208,7 +1208,7 @@ void cassandra::on_communication_ready()
     //
     SNAP_LOG_TRACE("Sending CASSANDRASERVERKEYS to get the cassandra node SSL public keys..." );
     snap::snap_communicator_message cassandra_query;
-    cassandra_query.set_service("cassandra");
+    cassandra_query.set_service("*");
     cassandra_query.set_command("CASSANDRASERVERKEYS");
     get_cassandra_info(cassandra_query);
     f_snap->forward_message(cassandra_query);
@@ -1305,23 +1305,74 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
     else if( command == "CASSANDRASERVERKEY" )
     {
         // Open the file...
-        QString const full_path( QString("%1%2.pem")
-                                 .arg(g_ssl_keys_dir)
-                                 .arg(message.get_parameter("listen_address"))
-                                 );
-        QFile file( full_path );
-        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        QString const msg_listen_address( message.get_parameter("listen_address") );
+        if( msg_listen_address == get_local_listen_address() )
         {
-            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-            SNAP_LOG_ERROR(qPrintable(errmsg));
+            SNAP_LOG_TRACE("We received our own listen address [")(msg_listen_address)("], so no need to add the cert.");
             return;
         }
         //
-        // ...and stream the file out to disk so we have the node key for
-        // node-to-node SSL connections.
+        QString listen_address_us( msg_listen_address );
+        listen_address_us.replace( '.', '_' );
+        QString const full_path( QString("%1%2.cer")
+                                 .arg(g_ssl_keys_dir)
+                                 .arg(listen_address_us)
+                                 );
+        try
+        {
+            QFile file( full_path );
+            if( file.exists() )
+            {
+                // We already have the file, so ignore this.
+                //
+                SNAP_LOG_TRACE("We already have server cert file [")(full_path)("], so ignoring.");
+                return;
+            }
+
+            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+            {
+                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+                SNAP_LOG_ERROR(qPrintable(errmsg));
+                return;
+            }
+            //
+            // ...and stream the file out to disk so we have the node key for
+            // node-to-node SSL connections.
+            //
+            QTextStream out( &file );
+            out << message.get_parameter("key");
+        }
+        catch( std::exception const& ex )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
+            return;
+        }
+        catch( ... )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+            return;
+        }
+
+        SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding importing into server session.");
         //
-        QTextStream out( &file );
-        out << message.get_parameter("key");
+        QString const cmd(
+           QString
+           (
+               "keytool -import -noprompt -trustcacerts "
+               " -alias node%1"
+               " -file %2"
+               " -storepass %3"
+               " -keystore %4/keystore.jks"
+           )
+               .arg(listen_address_us)
+               .arg(full_path)
+               .arg(g_truststore_password)
+               .arg(g_ssl_keys_dir)
+        );
+        if( system( cmd.toUtf8().data() ) != 0 )
+        {
+            SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'! Key is likely already in the truststore.");
+        }
     }
     else if( command == "CASSANDRASERVERKEYS" )
     {
