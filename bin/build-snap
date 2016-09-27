@@ -1,5 +1,13 @@
 #!/bin/sh
 
+if test ! -d snapcpp
+then
+	echo "error: This script must be run from the directly right outside of the snapcpp source code."
+	echo "error: i.e. the command line generally looks like: snapcpp/bin/build-snap"
+	echo "error: It also assumes that you did a clone in a directory named \"snapcpp\"."
+	exit 1;
+fi
+
 # Full clean up
 rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
 
