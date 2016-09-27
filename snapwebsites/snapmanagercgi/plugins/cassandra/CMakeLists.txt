@@ -32,11 +32,13 @@
 
 project(plugin_cassandra)
 
-find_package( Qt5Core REQUIRED )
-find_package( Qt5Xml  REQUIRED )
+find_package( Qt5Core  REQUIRED )
+find_package( Qt5Xml   REQUIRED )
+find_package( YAML-CPP REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${YAML_CPP_INCLUDE_DIR}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
@@ -55,7 +57,7 @@ target_link_libraries(cassandra
     snapmanager
     ${QT_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
-    yaml-cpp
+    ${YAML_CPP_LIBRARIES}
 )
 
 install(
