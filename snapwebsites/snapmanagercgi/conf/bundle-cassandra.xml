@@ -86,7 +86,7 @@
     systemctl start cassandra
   </postinst>
   <postrm>
-    rm -rf /etc/cassandra /var/lib/cassandra /var/log/cassandra
+    rm -rf /etc/cassandra /var/lib/cassandra /var/log/cassandra /var/lib/snapwebsites/keys
   </postrm>
 </bundle>
 <!--
