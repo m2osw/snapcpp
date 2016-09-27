@@ -253,7 +253,8 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
                       snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
                     , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)
-                    , snap_communicator_conf[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)]);
+                    , get_known_neighbors() + "|"
+                      + snap_communicator_conf[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_NEIGHBORS)]);
         server_status.set_field(neighbors);
 
         snap_manager::status_t const forget_neighbor(
@@ -263,7 +264,6 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
                     , "");
         server_status.set_field(forget_neighbor);
     }
-
 
     // when the user installed VPN (client or server) then we want to
     // check whether we have the following in snapcommunicator.service:
@@ -300,6 +300,51 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
 }
 
 
+// TODO: put that in the library so the snapcommunicator and this plugin can both use the same function?
+QString communicator::get_known_neighbors()
+{
+    // get the path to the cache, create if necessary
+    //
+    QString neighbors_cache_filename(f_snap->get_cache_path());
+    if(neighbors_cache_filename.isEmpty())
+    {
+        neighbors_cache_filename = "/var/cache/snapwebsites";
+    }
+    neighbors_cache_filename += "/neighbors.txt";
+
+    QFile cache(neighbors_cache_filename);
+    if(!cache.open(QIODevice::ReadOnly))
+    {
+        return QString();
+    }
+
+    QString neighbors;
+
+    char buf[1024];
+    for(;;)
+    {
+        qint64 const r(cache.readLine(buf, sizeof(buf)));
+        if(r < 0)
+        {
+            break;
+        }
+        if(r > 0
+        && buf[0] != '#')
+        {
+            if(!neighbors.isEmpty())
+            {
+                neighbors = ", ";
+            }
+
+            QString const line(QString::fromUtf8(buf, r).trimmed());
+            neighbors += line;
+
+            // TODO: verify that each entry is a valid IP address
+        }
+    }
+
+    return neighbors;
+}
 
 /** \brief Transform a value to HTML for display.
  *
@@ -336,7 +381,12 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
                           "The Private Network IP Address of this computer:"
                         , s.get_field_name()
                         , s.get_value()
-                        , "Here you want to enter the Private Network IP Address. If you have your own private network, this is likely the eth0 or equivalent IP address. If you have OpenVPN, then it is the IP address shown in the tun0 interface (with ifconfig)."
+                        , "Here you want to enter the Private Network IP Address."
+                         " If you have your own private network, this is likely"
+                         " the eth1 or equivalent IP address. If you have OpenVPN,"
+                         " then it is the IP address shown in the tun0 interface"
+                         " (with ifconfig, we also show those IPs on this page"
+                         " under self.)"
                         ));
         f.add_widget(field);
 
@@ -357,11 +407,38 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
                 , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
+        // extract the list of known neighbors and the value from
+        // the field value; they are separated by a pipe character
+        //
+        QString known_neighbors;
+        QString value;
+
+        QString known_neighbors_value(s.get_value());
+        int const pos(known_neighbors_value.indexOf('|'));
+        if(pos > 0)
+        {
+            known_neighbors = known_neighbors_value.mid(0, pos);
+            value = known_neighbors_value.mid(pos + 1);
+        }
+        else
+        {
+            value = known_neighbors_value;
+        }
+
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "The comma separated IP addresses of one or more neighbors:"
                         , s.get_field_name()
-                        , s.get_value()
-                        , "This field accepts the IP address of one or more neighbors in the same private network. WARNING: At this time we do not support cross site communication without some kind of tunnelling, and even that will probably fail because all snapcommunicators will try to connect to such IPs (so you'd have to have the tunneling available on all the machines in your cluster)."
+                        , value
+                        , QString("<p>This field accepts the IP address of one or more neighbors"
+                         " in the same private network.</p>"
+                         "<p><strong>NOTE:</strong> By default we install"
+                         " snapcommunicator with SSL encryption between computers."
+                         " However, if you removed that encryption mechanism, you"
+                         " must either turn it back on or use a form of tunneling"
+                         " such as OpenVPN.</p>%1").arg(
+                             known_neighbors.isEmpty()
+                                ? QString("<p>No neighbors are known at this time.</p>")
+                                : QString("<p>The already known neighbors are: %1</p>").arg(known_neighbors))
                         ));
         f.add_widget(field);
 
@@ -386,7 +463,12 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
                           "One neighbor to remove (IP:Port):"
                         , s.get_field_name()
                         , s.get_value()
-                        , "This object is here to allow you to actually really remove a neighbor. Once neighbors were shared on the cluster, there are copies everywhere. So the easest way is to use this field and enter the IP address and the port. For example: \"10.8.0.1:4040\" (the default port is 4040)."
+                        , "This object is here to allow you to actually really"
+                         " remove a neighbor. Once neighbors were shared on the"
+                         " cluster, there are copies everywhere. So the easest"
+                         " way is to use this field and enter the IP address"
+                         " and the port. For example: \"10.8.0.1:4040\" (the"
+                         " default port is 4040)."
                         ));
         f.add_widget(field);
 

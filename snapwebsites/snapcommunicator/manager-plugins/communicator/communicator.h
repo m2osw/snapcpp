@@ -87,6 +87,7 @@ public:
 private:
     void                    retrieve_bundles_status(snap_manager::server_status & server_status);
     bool                    install_bundle(bool const install, QString const & bundle_name, std::set<QString> & services);
+    QString                 get_known_neighbors();
 
     snap_manager::manager * f_snap = nullptr;
 };

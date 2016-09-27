@@ -250,6 +250,7 @@ snapdb::snapdb(int argc, char * argv[])
     if( f_opt->is_defined( "help" ) )
     {
         usage(advgetopt::getopt::status_t::no_error);
+        snap::NOTREACHED();
     }
 
     try
