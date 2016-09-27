@@ -1180,6 +1180,77 @@ void cassandra::on_handle_affected_services(std::set<QString> & affected_service
 }
 
 
+void cassandra::send_client_key( snap::snap_communicator_message const* message )
+{
+    // A client requested the public key for authentication.
+    //
+    QFile file( g_ssl_keys_dir + "client.pem" );
+    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        SNAP_LOG_TRACE("client.pem file found, sending to requesing app");
+
+        QTextStream in(&file);
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRAKEY");
+        //
+        if( message == nullptr )
+        {
+            //cmd.set_server("*");
+            cmd.set_service("*");
+        }
+        else
+        {
+            cmd.reply_to(*message);
+        }
+        //
+        cmd.add_parameter( "key"   , in.readAll() );
+        cmd.add_parameter( "cache" , "ttl=60"     );
+        get_cassandra_info(cmd);
+        f_snap->forward_message(cmd);
+
+        SNAP_LOG_TRACE("CASSANDRAKEY message sent!");
+    }
+    else
+    {
+        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+        SNAP_LOG_ERROR(qPrintable(errmsg));
+        //throw vpn_exception( errmsg );
+    }
+}
+
+
+void cassandra::send_server_key()
+{
+    // Send the node key for the requesting peer.
+    //
+    QFile file( g_ssl_keys_dir + "node.cer" );
+    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        SNAP_LOG_TRACE("node.cer file found, broadcasting to all...");
+
+        QTextStream in(&file);
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRASERVERKEY");
+        cmd.set_service("*");
+        //cmd.set_service("snapmanagerdaemon");
+        cmd.add_parameter( "key"   , in.readAll()    );
+        cmd.add_parameter( "cache" , "ttl=60"        );
+        get_cassandra_info(cmd);
+        f_snap->forward_message(cmd);
+
+        SNAP_LOG_TRACE("CASSANDRASERVERKEY sent!");
+    }
+    else
+    {
+        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+        SNAP_LOG_ERROR(errmsg);
+        //throw vpn_exception( errmsg );
+    }
+}
+
+
 void cassandra::on_communication_ready()
 {
     // now we can broadcast our CASSANDRAQUERY so we have
@@ -1204,18 +1275,14 @@ void cassandra::on_communication_ready()
     //get_cassandra_info(cassandra_query);
     //f_snap->forward_message(cassandra_query);
 
-    // Request all of the server keys from all of the nodes
-    //
-    SNAP_LOG_TRACE("Sending CASSANDRASERVERKEYS to get the cassandra node SSL public keys..." );
-    snap::snap_communicator_message cassandra_query;
-    cassandra_query.set_service("*");
-    cassandra_query.set_command("CASSANDRASERVERKEYS");
-    get_cassandra_info(cassandra_query);
-    f_snap->forward_message(cassandra_query);
-
     // Make sure server keys are generated.
     //
     generate_keys();
+
+    // Next, send keys to everyone
+    //
+    send_client_key();
+    send_server_key();
 }
 
 
@@ -1225,8 +1292,87 @@ void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_comma
     understood_commands << "CASSANDRAFIELDS";
     understood_commands << "CASSANDRAKEYS";         // Send our public key to the requesting server...
     understood_commands << "CASSANDRASERVERKEY";    // Request public keys from other nodes...
-    understood_commands << "CASSANDRASERVERKEYS";   // Send our node key to the requesting server...
 }
+
+
+namespace
+{
+
+void import_server_key( const QString& msg_listen_address, const QString& key )
+{
+    // Open the file...
+    //
+    if( msg_listen_address == get_local_listen_address() )
+    {
+        SNAP_LOG_TRACE("We received our own listen address [")(msg_listen_address)("], so no need to add the cert.");
+        return;
+    }
+    //
+    QString listen_address_us( msg_listen_address );
+    listen_address_us.replace( '.', '_' );
+    QString const full_path( QString("%1%2.cer")
+                             .arg(g_ssl_keys_dir)
+                             .arg(listen_address_us)
+                             );
+    try
+    {
+        QFile file( full_path );
+        if( file.exists() )
+        {
+            // We already have the file, so ignore this.
+            //
+            SNAP_LOG_TRACE("We already have server cert file [")(full_path)("], so ignoring.");
+            return;
+        }
+
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(errmsg);
+            return;
+        }
+        //
+        // ...and stream the file out to disk so we have the node key for
+        // node-to-node SSL connections.
+        //
+        QTextStream out( &file );
+        out << key;
+    }
+    catch( std::exception const& ex )
+    {
+        SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
+        return;
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+        return;
+    }
+
+    SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding importing into server session.");
+    //
+    QString const cmd(
+                QString
+                (
+                    "keytool -import -noprompt -trustcacerts "
+                    " -alias node%1"
+                    " -file %2"
+                    " -storepass %3"
+                    " -keystore %4/keystore.jks"
+                    )
+                .arg(listen_address_us)
+                .arg(full_path)
+                .arg(g_truststore_password)
+                .arg(g_ssl_keys_dir)
+                );
+    if( system( cmd.toUtf8().data() ) != 0 )
+    {
+        SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'! Key is likely already in the truststore.");
+    }
+}
+
+}
+// namespace
 
 
 void cassandra::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
@@ -1275,128 +1421,14 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
     else if( command == "CASSANDRAKEYS" )
     {
         SNAP_LOG_TRACE("Processing command CASSANDRAKEYS");
-
-        // A client requested the public key for authentication.
-        //
-        QFile file( g_ssl_keys_dir + "client.pem" );
-        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
-        {
-            SNAP_LOG_TRACE("client.pem file found, sending to requesing app");
-
-            QTextStream in(&file);
-            //
-            snap::snap_communicator_message cmd;
-            cmd.reply_to(message);
-            cmd.set_command("CASSANDRAKEY");
-            cmd.add_parameter( "key"   , in.readAll()    );
-            cmd.add_parameter( "cache" , "ttl=60"        );
-            get_cassandra_info(cmd);
-            f_snap->forward_message(cmd);
-
-            SNAP_LOG_TRACE("CASSANDRAKEY message sent!");
-        }
-        else
-        {
-            QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            //throw vpn_exception( errmsg );
-        }
+        send_client_key( &message );
+        processed = true;
     }
     else if( command == "CASSANDRASERVERKEY" )
     {
-        // Open the file...
-        QString const msg_listen_address( message.get_parameter("listen_address") );
-        if( msg_listen_address == get_local_listen_address() )
-        {
-            SNAP_LOG_TRACE("We received our own listen address [")(msg_listen_address)("], so no need to add the cert.");
-            return;
-        }
-        //
-        QString listen_address_us( msg_listen_address );
-        listen_address_us.replace( '.', '_' );
-        QString const full_path( QString("%1%2.cer")
-                                 .arg(g_ssl_keys_dir)
-                                 .arg(listen_address_us)
-                                 );
-        try
-        {
-            QFile file( full_path );
-            if( file.exists() )
-            {
-                // We already have the file, so ignore this.
-                //
-                SNAP_LOG_TRACE("We already have server cert file [")(full_path)("], so ignoring.");
-                return;
-            }
-
-            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
-            {
-                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-                SNAP_LOG_ERROR(qPrintable(errmsg));
-                return;
-            }
-            //
-            // ...and stream the file out to disk so we have the node key for
-            // node-to-node SSL connections.
-            //
-            QTextStream out( &file );
-            out << message.get_parameter("key");
-        }
-        catch( std::exception const& ex )
-        {
-            SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
-            return;
-        }
-        catch( ... )
-        {
-            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
-            return;
-        }
-
-        SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding importing into server session.");
-        //
-        QString const cmd(
-           QString
-           (
-               "keytool -import -noprompt -trustcacerts "
-               " -alias node%1"
-               " -file %2"
-               " -storepass %3"
-               " -keystore %4/keystore.jks"
-           )
-               .arg(listen_address_us)
-               .arg(full_path)
-               .arg(g_truststore_password)
-               .arg(g_ssl_keys_dir)
-        );
-        if( system( cmd.toUtf8().data() ) != 0 )
-        {
-            SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'! Key is likely already in the truststore.");
-        }
-    }
-    else if( command == "CASSANDRASERVERKEYS" )
-    {
-        // Send the node key for the requesting peer.
-        //
-        QFile file( g_ssl_keys_dir + "node.cer" );
-        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
-        {
-            QTextStream in(&file);
-            //
-            snap::snap_communicator_message cmd;
-            cmd.reply_to(message);
-            cmd.set_command("CASSANDRASERVERKEY");
-            cmd.add_parameter( "key"   , in.readAll()    );
-            cmd.add_parameter( "cache" , "ttl=60"        );
-            get_cassandra_info(cmd);
-            f_snap->forward_message(cmd);
-        }
-        else
-        {
-            QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
-            SNAP_LOG_ERROR(qPrintable(errmsg));
-            //throw vpn_exception( errmsg );
-        }
+        SNAP_LOG_TRACE("Processing command CASSANDRASERVERKEY");
+        import_server_key( message.get_parameter("listen_address"), message.get_parameter("key") );
+        processed = true;
     }
 }
 

@@ -86,6 +86,8 @@ private:
     QString                 get_replication_factor();
     void                    set_replication_factor(QString const & replication_factor);
 
+    void                    send_client_key( snap::snap_communicator_message const* message = nullptr );
+    void                    send_server_key();
     void                    generate_keys();
 
     snap_manager::manager * f_snap = nullptr;
