@@ -482,18 +482,23 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
                         }
                         QString const status_letter(line.mid(first_colon + 1, second_colon - first_colon - 1));
 
-                        // the message is after that
+                        // hide that bundle? if so do not add t he field
                         //
-                        QString const status_info(line.mid(second_colon + 1));
+                        if(status_letter != "H")
+                        {
+                            // the message is after that
+                            //
+                            QString const status_info(line.mid(second_colon + 1));
 
-                        snap_manager::status_t const package_status(
-                                    status_letter == "E" ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
-                                                         : status_letter == "I" ? snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                                                                : snap_manager::status_t::state_t::STATUS_STATE_WARNING,
-                                    get_plugin_name(),
-                                    "bundle::" + name,
-                                    status_info);
-                        server_status.set_field(package_status);
+                            snap_manager::status_t const package_status(
+                                        status_letter == "E" ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                                                             : status_letter == "I" ? snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                                                                    : snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT,
+                                        get_plugin_name(),
+                                        "bundle::" + name,
+                                        status_info);
+                            server_status.set_field(package_status);
+                        }
                     }
 
                     // we can return now, if something changed in the
@@ -531,6 +536,7 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
     for(auto const & b : bundles)
     {
         bool good_bundle(true);
+        bool hide_bundle(false);
         bool has_error(false);
 
         QString filename(QString::fromUtf8(b.c_str()));
@@ -594,8 +600,19 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
                 std::string const list_of_packages(package_list.text().toUtf8().data());
                 snap::tokenize_string(packages, list_of_packages, ",", true, " ");
             }
-            for(auto const & p : packages)
+            for(auto p : packages)
             {
+                // skip empty entries (should not happen though)
+                if(p.empty())
+                {
+                    continue;
+                }
+                bool const inverted(p[0] == '!');
+                if(inverted)
+                {
+                    p.erase(p.begin());
+                }
+
                 std::string output;
                 int const r(f_snap->package_status(p, output));
 
@@ -611,6 +628,10 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
                     if(output.compare(pos + 1, 20, "install ok installed") == 0)
                     {
                         success = true;
+                        if(inverted)
+                        {
+                            hide_bundle = true;
+                        }
                         package_name_and_version += "<li class='installed-package'>";
                         package_name_and_version += p;
                         package_name_and_version += " (";
@@ -685,10 +706,19 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
         //
         if(bundles_status_file.isOpen())
         {
+            // should hidden bundle just not be included?
+            //
             QByteArray const name_utf8(name.toUtf8());
             bundles_status_file.write(name_utf8.data(), name_utf8.size());
             bundles_status_file.putChar(':');
-            bundles_status_file.putChar(has_error ? 'E' : good_bundle ? 'I' : 'W');
+            bundles_status_file.putChar(
+                        has_error
+                            ? 'E'
+                            : hide_bundle
+                                ? 'H'
+                                : good_bundle
+                                    ? 'I'
+                                    : 'W');
             bundles_status_file.putChar(':');
             QByteArray status_info_utf8(status_info.toUtf8());
             // TODO: we probably want to also escape \\ here?
@@ -698,14 +728,17 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
             bundles_status_file.putChar('\n');
         }
 
-        snap_manager::status_t const package_status(
-                    has_error ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
-                              : good_bundle ? snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                            : snap_manager::status_t::state_t::STATUS_STATE_WARNING,
-                    get_plugin_name(),
-                    "bundle::" + name,
-                    status_info);
-        server_status.set_field(package_status);
+        if(!hide_bundle)
+        {
+            snap_manager::status_t const package_status(
+                        has_error ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                                  : good_bundle ? snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                                : snap_manager::status_t::state_t::STATUS_STATE_WARNING,
+                        get_plugin_name(),
+                        "bundle::" + name,
+                        status_info);
+            server_status.set_field(package_status);
+        }
     }
 }
 
