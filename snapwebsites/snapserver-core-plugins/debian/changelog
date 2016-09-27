@@ -1,6 +1,9 @@
 snapserver-core-plugins (1.0.4.0~xenial) xenial; urgency=high
 
   * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.
+  * The snapserver Core plugins do not require snapcommunicator on
+    installation so snapsignal may not be available so this one checks
+    the availability of snapsignal.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sat, 24 Sep 2016 14:59:48 -0700
 
