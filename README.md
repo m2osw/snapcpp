@@ -24,6 +24,10 @@ licenses.
 
 # Getting Started
 
+TODO: We are not using the PPA environment at this time...
+      I suggest you first run bin/snap-ubuntu-packages to get all
+      dependencies installed. Then do cmake + make.
+
 The whole environment is based on cmake and also matches pbuilder so we
 can create Ubuntu packages with ease (cmake even makes use of the control
 files to generate the inter project dependencies!) We do not yet release
