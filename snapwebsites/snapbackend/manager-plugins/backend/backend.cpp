@@ -577,13 +577,13 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
     if(field == "recovery")
     {
         QString const filename(QString("/etc/systemd/system/%1.service.d/override.conf").arg(service_name));
-        if(f_snap->replace_configuration_value(filename, "Sevice::RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION))
+        if(f_snap->replace_configuration_value(filename, "Service::RestartSec", new_value, snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION))
         {
             // make sure the cache gets updated
             //
             snap_config service_config(std::string("/lib/systemd/system/") + service_name + ".service"
                                      , std::string("/etc/systemd/system/") + service_name + ".service.d/override.conf");
-            service_config["Sevice::RestartSec"] = new_value;
+            service_config["Service::RestartSec"] = new_value;
         }
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);

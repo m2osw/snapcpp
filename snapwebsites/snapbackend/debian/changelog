@@ -1,3 +1,9 @@
+snapbackend (1.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-438: Fixed the misspelled "Se[r]vice" for the RestartSec parameter.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 26 Sep 2016 23:13:09 -0700
+
 snapbackend (1.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-438: Added the SECTION flag, without it the section won't work.
