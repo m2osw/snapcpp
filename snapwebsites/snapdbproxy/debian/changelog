@@ -1,3 +1,9 @@
+snapdbproxy (1.1.4.0~xenial) xenial; urgency=high
+
+  * SNAP-440: Key file has to be flushed before QCassandraSession can pick it up.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Sep 2016 17:46:40 -0700
+
 snapdbproxy (1.1.2.0~xenial) xenial; urgency=high
 
   * SNAP-440: Don't accept a key we already have.
