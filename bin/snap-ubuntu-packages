@@ -19,13 +19,14 @@ apt-get install \
     libmagic-dev \
     libmagick++-dev \
     libprocps4-dev \
+    libqrencode-dev \
     libqt5script5 \
     libqt5scripttools5 \
     libqt5xmlpatterns5-dev \
     libqt5webkit5-dev \
     libssl-dev \
     libxml2-utils \
-    libqrencode-dev \
+    libyaml-cpp-dev \
     qt5-default \
     qtscript5-dev \
     uuid-dev \
