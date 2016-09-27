@@ -2305,9 +2305,13 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     || (command != "UNLOCKED"
      && sent_from_service != "snaplock"
      && !sent_from_service.startsWith("lock_")
-     && (command != "REGISTER" || !message.has_parameter("service") || !message.get_parameter("service").startsWith("lock_"))))
+     && (command != "REGISTER"
+         || !message.has_parameter("service")
+         || !message.get_parameter("service").startsWith("lock_"))))
     {
-        SNAP_LOG_TRACE("received a message [")(message.to_message())("]");
+        SNAP_LOG_TRACE("received command=[")(command)
+                ("], server_name=[")(server_name)("], service=[")(service)
+                ("], message=[")(message.to_message())("]");
     }
 
     base_connection::pointer_t base(std::dynamic_pointer_cast<base_connection>(connection));

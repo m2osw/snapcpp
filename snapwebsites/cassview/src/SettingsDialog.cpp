@@ -46,11 +46,13 @@ namespace
 {
     const char* SERVER_ID       = "cassandra_host"       ;
     const char* PORT_ID         = "cassandra_port"       ;
+    const char* USESSL_ID       = "use_ssl"              ;
     const char* PROMPT_ID       = "prompt_before_commit" ;
     const char* CONTEXT_ID      = "snap_keyspace"        ;
     const char* GEOMETRY_ID     = "settings_geometry"    ;
     const char* SERVER_DEFAULT  = "127.0.0.1"            ;
     const int   PORT_DEFAULT    = 9042                   ;
+    const bool  USESSL_DEFAULT  = true                   ; // Connect to Cassandra via SSL
     const bool  PROMPT_DEFAULT  = true                   ; // Prompt before saving to database
     const char* CONTEXT_DEFAULT = "snap_websites"        ;
 }
@@ -65,11 +67,13 @@ SettingsDialog::SettingsDialog( QWidget *p, const bool first_time )
     restoreGeometry( settings.value( GEOMETRY_ID, saveGeometry() ).toByteArray() );
     f_server           = settings.value( SERVER_ID,  SERVER_DEFAULT  );
     f_port             = settings.value( PORT_ID,    PORT_DEFAULT    );
+    f_useSSL           = settings.value( USESSL_ID,  USESSL_DEFAULT  );
     f_promptBeforeSave = settings.value( PROMPT_ID,  PROMPT_DEFAULT  );
     f_contextName      = settings.value( CONTEXT_ID, CONTEXT_DEFAULT );
     //
     f_hostnameEdit ->setText    ( f_server.toString()         );
     f_portEdit     ->setValue   ( f_port.toInt()              );
+    f_useSslCB     ->setChecked ( f_useSSL.toBool()           );
     f_promptCB     ->setChecked ( f_promptBeforeSave.toBool() );
     f_contextEdit  ->setText    ( f_contextName.toString()    );
     //
@@ -94,6 +98,10 @@ bool SettingsDialog::tryConnection( QWidget* p )
         const QString context = settings.value( CONTEXT_ID, CONTEXT_DEFAULT ).toString();
 
         QCassandraSession::pointer_t session( QCassandraSession::create() );
+        if( settings.value( USESSL_ID, USESSL_DEFAULT ).toBool() )
+        {
+            session->add_ssl_keys();
+        }
         session->connect( server, port );
 
         QCassandraSchema::SessionMeta::pointer_t meta( QCassandraSchema::SessionMeta::create( session ) );
@@ -120,12 +128,14 @@ void SettingsDialog::on_f_buttonBox_accepted()
 {
     QSettings settings( this );
 
-    const QString prev_server  = settings.value( SERVER_ID,  SERVER_DEFAULT  ).toString();
-    const int     prev_port    = settings.value( PORT_ID,    PORT_DEFAULT    ).toInt();
-    const QString prev_context = settings.value( CONTEXT_ID, CONTEXT_DEFAULT ).toString();
+    QString const prev_server  = settings.value( SERVER_ID,  SERVER_DEFAULT  ).toString();
+    int     const prev_port    = settings.value( PORT_ID,    PORT_DEFAULT    ).toInt();
+    bool    const prev_ssl     = settings.value( USESSL_ID,  USESSL_DEFAULT  ).toBool();
+    QString const prev_context = settings.value( CONTEXT_ID, CONTEXT_DEFAULT ).toString();
     //
     settings.setValue( SERVER_ID,  f_server      );
     settings.setValue( PORT_ID,    f_port        );
+    settings.setValue( USESSL_ID,  f_useSSL      );
     settings.setValue( CONTEXT_ID, f_contextName );
 
     if( !tryConnection( this ) )
@@ -133,6 +143,7 @@ void SettingsDialog::on_f_buttonBox_accepted()
         // Put back the old values and return, causing the dialog to stay open.
         settings.setValue( SERVER_ID,  prev_server  );
         settings.setValue( PORT_ID,    prev_port    );
+        settings.setValue( USESSL_ID,  prev_ssl     );
         settings.setValue( CONTEXT_ID, prev_context );
         return;
     }
@@ -170,6 +181,12 @@ void SettingsDialog::on_f_hostnameEdit_textEdited(const QString &arg1)
 void SettingsDialog::on_f_portEdit_valueChanged(int arg1)
 {
     f_port = arg1;
+    f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
+}
+
+void SettingsDialog::on_f_useSslCB_toggled(bool checked)
+{
+    f_useSSL = checked;
     f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );
 }
 

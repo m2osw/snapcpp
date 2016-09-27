@@ -1,8 +1,14 @@
-snapmanager (1.1.2.2~xenial) xenial; urgency=high
+snapmanager (1.1.2.8~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 26 Sep 2016 02:00:46 -0700
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 22 Sep 2016 13:48:57 -0700
+
+snapmanager (1.1.2.1~xenial) xenial; urgency=high
+
+  * SNAP-440: Added SSL support for Cassandra.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:56:11 -0700
 
 snapmanager (1.1.2.0~xenial) xenial; urgency=high
 

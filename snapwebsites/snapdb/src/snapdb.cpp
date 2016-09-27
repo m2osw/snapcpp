@@ -186,6 +186,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "no-ssl",
+            nullptr,
+            "Supress the use of SSL even if the keys are present.",
+            advgetopt::getopt::argument_mode_t::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
             "show the version of the snapdb executable",
@@ -309,10 +317,25 @@ void snapdb::usage(advgetopt::getopt::status_t status)
     exit(1);
 }
 
+
+/** \brief Add trusted SSL keys we got from the Cassandra nodes
+ */
+void snapdb::add_ssl_keys()
+{
+    if( f_opt->is_defined("no-ssl") )
+    {
+        // Don't use SSL
+        return;
+    }
+
+    f_session->add_ssl_keys();
+}
+
 void snapdb::info()
 {
     try
     {
+        add_ssl_keys();
         f_session->connect(f_host, f_port);
         if(f_session->isConnected())
         {
@@ -808,6 +831,7 @@ void snapdb::exec()
         f_session->setTimeout(5 * 60 * 60 * 1000);
     }
 
+    add_ssl_keys();
     f_session->connect( f_host, f_port );
 
     if(f_table.isEmpty())

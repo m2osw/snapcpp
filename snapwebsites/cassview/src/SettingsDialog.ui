@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>313</width>
-    <height>180</height>
+    <height>201</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,6 +65,16 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="f_useSslCB">
+     <property name="text">
+      <string>Use SSL</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QCheckBox" name="f_promptCB">

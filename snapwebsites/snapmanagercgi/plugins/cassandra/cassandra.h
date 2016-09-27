@@ -63,7 +63,7 @@ public:
     virtual                 ~cassandra() override;
 
     // plugins::plugin implementation
-    static cassandra *        instance();
+    static cassandra *      instance();
     virtual QString         description() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
@@ -85,6 +85,10 @@ private:
     void                    join_cassandra_node(snap::snap_communicator_message const & message);
     QString                 get_replication_factor();
     void                    set_replication_factor(QString const & replication_factor);
+
+    void                    send_client_key( snap::snap_communicator_message const* message = nullptr );
+    void                    send_server_key();
+    void                    generate_keys();
 
     snap_manager::manager * f_snap = nullptr;
     bool                    f_joining = false;

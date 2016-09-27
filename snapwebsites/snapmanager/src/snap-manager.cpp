@@ -62,6 +62,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     //
     cassandraHost->setText  ( settings.value( "cassandra_host", "localhost" ).toString() );
     cassandraPort->setText  ( settings.value( "cassandra_port", "9042"      ).toString() );
+    useSSLCB->setChecked    ( settings.value( "use_ssl",        true        ).toBool()   );
     snapServerHost->setText ( settings.value( "snap_host",      "localhost" ).toString() );
     snapServerPort->setText ( settings.value( "snap_port",      "4004"      ).toString() );
 
@@ -214,6 +215,7 @@ void snap_manager::OnAboutToQuit()
     QSettings settings( this );
     settings.setValue( "cassandra_host", cassandraHost->text()  );
     settings.setValue( "cassandra_port", cassandraPort->text()  );
+    settings.setValue( "use_ssl",        useSSLCB->isChecked()  );
     settings.setValue( "snap_host",      snapServerHost->text() );
     settings.setValue( "snap_port",      snapServerPort->text() );
     settings.setValue( "geometry",       saveGeometry()         );
@@ -558,6 +560,11 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_session->disconnect();
     try
     {
+        if( useSSLCB->isChecked() )
+        {
+            f_session->add_ssl_keys();
+        }
+        //
         f_session->connect( f_cassandra_host, f_cassandra_port );
     }
     catch( const std::exception& ex )
@@ -943,6 +950,11 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
         //
         f_session->setTimeout(5 * 60 * 1000);
 
+        if( useSSLCB->isChecked() )
+        {
+            f_session->add_ssl_keys();
+        }
+        //
         f_session->connect( f_cassandra_host, f_cassandra_port );
 
         QString query_str( "CREATE TABLE %1.%2 (key blob, column1 blob, value blob, PRIMARY KEY ((key), column1))\n" );

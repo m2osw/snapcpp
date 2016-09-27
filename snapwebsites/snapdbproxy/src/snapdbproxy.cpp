@@ -64,6 +64,7 @@
 
 namespace
 {
+
     const std::vector<std::string> g_configuration_files; // Empty
 
     const advgetopt::getopt::option g_snapdbproxy_options[] =
@@ -347,6 +348,23 @@ std::string snapdbproxy::server_name() const
 }
 
 
+/** \brief Use SSL for Cassandra connections
+ *
+ * This checks the configuration settings for "cassandra_use_ssl".
+ * If present and set to "true", this method returns true, false
+ * otherwise.
+ */
+bool snapdbproxy::use_ssl() const
+{
+    if( f_config.has_parameter("cassandra_use_ssl") )
+    {
+        return f_config["cassandra_use_ssl"] == "true";
+    }
+
+    return false;
+}
+
+
 /** \brief Start the Snap! Communicator and wait for events.
  *
  * This function initializes the snapdbproxy object further and then
@@ -515,6 +533,75 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         return;
     }
 
+    if( command == "CASSANDRAKEY" )
+    {
+        QDir key_path(f_session->get_keys_path());
+        if( !key_path.exists() )
+        {
+            SNAP_LOG_TRACE("First time receiving any cert keys, so creating path.");
+            // Make sure the key path exists...if not,
+            // then create it.
+            //
+            key_path.mkdir(f_session->get_keys_path());
+        }
+
+        // Open the file...
+        //
+        QString listen_address_us( message.get_parameter("listen_address") );
+        listen_address_us.replace( '.', '_' );
+        QString const full_path( QString("%1client_%2.pem")
+                                 .arg(f_session->get_keys_path())
+                                 .arg(listen_address_us)
+                                 );
+        try
+        {
+            QFile file( full_path );
+            if( file.exists() )
+            {
+                // We already have the file, so ignore this.
+                //
+                SNAP_LOG_TRACE("We already have cert file [")(full_path)("], so ignoring.");
+                return;
+            }
+            //
+            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+            {
+                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+                SNAP_LOG_ERROR(errmsg);
+                return;
+            }
+            //
+            // ...and stream the file out to disk
+            //
+            QTextStream out( &file );
+            out << message.get_parameter("key");
+        }
+        catch( std::exception const& ex )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
+        }
+        catch( ... )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+        }
+
+        try
+        {
+            SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding into current session.");
+            f_session->add_ssl_cert_file( full_path );
+        }
+        catch( std::exception const& ex )
+        {
+            SNAP_LOG_ERROR("Cannot add SSL CERT file! what=[")(ex.what())("]");
+        }
+        catch( ... )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+        }
+
+        return;
+    }
+
     if(command == "LOG")
     {
         // logrotate just rotated the logs, we have to reconfigure
@@ -546,12 +633,25 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
     {
         f_ready = true;
 
+        if( use_ssl() )
+        {
+            // Ask for server certs first from each snapmanager cassandra
+            // throughout the entire cluster.
+            //
+            snap::snap_communicator_message request;
+            request.set_command("CASSANDRAKEYS");
+            request.set_service("*");
+            request.add_parameter("cache", "ttl=60");
+            f_messenger->send_message(request);
+        }
+
         // Snap! Communicator received our REGISTER command
         //
         if(f_session->isConnected())
         {
             cassandra_ready();
         }
+
         return;
     }
 
@@ -571,7 +671,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAKEY,CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         f_messenger->send_message(reply);
         return;
@@ -657,6 +757,14 @@ void snapdbproxy::process_timeout()
 {
     try
     {
+        // First, add the trusted SSL cert keys to the session
+        // if they exist.
+        //
+        if( use_ssl() )
+        {
+            f_session->add_ssl_keys();
+        }
+
         // connect to Cassandra
         //
         // The Cassandra C/C++ driver is responsible to actually create

@@ -25,6 +25,7 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/chownnm.h>
 #include <snapwebsites/file_content.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
@@ -33,11 +34,20 @@
 
 // Qt lib
 //
+#include <QDateTime>
+#include <QDir>
 #include <QFile>
+#include <QTextStream>
 
 // C++ lib
 //
 #include <fstream>
+#include <vector>
+#include <sys/stat.h>
+
+// YAML-CPP
+//
+#include <yaml-cpp/yaml.h>
 
 // last entry
 //
@@ -50,116 +60,92 @@ SNAP_PLUGIN_START(cassandra, 1, 0)
 namespace
 {
 
-char const * g_cassandra_yaml = "/etc/cassandra/cassandra.yaml";
+const QString g_ssl_keys_dir        = "/etc/cassandra/ssl/";
+const QString g_cassandra_yaml      = "/etc/cassandra/cassandra.yaml";
+const QString g_keystore_password   = "qZ0LK74eiPecWcTQJCX2";
+const QString g_truststore_password = g_keystore_password; //"fu87kxWq4ktrkuZqVLQX";
 
-
-class cassandra_info
+QString get_local_listen_address()
 {
-public:
-    cassandra_info()
-        : f_cassandra_configuration(g_cassandra_yaml)
+    std::string listen_address;
+    try
     {
+        YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
+        listen_address = node["listen_address"].Scalar();
+    }
+    catch( std::exception const& x )
+    {
+        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys! Reason=[")(x.what())("]");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("'listen_address' is not defined in your cassandra.yaml! Cannot generate keys!");
     }
 
-    bool read_configuration()
+    return listen_address.c_str();
+}
+
+YAML::Node read_node_from_yaml()
+{
+    SNAP_LOG_TRACE("read_node_from_yaml()");
+    return YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
+}
+
+void write_node_to_yaml( const YAML::Node& node )
+{
+    SNAP_LOG_TRACE("write_node_to_yaml()");
+    QString const header_comment(
+            QString("Automatically generated file on '%1'. Do not modify!")
+            .arg( QDateTime::currentDateTime().toString( Qt::LocalDate ) ) );
+
+    YAML::Emitter emitter;
+    emitter.SetIndent( 4 );
+    emitter.SetMapFormat( YAML::Flow );
+    emitter
+        << YAML::Comment(header_comment.toUtf8().data())
+        << node
+        << YAML::Comment("vim: ts=4 sw=4 et");
+
+    QFile file( g_cassandra_yaml );
+    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
     {
-        // try reading only once
-        //
-        if(!f_read)
-        {
-            f_read = true;
-            if(f_cassandra_configuration.read_all())
-            {
-                f_valid = true;
-            }
-        }
-
-        return f_valid;
+        QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+        SNAP_LOG_ERROR(qPrintable(errmsg));
+        return;
     }
-
-    bool exists()
-    {
-        return f_cassandra_configuration.exists();
-    }
-
-    std::string retrieve_parameter(bool & found, std::string const & parameter_name)
-    {
-        found = false;
-
-        // get the file content in a string reference
-        //
-        std::string const & content = f_cassandra_configuration.get_content();
-
-        // search for the parameter
-        //
-        std::string::size_type const pos(snap_manager::manager::search_parameter(content, parameter_name + ":", 0, true));
-
-        // make sure that there is nothing "weird" before that name
-        // (i.e. "rpc_address" and "broadcast_rpc_address")
-        //
-        if(pos != std::string::size_type(-1)
-        && (pos == 0
-        || content[pos - 1] == '\r'
-        || content[pos - 1] == '\n'
-        || content[pos - 1] == '\t'
-        || content[pos - 1] == ' '))
-        {
-            // found it, get the value
-            //
-            std::string::size_type const p1(content.find_first_not_of(" \t", pos + parameter_name.length() + 1));
-            if(p1 != std::string::size_type(-1))
-            {
-                std::string::size_type p2(content.find_first_of("\r\n", p1));
-                if(p2 != std::string::size_type(-1))
-                {
-                    found = true;
-
-                    // trim spaces at the end
-                    while(p2 > p1 && isspace(content[p2 - 1]))
-                    {
-                        --p2;
-                    }
-                    if(content[p1] == '"' || content[p1] == '\''
-                    && p2 - 1 > p1
-                    && content[p2 - 1] == content[p1])
-                    {
-                        // remove quotation (this is random in this configuration file)
-                        //
-                        return content.substr(p1 + 1, p2 - p1 - 2);
-                    }
-                    else
-                    {
-                        return content.substr(p1, p2 - p1);
-                    }
-                }
-            }
-        }
-
-        return std::string();
-    }
-
-private:
-    file_content        f_cassandra_configuration;
-    bool                f_read = false;
-    bool                f_valid = false;
-};
+    //
+    QTextStream out( &file );
+    out << emitter.c_str();
+}
 
 
-void create_field(snap_manager::server_status & server_status, cassandra_info & info, QString const & plugin_name, std::string const & parameter_name)
+void create_field( snap_manager::server_status & server_status, YAML::Node node, QString const & plugin_name, std::string const & parameter_name )
 {
     bool found(false);
-    std::string const value(info.retrieve_parameter(found, parameter_name));
-    if(found)
+    try
     {
-        snap_manager::status_t const conf_field(
-                          snap_manager::status_t::state_t::STATUS_STATE_INFO
-                        , plugin_name
-                        , QString::fromUtf8(parameter_name.c_str())
-                        , QString::fromUtf8(value.c_str()));
-        server_status.set_field(conf_field);
-
+        if( node[parameter_name].IsDefined() )
+        {
+            snap_manager::status_t const conf_field
+                ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                  , plugin_name
+                  , QString::fromUtf8(parameter_name.c_str())
+                  , QString::fromUtf8(node[parameter_name].Scalar().c_str())
+                );
+            server_status.set_field(conf_field);
+            found = true;
+        }
     }
-    else
+    catch( std::exception const& x )
+    {
+        SNAP_LOG_ERROR("create_field() exception caught! what=[")(x.what())("]");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("create_field() unknown exception caught!");
+    }
+
+    if( !found )
     {
         // we got the file, but could not find the field as expected
         //
@@ -301,13 +287,63 @@ void cassandra::bootstrap(snap_child * snap)
         throw snap_logic_exception("snap pointer does not represent a valid manager object.");
     }
 
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, retrieve_status, _1);
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, handle_affected_services, _1);
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, add_plugin_commands, _1);
-    SNAP_LISTEN(cassandra, "server", snap_manager::manager, process_plugin_message, _1, _2);
-    SNAP_LISTEN0(cassandra, "server", snap_manager::manager, communication_ready);
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, retrieve_status,          _1     );
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, handle_affected_services, _1     );
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, add_plugin_commands,      _1     );
+    SNAP_LISTEN  ( cassandra, "server", snap_manager::manager, process_plugin_message,   _1, _2 );
+    SNAP_LISTEN0 ( cassandra, "server", snap_manager::manager, communication_ready              );
 }
 
+#if 0
+void output_node( YAML::Node node, int const level = 0 )
+{
+    std::string prefix( level+1, ' ' );
+    if( !node.IsDefined() )
+    {
+        std::cout << prefix << "node is not defined!" << std::endl;
+        return;
+    }
+
+    if( node.IsNull() )
+    {
+        std::cout << prefix << "node is null!" << std::endl;
+        return;
+    }
+
+    if( node.IsScalar() )
+    {
+        if( node.Tag() == "!" )
+        {
+            node.SetTag( "?" );
+        }
+        //
+        std::cout << prefix << "node is a scalar: [" << node << "]" << std::endl;
+        return;
+    }
+
+    if( node.IsSequence() )
+    {
+        std::cout << prefix << "node is a sequence:" << std::endl;
+        for( auto seq : node )
+        {
+            output_node( seq, level + 1 );
+        }
+
+        return;
+    }
+
+    if( node.IsMap() )
+    {
+        std::cout << prefix << "node is a map:" << std::endl;
+        for( auto map : node )
+        {
+            std::cout << prefix << "name=[" << map.first << "]" << std::endl;
+            output_node( map.second, level + 1 );
+        }
+        return;
+    }
+}
+#endif
 
 /** \brief Determine this plugin status data.
  *
@@ -324,15 +360,45 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
 
     // get the data
     //
-    cassandra_info info;
-    if(info.read_configuration())
+    QFile config_file(g_cassandra_yaml);
+    if( config_file.exists() )
     {
-        create_field(server_status, info, get_plugin_name(), "cluster_name"         );
-        create_field(server_status, info, get_plugin_name(), "seeds"                );
-        create_field(server_status, info, get_plugin_name(), "listen_address"       );
-        create_field(server_status, info, get_plugin_name(), "rpc_address"          );
-        create_field(server_status, info, get_plugin_name(), "broadcast_rpc_address");
-        create_field(server_status, info, get_plugin_name(), "auto_snapshot"        );
+        YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
+        //
+        {
+            bool found = true;
+            for( auto seq : node["seed_provider"] )
+            {
+                for( auto subseq : seq["parameters"] )
+                {
+                    snap_manager::status_t const conf_field
+                        ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                          , get_plugin_name()
+                          , "seeds"
+                          , QString::fromUtf8(subseq["seeds"].Scalar().c_str())
+                        );
+                    server_status.set_field(conf_field);
+                    found = true;
+                    break;
+                }
+            }
+
+            if( !found )
+            {
+                snap_manager::status_t const conf_field(
+                        snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                        , get_plugin_name()
+                        , "seeds"
+                        , QString("\"seed_provider::parameters::seeds\" is not defined in \"%1\".").arg(g_cassandra_yaml));
+                server_status.set_field(conf_field);
+            }
+        }
+        //
+        create_field(server_status, node,       get_plugin_name(), "cluster_name"            );
+        create_field(server_status, node,       get_plugin_name(), "listen_address"          );
+        create_field(server_status, node,       get_plugin_name(), "rpc_address"             );
+        create_field(server_status, node,       get_plugin_name(), "broadcast_rpc_address"   );
+        create_field(server_status, node,       get_plugin_name(), "auto_snapshot"           );
 
         // also add a "join a cluster" field
         //
@@ -359,8 +425,35 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
                             , replication_factor);
             server_status.set_field(conf_field);
         }
+
+        // Present the server SSL option (to allow node-to-node encryption).
+        //
+        SNAP_LOG_TRACE("on_retrieve_status(): YAML::LoadFile()");
+        node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
+        //
+        {
+            snap_manager::status_t const conf_field
+                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "use_server_ssl"
+                            , node["server_encryption_options"]["internode_encryption"].Scalar().c_str()
+                            );
+            server_status.set_field(conf_field);
+        }
+
+        // Present the client SSL option (to allow client-to-server encryption).
+        //
+        {
+            snap_manager::status_t const conf_field
+                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "use_client_ssl"
+                            , node["client_encryption_options"]["enabled"].Scalar().c_str()
+                            );
+            server_status.set_field(conf_field);
+        }
     }
-    else if(info.exists())
+    else //if(info.exists())
     {
         // create an error field which is not editable
         //
@@ -368,7 +461,7 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
                           snap_manager::status_t::state_t::STATUS_STATE_WARNING
                         , get_plugin_name()
                         , "cassandra_yaml"
-                        , QString("\"%1\" is not editable at the moment.").arg(g_cassandra_yaml));
+                        , QString("\"%1\" does not exist or cannot be read!").arg(g_cassandra_yaml));
         server_status.set_field(conf_field);
     }
     // else -- file does not exist
@@ -416,7 +509,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra 'ClusterName'"
                         , s.get_field_name()
@@ -450,7 +542,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Seeds"
                         , s.get_field_name()
@@ -484,7 +575,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Listen Address"
                         , s.get_field_name()
@@ -518,7 +608,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra RPC Address"
                         , s.get_field_name()
@@ -552,7 +641,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Broadcast RPC Address"
                         , s.get_field_name()
@@ -587,7 +675,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Cassandra Auto-Snapshot"
                         , s.get_field_name()
@@ -626,7 +713,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
 
         // TODO: get the list of names and show as a dropdown
         //
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Enter the server_name of the computer to join:"
                         , s.get_field_name()
@@ -657,7 +743,6 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Enter the replication factor (RF):"
                         , s.get_field_name()
@@ -675,7 +760,228 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
         return true;
     }
 
+    if(s.get_field_name() == "use_server_ssl")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Turn on server-to-server encryption (none, all, dc:<name>, rack:<name>):"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>By default, Cassandra communicates in the clear on the listening address."
+                          " When you change this option to anything except 'none', 'server to server'' encryption will be turned on between"
+                          " nodes. Also, if it is not already created, a server key pair will be created also,"
+                          " and the trusted keys will be exchanged with each node on the network.<p>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name() == "use_client_ssl")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Turn on client-to-server encryption (true or false):"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "<p>By default, Cassandra communicates in the clear on the listening address."
+                          " When you turn on this flag, client to server encryption will be turned on between"
+                          " clients and nodes. If it is not already present, a trusted client key will be generated."
+                          " <i>snapdbproxy</i> will then query the nodes it's connected to and request the keys.<p>"
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     return false;
+}
+
+
+void cassandra::generate_keys()
+{
+    //
+    // check whether the configuration file exists, if not then do not
+    // bother, Cassandra is not even installed
+    //
+    QFile config_file(g_cassandra_yaml);
+    if( !config_file.exists() )
+    {
+        SNAP_LOG_ERROR("Cannot read Cassandra configuration! Not generating keys!");
+        return;
+    }
+
+    QString const listen_address( get_local_listen_address() );
+
+    QDir ssl_dir(g_ssl_keys_dir);
+    if( ssl_dir.exists() )
+    {
+        SNAP_LOG_TRACE("/etc/cassandra/ssl already exists, so we do nothing.");
+        return;
+    }
+
+    SNAP_LOG_TRACE("The directory '")(g_ssl_keys_dir)("' does not exist, so generating Cassandra SSL keys...");
+
+    // Create the directory, make sure it's in the snapwebsites group,
+    // and make it so we have full access to it, but nothing for the rest
+    // of the world.
+    //
+    ssl_dir.mkdir( g_ssl_keys_dir );
+    snap::chownnm( g_ssl_keys_dir, "root", "cassandra" );
+    ::chmod( g_ssl_keys_dir.toUtf8().data(), 0750 );
+    //
+    char const * pd = "/etc/cassandra/public";
+    QDir public_dir(pd);
+    if( !public_dir.exists() )
+    {
+        public_dir.mkdir( pd );
+        ::chmod( pd, 0755 );
+    }
+
+    // Replace the periods with underscores, so that way it's a
+    // little nicer as part of a file name.
+    //
+    QString listen_address_us( listen_address );
+    listen_address_us.replace( '.', '_' );
+
+    // Now generate the keys...
+    //
+    QStringList command_list;
+
+    // Generate the keypair keystore for SSL
+    //
+    command_list << QString
+       (
+       "keytool -noprompt -genkeypair -keyalg RSA "
+       " -alias      node%5"
+       " -validity   36500"
+       " -keystore   %1/keystore.jks"
+       " -storepass  %2"
+       " -keypass    %3"
+       " -dname \"CN=%4, OU=Cassandra Backend, O=Made To Order Software Corp, L=Orangevale, ST=California, C=US\""
+       )
+          .arg(ssl_dir.path())
+          .arg(g_truststore_password)
+          .arg(g_keystore_password)
+          .arg(listen_address)
+          .arg(listen_address_us)
+          ;
+
+     // Export the node's public key. This will be distributed to the
+     // other Cassandra nodes on the network.
+     //
+     command_list << QString
+       (
+       "keytool -export -rfc -alias node%3"
+       " -file %1/node.cer"
+       " -keystore %1/keystore.jks"
+       " -storepass %2"
+       )
+          .arg(ssl_dir.path())
+          .arg(g_truststore_password)
+          .arg(listen_address_us)
+       ;
+
+    // Import our own public node key just incase
+    //
+    //command_list << QString
+    //   (
+    //   "keytool -import -v -trustcacerts "
+    //   " -alias node%1"
+    //   " -file %2/node.cer"
+    //   " -keystore %2/keystore.jks"
+    //   " -storepass %3"
+    //   )
+    //      .arg(listen_address_us)
+    //      .arg(ssl_dir.path())
+    //      .arg(g_truststore_password)
+    //   ;
+
+
+    // Export the client certificate. This will be shared
+    // with snapdbproxy instances.
+    //
+    command_list << QString
+       (
+       "keytool -exportcert -rfc -noprompt"
+       " -alias node%1"
+       " -keystore %2/keystore.jks"
+       " -file %2/client.pem"
+       " -storepass %3"
+       )
+          .arg(listen_address_us)
+          .arg(ssl_dir.path())
+          .arg(g_truststore_password)
+       ;
+
+    // Export CQLSH-friendly keys.
+    //
+    // keytool -importkeystore -srckeystore keystore.node0 -destkeystore node0.p12 -deststoretype PKCS12 -srcstorepass cassandra -deststorepass cassandra
+    // openssl pkcs12 -in node0.p12 -nokeys -out node0.cer.pem -passin pass:cassandra
+    // openssl pkcs12 -in node0.p12 -nodes -nocerts -out node0.key.pem -passin pass:cassandra
+    command_list << QString
+       (
+       "keytool -importkeystore"
+       " -srckeystore %1/keystore.jks"
+       " -destkeystore %1/node.p12"
+       " -deststoretype PKCS12"
+       " -srcstorepass %2"
+       " -deststorepass %2"
+       )
+          .arg(ssl_dir.path())
+          .arg(g_truststore_password)
+       ;
+
+    command_list << QString
+       (
+       "openssl pkcs12"
+       " -in %1/node.p12"
+       " -nokeys"
+       " -out %2/cqlsh.cert.%3.pem"
+       " -passin pass:%4"
+       )
+          .arg(ssl_dir.path())
+          .arg(public_dir.path())
+          .arg(listen_address_us)
+          .arg(g_truststore_password)
+       ;
+
+    for( auto const& cmd : command_list )
+    {
+        if( system( cmd.toUtf8().data() ) != 0 )
+        {
+            SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'!");
+        }
+    }
+
+    // Copy the public key to a public-accessable folder
+    //
+    // (Do this after we run the above commands, so that the client.pem file
+    // exists. It works better that way, I'm told.)
+    //
+    auto const source_client_pem( QString("%1client.pem").arg(g_ssl_keys_dir) );
+    auto const dest_client_pem  ( QString("%1/client_%2.pem").arg(pd).arg(listen_address_us) );
+    bool const copied = QFile::copy( source_client_pem, dest_client_pem );
+    if( !copied )
+    {
+        SNAP_LOG_ERROR("Cannot copy [")(source_client_pem)("] to [")(dest_client_pem)("]");
+    }
 }
 
 
@@ -697,113 +1003,6 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     NOTUSED(old_or_installation_value);
 
     bool const use_default(button_name == "restore_default");
-
-    if(field_name == "cluster_name")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SINGLE_QUOTE
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    );
-        return true;
-    }
-
-    if(field_name == "seeds")
-    {
-        affected_services.insert("cassandra-restart");
-
-        // IMPORTANT: this field is preceeded by spaces and a dash character
-        //            which we want to keep in the configuration file, so we
-        //            use the trim_left parameter for that purpose
-        //
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_DOUBLE_QUOTE
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    , " -"
-                    );
-        return true;
-    }
-
-    if(field_name == "listen_address")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "localhost" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    );
-        return true;
-    }
-
-    if(field_name == "rpc_address")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "localhost" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                    );
-        return true;
-    }
-
-    if(field_name == "broadcast_rpc_address")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "localhost" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
-                    );
-        return true;
-    }
-
-    if(field_name == "auto_snapshot")
-    {
-        affected_services.insert("cassandra-restart");
-
-        f_snap->replace_configuration_value(
-                      g_cassandra_yaml
-                    , field_name
-                    , use_default ? "false" : new_value
-                    ,   snap_manager::REPLACE_CONFIGURATION_VALUE_COLON
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_SPACE_AFTER
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_MUST_EXIST
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_HASH_COMMENT
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_CREATE_BACKUP
-                      | snap_manager::REPLACE_CONFIGURATION_VALUE_TRIM_RESULT
-                    );
-        return true;
-    }
 
     if(field_name == "join_a_cluster")
     {
@@ -833,6 +1032,96 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     if(field_name == "replication_factor")
     {
         set_replication_factor(new_value);
+        return true;
+    }
+
+    std::string const name( field_name.toUtf8().data() );
+    std::string const val ( new_value.toUtf8().data()  );
+
+    if( field_name == "cluster_name" )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if( field_name == "seeds" )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        for( auto seq : full_nodes["seed_provider"] )
+        {
+            for( auto subseq : seq["parameters"] )
+            {
+                SNAP_LOG_TRACE("writings 'seeds' with val=[")(val)("], new_value=[")(new_value)("]");
+                subseq["seeds"].SetTag("?");
+                subseq["seeds"] = val;
+                break;
+            }
+        }
+
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if  ( field_name == "listen_address"
+       || field_name == "rpc_address"
+       || field_name == "broadcast_rpc_address"
+        )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = use_default ? "localhost" : val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if(field_name == "auto_snapshot")
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = use_default ? "false" : val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if( field_name == "use_server_ssl" )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        YAML::Node seo( full_nodes["server_encryption_options"] );
+        seo["internode_encryption"] = val;
+        seo["keystore"]             = "/etc/cassandra/ssl/keystore.jks";
+        seo["keystore_password"]    = g_keystore_password.toUtf8().data();
+        seo["truststore"]           = "/etc/cassandra/ssl/keystore.jks";
+        seo["truststore_password"]  = g_truststore_password.toUtf8().data();
+
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if( field_name == "use_client_ssl" )
+    {
+        affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        auto ceo( full_nodes["client_encryption_options"] );
+        ceo["enabled"]             = val;
+        ceo["optional"]            = "false";
+        ceo["keystore"]            = "/etc/cassandra/ssl/keystore.jks";
+        ceo["keystore_password"]   = g_keystore_password.toUtf8().data();
+
+        write_node_to_yaml( full_nodes );
         return true;
     }
 
@@ -891,6 +1180,77 @@ void cassandra::on_handle_affected_services(std::set<QString> & affected_service
 }
 
 
+void cassandra::send_client_key( snap::snap_communicator_message const* message )
+{
+    // A client requested the public key for authentication.
+    //
+    QFile file( g_ssl_keys_dir + "client.pem" );
+    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        SNAP_LOG_TRACE("client.pem file found, sending to requesing app");
+
+        QTextStream in(&file);
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRAKEY");
+        //
+        if( message == nullptr )
+        {
+            //cmd.set_server("*");
+            cmd.set_service("*");
+        }
+        else
+        {
+            cmd.reply_to(*message);
+        }
+        //
+        cmd.add_parameter( "key"   , in.readAll() );
+        cmd.add_parameter( "cache" , "ttl=60"     );
+        get_cassandra_info(cmd);
+        f_snap->forward_message(cmd);
+
+        SNAP_LOG_TRACE("CASSANDRAKEY message sent!");
+    }
+    else
+    {
+        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+        SNAP_LOG_ERROR(qPrintable(errmsg));
+        //throw vpn_exception( errmsg );
+    }
+}
+
+
+void cassandra::send_server_key()
+{
+    // Send the node key for the requesting peer.
+    //
+    QFile file( g_ssl_keys_dir + "node.cer" );
+    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        SNAP_LOG_TRACE("node.cer file found, broadcasting to all...");
+
+        QTextStream in(&file);
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRASERVERKEY");
+        cmd.set_service("*");
+        //cmd.set_service("snapmanagerdaemon");
+        cmd.add_parameter( "key"   , in.readAll()    );
+        cmd.add_parameter( "cache" , "ttl=60"        );
+        get_cassandra_info(cmd);
+        f_snap->forward_message(cmd);
+
+        SNAP_LOG_TRACE("CASSANDRASERVERKEY sent!");
+    }
+    else
+    {
+        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+        SNAP_LOG_ERROR(errmsg);
+        //throw vpn_exception( errmsg );
+    }
+}
+
+
 void cassandra::on_communication_ready()
 {
     // now we can broadcast our CASSANDRAQUERY so we have
@@ -914,6 +1274,15 @@ void cassandra::on_communication_ready()
     //cassandra_query.set_command("CASSANDRAQUERY");
     //get_cassandra_info(cassandra_query);
     //f_snap->forward_message(cassandra_query);
+
+    // Make sure server keys are generated.
+    //
+    generate_keys();
+
+    // Next, send keys to everyone
+    //
+    send_client_key();
+    send_server_key();
 }
 
 
@@ -921,12 +1290,95 @@ void cassandra::on_add_plugin_commands(snap::snap_string_list & understood_comma
 {
     understood_commands << "CASSANDRAQUERY";
     understood_commands << "CASSANDRAFIELDS";
+    understood_commands << "CASSANDRAKEYS";         // Send our public key to the requesting server...
+    understood_commands << "CASSANDRASERVERKEY";    // Request public keys from other nodes...
 }
+
+
+namespace
+{
+
+void import_server_key( const QString& msg_listen_address, const QString& key )
+{
+    // Open the file...
+    //
+    if( msg_listen_address == get_local_listen_address() )
+    {
+        SNAP_LOG_TRACE("We received our own listen address [")(msg_listen_address)("], so no need to add the cert.");
+        return;
+    }
+    //
+    QString listen_address_us( msg_listen_address );
+    listen_address_us.replace( '.', '_' );
+    QString const full_path( QString("%1%2.cer")
+                             .arg(g_ssl_keys_dir)
+                             .arg(listen_address_us)
+                             );
+    try
+    {
+        QFile file( full_path );
+        if( file.exists() )
+        {
+            // We already have the file, so ignore this.
+            //
+            SNAP_LOG_TRACE("We already have server cert file [")(full_path)("], so ignoring.");
+            return;
+        }
+
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(errmsg);
+            return;
+        }
+        //
+        // ...and stream the file out to disk so we have the node key for
+        // node-to-node SSL connections.
+        //
+        QTextStream out( &file );
+        out << key;
+    }
+    catch( std::exception const& ex )
+    {
+        SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
+        return;
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+        return;
+    }
+
+    SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding importing into server session.");
+    //
+    QString const cmd(
+                QString
+                (
+                    "keytool -import -noprompt -trustcacerts "
+                    " -alias node%1"
+                    " -file %2"
+                    " -storepass %3"
+                    " -keystore %4/keystore.jks"
+                    )
+                .arg(listen_address_us)
+                .arg(full_path)
+                .arg(g_truststore_password)
+                .arg(g_ssl_keys_dir)
+                );
+    if( system( cmd.toUtf8().data() ) != 0 )
+    {
+        SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'! Key is likely already in the truststore.");
+    }
+}
+
+}
+// namespace
 
 
 void cassandra::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
 {
     QString const command(message.get_command());
+    SNAP_LOG_TRACE("cassandra::on_process_plugin_message(), command=[")(command)("]");
 
     if(command == "CASSANDRAFIELDS")
     {
@@ -966,19 +1418,32 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
 
         processed = true;
     }
+    else if( command == "CASSANDRAKEYS" )
+    {
+        SNAP_LOG_TRACE("Processing command CASSANDRAKEYS");
+        send_client_key( &message );
+        processed = true;
+    }
+    else if( command == "CASSANDRASERVERKEY" )
+    {
+        SNAP_LOG_TRACE("Processing command CASSANDRASERVERKEY");
+        import_server_key( message.get_parameter("listen_address"), message.get_parameter("key") );
+        processed = true;
+    }
 }
 
 
 void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
 {
-    cassandra_info info;
-
     // check whether the configuration file exists, if not then do not
     // bother, Cassandra is not even installed
     //
+    QFile config_file( g_cassandra_yaml );
     struct stat st;
-    if(stat("/usr/sbin/cassandra", &st) != 0
-    || !info.read_configuration())
+    if
+       ( stat("/usr/sbin/cassandra", &st) != 0
+      || !config_file.exists()
+       )
     {
         status.add_parameter("status", "not-installed");
         return;
@@ -986,21 +1451,42 @@ void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
 
     status.add_parameter("status", "installed");
 
-    // if installed we want to include the "cluster_name" and "seeds"
-    // parameters
-    //
-    bool found(false);
-    std::string const cluster_name(info.retrieve_parameter(found, "cluster_name"));
-    if(found)
+    try
     {
-        status.add_parameter("cluster_name", QString::fromUtf8(cluster_name.c_str()));
-    }
+        YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
 
-    found = false;
-    std::string const seeds(info.retrieve_parameter(found, "seeds"));
-    if(found)
+        // if installed we want to include the "cluster_name" and "seeds"
+        // parameters
+        //
+        {
+            status.add_parameter( "cluster_name",
+                QString::fromUtf8(node["cluster_name"].Scalar().c_str()) );
+        }
+
+        {
+            for( auto seq : node["seed_provider"] )
+            {
+                for( auto subseq : seq["parameters"] )
+                {
+                    status.add_parameter( "seeds",
+                        QString::fromUtf8(subseq["seeds"].Scalar().c_str()) );
+                    break;
+                }
+            }
+        }
+
+        {
+            status.add_parameter( "listen_address",
+                QString::fromUtf8(node["listen_address"].Scalar().c_str()) );
+        }
+    }
+    catch( std::exception const& x )
     {
-        status.add_parameter("seeds", QString::fromUtf8(seeds.c_str()));
+        SNAP_LOG_ERROR("cassandra::get_cassandra_info() exception caught, what=[")(x.what())("]!");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("cassandra::get_cassandra_info() unknown exception caught!");
     }
 
 #if 0

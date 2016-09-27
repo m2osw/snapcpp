@@ -94,6 +94,11 @@ struct sessionDeleter
     void operator()(CassSession* p) const;
 };
 
+struct sslDeleter
+{ 
+    void operator()(CassSsl* p) const;
+};
+
 struct statementDeleter
 { 
     void operator()(CassStatement* p) const;

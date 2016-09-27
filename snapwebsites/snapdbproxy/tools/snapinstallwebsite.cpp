@@ -24,8 +24,6 @@
 #include <snapwebsites/snap_config.h>
 
 
-
-
 namespace
 {
     const std::vector<std::string> g_configuration_files; // Empty

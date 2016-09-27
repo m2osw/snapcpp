@@ -54,6 +54,7 @@ typedef struct CassKeyspaceMeta_ CassKeyspaceMeta;
 typedef struct CassResult_       CassResult;
 typedef struct CassSchemaMeta_   CassSchemaMeta;
 typedef struct CassSession_      CassSession;
+typedef struct CassSsl_          CassSsl;
 typedef struct CassStatement_    CassStatement;
 typedef struct CassTableMeta_    CassTableMeta;
 typedef struct CassValue_        CassValue;
@@ -75,6 +76,7 @@ namespace CassTools
     typedef std::shared_ptr<const CassSchemaMeta>   schema_meta_pointer_t;
     typedef std::shared_ptr<const CassTableMeta>    table_meta_pointer_t;
     typedef std::shared_ptr<CassSession>            session_pointer_t;
+    typedef std::shared_ptr<CassSsl>                ssl_pointer_t;
     typedef std::shared_ptr<CassStatement>          statement_pointer_t;
     typedef std::shared_ptr<const CassValue>        value_pointer_t;
     typedef int64_t                                 timeout_t;
@@ -104,6 +106,13 @@ public:
     void disconnect();
     bool isConnected() const;
 
+    QString const& get_keys_path() const;
+    void           set_keys_path( QString const& path );
+    void           add_ssl_keys();
+
+    void           add_ssl_trusted_cert( const QString& cert     );
+    void           add_ssl_cert_file   ( const QString& filename );
+
     CassTools::cluster_pointer_t cluster()    const;
     CassTools::session_pointer_t session()    const;
     CassTools::future_pointer_t  connection() const;
@@ -119,12 +128,16 @@ public:
 private:
     QCassandraSession();
 
+    void reset_ssl_keys();
+
     CassTools::cluster_pointer_t        f_cluster;
     CassTools::session_pointer_t        f_session;
+    CassTools::ssl_pointer_t            f_ssl;
     CassTools::future_pointer_t         f_connection;
-    CassTools::timeout_t                f_timeout       = DEFAULT_TIMEOUT; // 12s
-    uint32_t                            f_highWaterMark = 65536;
-    uint32_t                            f_lowWaterMark  = 0;
+    CassTools::timeout_t                f_timeout         = DEFAULT_TIMEOUT; // 12s
+    uint32_t                            f_high_water_mark = 65536;
+    uint32_t                            f_low_water_mark  = 0;
+    QString                             f_keys_path       = "/var/lib/snapwebsites/keys/";
 };
 
 
