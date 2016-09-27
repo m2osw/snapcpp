@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.3.6~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.4.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.
 
- -- Build Server <build@m2osw.com>  Sat, 24 Sep 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 24 Sep 2016 14:59:48 -0700
 
 snapserver-core-plugins (1.0.3.0~xenial) xenial; urgency=high
 

@@ -1,8 +1,10 @@
-snapdbproxy (1.1.4.1~xenial) xenial; urgency=high
+snapdbproxy (1.1.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.
+  * Added support for a NEWTABLE message (not implemented yet though.)
+  * Removed a few "Nightly build" entries.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 27 Sep 2016 09:34:54 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 27 Sep 2016 14:54:54 -0700
 
 snapdbproxy (1.1.4.0~xenial) xenial; urgency=high
 
@@ -10,23 +12,11 @@ snapdbproxy (1.1.4.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Sep 2016 17:46:40 -0700
 
-snapdbproxy (1.1.2.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Mon, 26 Sep 2016 16:17:13 -0700
-
 snapdbproxy (1.1.2.0~xenial) xenial; urgency=high
 
   * SNAP-440: Don't accept a key we already have.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Sep 2016 15:51:03 -0700
-
-snapdbproxy (1.1.1.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 25 Sep 2016 20:46:46 -0700
 
 snapdbproxy (1.1.1.0~xenial) xenial; urgency=high
 
@@ -34,23 +24,11 @@ snapdbproxy (1.1.1.0~xenial) xenial; urgency=high
 
  -- Doug Barbieri <doug@dooglio.net>  Sun, 25 Sep 2016 12:37:03 -0700
 
-snapdbproxy (1.1.0.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 22 Sep 2016 13:48:56 -0700
-
 snapdbproxy (1.1.0.1~xenial) xenial; urgency=high
 
   * SNAP-440: added support for SSL to Cassandra.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:54:43 -0700
-
-snapdbproxy (1.0.15.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 26 Sep 2016 02:00:46 -0700
 
 snapdbproxy (1.0.15.0~xenial) xenial; urgency=high
 

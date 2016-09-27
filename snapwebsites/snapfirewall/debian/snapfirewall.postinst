@@ -28,12 +28,9 @@ then
     SERVICES_DIR=/usr/share/snapwebsites/services
     touch $SERVICES_DIR/snapfirewall.service
 
-    # Make sure that the snapfirewall table exists
+    # Signal snapdbproxy since we just added new tables
     #
-    if ! snapcreatetables
-    then
-        echo "notice: snapcreatetables failed. This is common on a first installation that does not yet have a database installed and connected."
-    fi
+    snapsignal snapdbproxy/NEWTABLE
 fi
 
 # vim: ts=4 sw=4 et nocindent

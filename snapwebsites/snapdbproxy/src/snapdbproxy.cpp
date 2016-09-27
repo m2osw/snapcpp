@@ -662,6 +662,17 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
         return;
     }
 
+    if(command == "NEWTABLE")
+    {
+        // a package just got installed and that package included a
+        // table definition
+        //
+
+SNAP_LOG_WARNING("NEWTABLE not yet implemented...");
+
+        return;
+    }
+
     if(command == "HELP")
     {
         // Snap! Communicator is asking us about the commands that we support
@@ -671,7 +682,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRAKEY,CASSANDRASTATUS,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAKEY,CASSANDRASTATUS,HELP,LOG,NEWTABLE,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         f_messenger->send_message(reply);
         return;

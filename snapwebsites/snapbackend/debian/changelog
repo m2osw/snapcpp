@@ -1,8 +1,8 @@
-snapbackend (1.0.7.1~xenial) xenial; urgency=high
+snapbackend (1.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.
 
- -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 27 Sep 2016 14:50:47 -0700
 
 snapbackend (1.0.7.0~xenial) xenial; urgency=high
 

@@ -34,12 +34,9 @@ then
     SERVICES_DIR=/usr/share/snapwebsites/services
     touch $SERVICES_DIR/snapwatchdog.service
 
-    # Make sure that the snapwatchdog table exists
+    # Signal snapdbproxy since we just added new tables
     #
-    if ! snapcreatetables
-    then
-        echo "notice: snapcreatetables failed."
-    fi
+    snapsignal snapdbproxy/NEWTABLE
 fi
 
 # vim: ts=4 sw=4 et nocindent

@@ -7,13 +7,6 @@
 
 if [ "$1" = "configure" ]
 then
-    # Make sure that the core table exists
-    #
-    if ! snapcreatetables
-    then
-        echo "notice: snapcreatetables failed."
-    fi
-
     # Create files representing each service offered by this package
     #
     SERVICES_DIR=/usr/share/snapwebsites/services
@@ -21,6 +14,10 @@ then
     touch $SERVICES_DIR/images.service
     touch $SERVICES_DIR/pagelist.service
     touch $SERVICES_DIR/sendmail.service
+
+    # Signal snapdbproxy since we just added new tables
+    #
+    snapsignal snapdbproxy/NEWTABLE
 
     systemctl daemon-reload
 

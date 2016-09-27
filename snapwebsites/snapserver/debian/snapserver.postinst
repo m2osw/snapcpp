@@ -14,12 +14,9 @@ then
     SERVICES_DIR=/usr/share/snapwebsites/services
     touch $SERVICES_DIR/snapserver.service
 
-    # Make sure that the core table exists
+    # Signal snapdbproxy since we just added new tables
     #
-    if ! snapcreatetables
-    then
-        echo "notice: snapcreatetables failed."
-    fi
+    snapsignal snapdbproxy/NEWTABLE
 
     # generate a private key and a certificate for remote snap.cgi to
     # connect to this snapserver installation using SSL; this key

@@ -28,19 +28,6 @@ then
     #
     SERVICES_DIR=/usr/share/snapwebsites/services
     touch $SERVICES_DIR/snapdbproxy.service
-
-    # Make sure that the core tables exist
-    # The core tables are defined in the library, but installed here
-    # since it is only once we have snapdbproxy that we can install
-    # said libraries...
-    #
-    #snapcreatetables -- at this time this could be too early (i.e.
-    #                    the snapdbproxy takes some time to connnect
-    #                    to the Cassandra database.)
-    #
-    #                    to palliate to this current limitation, we
-    #                    instead run the command in snapserver and
-    #                    snapbackend when those get installed
 fi
 
 # vim: ts=4 sw=4 et nocindent
