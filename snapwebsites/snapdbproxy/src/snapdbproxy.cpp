@@ -553,39 +553,51 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
                                  .arg(f_session->get_keys_path())
                                  .arg(listen_address_us)
                                  );
-        QFile file( full_path );
-        if( file.exists() )
+        try
         {
-            // We already have the file, so ignore this.
+            QFile file( full_path );
+            if( file.exists() )
+            {
+                // We already have the file, so ignore this.
+                //
+                SNAP_LOG_TRACE("We already have cert file [")(full_path)("], so ignoring.");
+                return;
+            }
             //
-            SNAP_LOG_TRACE("We already have cert file [")(full_path)("], so ignoring.");
-            return;
+            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+            {
+                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+                SNAP_LOG_ERROR(errmsg);
+                return;
+            }
+            //
+            // ...and stream the file out to disk
+            //
+            QTextStream out( &file );
+            out << message.get_parameter("key");
         }
-        //
-        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        catch( std::exception const& ex )
         {
-            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-            SNAP_LOG_ERROR(errmsg);
-            return;
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
         }
-        //
-        // ...and stream the file out to disk
-        //
-        QTextStream out( &file );
-        out << message.get_parameter("key");
+        catch( ... )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+        }
 
-#if 0
-        // Force a restart, now that we have a new key
-        //
-        // TODO: I would like a better way to do this. It would be nice
-        // to know how many keys to expect first, *then* do a restart.
-        SNAP_LOG_TRACE("Recieved cert file [")(full_path)("], forcing a restart.");
-        f_force_restart = true;
-        stop(false);
-#else
-        SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding into current session.");
-        f_session->add_ssl_cert_file( full_path );
-#endif
+        try
+        {
+            SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding into current session.");
+            f_session->add_ssl_cert_file( full_path );
+        }
+        catch( std::exception const& ex )
+        {
+            SNAP_LOG_ERROR("Cannot add SSL CERT file! what=[")(ex.what())("]");
+        }
+        catch( ... )
+        {
+            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
+        }
 
         return;
     }
