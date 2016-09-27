@@ -58,16 +58,12 @@ SNAP_PLUGIN_START(communicator, 1, 0)
 namespace
 {
 
-// TODO: offer the user a way to change this path?
-//char const * g_service_filename = "/etc/snapwebsites/services.d/service-snapcommunicator.xml";
-
-// TODO: get that path from the XML instead
 char const * g_configuration_filename = "snapcommunicator";
 
-// TODO: get that path from the XML instead and add the /snapwebsites.d/ part
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf";
 
 char const * g_service_filename = "/lib/systemd/system/snapcommunicator.service";
+char const * g_service_override_filename = "/etc/systemd/system/snapcommunicator.service.d/override.conf";
 
 
 void file_descriptor_deleter(int * fd)
@@ -277,7 +273,7 @@ void communicator::on_retrieve_status(snap_manager::server_status & server_statu
     //
     if(vpn::vpn::is_installed())
     {
-        snap_config config("/lib/systemd/system/snapcommunicator.service");
+        snap_config config(g_service_filename, g_service_override_filename);
 
         {
             std::string const after(config[get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD)]);
@@ -524,12 +520,11 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
         //
         affected_services.insert("snapmanagerdaemon");
 
-        QString const filename(g_service_filename);
         f_snap->replace_configuration_value(
-                          filename
+                          g_service_override_filename
                         , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_AFTER_FIELD)
                         , new_value
-                        , snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION | snap_manager::REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST);
+                        , snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION);
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
         p.set_command("systemctl");
@@ -546,12 +541,11 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
         //
         affected_services.insert("snapmanagerdaemon");
 
-        QString const filename(g_service_filename);
         f_snap->replace_configuration_value(
-                          filename
+                          g_service_override_filename
                         , get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_REQUIRE_FIELD)
                         , new_value
-                        , snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION | snap_manager::REPLACE_CONFIGURATION_VALUE_FILE_MUST_EXIST);
+                        , snap_manager::REPLACE_CONFIGURATION_VALUE_SECTION);
         snap::process p("reload daemon");
         p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
         p.set_command("systemctl");
