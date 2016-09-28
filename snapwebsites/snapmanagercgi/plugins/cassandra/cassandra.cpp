@@ -119,22 +119,64 @@ void write_node_to_yaml( const YAML::Node& node )
 }
 
 
-void create_field( snap_manager::server_status & server_status, YAML::Node node, QString const & plugin_name, std::string const & parameter_name )
+void create_seed_field( snap_manager::server_status & server_status, YAML::Node node, QString const & plugin_name )
 {
-    bool found(false);
     try
     {
-        if( node[parameter_name].IsDefined() )
+        QString previous_value;
+        //
+        for( auto seq : node["seed_provider"] )
         {
-            snap_manager::status_t const conf_field
+            for( auto subseq : seq["parameters"] )
+            {
+                previous_value = QString::fromUtf8(subseq["seeds"].Scalar().c_str());
+                break;
+            }
+        }
+
+        snap_manager::status_t const conf_field
+                ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                  , plugin_name
+                  , "seeds"
+                  , previous_value
+                  );
+        server_status.set_field(conf_field);
+        return;
+    }
+    catch( std::exception const& x )
+    {
+        SNAP_LOG_ERROR("create_seed_field() exception caught! what=[")(x.what())("]");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("create_seed_field() unknown exception caught!");
+    }
+
+    // if we get here, that means that there was an error trying to read the yaml file
+    //
+    snap_manager::status_t const conf_field(
+                snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                , plugin_name
+                , "seeds"
+                , QString("There was an error reading \"seeds\" from \"%1\"!").arg(g_cassandra_yaml));
+    server_status.set_field(conf_field);
+}
+
+
+void create_field( snap_manager::server_status & server_status, YAML::Node node, QString const & plugin_name, std::string const & parameter_name )
+{
+    try
+    {
+        snap_manager::status_t const conf_field
                 ( snap_manager::status_t::state_t::STATUS_STATE_INFO
                   , plugin_name
                   , QString::fromUtf8(parameter_name.c_str())
-                  , QString::fromUtf8(node[parameter_name].Scalar().c_str())
-                );
-            server_status.set_field(conf_field);
-            found = true;
-        }
+                  , node[parameter_name].IsDefined()
+                  ? QString::fromUtf8(node[parameter_name].Scalar().c_str())
+                  : QString()
+                    );
+        server_status.set_field(conf_field);
+        return;
     }
     catch( std::exception const& x )
     {
@@ -145,17 +187,14 @@ void create_field( snap_manager::server_status & server_status, YAML::Node node,
         SNAP_LOG_ERROR("create_field() unknown exception caught!");
     }
 
-    if( !found )
-    {
-        // we got the file, but could not find the field as expected
-        //
-        snap_manager::status_t const conf_field(
-                          snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                        , plugin_name
-                        , QString::fromUtf8(parameter_name.c_str())
-                        , QString("\"%1\" is not defined in \"%2\".").arg(parameter_name.c_str()).arg(g_cassandra_yaml));
-        server_status.set_field(conf_field);
-    }
+    // if we get here, that means that there was an error trying to read the yaml file
+    //
+    snap_manager::status_t const conf_field(
+                snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                , plugin_name
+                , QString::fromUtf8(parameter_name.c_str())
+                , QString("There was an error reading \"%1\" from \"%2\"!").arg(parameter_name.c_str()).arg(g_cassandra_yaml));
+    server_status.set_field(conf_field);
 }
 
 
@@ -366,119 +405,85 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
     // get the data
     //
     QFile config_file(g_cassandra_yaml);
-    if( config_file.exists() )
-    {
-        {
-            snap_manager::status_t const conf_field(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "restart_cassandra"
-                            , "");
-            server_status.set_field(conf_field);
-        }
-
-        YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
-        //
-        {
-            bool found = true;
-            for( auto seq : node["seed_provider"] )
-            {
-                for( auto subseq : seq["parameters"] )
-                {
-                    snap_manager::status_t const conf_field
-                        ( snap_manager::status_t::state_t::STATUS_STATE_INFO
-                          , get_plugin_name()
-                          , "seeds"
-                          , QString::fromUtf8(subseq["seeds"].Scalar().c_str())
-                        );
-                    server_status.set_field(conf_field);
-                    found = true;
-                    break;
-                }
-            }
-
-            if( !found )
-            {
-                snap_manager::status_t const conf_field(
-                        snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                        , get_plugin_name()
-                        , "seeds"
-                        , QString("\"seed_provider::parameters::seeds\" is not defined in \"%1\".").arg(g_cassandra_yaml));
-                server_status.set_field(conf_field);
-            }
-        }
-        //
-        create_field(server_status, node, get_plugin_name(), "cluster_name"            );
-        create_field(server_status, node, get_plugin_name(), "listen_address"          );
-        create_field(server_status, node, get_plugin_name(), "rpc_address"             );
-        create_field(server_status, node, get_plugin_name(), "broadcast_rpc_address"   );
-        create_field(server_status, node, get_plugin_name(), "auto_snapshot"           );
-
-        // also add a "join a cluster" field
-        //
-        // TODO: add the field ONLY if the node does not include a
-        //       snap_websites context!
-        {
-            snap_manager::status_t const conf_field(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "join_a_cluster"
-                            , "");
-            server_status.set_field(conf_field);
-        }
-
-        // if joined, we want the user to be able to change the replication factor
-        //
-        {
-            QString const replication_factor(get_replication_factor());
-            // TBD: if replication_factor.isEmpty() do not show?
-            snap_manager::status_t const conf_field(
-                              snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "replication_factor"
-                            , replication_factor);
-            server_status.set_field(conf_field);
-        }
-
-        // Present the server SSL option (to allow node-to-node encryption).
-        //
-        SNAP_LOG_TRACE("on_retrieve_status(): YAML::LoadFile()");
-        node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
-        //
-        {
-            snap_manager::status_t const conf_field
-                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "use_server_ssl"
-                            , node["server_encryption_options"]["internode_encryption"].Scalar().c_str()
-                            );
-            server_status.set_field(conf_field);
-        }
-
-        // Present the client SSL option (to allow client-to-server encryption).
-        //
-        {
-            snap_manager::status_t const conf_field
-                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
-                            , get_plugin_name()
-                            , "use_client_ssl"
-                            , node["client_encryption_options"]["enabled"].Scalar().c_str()
-                            );
-            server_status.set_field(conf_field);
-        }
-    }
-    else //if(info.exists())
+    if( !config_file.exists() )
     {
         // create an error field which is not editable
         //
         snap_manager::status_t const conf_field(
-                          snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                        , get_plugin_name()
-                        , "cassandra_yaml"
-                        , QString("\"%1\" does not exist or cannot be read!").arg(g_cassandra_yaml));
+                    snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                    , get_plugin_name()
+                    , "cassandra_yaml"
+                    , QString("\"%1\" does not exist or cannot be read!").arg(g_cassandra_yaml));
+        server_status.set_field(conf_field);
+        return;
+    }
+
+    {
+        snap_manager::status_t const conf_field(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "restart_cassandra"
+                    , "");
         server_status.set_field(conf_field);
     }
-    // else -- file does not exist
+
+    YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
+    //
+    create_seed_field ( server_status, node, get_plugin_name()  );
+    create_field      ( server_status, node, get_plugin_name(), "cluster_name"          );
+    create_field      ( server_status, node, get_plugin_name(), "listen_address"        );
+    create_field      ( server_status, node, get_plugin_name(), "rpc_address"           );
+    create_field      ( server_status, node, get_plugin_name(), "broadcast_rpc_address" );
+    create_field      ( server_status, node, get_plugin_name(), "auto_snapshot"         );
+
+    // also add a "join a cluster" field
+    //
+    // TODO: add the field ONLY if the node does not include a
+    //       snap_websites context!
+    {
+        snap_manager::status_t const conf_field(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "join_a_cluster"
+                    , "");
+        server_status.set_field(conf_field);
+    }
+
+    // if joined, we want the user to be able to change the replication factor
+    //
+    {
+        QString const replication_factor(get_replication_factor());
+        snap_manager::status_t const conf_field(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "replication_factor"
+                    , replication_factor);
+        server_status.set_field(conf_field);
+    }
+
+    // Present the server SSL option (to allow node-to-node encryption).
+    //
+    {
+        snap_manager::status_t const conf_field
+                ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                  , get_plugin_name()
+                  , "use_server_ssl"
+                  , node["server_encryption_options"]["internode_encryption"].Scalar().c_str()
+                );
+        server_status.set_field(conf_field);
+    }
+
+    // Present the client SSL option (to allow client-to-server encryption).
+    //
+    {
+        snap_manager::status_t const conf_field
+                ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                  , get_plugin_name()
+                  , "use_client_ssl"
+                  , node["client_encryption_options"]["enabled"].Scalar().c_str()
+                );
+        server_status.set_field(conf_field);
+    }
 }
 
 
