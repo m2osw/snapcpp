@@ -1,8 +1,9 @@
 snapcommunicator (1.0.29.4~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: The "show all neighbors" addition introduced a small bug showing
+    a '|' character when the list is empty.
 
- -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 Sep 2016 08:19:47 -0700
 
 snapcommunicator (1.0.29.0~xenial) xenial; urgency=high
 

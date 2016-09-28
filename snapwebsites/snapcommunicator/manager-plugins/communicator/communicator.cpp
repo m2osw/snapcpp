@@ -415,7 +415,7 @@ bool communicator::display_value(QDomElement parent, snap_manager::status_t cons
 
         QString known_neighbors_value(s.get_value());
         int const pos(known_neighbors_value.indexOf('|'));
-        if(pos > 0)
+        if(pos >= 0)
         {
             known_neighbors = known_neighbors_value.mid(0, pos);
             value = known_neighbors_value.mid(pos + 1);
