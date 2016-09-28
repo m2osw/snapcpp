@@ -966,9 +966,9 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         snap_manager::form f(
                   get_plugin_name()
                 , s.get_field_name()
-                , s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT
-                        ? snap_manager::form::FORM_BUTTON_INSTALL
-                        : snap_manager::form::FORM_BUTTON_UNINSTALL
+                , s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_INFO
+                        ? snap_manager::form::FORM_BUTTON_UNINSTALL
+                        : snap_manager::form::FORM_BUTTON_INSTALL
                 );
 
         // the value is the description, although it may include fields
@@ -983,7 +983,7 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
             // fields entirely
             //
             int const pos(value.indexOf("</fields>"));
-            if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT)
+            if(s.get_state() != snap_manager::status_t::state_t::STATUS_STATE_INFO)
             {
                 fields = value.mid(0, pos + 9);
             }
