@@ -1,3 +1,9 @@
+snapwatchdog (0.2.8.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 17:40:40 -0700
+
 snapwatchdog (0.2.8.0~xenial) xenial; urgency=high
 
   * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.

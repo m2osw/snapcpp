@@ -1,3 +1,9 @@
+snapserver (1.0.10.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 17:40:40 -0700
+
 snapserver (1.0.10.0~xenial) xenial; urgency=high
 
   * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.
