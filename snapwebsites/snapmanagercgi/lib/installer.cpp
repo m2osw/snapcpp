@@ -682,10 +682,13 @@ bool manager::installer(QString const & bundle_name, std::string const & command
         std::for_each(packages.begin(), packages.end(),
                 [=, &success](auto const & p)
                 {
-                    // we want to call all the install even if a
-                    // previous one (or the update) failed
-                    //
-                    success = this->install_package(p, command) && success;
+                    if(!p.empty() && p[0] != '!')
+                    {
+                        // we want to call all the install even if a
+                        // previous one (or the update) failed
+                        //
+                        success = this->install_package(p, command) && success;
+                    }
                 });
     }
 
