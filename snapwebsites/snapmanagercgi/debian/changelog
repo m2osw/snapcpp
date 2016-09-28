@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.9.0~xenial) xenial; urgency=high
+
+  * SNAP-440: now if a value isn't there, you can create it.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Sep 2016 13:00:05 -0700
+
 snapmanagercgi (1.1.8.0~xenial) xenial; urgency=high
 
   * SNAP-110: Ignore !<name> when installing packages.
