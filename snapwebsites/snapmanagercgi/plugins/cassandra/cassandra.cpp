@@ -1368,7 +1368,21 @@ void import_server_key( const QString& msg_listen_address, const QString& key )
     if( system( cmd.toUtf8().data() ) != 0 )
     {
         SNAP_LOG_ERROR("Cannot execute command '")(cmd)("'! Key is likely already in the truststore.");
+        return;
     }
+
+    // restart cassandra
+    //
+    // the stop can be extremely long and because of that, a
+    // system restart does not always work correctly so we have
+    // our own tool to restart cassandra
+    //
+    SNAP_LOG_TRACE("Restarting cassandra because we imported a new public cert.");
+    //
+    snap::process p("restart cassandra");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+    p.set_command("snaprestartcassandra");
+    NOTUSED(p.run());           // errors are automatically logged by snap::process
 }
 
 }
