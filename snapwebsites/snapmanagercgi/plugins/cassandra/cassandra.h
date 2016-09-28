@@ -81,6 +81,8 @@ public:
     void                    on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed);
 
 private:
+    bool                    is_installed();
+
     void                    get_cassandra_info(snap::snap_communicator_message & status);
     void                    join_cassandra_node(snap::snap_communicator_message const & message);
     QString                 get_replication_factor();

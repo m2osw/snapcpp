@@ -358,6 +358,11 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
+    if(!is_installed())
+    {
+        return;
+    }
+
     // get the data
     //
     QFile config_file(g_cassandra_yaml);
@@ -465,6 +470,15 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(conf_field);
     }
     // else -- file does not exist
+}
+
+
+bool cassandra::is_installed()
+{
+    // for now we just check whether the executable is here, this is
+    // faster than checking whether the package is installed.
+    //
+    return access("/usr/sbin/cassandra", R_OK | X_OK) == 0;
 }
 
 
