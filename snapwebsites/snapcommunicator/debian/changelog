@@ -1,4 +1,4 @@
-snapcommunicator (1.0.29.3~xenial) xenial; urgency=high
+snapcommunicator (1.0.29.4~xenial) xenial; urgency=high
 
   * SNAP-110: The "show all neighbors" addition introduced a small bug showing
     a '|' character when the list is empty.
