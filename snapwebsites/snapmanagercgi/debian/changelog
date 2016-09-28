@@ -1,8 +1,14 @@
-snapmanagercgi (1.1.7.0~xenial) xenial; urgency=high
+snapmanagercgi (1.1.8.0~xenial) xenial; urgency=high
 
   * SNAP-110: Ignore !<name> when installing packages.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 Sep 2016 11:28:54 -0700
+
+snapmanagercgi (1.1.7.0~xenial) xenial; urgency=high
+
+  * SNAP-440: turn off cassandra reboot after every change
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Sep 2016 10:36:48 -0700
 
 snapmanagercgi (1.1.6.0~xenial) xenial; urgency=high
 
