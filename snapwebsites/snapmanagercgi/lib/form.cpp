@@ -341,6 +341,26 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
         QDomText text(doc.createTextNode("Refresh"));
         button.appendChild(text);
     }
+    if((f_buttons & FORM_BUTTON_RESTART) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "restart");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Restart Service"));
+        button.appendChild(text);
+    }
+    if((f_buttons & FORM_BUTTON_RESTART_EVERYWHERE) != 0)
+    {
+        QDomElement button(doc.createElement("button"));
+        button.setAttribute("type", "submit");
+        button.setAttribute("name", "restart_everywhere");
+        form_tag.appendChild(button);
+
+        QDomText text(doc.createTextNode("Restart Service Everywhere"));
+        button.appendChild(text);
+    }
 }
 
 

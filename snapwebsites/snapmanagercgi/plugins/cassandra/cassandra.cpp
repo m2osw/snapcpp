@@ -363,6 +363,15 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
     QFile config_file(g_cassandra_yaml);
     if( config_file.exists() )
     {
+        {
+            snap_manager::status_t const conf_field(
+                              snap_manager::status_t::state_t::STATUS_STATE_INFO
+                            , get_plugin_name()
+                            , "restart_cassandra"
+                            , "");
+            server_status.set_field(conf_field);
+        }
+
         YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
         //
         {
@@ -394,11 +403,11 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
             }
         }
         //
-        create_field(server_status, node,       get_plugin_name(), "cluster_name"            );
-        create_field(server_status, node,       get_plugin_name(), "listen_address"          );
-        create_field(server_status, node,       get_plugin_name(), "rpc_address"             );
-        create_field(server_status, node,       get_plugin_name(), "broadcast_rpc_address"   );
-        create_field(server_status, node,       get_plugin_name(), "auto_snapshot"           );
+        create_field(server_status, node, get_plugin_name(), "cluster_name"            );
+        create_field(server_status, node, get_plugin_name(), "listen_address"          );
+        create_field(server_status, node, get_plugin_name(), "rpc_address"             );
+        create_field(server_status, node, get_plugin_name(), "broadcast_rpc_address"   );
+        create_field(server_status, node, get_plugin_name(), "auto_snapshot"           );
 
         // also add a "join a cluster" field
         //
@@ -488,6 +497,19 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
 bool cassandra::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
     QDomDocument doc(parent.ownerDocument());
+
+    if(s.get_field_name() == "restart_cassandra")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESTART
+                  | snap_manager::form::FORM_BUTTON_RESTART_EVERYWHERE
+                );
+
+        f.generate(parent, uri);
+        return true;
+    }
 
     if(s.get_field_name() == "cluster_name")
     {
@@ -767,6 +789,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                 , s.get_field_name()
                 ,   snap_manager::form::FORM_BUTTON_RESET
                   | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
@@ -792,6 +815,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                 , s.get_field_name()
                 ,   snap_manager::form::FORM_BUTTON_RESET
                   | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
@@ -811,6 +835,278 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
     }
 
     return false;
+}
+
+
+/** \brief Save 'new_value' in field 'field_name'.
+ *
+ * This function saves 'new_value' in 'field_name'.
+ *
+ * \param[in] button_name  The name of the button the user clicked.
+ * \param[in] field_name  The name of the field to update.
+ * \param[in] new_value  The new value to save in that field.
+ * \param[in] old_or_installation_value  The old value, just in case
+ *            (usually ignored,) or the installation values (only
+ *            for the self plugin that manages bundles.)
+ *
+ * \return true if the new_value was applied successfully.
+ */
+bool cassandra::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
+{
+    NOTUSED(old_or_installation_value);
+
+    if( field_name == "restart_cassandra" )
+    {
+        affected_services.insert("cassandra-restart");
+        return true;
+    }
+
+    bool const use_default(button_name == "restore_default");
+
+    if(field_name == "join_a_cluster")
+    {
+        if(new_value == f_snap->get_server_name())
+        {
+            SNAP_LOG_ERROR("trying to join yourself (\"")(new_value)("\") is not going to work.");
+        }
+        else if(f_joining)
+        {
+            SNAP_LOG_ERROR("trying to join when you already ran that process. If it failed, restart snapmanagerdaemon and try again.");
+        }
+        else
+        {
+            f_joining = true;
+
+            snap::snap_communicator_message cassandra_query;
+            cassandra_query.set_server(new_value);
+            cassandra_query.set_service("snapmanagerdaemon");
+            cassandra_query.set_command("CASSANDRAQUERY");
+            get_cassandra_info(cassandra_query);
+            f_snap->forward_message(cassandra_query);
+        }
+
+        return true;
+    }
+
+    if(field_name == "replication_factor")
+    {
+        set_replication_factor(new_value);
+        return true;
+    }
+
+    std::string const name( field_name.toUtf8().data() );
+    std::string const val ( new_value.toUtf8().data()  );
+
+    if( field_name == "cluster_name" )
+    {
+        //affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if( field_name == "seeds" )
+    {
+        //affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        for( auto seq : full_nodes["seed_provider"] )
+        {
+            for( auto subseq : seq["parameters"] )
+            {
+                SNAP_LOG_TRACE("writings 'seeds' with val=[")(val)("], new_value=[")(new_value)("]");
+                subseq["seeds"].SetTag("?");
+                subseq["seeds"] = val;
+                break;
+            }
+        }
+
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if  ( field_name == "listen_address"
+       || field_name == "rpc_address"
+       || field_name == "broadcast_rpc_address"
+        )
+    {
+        //affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = use_default ? "localhost" : val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if(field_name == "auto_snapshot")
+    {
+        //affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+        full_nodes[name] = use_default ? "false" : val;
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if( field_name == "use_server_ssl" )
+    {
+        //affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        YAML::Node seo( full_nodes["server_encryption_options"] );
+        seo["internode_encryption"] = val;
+        seo["keystore"]             = "/etc/cassandra/ssl/keystore.jks";
+        seo["keystore_password"]    = g_keystore_password.toUtf8().data();
+        seo["truststore"]           = "/etc/cassandra/ssl/keystore.jks";
+        seo["truststore_password"]  = g_truststore_password.toUtf8().data();
+
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    if( field_name == "use_client_ssl" )
+    {
+        //affected_services.insert("cassandra-restart");
+
+        YAML::Node full_nodes = read_node_from_yaml();
+
+        auto ceo( full_nodes["client_encryption_options"] );
+        ceo["enabled"]             = val;
+        ceo["optional"]            = "false";
+        ceo["keystore"]            = "/etc/cassandra/ssl/keystore.jks";
+        ceo["keystore_password"]   = g_keystore_password.toUtf8().data();
+
+        write_node_to_yaml( full_nodes );
+        return true;
+    }
+
+    return false;
+}
+
+
+
+void cassandra::on_handle_affected_services(std::set<QString> & affected_services)
+{
+    bool restarted(false);
+
+    auto const & it_restart(std::find(affected_services.begin(), affected_services.end(), QString("cassandra-restart")));
+    if(it_restart != affected_services.end())
+    {
+        // remove since we are handling that one here
+        //
+        affected_services.erase(it_restart);
+
+        // restart cassandra
+        //
+        // the stop can be extremely long and because of that, a
+        // system restart does not always work correctly so we have
+        // our own tool to restart cassandra
+        //
+        snap::process p("restart cassandra");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("snaprestartcassandra");
+        NOTUSED(p.run());           // errors are automatically logged by snap::process
+
+        restarted = true;
+    }
+
+    auto const & it_reload(std::find(affected_services.begin(), affected_services.end(), QString("cassandra-reload")));
+    if(it_reload != affected_services.end())
+    {
+        // remove since we are handling that one here
+        //
+        affected_services.erase(it_reload);
+
+        // do the reload only if we did not already do a restart (otherwise
+        // it is going to be useless)
+        //
+        if(!restarted)
+        {
+            // reload cassandra
+            //
+            snap::process p("reload cassandra");
+            p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+            p.set_command("systemctl");
+            p.add_argument("reload");
+            p.add_argument("cassandra");
+            NOTUSED(p.run());           // errors are automatically logged by snap::process
+        }
+    }
+}
+
+
+void cassandra::send_client_key( snap::snap_communicator_message const* message )
+{
+    // A client requested the public key for authentication.
+    //
+    QFile file( g_ssl_keys_dir + "client.pem" );
+    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        SNAP_LOG_TRACE("client.pem file found, sending to requesing app");
+
+        QTextStream in(&file);
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRAKEY");
+        //
+        if( message == nullptr )
+        {
+            //cmd.set_server("*");
+            cmd.set_service("*");
+        }
+        else
+        {
+            cmd.reply_to(*message);
+        }
+        //
+        cmd.add_parameter( "key"   , in.readAll() );
+        cmd.add_parameter( "cache" , "ttl=60"     );
+        get_cassandra_info(cmd);
+        f_snap->forward_message(cmd);
+
+        SNAP_LOG_TRACE("CASSANDRAKEY message sent!");
+    }
+    else
+    {
+        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+        SNAP_LOG_ERROR(qPrintable(errmsg));
+        //throw vpn_exception( errmsg );
+    }
+}
+
+
+void cassandra::send_server_key()
+{
+    // Send the node key for the requesting peer.
+    //
+    QFile file( g_ssl_keys_dir + "node.cer" );
+    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        SNAP_LOG_TRACE("node.cer file found, broadcasting to all...");
+
+        QTextStream in(&file);
+        //
+        snap::snap_communicator_message cmd;
+        cmd.set_command("CASSANDRASERVERKEY");
+        cmd.set_service("*");
+        //cmd.set_service("snapmanagerdaemon");
+        cmd.add_parameter( "key"   , in.readAll()    );
+        cmd.add_parameter( "cache" , "ttl=60"        );
+        get_cassandra_info(cmd);
+        f_snap->forward_message(cmd);
+
+        SNAP_LOG_TRACE("CASSANDRASERVERKEY sent!");
+    }
+    else
+    {
+        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
+        SNAP_LOG_ERROR(errmsg);
+        //throw vpn_exception( errmsg );
+    }
 }
 
 
@@ -981,272 +1277,6 @@ void cassandra::generate_keys()
     if( !copied )
     {
         SNAP_LOG_ERROR("Cannot copy [")(source_client_pem)("] to [")(dest_client_pem)("]");
-    }
-}
-
-
-/** \brief Save 'new_value' in field 'field_name'.
- *
- * This function saves 'new_value' in 'field_name'.
- *
- * \param[in] button_name  The name of the button the user clicked.
- * \param[in] field_name  The name of the field to update.
- * \param[in] new_value  The new value to save in that field.
- * \param[in] old_or_installation_value  The old value, just in case
- *            (usually ignored,) or the installation values (only
- *            for the self plugin that manages bundles.)
- *
- * \return true if the new_value was applied successfully.
- */
-bool cassandra::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
-{
-    NOTUSED(old_or_installation_value);
-
-    bool const use_default(button_name == "restore_default");
-
-    if(field_name == "join_a_cluster")
-    {
-        if(new_value == f_snap->get_server_name())
-        {
-            SNAP_LOG_ERROR("trying to join yourself (\"")(new_value)("\") is not going to work.");
-        }
-        else if(f_joining)
-        {
-            SNAP_LOG_ERROR("trying to join when you already ran that process. If it failed, restart snapmanagerdaemon and try again.");
-        }
-        else
-        {
-            f_joining = true;
-
-            snap::snap_communicator_message cassandra_query;
-            cassandra_query.set_server(new_value);
-            cassandra_query.set_service("snapmanagerdaemon");
-            cassandra_query.set_command("CASSANDRAQUERY");
-            get_cassandra_info(cassandra_query);
-            f_snap->forward_message(cassandra_query);
-        }
-
-        return true;
-    }
-
-    if(field_name == "replication_factor")
-    {
-        set_replication_factor(new_value);
-        return true;
-    }
-
-    std::string const name( field_name.toUtf8().data() );
-    std::string const val ( new_value.toUtf8().data()  );
-
-    if( field_name == "cluster_name" )
-    {
-        affected_services.insert("cassandra-restart");
-
-        YAML::Node full_nodes = read_node_from_yaml();
-        full_nodes[name] = val;
-        write_node_to_yaml( full_nodes );
-        return true;
-    }
-
-    if( field_name == "seeds" )
-    {
-        affected_services.insert("cassandra-restart");
-
-        YAML::Node full_nodes = read_node_from_yaml();
-
-        for( auto seq : full_nodes["seed_provider"] )
-        {
-            for( auto subseq : seq["parameters"] )
-            {
-                SNAP_LOG_TRACE("writings 'seeds' with val=[")(val)("], new_value=[")(new_value)("]");
-                subseq["seeds"].SetTag("?");
-                subseq["seeds"] = val;
-                break;
-            }
-        }
-
-        write_node_to_yaml( full_nodes );
-        return true;
-    }
-
-    if  ( field_name == "listen_address"
-       || field_name == "rpc_address"
-       || field_name == "broadcast_rpc_address"
-        )
-    {
-        affected_services.insert("cassandra-restart");
-
-        YAML::Node full_nodes = read_node_from_yaml();
-        full_nodes[name] = use_default ? "localhost" : val;
-        write_node_to_yaml( full_nodes );
-        return true;
-    }
-
-    if(field_name == "auto_snapshot")
-    {
-        affected_services.insert("cassandra-restart");
-
-        YAML::Node full_nodes = read_node_from_yaml();
-        full_nodes[name] = use_default ? "false" : val;
-        write_node_to_yaml( full_nodes );
-        return true;
-    }
-
-    if( field_name == "use_server_ssl" )
-    {
-        affected_services.insert("cassandra-restart");
-
-        YAML::Node full_nodes = read_node_from_yaml();
-
-        YAML::Node seo( full_nodes["server_encryption_options"] );
-        seo["internode_encryption"] = val;
-        seo["keystore"]             = "/etc/cassandra/ssl/keystore.jks";
-        seo["keystore_password"]    = g_keystore_password.toUtf8().data();
-        seo["truststore"]           = "/etc/cassandra/ssl/keystore.jks";
-        seo["truststore_password"]  = g_truststore_password.toUtf8().data();
-
-        write_node_to_yaml( full_nodes );
-        return true;
-    }
-
-    if( field_name == "use_client_ssl" )
-    {
-        affected_services.insert("cassandra-restart");
-
-        YAML::Node full_nodes = read_node_from_yaml();
-
-        auto ceo( full_nodes["client_encryption_options"] );
-        ceo["enabled"]             = val;
-        ceo["optional"]            = "false";
-        ceo["keystore"]            = "/etc/cassandra/ssl/keystore.jks";
-        ceo["keystore_password"]   = g_keystore_password.toUtf8().data();
-
-        write_node_to_yaml( full_nodes );
-        return true;
-    }
-
-    return false;
-}
-
-
-
-void cassandra::on_handle_affected_services(std::set<QString> & affected_services)
-{
-    bool restarted(false);
-
-    auto const & it_restart(std::find(affected_services.begin(), affected_services.end(), QString("cassandra-restart")));
-    if(it_restart != affected_services.end())
-    {
-        // remove since we are handling that one here
-        //
-        affected_services.erase(it_restart);
-
-        // restart cassandra
-        //
-        // the stop can be extremely long and because of that, a
-        // system restart does not always work correctly so we have
-        // our own tool to restart cassandra
-        //
-        snap::process p("restart cassandra");
-        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
-        p.set_command("snaprestartcassandra");
-        NOTUSED(p.run());           // errors are automatically logged by snap::process
-
-        restarted = true;
-    }
-
-    auto const & it_reload(std::find(affected_services.begin(), affected_services.end(), QString("cassandra-reload")));
-    if(it_reload != affected_services.end())
-    {
-        // remove since we are handling that one here
-        //
-        affected_services.erase(it_reload);
-
-        // do the reload only if we did not already do a restart (otherwise
-        // it is going to be useless)
-        //
-        if(!restarted)
-        {
-            // reload cassandra
-            //
-            snap::process p("reload cassandra");
-            p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
-            p.set_command("systemctl");
-            p.add_argument("reload");
-            p.add_argument("cassandra");
-            NOTUSED(p.run());           // errors are automatically logged by snap::process
-        }
-    }
-}
-
-
-void cassandra::send_client_key( snap::snap_communicator_message const* message )
-{
-    // A client requested the public key for authentication.
-    //
-    QFile file( g_ssl_keys_dir + "client.pem" );
-    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
-    {
-        SNAP_LOG_TRACE("client.pem file found, sending to requesing app");
-
-        QTextStream in(&file);
-        //
-        snap::snap_communicator_message cmd;
-        cmd.set_command("CASSANDRAKEY");
-        //
-        if( message == nullptr )
-        {
-            //cmd.set_server("*");
-            cmd.set_service("*");
-        }
-        else
-        {
-            cmd.reply_to(*message);
-        }
-        //
-        cmd.add_parameter( "key"   , in.readAll() );
-        cmd.add_parameter( "cache" , "ttl=60"     );
-        get_cassandra_info(cmd);
-        f_snap->forward_message(cmd);
-
-        SNAP_LOG_TRACE("CASSANDRAKEY message sent!");
-    }
-    else
-    {
-        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
-        SNAP_LOG_ERROR(qPrintable(errmsg));
-        //throw vpn_exception( errmsg );
-    }
-}
-
-
-void cassandra::send_server_key()
-{
-    // Send the node key for the requesting peer.
-    //
-    QFile file( g_ssl_keys_dir + "node.cer" );
-    if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
-    {
-        SNAP_LOG_TRACE("node.cer file found, broadcasting to all...");
-
-        QTextStream in(&file);
-        //
-        snap::snap_communicator_message cmd;
-        cmd.set_command("CASSANDRASERVERKEY");
-        cmd.set_service("*");
-        //cmd.set_service("snapmanagerdaemon");
-        cmd.add_parameter( "key"   , in.readAll()    );
-        cmd.add_parameter( "cache" , "ttl=60"        );
-        get_cassandra_info(cmd);
-        f_snap->forward_message(cmd);
-
-        SNAP_LOG_TRACE("CASSANDRASERVERKEY sent!");
-    }
-    else
-    {
-        QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
-        SNAP_LOG_ERROR(errmsg);
-        //throw vpn_exception( errmsg );
     }
 }
 

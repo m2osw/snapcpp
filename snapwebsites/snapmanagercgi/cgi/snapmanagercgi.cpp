@@ -593,7 +593,9 @@ int manager_cgi::process_post()
                 "reboot",
                 "upgrade",
                 "upgrade_everywhere",
-                "refresh"
+                "refresh",
+                "restart",
+                "restart_everywhere"
             };
     auto const & button_it(std::find_first_of(
                 f_post_variables.begin(), f_post_variables.end(),
@@ -765,7 +767,8 @@ int manager_cgi::process_post()
         //
         snap::snap_communicator_message modify_settings;
         if(button_name == "save_everywhere"
-        || button_name == "upgrade_everywhere")
+        || button_name == "upgrade_everywhere"
+        || button_name == "restart_everywhere")
         {
             // save everywhere means sending to all snapmanagerdaemons
             // anywhere in the cluster

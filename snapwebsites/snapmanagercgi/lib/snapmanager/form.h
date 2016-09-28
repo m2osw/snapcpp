@@ -110,6 +110,8 @@ public:
     static button_t const       FORM_BUTTON_UPGRADE            = 0x00000080;
     static button_t const       FORM_BUTTON_UPGRADE_EVERYWHERE = 0x00000100;
     static button_t const       FORM_BUTTON_REFRESH            = 0x00000200;
+    static button_t const       FORM_BUTTON_RESTART            = 0x00000400;
+    static button_t const       FORM_BUTTON_RESTART_EVERYWHERE = 0x00000800;
 
                         form(QString const & plugin_name, QString const & field_name, button_t button = FORM_BUTTON_NONE);
 
