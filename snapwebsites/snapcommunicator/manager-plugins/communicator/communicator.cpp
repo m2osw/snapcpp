@@ -333,7 +333,7 @@ QString communicator::get_known_neighbors()
         {
             if(!neighbors.isEmpty())
             {
-                neighbors = ", ";
+                neighbors += ", ";
             }
 
             QString const line(QString::fromUtf8(buf, r).trimmed());
