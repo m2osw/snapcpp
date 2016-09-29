@@ -917,7 +917,11 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         if( new_value == "purge_ssl_keys" )
         {
-            snap::NOTUSED(system( "rm -rf /etc/cassandra/keys /etc/cassandra/public /var/lib/snapwebsites/keys" ));
+            if( system( "rm -rf /etc/cassandra/ssl /etc/cassandra/public /var/lib/snapwebsites/keys" ) != 0 )
+            {
+                SNAP_LOG_ERROR("Cannot remove keys directories!");
+            }
+            //
             generate_keys();
             send_client_key( true );
             send_server_key();

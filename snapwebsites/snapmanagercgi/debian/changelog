@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.11.0~xenial) xenial; urgency=high
+
+  * SNAP-440: Fixed bug where /etc/cassandra/ssl was not being deleted on purge.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Sep 2016 22:39:36 -0700
+
 snapmanagercgi (1.1.10.0~xenial) xenial; urgency=high
 
   * SNAP-440: Added purge-keys ability for cassandra.
