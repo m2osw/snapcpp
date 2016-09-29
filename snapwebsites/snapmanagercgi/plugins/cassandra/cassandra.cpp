@@ -427,6 +427,15 @@ void cassandra::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(conf_field);
     }
 
+    {
+        snap_manager::status_t const conf_field(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , "purge_ssl_keys"
+                    , "");
+        server_status.set_field(conf_field);
+    }
+
     YAML::Node node = YAML::LoadFile( g_cassandra_yaml.toUtf8().data() );
     //
     create_seed_field ( server_status, node, get_plugin_name()  );
@@ -525,6 +534,30 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                 ,   snap_manager::form::FORM_BUTTON_RESTART
                   | snap_manager::form::FORM_BUTTON_RESTART_EVERYWHERE
                 );
+
+        f.generate(parent, uri);
+        return true;
+    }
+
+    if(s.get_field_name() == "purge_ssl_keys")
+    {
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Purge all SSL keys! Type in 'purge_ssl_keys' to engage, then click 'Save' or 'Save Everywhere'."
+                        , s.get_field_name()
+                        , ""
+                        , "Be careful with this option--this will delete the entire /etc/cassandra/ssl directory"
+                          " and blow away the public keys as well. It will regenerate new key pairs, and instruct snapdbproxy to accept"
+                          " new versions of the key for this IP. It will not restart the Cassandra server, however"
+                          " so you need to do that by hand (using the 'Restart Cassandra' option)."
+                        ));
+        f.add_widget(field);
 
         f.generate(parent, uri);
         return true;
@@ -884,6 +917,26 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
         return true;
     }
 
+    if( field_name == "purge_ssl_keys" )
+    {
+        if( new_value == "purge_ssl_keys" )
+        {
+            if( system( "rm -rf /etc/cassandra/ssl /etc/cassandra/public /var/lib/snapwebsites/keys" ) != 0 )
+            {
+                SNAP_LOG_ERROR("Cannot remove keys directories!");
+            }
+            //
+            generate_keys();
+            send_client_key( true );
+            send_server_key();
+        }
+        else
+        {
+            SNAP_LOG_WARNING("Not purging keys, since user did not type in 'purge_ssl_keys'.");
+        }
+        return true;
+    }
+
     bool const use_default(button_name == "restore_default");
 
     if(field_name == "join_a_cluster")
@@ -1062,7 +1115,7 @@ void cassandra::on_handle_affected_services(std::set<QString> & affected_service
 }
 
 
-void cassandra::send_client_key( snap::snap_communicator_message const* message )
+void cassandra::send_client_key( bool const force, snap::snap_communicator_message const* message )
 {
     // A client requested the public key for authentication.
     //
@@ -1088,6 +1141,10 @@ void cassandra::send_client_key( snap::snap_communicator_message const* message 
         //
         cmd.add_parameter( "key"   , in.readAll() );
         cmd.add_parameter( "cache" , "ttl=60"     );
+        if( force )
+        {
+            cmd.add_parameter( "force", "true" );
+        }
         get_cassandra_info(cmd);
         f_snap->forward_message(cmd);
 
@@ -1147,6 +1204,10 @@ void cassandra::generate_keys()
     }
 
     QString const listen_address( get_local_listen_address() );
+    if( listen_address.isEmpty() )
+    {
+        SNAP_LOG_ERROR( "/etc/cassandra/cassandra.yaml does not contain a 'listen_address' entry! Cannot generate keys!" );
+    }
 
     QDir ssl_dir(g_ssl_keys_dir);
     if( ssl_dir.exists() )
@@ -1488,7 +1549,7 @@ void cassandra::on_process_plugin_message(snap::snap_communicator_message const 
     else if( command == "CASSANDRAKEYS" )
     {
         SNAP_LOG_TRACE("Processing command CASSANDRAKEYS");
-        send_client_key( &message );
+        send_client_key( false, &message );
         processed = true;
     }
     else if( command == "CASSANDRASERVERKEY" )

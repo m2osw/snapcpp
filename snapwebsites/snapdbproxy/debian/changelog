@@ -1,3 +1,15 @@
+snapdbproxy (1.1.6.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 29 Sep 2016 02:00:48 -0700
+
+snapdbproxy (1.1.6.0~xenial) xenial; urgency=high
+
+  * SNAP-440: Added purge-keys ability for cassandra.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Sep 2016 19:01:36 -0700
+
 snapdbproxy (1.1.5.3~xenial) xenial; urgency=high
 
   * Nightly build.
