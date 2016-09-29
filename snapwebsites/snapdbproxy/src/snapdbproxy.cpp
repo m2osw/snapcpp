@@ -558,10 +558,19 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
             QFile file( full_path );
             if( file.exists() )
             {
-                // We already have the file, so ignore this.
-                //
-                SNAP_LOG_TRACE("We already have cert file [")(full_path)("], so ignoring.");
-                return;
+                if( message.has_parameter("force") )
+                {
+                    SNAP_LOG_INFO("User has requested that the key for [")
+                            (message.get_parameter("listen_address"))
+                            ("] be overridded, even though we have it already.");
+                }
+                else
+                {
+                    // We already have the file, so ignore this.
+                    //
+                    SNAP_LOG_TRACE("We already have cert file [")(full_path)("], so ignoring.");
+                    return;
+                }
             }
             //
             if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
@@ -573,22 +582,14 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
             //
             // ...and stream the file out to disk
             //
+            QString const key( message.get_parameter("key") );
             QTextStream out( &file );
-            out << message.get_parameter("key");
-        }
-        catch( std::exception const& ex )
-        {
-            SNAP_LOG_ERROR("Cannot write SSL CERT file! what=[")(ex.what())("]");
-        }
-        catch( ... )
-        {
-            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
-        }
+            out << key;
 
-        try
-        {
+            // Make sure it's imported into the session...
+            //
             SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding into current session.");
-            f_session->add_ssl_cert_file( full_path );
+            f_session->add_ssl_trusted_cert( key );
         }
         catch( std::exception const& ex )
         {

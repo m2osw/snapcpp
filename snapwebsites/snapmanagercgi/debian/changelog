@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.10.0~xenial) xenial; urgency=high
+
+  * SNAP-440: Added purge-keys ability for cassandra.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Sep 2016 19:00:30 -0700
+
 snapmanagercgi (1.1.9.0~xenial) xenial; urgency=high
 
   * SNAP-440: now if a value isn't there, you can create it.
