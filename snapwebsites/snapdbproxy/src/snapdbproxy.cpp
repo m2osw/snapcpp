@@ -769,21 +769,13 @@ void snapdbproxy::process_timeout()
 {
     try
     {
-        // First, add the trusted SSL cert keys to the session
-        // if they exist.
-        //
-        if( use_ssl() )
-        {
-            f_session->add_ssl_keys();
-        }
-
         // connect to Cassandra
         //
         // The Cassandra C/C++ driver is responsible to actually create
         // "physical" connections to any number of nodes so we do not
         // need to monitor those connections.
         //
-        f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
+        f_session->connect( f_cassandra_host_list, f_cassandra_port, use_ssl() ); // throws on failure!
 
         // the connection succeeded, turn off the timer we do not need
         // it for now...

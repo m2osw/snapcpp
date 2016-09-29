@@ -87,12 +87,7 @@ void MainWindow::connectCassandra()
     int     const port( settings.value( "cassandra_port" ).toInt()    );
     try
     {
-        if( settings.value( "use_ssl", true ).toBool() )
-        {
-            f_session->add_ssl_keys();
-        }
-
-        f_session->connect( host, port );
+        f_session->connect( host, port, settings.value( "use_ssl", true ).toBool() );
         //
         //qDebug() << "Working on Cassandra Cluster Named"    << f_session->clusterName();
         //qDebug() << "Working on Cassandra Protocol Version" << f_session->protocolVersion();

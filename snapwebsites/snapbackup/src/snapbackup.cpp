@@ -89,14 +89,11 @@ void snapbackup::connectToCassandra()
     f_session->setLowWaterMark  ( f_opt->get_long("low-watermark")  );
     f_session->setHighWaterMark ( f_opt->get_long("high-watermark") );
 
-    if( !f_opt->is_defined("no-ssl") )
-    {
-        // Turn on SSL encryption if not turned off...
-        //
-        f_session->add_ssl_keys();
-    }
-
-    f_session->connect( f_opt->get_string("host").c_str(), f_opt->get_long("port") );
+    f_session->connect
+            ( f_opt->get_string("host").c_str()
+            , f_opt->get_long("port")
+            , !f_opt->is_defined("no-ssl")
+            );
 }
 
 void snapbackup::exec( QSqlQuery& q )

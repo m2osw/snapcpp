@@ -560,12 +560,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_session->disconnect();
     try
     {
-        if( useSSLCB->isChecked() )
-        {
-            f_session->add_ssl_keys();
-        }
-        //
-        f_session->connect( f_cassandra_host, f_cassandra_port );
+        f_session->connect( f_cassandra_host, f_cassandra_port, useSSLCB->isChecked() );
     }
     catch( const std::exception& ex )
     {
@@ -949,13 +944,7 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
         // (must be done before the connect() below)
         //
         f_session->setTimeout(5 * 60 * 1000);
-
-        if( useSSLCB->isChecked() )
-        {
-            f_session->add_ssl_keys();
-        }
-        //
-        f_session->connect( f_cassandra_host, f_cassandra_port );
+        f_session->connect( f_cassandra_host, f_cassandra_port, useSSLCB->isChecked() );
 
         QString query_str( "CREATE TABLE %1.%2 (key blob, column1 blob, value blob, PRIMARY KEY ((key), column1))\n" );
 

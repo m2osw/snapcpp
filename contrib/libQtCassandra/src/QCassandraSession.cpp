@@ -115,20 +115,22 @@ QCassandraSession::pointer_t QCassandraSession::create()
  * Note that the previous connection is lost whether or not the new one
  * succeeds.
  *
- * \param[in] host      The host, defaults to "localhost" (an IP address,
- * computer
+ * \param[in] host      The host, defaults to "localhost" (an IP address, computer
  *                      hostname, domain name, etc.)
  * \param[in] port      The connection port, defaults to 9042.
  * \param[in] password  Whether the connection makes use of encryption and a
  *                      password (if password is not an empty string).
+ * \param[in] use_ssl   Turn on SSL for connections with Cassandra.
+ *
+ * \sa connect(), add_ssl_keys()
  *
  * \return throws std::runtime_error on failure
  */
-void QCassandraSession::connect( const QString& host, const int port )
+void QCassandraSession::connect( const QString& host, const int port, const bool use_ssl )
 {
     QStringList host_list;
     host_list << host;
-    connect( host_list, port );
+    connect( host_list, port, use_ssl );
 }
 
 
@@ -154,13 +156,24 @@ void QCassandraSession::connect( const QString& host, const int port )
  * \param[in] host_list The list of hosts, AKA contact points (IP addresses,
  *                      computer hostnames, domain names, etc.)
  * \param[in] port      The connection port, defaults to 9042.
+ * \param[in] use_ssl   Turn on SSL for connections with Cassandra.
+ *
+ * \sa connect(), add_ssl_keys()
  *
  * \return throws std::runtime_error on failure
  */
-void QCassandraSession::connect( const QStringList& host_list, const int port )
+void QCassandraSession::connect( const QStringList& host_list, const int port, const bool use_ssl )
 {
     // disconnect any existing connection
+    //
     disconnect();
+
+    // Make sure we add keys if we want SSL.
+    //
+    if( use_ssl )
+    {
+        add_ssl_keys();
+    }
 
     // Create the cluster and specify settings.
     //

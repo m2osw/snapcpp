@@ -1823,7 +1823,7 @@ QString cassandra::get_replication_factor()
     //
     try
     {
-        session->connect( cassandra_host_list, cassandra_port ); // throws on failure!
+        session->connect( cassandra_host_list, cassandra_port, config["cassandra_use_ssl"] == "true" ); // throws on failure!
         if(!session->isConnected())
         {
             // this error should not ever appear since the connect()
@@ -1942,7 +1942,7 @@ void cassandra::set_replication_factor(QString const & replication_factor)
     //
     try
     {
-        session->connect( cassandra_host_list, cassandra_port ); // throws on failure!
+        session->connect( cassandra_host_list, cassandra_port, config["cassandra_use_ssl"] == "true" ); // throws on failure!
         if(!session->isConnected())
         {
             // this error should not ever appear since the connect()

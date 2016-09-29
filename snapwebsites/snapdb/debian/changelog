@@ -1,3 +1,10 @@
+snapdb (1.0.5.0~xenial) xenial; urgency=high
+
+  * SNAP-440: Removed add_ssl_keys() method and replaced with parameter to
+    QCassandraSession::connect() method.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 29 Sep 2016 12:47:27 -0700
+
 snapdb (1.0.4.9~xenial) xenial; urgency=high
 
   * Nightly build.

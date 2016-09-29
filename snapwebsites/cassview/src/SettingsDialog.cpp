@@ -98,11 +98,7 @@ bool SettingsDialog::tryConnection( QWidget* p )
         const QString context = settings.value( CONTEXT_ID, CONTEXT_DEFAULT ).toString();
 
         QCassandraSession::pointer_t session( QCassandraSession::create() );
-        if( settings.value( USESSL_ID, USESSL_DEFAULT ).toBool() )
-        {
-            session->add_ssl_keys();
-        }
-        session->connect( server, port );
+        session->connect( server, port, settings.value( USESSL_ID, USESSL_DEFAULT ).toBool() );
 
         QCassandraSchema::SessionMeta::pointer_t meta( QCassandraSchema::SessionMeta::create( session ) );
         meta->loadSchema();

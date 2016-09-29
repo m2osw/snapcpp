@@ -317,26 +317,11 @@ void snapdb::usage(advgetopt::getopt::status_t status)
     exit(1);
 }
 
-
-/** \brief Add trusted SSL keys we got from the Cassandra nodes
- */
-void snapdb::add_ssl_keys()
-{
-    if( f_opt->is_defined("no-ssl") )
-    {
-        // Don't use SSL
-        return;
-    }
-
-    f_session->add_ssl_keys();
-}
-
 void snapdb::info()
 {
     try
     {
-        add_ssl_keys();
-        f_session->connect(f_host, f_port);
+        f_session->connect( f_host, f_port, !f_opt->is_defined("no-ssl") );
         if(f_session->isConnected())
         {
             // read and display the Cassandra information
@@ -831,8 +816,7 @@ void snapdb::exec()
         f_session->setTimeout(5 * 60 * 60 * 1000);
     }
 
-    add_ssl_keys();
-    f_session->connect( f_host, f_port );
+    f_session->connect( f_host, f_port, !f_opt->is_defined("no-ssl") );
 
     if(f_table.isEmpty())
     {

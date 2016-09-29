@@ -101,14 +101,13 @@ public:
     static pointer_t create();
     ~QCassandraSession();
 
-    void connect( const QString& host = "localhost", const int port = 9042 );
-    void connect( const QStringList& host_list     , const int port = 9042 );
+    void connect( const QString& host = "localhost", const int port = 9042, const bool use_ssl = true );
+    void connect( const QStringList& host_list     , const int port = 9042, const bool use_ssl = true );
     void disconnect();
     bool isConnected() const;
 
     QString const& get_keys_path() const;
     void           set_keys_path( QString const& path );
-    void           add_ssl_keys();
 
     void           add_ssl_trusted_cert( const QString& cert     );
     void           add_ssl_cert_file   ( const QString& filename );
@@ -129,6 +128,7 @@ private:
     QCassandraSession();
 
     void reset_ssl_keys();
+    void add_ssl_keys();
 
     CassTools::cluster_pointer_t        f_cluster;
     CassTools::session_pointer_t        f_session;
