@@ -917,7 +917,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         if( new_value == "purge_ssl_keys" )
         {
-            system( "rm -rf /etc/cassandra/keys /etc/cassandra/public /var/lib/snapwebsites/keys" );
+            snap::NOTUSED(system( "rm -rf /etc/cassandra/keys /etc/cassandra/public /var/lib/snapwebsites/keys" ));
             generate_keys();
             send_client_key( true );
             send_server_key();
