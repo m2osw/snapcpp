@@ -921,7 +921,12 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         if( new_value == "purge_ssl_keys" )
         {
-            if( system( "rm -rf /etc/cassandra/ssl /etc/cassandra/public /var/lib/snapwebsites/keys" ) != 0 )
+            auto session( QtCassandra::QCassandraSession::create() );
+            QString const rm_cmd(
+                        QString("rm -rf /etc/cassandra/ssl /etc/cassandra/public %1")
+                            .arg(session.get_keys_path())
+                        );
+            if( system( rm_cmd.toUtf8().data() ) )
             {
                 SNAP_LOG_ERROR("Cannot remove keys directories!");
             }

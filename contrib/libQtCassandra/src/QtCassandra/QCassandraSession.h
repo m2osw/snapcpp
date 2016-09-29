@@ -137,7 +137,7 @@ private:
     CassTools::timeout_t                f_timeout         = DEFAULT_TIMEOUT; // 12s
     uint32_t                            f_high_water_mark = 65536;
     uint32_t                            f_low_water_mark  = 0;
-    QString                             f_keys_path       = "/var/lib/snapwebsites/keys/";
+    QString                             f_keys_path       = "/var/lib/snapwebsites/cassandra-keys/";
 };
 
 
