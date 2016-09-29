@@ -1,3 +1,10 @@
+snapmanagercgi (1.1.14.0~xenial) xenial; urgency=high
+
+  * SNAP-440: The snaprestartcassandra script was not being installed
+    properly.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 29 Sep 2016 14:07:27 -0700
+
 snapmanagercgi (1.1.13.0~xenial) xenial; urgency=high
 
   * SNAP-455: Changed default directory from "/var/lib/snapwebsites/keys" to
