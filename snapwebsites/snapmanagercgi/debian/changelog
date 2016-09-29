@@ -1,7 +1,8 @@
-snapmanagercgi (1.1.14.0~xenial) xenial; urgency=high
+snapmanagercgi (1.1.14.1~xenial) xenial; urgency=high
 
   * SNAP-440: The snaprestartcassandra script was not being installed
     properly.
+  * Fixed the error with the session pointer.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 29 Sep 2016 14:07:27 -0700
 

@@ -924,7 +924,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
             auto session( QtCassandra::QCassandraSession::create() );
             QString const rm_cmd(
                         QString("rm -rf /etc/cassandra/ssl /etc/cassandra/public %1")
-                            .arg(session.get_keys_path())
+                            .arg(session->get_keys_path())
                         );
             if( system( rm_cmd.toUtf8().data() ) )
             {
