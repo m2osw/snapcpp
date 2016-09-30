@@ -10,7 +10,7 @@ Build-Depends: cmake,
     libicu-dev,
     libqt5webkit5-dev,
     libqxcppunit-dev (>= 0.9.2),
-    qt5-default,
+    qt5base-dev,
     snapcmakemodules (>= 1.0.26.7~xenial)
 Standards-Version: 3.9.4
 Section: libs

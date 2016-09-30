@@ -6,7 +6,7 @@ Build-Depends: cmake,
     doxygen,
     graphviz,
     libboost-dev | libboost1.49-dev,
-    qt5-default,
+    qt5base-dev,
     snapcmakemodules (>= 1.0.26.7~xenial)
 Standards-Version: 3.9.4
 Section: libs
