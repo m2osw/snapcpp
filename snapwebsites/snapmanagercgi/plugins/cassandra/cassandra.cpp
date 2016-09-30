@@ -1158,8 +1158,7 @@ void cassandra::send_client_key( bool const force, snap::snap_communicator_messa
     else
     {
         QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
-        SNAP_LOG_ERROR(qPrintable(errmsg));
-        //throw vpn_exception( errmsg );
+        SNAP_LOG_INFO(errmsg);
     }
 }
 
@@ -1190,7 +1189,6 @@ void cassandra::send_server_key()
     {
         QString const errmsg(QString("Cannot open '%1' for reading!").arg(file.fileName()));
         SNAP_LOG_ERROR(errmsg);
-        //throw vpn_exception( errmsg );
     }
 }
 
@@ -1394,14 +1392,21 @@ void cassandra::on_communication_ready()
     //get_cassandra_info(cassandra_query);
     //f_snap->forward_message(cassandra_query);
 
-    // Make sure server keys are generated.
+    // If this is a system with Cassandra installed, generate the keys
+    // and distribute them.
     //
-    generate_keys();
+    QFile config_file(g_cassandra_yaml);
+    if( config_file.exists() )
+    {
+        // Make sure server keys are generated.
+        //
+        generate_keys();
 
-    // Next, send keys to everyone
-    //
-    send_client_key();
-    send_server_key();
+        // Next, send keys to everyone
+        //
+        send_client_key();
+        send_server_key();
+    }
 }
 
 

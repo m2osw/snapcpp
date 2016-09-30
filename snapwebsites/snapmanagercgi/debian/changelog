@@ -1,3 +1,10 @@
+snapmanagercgi (1.1.14.2~xenial) xenial; urgency=high
+
+  * SNAP-440: Put a guard around the key generation stuff. If cassandra.yaml
+    is not on the system, we assume Cassandra is not installed on this box.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 29 Sep 2016 17:02:27 -0700
+
 snapmanagercgi (1.1.14.1~xenial) xenial; urgency=high
 
   * SNAP-440: The snaprestartcassandra script was not being installed
