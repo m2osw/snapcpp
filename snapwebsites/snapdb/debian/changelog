@@ -1,3 +1,9 @@
+snapdb (1.0.5.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 30 Sep 2016 02:00:49 -0700
+
 snapdb (1.0.5.0~xenial) xenial; urgency=high
 
   * SNAP-440: Removed add_ssl_keys() method and replaced with parameter to

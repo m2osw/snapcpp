@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 libsnapwebsites (1.1.17.0~xenial) xenial; urgency=high
+=======
+libsnapwebsites (1.1.16.6~xenial) xenial; urgency=high
+>>>>>>> c1907cb3be06e19b7610c65dc1b3d6f1910af10c
 
   * SNAP-378: Applied fix so the do_update() calls only happen when we use the
     snapinstallwebsite command line. In other words, it is now in the
