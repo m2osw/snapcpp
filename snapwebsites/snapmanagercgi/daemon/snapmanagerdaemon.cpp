@@ -259,6 +259,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             //      to settle first?
             //
             reset_aptcheck();
+            return;
         }
         break;
 

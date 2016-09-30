@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.18.0~xenial) xenial; urgency=high
+
+  * SNAP-462: missed adding the return statement to the new message handler.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 30 Sep 2016 13:34:49 -0700
+
 snapmanagercgi (1.1.17.0~xenial) xenial; urgency=high
 
   * SNAP-462: message parameter names cannot include a dash, use '_' instead.
