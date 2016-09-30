@@ -5,7 +5,7 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    qt5-default,
+    qt5base-dev,
     snapcmakemodules (>= 1.0.26.7~xenial)
 Standards-Version: 3.9.4
 Section: libs
@@ -16,7 +16,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libQtSerializa
 Package: libqtserialization-dev
 Section: libdevel
 Architecture: any
-Depends: libqtserialization (= ${binary:Version}), ${misc:Depends}, qt5-default
+Depends: libqtserialization (= ${binary:Version}), ${misc:Depends}
 Description: Serialization Made Easy with Qt
  The libQtSerialization library is a Qt extension that makes it really easy to
  serialize your data in a forward and backward compatible way.
