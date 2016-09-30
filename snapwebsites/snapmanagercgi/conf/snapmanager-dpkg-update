@@ -1,1 +1,1 @@
-post-invoke=/usr/bin/snapsignal "snapmanagerdaemon/DPKGUPDATE hook-action=\"$DPKG_HOOK_ACTION\""
+post-invoke=/usr/bin/snapsignal "snapmanagerdaemon/DPKGUPDATE hook_action=\"$DPKG_HOOK_ACTION\""
