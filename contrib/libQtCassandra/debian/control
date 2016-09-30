@@ -12,7 +12,7 @@ Build-Depends: cassandra-cpp-driver-dev (>= 2.2.2-1),
     libqtserialization-dev (>= 0.1.17.23~xenial),
     libssl-dev,
     libtld-dev (>= 1.5.2.23~xenial),
-    qt5base-dev,
+    qtbase5-dev,
     snapcmakemodules (>= 1.0.27.11~xenial)
 Standards-Version: 3.9.4
 Section: libs

@@ -15,7 +15,7 @@ Build-Depends: cmake,
     libsnapwebsites-dev (>= 1.1.16.7~xenial),
     libtld-dev (>= 1.5.2.23~xenial),
     libxml2-utils,
-    qt5base-dev,
+    qtbase5-dev,
     snapbase-dev (>= 1.0.6.12~xenial),
     snapcmakemodules (>= 1.0.27.11~xenial),
     zip
