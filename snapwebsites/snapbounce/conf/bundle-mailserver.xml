@@ -97,7 +97,7 @@ EOF
     else
       systemctl enable postfix
       systemctl start postfix
-    endif
+    fi
   </postinst>
   <postrm>
     rm -rf /etc/opendkim /etc/opendmarc
