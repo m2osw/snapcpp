@@ -22,6 +22,118 @@ version 2. You will also find public domain code and MIT or FreeBSD
 licenses.
 
 
+# Details About Snap! Websites
+
+## Cluster Requirement
+
+Please make sure to understand that Snap! Websites are not for a one
+quick computer install a la Wordpress or Drupal. Snap! Websites only
+runs well on a cluster. It is built to run any number of websites
+within one cluster. Making it easy to share resources of large powerful
+websites with tiny websites. Both benefit from the other!
+
+Your cluster should have at least:
+
+* 4 frontend computers to run Apache2, snap.cgi and snapserver (1Gb)
+* 4 Cassandra nodes (at least 2 CPU and 4Gb of RAM)
+* 1 snapbackend computer (for the CRON like tasks) (1Gb)
+* 1 other services (mail, DNS, etc.) (1Gb)
+
+Less than those 10 computers and you are likely to have some slowness
+unless you have a monster computer with 14 processors, really fast
+hard drives (i.e. SSD), and a lot of RAM (32Gb+). But even that won't
+work right because you want separate computers for the Cassandra nodes.
+Otherwise loss of data is very high (only the Cassandra cluster retains
+website data, other computers may have various caches, but they do not
+retain the official website data.)
+
+## Cassandra Requirement
+
+The reason for having at least 4 Cassandra nodes is because you want
+a minimum of 3 as the replication factor and with only 3 computers,
+you cannot do an upgrade without stopping everything. With 4 computers,
+you can stop one Cassandra node, upgrade that computer, restart the
+node. Proceed to the next node.
+
+## Horizontal Growth
+
+Note that the number of frontend computers, middle-end if you separate
+the `snapserver` entries, and the Cassandra nodes can be much larger.
+At this time we think that the current implementation can support up
+to 300 computers in all, without too much trouble. In other words,
+the system is built to grow horizontally. If all your Cassandra nodes
+are always very busy (75%+) or all your frontend computers are always
+very busy, then you can just add more and the load will automatically
+be shared between the additional computers. (It is not currently
+dynamic, but we may at some point offer such a capability too!)
+
+## Backend Growth, also horizontal
+
+Similarly, some of the backends can be duplicated to share the load,
+although there are some limits on this one: one backend process can
+run against one website; another backend instance on another computer
+can run against another website. So in other words, we do not allow
+multiple backend run against the same website in parallel.
+
+## Developement and Testing
+
+To test or as a developer, you can test on a single machine, but of
+course that won't prove the cluster mechanisms work as expected. For
+such a test, you should at least have 8Gb or have another machine to run
+a Cassandra node.
+
+In other words, you do not need to have a cluster to work on Snap! Websites
+as a developer. You can even have a single Cassandra node. It will be
+somwhat slower, but it is bearable. Of course, as a developer with a
+single node, you may lose the data in that node, but I would imagine it
+would only be test data...
+
+## A Snap! Websites Cluster
+
+The following images shows you an installation example. The cloud represents
+clients accessing your Snap! environment. The Apache + snap.cgi represents
+access points (you can have as many as you want to load balance the incoming
+hits). All the other computers can be 100% private (i.e. no direct access to
+the Internet). The snapserver computers represent the frontend of Snap!
+(middle-end as far as the cluster is concerned.) At some point snap.cgi
+will be smart enough to auto-load balance your stack, right now we just use
+a simple round robin DNS definition. The Cassandra computers each run one
+node. Those must have at least 4Gb of RAM in a valid live system. The
+snapbackend run CRON like tasks. However, those are dynamic and receive a
+PING message from the snapserver whenever a client makes a change (on a
+POST). So really it does work in the background but instantly once data to
+crunch is available.
+
+![Snap! Websites Cluster Setup](libsnapwebsites/doc/snapwebsites-cluster-setup.png)
+
+## The Snap! Websites Stack
+
+We have
+[another picture and more details on this page](http://snapwebsites.org/implementation/snap-websites-processes)
+showing how the processes are linked together. It does not show all
+the details, such as the fact that `snapcommunicator` is used as the
+inter-process and inter-computer hub (i.e. `snapserver` sends the
+`PING` message to `snapcommunicator`, which knows where the `snapbackends`
+are and thus forwards the message to the correct computer automatically.)
+
+We see that a connection has to first be accepted by the firewall which
+is dynamically updated by our anti-hacker/spam processes. If it does go
+through, it gets sent to Apache2. If Apache2 is happy (you may put all sorts
+of protections in Apache2 such as `mod_security`), then it loads `snap.cgi`
+and runs it with a set of variables representing the header we just
+received and a packet with POST data if any was attached.
+
+At that point, the snap.cgi choose a snapserver that's not too loaded, and
+sends the access data to it and wait for the reply which is then sent to
+Apache2 and finally back to the client.
+
+The snapserver will access the database, Cassandra, through the
+`snapdbproxy` daemon (which allows us to have the system go really fast
+because we connect to it on localhost instead of directly to Cassandra,
+which can be much slower, especially if through an SSL connection. We also
+gather the meta data only once and cache it.)
+
+
 # Getting Started
 
 TODO: We are not using the PPA environment at this time...
