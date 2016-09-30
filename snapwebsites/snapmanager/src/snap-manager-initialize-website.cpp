@@ -178,7 +178,8 @@ void snap_manager_initialize_website::send_request()
 
     // now send the request to the server
     // TODO: add support for SSL...
-    f_initialize_website.reset(new snap::snap_initialize_website(snap_host, snap_port, false, url, site_port));
+    QString const protocol(site_port == 443 ? "HTTPS" : "HTTP");
+    f_initialize_website.reset(new snap::snap_initialize_website(snap_host, snap_port, false, url, site_port, protocol));
 
     // this starts a thread which sends the info to the backend
     // and wait on status messages from the backend.

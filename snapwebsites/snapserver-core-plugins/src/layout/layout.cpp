@@ -480,23 +480,28 @@ QString layout::apply_layout(content::path_info_t & ipath, layout_content * cont
     QString layout_name;
     QString xsl(define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT), get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL), ":/xsl/layout/default-body-parser.xsl", layout_name));
 
-    // check whether the layout was defined in this website database
-    // (note: this was in the define_layout() which now gets called twice...)
-    int64_t const last_update(install_layout(layout_name, 0));
 
-    QtCassandra::QCassandraValue specific_last_updated(f_snap->get_site_parameter("core::last_updated::layout"));
-    if(last_update > specific_last_updated.safeInt64Value())
-    {
-        specific_last_updated.setInt64Value(last_update);
-        // TODO:
-        // This is VERY dangerous from what I can tell because only
-        // one layout gets updated here; however, if we do not do that
-        // we get in many troubles; this happens the first time the
-        // layout is loaded and another layout may have a different date
-        // so we want to have one 'last updated' date per layout to make
-        // sure we get it right...
-        f_snap->set_site_parameter("core::last_updated::layout", specific_last_updated);
-    }
+// WARNING: install_layou() is NOT properly multi-user protected and can create
+//          HUGE inconsistencies. Use snapinstallwebsite instead.
+//
+//    // check whether the layout was defined in this website database
+//    // (note: this was in the define_layout() which now gets called twice...)
+//    //
+//    int64_t const last_update(0); //(install_layout(layout_name, 0));
+//
+//    QtCassandra::QCassandraValue specific_last_updated(f_snap->get_site_parameter("core::last_updated::layout"));
+//    if(last_update > specific_last_updated.safeInt64Value())
+//    {
+//        specific_last_updated.setInt64Value(last_update);
+//        // TODO:
+//        // This is VERY dangerous from what I can tell because only
+//        // one layout gets updated here; however, if we do not do that
+//        // we get in many troubles; this happens the first time the
+//        // layout is loaded and another layout may have a different date
+//        // so we want to have one 'last updated' date per layout to make
+//        // sure we get it right...
+//        f_snap->set_site_parameter("core::last_updated::layout", specific_last_updated);
+//    }
 
     QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
     create_body(doc, ipath, xsl, content_plugin, true, layout_name);
@@ -549,6 +554,7 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
     QString xsl;
 
     // Retrieve the name of the layout for this path
+    //
     layout_name = get_layout(ipath, name, true);
 
 //SNAP_LOG_TRACE("Got theme / layout name = [")(layout_name)("] (key=")(ipath.get_key())(")");
@@ -1455,6 +1461,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
             if(last_install <= last_updated)
             {
                 // we are good already
+                //
                 return last_updated;
             }
         }

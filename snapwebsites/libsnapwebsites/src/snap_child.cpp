@@ -2801,7 +2801,44 @@ bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
         snap_string_list list_of_plugins(init_plugins(true));
 
         // run updates if any
-        update_plugins(list_of_plugins);
+        if(f_is_being_initialized)
+        {
+            update_plugins(list_of_plugins);
+        }
+        else
+        {
+            // TODO: to be ameliorated big time:
+            //     a) we should present a really nice page and not a die()
+            //     b) we should have a state held by snaplock which will
+            //        be way faster than the database (but we have to
+            //        reinitialize that state on a reboot...)
+            //
+            QtCassandra::QCassandraValue const state(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_STATE)));
+            if(state.nullValue())
+            {
+                // after the very first installation, it is always defined
+                //
+                die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                    "The website is being initialized. Please try again in a moment. Thank you.",
+                    "The site state is undefined. It is not yet initialized.");
+                NOTREACHED();
+            }
+            if(state.stringValue() != "ready")
+            {
+                // at this point, we expect "ready" or "updating"
+                //
+                die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                    "The website is being updated. Please try again in a moment. Thank you.",
+                    QString("The site state is \"%1\", expected \"ready\"."
+                           " It either was not yet initialized or it is being"
+                           " updated right now (or the update process crashed?)")
+                                    .arg(state.stringValue()));
+                NOTREACHED();
+
+                // double protection, this statement is not reachable
+                return false;
+            }
+        }
 
         canonicalize_options();    // find the language, branch, and revision specified by the user
 
@@ -7069,10 +7106,10 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
         // use an "old" date (631152000)
         last_updated.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
     }
-    int64_t const last_update_timestamp(last_updated.int64Value());
+    //int64_t const last_update_timestamp(last_updated.int64Value());
     // 10 min. elapsed since last update?
-    if(is_debug() // force update in debug mode so we don't have to wait 10 min.!
-    || f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
+    //if(is_debug() // force update in debug mode so we don't have to wait 10 min.!
+    //|| f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
     {
         // this can be called more than once in debug mode whenever multiple
         // files are being loaded for a page being accessed (i.e. the main
@@ -7081,6 +7118,40 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
         // if is_debug() returns false, it should be useless unless the
         // process takes over 10 minutes
         snap_lock lock(QString("%1#snap-child-updating").arg(get_site_key_with_slash()), 60 * 60); // lock for up to 1h
+
+        // set the state to "updating" if it currently is "ready"
+        QtCassandra::QCassandraValue state(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_STATE)));
+        if(state.nullValue())
+        {
+            // set the state to "initializing if it is undefined
+            //
+            state.setStringValue("initializing");
+            set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_STATE), state);
+        }
+        else if(state.stringValue() == "ready"
+             || state.stringValue() == "updating"       // check this one in case a previous update failed
+             || state.stringValue() == "initializing")  // check this one in case a previous initialization failed
+        {
+            // set the state to "initializing if it is undefined
+            //
+            state.setStringValue("updating");
+            set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_STATE), state);
+
+            // in this case we want existing user requests to have a chance
+            // to end before we proceed with the update
+            //
+            // right now, this is a really ugly way of doing things we
+            // should instead be told once the last user left
+            //
+            sleep(10); // yeah... that's a hack which should work 99% of the time though
+        }
+        else
+        {
+            // unknown state... what to do? what to do?
+            //
+            SNAP_LOG_ERROR("Updating website failed as we do not understand its current state: \"")(state.stringValue())("\".");
+            return;
+        }
 
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
@@ -7103,19 +7174,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
         {
             QString const plugin_name(*it);
             plugins::plugin * p(plugins::get_plugin(plugin_name));
-            // TODO: Verify whether I'm correct here, but the plugin_threshold
-            //       is not actually a valid test here... The fact is that the
-            //       last modification time of a plugin may end up being less
-            //       than the plugin_threshold on an installation target; this
-            //       is because you may first install plugin A with
-            //       modification time P, run this function, and later (and
-            //       remember that we only need 1 second different here...)
-            //       we install plugin B with modification Q with Q < P. At
-            //       that point B is considered updated with such a test!
-            //       Instead we only make use of the plugin specific last
-            //       updated value which is checked inside the do_update()
-            //       function itself.
-            if(p != nullptr) // && p->last_modification() > plugin_threshold)
+            if(p != nullptr)
             {
                 trace(QString("Updating plugin \"%1\"\n").arg(plugin_name));
 
@@ -7190,22 +7249,23 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
             }
         }
 
-        // avoid a write to the DB if the value did not change
-        // (i.e. most of the time!)
+        // save the new threshold if larger
+        //
         if(new_plugin_threshold > plugin_threshold)
         {
             set_site_parameter(core_plugin_threshold, new_plugin_threshold);
         }
 
         // always mark when the site was last updated
-        {
-            // get the date right now, DO NOT RESET START DATE
-            struct timeval tv;
-            gettimeofday(&tv, nullptr);
-            int64_t const now = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
-                              + static_cast<int64_t>(tv.tv_usec);
-            set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_READY), now);
-        }
+        //
+        // get the date right now, DO NOT RESET START DATE (f_start_date)
+        //
+        set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_READY), get_current_date());
+
+        // change the state while still locked
+        //
+        state.setStringValue("ready");
+        set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_STATE), state);
     }
 }
 
@@ -7457,8 +7517,9 @@ void snap_child::execute()
 
     if(f_uri.protocol() == "https")
     {
-        // this is used by different load balancer as an indication that
+        // this is used by different load balancers as an indication that
         // the request is secure
+        //
         set_header("Front-End-Https", "on", HEADER_MODE_EVERYWHERE);
     }
 

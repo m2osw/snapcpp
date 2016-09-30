@@ -32,7 +32,7 @@ namespace snap
 
 snap_initialize_website::snap_initialize_website_runner::snap_initialize_website_runner(snap_initialize_website * parent,
                                                 QString const & snap_host, int snap_port, bool secure,
-                                                QString const & website_uri, int destination_port)
+                                                QString const & website_uri, int destination_port, QString const & protocol)
     : snap_runner("initialize_website")
     , f_parent(parent)
     //, f_mutex() -- auto-init
@@ -42,7 +42,13 @@ snap_initialize_website::snap_initialize_website_runner::snap_initialize_website
     , f_secure(secure)
     , f_website_uri(website_uri)
     , f_destination_port(destination_port)
+    , f_protocol(protocol.toUpper())
 {
+    if(f_protocol != "HTTP"
+    && f_protocol != "HTTPS")
+    {
+        throw snap_initialize_website_exception_invalid_parameter("protocol must be \"HTTP\" or \"HTTPS\".");
+    }
 }
 
 void snap_initialize_website::snap_initialize_website_runner::run()
@@ -144,9 +150,6 @@ void snap_initialize_website::snap_initialize_website_runner::send_init_command(
     ss << "REMOTE_HOST=" << hostname << std::endl;
 
     // REMOTE_ADDR
-    //struct hostent *host_addr(gethostbyname(hostname));
-    //char host_ip[BUFSIZ];
-    //inet_ntop(host_addr->h_addrtype, *host_addr->h_addr_list, host_ip, sizeof(host_ip));
     ss << "REMOTE_ADDR=" << socket->get_client_addr() << std::endl;
 
     // REMOTE_PORT
@@ -174,9 +177,7 @@ void snap_initialize_website::snap_initialize_website_runner::send_init_command(
 
     // HTTPS
     //
-    // TODO: we most certainly want to make use of a URI with protocol and port
-    //       support because this test is very weak right now
-    if(f_destination_port == 443)
+    if(f_protocol == "HTTPS")
     {
         ss << "HTTPS=on" << std::endl;
     }
@@ -280,8 +281,8 @@ void snap_initialize_website::snap_initialize_website_runner::done()
 
 
 snap_initialize_website::snap_initialize_website(QString const& snap_host, int snap_port, bool secure,
-                                                 QString const& website_uri, int destination_port)
-    : f_website_runner(new snap_initialize_website_runner(this, snap_host, snap_port, secure, website_uri, destination_port))
+                                                 QString const& website_uri, int destination_port, QString const & protocol)
+    : f_website_runner(new snap_initialize_website_runner(this, snap_host, snap_port, secure, website_uri, destination_port, protocol))
     , f_process_thread(new snap_thread("Initialize Website Thread", f_website_runner.get()))
 {
 }

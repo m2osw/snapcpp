@@ -81,6 +81,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "protocol",
+            nullptr,
+            "the protocol used to access this website (HTTP or HTTPS), defaults to HTTP if port is 80 and to HTTPS if port is 443, required for any other port",
+            advgetopt::getopt::argument_mode_t::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
             "show the version of the snapdb executable",
@@ -139,6 +147,10 @@ int main(int argc, char * argv[])
         // read the snapserver IP:port information directly from the "snapserver"
         // configuration file
         //
+        // TODO: we may want to use snapcgi.conf instead of snapserver.conf?
+        //       or maybe support both/either in case the user starts this
+        //       tool "on the wrong machine".
+        //
         snap::snap_config config("snapserver");
         if(opt.is_defined("config"))
         {
@@ -164,7 +176,6 @@ int main(int argc, char * argv[])
 
         // we need the URL:port to initialize the new website
         //
-        //url, site_port
         QString const url(QString::fromUtf8(opt.get_string("domain").c_str()));
         if(url.isEmpty())
         {
@@ -175,12 +186,24 @@ int main(int argc, char * argv[])
 
         int const site_port(opt.get_long("port", 0, 0, 65535));
 
-        SNAP_LOG_INFO("website is at ")(url)(":")(site_port)(".");
+        QString protocol(site_port == 443 ? "HTTPS" : "HTTP");
+        if(opt.is_defined("protocol"))
+        {
+            protocol = QString::fromUtf8(opt.get_string("protocol").c_str());
+        }
+        else if(site_port != 80 && site_port != 443)
+        {
+            std::cerr << "error: --protocol is required if the port is not 80 or 443." << std::endl;
+            exit(1);
+            snap::NOTREACHED();
+        }
+
+        SNAP_LOG_INFO("website is at \"")(protocol.toLower())("://")(url)(":")(site_port)("/\".");
 
         // create a snap_initialize_website object and listen for messages
         // up until is_done() returns true
         //
-        snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, secure, url, site_port));
+        snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, secure, url, site_port, protocol));
 
         SNAP_LOG_INFO("start website initializer.");
 

@@ -25,13 +25,33 @@ namespace snap
 {
 
 
+class snap_initialize_website_exception : public snap_exception
+{
+public:
+    explicit snap_initialize_website_exception(char const *        whatmsg) : snap_exception("snap_initialize_website", whatmsg) {}
+    explicit snap_initialize_website_exception(std::string const & whatmsg) : snap_exception("snap_initialize_website", whatmsg) {}
+    explicit snap_initialize_website_exception(QString const &     whatmsg) : snap_exception("snap_initialize_website", whatmsg) {}
+};
+
+class snap_initialize_website_exception_invalid_parameter : public snap_initialize_website_exception
+{
+public:
+    explicit snap_initialize_website_exception_invalid_parameter(char const *        whatmsg) : snap_initialize_website_exception(whatmsg) {}
+    explicit snap_initialize_website_exception_invalid_parameter(std::string const & whatmsg) : snap_initialize_website_exception(whatmsg) {}
+    explicit snap_initialize_website_exception_invalid_parameter(QString const &     whatmsg) : snap_initialize_website_exception(whatmsg) {}
+};
+
+
+
+
+
 class snap_initialize_website
 {
 public:
     typedef std::shared_ptr<snap_initialize_website>   pointer_t;
 
                     snap_initialize_website(QString const & snap_host, int snap_port, bool secure,
-                                            QString const & website_uri, int destination_port);
+                                            QString const & website_uri, int destination_port, QString const & protocol);
 
     bool            start_process();
     bool            is_done() const;
@@ -43,7 +63,7 @@ private:
     public:
                         snap_initialize_website_runner(snap_initialize_website * parent,
                                                        QString const & snap_host, int snap_port, bool secure,
-                                                       QString const & website_uri, int destination_port);
+                                                       QString const & website_uri, int destination_port, QString const & protocol);
 
         // from class snap_thread
         virtual void    run();
@@ -62,9 +82,10 @@ private:
         QString const                       f_snap_host;
         int32_t                             f_snap_port = 0;
         bool                                f_secure = false;
-        QString const                       f_website_uri;
-        int32_t                             f_destination_port = 0;
-        std::deque<QString>                 f_message_queue; // TODO: look into reusing the message queue from the thread with T = QString!?
+        QString const                       f_website_uri;      // 'const' so it is mandatory anyway
+        int32_t const                       f_destination_port; // 'const' so it is mandatory anyway
+        QString const                       f_protocol;         // 'const' so it is mandatory anyway
+        std::deque<QString>                 f_message_queue;    // TODO: look into reusing the message queue from the thread with T = QString!?
     };
 
     std::unique_ptr<snap_initialize_website_runner>     f_website_runner;
