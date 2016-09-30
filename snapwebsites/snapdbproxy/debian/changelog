@@ -1,3 +1,10 @@
+snapdbproxy (1.1.8.0~xenial) xenial; urgency=high
+
+  * SNAP-378: snapinitializewebsite supports --protocol <HTTP | HTTPS>.
+  * Added my cassandra-start script to the snapdbproxy/tools.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 29 Sep 2016 21:52:27 -0700
+
 snapdbproxy (1.1.7.0~xenial) xenial; urgency=high
 
   * SNAP-440: Removed add_ssl_keys() method and replaced with parameter to
@@ -5,29 +12,16 @@ snapdbproxy (1.1.7.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 29 Sep 2016 12:47:27 -0700
 
-snapdbproxy (1.1.6.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 29 Sep 2016 02:00:48 -0700
-
 snapdbproxy (1.1.6.0~xenial) xenial; urgency=high
 
   * SNAP-440: Added purge-keys ability for cassandra.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Sep 2016 19:01:36 -0700
 
-snapdbproxy (1.1.5.3~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 17:40:40 -0700
-
 snapdbproxy (1.1.5.0~xenial) xenial; urgency=high
 
   * SNAP-413: Replaced the snapcreatetables call with the NEWTABLE signal.
   * Added support for a NEWTABLE message (not implemented yet though.)
-  * Removed a few "Nightly build" entries.
 
  -- Alexis Wilke <alexis@m2osw.com>  Tue, 27 Sep 2016 14:54:54 -0700
 
