@@ -104,7 +104,7 @@ PING message from the snapserver whenever a client makes a change (on a
 POST). So really it does work in the background but instantly once data to
 crunch is available.
 
-![Snap! Websites Cluster Setup](libsnapwebsites/doc/snapwebsites-cluster-setup.png)
+![Snap! Websites Cluster Setup](snapwebsites/libsnapwebsites/doc/snapwebsites-cluster-setup.png)
 
 ## The Snap! Websites Stack
 
