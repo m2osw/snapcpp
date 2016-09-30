@@ -248,6 +248,20 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
 
     switch(command[0].unicode())
     {
+    case 'D':
+        if(command == "DPKGUPDATE")
+        {
+            // at this time we ignore the "action" parameter and just
+            // tell the backend to reset the dpkg status for all packages
+            //
+            // TBD: we may need/want to do this "a retardement" after a
+            //      minute or two, so that way the system has some time
+            //      to settle first?
+            //
+            reset_aptcheck();
+        }
+        break;
+
     case 'H':
         if(command == "HELP")
         {
@@ -257,6 +271,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             reply.set_command("COMMANDS");
 
             snap::snap_string_list understood_commands;
+            understood_commands << "DPKGUPDATE";
             understood_commands << "HELP";
             understood_commands << "LOG";
             understood_commands << "MANAGERINSTALL";

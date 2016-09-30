@@ -181,6 +181,9 @@ int main(int argc, char * argv[])
             bool const r(upgrade(upgrader));
 
             // things are likely changed, make sure to reset the apt-check counters
+            //
+            // Note: we should also automatically receive a DPKGUPDATE message
+            //
             upgrader->reset_aptcheck();
 
             if(r)
