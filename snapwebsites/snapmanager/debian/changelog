@@ -1,3 +1,9 @@
+snapmanager (1.1.4.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:48 -0700
+
 snapmanager (1.1.4.0~xenial) xenial; urgency=high
 
   * SNAP-378: applied an update for the snap_initialize_website() call.

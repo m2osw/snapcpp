@@ -1,3 +1,9 @@
+snapmanagercgi (1.1.18.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:47 -0700
+
 snapmanagercgi (1.1.18.0~xenial) xenial; urgency=high
 
   * SNAP-462: missed adding the return statement to the new message handler.
