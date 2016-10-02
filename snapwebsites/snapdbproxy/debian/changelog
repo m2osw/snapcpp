@@ -1,3 +1,9 @@
+snapdbproxy (1.1.8.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:47 -0700
+
 snapdbproxy (1.1.8.0~xenial) xenial; urgency=high
 
   * SNAP-378: snapinitializewebsite supports --protocol <HTTP | HTTPS>.
