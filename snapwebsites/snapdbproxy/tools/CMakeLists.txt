@@ -113,8 +113,8 @@ project(snapwebsiteready)
 #
 install(
     FILES
-        ${PROJECT_NAME}
-    RUNTIME DESTINATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}
+    DESTINATION
         bin
 )
 

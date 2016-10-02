@@ -1,9 +1,15 @@
+snapdbproxy (1.1.10.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the CMakeLists.txt so it actually works.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 02 Oct 2016 15:36:47 -0700
+
 snapdbproxy (1.1.9.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added a snapwebsiteready to mark a website as ready in case a
     tool changing that state fails inadvertendly.
 
- -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 02 Oct 2016 11:30:47 -0700
 
 snapdbproxy (1.1.8.0~xenial) xenial; urgency=high
 
