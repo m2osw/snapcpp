@@ -1,10 +1,10 @@
-snaplock (1.0.3.12~xenial) xenial; urgency=high
+snaplock (1.0.4.0~xenial) xenial; urgency=high
 
   * EX-128: While testing a fix for this entry, noticed a problem with the
     locking mechanism. In some cases a lock is canceled but remains in the
     list. We have to ignore it and not send an unlock.
 
- -- Build Server <build@m2osw.com>  Mon, 26 Sep 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 02 Oct 2016 16:41:47 -0700
 
 snaplock (1.0.3.0~xenial) xenial; urgency=high
 
