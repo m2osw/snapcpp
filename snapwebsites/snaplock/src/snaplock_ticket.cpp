@@ -691,7 +691,8 @@ void snaplock_ticket::activate_lock()
 {
     if(f_ticket_ready
     && !f_locked
-    && !f_lock_failed)
+    && !f_lock_failed
+    && !f_service_name.isEmpty())
     {
         f_locked = true;
         f_lock_timeout = f_lock_duration + time(nullptr);
