@@ -102,4 +102,21 @@ install(
 )
 
 
+#######################################
+## Snap Mark Website as Ready
+#######################################
+
+project(snapwebsiteready)
+
+# This is a shell script so we do not have to do anything special
+# just install the script
+#
+install(
+    FILES
+        ${PROJECT_NAME}
+    RUNTIME DESTINATION
+        bin
+)
+
+
 # vim: ts=4 sw=4 et
