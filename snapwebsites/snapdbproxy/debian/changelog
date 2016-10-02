@@ -1,6 +1,7 @@
-snapdbproxy (1.1.8.2~xenial) xenial; urgency=high
+snapdbproxy (1.1.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added a snapwebsiteready to mark a website as ready in case a
+    tool changing that state fails inadvertendly.
 
  -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:47 -0700
 
