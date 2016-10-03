@@ -1,3 +1,9 @@
+snaplock (1.0.4.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 03 Oct 2016 02:00:46 -0700
+
 snaplock (1.0.4.0~xenial) xenial; urgency=high
 
   * EX-128: While testing a fix for this entry, noticed a problem with the
