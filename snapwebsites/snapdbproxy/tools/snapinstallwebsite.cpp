@@ -176,7 +176,7 @@ int main(int argc, char * argv[])
 
         // we need the URL:port to initialize the new website
         //
-        QString const url(QString::fromUtf8(opt.get_string("domain").c_str()));
+        QString url(QString::fromUtf8(opt.get_string("domain").c_str()));
         if(url.isEmpty())
         {
             std::cerr << "error: domain cannot be empty and must be specified." << std::endl;
@@ -198,12 +198,30 @@ int main(int argc, char * argv[])
             snap::NOTREACHED();
         }
 
+        // extract the query string if there is one
+        //
+        QString query_string;
+        int const pos(url.indexOf('?'));
+        if(pos > 0)
+        {
+            query_string = url.mid(pos + 1);
+            url = url.mid(0, pos);
+        }
+
         SNAP_LOG_INFO("website is at \"")(protocol.toLower())("://")(url)(":")(site_port)("/\".");
 
         // create a snap_initialize_website object and listen for messages
         // up until is_done() returns true
         //
-        snap::snap_initialize_website::pointer_t initialize_website(std::make_shared<snap::snap_initialize_website>(snap_host, snap_port, secure, url, site_port, protocol));
+        snap::snap_initialize_website::pointer_t initialize_website(
+                std::make_shared<snap::snap_initialize_website>(
+                              snap_host
+                            , snap_port
+                            , secure
+                            , url
+                            , site_port
+                            , query_string
+                            , protocol));
 
         SNAP_LOG_INFO("start website initializer.");
 
@@ -264,4 +282,4 @@ int main(int argc, char * argv[])
 }
 
 
-// vim: ts=4 sw=4 et
+// vim: ts=4 sw=4 et nowrap

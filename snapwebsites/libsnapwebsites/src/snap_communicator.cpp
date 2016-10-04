@@ -1695,7 +1695,14 @@ void snap_communicator::snap_connection::process_error()
     //      case? because the get_socket() function will not return
     //      -1 after such errors...
 
-    SNAP_LOG_ERROR("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
+    if(get_socket() == -1)
+    {
+        SNAP_LOG_DEBUG("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
+    }
+    else
+    {
+        SNAP_LOG_WARNING("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
+    }
 
     remove_from_communicator();
 }
@@ -4049,7 +4056,7 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_read()
             else //if(r < 0)
             {
                 int const e(errno);
-                SNAP_LOG_ERROR("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
+                SNAP_LOG_WARNING("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
                 process_error();
                 return;
             }

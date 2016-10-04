@@ -460,7 +460,7 @@ content * content::instance()
  */
 QString content::settings_path() const
 {
-    return "/admin/settings/info";
+    return "/settings/info";
 }
 
 
@@ -3043,11 +3043,12 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
             bool const source_unique(true);
             bool const destination_unique(false);
             QString destination_path;
-            if(path.startsWith("admin/layouts/"))
+            if(path.startsWith("layouts/"))
             {
                 // make sure that this is the root of that layout and
                 // not an attachment or sub-page
-                QString const base(path.mid(14));
+                //
+                QString const base(path.mid(8));
                 int const pos(base.indexOf('/'));
                 if(pos < 0)
                 {

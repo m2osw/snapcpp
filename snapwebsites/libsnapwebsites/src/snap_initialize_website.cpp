@@ -32,7 +32,8 @@ namespace snap
 
 snap_initialize_website::snap_initialize_website_runner::snap_initialize_website_runner(snap_initialize_website * parent,
                                                 QString const & snap_host, int snap_port, bool secure,
-                                                QString const & website_uri, int destination_port, QString const & protocol)
+                                                QString const & website_uri, int destination_port,
+                                                QString const & query_string, QString const & protocol)
     : snap_runner("initialize_website")
     , f_parent(parent)
     //, f_mutex() -- auto-init
@@ -42,6 +43,7 @@ snap_initialize_website::snap_initialize_website_runner::snap_initialize_website
     , f_secure(secure)
     , f_website_uri(website_uri)
     , f_destination_port(destination_port)
+    , f_query_string(query_string)
     , f_protocol(protocol.toUpper())
 {
     if(f_protocol != "HTTP"
@@ -50,6 +52,7 @@ snap_initialize_website::snap_initialize_website_runner::snap_initialize_website
         throw snap_initialize_website_exception_invalid_parameter("protocol must be \"HTTP\" or \"HTTPS\".");
     }
 }
+
 
 void snap_initialize_website::snap_initialize_website_runner::run()
 {
@@ -167,7 +170,12 @@ void snap_initialize_website::snap_initialize_website_runner::send_init_command(
     ss << get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD) << "=GET" << std::endl;
 
     // QUERY_STRING
-    ss << "QUERY_STRING=initialize_website=1" << std::endl;
+    ss << "QUERY_STRING=initialize_website=1";
+    if(!f_query_string.isEmpty())
+    {
+        ss << "&" << f_query_string;
+    }
+    ss << std::endl;
 
     // REQUEST_URI
     ss << snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI) << "=/" << std::endl;
@@ -280,9 +288,10 @@ void snap_initialize_website::snap_initialize_website_runner::done()
 
 
 
-snap_initialize_website::snap_initialize_website(QString const& snap_host, int snap_port, bool secure,
-                                                 QString const& website_uri, int destination_port, QString const & protocol)
-    : f_website_runner(new snap_initialize_website_runner(this, snap_host, snap_port, secure, website_uri, destination_port, protocol))
+snap_initialize_website::snap_initialize_website(QString const & snap_host, int snap_port, bool secure,
+                                                 QString const & website_uri, int destination_port,
+                                                 QString const & query_string, QString const & protocol)
+    : f_website_runner(new snap_initialize_website_runner(this, snap_host, snap_port, secure, website_uri, destination_port, query_string, protocol))
     , f_process_thread(new snap_thread("Initialize Website Thread", f_website_runner.get()))
 {
 }

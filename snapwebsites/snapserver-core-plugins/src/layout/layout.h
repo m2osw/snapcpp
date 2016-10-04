@@ -28,12 +28,12 @@ namespace layout
 
 enum class name_t
 {
-    SNAP_NAME_LAYOUT_ADMIN_LAYOUTS,
     SNAP_NAME_LAYOUT_BODY_XSL,
     SNAP_NAME_LAYOUT_BOX,
     SNAP_NAME_LAYOUT_BOXES,
-    SNAP_NAME_LAYOUT_CONTENT,
+    SNAP_NAME_LAYOUT_CONTENT_XML,
     SNAP_NAME_LAYOUT_LAYOUT,
+    SNAP_NAME_LAYOUT_LAYOUTS_PATH,
     SNAP_NAME_LAYOUT_NAMESPACE,
     SNAP_NAME_LAYOUT_REFERENCE,
     SNAP_NAME_LAYOUT_TABLE,
@@ -89,11 +89,12 @@ public:
 
     // plugins::plugin implementation
     static layout *     instance();
-    virtual QString     icon() const;
-    virtual QString     description() const;
-    virtual QString     dependencies() const;
-    virtual int64_t     do_update(int64_t last_updated);
-    virtual void        bootstrap(snap_child *snap);
+    virtual QString     icon() const override;
+    virtual QString     description() const override;
+    virtual QString     dependencies() const override;
+    virtual int64_t     do_update(int64_t last_updated) override;
+    virtual int64_t     do_dynamic_update(int64_t last_updated) override;
+    virtual void        bootstrap(snap_child *snap) override;
 
     QtCassandra::QCassandraTable::pointer_t get_layout_table();
 
@@ -111,7 +112,6 @@ public:
     void                create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool const handle_boxes = false, QString const & layout_name = "");
     QString             apply_theme(QDomDocument doc, QString const & xsl, QString const & theme_name);
     void                replace_includes(QString & xsl);
-    int64_t             install_layout(QString const & layout_name, int64_t const last_updated);
     //void                add_layout_from_resources(QString const & name);
     void                extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output);
 
@@ -121,13 +121,16 @@ public:
     SNAP_SIGNAL_WITH_MODE(filtered_content, (content::path_info_t & ipath, QDomDocument & doc, QString const & xsl), (ipath, doc, xsl), NEITHER);
 
 private:
-    //void content_update(int64_t variables_timestamp);
-    int64_t             do_layout_updates(int64_t const last_updated);
+    void                content_update(int64_t variables_timestamp);
+    void                do_layout_updates();
+    void                install_layout(QString const & layout_name);
+    void                finish_install_layout();
 
     void                generate_boxes(content::path_info_t & ipath, QString const & layout_name, QDomDocument doc);
 
-    snap_child *                               f_snap = nullptr;
-    QtCassandra::QCassandraTable::pointer_t    f_content_table;
+    snap_child *                            f_snap = nullptr;
+    QtCassandra::QCassandraTable::pointer_t f_content_table;
+    std::vector<QString>                    f_initialized_layout;
 };
 
 

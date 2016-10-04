@@ -58,11 +58,8 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS:
-        return "admin/layouts";
-
     case name_t::SNAP_NAME_LAYOUT_BODY_XSL:
-        return "body-parser";
+        return "body-parser.xsl";
 
     case name_t::SNAP_NAME_LAYOUT_BOX:
         return "layout::box";
@@ -70,11 +67,14 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LAYOUT_BOXES:
         return "layout::boxes";
 
-    case name_t::SNAP_NAME_LAYOUT_CONTENT:
-        return "content";
+    case name_t::SNAP_NAME_LAYOUT_CONTENT_XML:
+        return "content.xml";
 
     case name_t::SNAP_NAME_LAYOUT_LAYOUT:
         return "layout::layout";
+
+    case name_t::SNAP_NAME_LAYOUT_LAYOUTS_PATH:
+        return "layouts";
 
     case name_t::SNAP_NAME_LAYOUT_NAMESPACE:
         return "layout";
@@ -89,7 +89,7 @@ char const * get_name(name_t name)
         return "layout::theme";
 
     case name_t::SNAP_NAME_LAYOUT_THEME_XSL:
-        return "theme-parser";
+        return "theme-parser.xsl";
 
     default:
         // invalid index
@@ -209,53 +209,124 @@ int64_t layout::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- layout data is defined in output/content.xml at this time
+    // first time, make sure the default theme is installed
+    //
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
 
-    // we do not use the last_updated timestamp against the plugin
-    // last update date and time because the layout itself is
-    // considered as its own entity and as such it has its own
-    // last date date and time; because of that we always call this
-    // sub-function
-    int64_t const last_layout_update(do_layout_updates(last_updated));
-    if(last_layout_update > last_plugin_update)
-    {
-        last_plugin_update = last_layout_update;
-    }
+    // always call the do_layout_updates() function since it may be
+    // that a layout was updated at a date different from any other
+    //
+    // i.e. you may upgrade layout A, run snapinstallwebsite,
+    //      upgrade layout B, run snapinstallwebsite
+    //
+    // In that example, if B has a "last update" timestamp that's
+    // smaller than A's "last update" timestamp, we cannot here
+    // know that B has a smaller timestamp and thus we have to check
+    // each entry and make sure they all get updated acconding to
+    // their own "last update" timestamp.
+    //
+    // TBD: This may be too soon because the output and editor
+    //      will add their own themes AFTER this call (i.e. they
+    //      depend on us, not the other way around.)
+    //
+    //      We may instead need to have a form of signal to know
+    //      that we need to do something.
+    //
+    //      That being said, the first time I do not think we need
+    //      that because the install_layout() does the necessar on
+    //      its own. (we do not need to install and update.)
+    //
+    do_layout_updates();
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 
+int64_t layout::do_dynamic_update(int64_t last_updated)
+{
+    NOTUSED(last_updated);
+
+    SNAP_PLUGIN_UPDATE_INIT();
+
+    // we cannot use a static data here since a layout can be updated at
+    // any time and we already check that, at this point we have a list
+    // of names that the next function can use
+    //
+    finish_install_layout();
+
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Update the database with our layout references.
+ *
+ * This first initialization is used to initialize the default
+ * layout.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void layout::content_update(int64_t const last_updated)
+{
+    NOTUSED(last_updated);
+
+    install_layout("default");
+}
+
+
 /** \brief Update layouts as required.
  *
- * This function goes through the list of updated layouts that are installed
- * on this website.
+ * This function goes through the list of layouts that are installed
+ * on this website. If some need to be updated, run the update code
+ * as required against those.
  *
- * Whenever you update a layout file, all references are reset to zero. This
- * function searches such references and if zero, does the update and then
- * sets the reference to one.
- *
- * \param[in] last_updated  The UTC Unix date when the website was last
- *                          updated (in micro seconds).
- *
- * \return The date when we last updated a layout.
+ * Whenever you update a layout file, all references are reset to zero.
+ * This function searches such references and if zero, does the update
+ * and then sets the reference to one.
  */
-int64_t layout::do_layout_updates(int64_t const last_updated)
+void layout::do_layout_updates()
 {
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
 
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const base_key(site_key + get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/");
+    // the user may have asked to install a layout too
+    //
+    QString const qs_install_layout(f_snap->get_server_parameter("qs_layout::install"));
+    if(!qs_install_layout.isEmpty())
+    {
+        snap_uri const & uri(f_snap->get_uri());
+        QString const install_layouts(uri.query_option(qs_install_layout));
+        snap_string_list layout_names(install_layouts.split(","));
+        for(auto const & ln : layout_names)
+        {
+            QString const layout_name(ln.trimmed());
+            if(!layout_name.isEmpty())
+            {
+                install_layout(layout_name);
+            }
+        }
+    }
 
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const base_key(site_key + get_name(name_t::SNAP_NAME_LAYOUT_LAYOUTS_PATH) + "/");
+
+    // verify that we have a valid layout-page type, without it we cannot
+    // install the layout
+    //
     content::path_info_t types_ipath;
     types_ipath.set_path("types/taxonomy/system/content-types/layout-page");
     if(!content_table->exists(types_ipath.get_key()))
     {
-        // this is likely to happen on first initialization
-        return last_updated;
+        // this is likely to happen on first initialization, which is fine
+        // because the install_layout() gets called directory and we get
+        // the wanted effect anyway
+        //
+        return;
     }
-    int64_t new_last_updated(last_updated);
+
+    // get the list of links to layouts, that's our list of layout for
+    // this one website (i.e. we do not update all the layouts for one
+    // website that may be using just one or two layouts...)
+    //
     links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE), false, types_ipath.get_key(), types_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info layout_info;
@@ -268,7 +339,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
             int const pos(name.indexOf('/'));
             if(pos < 0)
             {
-                // 'name' is now the name of a layout
+                // 'name' is the name of a layout
 
                 // define limit with the original last_updated because
                 // the order in which we read the layouts has nothing to
@@ -278,16 +349,10 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
                 //       per layout (just like plugins, having a single
                 //       time definition is actually bogus)
                 //
-                int64_t const limit(install_layout(name, last_updated));
-                if(limit > new_last_updated)
-                {
-                    new_last_updated = limit;
-                }
+                install_layout(name);
             }
         }
     }
-
-    return new_last_updated;
 }
 
 
@@ -478,36 +543,24 @@ QString layout::apply_layout(content::path_info_t & ipath, layout_content * cont
 {
     // First generate the body content (a large XML document)
     QString layout_name;
-    QString xsl(define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT), get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL), ":/xsl/layout/default-body-parser.xsl", layout_name));
-
-
-// WARNING: install_layou() is NOT properly multi-user protected and can create
-//          HUGE inconsistencies. Use snapinstallwebsite instead.
-//
-//    // check whether the layout was defined in this website database
-//    // (note: this was in the define_layout() which now gets called twice...)
-//    //
-//    int64_t const last_update(0); //(install_layout(layout_name, 0));
-//
-//    QtCassandra::QCassandraValue specific_last_updated(f_snap->get_site_parameter("core::last_updated::layout"));
-//    if(last_update > specific_last_updated.safeInt64Value())
-//    {
-//        specific_last_updated.setInt64Value(last_update);
-//        // TODO:
-//        // This is VERY dangerous from what I can tell because only
-//        // one layout gets updated here; however, if we do not do that
-//        // we get in many troubles; this happens the first time the
-//        // layout is loaded and another layout may have a different date
-//        // so we want to have one 'last updated' date per layout to make
-//        // sure we get it right...
-//        f_snap->set_site_parameter("core::last_updated::layout", specific_last_updated);
-//    }
+    QString xsl(define_layout(
+                  ipath
+                , get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT)
+                , get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL)
+                , ":/xsl/layout/default-body-parser.xsl"
+                , layout_name));
 
     QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
     create_body(doc, ipath, xsl, content_plugin, true, layout_name);
 
     // Then apply a theme to it
-    xsl = define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_THEME), get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
+    xsl = define_layout(
+                  ipath
+                , get_name(name_t::SNAP_NAME_LAYOUT_THEME)
+                , get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL)
+                , ":/xsl/layout/default-theme-parser.xsl"
+                , layout_name);
+
     // HTML5 DOCTYPE is just "html" as follow
     return "<!DOCTYPE html>" + apply_theme(doc, xsl, layout_name);
 }
@@ -548,9 +601,15 @@ QString layout::apply_layout(content::path_info_t & ipath, layout_content * cont
  *
  * \return The XSL code in a string.
  */
-QString layout::define_layout(content::path_info_t & ipath, QString const & name, QString const & key, QString const & default_filename, QString & layout_name)
+QString layout::define_layout(
+              content::path_info_t & ipath
+            , QString const & name
+            , QString const & key
+            , QString const & default_filename
+            , QString & layout_name)
 {
     // result variable
+    //
     QString xsl;
 
     // Retrieve the name of the layout for this path
@@ -566,10 +625,12 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
     {
         // the layout name may have two entries: "row/cell" so we check
         // that first and cut the name in half if required
+        //
         snap_string_list const names(layout_name.split("/"));
         if(names.size() > 2)
         {
             // can be one or two workds, no more
+            //
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Somehow no website layout was accessible.",
@@ -577,22 +638,32 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
             NOTREACHED();
         }
         layout_name = names[0];
-        QString const cell_name(names.size() >= 2 ? names[1] : key);
+        QString cell_name(names.size() >= 2 ? names[1] : key);
         if(cell_name == "content"
+        || cell_name == "content.xml"
         || cell_name == "style"
+        || cell_name == "style.css"
+        || cell_name == "."
+        || cell_name == ".."
         || cell_name.contains(':'))
         {
             // this is just to try to avoid some security issues
+            //
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     QString("The name \"%1\" used as the layout cell is not acceptable.").arg(cell_name),
                     "layout::define_layout() found an illegal cell name.");
             NOTREACHED();
         }
+        if(!cell_name.endsWith(".xsl"))
+        {
+            cell_name += ".xsl";
+        }
 
         // try to load the layout from the database, if not found
         // we will try the Qt resources and if that fails too
         // switch to the default layout instead
+        //
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
         QtCassandra::QCassandraValue const layout_value(layout_table->row(layout_name)->cell(cell_name)->value());
         if(layout_value.nullValue())
@@ -601,6 +672,7 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
             // the XSLT data may be in Qt, so we check there,
             // but we still return the layout name as "default"
             // (which is possibly wrong but works with my current tests)
+            //
             QByteArray data;
             QString const rc_name(QString(":/xsl/layout/%1-parser.xsl").arg(layout_name));
             QFile rc_parser(rc_name);
@@ -611,6 +683,7 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
             else
             {
                 // try again without adding the "-parser"
+                //
                 QString const qt_name(QString(":/xsl/layout/%1.xsl").arg(layout_name));
                 QFile rc_layout(qt_name);
                 if(rc_layout.open(QIODevice::ReadOnly))
@@ -626,8 +699,13 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
             {
                 // this warning will help at least me to debug a problem
                 // with loading a layout
+                //
                 SNAP_LOG_WARNING("layout data named \"")(names.join("/"))("\" could not be loaded. We will be using the \"default\" layout instead.");
             }
+            // Note: we set the default name here in case the xsl we just
+            //       read returned an empty string (if data was not empty
+            //       xsl should not be either, though.)
+            //
             layout_name = "default";
         }
         else
@@ -665,6 +743,7 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
 
     // replace <xsl:include ...> with other XSTL files (should be done
     // by the parser, but Qt's parser does not support it yet)
+    //
     replace_includes(xsl);
 
     return xsl;
@@ -736,7 +815,7 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
  * This function is often used to generate parts of the content such
  * as boxes on the side of the screen. It can also be used to create
  * content of a page from a template (i.e. the user profile is
- * created from the admin/users/pages/profile template.) In many
+ * created from the users/pages/profile template.) In many
  * cases, when the function is used in this way, only the title and
  * body are used. If a block is to generate something that should
  * appear in the header, then it should create it in the header of
@@ -964,7 +1043,7 @@ void layout::extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output)
  * The path used to find the layout list of boxes is:
  *
  * \code
- * admin/layouts/<layout name>
+ * layouts/<layout name>
  * \endcode
  *
  * The boxes are defined inside the layout and are found by their name.
@@ -972,7 +1051,7 @@ void layout::extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output)
  * [-_a-z0-9]+). For example, a box named left would appear as:
  *
  * \code
- * admin/layouts/<layout name>/left
+ * layouts/<layout name>/left
  * \endcode
  *
  * \param[in,out] ipath  The path being dealt with.
@@ -982,9 +1061,9 @@ void layout::extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output)
 void layout::generate_boxes(content::path_info_t & ipath, QString const & layout_name, QDomDocument doc)
 {
     // the list of boxes is defined in the database under (GLOBAL)
-    //    admin/layouts/<layout_name>[layout::boxes]
+    //    layouts/<layout_name>[layout::boxes]
     // as one row name per box; for example, the left box would appears as:
-    //    admin/layouts/<layout_name>/left
+    //    layouts/<layout_name>/left
     QDomElement boxes(doc.createElement("boxes"));
 
     QDomNodeList all_pages(doc.elementsByTagName("page"));
@@ -1010,7 +1089,7 @@ void layout::generate_boxes(content::path_info_t & ipath, QString const & layout
     //   . Under the theme path branch[layout::boxes]
     //
     content::path_info_t boxes_ipath;
-    boxes_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+    boxes_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_LAYOUTS_PATH)).arg(layout_name));
 
     // get the page type
     //
@@ -1104,7 +1183,7 @@ void layout::generate_boxes(content::path_info_t & ipath, QString const & layout
             for(int i(0); i < max_boxes; ++i)
             {
                 content::path_info_t ichild;
-                ichild.set_path(QString("%1/%2/%3").arg(get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
+                ichild.set_path(QString("%1/%2/%3").arg(get_name(name_t::SNAP_NAME_LAYOUT_LAYOUTS_PATH)).arg(layout_name).arg(names[i]));
                 // links cannot be read if the version is undefined;
                 // the version is undefined if the theme has no boxes at all
                 snap_version::version_number_t branch(ichild.get_branch());
@@ -1221,76 +1300,6 @@ QString layout::apply_theme(QDomDocument doc, QString const & xsl, QString const
 }
 
 
-/** \brief Search for the theme XSLT data.
- *
- * This function determines the name of the XSLT data depending on the
- * specified path. The name may be indicated in the page, in the type
- * of the page, or in the content-types (in which case it is the
- * default for the entire website.) If not found in the database, it
- * reverts to "default".
- *
- * \param[in,out] ipath  The path of the document being themed.
- *
- * \return The XSL data of the theme for this page.
- */
-//QString layout::define_theme(content::path_info_t& ipath)
-//{
-//    QString xsl;
-//
-//    QString theme_name( get_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_THEME), false) );
-//
-//    // If theme_name is not default, attempt to obtain the
-//    // selected theme from the layout table.
-//    //
-//    if( theme_name != "default" )
-//    {
-//        // try to load the layout from the database, if not found
-//        // we'll switch to the default layout instead
-//        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-//        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL))->value());
-//        if(theme_value.nullValue())
-//        {
-//            // If no theme selected, then default to the "default" theme."
-//            //
-//            // note: a layout cannot be empty so the test is correct
-//            //
-//            theme_name = "default";
-//        }
-//        else
-//        {
-//            // Use the selected theme.
-//            //
-//            xsl = theme_value.stringValue();
-//        }
-//    }
-//
-//    // Fallback to the default theme if none was set properly above.
-//    //
-//    if( theme_name == "default" )
-//    {
-//        // Grab the XSL from the Qt4 compiled-in resources.
-//        //
-//        QFile file(":/xsl/layout/default-theme-parser.xsl");
-//        if(!file.open(QIODevice::ReadOnly))
-//        {
-//            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
-//                "Layout Unavailable",
-//                "Somehow no website layout was accessible, not even the internal default.",
-//                "layout::define_theme() could not open the default-theme-parser.xsl resource file.");
-//            NOTREACHED();
-//        }
-//        QByteArray data(file.readAll());
-//        xsl = QString::fromUtf8(data.data(), data.size());
-//    }
-//
-//    // replace <xsl:include ...> with other XSTL files (should be done
-//    // by the parser, but Qt's parser doesn't support it yet)
-//    replace_includes(xsl);
-//
-//    return xsl;
-//}
-
-
 /** \brief Search the XSLT document and replace include/import tags.
  *
  * This function searches the XSLT document for tags that look like
@@ -1322,14 +1331,14 @@ QString layout::apply_theme(QDomDocument doc, QString const & xsl, QString const
  *
  * Source: http://www.w3.org/TR/xslt#section-Combining-Stylesheets
  */
-void layout::replace_includes(QString& xsl)
+void layout::replace_includes(QString & xsl)
 {
     // use a sub-function so we can apply the xsl:include and xsl:import
     // with the exact same code instead of copy & paste.
     class replace_t
     {
     public:
-        static void replace(snap_child *snap, QString const& tag, QString& xsl)
+        static void replace(snap_child * snap, QString const & tag, QString & xsl)
         {
             // the xsl:include is recursive, what gets included may itself
             // include some more sub-data
@@ -1363,13 +1372,18 @@ void layout::replace_includes(QString& xsl)
                     break;
                 }
                 QString uri(attributes.mid(href_start + 6, href_end - href_start - 6));
+                if(!uri.endsWith(".xsl"))
+                {
+                    uri += ".xsl";
+                }
                 if(!uri.contains(':')
                 && !uri.contains('/'))
                 {
-                    uri = QString(":/xsl/layout/%1.xsl").arg(uri);
+                    uri = QString(":/xsl/layout/%1").arg(uri);
                 }
 
                 // load the file in memory
+                //
                 snap_child::post_file_t file;
                 file.set_filename(uri);
                 if(!snap->load_file(file))
@@ -1380,12 +1394,14 @@ void layout::replace_includes(QString& xsl)
                 QString include(QString::fromUtf8(file.get_data(), file.get_size()));
 
                 // grab the content within the <xsl:stylesheet> root tag
+                //
                 int const open_stylesheet_start(include.indexOf("<xsl:stylesheet"));
                 int const open_stylesheet_end(include.indexOf(">", open_stylesheet_start + 15));
                 int const close_stylesheet_start(include.lastIndexOf("</xsl:stylesheet"));
                 include = include.mid(open_stylesheet_end + 1, close_stylesheet_start - open_stylesheet_end - 1);
 
                 // replace the <xsl:include ...> tag
+                //
                 xsl.replace(start, end - start + 1, include);
             }
         }
@@ -1403,86 +1419,145 @@ void layout::replace_includes(QString& xsl)
  * the layout was updated.
  *
  * \param[in] layout_name  The name of the layout to install.
- * \param[in,out] last_updated  The date when the layout was last updated.
- *                              If zero, do not check for updates.
- *
- * \return last updated timestamp
  */
-int64_t layout::install_layout(QString const & layout_name, int64_t const last_updated)
+void layout::install_layout(QString const & layout_name)
 {
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
-    // installing a layout can be complex so knowing which one breaks an
-    // update can be really useful
-    //
-    //SNAP_LOG_TRACE("layout::install_layout(): layout name \"")(layout_name)("\" last updated on ")(last_updated);
-
     QtCassandra::QCassandraValue last_updated_value;
     if(layout_name == "default")
     {
-        // the default theme doesn't get a new date and time without us
+        // the default theme does not get a new date and time without us
         // having to read, parse, analyze the XML date, so instead we use
-        // this file date and time
-        QString const last_layout_update(__DATE__ " " __TIME__);
-
-        time_t const last_update_of_default_theme(f_snap->string_to_date(last_layout_update));
-        if(last_update_of_default_theme == static_cast<time_t>(-1))
-        {
-            throw snap_logic_exception(QString("string_to_date(%1) failed in layout::install_layout()").arg(last_layout_update));
-        }
+        // the date and time when this file gets compiled
+        //
+        time_t const last_update_of_default_theme(SNAP_UNIX_TIMESTAMP(UTC_YEAR, UTC_MONTH, UTC_DAY, UTC_HOUR, UTC_MINUTE, UTC_SECOND));
         last_updated_value.setInt64Value(last_update_of_default_theme * 1000000LL);
     }
     else
     {
         last_updated_value = layout_table->row(layout_name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value();
+
+        if(last_updated_value.size() != sizeof(int64_t))
+        {
+            // this is a rather bad error, i.e. we do not know when that
+            // layout was last updated?! the snaplayout tool does write
+            // that information, but if you program your own thing, then
+            // it could go missing
+            //
+            SNAP_LOG_ERROR("layout::install_layout(): the ")
+                          (snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))
+                          (" field is not defined for layout ")
+                          (layout_name)
+                          (".");
+
+            // force a default using "now"
+            //
+            // TBD: this may need to be a different value (i.e. maybe
+            //      2012/1/1 00:00:00)
+            //
+            int64_t const start_date(f_snap->get_start_date());
+            last_updated_value.setInt64Value(start_date);
+            layout_table->row(layout_name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated_value);
+        }
     }
 
+    // here the last_updated_value must be correct
+    //
+    if(last_updated_value.size() != sizeof(int64_t))
+    {
+        throw snap_logic_exception("layout::install_layout(): somehow last_updated_value is not exactly sizeof(int64_t).");
+    }
+
+    // installing a layout can be complex so knowing which one breaks an
+    // update can be really useful
+    //
+    SNAP_LOG_DEBUG("layout::install_layout(): layout name \"")
+                  (layout_name)
+                  ("\" last updated on ")
+                  (last_updated_value.safeInt64Value());
+
+    // determine the path to this layout
+    //
     content::path_info_t layout_ipath;
-    layout_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+    layout_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_LAYOUTS_PATH)).arg(layout_name));
+
+    // Define the name of the field to be used to record the last time
+    // the layout was updated
+    //
+    QString const layout_last_update_field_name(QString("%1::layout::%2")
+                                .arg(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))
+                                .arg(layout_name));
+
+    // if the layout is already installed (has_branch() returns true) then
+    // then check when the last update was applied
+    //
     if(layout_ipath.has_branch()
     && branch_table->exists(layout_ipath.get_branch_key())
     && branch_table->row(layout_ipath.get_branch_key())->exists(get_name(name_t::SNAP_NAME_LAYOUT_BOXES)))
     {
-        // The layout is already installed
-        if(last_updated == 0)
-        {
-            // do not check for updates
-            return 0;
-        }
-        // caller wants us to check for updates
+        // the layout is already installed
+        //
 
-        // the value should never be null in a properly installed layout
-        if(last_updated_value.size() == sizeof(int64_t))
+        // retrieve the timestamp of the last update for this layout
+        //
+        int64_t const last_install(f_snap->get_site_parameter(layout_last_update_field_name).safeInt64Value());
+
+        // get the timestamp from the layout
+        //
+        int64_t const last_update(last_updated_value.safeInt64Value());
+
+        // compare whether the layout was updated more recently
+        //
+        if(last_update <= last_install)
         {
-            int64_t const last_install(last_updated_value.int64Value());
-            if(last_install <= last_updated)
-            {
-                // we are good already
-                //
-                return last_updated;
-            }
+            // we are good already
+            //
+            // last update of the website is older or the same as
+            // the last installation we have done of it on this
+            // website
+            //
+            return;
         }
     }
 
-    // make sure the layout is valid if it exists
+    // make sure the layout is considered valid if it exists
+    //
     if(content_table->exists(layout_ipath.get_key()))
     {
         content::path_info_t::status_t const status(layout_ipath.get_status());
         if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
         {
-            return 0;
+            // layout page is not marked as being "normal", we cannot work
+            // on it while the content plugin is also working on it
+            //
+            return;
         }
     }
 
-    // this layout is missing, create necessary basic info
-    // (later users can edit those settings)
+    // save the new updated date to the database
+    //
+    // Saving it now somewhat replicates what we do in the child process
+    // (really it would happen even if the previous return gets executed!)
+    // because if anything else fails, we do not want to try it again until
+    // a new update is available (otherwise the website gets hosed until
+    // the fixing update gets installed...)
+    //
+    f_snap->set_site_parameter(layout_last_update_field_name, last_updated_value);
+
+    // this layout is missing or needs updates
     //
     QString xml_content;
-    if( layout_name == "default" )
+    if(layout_name == "default")
     {
+        // the default theme is in our resources instead of the database
+        // so it can work even if we were to not be able to read that info
+        // from the database (although at this time we are bound to having
+        // a database connection in any event)
+        //
         QFile file(":/xml/layout/content.xml");
         if(!file.open(QIODevice::ReadOnly))
         {
@@ -1497,23 +1572,22 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     }
     else
     {
-        if(!layout_table->row(layout_name)->exists(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT)))
+        if(!layout_table->row(layout_name)->exists(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT_XML)))
         {
             // that should probably apply to the body and theme names
-            if(last_updated != 0)
-            {
-                SNAP_LOG_ERROR("Could not read \"")(layout_name)(".")(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))("\" from the layout table while updating layouts, error is ignored now so your plugin can fix it.");
-                return last_updated;
-            }
-            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                        "Layout Unavailable",
-                        QString("Layout \"%1\" content.xml file is missing.").arg(layout_name),
-                        "layout::install_layout() could not find the content.xml file in the layout table.");
-            NOTREACHED();
+            //
+            SNAP_LOG_ERROR("Could not read \"")
+                          (layout_name)
+                          ("/")
+                          (get_name(name_t::SNAP_NAME_LAYOUT_CONTENT_XML))
+                          ("\" from the layout table while updating layouts, error is ignored now so your plugin can fix it.");
+            return;
         }
-        xml_content = layout_table->row(layout_name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))->value().stringValue();
+        xml_content = layout_table->row(layout_name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT_XML))->value().stringValue();
     }
 
+    // transform the XML data to a DOM
+    //
     QDomDocument dom;
     if(!dom.setContent(xml_content, false))
     {
@@ -1524,57 +1598,62 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
         NOTREACHED();
     }
 
-    // XXX: it seems to me that the owner should not depend on p
-    //      because at this point we cannot really know what p is
-    //      and it should probably not be initialized with a plugin
-    //      that we don't know anything about...
-    //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::name_t::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
+    // add the XML document to the installation data
+    //
+    // IMPORTANT NOTE: We use the "output" plugin as the default owner of
+    //                 all layout data because we expect the "output"
+    //                 plugin to display any page added by a layout (there
+    //                 should be nothing of much interest to a hacker, etc.
+    //                 in a layout so this should always be fine.)
+    //
     content_plugin->add_xml_document(dom, content::get_name(content::name_t::SNAP_NAME_CONTENT_OUTPUT_PLUGIN));
 
-    // if the snap_child object is ready, then the initialization process
-    // was over for a while and thus we need to ask the system to process
-    // the new content that was just added by the layout system...
-    if(f_snap->is_ready())
-    {
-        f_snap->finish_update();
-    }
+    // memorize which layout we updated so we can finalize the installation
+    // in our finish_install_layout() function
+    //
+    f_initialized_layout.push_back(layout_name);
+}
 
-    // after an update of the content.xml file we expect the layout::boxes
-    // field to be defined
-    if( !branch_table->row(layout_ipath.get_branch_key())->exists(get_name(name_t::SNAP_NAME_LAYOUT_BOXES)) )
+
+void layout::finish_install_layout()
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
+    for(auto const & layout_name : f_initialized_layout)
     {
-        if(last_updated != 0)
+        content::path_info_t layout_ipath;
+        layout_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_LAYOUTS_PATH)).arg(layout_name));
+
+        // after an update of the content.xml file we expect the layout::boxes
+        // field to be defined
+        //
+        if(!branch_table->row(layout_ipath.get_branch_key())->exists(get_name(name_t::SNAP_NAME_LAYOUT_BOXES)))
         {
             SNAP_LOG_ERROR("Could not read \"")(layout_ipath.get_branch_key())(".")
                     (get_name(name_t::SNAP_NAME_LAYOUT_BOXES))
                     ("\" from the layout, error is ignored now so your plugin can fix it.");
-            return last_updated;
         }
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                "Layout Unavailable",
-                QString("Layout \"%1\" content.xml file does not define the layout::boxes entry for this layout.").arg(layout_name),
-                QString("layout::install_layout() the content.xml did not define \"%1->[layout::boxes]\" as expected.").arg(layout_ipath.get_branch_key()));
-        NOTREACHED();
+
+        // create a reference back to us from the layout that way we know
+        // who uses what
+        //
+        // note that at this point we do not yet have a way to remove
+        // those references
+        //
+        QString const reference(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_REFERENCE)).arg(layout_ipath.get_key()));
+        int64_t const start_date(f_snap->get_start_date());
+        QtCassandra::QCassandraValue value;
+        value.setInt64Value(start_date);
+        layout_table->row(layout_name)->cell(reference)->setValue(value);
     }
 
-    // create a reference back to us from the layout
-    // that way we know who uses what (although a layout may not be in use
-    // anymore after a while and the reference won't be removed...)
-    QString const reference(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_REFERENCE)).arg(layout_ipath.get_key()));
-    int64_t const start_date(f_snap->get_start_date());
-    QtCassandra::QCassandraValue value;
-    value.setInt64Value(start_date);
-    layout_table->row(layout_name)->cell(reference)->setValue(value);
-
-    // the last updated value should never be empty, but that happens when
-    // we deal with the default theme
-    if(last_updated_value.size() != sizeof(int64_t))
-    {
-        last_updated_value.setInt64Value(last_updated);
-        layout_table->row(layout_name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated_value);
-    }
-
-    return last_updated_value.int64Value();
+    // just in case, clear the list because we do not want to re-run that
+    // code over and over again (this function should never be called more
+    // than once, though.)
+    //
+    f_initialized_layout.clear();
 }
 
 
@@ -1760,10 +1839,11 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
                 return;
             }
             QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+            QString const column_name(parts[1] + ".xsl");
             if(layout_table->exists(parts[0])
-            && layout_table->row(parts[0])->exists(QString(parts[1])))
+            && layout_table->row(parts[0])->exists(QString(column_name)))
             {
-                QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(parts[1]))->value());
+                QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(column_name))->value());
 
                 file.set_filename(filename);
                 file.set_data(layout_value.binaryValue());
@@ -1788,6 +1868,11 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
  *
  * The update date is set to start_date().
  *
+ * \warning
+ * This function can only be called from your do_update() function or
+ * things will break. The finalization will automatically be handled
+ * as required.
+ *
  * \param[in] name  The name of the layout. In most cases it will be the
  *                  same as the name of your plugin.
  */
@@ -1803,7 +1888,7 @@ bool layout::add_layout_from_resources_impl(QString const & name)
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Body Layout Unavailable",
                     QString("Could not read \"%1\" from the Qt resources.").arg(body),
-                    "layout::add_layout_from_resources() could not open resource file for a body file.");
+                    "layout::add_layout_from_resources_impl() could not open resource file for a body file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
@@ -1818,7 +1903,7 @@ bool layout::add_layout_from_resources_impl(QString const & name)
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Theme Layout Unavailable",
                     QString("Could not read \"%1\" from the Qt resources.").arg(theme),
-                    "layout::add_layout_from_resources() could not open resource file for a theme file.");
+                    "layout::add_layout_from_resources_impl() could not open resource file for a theme file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
@@ -1833,26 +1918,44 @@ bool layout::add_layout_from_resources_impl(QString const & name)
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Sendmail Theme Content Unavailable",
                     QString("Could not read \"%1\" from the Qt resources.").arg(content),
-                    "layout::add_layout_from_resources() could not open resource file for a content.xml file.");
+                    "layout::add_layout_from_resources_impl() could not open resource file for a content.xml file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
-        layout_table->row(name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
+        layout_table->row(name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT_XML))->setValue(data);
     }
 
     return true;
 }
 
 
-void layout::add_layout_from_resources_done(QString const & name)
+/** \brief Helper function to install a theme from resources.
+ *
+ * This function is called after other plugins had a chance to tweak a
+ * few things in this theme. For example, the editor plugin may add
+ * the editor XSL file if present in the source.
+ *
+ * It also finalize the installation by calling the install_layout()
+ * function.
+ *
+ * \param[in] layout_name  The layout name.
+ */
+void layout::add_layout_from_resources_done(QString const & layout_name)
 {
     QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
+    // simulate a "last updated" date?
+    //
+    // TBD: is this required? At this time we generate an error if it does
+    //      not get defined and use 'get_start_date()' as the default anyway...
+    //      (see install_layout() for details)
+    //
+    //      I am wondering whether this should not be set at all?
+    //
     int64_t const updated(f_snap->get_start_date());
-    layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
+    layout_table->row(layout_name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
 
-    int64_t const last_update(install_layout(name, 0));
-    layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_update);
+    install_layout(layout_name);
 }
 
 
@@ -1978,7 +2081,7 @@ bool layout::on_improve_signature(QString const & path, QDomDocument doc, QDomEl
   </body>
   <boxes>
    <left>
-    <filter path="admin/layouts/bare/left/login" owner="users_ui">
+    <filter path="layouts/bare/left/login" owner="users_ui">
      <titles>
       <title>User Login</title>
      </titles>

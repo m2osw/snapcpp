@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!-- to install: snaplayout content.xml -->
 <snap-tree content-modified="2015-11-04 15:43:39">
-  <content path="/admin/layouts/default">
+  <content path="/layouts/default">
     <param name="content::title" revision="revision">Default Layout</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The default layout is the default used internally by Snap!</p>
@@ -27,13 +27,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="layout::boxes">left</param>
   </content>
-  <content path="/admin/layouts/default/left">
+  <content path="/layouts/default/left">
     <param name="content::title" revision="revision">Left Boxes</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This box is shown on the left side of the content.</p>]]>
     </param>
   </content>
-  <content path="/admin/layouts/default/left/login" owner="users_ui">
+  <content path="/layouts/default/left/login" owner="users_ui">
     <!--
       this is a default box as a proof of concept
       once we can edit this data it will be much less useful
@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
   </content>
-  <content path="/admin/layouts/default/left/admin" owner="list">
+  <content path="/layouts/default/left/admin" owner="list">
     <!--
       all themes should get the administration menu and we may
       actually end up adding it automatically (forcibly) instead

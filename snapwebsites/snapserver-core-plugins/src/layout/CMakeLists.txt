@@ -54,6 +54,8 @@ snap_validate_xml( layout/user-messages.xsl          simplified-xslt20.dtd )
 snap_validate_xml( layout/default-body-parser.xsl    simplified-xslt20.dtd )
 
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUTC_YEAR=\"`date -u +%Y`\" -DUTC_MONTH=\"`date -u +%-m`\" -DUTC_DAY=\"`date -u +%-d`\" -DUTC_HOUR=\"`date -u +%-H`\" -DUTC_MINUTE=\"`date -u +%-M`\" -DUTC_SECOND=\"`date -u +%-S`\"")
+
 add_library(layout SHARED
     layout.cpp
     ${SNAP_MANAGER_MOC_CXX}
@@ -83,4 +85,4 @@ install(
 )
 
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et wrap
