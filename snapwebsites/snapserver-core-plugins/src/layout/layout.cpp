@@ -1839,7 +1839,7 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
                 return;
             }
             QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-            QString const column_name(parts[1] + ".xsl");
+            QString column_name(parts[1]);
             if(layout_table->exists(parts[0])
             && layout_table->row(parts[0])->exists(QString(column_name)))
             {
@@ -1848,7 +1848,26 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
                 file.set_filename(filename);
                 file.set_data(layout_value.binaryValue());
                 found = true;
-                // return false since we already "found" the file
+            }
+            else
+            {
+                // if "column_name" does not exist, we try again with
+                // the ".xsl" extension
+                //
+                // TODO: this is to be backward compatible, all filenames
+                //       should have an extension specified so we do not
+                //       take a chance like this...
+                //
+                column_name += ".xsl";
+                if(layout_table->exists(parts[0])
+                && layout_table->row(parts[0])->exists(QString(column_name)))
+                {
+                    QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(column_name))->value());
+
+                    file.set_filename(filename);
+                    file.set_data(layout_value.binaryValue());
+                    found = true;
+                }
             }
         }
     }
