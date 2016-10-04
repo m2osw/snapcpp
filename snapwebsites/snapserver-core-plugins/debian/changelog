@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.5.4~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-468: Fixed the load_file so it loads files as is or with the
+    ".xsl" extension.
 
- -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 04 Oct 2016 14:12:48 -0700
 
 snapserver-core-plugins (1.0.5.0~xenial) xenial; urgency=high
 
