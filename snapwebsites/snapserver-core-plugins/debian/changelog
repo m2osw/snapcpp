@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.6.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 04 Oct 2016 14:24:06 -0700
+
 snapserver-core-plugins (1.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-468: Fixed the load_file so it loads files as is or with the
