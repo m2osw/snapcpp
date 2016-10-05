@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <!-- make the sendmail layout exist, but we keep it as simple as possible -->
-  <content path="/admin/layouts/sendmail">
+  <content path="/layouts/sendmail">
     <param name="content::title" revision="revision">Sendmail Layout</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The sendmail layout is the default used when Snap! sends email.</p>

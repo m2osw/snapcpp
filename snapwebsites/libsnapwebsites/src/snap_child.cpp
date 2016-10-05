@@ -4722,7 +4722,6 @@ void snap_child::canonicalize_website()
             {
                 f_site_key_with_slash += "/";
             }
-SNAP_LOG_WARNING("site key = [")(f_site_key)("] and site key with slash = [")(f_site_key_with_slash)("]");
             return;
         }
     }
@@ -6013,20 +6012,12 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name
 void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value)
 {
     // retrieve site table if not there yet
+    //
     if(!f_sites_table)
     {
         // get a pointer to the "sites" table
         //
         f_sites_table = get_table(get_name(name_t::SNAP_NAME_SITES));
-
-        // mandatory field if this is not the first field being written
-        //
-        // TODO: this "mandatory field" is incorrect because only one
-        //       website gets to create this table...
-        if(name != get_name(name_t::SNAP_NAME_CORE_SITE_NAME))
-        {
-            f_sites_table->row(f_site_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
-        }
     }
 
     f_sites_table->row(f_site_key)->cell(name)->setValue(value);
@@ -7095,8 +7086,10 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
  * \param[in] list_of_plugins  The list of plugin names that were loaded
  *                             for this run.
  */
-void snap_child::update_plugins(snap_string_list const& list_of_plugins)
+void snap_child::update_plugins(snap_string_list const & list_of_plugins)
 {
+    SNAP_LOG_INFO("update_plugins() called with \"")(list_of_plugins.join(", "))("\"");
+
     // system updates run at most once every 10 minutes
     QString const core_last_updated(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
     QString const core_last_dynamic_update(get_name(name_t::SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE));
@@ -7153,7 +7146,19 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
             return;
         }
 
+        // we do not allow a null value in the core::site_name field,
+        // so we set it on initialization, user can replace the name
+        // later from the UI
+        //
+        QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
+        if(site_name.nullValue())
+        {
+            site_name.setStringValue("Website Name");
+            set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME), site_name);
+        }
+
         // save that last time we checked for an update
+        //
         last_updated.setInt64Value(f_start_date);
         QString const core_plugin_threshold(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         set_site_parameter(core_last_updated, last_updated);
@@ -7176,6 +7181,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
             plugins::plugin * p(plugins::get_plugin(plugin_name));
             if(p != nullptr)
             {
+                SNAP_LOG_INFO("update_plugins() called with \"")(plugin_name)("\"");
                 trace(QString("Updating plugin \"%1\"\n").arg(plugin_name));
 
                 // the plugin changed, we want to call do_update() on it!
@@ -7188,28 +7194,32 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
                 // its own list of date/time checks
                 QString const specific_param_name(QString("%1::%2").arg(core_last_updated).arg(plugin_name));
                 QtCassandra::QCassandraValue specific_last_updated(get_site_parameter(specific_param_name));
+                int64_t const old_last_updated(specific_last_updated.safeInt64Value());
                 if(specific_last_updated.nullValue())
                 {
                     // use an "old" date (631152000)
                     specific_last_updated.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
                 }
-                // IMPORTANT: Note that we save the newest date found in the
-                //            do_update() to make 100% sure we catch all the
-                //            updates every time (using "now" would often mean
-                //            missing many updates!)
                 try
                 {
-                    specific_last_updated.setInt64Value(p->do_update(specific_last_updated.int64Value()));
+                    specific_last_updated.setInt64Value(p->do_update(old_last_updated));
+
+                    // avoid the database access if the value did not change
+                    //
+                    if(specific_last_updated.int64Value() != old_last_updated)
+                    {
+                        set_site_parameter(specific_param_name, specific_last_updated);
+                    }
                 }
                 catch(std::exception const & e)
                 {
                     SNAP_LOG_ERROR("Updating ")(plugin_name)(" failed with an exception: ")(e.what());
                 }
-                set_site_parameter(specific_param_name, specific_last_updated);
             }
         }
 
         // this finishes the content.xml updates
+        SNAP_LOG_INFO("update_plugins() finalize the content.xml (a.k.a. static) update.");
         finish_update();
 
         // now allow plugins to have a more dynamic set of updates
@@ -7228,6 +7238,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
                 // its own list of date/time checks
                 QString const specific_param_name(QString("%1::%2").arg(core_last_dynamic_update).arg(plugin_name));
                 QtCassandra::QCassandraValue specific_last_updated(get_site_parameter(specific_param_name));
+                int64_t const old_last_updated(specific_last_updated.safeInt64Value());
                 if(specific_last_updated.nullValue())
                 {
                     // use an "old" date (631152000)
@@ -7239,13 +7250,19 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
                 //            missing many updates!)
                 try
                 {
-                    specific_last_updated.setInt64Value(p->do_dynamic_update(specific_last_updated.int64Value()));
+                    specific_last_updated.setInt64Value(p->do_dynamic_update(old_last_updated));
+
+                    // avoid the database access if the value did not change
+                    //
+                    if(specific_last_updated.int64Value() != old_last_updated)
+                    {
+                        set_site_parameter(specific_param_name, specific_last_updated);
+                    }
                 }
                 catch(std::exception const & e)
                 {
                     SNAP_LOG_ERROR("Dynamically updating ")(plugin_name)(" failed with an exception: ")(e.what());
                 }
-                set_site_parameter(specific_param_name, specific_last_updated);
             }
         }
 

@@ -362,6 +362,8 @@ void snaplock::run()
     //
     if(f_opt.is_defined("list"))
     {
+        snap::logging::set_log_output_level(snap::logging::log_level_t::LOG_LEVEL_ERROR);
+
         // in this case create a snaplock_tool() which means most messages
         // are not going to function; and once ready, it will execute the
         // function specified on the command line such as --list
@@ -371,6 +373,8 @@ void snaplock::run()
     }
     else
     {
+        SNAP_LOG_INFO("--------------------------------- snaplock started.");
+
         f_messenger.reset(new snaplock_messenger(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
     }
     f_communicator->add_connection(f_messenger);

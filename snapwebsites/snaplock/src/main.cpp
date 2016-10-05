@@ -65,8 +65,6 @@ int main(int argc, char * argv[])
         //
         snaplock lock( argc, argv );
 
-        SNAP_LOG_INFO("--------------------------------- snaplock started.");
-
         // Now run!
         //
         lock.run();

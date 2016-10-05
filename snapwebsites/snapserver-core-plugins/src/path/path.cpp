@@ -810,7 +810,8 @@ QString path::define_action(content::path_info_t & ipath)
         // save the action in the path
         ipath.set_parameter("action", action);
     }
-    else if(action != "administer" && (ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/")) && !ipath.get_cpath().startsWith("admin/layout"))
+    else if(action != "administer"
+         && (ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/")))
     {
         // TBD: anything under /admin is supposed to be administrative
         //      forms and navigation pages; however, we have our layout

@@ -1,8 +1,18 @@
-libsnapwebsites (1.1.16.7~xenial) xenial; urgency=high
+libsnapwebsites (1.1.17.6~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 02:00:47 -0700
+ -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:48 -0700
+
+libsnapwebsites (1.1.17.0~xenial) xenial; urgency=high
+
+  * SNAP-378: Applied fix so the do_update() calls only happen when we use the
+    snapinstallwebsite command line. In other words, it is now in the
+    background and thus way safer.
+  * If current state not "ready," frontend users get a 503 error.
+  * Removed access to the install_layout() call from frontend users.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 29 Sep 2016 21:52:47 -0700
 
 libsnapwebsites (1.1.16.0~xenial) xenial; urgency=high
 

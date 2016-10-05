@@ -59,6 +59,7 @@
 #include <QTextStream>
 #include <QXmlInputSource>
 
+#include <snapwebsites/poison.h>
 
 
 namespace
@@ -229,11 +230,11 @@ public:
     void usage();
     void run();
     void add_files();
-    bool load_xml_info(QDomDocument& doc, QString const& filename, QString& layout_name, time_t& layout_modified);
-    void load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified);
-    void load_css  (QString const& filename, QByteArray const& content, QString& row_name);
-    void load_js   (QString const& filename, QByteArray const& content, QString& row_name);
-    void load_image(QString const& filename, QByteArray const& content, QString& row_name);
+    bool load_xml_info(QDomDocument& doc, QString const & filename, QString & layout_name, time_t & layout_modified);
+    void load_xsl_info(QDomDocument& doc, QString const & filename, QString & layout_name, QString & layout_area, time_t & layout_modified);
+    void load_css  (QString const & filename, QByteArray const & content, QString & row_name);
+    void load_js   (QString const & filename, QByteArray const & content, QString & row_name);
+    void load_image(QString const & filename, QByteArray const & content, QString & row_name);
     void set_theme();
     void remove_theme();
     void extract_file();
@@ -250,7 +251,7 @@ private:
         {
         }
 
-        fileinfo_t( QString const& fn, QByteArray const& content, time_t const time )
+        fileinfo_t( QString const & fn, QByteArray const & content, time_t const time )
             : f_filename(fn)
             , f_content(content)
             , f_filetime(time)
@@ -266,9 +267,9 @@ private:
     // Private methods
     //
     void connect();
-    bool tableExists( const QString& table_name ) const;
-    bool rowExists  ( const QString& table_name, const QByteArray& row_key ) const;
-    bool cellExists ( const QString& table_name, const QByteArray& row_key, const QByteArray& cell_key ) const;
+    bool tableExists( QString const & table_name ) const;
+    bool rowExists  ( QString const & table_name, QByteArray const & row_key ) const;
+    bool cellExists ( QString const & table_name, QByteArray const & row_key, QByteArray const & cell_key ) const;
 
     // Common attributes
     //
@@ -459,7 +460,7 @@ bool snap_layout::load_xml_info(QDomDocument & doc, QString const & filename, QS
                 // this is probably an error
                 continue;
             }
-            if(path.startsWith("/admin/layouts/"))
+            if(path.startsWith("/layouts/"))
             {
                 int pos(path.indexOf('/', 15));
                // int const end(path.indexOf('/', pos + 1));
@@ -467,7 +468,7 @@ bool snap_layout::load_xml_info(QDomDocument & doc, QString const & filename, QS
                 {
                     pos = path.length();
                 }
-                QString name(path.mid(15, pos - 15));
+                QString name(path.mid(9, pos - 9));
                 if(name.isEmpty())
                 {
                     std::cerr << "error: the XML document seems to have an invalid path in \"" << filename << "\"" << std::endl;
@@ -520,6 +521,18 @@ bool snap_layout::load_xml_info(QDomDocument & doc, QString const & filename, QS
 }
 
 
+/** \brief Retrieve information from an XSL document.
+ *
+ * Layouts are defined in an XSL file. The information there includes
+ * retrieved the \p layout_name, \p layout_area and the \p layout_modified.
+ *
+ * \param[in] doc  The XSL document to be checked out.
+ * \param[in] filename  The name of the input file representing doc.
+ * \param[out] layout_name  The name of the layout (i.e. the row in the db).
+ * \param[out] layout_area  The name of the area (i.e. the cell in the db,
+ *                          which represents a filename).
+ * \param[out] layout_modified  The time when this info was last updated.
+ */
 void snap_layout::load_xsl_info(QDomDocument & doc, QString const & filename, QString & layout_name, QString & layout_area, time_t & layout_modified)
 {
     layout_name.clear();
@@ -533,6 +546,7 @@ void snap_layout::load_xsl_info(QDomDocument & doc, QString const & filename, QS
     for(int idx(0); idx < max_nodes; ++idx)
     {
         // all should be elements... but still verify
+        //
         QDomNode p(params.at(idx));
         if(!p.isElement())
         {
@@ -549,10 +563,12 @@ void snap_layout::load_xsl_info(QDomDocument & doc, QString const & filename, QS
         // we'll throw away! but that way we don't have to
         // duplicate the code plus this process is not run
         // by the server
+        //
         QDomNodeList children(e.childNodes());
         if(children.size() != 1)
         {
             // that's most certainly the wrong name?
+            //
             continue;
         }
         QDomNode n(children.at(0));
@@ -562,23 +578,28 @@ void snap_layout::load_xsl_info(QDomDocument & doc, QString const & filename, QS
         n.save(data, 0);
 
         // verify the name
+        //
         QString const name(e.attribute("name"));
-//#ifdef DEBUG
-//printf("param name [%s] = [%s]\n", name.toUtf8().data(), buffer.toUtf8().data());
-//#endif
         if(name == "layout-name")
         {
             // that is the row key
+            //
             layout_name = buffer;
         }
         else if(name == "layout-area")
         {
             // that is the name of the column
+            //
             layout_area = buffer;
+            if(!layout_area.endsWith(".xsl"))
+            {
+                layout_area += ".xsl";
+            }
         }
         else if(name == "layout-modified")
         {
             // that is to make sure we do not overwrite a newer version
+            //
             layout_modified_date = buffer;
         }
     }
@@ -745,7 +766,7 @@ bool snap_layout::tableExists( const QString& table_name ) const
 }
 
 
-bool snap_layout::rowExists( const QString& table_name, const QByteArray& row_key ) const
+bool snap_layout::rowExists( QString const & table_name, QByteArray const & row_key ) const
 {
     try
     {
@@ -759,7 +780,7 @@ bool snap_layout::rowExists( const QString& table_name, const QByteArray& row_ke
         q->start();
         return q->rowCount() > 0;
     }
-    catch( const std::exception& ex )
+    catch( std::exception const & ex )
     {
         std::cerr << "snap_layout::rowExists(): Exception caught! what=" << ex.what() << std::endl;
         exit(1);
@@ -867,7 +888,7 @@ void snap_layout::add_files()
         int const e(filename.lastIndexOf("."));
         if(e == -1)
         {
-            std::cerr << "error: file \"" << filename << "\" must be an XML file (end with the .xml, .xsl or .zip extension.)" << std::endl;
+            std::cerr << "error: file \"" << filename << "\" must include an extension (end with .xml, .xsl, .css, .js, .png, .jpg, etc.)" << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
@@ -890,20 +911,18 @@ void snap_layout::add_files()
             time_t layout_modified;
             if(load_xml_info(doc, filename, row_name, layout_modified))
             {
-                cell_name = "content";
+                cell_name = "content.xml";
             }
             else
             {
                 cell_name = filename;
+
+                // remove the path, only keep the basename
+                //
                 int const last_slash(cell_name.lastIndexOf('/'));
                 if(last_slash >= 0)
                 {
                     cell_name = cell_name.mid(last_slash + 1);
-                }
-                int const last_period(cell_name.lastIndexOf('.'));
-                if(last_period > 0)
-                {
-                    cell_name = cell_name.mid(0, last_period);
                 }
             }
         }
@@ -1295,7 +1314,7 @@ void snap_layout::extract_file()
 
     QString const row_name( f_opt->get_string( "--", 0 ).c_str() );
     //if(!table->exists(row_name))
-    if( !rowExists("layout",row_name.toUtf8()) )
+    if( !rowExists("layout", row_name.toUtf8()) )
     {
         std::cerr << "warning: \"" << row_name << "\" layout not found." << std::endl;
         exit(1);

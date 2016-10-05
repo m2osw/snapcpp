@@ -1239,7 +1239,7 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
                 {
                     if(std::isspace(help[line_width - option_width]))
                     {
-                        ss << help.substr(0, line_width - option_width) << std::endl << std::setw( option_width ) << " ";
+                        ss << help.substr(0, line_width - option_width) << std::endl;
                         help = help.substr(line_width - option_width + 1);
                     }
                     else
@@ -1301,7 +1301,7 @@ void getopt::usage(status_t status, char const * msg, ...)
             errstr = "fatal error";
             break;
 
-        default: //case error:
+        default: //case status_t::error:
             errstr = "error";
             break;
 

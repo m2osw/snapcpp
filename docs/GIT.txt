@@ -67,10 +67,22 @@ git log --stat ["path"]
 # More details available on this page (and next/previous)
 #    https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
 #
+# WARNING: By default, switching from the master to another branch
+#          forces a merge (I do not understand why that would be a good
+#          thing though.)
+#
+# In your home directory, edit .gitconfig and plaster:
+#
+#    [branch]
+#        autosetupmerge = always
+#        autosetuprebase = always
+#
 git branch "branch-name"       # creates a new branch
 git checkout "branch-name"     # switch between branches
 git merge "branch-name"        # merge <name> in current branch
 git branch -d "branch-name"    # delete a branch
+git fetch                      # fetch all (including remote) branches
+git diff "branch-nameA" "branch-nameB" -- "filename"   # diff "filename" between two branches
 
 
 # vim: syntax=sh

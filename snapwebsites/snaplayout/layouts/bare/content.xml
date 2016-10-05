@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!-- to install: snaplayout bare-content.xml -->
 <snap-tree content-modified="2014-01-08 19:36:39">
   <!-- the content grows as things are added to the site, at first it handles the root though -->
-  <content path="/admin/layouts/bare">
+  <content path="/layouts/bare">
     <param name="content::title" revision="revision">Bare Layout</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The bare layout is the default used internally by Snap!</p>
@@ -28,13 +28,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="layout::boxes">left</param>
   </content>
-  <content path="/admin/layouts/bare/left">
+  <content path="/layouts/bare/left">
     <param name="content::title" revision="revision">Left Boxes</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This box is shown on the left side of the content.</p>]]>
     </param>
   </content>
-  <content path="/admin/layouts/bare/left/login" owner="users_ui">
+  <content path="/layouts/bare/left/login" owner="users_ui">
     <!--
       this is a default box as a proof of concept
       once we can edit this data it will be much less useful
@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="users::not_main_page" to="users::not_main_page" mode="1:*">/types/taxonomy/system/content-types/page/not-main-page</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
   </content>
-  <content path="/admin/layouts/bare/left/admin" owner="list">
+  <content path="/layouts/bare/left/admin" owner="list">
     <!--
       all themes should get the administration menu and we may
       actually end up adding it automatically (forcibly) instead

@@ -193,6 +193,14 @@ namespace
         },
         {
             '\0',
+            0,
+            "save-cell",
+            nullptr,
+            "save the specified cell (specify table, row, and cell)",
+            advgetopt::getopt::argument_mode_t::required_argument
+        },
+        {
+            '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
@@ -817,6 +825,12 @@ void snapdb::exec()
     }
 
     f_session->connect( f_host, f_port, !f_opt->is_defined("no-ssl") );
+
+    // TODO: the following is not very good in terms of checking whether
+    //       the specified command line arguments are all proper; for
+    //       example, you should not be allowed to use --save-cell and
+    //       --drop-row together...
+    //
 
     if(f_table.isEmpty())
     {

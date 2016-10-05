@@ -1192,12 +1192,12 @@ void form::on_process_post(QString const & uri_path)
         // generate a redirect... so there must have been an
         // error because a redirect after this place seems
         // unlikely)
-        if(cpath.startsWith("admin/layouts/"))
+        if(cpath.startsWith("layouts/"))
         {
             snap_string_list const segments(cpath.split("/"));
-            // TBD: I'm not totally sure that boxes will always have exactly
-            //      5 segments, but this is the case at this point
-            if(segments.size() == 5)
+            // TBD: I am not totally sure that boxes will always have exactly
+            //      4 segments, but this is the case at this point
+            if(segments.size() == 4)
             {
                 // this is a box, try to send the user back to where he
                 // came from, which means he loses the POST data... Ooops!

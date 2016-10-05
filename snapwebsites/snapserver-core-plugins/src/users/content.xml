@@ -61,7 +61,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <dependency>popup (&gt;= 0.1.0.10)</dependency>
     </attachment>
   </content>
-  <content path="/images/users">
+  <content path="/images/users" owner="users_ui">
     <param name="content::title" revision="revision">User Images</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Various images used by the users plugins.</p>]]>

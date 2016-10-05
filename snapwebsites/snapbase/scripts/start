@@ -36,6 +36,6 @@ do
 	# Run this one blocking to avoid having to instances running
 	# simultaneously
 	#
-	BUILD/snapwebsites/snapcommunicator/src/snapbackend
+	BUILD/snapwebsites/snapbackend/src/snapbackend
 done
 

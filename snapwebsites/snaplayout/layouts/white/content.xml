@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree content-modified="2014-01-08 19:36:25">
   <!-- the content grows as things are added to the site, at first it handles the root though -->
-  <content path="/admin/layouts/white">
+  <content path="/layouts/white">
     <param name="content::title" revision="revision">White Layout</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The white layout is a simple layout using black, white, and gray colors.</p>]]>

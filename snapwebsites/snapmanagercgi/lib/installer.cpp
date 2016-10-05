@@ -731,6 +731,8 @@ bool manager::installer(QString const & bundle_name, std::string const & command
         }
     }
 
+    // Note: we should receive a DPKGUPDATE message too
+    //
     reset_aptcheck();
 
     return success;

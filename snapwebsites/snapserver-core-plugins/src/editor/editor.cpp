@@ -2182,7 +2182,7 @@ void editor::on_add_layout_from_resources(QString const & name)
         if(file.open(QIODevice::ReadOnly))
         {
             QByteArray data(file.readAll());
-            layout_table->row(name)->cell(QString("%1-page").arg(name))->setValue(data);
+            layout_table->row(name)->cell(QString("%1-page.xml").arg(name))->setValue(data);
         }
     }
 }
@@ -2489,7 +2489,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool const
 
                 // always test for the data in the layout table first
                 QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
-                QString widgets_xml(layout_table->row(name)->cell(script)->value().stringValue());
+                QString widgets_xml(layout_table->row(name)->cell(script + ".xml")->value().stringValue());
                 if(widgets_xml.isEmpty())
                 {
                     // check for a file in the resources instead...

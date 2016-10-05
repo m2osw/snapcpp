@@ -244,26 +244,34 @@ void users_ui::fix_owner_update(int64_t variables_timestamp)
 {
     NOTUSED(variables_timestamp);
 
+    // I leave this here as an example, only:
+    //
+    // 1. I fixed the XML files so it is not required
+    // 2. on installation, it runs BEFORE pages get installed and never
+    //    again, so if I were to still have errors in the list of pages
+    //    presented below, it would double "fail"
+    // 3. this should be called from do_dynamic_update() instead
+    //
     char const * paths[] =
     {
         "login",
-        "verify-credentials",
-        "forgot-password",
-        "new-password",
-        "register",
-        "verify/resend",
-        "verify",
-        "logout",
-        "user/password",
-        "user/password/replace",
-        "images/users",
-        "admin/settings/users",
-        "admin/email/users",
-        "admin/email/users/verify",
-        "admin/email/users/forgot-password",
-        "admin/page/users",
-        "admin/page/users/profile",
-        "admin/layouts/default/left/login"   // this is a box
+        //"verify-credentials",
+        //"forgot-password",
+        //"new-password",
+        //"register",
+        //"verify/resend",
+        //"verify",
+        //"layouts/default/left/login"   // this is a box
+        //"logout",
+        //"user/password",
+        //"user/password/replace",
+        //"images/users",                           users
+        //"admin/settings/users",                   output
+        //"admin/email/users",                      output -- this may be because it is a directory and not a "useful" page in itself?
+        //"admin/email/users/verify",
+        //"admin/email/users/forgot-password",
+        //"admin/page/users",
+        //"admin/page/users/profile",
     };
 
     content::content * content_plugin(content::content::instance());

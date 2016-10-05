@@ -1,3 +1,4 @@
 debian/tmp/usr/bin/snapmanagerdaemon debian/tmp/usr/bin/snapupgrader scripts/snapchangeloglevel scripts/snaprestartcassandra usr/bin/
 conf/snapmanagerdaemon.properties usr/share/snapwebsites/logger/
 conf/snapmanagerdaemon.properties etc/snapwebsites/logger/
+conf/snapmanager-dpkg-update etc/dpkg/dpkg.cfg.d/

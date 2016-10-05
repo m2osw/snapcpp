@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <!-- make the sendmail layout exist, but we keep it as simple as possible -->
-  <content path="/admin/layouts/unsubscribe">
+  <content path="/layouts/unsubscribe">
     <param name="content::title" revision="revision">Unsubscribe Layout</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The unsubscribe layout is the default used for users to unsubscribe from our emails.</p>]]>

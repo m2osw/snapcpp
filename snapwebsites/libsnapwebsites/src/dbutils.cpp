@@ -722,6 +722,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     }
     else if((f_tableName == "backend" && f_rowName.startsWith("*"))
          || (f_tableName == "antihammering" && n == "*blocked*")
+         || (f_tableName == "layout" && n.startsWith("layout::reference::"))
          || n == "content::created"
          || n == "content::cloned"
          || n == "content::files::created"
