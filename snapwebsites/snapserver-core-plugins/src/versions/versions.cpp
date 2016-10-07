@@ -321,16 +321,173 @@ bool versions::versions_tools_impl(filter::filter::token_info_t & token)
     token.f_replacement += "<h3>Tools</h3><ul>";
 
         // iplock
-    token.f_replacement += "<li>iplock ";
+    if(access("/usr/sbin/iplock", X_OK))
     {
-        process p("check iplock version");
-        p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
-        p.set_command("iplock");
-        p.add_argument("--version");
-        p.run();
-        token.f_replacement += p.get_output();
+        token.f_replacement += "<li>iplock ";
+        {
+            process p("check iplock version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("iplock");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
     }
-    token.f_replacement += "</li>";
+
+        // snapdb
+    if(access("/usr/bin/snapdb", X_OK))
+    {
+        token.f_replacement += "<li>snapdb ";
+        {
+            process p("check snapdb version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snapdb");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snapbounce
+    if(access("/usr/bin/snapbounce", X_OK))
+    {
+        token.f_replacement += "<li>snapbounce ";
+        {
+            process p("check snapbounce version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snapbounce");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snapdbproxy
+    if(access("/usr/bin/snapdbproxy", X_OK))
+    {
+        token.f_replacement += "<li>snapdbproxy ";
+        {
+            process p("check snapdbproxy version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snapdbproxy");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snapcommunicator
+    if(access("/usr/bin/snapcommunicator", X_OK))
+    {
+        token.f_replacement += "<li>snapcommunicator ";
+        {
+            process p("check snapcommunicator version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snapcommunicator");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snapfirewall
+    if(access("/usr/bin/snapfirewall", X_OK))
+    {
+        token.f_replacement += "<li>snapfirewall ";
+        {
+            process p("check snapfirewall version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snapfirewall");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snaplayout
+    if(access("/usr/bin/snaplayout", X_OK))
+    {
+        token.f_replacement += "<li>snaplayout ";
+        {
+            process p("check snaplayout version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snaplayout");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snaplock
+    if(access("/usr/bin/snaplock", X_OK))
+    {
+        token.f_replacement += "<li>snaplock ";
+        {
+            process p("check snaplock version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snaplock");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snapwatchdogserver
+        //
+        // TODO: until the snapwatchdogserver offers a snapserver-plugin
+        //       which does that itself
+        //
+    if(access("/usr/bin/snapwatchdogserver", X_OK))
+    {
+        token.f_replacement += "<li>snapwatchdog ";
+        {
+            process p("check snapwatchdogserver version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/bin/snapwatchdogserver");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snap.cgi
+    if(access("/usr/lib/cgi-bin/snap.cgi", X_OK))
+    {
+        token.f_replacement += "<li>snap.cgi ";
+        {
+            process p("check snap.cgi version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/lib/cgi-bin/snap.cgi");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
+
+        // snapmanager.cgi
+    if(access("/usr/lib/cgi-bin/snapmanager.cgi", X_OK))
+    {
+        token.f_replacement += "<li>snapmanager.cgi ";
+        {
+            process p("check snapmanager.cgi version");
+            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+            p.set_command("/usr/lib/cgi-bin/snapmanager.cgi");
+            p.add_argument("--version");
+            p.run();
+            token.f_replacement += p.get_output();
+        }
+        token.f_replacement += "</li>";
+    }
 
     return true;
 }
