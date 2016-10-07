@@ -1,6 +1,6 @@
 #
 # File:
-#      snapcgi/CMakeLists.txt
+#      snapwebsites/snapcgi/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. The server is the main() of the Snap!

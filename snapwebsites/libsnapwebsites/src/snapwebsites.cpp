@@ -819,17 +819,17 @@ void server::setup_as_backend()
  */
 
 
-/** \brief Print the version string to stderr.
+/** \brief Print the version string to stdout.
  *
  * This function prints out the version string of this server to the standard
- * error stream.
+ * output stream.
  *
  * This is a virtual function so that way servers and daemons that derive
  * from snap::server have a chance to show their own version.
  */
 void server::show_version()
 {
-    std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+    std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
 }
 
 
@@ -918,7 +918,7 @@ void server::config(int argc, char * argv[])
     if(f_opt->is_defined("version"))
     {
         show_version();
-        exit(1);
+        exit(0);
         NOTREACHED();
     }
 

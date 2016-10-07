@@ -36,6 +36,8 @@
 //
 #include "snaplock.h"
 
+#include "version.h"
+
 // our lib
 //
 #include <snapwebsites/log.h>
@@ -53,6 +55,34 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+
+// included last
+//
+#include <snapwebsites/poison.h>
+
+/** \file
+ * \brief Implementation of the snap inter-process lock mechanism.
+ *
+ * This file implements an inter-process lock that functions between
+ * any number of machines. The basic algorithm used is the Bakery
+ * Algorithm by Lamport. The concept is simple: you get a waiting
+ * ticket and loop into it is your turn.
+ *
+ * Contrary to a multi-processor environment thread synchronization,
+ * this lock system uses messages and arrays to know its current
+ * status. A user interested in obtaining a lock sends a LOCK
+ * message. The snaplock daemon then waits until the lock is
+ * obtained and sends a LOCKED as a reply. Once done with the lock,
+ * the user sends UNLOCK.
+ *
+ * The implementation makes use of any number of snaplock instances.
+ * The locking mechanism makes use of the QUORUM voting system to
+ * know that enough of the other snaplock agree on a statement.
+ * This allows the snaplock daemon to obtain/release locks in an
+ * unknown network environment (i.e. any one of the machines may
+ * be up or down and the locking mechanism still functions as
+ * expected.)
+ */
 
 namespace
 {
@@ -214,7 +244,7 @@ snaplock::snaplock(int argc, char * argv[])
     // --version
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        std::cerr << SNAPLOCK_VERSION_STRING << std::endl;
         exit(1);
         snap::NOTREACHED();
     }

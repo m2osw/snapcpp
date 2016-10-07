@@ -15,10 +15,31 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "version.h"
+
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/snap_exception.h>
 #include <snapwebsites/snapwebsites.h>
+
+
+// TODO:
+// The follow would not work, we need to fix that problem... we should
+// not have an instance if we are to be able to derive this class in
+// various places...
+
+//class the_server
+//    : public snap::server
+//{
+//public:
+//
+//    virtual void show_version() override
+//    {
+//        std::cout << SNAPSERVER_VERSION_STRING << std::endl;
+//    }
+//};
+
+
 
 
 int main(int argc, char *argv[])

@@ -17,7 +17,7 @@
 
 // ourselves
 //
-#include <snapwebsites/snap_communicator.h>
+#include "version.h"
 
 // our lib
 //
@@ -27,6 +27,7 @@
 #include <snapwebsites/log.h>
 #include <snapwebsites/mkdir_p.h>
 #include <snapwebsites/not_used.h>
+#include <snapwebsites/snap_communicator.h>
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/tokenize_string.h>
 
@@ -4854,6 +4855,17 @@ snap_addr::addr const & remote_snap_communicator::get_address() const
 
 
 
+class snapcommunicator
+    : public snap::server
+{
+public:
+
+    virtual void show_version() override
+    {
+        std::cout << SNAPCOMMUNICATOR_VERSION_STRING << std::endl;
+    }
+};
+
 
 
 
@@ -4863,7 +4875,7 @@ int main(int argc, char * argv[])
     try
     {
         // create a server object
-        snap::server::pointer_t s( snap::server::instance() );
+        snap::server::pointer_t s( std::make_shared<snapcommunicator>() );
         //s->setup_as_backend();
 
         // parse the command line arguments (this also brings in the .conf params)

@@ -38,6 +38,8 @@
 
 #include "snapdb.h"
 
+#include "version.h"
+
 // snapwebsites library
 //
 #include <snapwebsites/dbutils.h>
@@ -240,8 +242,8 @@ snapdb::snapdb(int argc, char * argv[])
 {
     if(f_opt->is_defined("version"))
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
-        exit(1);
+        std::cout << SNAPDB_VERSION_STRING << std::endl;
+        exit(0);
     }
 
     // first check options

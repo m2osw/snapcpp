@@ -1,6 +1,6 @@
 #
 # File:
-#      src/snapdb/CMakeLists.txt
+#      snapwebsites/snapdb/src/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites database tool.
@@ -34,6 +34,10 @@
 ## Snap DB process
 ##
 project(snapdb)
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_executable(${PROJECT_NAME}
     snapdb.h

@@ -63,6 +63,8 @@
 // SCRIPT_NAME=/cgi-bin/snap.cgi
 //
 
+#include "version.h"
+
 #include <snapwebsites/addr.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
@@ -175,8 +177,8 @@ snap_cgi::snap_cgi( int argc, char * argv[] )
 {
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
-        exit(1);
+        std::cout << SNAPCGI_VERSION_STRING << std::endl;
+        exit(0);
     }
     if(f_opt.is_defined("help"))
     {

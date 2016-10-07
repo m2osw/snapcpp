@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapwebsites/snapserver/src/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. The server is the main() of the Snap!
@@ -35,6 +35,10 @@
 ## The Snap! Server
 ##
 project(snapserver)
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -139,42 +143,6 @@ target_link_libraries(${PROJECT_NAME}
     ${SNAPWEBSITES_LIBRARIES}
 )
 
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Build CGI
-##
-project(snapbuild)
-
-add_executable(${PROJECT_NAME}
-    build.cpp
-)
-
-set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME build.cgi )
-
-# We install the binary so that way the linking is finalized, but
-# we do not install that in a pacakage for now (maybe later if we
-# do a build system for snap, although I don't think we need such.)
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Build CGI
-##
-project(build-service)
-
-add_executable(${PROJECT_NAME}
-    build-service.cpp
-)
-
-# We install the binary so that way the linking is finalized, but
-# we do not install that in a pacakage for now (maybe later if we
-# do a build system for snap, although I don't think we need such.)
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )

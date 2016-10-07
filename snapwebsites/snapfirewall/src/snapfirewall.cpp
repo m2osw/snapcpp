@@ -21,6 +21,8 @@
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/snapwebsites.h>
 
+#include "version.h"
+
 
 namespace
 {
@@ -437,7 +439,7 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
 
     if(f_opt.is_defined("version"))
     {
-        std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
+        std::cout << SNAPFIREWALL_VERSION_STRING << std::endl;
         exit(0);
         snap::NOTREACHED();
     }

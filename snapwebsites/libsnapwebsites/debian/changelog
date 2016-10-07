@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.17.7~xenial) xenial; urgency=high
+libsnapwebsites (1.1.18.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Write versions to stdout.
 
- -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 07 Oct 2016 11:22:48 -0700
 
 libsnapwebsites (1.1.17.0~xenial) xenial; urgency=high
 

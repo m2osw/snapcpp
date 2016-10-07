@@ -21,6 +21,8 @@
 // When signaled, it will terminate those services cleanly.
 /////////////////////////////////////////////////////////////////////////////////
 
+#include "version.h"
+
 // snapwebsites lib
 //
 #include <snapwebsites/log.h>
@@ -196,7 +198,7 @@ snap_bounce::snap_bounce( int argc, char * argv[] )
 {
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        std::cerr << SNAPBOUNCE_VERSION_STRING << std::endl;
         exit(1);
     }
 
