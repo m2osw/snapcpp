@@ -17,6 +17,7 @@
 
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/snapwebsites.h>
 
@@ -601,7 +602,7 @@ void snap_firewall::setup_firewall()
 
     // run through the entire table
     //
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     column_predicate->setCount(100);
     column_predicate->setIndex(); // behave like an index
     for(;;)
@@ -623,12 +624,31 @@ void snap_firewall::setup_firewall()
             // first we want to unblock that IP address
             //
             QString const ip(cell->value().stringValue());
-            QString iplock_remove(QString("iplock --remove %1").arg(ip));
-            int const rr(system(iplock_remove.toUtf8().data()));
+
+            snap::process pr("remove IP block");
+            pr.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+            pr.set_command("/usr/sbin/iplock");
+            pr.add_argument("--remove");
+            pr.add_argument(ip);
+            pr.add_argument("2>&1");
+            int const rr(pr.run());
             if(rr != 0)
             {
+                // Note: if the IP was not already defined, this command
+                //       generates an error
+                //
                 int const e(errno);
-                SNAP_LOG_ERROR("an error occurred trying to run \"")(iplock_remove)("\", errno: ")(e)(" -- ")(strerror(e));
+                QString const output(pr.get_output(true));
+                SNAP_LOG_ERROR("an error occurred (")
+                              (rr)
+                              (") trying to run \"iplock --remove ")
+                              (ip)
+                              ("\", errno: ")
+                              (e)
+                              (" -- ")
+                              (strerror(e))
+                              ("\nConsole output:\n")
+                              (output);
             }
 
             QByteArray const key(it.key());
@@ -656,12 +676,27 @@ void snap_firewall::setup_firewall()
                     f_wakeup_timer->set_timeout_date(drop_date);
                 }
 
-                QString const iplock_block(QString("iplock --block %1").arg(ip));
-                int const rb(system(iplock_block.toUtf8().data()));
+                snap::process pb("remove IP block");
+                pb.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+                pb.set_command("/usr/sbin/iplock");
+                pb.add_argument("--block");
+                pb.add_argument(ip);
+                pb.add_argument("2>&1");
+                int const rb(pb.run());
                 if(rb != 0)
                 {
                     int const e(errno);
-                    SNAP_LOG_ERROR("an error occurred trying to run \"")(iplock_block)("\", errno: ")(e)(" -- ")(strerror(e));
+                    QString const output(pb.get_output(true));
+                    SNAP_LOG_ERROR("an error occurred (")
+                                  (rb)
+                                  (") trying to run \"iplock --block ")
+                                  (ip)
+                                  ("\", errno: ")
+                                  (e)
+                                  (" -- ")
+                                  (strerror(e))
+                                  ("\nConsole output:\n")
+                                  (output);
                 }
             }
         }
