@@ -95,7 +95,6 @@ public:
     SNAP_SIGNAL(allow_shorturl, (content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow), (ipath, owner, type, allow));
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
 
     snap_child *                            f_snap = nullptr;

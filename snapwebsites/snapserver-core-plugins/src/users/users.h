@@ -376,7 +376,6 @@ public:
     QString                 basic_email_canonicalization(QString const & email);
 
 private:
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    token_user_count(filter::filter::token_info_t & token);
 

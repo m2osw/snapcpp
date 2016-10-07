@@ -523,54 +523,12 @@ int64_t content::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     // DO NOT CHANGE THE DATES ON THOSE ENTRIES
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2015, 7, 3, 20, 54, 18, remove_files_compressor);
 
     // This entry can get a newer date as things evolve
     SNAP_PLUGIN_UPDATE(2015, 9, 10, 3, 35, 19, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the content plugin.
- *
- * This function is the first update for the content plugin. It creates
- * the tables.
- *
- * \note
- * We reset the cached pointer to the tables to make sure that they get
- * synchronized when used for the first time (very first initialization
- * only, do_update() is not generally called anyway, unless you are a
- * developer with the debug mode turned on.)
- *
- * \param[in] variables_timestamp  The timestamp for all the variables
- *            added to the database by this update (in micro-seconds).
- */
-void content::initial_update(int64_t variables_timestamp)
-{
-    NOTUSED(variables_timestamp);
-
-    get_content_table();
-    f_content_table.reset();
-
-    get_secret_table();
-    f_secret_table.reset();
-
-    get_branch_table();
-    f_branch_table.reset();
-
-    get_revision_table();
-    f_revision_table.reset();
-
-    get_files_table();
-    f_files_table.reset();
-
-    get_processing_table();
-    f_processing_table.reset();
-
-    get_cache_table();
-    f_cache_table.reset();
 }
 
 

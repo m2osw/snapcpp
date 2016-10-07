@@ -161,7 +161,6 @@ public:
     void                        on_repeat_payment(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath);
 
 private:
-    void                        initial_update(int64_t variables_timestamp);
     void                        content_update(int64_t variables_timestamp);
     void                        cancel_invoice(QString const & token);
     bool                        get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token);

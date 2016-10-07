@@ -299,7 +299,6 @@ public:
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                init_tables();
     void                on_backend_action_create_link();
     void                on_backend_action_delete_link();

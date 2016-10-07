@@ -199,7 +199,6 @@ public:
     QString                 get_from_session(session_info const & info, QString const & name);
 
 private:
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    clean_session_table(int64_t variables_timestamp);
 

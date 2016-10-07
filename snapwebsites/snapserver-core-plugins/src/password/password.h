@@ -214,7 +214,6 @@ public:
     QString             create_password(QString const & policy = "users");
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
     void                on_path_execute__is_password_blacklisted(content::path_info_t & ipath);
     void                on_path_execute__blacklist_new_passwords(content::path_info_t & ipath);

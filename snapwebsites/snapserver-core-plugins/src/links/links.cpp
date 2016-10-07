@@ -806,37 +806,13 @@ QString links::dependencies() const
  */
 int64_t links::do_update(int64_t last_updated)
 {
-    SNAP_PLUGIN_UPDATE_INIT();
+    NOTUSED(last_updated);
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
+    SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-
-/** \brief First update to run for the links plugin.
- *
- * This function is the first update for the links plugin. It installs
- * the initial data required by the links plugin. Especially, it creates
- * the links table.
- *
- * \note
- * We reset the cached pointer to the table to make sure that they get
- * synchronized when used for the first time (very first initialization
- * only, do_update() is not generally called anyway, unless you are a
- * developer with the debug mode turned on.)
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added
- *                        to the database by this update (in micro-seconds).
- */
-void links::initial_update(int64_t variables_timestamp)
-{
-    NOTUSED(variables_timestamp);
-
-    // read the links table to create it
-    get_links_table();
-    f_links_table.reset();
-}
 
 
 /** \brief Initialize the links table.

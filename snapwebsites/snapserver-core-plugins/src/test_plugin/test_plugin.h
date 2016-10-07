@@ -86,7 +86,6 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_test_results_table();
 
 private:
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
 
     snap_child *                            f_snap = nullptr;

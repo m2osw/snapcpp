@@ -1549,27 +1549,9 @@ int64_t sendmail::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-
     SNAP_PLUGIN_UPDATE(2015, 12, 25, 4, 16, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the sendmail plugin.
- *
- * This function is the first update for the sendmail plugin. It creates
- * the table.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables
- *            added to the database by this update (in micro-seconds).
- */
-void sendmail::initial_update(int64_t variables_timestamp)
-{
-    NOTUSED(variables_timestamp);
-
-    get_emails_table();
 }
 
 
