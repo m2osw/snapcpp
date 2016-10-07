@@ -238,10 +238,22 @@ void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
         {
             // okay, this user is really allowed so generate the versions
 
+            // first show this Core release version, this is the GIT branch
+            // which cmake generates on the g++ command line
+            //
+            // TODO: This does not work yet. Not too sure how to properly
+            //       get the GIT branch yet.
+            //
+            //token.f_replacement += "<h3>Release</h3><ul><li>The Core Release Version is <strong>"
+            //                       BOOST_STRINGIZE(GIT_BRANCH)
+            //                       "</strong></li></ul>";
+
             // libraries
+            //
             versions_libraries(token);
 
             // Plugin Versions
+            //
             token.f_replacement += "<h3>Plugins</h3><ul>";
             plugins::plugin_map_t const & list_of_plugins(plugins::get_plugin_list());
             for(plugins::plugin_map_t::const_iterator it(list_of_plugins.begin());
@@ -256,6 +268,7 @@ void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
             token.f_replacement += "</ul>";
 
             // Tools
+            //
             versions_tools(token);
         }
     }

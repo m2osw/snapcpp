@@ -45,7 +45,13 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 snap_validate_xml( content.xml content/content.dtd )
 
 
-
+# TODO: Find a way to get the GIT branch and pass it to the compiler...
+#       This won't work because (1) we are not always going to have
+#       git (i.e. pbuilder environment); and (2) this command gets
+#       executed in the destination directory which generally is not
+#       where the git repository is.
+#
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGIT_BRANCH=\"s`git rev-parse --abbrev-ref HEAD`e\"")
 
 add_library(versions SHARED
     versions.cpp
