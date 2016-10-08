@@ -148,6 +148,8 @@ QString             g_log_output_filename;
 log4cplus::Logger   g_logger;
 log4cplus::Logger   g_secure_logger;
 
+messenger_t         g_messenger;
+
 enum class logging_type_t
     { UNCONFIGURED_LOGGER
     , CONSOLE_LOGGER
@@ -298,7 +300,6 @@ void unconfigure()
         //g_secure_logger = log4cplus::Logger();
     }
 }
-
 
 /** \brief Configure log4cplus system to the console.
  *
@@ -513,6 +514,26 @@ void configure_server()
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
     set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+}
+
+
+/** \brief Configure a snapcommunicator instance.
+ *
+ * Log entries are mirrored across the snapcommunicator instance. The configured log level
+ * of the "snap" logger is used to determine what to send "over the wire." This is making
+ * the assumption that you have set up the "snap" logger correctly.
+ */
+void configure_messenger( messenger_t messenger )
+{
+    g_messenger = messenger;
+}
+
+
+/** \brief Unconfigure the messenger (reset the shared pointer).
+ */
+void unconfigure_messenger()
+{
+    g_messenger.reset();
 }
 
 
@@ -955,14 +976,17 @@ logger::~logger()
     case log_level_t::LOG_LEVEL_INFO:
         ll = log4cplus::INFO_LOG_LEVEL;
         sll = LOG_INFO;
+        level_str = "info";
         break;
 
     case log_level_t::LOG_LEVEL_DEBUG:
         ll = log4cplus::DEBUG_LOG_LEVEL;
+        level_str = "debug";
         break;
 
     case log_level_t::LOG_LEVEL_TRACE:
         ll = log4cplus::TRACE_LOG_LEVEL;
+        level_str = "trace";
         break;
 
     }
@@ -1007,6 +1031,22 @@ logger::~logger()
         else
         {
             g_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
+
+            if( g_messenger && g_logger.isEnabledFor(ll) )
+            {
+                // Send the log to snapcommunicator, and eventually to snaplogd.
+                //
+                snap::snap_communicator_message request;
+                request.set_command("SNAPLOG");
+                request.set_service("snaplogd");
+                request.add_parameter( "cache",   "ttl=60"  );
+                request.add_parameter( "level",   level_str );
+                request.add_parameter( "file",    f_file    );
+                request.add_parameter( "func",    f_func    );
+                request.add_parameter( "line",    f_line    );
+                request.add_parameter( "message", f_message );
+                g_messenger->send_message(request);
+            }
 
             // full logger used, do not report error in console, logger can
             // do it if the user wants to

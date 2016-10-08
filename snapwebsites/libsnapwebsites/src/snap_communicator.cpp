@@ -4932,6 +4932,16 @@ snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client
     , f_pause(llabs(pause))
     , f_use_thread(use_thread)
 {
+    logging::configure_messenger( this );
+}
+
+/** \brief Destroy instance
+ *
+ * Unconfigure the logger.
+ */
+snap_communicator::snap_tcp_client_permanent_message_connection::~snap_tcp_client_permanent_message_connection()
+{
+    logging::unconfigure_messenger();
 }
 
 

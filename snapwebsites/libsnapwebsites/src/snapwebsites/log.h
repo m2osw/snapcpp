@@ -19,12 +19,19 @@
 // ourselves
 //
 #include "snapwebsites/snap_config.h"
+#include "snapwebsites/snap_communicator.h"
 
+#include <memory>
 
 namespace snap
 {
+
 namespace logging
 {
+
+typedef
+    std::shared_ptr<snap_communicator::snap_tcp_client_permanent_message_connection>
+    messenger_t;
 
 enum class log_level_t
 {
@@ -102,6 +109,9 @@ void set_log_output_level       ( log_level_t level );
 void reduce_log_output_level    ( log_level_t level );
 bool is_loggingserver_available ( QString const & logserver );
 bool is_enabled_for             ( log_level_t const log_level );
+
+void configure_messenger        ( messenger_t messenger );
+void unconfigure_messenger      ();
 
 logger & operator << ( logger & l, QString const &                                msg );
 logger & operator << ( logger & l, std::basic_string<char> const &                msg );

@@ -541,6 +541,7 @@ public:
         static int64_t const        DEFAULT_PAUSE_BEFORE_RECONNECTING = 60LL * 1000000LL;  // 1 minute
 
                                     snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN, int64_t const pause = DEFAULT_PAUSE_BEFORE_RECONNECTING, bool const use_thread = true);
+                                    ~snap_tcp_client_permanent_message_connection();
 
         bool                        send_message(snap_communicator_message const & message, bool cache = false);
         bool                        is_connected() const;
