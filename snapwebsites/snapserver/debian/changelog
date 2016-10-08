@@ -1,3 +1,9 @@
+snapserver (1.0.11.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:47 -0700
+
 snapserver (1.0.11.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added own version, but cannot output it because of the unique
