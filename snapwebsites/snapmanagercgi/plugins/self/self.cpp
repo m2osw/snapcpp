@@ -360,12 +360,12 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
 
     {
         std::string const redirect_unwanted(f_snap->get_parameter("redirect_unwanted"));
-        snap_manager::status_t const bundle(
+        snap_manager::status_t const redirect(
                       snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
                     , "redirect_unwanted"
                     , QString::fromUtf8(redirect_unwanted.c_str()));
-        server_status.set_field(bundle);
+        server_status.set_field(redirect);
     }
 
     {
@@ -733,7 +733,7 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
             snap_manager::status_t const package_status(
                         has_error ? snap_manager::status_t::state_t::STATUS_STATE_ERROR
                                   : good_bundle ? snap_manager::status_t::state_t::STATUS_STATE_INFO
-                                                : snap_manager::status_t::state_t::STATUS_STATE_WARNING,
+                                                : snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT,
                         get_plugin_name(),
                         "bundle::" + name,
                         status_info);
