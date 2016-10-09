@@ -30,8 +30,7 @@ namespace logging
 {
 
 typedef
-    std::shared_ptr<snap_communicator::snap_tcp_client_permanent_message_connection>
-    messenger_t;
+    std::weak_ptr<snap_communicator::snap_tcp_client_permanent_message_connection> messenger_t;
 
 enum class log_level_t
 {
@@ -100,6 +99,7 @@ std::string get_progname        ();
 void configure_console          ();
 void configure_logfile          ( QString const & logfile  );
 void configure_syslog           ();
+void configure_messenger        ( messenger_t messenger );
 void configure_server           ();
 void configure_conffile         ( QString const & filename );
 void unconfigure                ();
@@ -109,9 +109,6 @@ void set_log_output_level       ( log_level_t level );
 void reduce_log_output_level    ( log_level_t level );
 bool is_loggingserver_available ( QString const & logserver );
 bool is_enabled_for             ( log_level_t const log_level );
-
-void configure_messenger        ( messenger_t messenger );
-void unconfigure_messenger      ();
 
 logger & operator << ( logger & l, QString const &                                msg );
 logger & operator << ( logger & l, std::basic_string<char> const &                msg );
