@@ -504,7 +504,7 @@ void configure_messenger( messenger_t messenger )
     g_log_messenger = messenger;
 
     log4cplus::SharedAppenderPtr appender( new MessengerAppender( g_log_messenger ) );
-    appender->setName( LOG4CPLUS_TEXT("snapcom_log") );
+    appender->setName( LOG4CPLUS_TEXT("snapcommunicator") );
     log4cplus::tstring const pattern
                 ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
                 + boost::replace_all_copy(get_progname(), "%", "%%").c_str()
