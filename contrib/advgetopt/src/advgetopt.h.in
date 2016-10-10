@@ -90,7 +90,7 @@ public:
     enum class status_t
     {
         no_error,
-        no_error_nobr,	// What does this do?!
+        no_error_nobr,	// Do not insert \n to long help lines
         warning,
         error,
         fatal
@@ -122,9 +122,9 @@ public:
     {
         char                f_opt = '\0';           // letter option (or '\0')
         unsigned char       f_flags = 0;            // set of flags
-        char const *        f_name = nullptr;       // name of the option (i.e. "test" for --test, or NULL)
-        char const *        f_default = nullptr;    // a default value if not NULL
-        char const *        f_help = nullptr;       // help for this option, if NULL it's a hidden option; if ALIAS then this is the actual alias
+        char const *        f_name = nullptr;       // name of the option (i.e. "test" for --test, or nullptr)
+        char const *        f_default = nullptr;    // a default value if not nullptr
+        char const *        f_help = nullptr;       // help for this option, if nullptr it's a hidden option; if ALIAS then this is the actual alias
         argument_mode_t     f_arg_mode = argument_mode_t::no_argument;
     };
 
