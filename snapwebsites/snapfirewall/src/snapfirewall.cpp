@@ -661,7 +661,7 @@ bool snap_firewall::block_info_t::iplock_unblock()
 
 bool snap_firewall::block_info_t::iplock(QString const & cmd)
 {
-    QString command("iplock");
+    QString command("iplock ");
 
     snap::process iplock_process("block/unblock an IP address");
     iplock_process.set_command("iplock");
@@ -678,7 +678,7 @@ bool snap_firewall::block_info_t::iplock(QString const & cmd)
         iplock_process.add_argument("--scheme");
         iplock_process.add_argument(f_scheme);
     
-        command += "--scheme ";
+        command += " --scheme ";
         command += f_scheme;
     }
 
