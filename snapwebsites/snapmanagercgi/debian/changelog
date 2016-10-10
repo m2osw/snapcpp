@@ -1,8 +1,16 @@
-snapmanagercgi (1.1.18.8~xenial) xenial; urgency=high
+snapmanagercgi (1.1.19.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:47 -0700
+ -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:48 -0700
+
+snapmanagercgi (1.1.19.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the case where bundles are gathered and the bundle is
+    not installed. It was still shown as WARNING instead of HIGHLIGHT.
+  * Fixed a variable name so it is more sensible.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 07 Oct 2016 21:27:47 -0700
 
 snapmanagercgi (1.1.18.0~xenial) xenial; urgency=high
 

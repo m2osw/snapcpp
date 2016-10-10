@@ -220,33 +220,9 @@ int64_t test_plugin::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2015, 12, 20, 23, 29, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the test_plugin plugin.
- *
- * This function is the first update for the test_plugin plugin.
- * It creates the test_results table.
- *
- * \note
- * We reset the cached pointer to the table to make sure that it gets
- * synchronized when used for the first time (very first initialization
- * only, do_update() is not generally called anyway, unless you are a
- * developer with the debug mode turned on.)
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added
- *                        to the database by this update (in micro-seconds).
- */
-void test_plugin::initial_update(int64_t variables_timestamp)
-{
-    NOTUSED(variables_timestamp);
-
-    get_test_results_table();
-    f_test_results_table.reset();
 }
 
 

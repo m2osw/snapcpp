@@ -354,6 +354,14 @@ namespace
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {
+            '\0',
+            0,
+            "no-messenger-logging",
+            nullptr,
+            "Turn off the automatic logging to snapcommunicator.",
+            advgetopt::getopt::argument_mode_t::no_argument
+        },
+        {
             'n',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "no-log",
@@ -819,17 +827,17 @@ void server::setup_as_backend()
  */
 
 
-/** \brief Print the version string to stderr.
+/** \brief Print the version string to stdout.
  *
  * This function prints out the version string of this server to the standard
- * error stream.
+ * output stream.
  *
  * This is a virtual function so that way servers and daemons that derive
  * from snap::server have a chance to show their own version.
  */
 void server::show_version()
 {
-    std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+    std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
 }
 
 
@@ -918,7 +926,7 @@ void server::config(int argc, char * argv[])
     if(f_opt->is_defined("version"))
     {
         show_version();
-        exit(1);
+        exit(0);
         NOTREACHED();
     }
 
@@ -1727,10 +1735,20 @@ void server::udp_rusage(QString const & process_name)
  * \li "year" -- block the IP address for 366 days.
  * \li "forever" -- block the IP address for 5 years.
  *
- * \param[in] ip  The IP address of to ban.
+ * The scheme is the name of a protocol that needs to be blocked.
+ * At this time, we accept "http" and "smtp". Please use "http" for
+ * "https" since both ports will get blocked.
+ *
+ * This function does not verify the name of the scheme. However, the
+ * snapfirewall will do so before using it.
+ *
+ * If the scheme is not defined, then the default, which is "http",
+ * is used.
+ *
+ * \param[in] uri  The IP address of to ban.
  * \param[in] period  The duration for which the ban applies.
  */
-void server::block_ip( QString const & ip, QString const & period )
+void server::block_ip( QString const & uri, QString const & period )
 {
     // create a server object (we are a static function!)
     //
@@ -1747,8 +1765,9 @@ void server::block_ip( QString const & ip, QString const & period )
     //
     snap::snap_communicator_message message;
     message.set_command("BLOCK");
+    message.set_server("*");
     message.set_service("snapfirewall");
-    message.add_parameter("ip", ip);
+    message.add_parameter("uri", uri);
     if(!period.isEmpty())
     {
         message.add_parameter("period", period);
@@ -2370,6 +2389,10 @@ void server::listen()
     g_connection->f_messenger->set_priority(50);
     g_connection->f_communicator->add_connection(g_connection->f_messenger);
 
+    configure_messenger_logging(
+        std::static_pointer_cast<snap_communicator::snap_tcp_client_permanent_message_connection>( g_connection->f_messenger )
+    );
+
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(get_server_name())("\" started.");
 
@@ -2526,6 +2549,17 @@ unsigned long server::connections_count()
 std::string server::servername() const
 {
     return f_servername;
+}
+
+
+void server::configure_messenger_logging( snap_communicator::snap_tcp_client_permanent_message_connection::pointer_t ptr )
+{
+    if( f_opt->is_defined("no-messenger-logging") )
+    {
+        return;
+    }
+
+    logging::configure_messenger( ptr );
 }
 
 

@@ -453,28 +453,9 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2016, 6, 28, 21, 28, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the users plugin.
- *
- * This function is the first update for the users plugin. It creates
- * the users table.
- *
- * \note
- * We do not cache the users table pointer.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void users::initial_update(int64_t variables_timestamp)
-{
-    NOTUSED(variables_timestamp);
-
-    get_users_table();
 }
 
 
@@ -576,13 +557,16 @@ int64_t users::get_total_session_duration()
 }
 
 
-/** \brief Retrieve the duration of the administrative session.
+/** \brief Retrieve the duration of the user session.
  *
  * The user has three types of session durations, as defined in the
  * authorize_user() function. This function returns the duration
- * of the administrative login session.
+ * of the user login session.
  *
- * The default duration of the administrative session is 3 hours.
+ * The default duration of the user session is 5 days.
+ *
+ * User sessions are considered soft. This means they get extended
+ * each time the user accesses the website.
  *
  * \note
  * The function is considered internal although it can be called by
@@ -591,7 +575,7 @@ int64_t users::get_total_session_duration()
  * \warning
  * The value is read once and statically cached by this function.
  *
- * \return The duration of the administrative session in seconds.
+ * \return The duration of the user session in seconds.
  */
 int64_t users::get_user_session_duration()
 {
@@ -856,20 +840,21 @@ void users::on_process_cookies()
     {
         // is the session over?  if so, do not extend it
         //
-        if(f_snap->get_start_time() >= f_info->get_time_limit())
+        time_t const start_time(f_snap->get_start_time());
+        if(start_time <= f_info->get_time_limit())
         {
             // extend the user session, it is always a soft session
             //
             int64_t const user_session_duration(get_user_session_duration());
-            f_info->set_time_limit(f_snap->get_start_time() + user_session_duration);
+            f_info->set_time_limit(start_time + user_session_duration);
 
             if(get_soft_administrative_session())
             {
                 // website administrator asked that the administrative session be
-                // grown each time the administrator accesses the site
+                // extended each time the administrator accesses the site
                 //
                 int64_t const administrative_session_duration(get_administrative_session_duration());
-                f_info->set_administrative_login_limit(f_snap->get_start_time() + administrative_session_duration);
+                f_info->set_administrative_login_limit(start_time + administrative_session_duration);
             }
         }
     }
@@ -896,6 +881,7 @@ void users::on_process_cookies()
         //
         // TBD: random is not working right if the user attempts to open
         //      multiple pages quickly at the same time
+        //
         bool const new_random(f_info->get_date() + NEW_RANDOM_INTERVAL < f_snap->get_start_date());
         sessions::sessions::instance()->save_session(*f_info, new_random);
     }

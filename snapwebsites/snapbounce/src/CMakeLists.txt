@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapwebsites/snapbounce/src/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. The server is the main() of the Snap!
@@ -35,6 +35,10 @@
 ## Snap signal manager
 ##
 project(snapbounce)
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_executable(${PROJECT_NAME}
     snapbounce.cpp

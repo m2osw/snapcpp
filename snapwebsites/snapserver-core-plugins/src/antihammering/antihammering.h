@@ -75,7 +75,6 @@ public:
     void                    on_check_for_redirect(content::path_info_t & ipath);
 
 private:
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
 
     snap_child *                            f_snap = nullptr;

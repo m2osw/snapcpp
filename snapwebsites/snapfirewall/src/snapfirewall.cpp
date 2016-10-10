@@ -21,6 +21,8 @@
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/snapwebsites.h>
 
+#include "version.h"
+
 
 namespace
 {
@@ -150,6 +152,39 @@ public:
     static void                 sighandler( int sig );
 
 private:
+    class block_info_t
+    {
+    public:
+        typedef std::vector<block_info_t>   block_info_vector_t;
+
+                            block_info_t(QString const & uri);
+                            block_info_t(snap::snap_communicator_message const & message);
+
+        void                save(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name);
+
+        void                set_uri(QString const & uri);
+        void                set_scheme(QString scheme);
+        void                set_ip(QString const & scheme);
+        void                set_block_limit(QString const & period);
+
+        QString             canonicalized_uri() const;
+        //QString             get_scheme() const;
+        //QString             get_ip() const;
+        int64_t             get_block_limit() const;
+
+        bool                operator < (block_info_t const & rhs) const;
+
+        bool                iplock_block();
+        bool                iplock_unblock();
+
+    private:
+        bool                iplock(QString const & cmd);
+
+        QString             f_scheme;
+        QString             f_ip;
+        int64_t             f_block_limit = 0LL;
+    };
+
                                 snap_firewall( snap_firewall const & ) = delete;
     snap_firewall &             operator = ( snap_firewall const & ) = delete;
 
@@ -157,6 +192,7 @@ private:
     void                        setup_firewall();
     void                        next_wakeup();
     void                        stop(bool quitting);
+    void                        block_ip(snap::snap_communicator_message const & message);
 
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
@@ -172,6 +208,7 @@ private:
     bool                                        f_firewall_up = false;
     messenger::pointer_t                        f_messenger;
     wakeup_timer::pointer_t                     f_wakeup_timer;
+    block_info_t::block_info_vector_t           f_blocks;       // save here until connected to Cassandra
 };
 
 
@@ -249,7 +286,7 @@ void wakeup_timer::process_timeout()
  *
  * \param[in] sfw  The snap firewall server we are listening for.
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
- * \param[in] port  The port to listen on (4040).
+ * \param[in] port  The port to connect to (4040).
  */
 messenger::messenger(snap_firewall * sfw, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(addr, port)
@@ -315,6 +352,363 @@ void messenger::process_connected()
     register_firewall.add_parameter("version", snap::snap_communicator::VERSION);
     send_message(register_firewall);
 }
+
+
+
+
+
+
+
+
+
+snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const & message)
+{
+    // retrieve scheme and IP
+    set_uri(message.get_parameter("uri"));
+    set_block_limit(message.get_parameter("period"));
+}
+
+
+snap_firewall::block_info_t::block_info_t(QString const & uri)
+{
+    set_uri(uri);
+    set_block_limit(QString());
+}
+
+
+void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name)
+{
+    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(server_name));
+    QByteArray key;
+    QtCassandra::setInt64Value(key, f_block_limit);
+    row->cell(key)->setValue(canonicalized_uri());
+}
+
+
+void snap_firewall::block_info_t::set_uri(QString const & uri)
+{
+    {
+        int const pos(uri.indexOf("://"));
+        if(pos > 0)
+        {
+            // there is a scheme and an IP
+            //
+            set_scheme(uri.mid(0, pos));
+            set_ip(uri.mid(pos + 3));
+        }
+        else
+        {
+            // no scheme specified, directly use the IP
+            //
+            set_ip(uri);
+        }
+    }
+}
+
+
+void snap_firewall::block_info_t::set_ip(QString const & ip)
+{
+    // make sure IP is not empty
+    //
+    if(ip.isEmpty())
+    {
+        SNAP_LOG_ERROR("BLOCK without a URI (or at least an IP in the \"uri\" parameter.) BLOCK will be ignored.");
+        return;
+    }
+
+    try
+    {
+        // at some point we could support "udp"?
+        //
+        // it does not matter much here, I would think, since we will ignore the
+        // port from the addr object, we are just verifying the IP address
+        //
+        snap_addr::addr a(ip.toUtf8().data(), "", 123, "tcp");
+
+        switch(a.get_network_type())
+        {
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_UNDEFINED:
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE:
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_CARRIER:
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_LINK_LOCAL:
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK:
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_ANY:
+            SNAP_LOG_ERROR("BLOCK with an unexpected IP address type in \"")(ip)(". BLOCK will be ignored.");
+            return;
+
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_MULTICAST:
+        case snap_addr::addr::network_type_t::NETWORK_TYPE_PUBLIC: // == NETWORK_TYPE_UNKNOWN
+            break;
+
+        }
+    }
+    catch(snap_addr::addr_invalid_argument_exception const & e)
+    {
+        SNAP_LOG_ERROR("BLOCK with an invalid IP address in \"")(ip)(". BLOCK will be ignored.");
+        return;
+    }
+
+    f_ip = ip;
+}
+
+
+void snap_firewall::block_info_t::set_scheme(QString scheme)
+{
+    // verify the scheme
+    //
+    // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+    //
+    // See:
+    // https://tools.ietf.org/html/rfc3986#section-3.1
+    //
+    bool bad_scheme(false);
+    int const max(scheme.length());
+    if(max > 0)
+    {
+        int const c(scheme.at(0).unicode());
+        if(c >= 'A' && c <= 'Z')
+        {
+            // transform to lowercase (canonicalization)
+            //
+            scheme[0] = c | 0x20;
+        }
+        else
+        {
+            bad_scheme = c < 'a' || c > 'z';
+        }
+    }
+    if(!bad_scheme)
+    {
+        for(int idx(1); idx < max; ++idx)
+        {
+            int const c(scheme.at(idx).unicode());
+            if(c >= 'A' && c <= 'Z')
+            {
+                // transform to lowercase (canonicalization)
+                //
+                scheme[idx] = c | 0x20;
+            }
+            else if((c < 'a' || c > 'z')
+                 && (c < '0' || c > '9')
+                 && c != '+'
+                 && c != '-'
+                 && c != '.')
+            {
+                bad_scheme = true;
+                break;
+            }
+        }
+    }
+    if(bad_scheme)
+    {
+        // invalid protocol, forget about the wrong one
+        //
+        // (i.e. an invalid protocol is not fatal at this point)
+        //
+        SNAP_LOG_ERROR("unsupported scheme \"")(scheme)("\" to block an IP address. We will use the default of \"http\".");
+        scheme.clear();
+    }
+
+    // further we limit the length of the protocol to 20 characters
+    //
+    if(scheme.isEmpty() || scheme.length() > 20)
+    {
+        scheme = "http";
+    }
+
+    // now that we have a valid scheme, make sure there is a
+    // corresponding iplock configuration file
+    //
+    std::string filename("/etc/iplock/");
+    filename += scheme.toUtf8().data();
+    filename += ".conf";
+    if(access(filename.c_str(), F_OK) != 0)
+    {
+        filename = "/etc/iplock/iplock.d/";
+        filename += scheme.toUtf8().data();
+        filename += ".conf";
+        if(access(filename.c_str(), F_OK) != 0)
+        {
+            if(scheme != "http")
+            {
+                // no message if http.conf does not exist; the iplock.conf
+                // is the default and is to block HTTP so all good anyway
+                //
+                SNAP_LOG_ERROR("unsupported scheme \"")(scheme)("\" to block an IP address. The iplock default will be used.");
+            }
+            return;
+        }
+    }
+
+    f_scheme = scheme;
+}
+
+
+void snap_firewall::block_info_t::set_block_limit(QString const & period)
+{
+    int64_t const now(snap::snap_communicator::get_current_date());
+    if(!period.isEmpty())
+    {
+        if(period == "5min")
+        {
+            f_block_limit = now + 5LL * 60LL * 1000000LL;
+            return;
+        }
+        else if(period == "hour")
+        {
+            f_block_limit = now + 60LL * 60LL * 1000000LL;
+            return;
+        }
+        else if(period == "day")
+        {
+            f_block_limit = now + 24LL * 60LL * 60LL * 1000000LL;
+            return;
+        }
+        else if(period == "week")
+        {
+            f_block_limit = now + 7LL * 24LL * 60LL * 60LL * 1000000LL;
+            return;
+        }
+        else if(period == "month")
+        {
+            f_block_limit = now + 31LL * 24LL * 60LL * 60LL * 1000000LL;
+            return;
+        }
+        else if(period == "year")
+        {
+            f_block_limit = now + 366LL * 24LL * 60LL * 60LL * 1000000LL;
+            return;
+        }
+        else if(period == "forever")
+        {
+            // 5 years is certainly very much like forever on the Internet!
+            //
+            f_block_limit = now + 5LL * 366LL * 24LL * 60LL * 60LL * 1000000LL;
+            return;
+        }
+        else
+        {
+            // keep default of 1 day, but log an error
+            //
+            SNAP_LOG_ERROR("unknown period \"")(period)("\" to block an IP address. Revert to default of 1 day.");
+        }
+    }
+
+    // default is now + 1 day
+    //
+    f_block_limit = now + 24LL * 60LL * 60LL * 1000000LL;
+}
+
+
+QString snap_firewall::block_info_t::canonicalized_uri() const
+{
+    // if no IP defined, return an empty string
+    //
+    if(f_ip.isEmpty())
+    {
+        return f_ip;
+    }
+
+    // if no scheme is defined (maybe it was invalid) then just return
+    // the IP
+    //
+    if(f_scheme.isEmpty())
+    {
+        return f_ip;
+    }
+
+    // both scheme and IP are valid, return both
+    //
+    return f_scheme + "://" + f_ip;
+}
+
+
+//QString snap_firewall::block_info_t::get_scheme() const
+//{
+//    return f_scheme;
+//}
+//
+//
+//QString snap_firewall::block_info_t::get_ip() const
+//{
+//    return f_ip;
+//}
+
+
+int64_t snap_firewall::block_info_t::get_block_limit() const
+{
+    return f_block_limit;
+}
+
+
+bool snap_firewall::block_info_t::operator < (block_info_t const & rhs) const
+{
+    return f_block_limit < rhs.f_block_limit;
+}
+
+
+bool snap_firewall::block_info_t::iplock_block()
+{
+    return iplock("--block");
+}
+
+
+bool snap_firewall::block_info_t::iplock_unblock()
+{
+    return iplock("--unblock");
+}
+
+
+bool snap_firewall::block_info_t::iplock(QString const & cmd)
+{
+    QString command("iplock");
+
+    snap::process iplock_process("block/unblock an IP address");
+    iplock_process.set_command("iplock");
+
+    // whether we block or unblock the specified IP address
+    iplock_process.add_argument(cmd);
+    iplock_process.add_argument(f_ip);
+
+    command += cmd + " " + f_ip;
+
+    // once we have support for configuration files and varying schemes
+    if(!f_scheme.isEmpty())
+    {
+        iplock_process.add_argument("--scheme");
+        iplock_process.add_argument(f_scheme);
+    
+        command += "--scheme ";
+        command += f_scheme;
+    }
+
+    // keep the stderr output
+    iplock_process.add_argument("2>&1");
+
+    int const r(iplock_process.run());
+    if(r != 0)
+    {
+        // Note: if the IP was not already defined, this command
+        //       generates an error
+        //
+        int const e(errno);
+        QString const output(iplock_process.get_output(true));
+        SNAP_LOG_ERROR("an error occurred (")
+                      (r)
+                      (") trying to run \"")
+                      (command)
+                      ("\", errno: ")
+                      (e)
+                      (" -- ")
+                      (strerror(e))
+                      ("\nConsole output:\n")
+                      (output);
+        return false;
+    }
+
+    return true;
+}
+
 
 
 
@@ -437,7 +831,7 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
 
     if(f_opt.is_defined("version"))
     {
-        std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
+        std::cout << SNAPFIREWALL_VERSION_STRING << std::endl;
         exit(0);
         snap::NOTREACHED();
     }
@@ -446,7 +840,7 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
 
     // read the configuration file
     //
-    if(f_opt.is_defined( "config"))
+    if(f_opt.is_defined("config"))
     {
         f_config.set_configuration_path( f_opt.get_string("config") );
     }
@@ -570,15 +964,15 @@ void snap_firewall::run()
  *
  * The process gets all the IPs defined in the database and:
  *
- * \li unblock the addresses which are out of date
- * \li unblock and (re-)block adresses that are not out of date
+ * \li unblock the addresses which timed out
+ * \li unblock and (re-)block addresses that are not out of date
  *
  * The unblock and re-block process is necessary in case you are restarting
  * the process. The problem is that the IP address may already be in your
  * firewall. If that's the case, just blocking would duplicate it, which
  * would slow down the firewall for nothing and also would not properly
  * unblock the IP when we receive the timeout because that process would
- * only remove one instance.
+ * only unblock one instance.
  */
 void snap_firewall::setup_firewall()
 {
@@ -623,38 +1017,18 @@ void snap_firewall::setup_firewall()
 
             // first we want to unblock that IP address
             //
-            QString const ip(cell->value().stringValue());
+            QString const uri(cell->value().stringValue());
 
-            snap::process pr("remove IP block");
-            pr.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
-            pr.set_command("/usr/sbin/iplock");
-            pr.add_argument("--remove");
-            pr.add_argument(ip);
-            pr.add_argument("2>&1");
-            int const rr(pr.run());
-            if(rr != 0)
-            {
-                // Note: if the IP was not already defined, this command
-                //       generates an error
-                //
-                int const e(errno);
-                QString const output(pr.get_output(true));
-                SNAP_LOG_ERROR("an error occurred (")
-                              (rr)
-                              (") trying to run \"iplock --remove ")
-                              (ip)
-                              ("\", errno: ")
-                              (e)
-                              (" -- ")
-                              (strerror(e))
-                              ("\nConsole output:\n")
-                              (output);
-            }
+            block_info_t info(uri);
 
             QByteArray const key(it.key());
             int64_t const drop_date(QtCassandra::safeInt64Value(key, 0, -1));
             if(drop_date < limit)
             {
+                // unblock the IP
+                //
+                info.iplock_unblock();
+
                 // drop that row, it is too old
                 //
                 row->dropCell(key);
@@ -676,31 +1050,36 @@ void snap_firewall::setup_firewall()
                     f_wakeup_timer->set_timeout_date(drop_date);
                 }
 
-                snap::process pb("remove IP block");
-                pb.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
-                pb.set_command("/usr/sbin/iplock");
-                pb.add_argument("--block");
-                pb.add_argument(ip);
-                pb.add_argument("2>&1");
-                int const rb(pb.run());
-                if(rb != 0)
-                {
-                    int const e(errno);
-                    QString const output(pb.get_output(true));
-                    SNAP_LOG_ERROR("an error occurred (")
-                                  (rb)
-                                  (") trying to run \"iplock --block ")
-                                  (ip)
-                                  ("\", errno: ")
-                                  (e)
-                                  (" -- ")
-                                  (strerror(e))
-                                  ("\nConsole output:\n")
-                                  (output);
-                }
+                // block the IP
+                //
+                info.iplock_block();
             }
         }
     }
+
+    std::for_each(
+              f_blocks.begin()
+            , f_blocks.end()
+            , [&, limit](block_info_t & info)
+            {
+                if(limit < info.get_block_limit())
+                {
+                    // this one did not yet time out, but it's already in
+                    // the firewall so no need to call iplock(), however
+                    // we want to save the info to the database
+                    //
+                    info.save(f_firewall_table, f_server_name);
+                }
+                else
+                {
+                    // this one already timed out, unblock from the
+                    // firewall and ignore
+                    //
+                    info.iplock_unblock();
+                }
+            }
+        );
+    f_blocks.clear();
 
     f_firewall_up = true;
 
@@ -736,8 +1115,33 @@ void snap_firewall::process_timeout()
     //
     if(f_stop_received)
     {
+        // TBD: note that this means we are not going to unblock any
+        //      old IP block if we already received a STOP...
         return;
     }
+
+    int64_t const now(snap::snap_communicator::get_current_date());
+
+    f_blocks.erase(
+            std::remove_if(
+                  f_blocks.begin()
+                , f_blocks.end()
+                , [&, now](block_info_t & info)
+                {
+                    if(now > info.get_block_limit())
+                    {
+                        // this one timed out, remove from the
+                        // firewall
+                        //
+                        info.iplock_unblock();
+                
+                        return true;
+                    }
+                
+                    return false;
+                }
+            )
+        );
 
     // make sure we are connected to cassandra
     //
@@ -752,7 +1156,6 @@ void snap_firewall::process_timeout()
     //
     //      <server-name> '/' <date with leading zeroes in minutes (10 digits)>
     //
-    int64_t const now(snap::snap_communicator::get_current_date());
 
     QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
     row->clearCache();
@@ -787,14 +1190,12 @@ void snap_firewall::process_timeout()
 
             // first we want to unblock that IP address
             //
-            QString const ip(cell->value().stringValue());
-            QString iplock(QString("iplock --remove %1").arg(ip));
-            int r(system(iplock.toUtf8().data()));
-            if(r != 0)
-            {
-                int const e(errno);
-                SNAP_LOG_ERROR("an error occurred trying to run \"")(iplock)("\", errno: ")(e)(" -- ")(strerror(e));
-            }
+            QString const uri(cell->value().stringValue());
+
+            // remove the block, it timed out
+            //
+            block_info_t info(uri);
+            info.iplock_unblock();
 
             // now drop that row
             //
@@ -820,13 +1221,9 @@ void snap_firewall::process_timeout()
  */
 void snap_firewall::next_wakeup()
 {
-    // by default use now + 5 min.
-    // (if we do not yet have access to the database)
+    // by default there is nothing to wake up for
     //
-    // TODO: instead we want some form of "temporary database" mechanism
-    //       so that way we can access the real user's data
-    //
-    int64_t limit(QtCassandra::QCassandra::timeofday() + 5LL * 60LL * 1000000LL);
+    int64_t limit(0LL);
     if(f_firewall_table)
     {
         QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
@@ -852,14 +1249,22 @@ void snap_firewall::next_wakeup()
             limit = 0;
         }
     }
+    else if(!f_blocks.empty())
+    {
+        // each time we add an entry to f_blocks, we re-sort the vector
+        // so the first entry is always the smallest
+        //
+        limit = f_blocks.front().get_block_limit();
+    }
 
-    if(limit >= 0)
+    if(limit > 0)
     {
         // we have a valid date to wait on,
         // save it in our wakeup timer
         //
         f_wakeup_timer->set_timeout_date(limit);
     }
+    //else -- there is nothing to wake up for...
 }
 
 
@@ -879,89 +1284,13 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
     QString const command(message.get_command());
 
-// TODO: make use of a switch() or even better: a map a la snapinit
+// TODO: make use of a switch() or even better: a map a la snapinit -- see SNAP-464
 
     if(command == "BLOCK")
     {
         // BLOCK an ip address
         //
-
-        // check the ip and period parameters, if valid, forward to
-        // other snapfirewall instances
-        //
-        QString const ip(message.get_parameter("ip"));
-        if(ip.isEmpty())
-        {
-            SNAP_LOG_ERROR("BLOCK sent to \"")(f_server_name)("\" service without an IP. BLOCK will be ignored.");
-            return;
-        }
-
-        int64_t block_period(24LL * 60LL * 60LL * 1000000LL); // 1 day by default
-        QString const period(message.get_parameter("period"));
-        if(!period.isEmpty())
-        {
-            if(period == "hour")
-            {
-                block_period = 60LL * 60LL * 1000000LL;
-            }
-            else if(period == "day")
-            {
-                block_period = 24LL * 60LL * 60LL * 1000000LL;
-            }
-            else if(period == "week")
-            {
-                block_period = 7LL * 24LL * 60LL * 60LL * 1000000LL;
-            }
-            else if(period == "month")
-            {
-                block_period = 31LL * 24LL * 60LL * 60LL * 1000000LL;
-            }
-            else if(period == "year")
-            {
-                block_period = 366LL * 24LL * 60LL * 60LL * 1000000LL;
-            }
-            else if(period == "forever")
-            {
-                // 5 years is certainly very much like forever!
-                //
-                block_period = 5LL * 366LL * 24LL * 60LL * 60LL * 1000000LL;
-            }
-            else
-            {
-                // keep default of 1 day, but log an error
-                //
-                SNAP_LOG_ERROR("unknown period \"")(period)("\" to block an IP address. Revert to default of 1 day.");
-            }
-        }
-
-        // TODO: send to other snapfirewall instances...
-
-        // save in our list of blocked IP addresses
-        //
-        if(f_firewall_table)
-        {
-            QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
-            int64_t const now(snap::snap_communicator::get_current_date());
-            QByteArray key;
-            QtCassandra::setInt64Value(key, now + block_period);
-            row->cell(key)->setValue(ip);
-        }
-        else
-        {
-            // TODO: add this IP in a memory list with it's block period
-            //       and save that in the database once available
-        }
-
-        next_wakeup();
-
-        QString const iplock_block(QString("iplock --block %1").arg(ip));
-        int const r(system(iplock_block.toUtf8().data()));
-        if(r != 0)
-        {
-            int const e(errno);
-            SNAP_LOG_ERROR("an error occurred trying to run \"")(iplock_block)("\", errno: ")(e)(" -- ")(strerror(e));
-        }
-
+        block_ip(message);
         return;
     }
 
@@ -1154,6 +1483,40 @@ void snap_firewall::stop(bool quitting)
         //f_communicator->remove_connection(f_messenger); -- this one will get an expected HUP shortly
         f_communicator->remove_connection(f_wakeup_timer);
     }
+}
+
+
+
+void snap_firewall::block_ip(snap::snap_communicator_message const & message)
+{
+    // check the "uri" and "period" parameters
+    //
+    // the URI may include a protocol and an IP separated by "://"
+    // if no "://" appears, then only an IP is expected
+    //
+    block_info_t info(message);
+
+    // save in our list of blocked IP addresses
+    //
+    if(f_firewall_table)
+    {
+        info.save(f_firewall_table, f_server_name);
+    }
+    else
+    {
+        // cache in memory for later, once we connect to Cassandra,
+        // we will save those in cassandra
+        //
+        f_blocks.push_back(info);
+
+        std::sort(f_blocks.begin(), f_blocks.end());
+    }
+
+    // actually add to the firewall
+    //
+    info.iplock_block();
+
+    next_wakeup();
 }
 
 

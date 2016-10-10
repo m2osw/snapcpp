@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplayout.cpp
+ *      snapwebsites/snaplayout/src/snaplayout.cpp
  *
  * Description:
  *      Save layout files in the Snap database.
@@ -30,6 +30,8 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+#include "version.h"
 
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/qstring_stream.h>
@@ -292,8 +294,8 @@ snap_layout::snap_layout(int argc, char * argv[])
     }
     if( f_opt->is_defined( "version" ) )
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
-        exit(1);
+        std::cout << SNAPLAYOUT_VERSION_STRING << std::endl;
+        exit(0);
         snap::NOTREACHED();
     }
     //

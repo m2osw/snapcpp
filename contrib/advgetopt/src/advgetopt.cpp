@@ -543,23 +543,61 @@ void getopt::reset(int argc
                 }
                 const char *str_value(s);
                 std::vector<std::string> values;
-                while(*s != '\0')
+                switch(opts[opt_by_long_name[name.c_str()]].f_arg_mode)
                 {
-                    if(isspace(*s))
+                case argument_mode_t::required_multiple_argument:
+                case argument_mode_t::optional_multiple_argument:
+                case argument_mode_t::required_multiple_long:
+                case argument_mode_t::optional_multiple_long:
+                case argument_mode_t::default_multiple_argument:
+                    // TODO: add support for quotes
+                    //
+                    while(*s != '\0')
                     {
-                        if(s > str_value)
+                        if(isspace(*s))
                         {
-                            std::string v(str_value, s - str_value);
-                            values.push_back(v);
+                            if(s > str_value)
+                            {
+                                std::string v(str_value, s - str_value);
+                                values.push_back(v);
+                            }
+                            str_value = s + 1;
                         }
-                        str_value = s + 1;
+                        ++s;
                     }
-                    ++s;
-                }
-                if(s > str_value)
-                {
-                    std::string v(str_value, s - str_value);
-                    values.push_back(v);
+                    if(s > str_value)
+                    {
+                        std::string v(str_value, s - str_value);
+                        values.push_back(v);
+                    }
+                    break;
+
+                default:
+                    // we expect exactly one argument, so just take the
+                    // rest of the line and use that as the argument
+                    //
+                    while(isspace(*s))
+                    {
+                        ++s;
+                    }
+                    for(e = s + strlen(s); e > s; --e)
+                    {
+                        if(!isspace(e[-1]))
+                        {
+                            break;
+                        }
+                    }
+                    // TODO: remove quotes if present
+                    //
+                    {
+                        size_t const len(e - s);
+                        if(len != 0)
+                        {
+                            values.push_back(std::string(s, len));
+                        }
+                    }
+                    break;
+
                 }
                 if(values.size() > 0)
                 {

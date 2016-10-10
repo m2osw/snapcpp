@@ -264,32 +264,9 @@ int64_t epayment_stripe::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2016, 4, 7, 23, 46, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
-/** \brief First update to run for the epayment_stripe plugin.
- *
- * This function is the first update for the epayment_stripe plugin.
- * It creates the tables.
- *
- * \note
- * We reset the cached pointer to the tables to make sure that they get
- * synchronized when used for the first time (very first initialization
- * only, do_update() is not generally called anyway, unless you are a
- * developer with the debug mode turned on.)
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void epayment_stripe::initial_update(int64_t variables_timestamp)
-{
-    NOTUSED(variables_timestamp);
-
-    get_epayment_stripe_table();
-    f_epayment_stripe_table.reset();
 }
 
 

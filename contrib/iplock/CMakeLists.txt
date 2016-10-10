@@ -37,48 +37,16 @@ set(IPLOCK_MAJOR 2)
 set(IPLOCK_MINOR 1)
 set(IPLOCK_PATCH 2)
 
-project(iplock)
+project(iplock_project)
 
-include(GNUInstallDirs)
-
-# Put the version in the cpp file
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/iplock.h.in ${CMAKE_CURRENT_BINARY_DIR}/iplock.h )
-
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-
-##
-## Include common Snap! cmake modules
-##
-#if( NOT CMAKE_MODULE_PATH )
-#    set( CMAKE_MODULE_PATH ${CMAKE_PREFIX_PATH}/share/cmake )
-#endif()
-
+find_package( AdvGetOpt        REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen )
 
 
-# The documentation
+# Sub-directories
+add_subdirectory(src)
 add_subdirectory(doc)
 
-
-##
-## IP Lock Tool
-##
-add_executable(${PROJECT_NAME}
-    iplock.cpp
-)
-
-install(
-    TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION sbin
-    #${CMAKE_INSTALL_SBINDIR}
-)
-
-install(
-    FILES
-        iplock.conf
-    DESTINATION
-        share/iplock/conf
-)
 
 # vim: ts=4 sw=4 et

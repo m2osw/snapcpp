@@ -1,6 +1,6 @@
 #
 # File:
-#      src/snaplock/CMakeLists.txt
+#      snapwebsites/snaplock/src/CMakeLists.txt
 #
 # Description:
 #      A daemon to synchronize processes between any number of computers
@@ -30,6 +30,10 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 project( snaplock )
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_executable(${PROJECT_NAME}
     snaplock.h

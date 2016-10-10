@@ -1,8 +1,14 @@
-snaplock (1.0.4.6~xenial) xenial; urgency=high
+snaplock (1.0.5.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 03 Oct 2016 02:00:46 -0700
+ -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:49 -0700
+
+snaplock (1.0.5.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Will output its own version instead of the libsnapwebsites one.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 07 Oct 2016 11:33:46 -0700
 
 snaplock (1.0.4.0~xenial) xenial; urgency=high
 

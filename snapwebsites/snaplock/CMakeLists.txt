@@ -1,6 +1,6 @@
 #
 # File:
-#      src/snaplock/CMakeLists.txt
+#      snapwebsites/snaplock/CMakeLists.txt
 #
 # Description:
 #      A daemon to synchronize processes between any number of computers

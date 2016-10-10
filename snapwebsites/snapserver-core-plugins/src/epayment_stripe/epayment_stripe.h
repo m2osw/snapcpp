@@ -161,7 +161,6 @@ public:
     virtual bool                process_creditcard(epayment_creditcard::epayment_creditcard_info_t & creditcard_info, editor::save_info_t & save_info);
 
 private:
-    void                        initial_update(int64_t variables_timestamp);
     void                        content_update(int64_t variables_timestamp);
     void                        cancel_invoice(QString const & token);
     bool                        get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token);

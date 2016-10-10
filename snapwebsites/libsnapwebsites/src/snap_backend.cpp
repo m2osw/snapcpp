@@ -853,6 +853,8 @@ void snap_backend::process_action()
         tcp_client_server::get_addr_port(QString(parameters["local_listen"]), tcp_addr, tcp_port, "tcp");
         g_messenger.reset(new messenger(this, f_action, tcp_addr.toUtf8().data(), tcp_port));
         g_communicator->add_connection(g_messenger);
+
+        f_server.lock()->configure_messenger_logging( g_messenger );
     }
 
     // create a wake up timer; whenever we have work to do, this timer

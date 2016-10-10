@@ -37,6 +37,7 @@
 #include <log4cplus/consoleappender.h>
 #include <log4cplus/syslogappender.h>
 #include <log4cplus/socketappender.h>
+#include <log4cplus/spi/loggingevent.h>
 #pragma GCC diagnostic pop
 
 #include <QFileInfo>
@@ -145,8 +146,10 @@ namespace
 std::string         g_progname;
 QString             g_log_config_filename;
 QString             g_log_output_filename;
+messenger_t         g_log_messenger;
 log4cplus::Logger   g_logger;
 log4cplus::Logger   g_secure_logger;
+log4cplus::Logger   g_messenger_logger;
 
 enum class logging_type_t
     { UNCONFIGURED_LOGGER
@@ -155,6 +158,7 @@ enum class logging_type_t
     , CONFFILE_LOGGER
     , SYSLOG_LOGGER
     , SERVER_LOGGER
+    , MESSENGER_LOGGER
     };
 logging_type_t      g_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
 logging_type_t      g_last_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
@@ -198,6 +202,76 @@ public:
     logger &        operator () (float const v)                 { NOTUSED(v); return *this; }
     logger &        operator () (double const v)                { NOTUSED(v); return *this; }
     logger &        operator () (bool const v)                  { NOTUSED(v); return *this; }
+};
+
+
+class MessengerAppender : public log4cplus::Appender
+{
+    public:
+        MessengerAppender( messenger_t snapcom ) : f_messenger(snapcom)
+        {
+        }
+
+        ~MessengerAppender()
+        {
+        }
+
+        virtual void close() override
+        {
+            f_messenger.reset();
+        }
+
+    protected:
+        virtual void append(const log4cplus::spi::InternalLoggingEvent& event) override
+        {
+            char const * level_str(nullptr);
+            switch( event.getLogLevel() )
+            {
+                case log4cplus::FATAL_LOG_LEVEL:
+                    level_str = "fatal error";
+                    break;
+
+                case log4cplus::ERROR_LOG_LEVEL:
+                    level_str = "error";
+                    break;
+
+                case log4cplus::WARN_LOG_LEVEL:
+                    level_str = "warning";
+                    break;
+
+                case log4cplus::INFO_LOG_LEVEL:
+                    level_str = "info";
+                    break;
+
+                case log4cplus::DEBUG_LOG_LEVEL:
+                    level_str = "debug";
+                    break;
+
+                case log4cplus::TRACE_LOG_LEVEL:
+                    level_str = "trace";
+                    break;
+            }
+
+            // Send the log to snapcommunicator, and eventually to snaplogd.
+            //
+            snap::snap_communicator_message request;
+            request.set_command("SNAPLOG");
+            request.set_service("snaplogd");
+            request.add_parameter( "cache",   "ttl=60"                    );
+            request.add_parameter( "level",   level_str                   );
+            request.add_parameter( "file",    event.getFile().c_str()     );
+            request.add_parameter( "func",    event.getFunction().c_str() );
+            request.add_parameter( "line",    event.getLine()             );
+            request.add_parameter( "message", event.getMessage().c_str()  );
+            auto messenger( f_messenger.lock() );
+            if( messenger ) // silently fail if the shared object has been deleted...
+            {
+                messenger->send_message(request);
+            }
+        }
+
+    private:
+        messenger_t f_messenger;
 };
 
 
@@ -298,7 +372,6 @@ void unconfigure()
         //g_secure_logger = log4cplus::Logger();
     }
 }
-
 
 /** \brief Configure log4cplus system to the console.
  *
@@ -408,6 +481,48 @@ void configure_logfile( QString const & logfile )
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );
+}
+
+
+/** \brief Configure a snapcommunicator instance.
+ *
+ * Log entries are mirrored across the snapcommunicator instance. The configured log level
+ * of the "snap" logger is used to determine what to send "over the wire." This is making
+ * the assumption that you have set up the "snap" logger correctly.
+ */
+void configure_messenger( messenger_t messenger )
+{
+    // Leave the file logger running
+    //unconfigure();
+
+    if( !messenger.lock() )
+    {
+        throw snap_exception( "Snap communicator messenger must be allocated!" );
+    }
+
+    g_log_messenger = messenger;
+
+    log4cplus::SharedAppenderPtr appender( new MessengerAppender( g_log_messenger ) );
+    appender->setName( LOG4CPLUS_TEXT("snapcommunicator") );
+    log4cplus::tstring const pattern
+                ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
+                + boost::replace_all_copy(get_progname(), "%", "%%").c_str()
+                + log4cplus::tstring("[%i]: %m (%b:%L)%n")
+                );
+// log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
+// of g++ so we have to make sure the deprecation definition gets ignored
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
+#pragma GCC diagnostic pop
+    appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
+
+    g_logging_type        = logging_type_t::FILE_LOGGER;
+    g_last_logging_type   = logging_type_t::FILE_LOGGER;
+    g_messenger_logger    = log4cplus::Logger::getInstance( "messenger" );
+
+    g_messenger_logger.addAppender( appender );
     set_log_output_level( log_level_t::LOG_LEVEL_INFO );
 }
 
@@ -602,11 +717,14 @@ void reconfigure()
         configure_server();
         break;
 
+    case logging_type_t::MESSENGER_LOGGER:
+        configure_messenger( g_log_messenger );
+        break;
+
     default:
         /* do nearly nothing */
         unconfigure();
         break;
-
     }
 }
 
@@ -676,6 +794,7 @@ void set_log_output_level( log_level_t level )
     log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
+    g_messenger_logger.setLogLevel( new_level );
 }
 
 
@@ -742,6 +861,10 @@ void reduce_log_output_level( log_level_t level )
     if( new_level < g_secure_logger.getLogLevel() )
     {
         g_secure_logger.setLogLevel( new_level );
+    }
+    if( new_level < g_messenger_logger.getLogLevel() )
+    {
+        g_messenger_logger.setLogLevel( new_level );
     }
 }
 
@@ -955,16 +1078,18 @@ logger::~logger()
     case log_level_t::LOG_LEVEL_INFO:
         ll = log4cplus::INFO_LOG_LEVEL;
         sll = LOG_INFO;
+        level_str = "info";
         break;
 
     case log_level_t::LOG_LEVEL_DEBUG:
         ll = log4cplus::DEBUG_LOG_LEVEL;
+        level_str = "debug";
         break;
 
     case log_level_t::LOG_LEVEL_TRACE:
         ll = log4cplus::TRACE_LOG_LEVEL;
+        level_str = "trace";
         break;
-
     }
 
     // TBD: is the exists() call doing anything for us here?
@@ -1013,6 +1138,11 @@ logger::~logger()
             //
             console = false;
         }
+    }
+
+    if( logger_exists("messenger") )
+    {
+        g_messenger_logger.log( ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line );
     }
 
     if(console && isatty(STDERR_FILENO))
@@ -1289,7 +1419,7 @@ bool is_enabled_for( log_level_t const log_level )
     //       likely lower than g_secure_logger; but such
     //       a statement can always be all wrong...
     //
-    return g_logger.isEnabledFor(ll) || g_secure_logger.isEnabledFor(ll);
+    return g_logger.isEnabledFor(ll) || g_secure_logger.isEnabledFor(ll) || g_messenger_logger.isEnabledFor(ll);
 }
 
 

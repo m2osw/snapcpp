@@ -19,12 +19,18 @@
 // ourselves
 //
 #include "snapwebsites/snap_config.h"
+#include "snapwebsites/snap_communicator.h"
 
+#include <memory>
 
 namespace snap
 {
+
 namespace logging
 {
+
+typedef
+    std::weak_ptr<snap_communicator::snap_tcp_client_permanent_message_connection> messenger_t;
 
 enum class log_level_t
 {
@@ -93,6 +99,7 @@ std::string get_progname        ();
 void configure_console          ();
 void configure_logfile          ( QString const & logfile  );
 void configure_syslog           ();
+void configure_messenger        ( messenger_t messenger );
 void configure_server           ();
 void configure_conffile         ( QString const & filename );
 void unconfigure                ();

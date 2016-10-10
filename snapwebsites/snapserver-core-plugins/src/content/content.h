@@ -825,7 +825,6 @@ private:
     };
     typedef QVector<javascript_ref_t> javascript_ref_map_t;
 
-    void        initial_update(int64_t variables_timestamp);
     void        remove_files_compressor(int64_t variables_timestamp);
     void        content_update(int64_t variables_timestamp);
     void        on_save_links(content_block_links_offset_t list, bool const create);

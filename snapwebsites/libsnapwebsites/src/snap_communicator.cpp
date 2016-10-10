@@ -4934,6 +4934,13 @@ snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client
 {
 }
 
+/** \brief Destroy instance
+ */
+snap_communicator::snap_tcp_client_permanent_message_connection::~snap_tcp_client_permanent_message_connection()
+{
+    // Does nothing
+}
+
 
 /** \brief Attempt to send a message to this connection.
  *

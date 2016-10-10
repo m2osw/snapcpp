@@ -1,8 +1,14 @@
-libsnapwebsites (1.1.17.8~xenial) xenial; urgency=high
+libsnapwebsites (1.1.19.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-355: We now broadcast the BLOCK message now.
 
- -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 10 Oct 2016 00:40:48 -0700
+
+libsnapwebsites (1.1.18.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Write versions to stdout.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 07 Oct 2016 11:22:48 -0700
 
 libsnapwebsites (1.1.17.0~xenial) xenial; urgency=high
 

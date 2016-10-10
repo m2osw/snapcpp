@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapwebsites/snaplayout/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. The server is the main() of the Snap!

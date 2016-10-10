@@ -495,10 +495,20 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
     // verify the revision, if different, then we want to
     // use the one that the user specified and not the most
     // recent one
-    if(attachment_ipath.get_extended_revision() != version)
+    //
+    if(!version.isEmpty()
+    && attachment_ipath.get_extended_revision() != version)
     {
         // 'filename' is used only in case of errors
+        //
         attachment_ipath.force_extended_revision(version, filename);
+    }
+
+    // make sure the path is valid (i.e. it could be a 404)
+    //
+    if(!attachment_ipath.has_revision())
+    {
+        return false;
     }
 
     content::content * content_plugin(content::content::instance());

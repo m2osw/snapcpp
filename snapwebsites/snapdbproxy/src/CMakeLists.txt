@@ -1,6 +1,6 @@
 #
 # File:
-#      src/snapdbproxy/CMakeLists.txt
+#      snapwebsites/snapdbproxy/src/CMakeLists.txt
 #
 # Description:
 #      A proxy to access the Cassandra database cluster without having to

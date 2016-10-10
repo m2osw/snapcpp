@@ -669,7 +669,7 @@ snap_version::version_number_t path_info_t::get_revision() const
 
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
         {
-            QString const& key(f_real_key.isEmpty() ? f_key : f_real_key);
+            QString const & key(f_real_key.isEmpty() ? f_key : f_real_key);
 
             // try with the full locale
             f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());

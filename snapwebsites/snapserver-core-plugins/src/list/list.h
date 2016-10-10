@@ -297,7 +297,6 @@ public:
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
-    void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
     void                add_all_pages_to_list_table(QString const & f);
     int                 generate_all_lists(QString const & site_key);

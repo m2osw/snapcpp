@@ -270,9 +270,11 @@ public:
 
     std::string         servername() const;
 
+    void                configure_messenger_logging( snap_communicator::snap_tcp_client_permanent_message_connection::pointer_t ptr );
+
     void                udp_ping_server( QString const & service, QString const & uri );
     void                udp_rusage(QString const & process_name);
-    static void         block_ip( QString const & ip, QString const & period = "" );
+    static void         block_ip( QString const & uri, QString const & period = "" );
 
 #ifdef SNAP_NO_FORK
     bool nofork() const;
