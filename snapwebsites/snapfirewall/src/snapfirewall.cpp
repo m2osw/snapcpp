@@ -1141,6 +1141,7 @@ void snap_firewall::process_timeout()
                     return false;
                 }
             )
+            , f_blocks.end()
         );
 
     // make sure we are connected to cassandra
