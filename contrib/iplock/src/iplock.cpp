@@ -224,6 +224,14 @@ advgetopt::getopt::option const g_iplock_configuration_options[] =
     },
     {
         '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "interface",
+        nullptr,
+        "The name of the interface that iplock is expected to work with.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
         0,
         nullptr,
         nullptr,
