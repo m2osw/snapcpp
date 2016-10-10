@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.10.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:48 -0700
+
 snapserver-core-plugins (1.0.10.0~xenial) xenial; urgency=high
 
   * EX-131: Looking at the problem with list not updating, I noticed an

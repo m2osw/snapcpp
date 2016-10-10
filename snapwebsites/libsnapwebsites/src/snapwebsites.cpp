@@ -354,6 +354,14 @@ namespace
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {
+            '\0',
+            0,
+            "no-messenger-logging",
+            nullptr,
+            "Turn off the automatic logging to snapcommunicator.",
+            advgetopt::getopt::argument_mode_t::no_argument
+        },
+        {
             'n',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "no-log",
@@ -2381,6 +2389,10 @@ void server::listen()
     g_connection->f_messenger->set_priority(50);
     g_connection->f_communicator->add_connection(g_connection->f_messenger);
 
+    configure_messenger_logging(
+        std::static_pointer_cast<snap_communicator::snap_tcp_client_permanent_message_connection>( g_connection->f_messenger )
+    );
+
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(get_server_name())("\" started.");
 
@@ -2537,6 +2549,17 @@ unsigned long server::connections_count()
 std::string server::servername() const
 {
     return f_servername;
+}
+
+
+void server::configure_messenger_logging( snap_communicator::snap_tcp_client_permanent_message_connection::pointer_t ptr )
+{
+    if( f_opt->is_defined("no-messenger-logging") )
+    {
+        return;
+    }
+
+    logging::configure_messenger( ptr );
 }
 
 

@@ -14,6 +14,8 @@ set (CMAKE_LEGACY_CYGWIN_WIN32 0)
 project (log4cplus)
 cmake_minimum_required (VERSION 2.8.4)
 
+find_package( SnapDoxygen )
+
 enable_language (CXX)
 include(GNUInstallDirs)
 
@@ -121,6 +123,7 @@ if (LOG4CPLUS_BUILD_TESTING)
   enable_testing()
 endif (LOG4CPLUS_BUILD_TESTING)
 
+add_subdirectory (doc)
 add_subdirectory (src)
 
 if (LOG4CPLUS_BUILD_LOGGINGSERVER)
