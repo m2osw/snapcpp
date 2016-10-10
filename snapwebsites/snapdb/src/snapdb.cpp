@@ -293,7 +293,7 @@ snapdb::snapdb(int argc, char * argv[])
     // finally check for parameters
     if( f_opt->is_defined( "--" ) )
     {
-        const int arg_count = f_opt->size( "--" );
+        int const arg_count = f_opt->size( "--" );
         if( arg_count > 4 )
         {
             std::cerr << "error: only four parameters (table, row, cell and value) can be specified on the command line." << std::endl;

@@ -57,21 +57,21 @@
  *
  * The messenger is a connection to the snapcommunicator server.
  *
- * In most cases we receive BLOCK, STOP, and LOG messages from it. We
- * implement a few other messages too (HELP, READY...)
+ * In most cases we receive CASSANDRASTATUS, STOP, and LOG messages from it.
+ * We implement a few other messages too (HELP, READY...)
  *
  * We use a permanent connection so if the snapcommunicator restarts
  * for whatever reason, we reconnect automatically.
  *
  * \note
- * The messenger connection used by the snapfirewall tool makes use
+ * The messenger connection used by the snapdbproxy tool makes use
  * of a thread. You will want to change this initialization function
- * if you intend to fork() direct children of ours (i.e. not fork()
+ * if you intend to fork() and run direct children (i.e. not fork()
  * + execv() as we do to run iptables.)
  *
- * \param[in] sfw  The snap firewall server we are listening for.
+ * \param[in] proxy  The snapdbproxy server we are listening for.
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
- * \param[in] port  The port to listen on (4040).
+ * \param[in] port  The port to connect to (4040).
  */
 snapdbproxy_messenger::snapdbproxy_messenger(snapdbproxy * proxy, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(addr, port)

@@ -272,7 +272,7 @@ public:
 
     void                udp_ping_server( QString const & service, QString const & uri );
     void                udp_rusage(QString const & process_name);
-    static void         block_ip( QString const & ip, QString const & period = "" );
+    static void         block_ip( QString const & uri, QString const & period = "" );
 
 #ifdef SNAP_NO_FORK
     bool nofork() const;
