@@ -1,4 +1,4 @@
-Source: snapcommunicator
+Source: snaplog
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: cmake,
@@ -7,7 +7,7 @@ Build-Depends: cmake,
     doxygen,
     graphviz,
     libadvgetopt-dev (>= 1.1.3.11~xenial),
-    liblog4cplus12-dev (>= 1.2.1.23~xenial),
+    liblog4cplus-dev (>= 1.2.1.23~xenial),
     libqtcassandra-dev (>= 0.6.7.2~xenial),
     libqtserialization-dev (>= 0.1.17.23~xenial),
     libsnapmanager-dev (>= 1.1.14.4~xenial),
@@ -20,16 +20,17 @@ Build-Depends: cmake,
     snapcmakemodules (>= 1.0.27.11~xenial),
     zip
 Standards-Version: 3.9.4
-Section: libs
+Section: admin
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 
-Package: snapcommunicator
+Package: snaplog
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, snapbase
-Suggests: snapcommunicator-doc
+Depends: ${shlibs:Depends}, ${misc:Depends},
+    snapcommunicator, libqt5sql5, libqt5sql5-mysql
+Suggests: snaplog-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -38,9 +39,11 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  extensible as it offers a plug-in mechanism that everyone is welcome to use to
  create their own extensions.
  .
- Faciliates communication between modules.
+ This package contains a resident service which monitors the snapcommunicator network
+ and captures logs broadcast to SNAPLOG from the entire network. It uses MySQL to capture
+ and store all log entries and provide a SQL interface for ease of retrieval and reports.
 
-Package: snapcommunicator-doc
+Package: snaplog-doc
 Section: admin
 Architecture: all
 Depends: ${misc:Depends}

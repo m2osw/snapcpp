@@ -70,10 +70,19 @@ for my $project (keys %DIRHASH)
     {
         $newvers = "$1.$2.$3.1";
     }
+    elsif( $version =~ m/^(\d*).(\d+).(\d+)-(\d+)$/ )
+    {
+        $newvers = "$1.$2.$3.1-$4";
+    }
     elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)$/ )
     {
         my $num = $4+1;
         $newvers = "$1.$2.$3.$num";
+    }
+    elsif( $version =~ m/^(\d*).(\d+).(\d+).(\d+)-(\d+)$/ )
+    {
+        my $num = $4+1;
+        $newvers = "$1.$2.$3.$num-$5";
     }
 
     my @lines = split /\n/, $changes;

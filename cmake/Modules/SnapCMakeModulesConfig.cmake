@@ -109,10 +109,22 @@ function( SnapGetVersion PACKAGE_NAME WORKING_DIRECTORY )
     if( NOT ${LEN} EQUAL 4 )
         message( FATAL_ERROR "Package name '${PACKAGE_NAME}' does not have a valid version number: '${ORIG_VERSION}'. It must have 4 parts: major.minor.patch.build!" )
     endif()
-    list( GET VERSION 0 major_version )
-    list( GET VERSION 1 minor_version )
-    list( GET VERSION 2 patch_version )
-    list( GET VERSION 3 build_version )
+
+    list( GET VERSION 0 major_version  )
+    list( GET VERSION 1 minor_version  )
+    list( GET VERSION 2 patch_version  )
+    list( GET VERSION 3 _build_version )
+
+    string( REPLACE "-"  " " temp_ver ${_build_version} )
+    list( LENGTH temp_ver temp_ver_len )
+    if( ${temp_ver_len} EQUAL 2 )
+        #
+        # Throw away the debian build number if it is present (e.g. 1.2.3.4-5, where we throw out the '-5').
+        #
+        list( GET temp_ver 0 build_version )
+    else()
+        set( build_version ${_build_version} )
+    endif()
 
     set( ${PACKAGE_NAME}_VERSION_MAJOR ${major_version} PARENT_SCOPE )
     set( ${PACKAGE_NAME}_VERSION_MINOR ${minor_version} PARENT_SCOPE )
