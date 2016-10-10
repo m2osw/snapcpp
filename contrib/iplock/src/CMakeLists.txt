@@ -1,5 +1,5 @@
 #
-# File:         CMakeLists.txt
+# File:         src/CMakeLists.txt
 # Object:       Definitions to create the build environment
 #
 # Copyright:    Copyright (c) 2012-2015 Made to Order Software Corp.
@@ -28,25 +28,34 @@
 #
 cmake_minimum_required(VERSION 2.8)
 
-enable_language( CXX )
 
-##
-## IP Lock Version
-##
-set(IPLOCK_MAJOR 2)
-set(IPLOCK_MINOR 1)
-set(IPLOCK_PATCH 2)
+project(iplock)
 
-project(iplock_project)
+include(GNUInstallDirs)
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-find_package( SnapDoxygen )
+# Put the version in the cpp file
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
 
+include_directories(
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${ADVGETOPT_INCLUDE_DIRS}
+)
 
-# Sub-directories
-add_subdirectory(src)
-add_subdirectory(doc)
+add_executable(${PROJECT_NAME}
+    iplock.cpp
+    main.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+    RUNTIME DESTINATION
+        sbin
+)
 
 
 # vim: ts=4 sw=4 et

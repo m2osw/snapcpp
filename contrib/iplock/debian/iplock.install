@@ -1,2 +1,3 @@
 usr/sbin/iplock
-iplock.conf etc/network/
+conf/iplock.conf conf/http.conf etc/iplock/
+conf/README.md etc/iplock/iplock.d/

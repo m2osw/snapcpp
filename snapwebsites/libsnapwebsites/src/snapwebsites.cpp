@@ -1735,10 +1735,20 @@ void server::udp_rusage(QString const & process_name)
  * \li "year" -- block the IP address for 366 days.
  * \li "forever" -- block the IP address for 5 years.
  *
- * \param[in] ip  The IP address of to ban.
+ * The scheme is the name of a protocol that needs to be blocked.
+ * At this time, we accept "http" and "smtp". Please use "http" for
+ * "https" since both ports will get blocked.
+ *
+ * This function does not verify the name of the scheme. However, the
+ * snapfirewall will do so before using it.
+ *
+ * If the scheme is not defined, then the default, which is "http",
+ * is used.
+ *
+ * \param[in] uri  The IP address of to ban.
  * \param[in] period  The duration for which the ban applies.
  */
-void server::block_ip( QString const & ip, QString const & period )
+void server::block_ip( QString const & uri, QString const & period )
 {
     // create a server object (we are a static function!)
     //
@@ -1755,8 +1765,9 @@ void server::block_ip( QString const & ip, QString const & period )
     //
     snap::snap_communicator_message message;
     message.set_command("BLOCK");
+    message.set_server("*");
     message.set_service("snapfirewall");
-    message.add_parameter("ip", ip);
+    message.add_parameter("uri", uri);
     if(!period.isEmpty())
     {
         message.add_parameter("period", period);

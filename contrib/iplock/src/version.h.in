@@ -1,10 +1,10 @@
 //
-// File:	iplock.h.in
-// Object:	Allow users to easily add and remove IPs to/from a blacklist
-//              of IP defined in an iptables firewall
+// File:        version.h.in
+// Object:      Allow users to easily add and remove IPs in an iptable
+//              firewall; this is useful if you have a blacklist of IPs
 //
-// Copyright:	Copyright (c) 2007-2015 Made to Order Software Corp.
-//		All Rights Reserved.
+// Copyright:   Copyright (c) 2007-2016 Made to Order Software Corp.
+//              All Rights Reserved.
 //
 // http://snapwebsites.org/
 // contact@m2osw.com
@@ -27,9 +27,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-#ifndef IPLOCK_H
-#define IPLOCK_H
+#ifndef IPLOCK_VERSION_H
+#define IPLOCK_VERSION_H
 
 #define IPLOCK_VERSION_STRING  "@IPLOCK_MAJOR@.@IPLOCK_MINOR@.@IPLOCK_PATCH@"
 
 #endif
+// vim: ts=4 sw=4 et
