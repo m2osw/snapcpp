@@ -1,4 +1,4 @@
-log4cplus12 (1.2.1.31-1) xenial; urgency=high
+log4cplus12 (1.2.2.0~xenial) xenial; urgency=high
 
   * SNAP-319: Rename package.
 
