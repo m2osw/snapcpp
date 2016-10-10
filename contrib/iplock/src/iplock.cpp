@@ -505,6 +505,13 @@ void iplock::command::verify_ip(std::string const & ip)
             else
             {
                 n = n * 10 + *s - '0';
+
+                // make sure it does not overflow
+                if(n > 255)
+                {
+                    std::cerr << "iplock:error: IPv4 numbers are limited to a value between 0 and 255, \"" << ip << "\" is invalid." << std::endl;
+                    exit(1);
+                }
             }
         }
         else if(*s == '.')
@@ -512,11 +519,6 @@ void iplock::command::verify_ip(std::string const & ip)
             if(n == -1)
             {
                 std::cerr << "iplock:error: IPv4 addresses are currently limited to IPv4 syntax only (a.b.c.d) \"" << ip << "\" is invalid." << std::endl;
-            }
-            if(n < 0 || n > 255)
-            {
-                std::cerr << "iplock:error: IPv4 numbers are limited to a value between 0 and 255, \"" << ip << "\" is invalid." << std::endl;
-                exit(1);
             }
             // reset the number
             n = -1;
