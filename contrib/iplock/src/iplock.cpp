@@ -49,6 +49,7 @@
 
 #include <iostream>
 
+#include <net/if.h>
 #include <stdio.h>
 
 #include "poison.h"
@@ -488,26 +489,27 @@ iplock::command::command(iplock * parent, char const * command_name, advgetopt::
 
     f_interface = f_iplock_opt->get_string("interface");
     if(f_interface.empty()
-    || f_interface.size() > 15)
+    || f_interface.size() >= IFNAMSIZ)
     {
         std::cerr << "iplock:error: the \"interface\" parameter cannot be more than 15 characters nor empty." << std::endl;
         exit(1);
     }
 
-    std::for_each(
-              f_interface.begin()
-            , f_interface.end()
-            , [&](auto const & c)
-            {
-                if((c < 'a' || c > 'z')
-                && (c < 'A' || c > 'Z')
-                && (c < '0' || c > '9')
-                && c != '_')
-                {
-                    std::cerr << "error:iplock: invalid \"interface=...\" option \"" << f_interface << "\", only [a-zA-Z0-9_]+ are supported." << std::endl;
-                    exit(1);
-                }
-            });
+    // there is a size limit, but not characters
+    //std::for_each(
+    //          f_interface.begin()
+    //        , f_interface.end()
+    //        , [&](auto const & c)
+    //        {
+    //            if((c < 'a' || c > 'z')
+    //            && (c < 'A' || c > 'Z')
+    //            && (c < '0' || c > '9')
+    //            && c != '_')
+    //            {
+    //                std::cerr << "error:iplock: invalid \"interface=...\" option \"" << f_interface << "\", only [a-zA-Z0-9_]+ are supported." << std::endl;
+    //                exit(1);
+    //            }
+    //        });
 }
 
 
