@@ -1,3 +1,9 @@
+iplock (3.0.0.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 10 Oct 2016 15:39:37 -0700
+
 iplock (3.0.0.0~xenial) xenial; urgency=high
 
   * SNAP-355: Refactor the tool so we can use --block even if the IP is
