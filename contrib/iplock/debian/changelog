@@ -1,8 +1,15 @@
-iplock (2.1.3.31~xenial) xenial; urgency=high
+iplock (3.0.0.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-355: Refactor the tool so we can use --block even if the IP is
+    already in the list.
+  * --unblock was changed to --remove.
+  * A --count option was added.
+  * Added support for --scheme so we can block other things than just HTTP.
+  * The chain and a counter were added so one can use -I and various schemes.
+  * Moved the configuration data under /etc/iplock and support the
+    /etc/iplock/iplock.d for user modified versions.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:11 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Sep 2016 17:34:11 -0700
 
 iplock (2.1.3.0~xenial) xenial; urgency=high
 
