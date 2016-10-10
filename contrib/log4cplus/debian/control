@@ -46,15 +46,4 @@ Description: log4cplus v1.2 is a simple to use C++ logging API.
  .
  This is the documentation package.
 
-Package: log4cplus12-simpleserver
-Section: utils
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Fast Websites: powerful CMS for Apache written in C++.
- log4cplus v1.2 is a simple to use C++ logging API providing thread-safe,
- flexible, and arbitrarily granular control over log management and
- configuration. It is modelled after the Java log4j API.
- .
- This is the logging server to log over a network connection.
-
 # vim: ts=4 sw=4 et
