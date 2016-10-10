@@ -5,7 +5,8 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    qtbase5-dev
+    qtbase5-dev,
+    snapcmakemodules
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://sourceforge.net/p/log4cplus/wiki/Home/
@@ -26,7 +27,7 @@ Description: log4cplus v1.2 is a simple to use C++ logging API.
 Package: liblog4cplus12-dev
 Section: libdevel
 Architecture: any
-Depends: liblog4cplus (= ${binary:Version}), ${misc:Depends}
+Depends: liblog4cplus12 (= ${binary:Version}), ${misc:Depends}
 Description: log4cplus v1.2 is a simple to use C++ logging API.
  log4cplus is a simple to use C++ logging API providing thread-safe,
  flexible, and arbitrarily granular control over log management and
@@ -34,15 +35,15 @@ Description: log4cplus v1.2 is a simple to use C++ logging API.
  .
  This is the development package that programmers want to install.
 
-Package: log4cplus12-simpleserver
-Section: utils
+Package: liblog4cplus12-doc
+Section: doc
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Fast Websites: powerful CMS for Apache written in C++.
- log4cplus v1.2 is a simple to use C++ logging API providing thread-safe,
+Suggests: liblog4cplus12-dev (= ${binary:Version})
+Description: log4cplus v1.2 is a simple to use C++ logging API.
+ log4cplus is a simple to use C++ logging API providing thread-safe,
  flexible, and arbitrarily granular control over log management and
  configuration. It is modelled after the Java log4j API.
  .
- This is the logging server to log over a network connection.
+ This is the documentation package.
 
 # vim: ts=4 sw=4 et
