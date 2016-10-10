@@ -52,6 +52,7 @@ public:
         advgetopt::getopt::pointer_t    f_opt;
         advgetopt::getopt::pointer_t    f_iplock_opt;
         std::string                     f_chain = "unwanted";
+        std::string                     f_interface = "eth0";
         bool const                      f_quiet;  // since it is const, you must specify it in the constructor
         bool const                      f_verbose;  // since it is const, you must specify it in the constructor
     };

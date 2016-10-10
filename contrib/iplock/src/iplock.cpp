@@ -44,7 +44,6 @@
 #include "iplock.h"
 #include "version.h"
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -478,6 +477,29 @@ iplock::command::command(iplock * parent, char const * command_name, advgetopt::
                     exit(1);
                 }
             });
+
+    f_interface = f_iplock_opt->get_string("interface");
+    if(f_interface.empty()
+    || f_interface.size() > 15)
+    {
+        std::cerr << "iplock:error: the \"interface\" parameter cannot be more than 15 characters nor empty." << std::endl;
+        exit(1);
+    }
+
+    std::for_each(
+              f_interface.begin()
+            , f_interface.end()
+            , [&](auto const & c)
+            {
+                if((c < 'a' || c > 'z')
+                && (c < 'A' || c > 'Z')
+                && (c < '0' || c > '9')
+                && c != '_')
+                {
+                    std::cerr << "error:iplock: invalid \"interface=...\" option \"" << f_interface << "\", only [a-zA-Z0-9_]+ are supported." << std::endl;
+                    exit(1);
+                }
+            });
 }
 
 
@@ -702,6 +724,7 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
             boost::replace_all(check_cmd, "[port]", std::to_string(static_cast<unsigned int>(port)));
             boost::replace_all(check_cmd, "[ip]", ip);
             boost::replace_all(check_cmd, "[num]", std::to_string(num));
+            boost::replace_all(check_cmd, "[interface]", f_interface);
 
             // although the -C does nothing, it will print a message
             // in stderr if the rule does not exist
@@ -745,6 +768,7 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
                 boost::replace_all(cmd, "[port]", std::to_string(static_cast<unsigned int>(port)));
                 boost::replace_all(cmd, "[ip]", ip);
                 boost::replace_all(cmd, "[num]", std::to_string(num));
+                boost::replace_all(cmd, "[interface]", f_interface);
 
                 // if user specified --quiet ignore all output
                 //
@@ -977,6 +1001,7 @@ void iplock::count::run()
         cmd = f_count_opt->get_string("count");
     }
     boost::replace_all(cmd, "[chain]", f_chain);
+    boost::replace_all(cmd, "[interface]", f_interface);
 
     if(f_verbose)
     {
