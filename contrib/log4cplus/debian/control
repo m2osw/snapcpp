@@ -5,7 +5,8 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    qtbase5-dev
+    qtbase5-dev,
+    snapcmakemodules
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://sourceforge.net/p/log4cplus/wiki/Home/
