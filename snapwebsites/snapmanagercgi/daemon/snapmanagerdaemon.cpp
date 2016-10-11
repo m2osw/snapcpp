@@ -30,6 +30,7 @@
 #include "snapmanagerdaemon.h"
 
 #include <snapwebsites/addr.h>
+#include <snapwebsites/log.h>
 #include <snapwebsites/mkdir_p.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/tokenize_string.h>
@@ -150,6 +151,10 @@ int manager_daemon::run()
     //
     f_messenger.reset(new manager_messenger(this, f_communicator_address.toUtf8().data(), f_communicator_port));
     f_communicator->add_connection(f_messenger);
+
+    // Add the logging server through snapcommunicator:
+    //
+    snap::logging::set_log_messenger( f_messenger );
 
     // also add the status connection created in the constructor
     //
