@@ -96,6 +96,7 @@ private:
 
 void set_progname               ( std::string const & progname );
 std::string get_progname        ();
+void set_log_messenger          ( messenger_t messenger );
 void configure_console          ();
 void configure_logfile          ( QString const & logfile  );
 void configure_syslog           ();

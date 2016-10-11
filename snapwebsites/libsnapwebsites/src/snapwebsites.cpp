@@ -2559,7 +2559,7 @@ void server::configure_messenger_logging( snap_communicator::snap_tcp_client_per
         return;
     }
 
-    logging::configure_messenger( ptr );
+    logging::set_log_messenger( ptr );
 }
 
 

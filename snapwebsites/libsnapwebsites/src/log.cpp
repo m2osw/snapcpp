@@ -32,12 +32,14 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <log4cplus/configurator.h>
-#include <log4cplus/logger.h>
-#include <log4cplus/fileappender.h>
 #include <log4cplus/consoleappender.h>
-#include <log4cplus/syslogappender.h>
+#include <log4cplus/fileappender.h>
+#include <log4cplus/helpers/property.h>
+#include <log4cplus/logger.h>
 #include <log4cplus/socketappender.h>
 #include <log4cplus/spi/loggingevent.h>
+#include <log4cplus/spi/factory.h>
+#include <log4cplus/syslogappender.h>
 #pragma GCC diagnostic pop
 
 #include <QFileInfo>
@@ -150,6 +152,7 @@ messenger_t         g_log_messenger;
 log4cplus::Logger   g_logger;
 log4cplus::Logger   g_secure_logger;
 log4cplus::Logger   g_messenger_logger;
+bool                g_messenger_logger_initialized = false;
 
 enum class logging_type_t
     { UNCONFIGURED_LOGGER
@@ -160,6 +163,7 @@ enum class logging_type_t
     , SERVER_LOGGER
     , MESSENGER_LOGGER
     };
+
 logging_type_t      g_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
 logging_type_t      g_last_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
 
@@ -205,26 +209,60 @@ public:
 };
 
 
-class MessengerAppender : public log4cplus::Appender
+class MessengerAppender
+        : public log4cplus::Appender
 {
-    public:
-        MessengerAppender( messenger_t snapcom ) : f_messenger(snapcom)
-        {
-        }
+public:
+    MessengerAppender()
+    {
+    }
 
-        ~MessengerAppender()
-        {
-        }
+    MessengerAppender(log4cplus::helpers::Properties const & props)
+        : Appender(props)
+    {
+    }
 
-        virtual void close() override
-        {
-            f_messenger.reset();
-        }
+    ~MessengerAppender()
+    {
+    }
 
-    protected:
-        virtual void append(const log4cplus::spi::InternalLoggingEvent& event) override
+    virtual void close() override
+    {
+    }
+
+    static void registerAppender()
+    {
+        // The registration must run just once and static variables
+        // are initialized just once
+        //
+        static bool const g_registered = []()
         {
-            char const * level_str(nullptr);
+            log4cplus::spi::AppenderFactoryRegistry & reg(log4cplus::spi::getAppenderFactoryRegistry());
+
+            // there are macros to do the following, but it uses the log4cplus
+            // namespace which is not terribly useful in our case
+            //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+            reg.put(std::auto_ptr<log4cplus::spi::AppenderFactory>(
+                    new log4cplus::spi::FactoryTempl<snap::logging::MessengerAppender, log4cplus::spi::AppenderFactory>(
+                                LOG4CPLUS_TEXT("snap::logging::")
+                                LOG4CPLUS_TEXT("MessengerAppender"))));
+#pragma GCC diagnostic pop
+
+            return false;
+        }();
+
+        NOTUSED(g_registered);
+    }
+
+protected:
+    virtual void append(const log4cplus::spi::InternalLoggingEvent& event) override
+    {
+        auto messenger( g_log_messenger.lock() );
+        if( messenger ) // silently fail if the shared object has been deleted...
+        {
+            char const * level_str("unknown");
             switch( event.getLogLevel() )
             {
                 case log4cplus::FATAL_LOG_LEVEL:
@@ -257,21 +295,18 @@ class MessengerAppender : public log4cplus::Appender
             snap::snap_communicator_message request;
             request.set_command("SNAPLOG");
             request.set_service("snaplogd");
-            request.add_parameter( "cache",   "ttl=60"                    );
-            request.add_parameter( "level",   level_str                   );
-            request.add_parameter( "file",    event.getFile().c_str()     );
-            request.add_parameter( "func",    event.getFunction().c_str() );
-            request.add_parameter( "line",    event.getLine()             );
-            request.add_parameter( "message", event.getMessage().c_str()  );
-            auto messenger( f_messenger.lock() );
-            if( messenger ) // silently fail if the shared object has been deleted...
-            {
-                messenger->send_message(request);
-            }
-        }
+            request.add_parameter( "cache",   "ttl=60"                                       );
+            request.add_parameter( "level",   level_str                                      );
+            request.add_parameter( "file",    QString::fromUtf8(event.getFile().c_str())     );
+            request.add_parameter( "func",    QString::fromUtf8(event.getFunction().c_str()) );
+            request.add_parameter( "line",    event.getLine()                                );
+            request.add_parameter( "message", QString::fromUtf8(event.getMessage().c_str())  );
 
-    private:
-        messenger_t f_messenger;
+            messenger->send_message(request);
+        }
+    }
+
+private:
 };
 
 
@@ -349,6 +384,27 @@ std::string get_progname()
 
 
 
+/** \brief Setup the messenger for the messenger appender.
+ *
+ * This function saves a copy of the smart pointer of the connection
+ * to snapcommunicator in the logger.
+ *
+ * This connection will be used if available and a messenger logger
+ * is setup.
+ *
+ * \param[in] messenger  A connection to snapcommunicator.
+ */
+void set_log_messenger( messenger_t messenger )
+{
+    if( !messenger.lock() )
+    {
+        throw snap_exception( "Snap communicator messenger must be allocated!" );
+    }
+
+    g_log_messenger = messenger;
+}
+
+
 /** \brief Unconfigure the logger and reset.
  *
  * This is an internal function which is here to prevent code duplication.
@@ -371,7 +427,15 @@ void unconfigure()
         //g_logger = log4cplus::Logger();
         //g_secure_logger = log4cplus::Logger();
     }
+
+    // register our appender
+    //
+    // Note: this function gets called by all the configure_...() functions
+    //       so it is a fairly logical place to do that registration...
+    //
+    MessengerAppender::registerAppender();
 }
+
 
 /** \brief Configure log4cplus system to the console.
  *
@@ -485,25 +549,25 @@ void configure_logfile( QString const & logfile )
 }
 
 
-/** \brief Configure a snapcommunicator instance.
+/** \brief Configure a messenger instance.
  *
- * Log entries are mirrored across the snapcommunicator instance. The configured log level
- * of the "snap" logger is used to determine what to send "over the wire." This is making
- * the assumption that you have set up the "snap" logger correctly.
+ * Log entries are sent to snapcommunicator. The configured log level of
+ * the "snap" logger is used to determine what to send "over the wire."
+ * This is making the assumption that you have set up the "snap" logger
+ * correctly.
+ *
+ * Note that in most cases you want to use configure_logfile() which
+ * can define a messenger too, without the need to call this function.
+ *
+ * \warning
+ * Make sure that you call the set_log_messenger() function with a
+ * connection to snapcommunicator or this appender won't do anything.
  */
-void configure_messenger( messenger_t messenger )
+void configure_messenger()
 {
-    // Leave the file logger running
-    //unconfigure();
+    unconfigure();
 
-    if( !messenger.lock() )
-    {
-        throw snap_exception( "Snap communicator messenger must be allocated!" );
-    }
-
-    g_log_messenger = messenger;
-
-    log4cplus::SharedAppenderPtr appender( new MessengerAppender( g_log_messenger ) );
+    log4cplus::SharedAppenderPtr appender( new MessengerAppender );
     appender->setName( LOG4CPLUS_TEXT("snapcommunicator") );
     log4cplus::tstring const pattern
                 ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
@@ -518,9 +582,11 @@ void configure_messenger( messenger_t messenger )
 #pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
 
-    g_logging_type        = logging_type_t::FILE_LOGGER;
-    g_last_logging_type   = logging_type_t::FILE_LOGGER;
-    g_messenger_logger    = log4cplus::Logger::getInstance( "messenger" );
+    g_logging_type                 = logging_type_t::MESSENGER_LOGGER;
+    g_last_logging_type            = logging_type_t::MESSENGER_LOGGER;
+    g_messenger_logger             = log4cplus::Logger::getInstance( "messenger" );
+
+    g_messenger_logger_initialized = true;
 
     g_messenger_logger.addAppender( appender );
     set_log_output_level( log_level_t::LOG_LEVEL_INFO );
@@ -681,6 +747,9 @@ void configure_conffile(QString const & filename)
 
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
+    g_messenger_logger      = log4cplus::Logger::getInstance("messenger");
+
+    g_messenger_logger_initialized = logger_exists("messenger");
 }
 
 
@@ -718,13 +787,14 @@ void reconfigure()
         break;
 
     case logging_type_t::MESSENGER_LOGGER:
-        configure_messenger( g_log_messenger );
+        configure_messenger();
         break;
 
     default:
         /* do nearly nothing */
         unconfigure();
         break;
+
     }
 }
 
@@ -794,7 +864,10 @@ void set_log_output_level( log_level_t level )
     log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
-    g_messenger_logger.setLogLevel( new_level );
+    if(g_messenger_logger_initialized)
+    {
+        g_messenger_logger.setLogLevel( new_level );
+    }
 }
 
 
@@ -862,9 +935,12 @@ void reduce_log_output_level( log_level_t level )
     {
         g_secure_logger.setLogLevel( new_level );
     }
-    if( new_level < g_messenger_logger.getLogLevel() )
+    if(g_messenger_logger_initialized)
     {
-        g_messenger_logger.setLogLevel( new_level );
+        if( new_level < g_messenger_logger.getLogLevel() )
+        {
+            g_messenger_logger.setLogLevel( new_level );
+        }
     }
 }
 
@@ -1092,7 +1168,11 @@ logger::~logger()
         break;
     }
 
-    // TBD: is the exists() call doing anything for us here?
+    // TODO: instead of calling logger_exists() which is very expensive
+    //       (because it uses a try/catch), we should instead have a flag
+    //       to know whether a logger is properly configured; if so then
+    //       we can use the else block.
+    //
     if( (g_logging_type == logging_type_t::UNCONFIGURED_LOGGER)
     ||  !logger_exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
@@ -1140,7 +1220,7 @@ logger::~logger()
         }
     }
 
-    if( logger_exists("messenger") )
+    if( g_messenger_logger_initialized )
     {
         g_messenger_logger.log( ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line );
     }
@@ -1419,7 +1499,9 @@ bool is_enabled_for( log_level_t const log_level )
     //       likely lower than g_secure_logger; but such
     //       a statement can always be all wrong...
     //
-    return g_logger.isEnabledFor(ll) || g_secure_logger.isEnabledFor(ll) || g_messenger_logger.isEnabledFor(ll);
+    return g_logger.isEnabledFor(ll)
+        || g_secure_logger.isEnabledFor(ll)
+        || (g_messenger_logger_initialized && g_messenger_logger.isEnabledFor(ll));
 }
 
 

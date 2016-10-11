@@ -2632,7 +2632,7 @@ pid_t snap_child::fork_child()
 
     if(p != 0)
     {
-        // re-establish the logger if we turned it of before the fork()
+        // re-establish the logger if we turned it off before the fork()
         if(server->is_logging_server())
         {
             logging::reconfigure();
