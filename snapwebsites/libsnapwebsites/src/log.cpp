@@ -224,7 +224,7 @@ public:
 
     ~MessengerAppender()
     {
-        destructorImpl()
+        destructorImpl();
     }
 
     virtual void close() override

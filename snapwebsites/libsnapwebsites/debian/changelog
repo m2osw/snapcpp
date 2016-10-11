@@ -1,8 +1,8 @@
 libsnapwebsites (1.1.20.1~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-266: Added call to destructorImpl().
 
- -- Build Server <build@m2osw.com>  Tue, 11 Oct 2016 02:00:47 -0700
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 10:20:47 -0700
 
 libsnapwebsites (1.1.20.0~xenial) xenial; urgency=high
 
