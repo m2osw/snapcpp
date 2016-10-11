@@ -1,8 +1,8 @@
-iplock (3.0.0.3~xenial) xenial; urgency=high
+iplock (3.0.1.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-355: Fixed version, it was still hard coded in main CMakeLists.txt.
 
- -- Build Server <build@m2osw.com>  Mon, 10 Oct 2016 15:39:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 10 Oct 2016 23:09:37 -0700
 
 iplock (3.0.0.0~xenial) xenial; urgency=high
 

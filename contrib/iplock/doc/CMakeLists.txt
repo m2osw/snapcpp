@@ -35,9 +35,9 @@
 ##
 AddDoxygenTarget(
     iplock
-    ${IPLOCK_MAJOR}
-    ${IPLOCK_MINOR}
-    ${IPLOCK_PATCH}
+    ${IPLOCK_VERSION_MAJOR}
+    ${IPLOCK_VERSION_MINOR}
+    ${IPLOCK_VERSION_PATCH}
 )
 
 install(

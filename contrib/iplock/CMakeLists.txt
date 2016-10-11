@@ -30,19 +30,13 @@ cmake_minimum_required(VERSION 2.8)
 
 enable_language( CXX )
 
-##
-## IP Lock Version
-##
-set(IPLOCK_MAJOR 2)
-set(IPLOCK_MINOR 1)
-set(IPLOCK_PATCH 2)
-
 project(iplock_project)
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen )
 
+SnapGetVersion( IPLOCK ${CMAKE_CURRENT_SOURCE_DIR} )
 
 # Sub-directories
 add_subdirectory(src)
