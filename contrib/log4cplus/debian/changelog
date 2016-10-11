@@ -1,3 +1,9 @@
+log4cplus12 (1.2.2.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 10 Oct 2016 15:39:37 -0700
+
 log4cplus12 (1.2.2.0~xenial) xenial; urgency=high
 
   * SNAP-319: Rename package.
