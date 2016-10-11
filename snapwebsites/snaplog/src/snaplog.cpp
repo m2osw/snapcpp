@@ -53,7 +53,6 @@
 // 3rd party libs
 //
 #include <QtCore>
-#include <QtCassandra/QCassandra.h>
 #include <advgetopt/advgetopt.h>
 
 // system (C++)
@@ -148,12 +147,6 @@ namespace
 //namespace
 
 
-void snaplog_timer::process_timeout()
-{
-    f_snaplog->process_timeout();
-}
-
-
 
 
 /** \class snaplog
@@ -191,7 +184,6 @@ snaplog::pointer_t                    snaplog::g_instance;
 snaplog::snaplog(int argc, char * argv[])
     : f_opt( argc, argv, g_snaplog_options, g_configuration_files, nullptr )
     , f_config( "snaplog" )
-    , f_session( QtCassandra::QCassandraSession::create() )
 {
     // --help
     if( f_opt.is_defined( "help" ) )
@@ -203,7 +195,7 @@ snaplog::snaplog(int argc, char * argv[])
     // --version
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPDBPROXY_VERSION_STRING << std::endl;
+        std::cerr << SNAPLOG_VERSION_STRING << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -220,9 +212,6 @@ snaplog::snaplog(int argc, char * argv[])
 
     // local_listen=... from snapcommunicator.conf
     tcp_client_server::get_addr_port(QString::fromUtf8(f_config("snapcommunicator", "local_listen").c_str()), f_communicator_addr, f_communicator_port, "tcp");
-
-    // listen=... from snaplog.conf
-    tcp_client_server::get_addr_port(QString::fromUtf8(f_config("listen").c_str()), f_snaplog_addr, f_snaplog_port, "tcp");
 
     // setup the logger: --nolog, --logfile, or config file log_config
     //
@@ -255,53 +244,6 @@ snaplog::snaplog(int argc, char * argv[])
     // get the server name from the snapcommunicator.conf or hostname()
     //
     f_server_name = snap::server::get_server_name();
-
-    // from config file only
-    if(f_config.has_parameter("cassandra_host_list"))
-    {
-        f_cassandra_host_list = f_config[ "cassandra_host_list" ];
-        if(f_cassandra_host_list.isEmpty())
-        {
-            throw snap::snapwebsites_exception_invalid_parameters("cassandra_host_list cannot be empty.");
-        }
-    }
-    if(f_config.has_parameter("cassandra_port"))
-    {
-        std::size_t pos(0);
-        std::string const port(f_config["cassandra_port"]);
-        f_cassandra_port = std::stoi(port, &pos, 10);
-        if(pos != port.length()
-        || f_cassandra_port < 0
-        || f_cassandra_port > 65535)
-        {
-            throw snap::snapwebsites_exception_invalid_parameters("cassandra_port to connect to Cassandra must be defined between 0 and 65535.");
-        }
-    }
-
-    // offer the user to setup the maximum number of pending connections
-    // from services that want to connect to Cassandra (this is only
-    // the maximum number of "pending" connections and not the total
-    // number of acceptable connections)
-    //
-    if(f_config.has_parameter("max_pending_connections"))
-    {
-        QString const max_connections(f_config["max_pending_connections"]);
-        if(!max_connections.isEmpty())
-        {
-            bool ok;
-            f_max_pending_connections = max_connections.toInt(&ok);
-            if(!ok)
-            {
-                SNAP_LOG_FATAL("invalid max_pending_connections, a valid number was expected instead of \"")(max_connections)("\".");
-                exit(1);
-            }
-            if(f_max_pending_connections < 1)
-            {
-                SNAP_LOG_FATAL("max_pending_connections must be positive, \"")(max_connections)("\" is not valid.");
-                exit(1);
-            }
-        }
-    }
 
     // make sure there are no standalone parameters
     if( f_opt.is_defined( "--" ) )
@@ -345,23 +287,6 @@ void snaplog::usage(advgetopt::getopt::status_t status)
 std::string snaplog::server_name() const
 {
     return f_server_name;
-}
-
-
-/** \brief Use SSL for Cassandra connections
- *
- * This checks the configuration settings for "cassandra_use_ssl".
- * If present and set to "true", this method returns true, false
- * otherwise.
- */
-bool snaplog::use_ssl() const
-{
-    if( f_config.has_parameter("cassandra_use_ssl") )
-    {
-        return f_config["cassandra_use_ssl"] == "true";
-    }
-
-    return false;
 }
 
 
@@ -512,88 +437,6 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
 
 // TODO: use a map statement (see poor old snapinit...)
 
-    if(command == "CASSANDRASTATUS")
-    {
-        // immediately reply with the current status
-        //
-        snap::snap_communicator_message reply;
-        reply.reply_to(message);
-        reply.set_command(f_session->isConnected() ? "CASSANDRAREADY" : "NOCASSANDRA");
-        reply.add_parameter("cache", "no");
-        f_messenger->send_message(reply);
-        return;
-    }
-
-    if( command == "CASSANDRAKEY" )
-    {
-        QDir key_path(f_session->get_keys_path());
-        if( !key_path.exists() )
-        {
-            SNAP_LOG_TRACE("First time receiving any cert keys, so creating path.");
-            // Make sure the key path exists...if not,
-            // then create it.
-            //
-            key_path.mkdir(f_session->get_keys_path());
-        }
-
-        // Open the file...
-        //
-        QString listen_address_us( message.get_parameter("listen_address") );
-        listen_address_us.replace( '.', '_' );
-        QString const full_path( QString("%1client_%2.pem")
-                                 .arg(f_session->get_keys_path())
-                                 .arg(listen_address_us)
-                                 );
-        try
-        {
-            QFile file( full_path );
-            if( file.exists() )
-            {
-                if( message.has_parameter("force") )
-                {
-                    SNAP_LOG_INFO("User has requested that the key for [")
-                            (message.get_parameter("listen_address"))
-                            ("] be overridded, even though we have it already.");
-                }
-                else
-                {
-                    // We already have the file, so ignore this.
-                    //
-                    SNAP_LOG_TRACE("We already have cert file [")(full_path)("], so ignoring.");
-                    return;
-                }
-            }
-            //
-            if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
-            {
-                QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-                SNAP_LOG_ERROR(errmsg);
-                return;
-            }
-            //
-            // ...and stream the file out to disk
-            //
-            QString const key( message.get_parameter("key") );
-            QTextStream out( &file );
-            out << key;
-
-            // Make sure it's imported into the session...
-            //
-            SNAP_LOG_TRACE("Received cert file [")(full_path)("], adding into current session.");
-            f_session->add_ssl_trusted_cert( key );
-        }
-        catch( std::exception const& ex )
-        {
-            SNAP_LOG_ERROR("Cannot add SSL CERT file! what=[")(ex.what())("]");
-        }
-        catch( ... )
-        {
-            SNAP_LOG_ERROR("Cannot write SSL CERT file! Unknown error!");
-        }
-
-        return;
-    }
-
     if(command == "LOG")
     {
         // logrotate just rotated the logs, we have to reconfigure
@@ -610,6 +453,7 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
         stop(false);
         return;
     }
+
     if(command == "QUITTING")
     {
         // If we received the QUITTING command, then somehow we sent
@@ -624,26 +468,9 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
     if(command == "READY")
     {
         f_ready = true;
-
-        if( use_ssl() )
-        {
-            // Ask for server certs first from each snapmanager cassandra
-            // throughout the entire cluster.
-            //
-            snap::snap_communicator_message request;
-            request.set_command("CASSANDRAKEYS");
-            request.set_service("*");
-            request.add_parameter("cache", "ttl=60");
-            f_messenger->send_message(request);
-        }
-
-        // Snap! Communicator received our REGISTER command
         //
-        if(f_session->isConnected())
-        {
-            cassandra_ready();
-        }
-
+        // TODO: contents!
+        //
         return;
     }
 
@@ -651,17 +478,6 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
     {
         f_force_restart = true;
         stop(false);
-        return;
-    }
-
-    if(command == "NEWTABLE")
-    {
-        // a package just got installed and that package included a
-        // table definition
-        //
-
-SNAP_LOG_WARNING("NEWTABLE not yet implemented...");
-
         return;
     }
 
@@ -674,9 +490,20 @@ SNAP_LOG_WARNING("NEWTABLE not yet implemented...");
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRAKEY,CASSANDRASTATUS,HELP,LOG,NEWTABLE,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
+        reply.add_parameter("list", "SNAPLOG,HELP,LOG,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
 
         f_messenger->send_message(reply);
+        return;
+    }
+
+    if(command == "SNAPLOG")
+    {
+        SNAP_LOG_TRACE("SNAPLOG command received: server=[")(message.get_server())("], service=[")(message.get_service())("]");
+        auto const all_parms = message.get_all_parameters();
+        for( auto key : all_parms.keys() )
+        {
+            SNAP_LOG_TRACE("parm {")(key)("} = [")(all_parms[key])("]");
+        }
         return;
     }
 
@@ -698,156 +525,6 @@ SNAP_LOG_WARNING("NEWTABLE not yet implemented...");
         f_messenger->send_message(reply);
     }
 }
-
-
-/** \brief Call whenever a new connection was received.
- *
- * This function adds a new connection to the snaplog daemon. A
- * connection is a blocking socket handled by a thread.
- *
- * \param[in] client  The client the connection threads becomes the owner of.
- */
-void snaplog::process_connection(tcp_client_server::bio_client::pointer_t client)
-{
-    // only the main process calls this function so we can take the time
-    // to check the f_connections vector and remove dead threads
-    //
-    f_connections.erase(
-            std::remove_if(
-                f_connections.begin(),
-                f_connections.end(),
-                [](auto const & c)
-                {
-                    return !c->is_running();
-                }),
-            f_connections.end());
-
-    if(!f_session->isConnected())
-    {
-        no_cassandra();
-    }
-
-    // create one thread per connection
-    //
-    // TODO: look into having either worker threads, or at least a pool
-    //       that we keep around
-    //
-    // The snaplog_thread constructor is expected to start the thread
-    // although it may fail; if it does fail, we avoid adding the thread
-    // to the f_connections vector; that way the socket gets closed
-    // (the only case where the socket does not get closed is and
-    // std::bad_alloc exception which we do not capture here.)
-    //
-    snaplog_thread::pointer_t thread(std::make_shared<snaplog_thread>(f_session, client, f_cassandra_host_list, f_cassandra_port));
-    if(thread && thread->is_running())
-    {
-        f_connections.push_back(thread);
-    }
-}
-
-
-/** \brief Attempt to connect to the Cassandra cluster.
- *
- * This function calls connect() in order to create a network connection
- * between this computer and a Cassandra node. Later the driver may
- * connect to additional nodes to better balance work load.
- *
- * \note
- * Since attempts to connect to Cassandra are blocking, we probably want
- * to move this timer processing to a thread instead.
- */
-void snaplog::process_timeout()
-{
-    try
-    {
-        // connect to Cassandra
-        //
-        // The Cassandra C/C++ driver is responsible to actually create
-        // "physical" connections to any number of nodes so we do not
-        // need to monitor those connections.
-        //
-        f_session->connect( f_cassandra_host_list, f_cassandra_port, use_ssl() ); // throws on failure!
-
-        // the connection succeeded, turn off the timer we do not need
-        // it for now...
-        //
-        f_timer->set_enable(false);
-
-        // reset that flag!
-        //
-        f_no_cassandra_sent = false;
-
-        // reset the delay to about 1 second
-        // (we use 1.625 so that way we will have 1s, 3s, 7s, 15s, 30s, 60s
-        // and thus 1 minute.)
-        //
-        f_cassandra_connect_timer_index = 1.625f;
-
-        cassandra_ready();
-    }
-    catch(std::runtime_error const &)
-    {
-        // the connection failed, keep the timeout enabled and try again
-        // on the next tick
-        //
-        no_cassandra();
-    }
-}
-
-
-/** \brief Send a NOCASSANDRA message.
- *
- * Let snapcommunicator and other services know that we do not
- * have a connection to Cassandra. Computers running snap.cgi should
- * react by not connecting to this computer since snapserver will not
- * work in that case.
- *
- * Obviously, if we cannot find a Cassandra node, we probably
- * have another bigger problem and snapcommunicator is probably
- * not connected to anyone else either...
- */
-void snaplog::no_cassandra()
-{
-    if(!f_no_cassandra_sent)
-    {
-        f_no_cassandra_sent = true;
-        snap::snap_communicator_message cmd;
-        cmd.set_command("NOCASSANDRA");
-        cmd.set_service(".");
-        cmd.add_parameter("cache", "no");
-        f_messenger->send_message(cmd);
-    }
-
-    // make sure the timer is on when we do not have a Cassandra connection
-    //
-    f_timer->set_enable(true);
-
-    // try again soon
-    //
-    f_timer->set_timeout_delay(static_cast<int64_t>(f_cassandra_connect_timer_index) * 1000000LL);
-    if(f_cassandra_connect_timer_index < 60.0f)
-    {
-        // increase the delay between attempts up to 1 min.
-        //
-        f_cassandra_connect_timer_index *= 2.0f;
-    }
-}
-
-
-void snaplog::cassandra_ready()
-{
-    if(f_ready)
-    {
-        // let other services know when cassandra is (finally) ready
-        //
-        snap::snap_communicator_message cmd;
-        cmd.set_command("CASSANDRAREADY");
-        cmd.set_service(".");
-        cmd.add_parameter("cache", "no");
-        f_messenger->send_message(cmd);
-    }
-}
-
 
 /** \brief Called whenever we receive the STOP command or equivalent.
  *
@@ -885,15 +562,6 @@ void snaplog::stop(bool quitting)
             cmd.add_parameter("service", "snaplog");
             f_messenger->send_message(cmd);
         }
-    }
-
-    // also remove the listener, we will not accept any more
-    // database commands...
-    //
-    if(f_communicator)
-    {
-        f_communicator->remove_connection(f_listener);
-        f_listener.reset(); // TBD: in snapserver I do not reset these pointers...
     }
 }
 

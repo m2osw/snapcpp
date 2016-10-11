@@ -85,6 +85,9 @@ ConfigureMakeProject( PROJECT_NAME snaplayout
 ConfigureMakeProject( PROJECT_NAME snaplock
 )
 
+ConfigureMakeProject( PROJECT_NAME snaplog
+)
+
 ConfigureMakeProject( PROJECT_NAME snapmanager
     CONFIG_ARGS
         -DADVGETOPT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include

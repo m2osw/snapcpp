@@ -61,7 +61,7 @@ int main(int argc, char * argv[])
         //
         snaplog logger( argc, argv );
 
-        SNAP_LOG_INFO("--------------------------------- snaplog v" SNAPDBPROXY_VERSION_STRING " started on ")(logger.server_name());
+        SNAP_LOG_INFO("--------------------------------- snaplog v" SNAPLOG_VERSION_STRING " started on ")(logger.server_name());
 
         // Now run!
         //

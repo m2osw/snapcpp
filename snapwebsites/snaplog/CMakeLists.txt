@@ -46,7 +46,6 @@ find_package( AdvGetOpt        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Sql           REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 find_package( SnapDoxygen )
@@ -64,7 +63,6 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 include_directories(
-    ${QTCASSANDRA_INCLUDE_DIRS}
     ${SNAPWEBSITES_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}/src
 )
