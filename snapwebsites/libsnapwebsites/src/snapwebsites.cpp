@@ -1722,28 +1722,34 @@ void server::udp_rusage(QString const & process_name)
 /** \brief Block an IP address at the firewall level.
  *
  * This function sends a BLOCK message to the snapfirewall service in
- * order to have the specified \p ip blocked for the specified \p period.
+ * order to have the IP from the specified \p uri blocked for the
+ * specified \p period.
  *
- * The \p period parameter is not required. If not specified, the default
- * will apply. At this time, the snapfirewall tool uses "day" as its default.
- * The supported periods are:
- *
- * \li "hour" -- block the IP address for one hour.
- * \li "day" -- block the IP address for 24h.
- * \li "week" -- block the IP address for 7 days.
- * \li "month" -- block the IP address for 31 days.
- * \li "year" -- block the IP address for 366 days.
- * \li "forever" -- block the IP address for 5 years.
- *
- * The scheme is the name of a protocol that needs to be blocked.
- * At this time, we accept "http" and "smtp". Please use "http" for
- * "https" since both ports will get blocked.
+ * The \p uri can include a scheme which represents the name of a protocol
+ * that needs to be blocked. At this time, we accept "http" and "smtp".
+ * Please use "http" for "https" since both ports will get blocked anyway.
  *
  * This function does not verify the name of the scheme. However, the
  * snapfirewall will do so before using it.
  *
  * If the scheme is not defined, then the default, which is "http",
  * is used.
+ *
+ * Supported schemes are defined under /etc/iplock/schemes and
+ * /etc/iplock/schemes/schemes.d for user defined schemes and
+ * modifications of system defined schemes.
+ *
+ * The \p period parameter is not required. If not specified, the default
+ * will apply. At this time, the snapfirewall tool uses "day" as its default.
+ * The supported periods are:
+ *
+ * \li "5min" -- this is mainly for test purposes, blocks the IP for 5 minutes.
+ * \li "hour" -- block the IP address for one hour.
+ * \li "day" -- block the IP address for 24h.
+ * \li "week" -- block the IP address for 7 days.
+ * \li "month" -- block the IP address for 31 days.
+ * \li "year" -- block the IP address for 366 days.
+ * \li "forever" -- block the IP address for 5 years.
  *
  * \param[in] uri  The IP address of to ban.
  * \param[in] period  The duration for which the ban applies.
@@ -1765,8 +1771,7 @@ void server::block_ip( QString const & uri, QString const & period )
     //
     snap::snap_communicator_message message;
     message.set_command("BLOCK");
-    message.set_server("*");
-    message.set_service("snapfirewall");
+    message.set_service("*");           // broadcast to all snapfirewall anywhere in our mesh
     message.add_parameter("uri", uri);
     if(!period.isEmpty())
     {

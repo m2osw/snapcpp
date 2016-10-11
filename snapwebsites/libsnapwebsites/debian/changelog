@@ -1,3 +1,11 @@
+libsnapwebsites (1.1.21.0~xenial) xenial; urgency=high
+
+  * SNAP-355: To really broadcast to all computers, I have to set the
+    service to "*". Setting just the server that way allows for broadcasting
+    only if the service in not running locally.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 11 Oct 2016 15:44:47 -0700
+
 libsnapwebsites (1.1.20.1~xenial) xenial; urgency=high
 
   * SNAP-266: Added call to destructorImpl().
