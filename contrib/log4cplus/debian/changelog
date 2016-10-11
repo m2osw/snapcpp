@@ -1,3 +1,9 @@
+log4cplus12 (1.2.3.0~xenial) xenial; urgency=high
+
+  * SNAP-319: Fixed the Replaces for the dev package.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 10 Oct 2016 19:03:38 -0700
+
 log4cplus12 (1.2.2.2~xenial) xenial; urgency=high
 
   * Nightly build.
