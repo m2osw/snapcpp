@@ -1,5 +1,4 @@
 usr/bin/*
-usr/lib/*
 usr/share/snapwebsites/*
 conf/snaplog.conf etc/snapwebsites/
 conf/snaplog.properties etc/snapwebsites/logger/
