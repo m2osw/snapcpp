@@ -17,6 +17,7 @@ Package: liblog4cplus12
 Section: libdevel
 Architecture: any
 Depends: ${misc:Depends}
+Replaces: liblog4cplus (>= 1.2.1)
 Description: log4cplus v1.2 is a simple to use C++ logging API.
  log4cplus is a simple to use C++ logging API providing thread-safe,
  flexible, and arbitrarily granular control over log management and
@@ -28,6 +29,7 @@ Package: liblog4cplus12-dev
 Section: libdevel
 Architecture: any
 Depends: liblog4cplus12 (= ${binary:Version}), ${misc:Depends}
+Replaces: liblog4cplus12-dev (>= 1.2.1)
 Description: log4cplus v1.2 is a simple to use C++ logging API.
  log4cplus is a simple to use C++ logging API providing thread-safe,
  flexible, and arbitrarily granular control over log management and
