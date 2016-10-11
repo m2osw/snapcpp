@@ -222,7 +222,7 @@ public:
     {
     }
 
-    ~MessengerAppender()
+    virtual ~MessengerAppender()
     {
         destructorImpl();
     }
