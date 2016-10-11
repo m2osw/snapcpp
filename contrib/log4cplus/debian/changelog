@@ -1,3 +1,9 @@
+log4cplus12 (1.2.3.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 10 Oct 2016 19:10:28 -0700
+
 log4cplus12 (1.2.3.0~xenial) xenial; urgency=high
 
   * SNAP-319: Fixed the Replaces for the dev package.
