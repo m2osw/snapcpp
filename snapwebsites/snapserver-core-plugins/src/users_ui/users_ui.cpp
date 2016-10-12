@@ -517,6 +517,7 @@ void users_ui::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dy
     || cpath.left(13) == "new-password/")   // form for users to enter their forgotten password verification code
     {
         // tell the path plugin that this is ours
+        //
         plugin_info.set_plugin(this);
     }
     else if(cpath.left(5) == "user/")       // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
@@ -2187,6 +2188,7 @@ void users_ui::process_verify_form()
     // verify the code the user entered, the verify_user() function
     // will automatically redirect us if necessary; we should
     // get an error if redirect to ourselves
+    //
     QString verification_code(f_snap->postenv("verification_code"));
     content::path_info_t ipath;
     ipath.set_path("verify/" + verification_code.simplified());

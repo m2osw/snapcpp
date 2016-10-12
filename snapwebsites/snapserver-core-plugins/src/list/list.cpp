@@ -2696,12 +2696,34 @@ int list::generate_all_lists_for_page(QString const & site_key, QString const & 
 }
 
 
-/** \brief Check whether a page is a match for a given list.
+/** \brief Add or remove a page from a list.
  *
- * This function checks the page \p page_ipath agains the different script
+ * This function checks the page \p page_ipath agains the script
  * defined in list \p list_ipath. If it is a match, the page is added to
  * the list (if it was not there). If it is not a match, the page is
  * removed from the list (if it was there.)
+ *
+ * This function can be called after you created a page to immediately
+ * add the page to a list. This is useful for pages that are known to
+ * at least very likely match the script of a certain list. (i.e. a
+ * page that is to appear in a menu, a new page in a blog will appear
+ * on the front page of that blog, etc.)
+ *
+ * The page will be checked again whenever the list system runs against
+ * it as it will be defined in the list table. That should not have any
+ * bad side effect outside of doing the work twice (although it will
+ * already have been added so it will not be re-added, just updated
+ * if need be.)
+ *
+ * \warning
+ * This function verifies that the \p page_ipath is valid before
+ * proceeding, however, it does not verify the \p list_ipath. It
+ * is your responsibility to do so.
+ *
+ * \note
+ * The \p update_request_time is not currently used. We ran in many
+ * problems attempting to obtimize using a "last time this was
+ * updated" that we abandonned the idea for now.
  *
  * \param[in,out] page_ipath  The path to the page being tested.
  * \param[in,out] list_ipath  The path to the list being worked on.
@@ -2745,16 +2767,21 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             // the page is not ready yet, let it be for a little longer, it will
             // be taken in account by the standard process
             // (at this point we may not even have the branch/revision data)
+            //
             return 0;
         }
 
         // TODO: testing just the row is not enough to know whether it was deleted
         //       (I think we will also always have content::created in the
         //       branch assuming it was properly created)
+        //
+        //       Note: since we are now using CQL, it is likely working right.
+        //
         if(!branch_table->exists(page_ipath.get_branch_key()))
         {
             // branch disappeared... ignore
             // (it could have been deleted or moved--i.e. renamed)
+            //
             return 0;
         }
         QtCassandra::QCassandraRow::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));

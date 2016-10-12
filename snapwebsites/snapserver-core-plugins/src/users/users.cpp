@@ -1843,6 +1843,7 @@ void users::verify_user(content::path_info_t & ipath)
         {
             // user is logged in already, just send him to his profile
             // (if logged in he was verified in some way!)
+            //
             f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
         }
@@ -1854,6 +1855,7 @@ void users::verify_user(content::path_info_t & ipath)
         //
         // So in this case we want to log out the current user and
         // process the form as if no one had been logged in.
+        //
         f_info->set_object_path("/user/");
 
         int32_t const total_session_duration(get_total_session_duration());
@@ -1863,6 +1865,7 @@ void users::verify_user(content::path_info_t & ipath)
 
         // drop the referrer if there is one, it is a security
         // issue to keep that info on an almost explicit log out!
+        //
         NOTUSED(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
         sessions::sessions::instance()->save_session(*f_info, new_random);
@@ -1880,15 +1883,18 @@ void users::verify_user(content::path_info_t & ipath)
         QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
 
         // Save the date when the user logged out
+        //
         QtCassandra::QCassandraValue value;
         value.setInt64Value(f_snap->get_start_date());
         row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
 
         // Save the user IP address when logged out
+        //
         value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
         row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
         // Login session was destroyed so we really do not need it here anymore
+        //
         QString const last_login_session(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION))->value().stringValue());
         if(last_login_session == f_info->get_session_key())
         {
@@ -1904,6 +1910,7 @@ void users::verify_user(content::path_info_t & ipath)
     }
 
     // remove "verify/" to retrieve the session ID
+    //
     QString const session_id(ipath.get_cpath().mid(7));
     sessions::sessions::session_info info;
     sessions::sessions * session(sessions::sessions::instance());
