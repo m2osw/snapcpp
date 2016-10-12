@@ -291,11 +291,11 @@ protected:
                     break;
             }
 
-            // Send the log to snapcommunicator, and eventually to snaplogd.
+            // Send the log to snapcommunicator, and eventually to snaplog.
             //
             snap::snap_communicator_message request;
             request.set_command("SNAPLOG");
-            request.set_service("snaplogd");
+            request.set_service("snaplog");
             request.add_parameter( "cache",   "ttl=60"                                       );
             request.add_parameter( "level",   level_str                                      );
             request.add_parameter( "file",    QString::fromUtf8(event.getFile().c_str())     );

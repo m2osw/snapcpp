@@ -1,3 +1,9 @@
+iplock (3.0.3.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 16:13:18 -0700
+
 iplock (3.0.3.0~xenial) xenial; urgency=high
 
   * SNAP-355: Moved schemes in a sub-directory to make sure users cannot
