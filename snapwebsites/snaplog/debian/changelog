@@ -1,3 +1,9 @@
+snaplog (1.0.1.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 12 Oct 2016 02:00:49 -0700
+
 snaplog (1.0.1.0~xenial) xenial; urgency=high
 
   * SNAP-266: snaplog service is not "snaplogd."
