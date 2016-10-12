@@ -288,23 +288,15 @@ void manager::init(int argc, char * argv[])
     // setup the logger
     // the definition in the configuration file has priority...
     //
-    if(f_config.has_parameter("log_server")
-    && snap::logging::is_loggingserver_available(f_config["log_server"]))
+    QString const log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
+    if(f_config.has_parameter(log_config_filename))
     {
-        f_log_conf = f_config["log_server"];
+        // use .conf definition when available
+        f_log_conf = f_config[log_config_filename];
     }
     else
     {
-        QString const log_config_filename(QString("log_config_%1").arg(f_daemon ? "daemon" : "cgi"));
-        if(f_config.has_parameter(log_config_filename))
-        {
-            // use .conf definition when available
-            f_log_conf = f_config[log_config_filename];
-        }
-        else
-        {
-            f_log_conf = QString::fromUtf8(f_opt->get_string("log-config").c_str());
-        }
+        f_log_conf = QString::fromUtf8(f_opt->get_string("log-config").c_str());
     }
     snap::logging::configure_conffile( f_log_conf );
 

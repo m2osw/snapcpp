@@ -4926,7 +4926,13 @@ private:
  * \param[in] use_thread  Whether a thread is used to connect to the
  *                        server.
  */
-snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode, int64_t const pause, bool const use_thread)
+snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client_permanent_message_connection
+    (   std::string const & address
+      , int port
+      , tcp_client_server::bio_client::mode_t mode
+      , int64_t const pause
+      , bool const use_thread
+    )
     : snap_timer(pause < 0 ? -pause : 0)
     , f_impl(new snap_tcp_client_permanent_message_connection_impl(this, address, port, mode))
     , f_pause(llabs(pause))

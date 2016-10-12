@@ -1,3 +1,11 @@
+snapdbproxy (1.1.11.0~xenial) xenial; urgency=high
+
+  * SNAP-266: snap_child recreates snapcom messenger with thread.
+  * Default is to use file logging and logging to snapcommunicator.
+  * Also took out all loggingserver API and properties files.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:48:34 -0700
+
 snapdbproxy (1.1.10.14~xenial) xenial; urgency=high
 
   * Nightly build.

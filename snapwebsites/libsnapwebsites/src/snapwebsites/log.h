@@ -101,14 +101,12 @@ void configure_console          ();
 void configure_logfile          ( QString const & logfile  );
 void configure_syslog           ();
 void configure_messenger        ( messenger_t messenger );
-void configure_server           ();
 void configure_conffile         ( QString const & filename );
 void unconfigure                ();
 void reconfigure                ();
 bool is_configured              ();
 void set_log_output_level       ( log_level_t level );
 void reduce_log_output_level    ( log_level_t level );
-bool is_loggingserver_available ( QString const & logserver );
 bool is_enabled_for             ( log_level_t const log_level );
 
 logger & operator << ( logger & l, QString const &                                msg );
