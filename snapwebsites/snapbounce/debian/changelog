@@ -1,8 +1,9 @@
-snapbounce (1.0.3.6~xenial) xenial; urgency=high
+snapbounce (1.0.4.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-439: removing the add/rm group postdrop, instead we allow the 's'
+    flag of /usr/sbin/postdrop to work by the sendmail backend.
 
- -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 11 Oct 2016 17:36:48 -0700
 
 snapbounce (1.0.3.0~xenial) xenial; urgency=high
 
