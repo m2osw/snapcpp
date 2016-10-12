@@ -4,7 +4,7 @@ snaplog (1.0.1.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 15:36:28 -0700
 
-snaplog (1.0.0.4~xenial) xenial; urgency=high
+snaplog (1.0.0.6~xenial) xenial; urgency=high
 
   * Nightly build.
 

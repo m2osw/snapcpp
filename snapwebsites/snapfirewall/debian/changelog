@@ -1,8 +1,15 @@
-snapfirewall (1.0.10.4~xenial) xenial; urgency=high
+snapfirewall (1.0.11.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 10 Oct 2016 15:39:37 -0700
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 16:13:18 -0700
+
+snapfirewall (1.0.11.0~xenial) xenial; urgency=high
+
+  * SNAP-355: Fixed the test for scheme validity to check in the new
+    sub-directory (/etc/iplock/schemes/...)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 11 Oct 2016 15:45:37 -0700
 
 snapfirewall (1.0.10.0~xenial) xenial; urgency=high
 

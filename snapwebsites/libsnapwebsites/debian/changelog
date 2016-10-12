@@ -1,10 +1,24 @@
-libsnapwebsites (1.1.21.0~xenial) xenial; urgency=high
+libsnapwebsites (1.1.23.0~xenial) xenial; urgency=high
 
   * SNAP-266: snaplog service is not "snaplogd."
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 15:36:28 -0700
 
-libsnapwebsites (1.1.20.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.22.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 16:13:18 -0700
+
+libsnapwebsites (1.1.22.0~xenial) xenial; urgency=high
+
+  * SNAP-355: To really broadcast to all computers, I have to set the
+    service to "*". Setting just the server that way allows for broadcasting
+    only if the service in not running locally.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 11 Oct 2016 15:44:47 -0700
+
+libsnapwebsites (1.1.21.0~xenial) xenial; urgency=high
 
   * SNAP-266: Added call to destructorImpl().
 

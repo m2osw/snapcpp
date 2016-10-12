@@ -519,12 +519,12 @@ void snap_firewall::block_info_t::set_scheme(QString scheme)
     // now that we have a valid scheme, make sure there is a
     // corresponding iplock configuration file
     //
-    std::string filename("/etc/iplock/");
+    std::string filename("/etc/iplock/schemes/");
     filename += scheme.toUtf8().data();
     filename += ".conf";
     if(access(filename.c_str(), F_OK) != 0)
     {
-        filename = "/etc/iplock/iplock.d/";
+        filename = "/etc/iplock/schemes/schemes.d/";
         filename += scheme.toUtf8().data();
         filename += ".conf";
         if(access(filename.c_str(), F_OK) != 0)
@@ -534,7 +534,7 @@ void snap_firewall::block_info_t::set_scheme(QString scheme)
                 // no message if http.conf does not exist; the iplock.conf
                 // is the default and is to block HTTP so all good anyway
                 //
-                SNAP_LOG_ERROR("unsupported scheme \"")(scheme)("\" to block an IP address. The iplock default will be used.");
+                SNAP_LOG_WARNING("unsupported scheme \"")(scheme)("\" to block an IP address. The iplock default will be used.");
             }
             return;
         }

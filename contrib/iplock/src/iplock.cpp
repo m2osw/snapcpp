@@ -631,12 +631,16 @@ iplock::block_or_unblock::block_or_unblock(iplock * parent, char const * command
     // read the scheme configuration file
     //
     // since the name of the file can change, we use a fully dynamically
-    // allocated vector
+    // allocated vector and a specific sub-directory so users cannot
+    // end up accessing another file instead of an actual scheme file
+    //
+    // note that the schemes-README.md is fine because it does not end
+    // with .conf
     //
     std::vector<std::string> scheme_configuration_files
     {
-        "@iplock@",
-        "/etc/iplock/" + f_scheme + ".conf"
+        "@schemes@",
+        "/etc/iplock/schemes/" + f_scheme + ".conf"
     };
 
     // fake a pair of argc/argv which are empty
