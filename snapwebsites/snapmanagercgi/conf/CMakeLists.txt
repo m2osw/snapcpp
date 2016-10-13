@@ -97,6 +97,7 @@ install(
         # HTML files
         index.html
         snap-bundles-footer.html
+        favicon.ico
 
     DESTINATION
         share/snapwebsites/html/snapmanager
