@@ -51,9 +51,18 @@ then
     #
     # Also turn on cgi and headers modules
     #
-    a2enmod cgi
-    a2enmod headers
-    a2enconf snap-httpoxy
+    a2enmod -q cgi
+    a2enmod -q headers
+    a2enconf -q snap-acceptfilter
+    a2enconf -q snap-httpoxy
+
+    # By default the reqtimeout module is not enabled
+    # Note that the default configuration of reqtimeout is just fine
+    #
+    # Note we install the reqtimeout module to avoid Slowloris, see:
+    # https://en.wikipedia.org/wiki/Slowloris_(computer_security)
+    # 
+    a2enmod -q reqtimeout
 
     # enable the snapmanager-apache2.conf and make sure to remove the default
     #

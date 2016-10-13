@@ -49,6 +49,7 @@ then
     #
     if hash a2enconf 2>/dev/null
     then
+        a2disconf snap-acceptfilter
         a2disconf snap-httpoxy
 
         # make sure to force a reload or that's going to be useless
@@ -56,10 +57,11 @@ then
         systemctl restart apache2
     else
         # here we may still have the soft-link since we did not have
-        # a changes to call a2disconf on it... so we remove it by
+        # a chance to call a2disconf on it... so we remove it by
         # hand and then remove all the directories which should now
         # be empty
         #
+        rm -f /etc/apache2/conf-enabled/snap-acceptfilter.conf
         rm -f /etc/apache2/conf-enabled/snap-httpoxy.conf
         for dir in \
             /etc/apache2/conf-empty \

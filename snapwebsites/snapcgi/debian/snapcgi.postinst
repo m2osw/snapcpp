@@ -27,12 +27,13 @@ then
     # Also turn on cgi and headers modules, enable our default apache2
     # script, and disable the existing default script
     #
-    a2enmod cgi
-    a2enmod headers
-    a2enconf snap-httpoxy
-    a2enconf snap-apache2-ssl-log
-    a2dissite 000-default
-    a2ensite 000-snap-apache2-default
+    a2enmod -q cgi
+    a2enmod -q headers
+    a2enconf -q snap-acceptfilter
+    a2enconf -q snap-httpoxy
+    a2enconf -q snap-apache2-ssl-log
+    a2dissite -q 000-default
+    a2ensite -q 000-snap-apache2-default
 
     # restart apache2 to make sure everything is taken in account
     #

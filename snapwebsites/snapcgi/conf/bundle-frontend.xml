@@ -43,9 +43,17 @@
   <postinst>
     systemctl stop apache2
 
-    # By default the rewrite module is not available
+    # By default the rewrite module is not enabled
     #
-    a2enmod rewrite
+    a2enmod -q rewrite
+
+    # By default the reqtimeout module is not enabled
+    # Note that the default configuration of reqtimeout is just fine
+    #
+    # Note we install the reqtimeout module to avoid Slowloris, see:
+    # https://en.wikipedia.org/wiki/Slowloris_(computer_security)
+    # 
+    a2enmod -q reqtimeout
 
     # setup the default apache2 configuration file
     #

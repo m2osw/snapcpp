@@ -88,12 +88,14 @@ then
     mkdir -p /var/lib/snapwebsites
     chown snapwebsites:snapwebsites /var/lib/snapwebsites
 
-    # make the snap-httpoxy.conf file active if apache2 is installed
+    # make the snap-acceptfilter and snap-httpoxy configurations
+    # active if apache2 is installed
     #
     if hash a2enconf 2>/dev/null
     then
-        a2enmod headers
-        a2enconf snap-httpoxy
+        a2enmod -q headers
+        a2enconf -q snap-acceptfilter
+        a2enconf -q snap-httpoxy
 
         # make sure to force a reload or that's going to be useless
         #
