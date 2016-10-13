@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.26.0~xenial) xenial; urgency=high
+
+  * SNAP-266: Added f_func at the end of the log() calls.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 12 Oct 2016 23:06:53 -0700
+
 libsnapwebsites (1.1.25.0~xenial) xenial; urgency=high
 
   * SNAP-266: Fixed a test in the logger that was inverted.
@@ -18,12 +24,6 @@ libsnapwebsites (1.1.23.0~xenial) xenial; urgency=high
   * SNAP-266: snaplog service is not "snaplogd."
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 15:36:28 -0700
-
-libsnapwebsites (1.1.22.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 16:13:18 -0700
 
 libsnapwebsites (1.1.22.0~xenial) xenial; urgency=high
 

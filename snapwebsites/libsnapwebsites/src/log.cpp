@@ -1036,11 +1036,11 @@ logger::~logger()
             // generally this at least goes in the /var/log/syslog
             // and it may also go in a secure log file (i.e. not readable by everyone)
             //
-            g_secure_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
+            g_secure_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line, f_func);
         }
         else
         {
-            g_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
+            g_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line, f_func);
 
             // full logger used, do not report error in console, logger can
             // do it if the user wants to
@@ -1051,7 +1051,7 @@ logger::~logger()
 
     if( g_messenger_logger_initialized )
     {
-        g_messenger_logger.log( ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line );
+        g_messenger_logger.log( ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line, f_func );
     }
 
     if(console && isatty(STDERR_FILENO))
