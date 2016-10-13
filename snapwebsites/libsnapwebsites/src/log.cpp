@@ -1021,7 +1021,7 @@ logger::~logger()
     }
     else
     {
-        if(!f_func)
+        if(f_func)
         {
             // TBD: how should we really include the function name to the log4cplus messages?
             //

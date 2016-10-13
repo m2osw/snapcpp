@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.24.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.25.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-266: Fixed a test in the logger that was inverted.
+  * SNAP-465: Added an entry about the /server-status, commented out by default.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:53 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 12 Oct 2016 22:45:53 -0700
 
 libsnapwebsites (1.1.24.0~xenial) xenial; urgency=high
 
@@ -11,12 +12,6 @@ libsnapwebsites (1.1.24.0~xenial) xenial; urgency=high
   * Also took out all loggingserver API and properties files.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:45:20 -0700
-
-libsnapwebsites (1.1.23.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 12 Oct 2016 02:00:48 -0700
 
 libsnapwebsites (1.1.23.0~xenial) xenial; urgency=high
 
