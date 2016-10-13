@@ -2624,12 +2624,6 @@ pid_t snap_child::fork_child()
 
     if(p != 0)
     {
-        // Since we are in the child instance, we don't want the same object as was running in the server.
-        // So we need to remove the only messenger connection, create a new one, register it, and add it
-        // into the logging facility.
-        //
-        server->create_messenger_instance( true /*use_threads*/ );
-
         if(count != 1)
         {
             SNAP_LOG_WARNING("snap_child::fork_child(): The number of threads before the fork() to create a snap_child is ")(count)(" when it should be 1.");
@@ -2650,6 +2644,12 @@ pid_t snap_child::fork_child()
         try
         {
             prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+            // Since we are in the child instance, we don't want the same object as was running in the server.
+            // So we need to remove the only messenger connection, create a new one, register it, and add it
+            // into the logging facility.
+            //
+            server->create_messenger_instance( true /*use_threads*/ );
 
             // always reconfigure the logger in the child
             logging::reconfigure();

@@ -437,7 +437,7 @@ namespace
      * gets allocated and never deleted (not a big deal since it is
      * ONE instance for the entire time the process is running.)
      */
-    connection_t *          g_connection;
+    connection_t *          g_connection = nullptr;
 }
 //namespace
 
@@ -1583,14 +1583,17 @@ void server::detach()
         return;
     }
 
-    // since we are quitting immediately we do not need to save the child_pid
-
     if(child_pid == -1)
     {
         logging::reconfigure();
         SNAP_LOG_FATAL("the server could not fork() a child process to detach itself from your console.");
         exit(1);
     }
+
+    // since we are quitting immediately we do not need to save the child_pid
+    //
+    // TODO: actually save the child PID in a file... this would make
+    //       systemd happy (know once the process is considered initialized)
 
     exit(0);
 }
