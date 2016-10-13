@@ -2649,7 +2649,7 @@ pid_t snap_child::fork_child()
             // So we need to remove the only messenger connection, create a new one, register it, and add it
             // into the logging facility.
             //
-            server->create_messenger_instance( true /*use_threads*/ );
+            //server->create_messenger_instance( true /*use_threads*/ );
 
             // always reconfigure the logger in the child
             logging::reconfigure();
