@@ -249,7 +249,6 @@ public:
     bool                is_debug() const { return f_debug; }
     bool                is_foreground() const { return f_foreground; }
     bool                is_backend() const { return f_backend; }
-    bool                is_logging_server() const { return f_using_logging_server; }
     static size_t       thread_count();
     void                set_config_filename(std::string const & filename);
     void                config( int argc, char * argv[] );
@@ -258,6 +257,9 @@ public:
     void                set_parameter( QString const & param_name, QString const & value );
     void                prepare_qtapp( int argc, char * argv[] );
     bool                check_cassandra(QString const & mandatory_table);
+
+    void                create_messenger_instance( bool const use_thread = false );
+
     void                detach();
     void                listen();
     void                backend();
@@ -332,7 +334,6 @@ private:
     bool                                    f_debug = false;
     bool                                    f_foreground = false;
     bool                                    f_backend = false;
-    bool                                    f_using_logging_server = false;
     bool                                    f_force_restart = false;
     QMap<QString, bool>                     f_created_table;
 

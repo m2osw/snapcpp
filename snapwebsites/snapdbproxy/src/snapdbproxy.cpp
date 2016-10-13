@@ -415,6 +415,10 @@ void snapdbproxy::run()
     f_messenger = std::make_shared<snapdbproxy_messenger>(this, f_communicator_addr.toUtf8().data(), f_communicator_port);
     f_communicator->add_connection(f_messenger);
 
+    // Add the logging server through snapcommunicator:
+    //
+    snap::logging::set_log_messenger( f_messenger );
+
     // create a timer, it will immediately kick in and attempt a connection
     // to Cassandra; if it fails, it will continue to tick until it works.
     //

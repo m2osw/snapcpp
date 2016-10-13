@@ -1,3 +1,17 @@
+snapbase (1.0.7.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:53 -0700
+
+snapbase (1.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-266: snap_child recreates snapcom messenger with thread.
+  * Default is to use file logging and logging to snapcommunicator.
+  * Also took out all loggingserver API and properties files.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:47:03 -0700
+
 snapbase (1.0.6.28~xenial) xenial; urgency=high
 
   * Nightly build.

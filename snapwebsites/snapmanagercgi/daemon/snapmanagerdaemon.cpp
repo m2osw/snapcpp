@@ -152,13 +152,13 @@ int manager_daemon::run()
     f_messenger.reset(new manager_messenger(this, f_communicator_address.toUtf8().data(), f_communicator_port));
     f_communicator->add_connection(f_messenger);
 
-    // Add the logging server through snapcommunicator:
-    //
-    snap::logging::set_log_messenger( f_messenger );
-
     // also add the status connection created in the constructor
     //
     f_communicator->add_connection(f_status_connection);
+
+    // Add the logging server through snapcommunicator:
+    //
+    snap::logging::set_log_messenger( f_messenger );
 
     // now run our listening loop
     //

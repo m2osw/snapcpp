@@ -92,33 +92,11 @@
  * To setup the logging system, the snapserver makes use of the following
  * files:
  *
- * \li logserver.properties
  * \li log.properties
- * \li loggingserver.properties
  * \li snapcgi.properties
- *
- * The path and filename of the logserver.properties file is defined
- * in the snapserver.conf file under the variable name log_server
- *
- * \code
- *      log_server=/etc/snapwebsites/logger/logserver.properties
- * \endcode
- *
- * The loggingserver may not be running so the snapserver first checks
- * the availability. If available, then it uses it. If it cannot be
- * found, then it insteads tries with the log.properties file, of more
- * exactly the file defined in log_config of the snapserver.conf file.
  *
  * \code
  *      log_config=/etc/snapwebsites/logger/log.properties
- * \endcode
- *
- * The loggingserver itself will make use of the loggingserver.properties
- * file. This is expected to be setup in the script starting the server.
- * The filename and path are given on the command line:
- *
- * \code
- *      loggingserver 9998 /etc/snapwebsites/logger/loggingserver.properties
  * \endcode
  *
  * The backends run just like the snapserver so they get the same logger
@@ -160,7 +138,6 @@ enum class logging_type_t
     , FILE_LOGGER
     , CONFFILE_LOGGER
     , SYSLOG_LOGGER
-    , SERVER_LOGGER
     , MESSENGER_LOGGER
     };
 
@@ -644,60 +621,6 @@ void configure_syslog()
 }
 
 
-/** \brief Configure log4cplus system to the log4cplus server.
- *
- * Set up the logging to be routed to the log4cplus server, assuming that
- * the server is running.
- *
- * \note
- * This function marks that the logger was configured. The other functions
- * do not work (do nothing) until this happens. In case of the snap server,
- * configure() is called from the server::config() function. If no
- * configuration file is defined then the other functions will do nothing.
- *
- * Format documentation:
- * http://log4cplus.sourceforge.net/docs/html/classlog4cplus_1_1PatternLayout.html
- *
- * \sa fatal()
- * \sa error()
- * \sa warning()
- * \sa info()
- * \sa server::config()
- * \sa unconfigure()
- */
-void configure_server()
-{
-    unconfigure();
-
-    // TODO: add the host and IP to parameters?
-    log4cplus::SharedAppenderPtr appender( new log4cplus::SocketAppender( "127.0.0.1", 9998, get_progname() ) );
-    log4cplus::tstring const pattern
-                ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
-                + boost::replace_all_copy(get_progname(), "%", "%%").c_str()
-                + log4cplus::tstring("[%i]: %m (%b:%L)%n")
-                );
-// log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
-// of g++ so we have to make sure the deprecated definition gets ignored
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
-#pragma GCC diagnostic pop
-    appender->setThreshold( log4cplus::TRACE_LOG_LEVEL );
-
-    g_log_config_filename.clear();
-    g_log_output_filename.clear();
-    g_logging_type        = logging_type_t::SERVER_LOGGER;
-    g_last_logging_type   = logging_type_t::SERVER_LOGGER;
-    // we only have one appender, so use g_logger in g_secure_logger
-    g_logger              = log4cplus::Logger::getInstance( get_progname() );
-    g_secure_logger       = g_logger;
-
-    g_logger.addAppender( appender );
-    g_secure_logger.addAppender( appender );
-    set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
-}
-
-
 /** \brief Configure from a log4cplus header file.
  *
  * This function sends the specified \p filename to the log4cplus configurator
@@ -781,10 +704,6 @@ void reconfigure()
 
     case logging_type_t::SYSLOG_LOGGER:
         configure_syslog();
-        break;
-
-    case logging_type_t::SERVER_LOGGER:
-        configure_server();
         break;
 
     case logging_type_t::MESSENGER_LOGGER:
@@ -943,97 +862,6 @@ void reduce_log_output_level( log_level_t level )
             g_messenger_logger.setLogLevel( new_level );
         }
     }
-}
-
-
-/** \brief Check whether the loggingserver is available.
- *
- * This function quickly checks whether the loggingserver is running
- * with "our port".
- *
- * If the server is available, then it gets used. This is generally only
- * checked in the server. Snap children will use the loggingserver if the
- * Snap server is setup to use the loggingserver.
- *
- * \param[in] logserver  The filename (and path) to the logging server
- *                       appender properties.
- *
- * \return true if the logging server is currently running.
- */
-bool is_loggingserver_available ( QString const & logserver )
-{
-    // Note: if logserver is an empty string we assume that the logging
-    //       server was not setup; otherwise the following may actually
-    //       return true which is wrong in this case
-
-    if( logserver.isEmpty() )
-    {
-        return false;
-    }
-
-    // get the address and port from the logserver.properties file
-    log4cplus::helpers::Properties logserver_properties(logserver.toUtf8().data());
-
-    // check properties that make use of the log4cplus::SocketAppender
-    // these may have any name even if we use "server" by default
-    std::vector<log4cplus::tstring> names(logserver_properties.propertyNames());
-    for(auto const & n : names)
-    {
-        // the string must start with "log4cplus.appender."
-        log4cplus::tstring prefix(n.substr(0, 19));
-        if(prefix == "log4cplus.appender.")
-        {
-            log4cplus::tstring name(logserver_properties.getProperty(n));
-            if( name == LOG4CPLUS_TEXT("log4cplus::SocketAppender") )
-            {
-                // this is a server, check for availability
-                //log4cplus::helpers::Properties socket_properties(logserver_properties.getPropertySubset(n + "."));
-                log4cplus::tstring const host(logserver_properties.getProperty(n + LOG4CPLUS_TEXT(".host")));
-                unsigned int port(0);
-                logserver_properties.getUInt(port, n + LOG4CPLUS_TEXT(".port"));
-                //log4cplus::tstring const server_name(logserver_properties.getProperty(n + LOG4CPLUS_TEXT(".ServerName"))); -- not necessary for our test
-
-                if(!host.empty() && port < 65536)
-                {
-                    log4cplus::helpers::Socket socket(host, port);
-                    if(socket.isOpen())
-                    {
-                        log4cplus::helpers::SocketBuffer version_request(sizeof(unsigned int));
-                        // -2 is a version request from the loggingserver executable
-                        version_request.appendInt(static_cast<unsigned int>(-2));
-                        if(socket.write(version_request))
-                        {
-                            // read reply size
-                            log4cplus::helpers::SocketBuffer version_size(sizeof(unsigned int));
-                            if(socket.read(version_size))
-                            {
-                                log4cplus::helpers::SocketBuffer version(version_size.readInt());
-                                if(socket.read(version))
-                                {
-//std::cerr << "*** found server at [" << host << "] and [" << port << "] -> [" << std::string(version.getBuffer(), version.getSize()) << "]\n";
-                                    // this socket appender works
-                                    // TODO: test that the version is compatible?
-                                    //std::string version_str(version.getBuffer(), version.getSize());
-                                    //if(version_str != log4cplus::versionStr) ...
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // if any one socket appender fails, we want to avoid
-                // loggingserver(s); that way we avoid long waits trying to
-                // connect each time we create a new snap_child process
-                return false;
-            }
-        }
-    }
-
-    // all appenders are A-Okay
-    // if all appenders are something else than a socket appender, then
-    // of course we will always return true
-    return true;
 }
 
 

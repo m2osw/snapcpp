@@ -62,9 +62,7 @@ install(
 install(
     FILES
         # log4cplus properties for snapserver and the log4cplus server
-        loggingserver.properties
         log.properties
-        logserver.properties
 
     DESTINATION
         share/snapwebsites/logger

@@ -350,7 +350,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "logconf",
             nullptr,
-            "Log configuration file to read from. Overrides log_server / log_config in the configuration file.",
+            "Log configuration file to read from. Overrides log_config in the configuration file.",
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {
@@ -1082,11 +1082,7 @@ void server::config(int argc, char * argv[])
         // and log level. If a server version exists and the server is
         // available then use the loggging server.
         //
-        QString const log_server( f_parameters["log_server"] );
-        f_using_logging_server = logging::is_loggingserver_available( log_server );
-        QString const log_config( f_using_logging_server
-                                    ? log_server
-                                    : f_parameters["log_config"] );
+        QString const log_config( f_parameters["log_config"] );
         if( log_config.isEmpty() )
         {
             // Fall back to output to the console
@@ -1578,14 +1574,6 @@ void server::detach()
         return;
     }
 
-    // if the logger is using threads, it has to be shutdown (unconfigured)
-    // before we call the fork(); this is a waste of time so we try not to
-    // do it if we can
-    if(is_logging_server())
-    {
-        logging::unconfigure();
-    }
-
     // detaching using fork()
     pid_t const child_pid(fork());
     if(child_pid == 0)
@@ -1915,6 +1903,10 @@ void signal_child_death::process_signal()
  * when we create listening children and in that case we do not want to
  * count those children until they get a new connection; before that they
  * do not count.)
+ *
+ * Also, we default to *not* using a thread to connect, because we are defaulting
+ * to the server. When used in a snap_child instance, you must override the default
+ * and set the flag to *true*. Otherwise bad things will happen.
  */
 class messenger
         : public snap_communicator::snap_tcp_client_permanent_message_connection
@@ -1922,7 +1914,7 @@ class messenger
 public:
     typedef std::shared_ptr<messenger>    pointer_t;
 
-                        messenger(server * s, std::string const & addr, int port);
+                        messenger(server * s, std::string const & addr, int port, bool const use_thread = false );
 
     // snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void        process_message(snap_communicator_message const & message);
@@ -1939,12 +1931,19 @@ private:
  * a pointer to the main Snap! server so it can react appropriately
  * whenever a message is received.
  *
- * \param[in] s  A pointer to the server so we can send messages there.
- * \param[in] addr  The address of the snapcommunicator server.
- * \param[in] port  The port of the snapcommunicator server.
+ * \param[in] s           A pointer to the server so we can send messages there.
+ * \param[in] addr        The address of the snapcommunicator server.
+ * \param[in] port        The port of the snapcommunicator server.
+ * \param[in] use_thread  If set to true, a thread is being used to connect to the server.
  */
-messenger::messenger(server * s, std::string const & addr, int port)
-    : snap_tcp_client_permanent_message_connection(addr, port, tcp_client_server::bio_client::mode_t::MODE_PLAIN, snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING, false)
+messenger::messenger(server * s, std::string const & addr, int port, bool const use_thread )
+    : snap_tcp_client_permanent_message_connection
+      (   addr
+        , port
+        , tcp_client_server::bio_client::mode_t::MODE_PLAIN
+        , snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING
+        , use_thread
+      )
     , f_server(s)
 {
 }
@@ -2183,10 +2182,10 @@ class listener_impl
         : public snap_communicator::snap_tcp_server_connection
 {
 public:
-                                listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr);
+                    listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr);
 
     // snap_communicator::snap_tcp_server_connection implementation
-    virtual void                process_accept();
+    virtual void    process_accept() override;
 
 private:
     // this is owned by a server function so no need for a smart pointer
@@ -2265,7 +2264,47 @@ void listener_impl::process_accept()
 }
 
 
+/** \brief Create the permanent messenger instance.
+ *
+ * This creates the messenger object, and hooks up the logger so we can send logs to
+ * snapcommunicator (and ultimately to snaplog).
+ *
+ * \param[in] use_thread    If set to true, this will create a thread. Set to false if you are going to fork()
+ */
+void server::create_messenger_instance( bool const use_thread )
+{
+    // Remove the old connection (ignored if not connected)
+    //
+    g_connection->f_communicator->remove_connection( g_connection->f_messenger );
 
+    // Get the communicator address/port
+    //
+    QString communicator_addr("127.0.0.1");
+    int communicator_port(4040);
+    tcp_client_server::get_addr_port
+            ( QString::fromUtf8(f_parameters("snapcommunicator", "local_listen").c_str())
+            , communicator_addr
+            , communicator_port
+            , "tcp"
+            );
+
+    // Create a new messenger object
+    //
+    g_connection->f_messenger.reset(new messenger(this, communicator_addr.toUtf8().data(), communicator_port, use_thread));
+    g_connection->f_messenger->set_name("messenger");
+    g_connection->f_messenger->set_priority(50);
+
+
+    // Add it into the instance list.
+    //
+    g_connection->f_communicator->add_connection( g_connection->f_messenger );
+
+    // Add this to the logging facility so we can broadcast logs to snaplog via snapcommunicator.
+    //
+    configure_messenger_logging(
+        std::static_pointer_cast<snap_communicator::snap_tcp_client_permanent_message_connection>( g_connection->f_messenger )
+    );
+}
 
 
 /** \brief Listen to incoming connections.
@@ -2389,14 +2428,7 @@ void server::listen()
     g_connection->f_child_death_listener->set_priority(75);
     g_connection->f_communicator->add_connection(g_connection->f_child_death_listener);
 
-    g_connection->f_messenger.reset(new messenger(this, communicator_addr.toUtf8().data(), communicator_port));
-    g_connection->f_messenger->set_name("messenger");
-    g_connection->f_messenger->set_priority(50);
-    g_connection->f_communicator->add_connection(g_connection->f_messenger);
-
-    configure_messenger_logging(
-        std::static_pointer_cast<snap_communicator::snap_tcp_client_permanent_message_connection>( g_connection->f_messenger )
-    );
+    create_messenger_instance();
 
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(get_server_name())("\" started.");

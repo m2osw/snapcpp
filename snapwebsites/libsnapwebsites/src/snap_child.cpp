@@ -2612,14 +2612,6 @@ pid_t snap_child::fork_child()
     }
 #endif
 
-    // if the logger is using threads, it has to be shutdown (unconfigured)
-    // before we call the fork(); this is a waste of time so we try not to
-    // do it if we can
-    if(server->is_logging_server())
-    {
-        logging::unconfigure();
-    }
-
     // generate a warning about having more than one thread at this point
     // (it is a huge potential for a crash or lock up, hence the test)
     // See: http://snapwebsites.org/journal/2015/06/using-threads-server-uses-fork-they-dont-mix-well
@@ -2632,11 +2624,11 @@ pid_t snap_child::fork_child()
 
     if(p != 0)
     {
-        // re-establish the logger if we turned it off before the fork()
-        if(server->is_logging_server())
-        {
-            logging::reconfigure();
-        }
+        // Since we are in the child instance, we don't want the same object as was running in the server.
+        // So we need to remove the only messenger connection, create a new one, register it, and add it
+        // into the logging facility.
+        //
+        server->create_messenger_instance( true /*use_threads*/ );
 
         if(count != 1)
         {
