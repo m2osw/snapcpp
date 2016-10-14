@@ -1,3 +1,9 @@
+snapdbproxy (1.1.11.4~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 14 Oct 2016 12:40:31 -0700
+
 snapdbproxy (1.1.11.3~xenial) xenial; urgency=high
 
   * SNAP-454: Fixed the culprit that would keep the connection alive.
