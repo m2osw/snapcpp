@@ -104,9 +104,8 @@ void snapdbproxy_listener::process_accept()
         return;
     }
 
-    // process the new connection, which means create a child process
-    // and run the necessary code to return an HTML page, a document,
-    // robots.txt, etc.
+    // process the new connection, which means create a thread
+    // and let the thread handle database requests
     //
     f_snapdbproxy->process_connection(new_client);
 }

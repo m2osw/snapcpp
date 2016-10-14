@@ -57,9 +57,8 @@
  * return false which means that you should not keep a copy of that
  * thread.
  */
-snapdbproxy_thread::snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t client, QString const & cassandra_host_list, int cassandra_port)
-    : f_client(client)
-    , f_connection(session, client, cassandra_host_list, cassandra_port)
+snapdbproxy_thread::snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t & client, QString const & cassandra_host_list, int cassandra_port)
+    : f_connection(session, client, cassandra_host_list, cassandra_port)
     , f_thread("connection", &f_connection)
 {
     if(!f_thread.start())

@@ -110,32 +110,32 @@ pid_t gettid()
 
 
 
-snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t client, QString const & cassandra_host_list, int cassandra_port)
+snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t & client, QString const & cassandra_host_list, int cassandra_port)
     : snap_runner("snapdbproxy_connection")
     //, f_proxy()
     , f_session(session)
     //, f_cursors() -- auto-init
-    , f_client(client)
-    , f_socket(f_client->get_socket())
+    //, f_client(nullptr) -- auto-init
+    , f_socket(client->get_socket())
     , f_cassandra_host_list(cassandra_host_list)
     , f_cassandra_port(cassandra_port)
 {
+    // take ownership of the client's pointer (we are not in the thread
+    // yet, so a simple swap is sufficient)
+    //
+    f_client.swap(client);
+
     // the parent (main) thread will shutdown the socket if it receives
-    // the STOP message from snapcommunicator
+    // the STOP message from snapcommunicator, see the kill() function
+    // for details
 }
 
 
 snapdbproxy_connection::~snapdbproxy_connection()
 {
-    // WARNING: do not close f_socket here, our parent (snapdbproxy_thread)
-    //          takes care of that
-
-    // TODO:
-    // Note that on errors we still force close the socket, and we may
-    // want to anyway revisit this scheme because the parent destructor
-    // only happens when another connection comes in... and that means
-    // we keep that socket opened for all that time, whether our thread
-    // died a long time ago or not.
+    // Note:
+    // The f_client object was likely reset() when we reach this function
+    // since the run() loop exists only if the f_client pointer is nullptr.
 }
 
 
@@ -219,8 +219,7 @@ void snapdbproxy_connection::run()
                     SNAP_LOG_TRACE("snapdbproxy received an invalid order (")(f_client != nullptr ? f_client->get_socket() : -1)(").");
                 }
 
-                f_socket = -1;
-                f_client.reset();
+                close();
             }
         }
     }
@@ -426,8 +425,24 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
 }
 
 
+void snapdbproxy_connection::close()
+{
+    {
+        snap::snap_thread::snap_lock lock(f_mutex);
+        f_socket = -1;
+    }
+
+    // the client is only in the thread runner so it is safe to do
+    // that outside of the lock
+    //
+    f_client.reset();
+}
+
+
 void snapdbproxy_connection::kill()
 {
+    snap::snap_thread::snap_lock lock(f_mutex);
+
     // parent thread wants to quit, tell the child to exit ASAP
     // by partially shutting down the socket
     //
@@ -518,8 +533,7 @@ void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const &
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        f_socket = -1;
-        f_client.reset();
+        close();
     }
 }
 
@@ -549,8 +563,7 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
 
     if(!f_proxy.sendResult(*this, result))
     {
-        f_socket = -1;
-        f_client.reset();
+        close();
     }
 }
 
@@ -599,8 +612,7 @@ void snapdbproxy_connection::fetch_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        f_socket = -1;
-        f_client.reset();
+        close();
     }
 }
 
@@ -621,8 +633,7 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        f_socket = -1;
-        f_client.reset();
+        close();
     }
 
     // now actually do the clean up
@@ -661,8 +672,7 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        f_socket = -1;
-        f_client.reset();
+        close();
     }
 }
 
@@ -703,8 +713,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
-        f_socket = -1;
-        f_client.reset();
+        close();
     }
 }
 

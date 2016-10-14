@@ -718,9 +718,14 @@ SNAP_LOG_WARNING("NEWTABLE not yet implemented...");
  * This function adds a new connection to the snapdbproxy daemon. A
  * connection is a blocking socket handled by a thread.
  *
+ * The snapdbproxy_listener does the listen() and accept() calls.
+ * Here we dispatch the call to a thread using a snapdbproxy_thread.
+ * The connection is then handled by the runner which is the
+ * snapdbproxy_connection.
+ *
  * \param[in] client  The client the connection threads becomes the owner of.
  */
-void snapdbproxy::process_connection(tcp_client_server::bio_client::pointer_t client)
+void snapdbproxy::process_connection(tcp_client_server::bio_client::pointer_t & client)
 {
     // only the main process calls this function so we can take the time
     // to check the f_connections vector and remove dead threads
@@ -750,6 +755,9 @@ void snapdbproxy::process_connection(tcp_client_server::bio_client::pointer_t cl
     // to the f_connections vector; that way the socket gets closed
     // (the only case where the socket does not get closed is and
     // std::bad_alloc exception which we do not capture here.)
+    //
+    // WARNING: the client is passed as a reference so we can cleanly take
+    //          ownership in the snapdbproxy_connection object
     //
     snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>(f_session, client, f_cassandra_host_list, f_cassandra_port));
     if(thread && thread->is_running())
