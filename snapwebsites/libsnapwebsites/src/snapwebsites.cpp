@@ -1775,6 +1775,12 @@ void server::block_ip( QString const & uri, QString const & period )
 }
 
 
+const snap_config&  server::get_parameters() const
+{
+    return f_parameters;
+}
+
+
 #ifdef SNAP_NO_FORK
 /** \brief Don't fork the snap child if true.
  *
