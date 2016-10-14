@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.92
+ * Version: 0.1.6.4
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -836,6 +836,7 @@ snapwebsites.Output.prototype.handleMessages_ = function()
     var that = this;
 
     // put a little delay() so we see the fadeIn(), eventually
+    //
     jQuery("div.user-messages")
         .each(function()
             {
@@ -846,6 +847,9 @@ snapwebsites.Output.prototype.handleMessages_ = function()
         .fadeIn(300)
         .click(function(e)
             {
+                // click to close, but do not react if the user clicked
+                // a link
+                //
                 if(!(jQuery(e.target).is("a")))
                 {
                     that.hideMessages();
@@ -865,6 +869,66 @@ snapwebsites.Output.prototype.handleMessages_ = function()
 snapwebsites.Output.prototype.hideMessages = function()
 {
     jQuery("div.user-messages").fadeOut(300);
+};
+
+
+/** \brief Retrieve the number of messages of a certain type.
+ *
+ * This function can be used to know whether there are messages of a
+ * certain type currently shown on the screen.
+ *
+ * You may specify the type of message. If not specified, 'error' is
+ * assumed.
+ *
+ * We also support the special name "total" to get the total numebr
+ * of messages, whatever their type.
+ *
+ * @param {string} opt_type  Whether this is an "info", "warning" or "error"
+ *                 message (optional, defaults to "error"), or "total" for
+ *                 a count of all the messages, whatever their type.
+ *
+ * @return {integer}  The number of message of the specified type.
+ */
+snapwebsites.Output.prototype.countMessages = function(opt_type)
+{
+    var msg = jQuery("div.user-messages"),
+        visible = false,
+        errors = 0,
+        warnings = 0,
+        total = 0;
+
+    // any messages at all?
+    //
+    if(!msg.exists())
+    {
+        return 0;
+    }
+
+    // if currently hidden, it is also considered that we have no messages
+    //
+    visible = msg.is(":visible");
+    if(!visible)
+    {
+        return 0;
+    }
+
+    // setup a default if undefined
+    //
+    if(!opt_type)
+    {
+        opt_type = "error";
+    }
+
+    if(opt_type == "total")
+    {
+        // count all messages
+        //
+        return jQuery(msg).children("div.message").length;
+    }
+
+    // only count messages of the specified type
+    //
+    return jQuery(msg).children("div.message.message-" + opt_type).length;
 };
 
 
@@ -925,6 +989,12 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
             // TODO: we probably want to not delete the close button instead
             //       of re-adding it each time...
             msg.append("<div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div>");
+        }
+        else
+        {
+            // make sure to keep a tag on the existing number of errors and warnings
+            errors = jQuery(msg).children("div.message.message-error").length;
+            warnings = jQuery(msg).children("div.message.message-warning").length;
         }
     }
 

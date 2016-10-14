@@ -1,8 +1,15 @@
-snapserver-core-plugins (1.0.11.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.12.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:53 -0700
+ -- Build Server <build@m2osw.com>  Thu, 13 Oct 2016 17:10:21 -0700
+
+snapserver-core-plugins (1.0.12.0~xenial) xenial; urgency=high
+
+  * EX-132: Added support for counting messages and avoid changing the
+    message type to "info" if there are still errors or warnings showing.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 13 Oct 2016 15:39:53 -0700
 
 snapserver-core-plugins (1.0.11.0~xenial) xenial; urgency=high
 
