@@ -1,6 +1,8 @@
 snapdbproxy (1.1.11.3~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-454: Fixed the culprit that would keep the connection alive.
+  * Made the way the connection is passed to the thread actually safe now.
+  * Protected all the f_socket changes because they may be used by both sides.
 
  -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:53 -0700
 
