@@ -3,15 +3,7 @@
  *      snapwebsites/snaplog/snaplog.cpp
  *
  * Description:
- *      Proxy database access for two main reasons:
- *
- *      1. keep connections between this computer and the database
- *         computer open (i.e. opening remote TCP connections taken
- *         "much" longer than opening local connections.)
- *
- *      2. remove threads being forced on us by the C/C++ driver from
- *         cassandra (this causes problems with the snapserver that
- *         uses fork() to create the snap_child processes.)
+ *      TODO
  *
  * License:
  *      Copyright (c) 2016 Made to Order Software Corp.
@@ -53,94 +45,105 @@
 // 3rd party libs
 //
 #include <QtCore>
+#include <QtSql>
 #include <advgetopt/advgetopt.h>
 
 // system (C++)
 //
 #include <algorithm>
+#include <exception>
 #include <iostream>
 #include <sstream>
 
 namespace
 {
 
-    const std::vector<std::string> g_configuration_files; // Empty
+const std::vector<std::string> g_configuration_files; // Empty
 
-    const advgetopt::getopt::option g_snaplog_options[] =
+const advgetopt::getopt::option g_snaplog_options[] =
+{
     {
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "Usage: %p [-<opt>]",
-            advgetopt::getopt::argument_mode_t::help_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "where -<opt> is one or more of:",
-            advgetopt::getopt::argument_mode_t::help_argument
-        },
-        {
-            'c',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "config",
-            nullptr,
-            "Configuration file to initialize snaplog.",
-            advgetopt::getopt::argument_mode_t::optional_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "debug",
-            nullptr,
-            "Start the snaplog in debug mode.",
-            advgetopt::getopt::argument_mode_t::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "help",
-            nullptr,
-            "show this help output",
-            advgetopt::getopt::argument_mode_t::no_argument
-        },
-        {
-            'l',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "logfile",
-            nullptr,
-            "Full path to the snaplog logfile.",
-            advgetopt::getopt::argument_mode_t::optional_argument
-        },
-        {
-            'n',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "nolog",
-            nullptr,
-            "Only output to the console, not a log file.",
-            advgetopt::getopt::argument_mode_t::no_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "version",
-            nullptr,
-            "show the version of the snapdb executable",
-            advgetopt::getopt::argument_mode_t::no_argument
-        },
-        {
-            '\0',
-            0,
-            nullptr,
-            nullptr,
-            nullptr,
-            advgetopt::getopt::argument_mode_t::end_of_options
-        }
-    };
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        nullptr,
+        nullptr,
+        "Usage: %p [-<opt>]",
+        advgetopt::getopt::argument_mode_t::help_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        nullptr,
+        nullptr,
+        "where -<opt> is one or more of:",
+        advgetopt::getopt::argument_mode_t::help_argument
+    },
+    {
+        'c',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "config",
+        nullptr,
+        "Configuration file to initialize snaplog.",
+        advgetopt::getopt::argument_mode_t::optional_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "debug",
+        nullptr,
+        "Start the snaplog in debug mode.",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "help",
+        nullptr,
+        "show this help output",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
+    {
+        'l',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "logfile",
+        nullptr,
+        "Full path to the snaplog logfile.",
+        advgetopt::getopt::argument_mode_t::optional_argument
+    },
+    {
+        'n',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "nolog",
+        nullptr,
+        "Only output to the console, not a log file.",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "version",
+        nullptr,
+        "show the version of the snapdb executable",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
+    {
+        '\0',
+        0,
+        nullptr,
+        nullptr,
+        nullptr,
+        advgetopt::getopt::argument_mode_t::end_of_options
+    }
+};
+
+
+void exec( QSqlQuery& q )
+{
+    if( !q.exec() )
+    {
+        SNAP_LOG_ERROR("Query error! [")(q.lastError().text())("], lastQuery=[")(q.lastQuery())("]");
+    }
+}
 
 
 }
@@ -334,8 +337,8 @@ void snaplog::run()
     // create a timer, it will immediately kick in and attempt a connection
     // to Cassandra; if it fails, it will continue to tick until it works.
     //
-    //f_timer = std::make_shared<snaplog_timer>(this);
-    //f_communicator->add_connection(f_timer);
+    f_timer = std::make_shared<snaplog_timer>(this);
+    f_communicator->add_connection(f_timer);
 
     // now run our listening loop
     //
@@ -421,6 +424,100 @@ void snaplog::sighandler( int sig )
 }
 
 
+void snaplog::process_timeout()
+{
+    try
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase( "QMYSQL" );
+        if( !db.isValid() )
+        {
+            std::string const error( "QMYSQL database is not valid for some reason!" );
+            SNAP_LOG_ERROR(error);
+            throw std::runtime_error(error.c_str());
+        }
+        //
+        db.setHostName     ( "localhost" );
+        db.setUserName     ( "snaplog"   );
+        db.setPassword     ( "snaplog"   );
+        db.setDatabaseName ( "snaplog"   );
+        if( !db.open() )
+        {
+            std::string const error( "Cannot open MySQL database snaplog!" );
+            SNAP_LOG_ERROR( error );
+            throw std::runtime_error(error.c_str());
+        }
+
+        // the connection succeeded, turn off the timer we do not need
+        // it for now...
+        //
+        f_timer->set_enable(false);
+
+        // reset the delay to about 1 second
+        // (we use 1.625 so that way we will have 1s, 3s, 7s, 15s, 30s, 60s
+        // and thus 1 minute.)
+        //
+        f_mysql_connect_timer_index = 1.625f;
+
+        mysql_ready();
+    }
+    catch(std::runtime_error const &)
+    {
+        // the connection failed, keep the timeout enabled and try again
+        // on the next tick
+        //
+        no_mysql();
+    }
+}
+
+
+void snaplog::mysql_ready()
+{
+    // TODO: We need something to do. Set a flag? We don't need to send anything
+    // across snapcomm like snapdbproxy does.
+}
+
+
+void snaplog::no_mysql()
+{
+    f_timer->set_enable( true );
+    f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) * 1000000LL);
+}
+
+
+void snaplog::add_message_to_db( snap::snap_communicator_message const & message )
+{
+    // TODO: add a record to the MySQL database
+    //
+    SNAP_LOG_TRACE("SNAPLOG command received: server=[")(message.get_server())("], service=[")(message.get_service())("]");
+    auto const all_parms = message.get_all_parameters();
+#if 1
+    const QString q_str("INSERT INTO snaplog.log "
+            "(server, service, level, msgid, ipaddr, file, line, func, message ) "
+            "VALUES "
+            "(:server, :service, :level, :msgid, :ipaddr, :file, :line, :func, :message );");
+    QSqlQuery q;
+    q.prepare( q_str );
+    //
+    q.bindValue( ":server",  message.get_sent_from_server()    );
+    q.bindValue( ":service", message.get_sent_from_service()   );
+    q.bindValue( ":level",   all_parms["level"]                );
+    q.bindValue( ":msgid",   all_parms["broadcast_msgid"]      );
+    q.bindValue( ":ipaddr",  all_parms["broadcast_originator"] );
+    q.bindValue( ":file",    all_parms["file"]                 );
+    q.bindValue( ":line",    all_parms["line"]                 );
+    q.bindValue( ":func",    all_parms["func"]                 );
+    q.bindValue( ":message", all_parms["message"]              );
+    //
+    exec( q );
+#else
+    for( auto key : all_parms.keys() )
+    {
+        SNAP_LOG_TRACE("parm {")(key)("} = [")(all_parms[key])("]");
+    }
+#endif
+}
+
+
 /** \brief Process a message received from Snap! Communicator.
  *
  * This function gets called whenever the Snap! Communicator sends
@@ -434,8 +531,6 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
     SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
-
-// TODO: use a map statement (see poor old snapinit...)
 
     if(command == "LOG")
     {
@@ -468,9 +563,13 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
     if(command == "READY")
     {
         f_ready = true;
+
+        // Snap! Communicator received our REGISTER command
         //
-        // TODO: contents!
-        //
+        if( QSqlDatabase::database().isOpen() )
+        {
+            mysql_ready();
+        }
         return;
     }
 
@@ -498,12 +597,7 @@ void snaplog::process_message(snap::snap_communicator_message const & message)
 
     if(command == "SNAPLOG")
     {
-        SNAP_LOG_TRACE("SNAPLOG command received: server=[")(message.get_server())("], service=[")(message.get_service())("]");
-        auto const all_parms = message.get_all_parameters();
-        for( auto key : all_parms.keys() )
-        {
-            SNAP_LOG_TRACE("parm {")(key)("} = [")(all_parms[key])("]");
-        }
+        add_message_to_db( message );
         return;
     }
 

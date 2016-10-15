@@ -31,7 +31,7 @@
 
 project( snaplog_conf )
 
-snap_validate_xml( bundle-mysql.xml  bundles.xsd )
+snap_validate_xml( bundle-snaplog.xml  bundles.xsd )
 
 
 #################################################################################
@@ -39,7 +39,7 @@ snap_validate_xml( bundle-mysql.xml  bundles.xsd )
 ##
 install(
     FILES
-        bundle-mysql.xml
+        bundle-snaplog.xml
 
     DESTINATION
         share/snapwebsites/bundles

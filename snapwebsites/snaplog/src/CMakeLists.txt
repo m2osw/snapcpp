@@ -43,6 +43,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} )
 add_executable(${PROJECT_NAME}
     snaplog.cpp
     snaplog_messenger.cpp
+    snaplog_timer.cpp
     main.cpp
 )
 
