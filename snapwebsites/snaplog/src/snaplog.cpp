@@ -480,7 +480,7 @@ void snaplog::mysql_ready()
 void snaplog::no_mysql()
 {
     f_timer->set_enable( true );
-    f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) /* * 1000000LL */);
+    //f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) /* * 1000000LL */);
 }
 
 
