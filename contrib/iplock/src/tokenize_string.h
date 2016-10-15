@@ -19,10 +19,10 @@
 //
 #pragma once
 
-#include "snapwebsites/reverse_cstring.h"
+//#include "snapwebsites/reverse_cstring.h"
 
-#include <string>
 #include <algorithm>
+#include <string>
 
 namespace snap
 {
@@ -79,17 +79,12 @@ size_t tokenize_string(ContainerT & tokens
 
             // find last character not in trim_string
             //
-            if(start < end)
+            for(; end > start; --end)
             {
-                reverse_cstring<typename ContainerT::value_type::value_type const> const rstr(start, end);
-                auto const p(std::find_if_not(
-                      rstr.begin()
-                    , rstr.end()
-                    , [&trim_string](auto const c)
-                      {
-                          return trim_string.find(c) != ContainerT::value_type::npos;
-                      }));
-                end = p.get();
+                if(trim_string.find(end[-1]) == ContainerT::value_type::npos)
+                {
+                    break;
+                }
             }
         }
 

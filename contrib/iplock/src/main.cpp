@@ -65,7 +65,7 @@ int main(int argc, char * argv[])
     }
     catch(std::exception const & e)
     {
-        std::cerr << "fatal error:error:iplock: an exception occurred. " << e.what() << std::endl;
+        std::cerr << "error:iplock: an exception occurred: " << e.what() << std::endl;
     }
 
     exit(1);

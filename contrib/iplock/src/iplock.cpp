@@ -42,6 +42,7 @@
 
 
 #include "iplock.h"
+#include "tokenize_string.h"
 #include "version.h"
 
 #include <boost/algorithm/string/replace.hpp>
@@ -285,6 +286,14 @@ advgetopt::getopt::option const g_iplock_block_or_unblock_options[] =
         "unblock",
         nullptr,
         "Unblock the specified IP address. If not already blocked, do nothing.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "whitelist",
+        nullptr,
+        "List of comma separated IPs to never block.",
         advgetopt::getopt::argument_mode_t::required_argument
     },
     {
@@ -719,6 +728,13 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
 
     std::string const check_cmdline(f_scheme_opt->get_string("check"));
 
+    std::vector<std::string> whitelist_ips;
+    if(f_scheme_opt->is_defined("whitelist"))
+    {
+        std::string const whitelist(f_scheme_opt->get_string("whitelist"));
+        snap::tokenize_string(whitelist_ips, whitelist, ",", true, " \t");
+    }
+
     int const max(f_opt->size("--"));
     for(int idx(0); idx < max; ++idx)
     {
@@ -729,6 +745,26 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
         //      atomic kind of a thing?)
         //
         verify_ip(ip);
+
+        // are we here to block (1) or unblock (0)?
+        //
+        if(run_on_result == 1)
+        {
+            // is this IP address white listed? if so, skip it
+            //
+            auto const & white_listed(std::find(
+                whitelist_ips.begin(),
+                whitelist_ips.end(),
+                ip));
+            if(white_listed != whitelist_ips.end())
+            {
+                if(f_verbose)
+                {
+                    std::cerr << "iplock:notice: ip address " << ip << " is whitelisted, ignoring." << std::endl;
+                }
+                continue;
+            }
+        }
 
         for(auto const port : f_ports)
         {

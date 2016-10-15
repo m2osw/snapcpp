@@ -1,8 +1,9 @@
-iplock (3.0.3.6~xenial) xenial; urgency=high
+iplock (3.0.4.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-181: Added support for a whitelist in each scheme.
+  * Made a copy of the tokenize_string.h so we can do so on one line.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 16:13:18 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 01:49:18 -0700
 
 iplock (3.0.3.0~xenial) xenial; urgency=high
 
