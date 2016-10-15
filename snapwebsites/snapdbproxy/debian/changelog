@@ -1,16 +1,17 @@
-snapdbproxy (1.1.11.5~xenial) xenial; urgency=high
+snapdbproxy (1.1.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-481: Drastically limit the number of sub-processes the snapbackend
+    can create between 100 and 1,000.
 
- -- Build Server <build@m2osw.com>  Fri, 14 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 12:07:49 -0700
 
-snapdbproxy (1.1.11.3~xenial) xenial; urgency=high
+snapdbproxy (1.1.12.0~xenial) xenial; urgency=high
 
   * SNAP-454: Fixed the culprit that would keep the connection alive.
   * Made the way the connection is passed to the thread actually safe now.
   * Protected all the f_socket changes because they may be used by both sides.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:53 -0700
+ --Alexis Wilke <alexis@m2osw.com>   Wed, 12 Oct 2016 15:47:53 -0700
 
 snapdbproxy (1.1.11.0~xenial) xenial; urgency=high
 
@@ -19,12 +20,6 @@ snapdbproxy (1.1.11.0~xenial) xenial; urgency=high
   * Also took out all loggingserver API and properties files.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:48:34 -0700
-
-snapdbproxy (1.1.10.14~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 03 Oct 2016 02:00:45 -0700
 
 snapdbproxy (1.1.10.0~xenial) xenial; urgency=high
 

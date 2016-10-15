@@ -1,8 +1,9 @@
-snapbackend (1.0.9.6~xenial) xenial; urgency=high
+snapbackend (1.0.10.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-481: Drastically limit the number of sub-processes the snapbackend
+    can create between 100 and 1,000.
 
- -- Build Server <build@m2osw.com>  Wed, 12 Oct 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 12:07:49 -0700
 
 snapbackend (1.0.9.0~xenial) xenial; urgency=high
 

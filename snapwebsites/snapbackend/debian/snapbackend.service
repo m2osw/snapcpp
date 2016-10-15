@@ -20,6 +20,7 @@ Group=snapwebsites
 # We also want to make systemd think that exit(1) is fine
 SuccessExitStatus=1
 Nice=5
+LimitNPROC=100
 # For developers and administrators to get console output
 #StandardOutput=tty
 #StandardError=tty

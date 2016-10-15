@@ -1,8 +1,10 @@
-snapfirewall (1.0.12.5~xenial) xenial; urgency=high
+snapfirewall (1.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-481: Drastically limit the number of sub-processes the snapbackend
+    can create between 100 and 1,000.
+  * Removed the duplicated definition of "NoNewPrivileges=...".
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 12:07:49 -0700
 
 snapfirewall (1.0.12.0~xenial) xenial; urgency=high
 
@@ -11,12 +13,6 @@ snapfirewall (1.0.12.0~xenial) xenial; urgency=high
   * Also took out all loggingserver API and properties files.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:49:23 -0700
-
-snapfirewall (1.0.11.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Tue, 11 Oct 2016 16:13:18 -0700
 
 snapfirewall (1.0.11.0~xenial) xenial; urgency=high
 

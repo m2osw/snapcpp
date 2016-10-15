@@ -1,8 +1,9 @@
-snaplock (1.0.6.5~xenial) xenial; urgency=high
+snaplock (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-481: Drastically limit the number of sub-processes the snapbackend
+    can create between 100 and 1,000.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:54 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 12:07:49 -0700
 
 snaplock (1.0.6.0~xenial) xenial; urgency=high
 
@@ -11,12 +12,6 @@ snaplock (1.0.6.0~xenial) xenial; urgency=high
   * Also took out all loggingserver API and properties files.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:50:09 -0700
-
-snaplock (1.0.5.8~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:49 -0700
 
 snaplock (1.0.5.0~xenial) xenial; urgency=high
 

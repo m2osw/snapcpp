@@ -20,6 +20,7 @@ User=root
 Group=root
 # Do not kill our children (i.e. snapupgrader) when we stop
 KillMode=process
+LimitNPROC=1000
 # For developers and administrators to get console output
 #StandardOutput=tty
 #StandardError=tty
