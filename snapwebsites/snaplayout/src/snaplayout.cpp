@@ -146,6 +146,14 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         "remove the specified theme; this remove the entire row and can allow you to reinstall a theme that \"lost\" files",
         advgetopt::getopt::argument_mode_t::no_argument
     },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "no-ssl",
+        nullptr,
+        "Supress the use of SSL even if the keys are present.",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
     { // at least until we have a way to edit the theme from the website
         't',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
@@ -715,7 +723,7 @@ void snap_layout::connect()
 
     try
     {
-        f_session->connect( host, port );
+        f_session->connect( host, port, !f_opt->is_defined("no-ssl") );
         if( !f_session->isConnected() )
         {
             std::cerr << "error: connecting to Cassandra failed on host='"
