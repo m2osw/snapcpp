@@ -53,6 +53,9 @@ then
     #
     a2enmod -q cgi
     a2enmod -q headers
+
+    a2disconf -q security
+    a2enconf -q snap-apache2-security
     a2enconf -q snap-acceptfilter
     a2enconf -q snap-httpoxy
 

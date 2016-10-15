@@ -29,9 +29,13 @@ then
     #
     a2enmod -q cgi
     a2enmod -q headers
+
+    a2disconf -q security
+    a2enconf -q snap-apache2-security
     a2enconf -q snap-acceptfilter
     a2enconf -q snap-httpoxy
     a2enconf -q snap-apache2-ssl-log
+
     a2dissite -q 000-default
     a2ensite -q 000-snap-apache2-default
 

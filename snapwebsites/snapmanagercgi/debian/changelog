@@ -1,8 +1,8 @@
-snapmanagercgi (1.1.22.3~xenial) xenial; urgency=high
+snapmanagercgi (1.1.23.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-479: Added the snap-apache2-security.conf file to replace secure.conf.
 
- -- Build Server <build@m2osw.com>  Thu, 13 Oct 2016 02:00:44 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 14 Oct 2016 22:06:44 -0700
 
 snapmanagercgi (1.1.22.0~xenial) xenial; urgency=high
 
