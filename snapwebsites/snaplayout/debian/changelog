@@ -1,3 +1,9 @@
+snaplayout (1.0.4.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 15 Oct 2016 02:00:48 -0700
+
 snaplayout (1.0.4.0~xenial) xenial; urgency=high
 
   * SNAP-440: Snap layout did not yet have a --no-ssl command line option.
