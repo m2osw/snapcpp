@@ -1454,7 +1454,7 @@ public:
      * When a connection goes down it gets deleted. This is when we can
      * send a new STATUS event to all the other STATUS hungry connections.
      */
-    ~service_connection()
+    virtual ~service_connection() override
     {
         // save when it is ending in case we did not get a DISCONNECT
         // or an UNREGISTER event
@@ -1486,7 +1486,7 @@ public:
 
 
     // snap::snap_communicator::snap_tcp_server_client_message_connection implementation
-    virtual void process_message(snap::snap_communicator_message const & message)
+    virtual void process_message(snap::snap_communicator_message const & message) override
     {
         // make sure the destination knows who sent that message so it
         // is possible to directly reply to that specific instance of
@@ -1506,6 +1506,22 @@ public:
     }
 
 
+    /** \brief We are losing the connection, send a STATUS message.
+     *
+     * This function is called in all cases where the connection is
+     * lost so we can send a STATUS message with information saying
+     * that the connection is gone.
+     */
+    void send_status()
+    {
+        // mark connection as down before we call the send_status()
+        //
+        set_connection_type(connection_type_t::CONNECTION_TYPE_DOWN);
+
+        f_communicator_server->send_status(shared_from_this());
+    }
+
+
     /** \brief Remove ourselves when we receive a timeout.
      *
      * Whenever we receive a shutdown, we have to remove everything but
@@ -1513,9 +1529,19 @@ public:
      * the timeout which happens after we finalize all read and write
      * callbacks.
      */
-    virtual void process_timeout()
+    virtual void process_timeout() override
     {
         remove_from_communicator();
+
+        send_status();
+    }
+
+
+    virtual void process_error() override
+    {
+        snap_tcp_server_client_message_connection::process_error();
+
+        send_status();
     }
 
 
@@ -1526,7 +1552,7 @@ public:
      * example.) So we handle the process_hup() event and send a
      * HANGUP if this connection is a remote connection.
      */
-    virtual void process_hup()
+    virtual void process_hup() override
     {
         snap_tcp_server_client_message_connection::process_hup();
 
@@ -1539,6 +1565,16 @@ public:
             hangup.add_parameter("server_name", get_server_name());
             f_communicator_server->broadcast_message(hangup);
         }
+
+        send_status();
+    }
+
+
+    virtual void process_invalid() override
+    {
+        snap_tcp_server_client_message_connection::process_invalid();
+
+        send_status();
     }
 
 
@@ -4139,6 +4175,7 @@ void snap_communicator_server::send_status(
 {
     snap::snap_communicator_message reply;
     reply.set_command("STATUS");
+    reply.add_parameter("cache", "no");
 
     // the name of the service is the name of the connection
     reply.add_parameter("service", connection->get_name());
