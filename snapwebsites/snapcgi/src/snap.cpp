@@ -404,7 +404,8 @@ bool snap_cgi::verify()
         //
         if(*user_agent == '\0'
         || (*user_agent == '-' && user_agent[1] == '\0')
-        || strcasestr(user_agent, "ZmEu") != nullptr)
+        || strcasestr(user_agent, "ZmEu") != nullptr
+        || strcasestr(user_agent, "libwww-perl") != nullptr)
         {
             // note that we consider "-" as empty for this test
             error("400 Bad Request", nullptr, "The agent string cannot be empty.");
