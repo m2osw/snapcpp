@@ -1,6 +1,7 @@
-snapcommunicator (1.0.31.11~xenial) xenial; urgency=high
+snapcommunicator (1.0.32.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-461: Added support for the SERVICESTATUS message.
+  * Added a call to send_status() on DISCONNECT.
 
  -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:48 -0700
 

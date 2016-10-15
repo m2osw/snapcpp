@@ -2057,6 +2057,14 @@ void server::process_message(snap_communicator_message const & message)
         isdbready_message.set_service("snapdbproxy");
         std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(isdbready_message);
 
+        // request snapcommunicator to send us a STATUS message
+        // about the current status of the snaplock service
+        //
+        snap::snap_communicator_message islockready_message;
+        islockready_message.set_command("SERVICESTATUS");
+        islockready_message.add_parameter("service", "snaplock");
+        std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(islockready_message);
+
         return;
     }
 
@@ -2091,13 +2099,25 @@ void server::process_message(snap_communicator_message const & message)
         return;
     }
 
+    if(command == "STATUS")
+    {
+        if(message.get_parameter("service") == "snaplock")
+        {
+            f_snaplock = message.has_parameter("status")
+                      && message.get_parameter("status") == "up";
+        }
+        // else -- ignore all others
+
+        return;
+    }
+
     if(command == "HELP")
     {
         snap::snap_communicator_message reply;
         reply.set_command("COMMANDS");
 
         // list of commands understood by server
-        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,RELOADCONFIG,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,RELOADCONFIG,STATUS,STOP,UNKNOWN");
 
         std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(reply);
         return;
@@ -2459,8 +2479,6 @@ void server::listen()
  */
 void server::process_connection(tcp_client_server::bio_client::pointer_t client)
 {
-    snap_child * child;
-
     // we are handling one more connection, whether it works or
     // not we increase our internal counter
     ++f_connections_count;
@@ -2475,11 +2493,24 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
                       "Connection: close\n"
                       "\n"
                       "<h1>503 Service Unavailable</h1>\n"
-                      "<p>Snap cannot find Cassandra at the moment.</p>\n");
+                      "<p>Snap cannot find <strong>Cassandra</strong> at the moment.</p>\n");
+        NOTUSED(client->write(err.c_str(), err.size()));
+    }
+    else if(!f_snaplock)
+    {
+        std::string const err("Status: 503 Service Unavailable\n"
+                      "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
+                      "Content-type: text/html\n"
+                      "Connection: close\n"
+                      "\n"
+                      "<h1>503 Service Unavailable</h1>\n"
+                      "<p>Cannot find <strong>Snap! Lock</strong> at the moment.</p>\n");
         NOTUSED(client->write(err.c_str(), err.size()));
     }
     else
     {
+        snap_child * child(nullptr);
+
         if(f_children_waiting.empty())
         {
             child = new snap_child(g_instance);

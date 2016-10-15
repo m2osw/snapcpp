@@ -312,6 +312,7 @@ protected:
     // See TODO in server::prepare_cassandra()
     QString                                 f_snapdbproxy_addr;     // NO DEFAULT, if isEmpty() then we are not connected / cannot connect to snapdbproxy
     int32_t                                 f_snapdbproxy_port = 0;
+    bool                                    f_snaplock = false;
     snap_config                             f_parameters;
 
 private:
