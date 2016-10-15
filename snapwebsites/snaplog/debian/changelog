@@ -1,8 +1,9 @@
-snaplog (1.0.2.4~xenial) xenial; urgency=high
+snaplog (1.0.2.5~xenial) xenial; urgency=high
 
   * SNAP-266: Added support for mysql.
   * Fixed errors in bundle-snaplog.xml and shortened timeout.
   * Fixed timer exception.
+  * Recovers properly when mysql goes down and comes back up.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 14 Oct 2016 20:47:37 -0700
 

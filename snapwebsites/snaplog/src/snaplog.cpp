@@ -137,15 +137,6 @@ const advgetopt::getopt::option g_snaplog_options[] =
 };
 
 
-void exec( QSqlQuery& q )
-{
-    if( !q.exec() )
-    {
-        SNAP_LOG_ERROR("Query error! [")(q.lastError().text())("], lastQuery=[")(q.lastQuery())("]");
-    }
-}
-
-
 }
 //namespace
 
@@ -428,12 +419,19 @@ void snaplog::process_timeout()
 {
     try
     {
+        SNAP_LOG_TRACE("Attempting to connect to MySQL database");
+
         QSqlDatabase db = QSqlDatabase::addDatabase( "QMYSQL" );
         if( !db.isValid() )
         {
             std::string const error( "QMYSQL database is not valid for some reason!" );
             SNAP_LOG_ERROR(error);
             throw std::runtime_error(error.c_str());
+        }
+
+        if( QSqlDatabase::database().isOpen() )
+        {
+            QSqlDatabase::database().close();
         }
         //
         db.setHostName     ( "localhost" );
@@ -462,16 +460,27 @@ void snaplog::process_timeout()
     }
     catch(std::runtime_error const &)
     {
+        SNAP_LOG_WARNING("Cannot connect to MySQL database: retrying...");
+
         // the connection failed, keep the timeout enabled and try again
         // on the next tick
         //
         no_mysql();
+
+        if(f_mysql_connect_timer_index < 60.0f)
+        {
+            // increase the delay between attempts up to 1 min.
+            //
+            f_mysql_connect_timer_index *= 2.0f;
+        }
     }
 }
 
 
 void snaplog::mysql_ready()
 {
+    SNAP_LOG_INFO("MySQL database is ready to receive requests.");
+
     // TODO: We need something to do. Set a flag? We don't need to send anything
     // across snapcomm like snapdbproxy does.
 }
@@ -479,13 +488,21 @@ void snaplog::mysql_ready()
 
 void snaplog::no_mysql()
 {
+    SNAP_LOG_TRACE("no_mysql() called.");
+
     f_timer->set_enable( true );
-    //f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) /* * 1000000LL */);
+    f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) * 1000000LL);
 }
 
 
 void snaplog::add_message_to_db( snap::snap_communicator_message const & message )
 {
+    if( !QSqlDatabase::database().isOpen() )
+    {
+        no_mysql();
+        return;
+    }
+
     // TODO: add a record to the MySQL database
     //
     SNAP_LOG_TRACE("SNAPLOG command received: server=[")(message.get_server())("], service=[")(message.get_service())("]");
@@ -513,7 +530,11 @@ void snaplog::add_message_to_db( snap::snap_communicator_message const & message
     q.bindValue( ":func",    all_parms["func"]                 );
     q.bindValue( ":message", all_parms["message"]              );
     //
-    exec( q );
+    if( !q.exec() )
+    {
+        SNAP_LOG_ERROR("Query error! [")(q.lastError().text())("], lastQuery=[")(q.lastQuery())("]");
+        no_mysql();
+    }
 }
 
 
