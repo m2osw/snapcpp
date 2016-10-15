@@ -480,7 +480,7 @@ void snaplog::mysql_ready()
 void snaplog::no_mysql()
 {
     f_timer->set_enable( true );
-    f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) * 1000000LL);
+    f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) /* * 1000000LL */);
 }
 
 
@@ -490,7 +490,12 @@ void snaplog::add_message_to_db( snap::snap_communicator_message const & message
     //
     SNAP_LOG_TRACE("SNAPLOG command received: server=[")(message.get_server())("], service=[")(message.get_service())("]");
     auto const all_parms = message.get_all_parameters();
-#if 1
+#if 0
+    for( auto key : all_parms.keys() )
+    {
+        SNAP_LOG_TRACE("parm {")(key)("} = [")(all_parms[key])("]");
+    }
+#endif
     const QString q_str("INSERT INTO snaplog.log "
             "(server, service, level, msgid, ipaddr, file, line, func, message ) "
             "VALUES "
@@ -509,12 +514,6 @@ void snaplog::add_message_to_db( snap::snap_communicator_message const & message
     q.bindValue( ":message", all_parms["message"]              );
     //
     exec( q );
-#else
-    for( auto key : all_parms.keys() )
-    {
-        SNAP_LOG_TRACE("parm {")(key)("} = [")(all_parms[key])("]");
-    }
-#endif
 }
 
 
