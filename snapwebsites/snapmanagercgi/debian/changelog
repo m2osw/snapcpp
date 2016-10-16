@@ -1,3 +1,10 @@
+snapmanagercgi (1.1.26.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Removed any Allow/Deny/Order since we remove that module.
+  * Removed the /server-status example since we remove that module.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 13:20:49 -0700
+
 snapmanagercgi (1.1.25.0~xenial) xenial; urgency=high
 
   * SNAP-481: Use 1,000 as the RLIMIT_NPROC. It is per user, not process.

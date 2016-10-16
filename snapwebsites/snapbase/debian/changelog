@@ -1,8 +1,11 @@
-snapbase (1.0.8.1~xenial) xenial; urgency=high
+snapbase (1.0.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-479: Added a snap-apache2-extra-options.conf file to replace Mutex.
+  * Try to prevent use of .htaccess files.
+  * Deny access of /usr/share directory.
+  * Made only index.html and index.htm default directory items.
 
- -- Build Server <build@m2osw.com>  Sat, 15 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 13:15:47 -0700
 
 snapbase (1.0.8.0~xenial) xenial; urgency=high
 
