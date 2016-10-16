@@ -27,6 +27,13 @@ then
     # Also turn on cgi and headers modules, enable our default apache2
     # script, and disable the existing default script
     #
+    a2dismod -qf autoindex
+    a2dismod -q status
+    a2dismod -qf auth_basic
+    a2dismod -q access_compat
+    a2dismod -q authn_core
+    a2dismod -qf authn_file
+    a2dismod -qf authz_user
     a2enmod -q cgi
     a2enmod -q headers
 
