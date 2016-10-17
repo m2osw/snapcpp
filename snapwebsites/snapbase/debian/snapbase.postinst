@@ -93,7 +93,17 @@ then
     #
     if hash a2enconf 2>/dev/null
     then
+        a2dismod -qf autoindex
+        a2dismod -q status
+        a2dismod -qf auth_basic
+        a2dismod -q access_compat
+        a2dismod -q authn_core
+        a2dismod -qf authn_file
+        a2dismod -qf authz_user
         a2enmod -q headers
+
+        a2disconf -q security
+        a2enconf -q snap-apache2-security
         a2enconf -q snap-acceptfilter
         a2enconf -q snap-httpoxy
 

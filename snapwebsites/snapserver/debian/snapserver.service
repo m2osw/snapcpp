@@ -17,6 +17,7 @@ Restart=on-failure
 RestartSec=5
 User=snapwebsites
 Group=snapwebsites
+LimitNPROC=1000
 # For developers and administrators to get console output
 #StandardOutput=tty
 #StandardError=tty

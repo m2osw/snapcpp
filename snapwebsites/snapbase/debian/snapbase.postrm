@@ -49,6 +49,8 @@ then
     #
     if hash a2enconf 2>/dev/null
     then
+        a2disconf -q snap-apache2-security
+        a2enconf -q security
         a2disconf snap-acceptfilter
         a2disconf snap-httpoxy
 
@@ -61,6 +63,7 @@ then
         # hand and then remove all the directories which should now
         # be empty
         #
+        rm -f /etc/apache2/conf-enabled/snap-apache2-security.conf
         rm -f /etc/apache2/conf-enabled/snap-acceptfilter.conf
         rm -f /etc/apache2/conf-enabled/snap-httpoxy.conf
         for dir in \

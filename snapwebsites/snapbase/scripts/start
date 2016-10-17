@@ -17,6 +17,7 @@ sleep 2
 # ready to connect to otherwise we will miss it in many cases anyway.
 
 # Start other services (comment out if you do not want to start such and such)
+BUILD/snapwebsites/snaplog/src/snaplog &
 BUILD/snapwebsites/snaplock/src/snaplock &
 BUILD/snapwebsites/snapdbproxy/src/snapdbproxy &
 BUILD/snapwebsites/snapfirewall/src/snapfirewall &

@@ -27,11 +27,22 @@ then
     # Also turn on cgi and headers modules, enable our default apache2
     # script, and disable the existing default script
     #
+    a2dismod -qf autoindex
+    a2dismod -q status
+    a2dismod -qf auth_basic
+    a2dismod -q access_compat
+    a2dismod -q authn_core
+    a2dismod -qf authn_file
+    a2dismod -qf authz_user
     a2enmod -q cgi
     a2enmod -q headers
+
+    a2disconf -q security
+    a2enconf -q snap-apache2-security
     a2enconf -q snap-acceptfilter
     a2enconf -q snap-httpoxy
     a2enconf -q snap-apache2-ssl-log
+
     a2dissite -q 000-default
     a2ensite -q 000-snap-apache2-default
 

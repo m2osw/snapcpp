@@ -4,4 +4,4 @@ usr/share/snapwebsites/logger/*
 conf/snapserver.conf etc/snapwebsites/
 conf/loggingserver.properties conf/log.properties conf/logserver.properties etc/snapwebsites/logger/
 conf/README.md etc/snapwebsites/snapwebsites.d/
-conf/snap-acceptfilter.conf conf/snap-httpoxy.conf etc/apache2/conf-available/
+conf/snap-acceptfilter.conf conf/snap-apache2-extra-options.conf conf/snap-apache2-security.conf conf/snap-httpoxy.conf etc/apache2/conf-available/

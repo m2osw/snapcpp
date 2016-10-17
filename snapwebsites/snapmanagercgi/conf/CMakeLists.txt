@@ -68,7 +68,6 @@ install(
     FILES
         # misc files
         snapmanager-apache2.conf
-        snap-bundles-apache2.conf
 
     DESTINATION
         share/snapwebsites/apache2
@@ -96,7 +95,6 @@ install(
     FILES
         # HTML files
         index.html
-        snap-bundles-footer.html
         favicon.ico
 
     DESTINATION

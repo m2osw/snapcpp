@@ -17,6 +17,7 @@ RestartSec=1h
 User=snapwebsites
 Group=snapwebsites
 Nice=10
+LimitNPROC=1000
 # For developers and administrators to get console output
 #StandardOutput=tty
 #StandardError=tty

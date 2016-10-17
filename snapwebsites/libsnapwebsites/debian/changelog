@@ -1,8 +1,16 @@
-libsnapwebsites (1.1.26.7~xenial) xenial; urgency=high
+libsnapwebsites (1.1.27.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Thu, 13 Oct 2016 02:00:45 -0700
+ -- Build Server <build@m2osw.com>  Sat, 15 Oct 2016 02:00:47 -0700
+
+libsnapwebsites (1.1.27.0~xenial) xenial; urgency=high
+
+  * SNAP-461: Added support to retrieve the status of the snaplock service.
+  * Prevent showing a website if snaplock is not running.
+  * Prevent running a backend if snaplock is not running.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 14 Oct 2016 17:19:45 -0700
 
 libsnapwebsites (1.1.26.0~xenial) xenial; urgency=high
 

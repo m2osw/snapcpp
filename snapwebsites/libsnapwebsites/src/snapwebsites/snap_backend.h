@@ -71,6 +71,7 @@ private:
     bool                                    f_emit_warning_about_missing_sites = true;
     bool                                    f_pinged = false;
     bool                                    f_global_lock = false;
+    bool                                    f_snaplock = false;
 };
 
 

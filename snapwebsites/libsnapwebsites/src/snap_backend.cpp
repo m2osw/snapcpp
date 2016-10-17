@@ -929,6 +929,16 @@ void snap_backend::process_tick()
         {
             if(!f_cron_action)
             {
+                // one reason for is_ready() to return true is if snaplock
+                // is not up yet
+                //
+                if(!f_snaplock)
+                {
+                    SNAP_LOG_FATAL("snap_backend::process_tick(): The Snap! Lock daemon is not available.");
+                    exit(1);
+                    snap::NOTREACHED();
+                }
+
                 // if we are connected to cassandra but are not marked ready
                 // that means the "sites" table is not yet defined
                 //
@@ -1216,6 +1226,14 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         isdbready_message.set_service("snapdbproxy");
         g_messenger->send_message(isdbready_message);
 
+        // request snapcommunicator to send us a STATUS message
+        // about the current status of the snaplock service
+        //
+        snap::snap_communicator_message islockready_message;
+        islockready_message.set_command("SERVICESTATUS");
+        islockready_message.add_parameter("service", "snaplock");
+        g_messenger->send_message(islockready_message);
+
         return;
     }
 
@@ -1256,6 +1274,18 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         return;
     }
 
+    if(command == "STATUS")
+    {
+        if(message.get_parameter("service") == "snaplock")
+        {
+            f_snaplock = message.has_parameter("status")
+                      && message.get_parameter("status") == "up";
+        }
+        // else -- ignore all others
+
+        return;
+    }
+
     if(command == "HELP")
     {
         // Snap! Communicator is asking us about the commands that we support
@@ -1265,7 +1295,7 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,PING,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,PING,QUITTING,READY,STATUS,STOP,UNKNOWN");
 
         g_messenger->send_message(reply);
         return;
@@ -1600,6 +1630,14 @@ bool snap_backend::is_ready(QString const & uri)
             // we are in the NOCASSANDRA to CASSANDRAREADY window
             return false;
         }
+    }
+
+    if(!f_snaplock)
+    {
+        // we are waiting on the "snaplock" daemon to be registered as
+        // a service to the "snapcommunicator"
+        //
+        return false;
     }
 
     if(!f_sites_table)

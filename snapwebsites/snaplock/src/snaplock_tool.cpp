@@ -127,11 +127,11 @@ void snaplock_tool::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
-    snap::snap_communicator_message register_snapdbproxy;
-    register_snapdbproxy.set_command("REGISTER");
-    register_snapdbproxy.add_parameter("service", "snaplocktool");
-    register_snapdbproxy.add_parameter("version", snap::snap_communicator::VERSION);
-    send_message(register_snapdbproxy);
+    snap::snap_communicator_message register_snaplock;
+    register_snaplock.set_command("REGISTER");
+    register_snaplock.add_parameter("service", "snaplocktool");
+    register_snaplock.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_snaplock);
 }
 
 

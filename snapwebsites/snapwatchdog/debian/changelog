@@ -1,8 +1,21 @@
-snapwatchdog (0.2.9.8~xenial) xenial; urgency=high
+snapwatchdog (0.2.11.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 15:47:53 -0700
+ -- Build Server <build@m2osw.com>  Mon, 17 Oct 2016 02:00:47 -0700
+
+snapwatchdog (0.2.11.0~xenial) xenial; urgency=high
+
+  * SNAP-481: Use 1,000 as the RLIMIT_NPROC. It is per user, not process.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 17:59:49 -0700
+
+snapwatchdog (0.2.10.0~xenial) xenial; urgency=high
+
+  * SNAP-473: Drastically limit the number of sub-processes the snapbackend
+    can create between 100 and 1,000.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 12:07:49 -0700
 
 snapwatchdog (0.2.9.0~xenial) xenial; urgency=high
 
@@ -11,12 +24,6 @@ snapwatchdog (0.2.9.0~xenial) xenial; urgency=high
   * Also took out all loggingserver API and properties files.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 12 Oct 2016 14:51:37 -0700
-
-snapwatchdog (0.2.8.22~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 27 Sep 2016 17:40:40 -0700
 
 snapwatchdog (0.2.8.0~xenial) xenial; urgency=high
 

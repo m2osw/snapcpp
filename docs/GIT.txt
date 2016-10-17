@@ -84,5 +84,10 @@ git branch -d "branch-name"    # delete a branch
 git fetch                      # fetch all (including remote) branches
 git diff "branch-nameA" "branch-nameB" -- "filename"   # diff "filename" between two branches
 
+# If you already have changes that you want to save in a different branch:
+git branch "branch-name"
+git checkout "branch-name"
+git commit "branch-name"
+
 
 # vim: syntax=sh

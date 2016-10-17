@@ -1,8 +1,54 @@
-snapmanagercgi (1.1.22.7~xenial) xenial; urgency=high
+snapmanagercgi (1.1.28.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Thu, 13 Oct 2016 02:00:44 -0700
+ -- Build Server <build@m2osw.com>  Mon, 17 Oct 2016 02:00:47 -0700
+
+snapmanagercgi (1.1.28.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Removed the snap-bundles-footer from the install.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 23:25:49 -0700
+
+snapmanagercgi (1.1.28.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Removed the snapmanagerbuild.install.
+  * Moved the footer to the build-system instead.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 21:20:49 -0700
+
+snapmanagercgi (1.1.27.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Verify the HTTP version. It must be 1.0 or 1.1.
+  * Removed the installation of the Apache2 bundle configuration file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 21:20:49 -0700
+
+snapmanagercgi (1.1.26.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Removed any Allow/Deny/Order since we remove that module.
+  * Removed the /server-status example since we remove that module.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 13:20:49 -0700
+
+snapmanagercgi (1.1.25.0~xenial) xenial; urgency=high
+
+  * SNAP-481: Use 1,000 as the RLIMIT_NPROC. It is per user, not process.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 17:59:49 -0700
+
+snapmanagercgi (1.1.24.0~xenial) xenial; urgency=high
+
+  * SNAP-481: Drastically limit the number of sub-processes the snapbackend
+    can create between 100 and 1,000.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 Oct 2016 12:07:49 -0700
+
+snapmanagercgi (1.1.23.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Added the snap-apache2-security.conf file to replace secure.conf.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 14 Oct 2016 22:06:44 -0700
 
 snapmanagercgi (1.1.22.0~xenial) xenial; urgency=high
 

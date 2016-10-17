@@ -389,7 +389,7 @@ public:
     // one place where all messages get processed
     void                        process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp);
 
-    void                        send_status(snap::snap_communicator::snap_connection::pointer_t connection);
+    void                        send_status(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator::snap_connection::pointer_t * reply_connection = nullptr);
     QString                     get_local_services() const;
     QString                     get_services_heard_of() const;
     void                        add_neighbors(QString const & new_neighbors);
@@ -1454,7 +1454,7 @@ public:
      * When a connection goes down it gets deleted. This is when we can
      * send a new STATUS event to all the other STATUS hungry connections.
      */
-    ~service_connection()
+    virtual ~service_connection() override
     {
         // save when it is ending in case we did not get a DISCONNECT
         // or an UNREGISTER event
@@ -1486,7 +1486,7 @@ public:
 
 
     // snap::snap_communicator::snap_tcp_server_client_message_connection implementation
-    virtual void process_message(snap::snap_communicator_message const & message)
+    virtual void process_message(snap::snap_communicator_message const & message) override
     {
         // make sure the destination knows who sent that message so it
         // is possible to directly reply to that specific instance of
@@ -1506,6 +1506,22 @@ public:
     }
 
 
+    /** \brief We are losing the connection, send a STATUS message.
+     *
+     * This function is called in all cases where the connection is
+     * lost so we can send a STATUS message with information saying
+     * that the connection is gone.
+     */
+    void send_status()
+    {
+        // mark connection as down before we call the send_status()
+        //
+        set_connection_type(connection_type_t::CONNECTION_TYPE_DOWN);
+
+        f_communicator_server->send_status(shared_from_this());
+    }
+
+
     /** \brief Remove ourselves when we receive a timeout.
      *
      * Whenever we receive a shutdown, we have to remove everything but
@@ -1513,9 +1529,19 @@ public:
      * the timeout which happens after we finalize all read and write
      * callbacks.
      */
-    virtual void process_timeout()
+    virtual void process_timeout() override
     {
         remove_from_communicator();
+
+        send_status();
+    }
+
+
+    virtual void process_error() override
+    {
+        snap_tcp_server_client_message_connection::process_error();
+
+        send_status();
     }
 
 
@@ -1526,7 +1552,7 @@ public:
      * example.) So we handle the process_hup() event and send a
      * HANGUP if this connection is a remote connection.
      */
-    virtual void process_hup()
+    virtual void process_hup() override
     {
         snap_tcp_server_client_message_connection::process_hup();
 
@@ -1539,6 +1565,16 @@ public:
             hangup.add_parameter("server_name", get_server_name());
             f_communicator_server->broadcast_message(hangup);
         }
+
+        send_status();
+    }
+
+
+    virtual void process_invalid() override
+    {
+        snap_tcp_server_client_message_connection::process_invalid();
+
+        send_status();
     }
 
 
@@ -2850,6 +2886,10 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                       (type == base_connection::connection_type_t::CONNECTION_TYPE_DOWN ? "down" : "client")
                                       (").");
                     }
+
+                    // status changed for this connection
+                    //
+                    send_status(connection);
                     return;
                 }
             }
@@ -3363,6 +3403,39 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             else if(command == "STOP")
             {
                 shutdown(false);
+                return;
+            }
+            else if(command == "SERVICESTATUS")
+            {
+                QString const & service_name(message.get_parameter("service"));
+                if(service_name.isEmpty())
+                {
+                    SNAP_LOG_ERROR("The SERVICESTATUS service parameter cannot be an empty string.");
+                    return;
+                }
+                snap::snap_communicator::snap_connection::vector_t const & named_connections(f_communicator->get_connections());
+                auto const named_service(std::find_if(
+                              named_connections.begin()
+                            , named_connections.end()
+                            , [service_name](auto const & named_connection)
+                            {
+                                return named_connection->get_name() == service_name;
+                            }));
+                if(named_service == named_connections.end())
+                {
+                    // service is totally unknown
+                    //
+                    // create a fake connection so we can call the
+                    // send_status() function
+                    //
+                    snap::snap_communicator::snap_connection::pointer_t fake_connection(std::make_shared<snap::snap_communicator::snap_timer>(0));
+                    fake_connection->set_name(service_name);
+                    send_status(fake_connection, &connection);
+                }
+                else
+                {
+                    send_status(*named_service, &connection);
+                }
                 return;
             }
             break;
@@ -4093,11 +4166,16 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
  * changes (specifically, on a REGISTER and on an UNREGISTER or equivalent.)
  *
  * \param[in] client  The client that just had its status changed.
+ * \param[in] reply_connection  If not nullptr, the connection where the
+ *                              STATUS message gets sent.
  */
-void snap_communicator_server::send_status(snap::snap_communicator::snap_connection::pointer_t connection)
+void snap_communicator_server::send_status(
+              snap::snap_communicator::snap_connection::pointer_t connection
+            , snap::snap_communicator::snap_connection::pointer_t * reply_connection)
 {
     snap::snap_communicator_message reply;
     reply.set_command("STATUS");
+    reply.add_parameter("cache", "no");
 
     // the name of the service is the name of the connection
     reply.add_parameter("service", connection->get_name());
@@ -4124,26 +4202,41 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
         }
     }
 
-    // we have the message, now we need to find the list of connections
-    // interested by the STATUS event
-    // TODO: cache that list?
-    // TODO: use the broadcast_message() function instead? (with service set to ".")
-    //
-    snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
-    for(auto const & conn : all_connections)
+    if(reply_connection != nullptr)
     {
-        service_connection::pointer_t sc(std::dynamic_pointer_cast<service_connection>(conn));
-        if(!sc)
+        service_connection::pointer_t sc(std::dynamic_pointer_cast<service_connection>(*reply_connection));
+        if(sc)
         {
-            // not a service_connection, ignore (i.e. servers)
-            continue;
-        }
-
-        if(sc->understand_command("STATUS"))
-        {
-            // send that STATUS message
-            //verify_command(sc, reply); -- we reach this line only if the command is understood
+            // if the verify_command() fails then it means the caller has to
+            // create a handler for the STATUS message
+            //
+            verify_command(sc, reply);
             sc->send_message(reply);
+        }
+    }
+    else
+    {
+        // we have the message, now we need to find the list of connections
+        // interested by the STATUS event
+        //
+        // TODO: use the broadcast_message() function instead? (with service set to ".")
+        //
+        snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
+        for(auto const & conn : all_connections)
+        {
+            service_connection::pointer_t sc(std::dynamic_pointer_cast<service_connection>(conn));
+            if(!sc)
+            {
+                // not a service_connection, ignore (i.e. servers)
+                continue;
+            }
+
+            if(sc->understand_command("STATUS"))
+            {
+                // send that STATUS message
+                //verify_command(sc, reply); -- we reach this line only if the command is understood
+                sc->send_message(reply);
+            }
         }
     }
 }

@@ -49,6 +49,9 @@ install(
 install(
     FILES
         # snap configuration files (shared between snapbackend and snapserver)
+        snap-acceptfilter.conf
+        snap-apache2-extra-options.conf
+        snap-apache2-security.conf
         snap-httpoxy.conf
 
     DESTINATION
