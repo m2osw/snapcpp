@@ -1,3 +1,10 @@
+snapbase (1.0.10.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Finished up setting up the CIS recommendations.
+  * Install the snap-apache2-extra-options.conf file under /usr/share/...
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 21:18:47 -0700
+
 snapbase (1.0.9.0~xenial) xenial; urgency=high
 
   * SNAP-479: Added a snap-apache2-extra-options.conf file to replace Mutex.

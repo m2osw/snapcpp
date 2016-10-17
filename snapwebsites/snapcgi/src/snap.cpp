@@ -287,6 +287,73 @@ bool snap_cgi::verify()
         }
     }
 
+    // catch "invalid" protocols early so we do not waste
+    // any time with protocols we do not support at all
+    //
+    {
+        // WARNING: do not use std::string because nullptr will crash
+        //
+        char const * server_protocol(getenv("SERVER_PROTOCOL"));
+        if(server_protocol == nullptr)
+        {
+            // Frankly this should never happen here, Apache2 should refuse
+            // such early on.
+            //
+            error("400 Bad Request", nullptr, "The SERVER_PROTOCOL parameter is not available.");
+            return false;
+        }
+        if(server_protocol[0] != 'H'
+        || server_protocol[1] != 'T'
+        || server_protocol[2] != 'T'
+        || server_protocol[3] != 'P'
+        || server_protocol[4] != '/')
+        {
+            // Again, I would hope that Apache refuses anything that does not
+            // say HTTP in the server protocol without sending it to us
+            //
+            error(
+                "400 Bad Request",
+                "We only support the HTTP protocol.",
+                ("Unexpected protocol in \"" + std::string(server_protocol) + "\", not supported.").c_str());
+            return false;
+        }
+        // we only support "[0-9].[0-9]" at the moment
+        //
+        if((server_protocol[5] < '0' || server_protocol[5] > '9')
+        || server_protocol[6] != '.'
+        || (server_protocol[7] < '0' || server_protocol[7] > '9')
+        || server_protocol[8] != '\0')
+        {
+            // Again, I would hope that Apache refuses anything that does not
+            // say HTTP in the server protocol without sending it to us
+            //
+            error(
+                "400 Bad Request",
+                "Protocol must be followed by a valid version.",
+                ("Unexpected protocol version in \"" + std::string(server_protocol) + "\", not supported.").c_str());
+            return false;
+        }
+        uint32_t const version(((server_protocol[5] - '0') << 16) + server_protocol[7] - '0');
+        switch(version)
+        {
+        case 0x00010000:
+        case 0x00010001:
+            // we understand those
+            break;
+
+        default:
+            // In this case, Apache may let it through... we only
+            // support version 1.0 and 1.1 at the moment
+            //
+            error(
+                "400 Bad Request",
+                "Protocol version not supported.",
+                ("Protocol version is not 1.0 or 1.1, \"" + std::string(server_protocol) + "\" is not supported.").c_str());
+            return false;
+
+        }
+    }
+
     char const * remote_addr(getenv("REMOTE_ADDR"));
     if(remote_addr == nullptr)
     {
@@ -356,7 +423,7 @@ bool snap_cgi::verify()
             return false;
         }
 
-        // TBD: we could test <protocol>:// instead of specifically http
+        // TBD: we could test <protocol>:// instead of specifically http[s]
         //
         if(strncasecmp(request_uri, "http://", 7) == 0
         || strncasecmp(request_uri, "https://", 8) == 0)

@@ -1,8 +1,10 @@
-snapcgi (1.0.10.1~xenial) xenial; urgency=high
+snapcgi (1.0.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-479: Added a couple lines of settings, but commented out because
+    generally useless (i.e. SSL stapling is not useful with SSL bundles.)
+  * Verify the HTTP version. It must be 1.0 or 1.1.
 
- -- Build Server <build@m2osw.com>  Sat, 15 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 21:20:49 -0700
 
 snapcgi (1.0.10.0~xenial) xenial; urgency=high
 

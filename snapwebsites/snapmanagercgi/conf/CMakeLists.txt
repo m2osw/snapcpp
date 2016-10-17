@@ -68,7 +68,6 @@ install(
     FILES
         # misc files
         snapmanager-apache2.conf
-        snap-bundles-apache2.conf
 
     DESTINATION
         share/snapwebsites/apache2
