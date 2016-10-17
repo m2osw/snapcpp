@@ -1,5 +1,11 @@
 snapmanagercgi (1.1.28.0~xenial) xenial; urgency=high
 
+  * SNAP-479: Removed the snap-bundles-footer from the install.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 16 Oct 2016 23:25:49 -0700
+
+snapmanagercgi (1.1.28.0~xenial) xenial; urgency=high
+
   * SNAP-479: Removed the snapmanagerbuild.install.
   * Moved the footer to the build-system instead.
 
