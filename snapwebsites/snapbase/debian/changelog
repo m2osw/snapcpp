@@ -1,3 +1,9 @@
+snapbase (1.0.11.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Fixed the spelling of "mod" (no 'e').
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 17 Oct 2016 00:53:47 -0700
+
 snapbase (1.0.10.0~xenial) xenial; urgency=high
 
   * SNAP-479: Finished up setting up the CIS recommendations.
