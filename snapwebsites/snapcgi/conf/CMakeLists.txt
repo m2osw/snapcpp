@@ -53,8 +53,6 @@ install(
         # misc files
         000-snap-apache2-default.conf
         snap-apache2.conf
-        snap-apache2-ssl.conf
-        snap-apache2-ssl-log.conf
 
     DESTINATION
         share/snapwebsites/apache2

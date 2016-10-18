@@ -52,6 +52,8 @@ install(
         snap-acceptfilter.conf
         snap-apache2-extra-options.conf
         snap-apache2-security.conf
+        snap-apache2-ssl.conf
+        snap-apache2-ssl-log.conf
         snap-httpoxy.conf
 
     DESTINATION
