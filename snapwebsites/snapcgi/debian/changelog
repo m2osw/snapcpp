@@ -1,3 +1,9 @@
+snapcgi (1.0.11.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 17 Oct 2016 02:00:48 -0700
+
 snapcgi (1.0.11.0~xenial) xenial; urgency=high
 
   * SNAP-479: Added a couple lines of settings, but commented out because
