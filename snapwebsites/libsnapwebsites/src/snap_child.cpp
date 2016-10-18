@@ -2825,6 +2825,8 @@ pid_t snap_child::fork_child()
             // always reconfigure the logger in the child
             logging::reconfigure();
 
+            SNAP_LOG_TRACE("snap_child::fork_child() just hooked up logging!");
+
             // it could be that the prctrl() was made after the true parent died...
             // so we have to test the PID of our parent
             //

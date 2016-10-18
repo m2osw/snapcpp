@@ -514,12 +514,13 @@ void snaplog::add_message_to_db( snap::snap_communicator_message const & message
     }
 #endif
     const QString q_str("INSERT INTO snaplog.log "
-            "(server, service, level, msgid, ipaddr, file, line, func, message ) "
+            "(command, server, service, level, msgid, ipaddr, file, line, func, message ) "
             "VALUES "
-            "(:server, :service, :level, :msgid, :ipaddr, :file, :line, :func, :message );");
+            "(:command,:server, :service, :level, :msgid, :ipaddr, :file, :line, :func, :message );");
     QSqlQuery q;
     q.prepare( q_str );
     //
+    q.bindValue( ":command", message.get_command()             );
     q.bindValue( ":server",  message.get_sent_from_server()    );
     q.bindValue( ":service", message.get_sent_from_service()   );
     q.bindValue( ":level",   all_parms["level"]                );
