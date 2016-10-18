@@ -1,8 +1,8 @@
-snapcgi (1.0.11.2~xenial) xenial; urgency=high
+snapcgi (1.0.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-479: Moving the SSL configuration and log format to snapbase.
 
- -- Build Server <build@m2osw.com>  Mon, 17 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 17 Oct 2016 23:57:47 -0700
 
 snapcgi (1.0.11.0~xenial) xenial; urgency=high
 

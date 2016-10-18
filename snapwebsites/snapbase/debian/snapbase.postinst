@@ -106,6 +106,7 @@ then
         a2enconf -q snap-apache2-security
         a2enconf -q snap-acceptfilter
         a2enconf -q snap-httpoxy
+        a2enconf -q snap-apache2-ssl-log
 
         # make sure to force a reload or that's going to be useless
         #

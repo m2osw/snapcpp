@@ -65,6 +65,7 @@ then
     a2enconf -q snap-apache2-security
     a2enconf -q snap-acceptfilter
     a2enconf -q snap-httpoxy
+    a2enconf -q snap-apache2-ssl-log
 
     # By default the reqtimeout module is not enabled
     # Note that the default configuration of reqtimeout is just fine
