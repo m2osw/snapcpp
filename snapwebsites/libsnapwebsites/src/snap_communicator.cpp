@@ -6042,7 +6042,7 @@ bool snap_communicator::run()
                 throw snap_communicator_runtime_error("poll() returned a number larger than the input");
             }
 //std::cerr << getpid() << ": ------------------- new set of " << r << " events to handle\n";
-            //SNAP_LOG_TRACE("snap_communicator::run(): ------------------- new set of ")(r)(" events to handle");
+            //SNAP_LOG_TRACE("tid=")(gettid())(", snap_communicator::run(): ------------------- new set of ")(r)(" events to handle");
 
             // check each connection one by one for:
             //

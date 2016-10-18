@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <wait.h>
 #include <sys/prctl.h>
+#include <sys/syscall.h>
 
 #include <QDirIterator>
 
@@ -98,6 +99,20 @@ namespace snap
 
 namespace
 {
+
+
+/** \brief Retrieve the current thread identifier.
+ *
+ * This function retrieves the current thread identifier.
+ *
+ * \return The thread identifier, which is a pid_t specific to each thread
+ *         of a process.
+ */
+pid_t gettid()
+{
+    return syscall(SYS_gettid);
+}
+
 
 // list of plugins that we cannot do without
 char const * g_minimum_plugins[] =
@@ -2406,8 +2421,11 @@ snap_child::snap_child(server_pointer_t s)
     //, f_child_pid(0) -- auto-init
     //, f_socket(-1) -- auto-init
     , f_start_date(0)
+    , f_messenger_runner(this)
+    , f_messenger_thread("background messenger connection thread", &f_messenger_runner)
 {
 }
+
 
 /** \brief Clean up a child process.
  *
@@ -2575,6 +2593,159 @@ void snap_child::set_locale(QString const & locale)
 }
 
 
+void snap_child::connect_messenger()
+{
+    auto server( f_server.lock() );
+    f_communicator = snap_communicator::instance();
+
+    QString communicator_addr("127.0.0.1");
+    int communicator_port(4040);
+    tcp_client_server::get_addr_port
+            ( QString::fromUtf8(server->get_parameters()("snapcommunicator", "local_listen").c_str())
+            , communicator_addr
+            , communicator_port
+            , "tcp"
+            );
+
+    // Create a new child_messenger object
+    //
+    f_messenger.reset(new child_messenger(this, communicator_addr.toUtf8().data(), communicator_port ));
+    f_messenger->set_name("child_messenger");
+    f_messenger->set_priority(50);
+
+    // Add it into the instance list.
+    //
+    f_communicator->add_connection( f_messenger );
+
+    // Add this to the logging facility so we can broadcast logs to snaplog via snapcommunicator.
+    //
+    server->configure_messenger_logging(
+        std::static_pointer_cast<snap_communicator::snap_tcp_client_permanent_message_connection>( f_messenger )
+    );
+
+    if(!f_messenger_thread.start())
+    {
+        SNAP_LOG_ERROR("The thread used to run the background connection process did not start.");
+    }
+}
+
+
+void snap_child::stop_messenger()
+{
+    // This causes the background thread to stop.
+    //
+    f_communicator->remove_connection( f_messenger );
+}
+
+
+/** \brief Initialize the child_messenger connection.
+ *
+ * This function initializes the child_messenger connection. It saves
+ * a pointer to the main Snap! server so it can react appropriately
+ * whenever a message is received.
+ *
+ * \param[in] s           A pointer to the server so we can send messages there.
+ * \param[in] addr        The address of the snapcommunicator server.
+ * \param[in] port        The port of the snapcommunicator server.
+ * \param[in] use_thread  If set to true, a thread is being used to connect to the server.
+ */
+snap_child::child_messenger::child_messenger(snap_child * s, std::string const & addr, int port )
+    : snap_tcp_client_permanent_message_connection
+      (   addr
+        , port
+        , tcp_client_server::bio_client::mode_t::MODE_PLAIN
+        , snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING
+        , true /*use_thread*/
+      )
+    , f_child(s)
+    , f_service_name( QString("snap_child_%1").arg(gettid()) )
+{
+}
+
+
+/** \brief Process a message we just received.
+ *
+ * This function is called whenever the snapcommunicator received and
+ * decided to forward a message to us.
+ *
+ * \param[in] message  The message we just recieved.
+ */
+void snap_child::child_messenger::process_message(snap_communicator_message const & message)
+{
+    QString const command(message.get_command());
+    if(command == "HELP")
+    {
+        // snapcommunicator wants us to tell it what commands
+        // we accept
+        snap_communicator_message commands_message;
+        commands_message.set_command("COMMANDS");
+        commands_message.add_parameter("list", "HELP,QUITTING,READY,STOP,UNKNOWN");
+        send_message(commands_message);
+        return;
+    }
+    else if(command == "QUITTING")
+    {
+        SNAP_LOG_WARNING("We received the QUITTING command.");
+        f_child->stop_messenger();
+        return;
+    }
+    else if(command == "READY")
+    {
+        // the REGISTER worked, wait for the HELP message
+        return;
+    }
+    else if(command == "STOP")
+    {
+        SNAP_LOG_WARNING("we received the STOP command.");
+        f_child->stop_messenger();
+        return;
+    }
+    else if(command == "UNKNOWN")
+    {
+        // we sent a command that Snap! Communicator did not understand
+        //
+        SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+        return;
+    }
+}
+
+
+/** \brief Process was just connected.
+ *
+ * This callback happens whenever a new connection is established.
+ * It sends a REGISTER command to the snapcommunicator. The READY
+ * reply will be received when process_message() gets called. At
+ * that point we are fully registered.
+ *
+ * This callback happens first so if we lose our connection to
+ * the snapcommunicator server, it will re-register the snapserver
+ * again as expected.
+ */
+void snap_child::child_messenger::process_connected()
+{
+    snap_tcp_client_permanent_message_connection::process_connected();
+
+    snap::snap_communicator_message register_snapserver;
+    register_snapserver.set_command("REGISTER");
+    register_snapserver.add_parameter("service", f_service_name);
+    register_snapserver.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_snapserver);
+}
+
+
+snap_child::messenger_runner::messenger_runner( snap_child* sc )
+    : snap_runner("background snap_tcp_client_permanent_message_connection for asynchroneous connections")
+    , f_child(sc)
+{
+}
+
+
+void snap_child::messenger_runner::run()
+{
+    f_child->f_communicator->run();
+}
+
+
 /** \brief Fork the child process.
  *
  * Use this method to fork child processes. If SNAP_NO_FORK is on,
@@ -2646,13 +2817,15 @@ pid_t snap_child::fork_child()
             prctl(PR_SET_PDEATHSIG, SIGHUP);
 
             // Since we are in the child instance, we don't want the same object as was running in the server.
-            // So we need to remove the only messenger connection, create a new one, register it, and add it
+            // So we need to create a new snapcommunicator connection, register it, and add it
             // into the logging facility.
             //
-            //server->create_messenger_instance( true /*use_threads*/ );
+            connect_messenger();
 
             // always reconfigure the logger in the child
             logging::reconfigure();
+
+            SNAP_LOG_TRACE("snap_child::fork_child() just hooked up logging!");
 
             // it could be that the prctrl() was made after the true parent died...
             // so we have to test the PID of our parent

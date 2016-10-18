@@ -70,11 +70,17 @@
  * + execv() as we do to run iptables.)
  *
  * \param[in] sfw  The snap firewall server we are listening for.
- * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
- * \param[in] port  The port to listen on (4040).
+ * \param[in] addr The address to connect to. Most often it is 127.0.0.1.
+ * \param[in] port The port to listen on (4040).
  */
-snaplog_messenger::snaplog_messenger(snaplog * proxy, std::string const & addr, int port)
-    : snap_tcp_client_permanent_message_connection(addr, port)
+snaplog_messenger::snaplog_messenger( snaplog * proxy, std::string const & addr, int port )
+    : snap_tcp_client_permanent_message_connection
+      ( addr
+      , port
+      , tcp_client_server::bio_client::mode_t::MODE_PLAIN
+      , snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING
+      , false /*use_threads*/
+      )
     , f_snaplog(proxy)
 {
     set_name("snaplog messenger");

@@ -20,7 +20,9 @@
 //
 #include "snapwebsites/cache_control.h"
 #include "snapwebsites/http_cookie.h"
+#include "snapwebsites/snap_communicator.h"
 #include "snapwebsites/snap_signals.h"
+#include "snapwebsites/snap_thread.h"
 #include "snapwebsites/snap_uri.h"
 #include "snapwebsites/snap_version.h"
 #include "snapwebsites/tcp_client_server.h"
@@ -515,6 +517,51 @@ private:
     cache_control_settings                      f_client_cache_control;
     cache_control_settings                      f_server_cache_control;
     cache_control_settings                      f_page_cache_control;
+
+    //======================================================================
+    class messenger_runner
+        : public snap_thread::snap_runner
+    {
+    public:
+        messenger_runner( snap_child* sc );
+
+        virtual void run() override;
+
+    private:
+        snap_child* f_child;
+    };
+
+    friend class messenger_runner;
+
+
+    class child_messenger
+            : public snap_communicator::snap_tcp_client_permanent_message_connection
+    {
+    public:
+        typedef std::shared_ptr<child_messenger> pointer_t;
+
+        child_messenger( snap_child * s
+                 , std::string const & addr
+                 , int port
+                 );
+
+        virtual void process_message( snap_communicator_message const & message ) override;
+        virtual void process_connected() override;
+
+    private:
+        snap_child *        f_child;
+        QString             f_service_name;
+    };
+
+    friend class child_messenger;
+
+    messenger_runner                f_messenger_runner;
+    snap::snap_thread               f_messenger_thread;
+    snap_communicator::pointer_t    f_communicator;
+    child_messenger::pointer_t      f_messenger;
+
+    void connect_messenger();
+    void stop_messenger();
 };
 
 typedef std::vector<snap_child *> snap_child_vector_t;

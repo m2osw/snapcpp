@@ -278,6 +278,8 @@ public:
     void                udp_rusage(QString const & process_name);
     static void         block_ip( QString const & uri, QString const & period = "" );
 
+    const snap_config&  get_parameters() const;
+
 #ifdef SNAP_NO_FORK
     bool nofork() const;
 #endif

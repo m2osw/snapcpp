@@ -1,3 +1,18 @@
+snaplog (1.0.4.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 16 Oct 2016 11:48:16 -0700
+
+snaplog (1.0.4.0~xenial) xenial; urgency=high
+
+  * SNAP-266: Added support for mysql.
+  * Fixed errors in bundle-snaplog.xml and shortened timeout.
+  * Fixed timer exception.
+  * Recovers properly when mysql goes down and comes back up.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 14 Oct 2016 20:47:37 -0700
+
 snaplog (1.0.3.1~xenial) xenial; urgency=high
 
   * Nightly build.

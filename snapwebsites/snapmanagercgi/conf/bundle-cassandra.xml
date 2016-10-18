@@ -33,9 +33,10 @@
     # Cassandra from Apache2
     echo "# Info from http://docs.datastax.com/en/cassandra/3.x/cassandra/install/installDeb.html" > /etc/apt/sources.list.d/cassandra.list
     echo "#deb http://debian.datastax.com/datastax-ddc 3.5 main" >> /etc/apt/sources.list.d/cassandra.list
-    echo "deb http://www.apache.org/dist/cassandra/debian 37x main" >> /etc/apt/sources.list.d/cassandra.list
-    gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D
-    gpg --export --armor F758CE318D77295D | sudo apt-key add -
+    echo "deb http://www.apache.org/dist/cassandra/debian 39x main" >> /etc/apt/sources.list.d/cassandra.list
+    CASSKEY=A278B781FE4B2BDA
+    gpg --keyserver pgp.mit.edu --recv-keys ${CASSKEY}
+    gpg --export --armor ${CASSKEY} | sudo apt-key add -
     gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00
     gpg --export --armor 2B5C1B00 | sudo apt-key add -
     gpg --keyserver pgp.mit.edu --recv-keys 0353B12C
