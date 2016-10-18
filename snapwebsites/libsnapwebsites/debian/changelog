@@ -1,6 +1,6 @@
-libsnapwebsites (1.1.27.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.28.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-266: Check whether there is a messenger before getting an instance.
 
  -- Build Server <build@m2osw.com>  Sat, 15 Oct 2016 02:00:47 -0700
 

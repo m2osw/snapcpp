@@ -671,9 +671,12 @@ void configure_conffile(QString const & filename)
 
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
-    g_messenger_logger      = log4cplus::Logger::getInstance("messenger");
 
     g_messenger_logger_initialized = logger_exists("messenger");
+    if(g_messenger_logger_initialized)
+    {
+        g_messenger_logger = log4cplus::Logger::getInstance("messenger");
+    }
 }
 
 

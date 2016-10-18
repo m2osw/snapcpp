@@ -1,3 +1,9 @@
+snapbase (1.0.13.0~xenial) xenial; urgency=high
+
+  * SNAP-479: Moved the special rule to change the permissions on ssl-snap.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Oct 2016 10:14:47 -0700
+
 snapbase (1.0.12.0~xenial) xenial; urgency=high
 
   * SNAP-479: Moving the SSL configuration and log format to snapbase.
