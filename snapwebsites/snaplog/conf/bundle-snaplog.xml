@@ -49,7 +49,6 @@ CREATE DATABASE snaplog;
 CREATE TABLE snaplog.log
   ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT
   , timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
-  , command     VARCHAR(30)
   , server      VARCHAR(25)
   , service     VARCHAR(25)
   , level       VARCHAR(10)
