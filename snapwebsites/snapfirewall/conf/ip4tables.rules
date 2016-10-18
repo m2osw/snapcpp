@@ -77,8 +77,8 @@
 # Reject anything else!
 -A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "block service: " --log-uid
 -A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "block service: " --log-uid
--A INPUT -i @PUBLIC_INTERFACE@ -p all -j REJECT
--A INPUT -i @PRIVATE_INTERFACE@ -p all -j REJECT
+-A INPUT -i @PUBLIC_INTERFACE@ -p all -j DROP
+-A INPUT -i @PRIVATE_INTERFACE@ -p all -j DROP
 
 
 ###################
