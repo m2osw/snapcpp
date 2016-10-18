@@ -1,8 +1,8 @@
-snapcommunicator (1.0.34.2~xenial) xenial; urgency=high
+snapcommunicator (1.0.35.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-266: Hide the SNAPLOG from the snapcommunicator trace.
 
- -- Build Server <build@m2osw.com>  Mon, 17 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 18 Oct 2016 12:00:47 -0700
 
 snapcommunicator (1.0.34.0~xenial) xenial; urgency=high
 

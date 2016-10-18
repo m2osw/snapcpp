@@ -2344,7 +2344,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
      && !sent_from_service.startsWith("lock_")
      && (command != "REGISTER"
          || !message.has_parameter("service")
-         || !message.get_parameter("service").startsWith("lock_"))))
+         || !message.get_parameter("service").startsWith("lock_"))
+     && command != "SNAPLOG"))
     {
         SNAP_LOG_TRACE("received command=[")(command)
                 ("], server_name=[")(server_name)("], service=[")(service)

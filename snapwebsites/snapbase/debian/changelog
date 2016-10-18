@@ -1,3 +1,9 @@
+snapbase (1.0.14.0~xenial) xenial; urgency=high
+
+  * SNAP-479: One of the directory names needed updating.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 18 Oct 2016 11:53:47 -0700
+
 snapbase (1.0.13.0~xenial) xenial; urgency=high
 
   * SNAP-479: Moved the special rule to change the permissions on ssl-snap.
