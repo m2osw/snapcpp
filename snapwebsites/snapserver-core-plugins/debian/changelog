@@ -1,8 +1,10 @@
-snapserver-core-plugins (1.0.12.9~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-276: Fixed the check of bounced emails: it was using == instead of !=.
+  * Fixed the 4 months calculation, it needed to be in microseconds.
+  * Added a script to generate the 4 bounce fields for test purposes.
 
- -- Build Server <build@m2osw.com>  Thu, 13 Oct 2016 17:10:21 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 19 Oct 2016 10:35:21 -0700
 
 snapserver-core-plugins (1.0.12.0~xenial) xenial; urgency=high
 

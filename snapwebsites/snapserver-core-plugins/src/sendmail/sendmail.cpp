@@ -1796,12 +1796,12 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
                     // if we tried more than 4 months ago, we can try again
                     // (i.e. the user may have been created in the meantime)
                     //
-                    if(f_snap->get_start_date() > arrival_date_us + 86400 * 124)
+                    if(f_snap->get_start_date() > arrival_date_us + 86400LL * 124LL * 1000000LL)
                     {
                         arrival_date_us = 0;
                     }
                 }
-                if(arrival_date_us == 0)
+                if(arrival_date_us != 0)
                 {
                     security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
                     security.set_status(users::users::status_t::STATUS_BLOCKED);
