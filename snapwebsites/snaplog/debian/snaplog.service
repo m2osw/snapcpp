@@ -3,8 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snaplog daemon
-After=snapcommunicator.service, mysql.service
-Requires=snapcommunicator.service
+After=snapcommunicator.service mysql.service
 
 [Service]
 Type=simple

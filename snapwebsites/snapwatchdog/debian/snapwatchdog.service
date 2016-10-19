@@ -3,8 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snapwatchdog daemon
-After=snapcommunicator.service
-Requires=snapcommunicator.service snapdbproxy.service
+After=snapcommunicator.service snapfirewall.service snapdbproxy.service
 
 [Service]
 Type=simple

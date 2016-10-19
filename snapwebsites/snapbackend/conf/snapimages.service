@@ -3,8 +3,7 @@
 
 [Unit]
 Description=Snap! Websites images backend
-After=snapcommunicator.service
-Requires=snapcommunicator.service snaplock.service snapdbproxy.service
+After=snapcommunicator.service snapfirewall.service snaplock.service snapdbproxy.service
 
 [Service]
 Type=simple

@@ -4,7 +4,6 @@
 [Unit]
 Description=Snap! Websites snapmanagerdaemon
 After=snapcommunicator.service snapfirewall.service
-Requires=snapcommunicator.service
 
 [Service]
 Type=simple

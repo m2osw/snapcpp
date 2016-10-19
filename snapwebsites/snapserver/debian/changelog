@@ -1,8 +1,8 @@
-snapserver (1.0.13.5~xenial) xenial; urgency=high
+snapserver (1.0.14.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-461: Removed "Requires=..." since all servers can run by themselves.
 
- -- Build Server <build@m2osw.com>  Mon, 17 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 19 Oct 2016 12:21:49 -0700
 
 snapserver (1.0.13.0~xenial) xenial; urgency=high
 

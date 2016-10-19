@@ -1,8 +1,8 @@
-snaplog (1.0.4.6~xenial) xenial; urgency=high
+snaplog (1.0.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-461: Removed "Requires=..." since all servers can run by themselves.
 
- -- Doug Barbieri <doug@dooglio.net>  Sun, 16 Oct 2016 11:48:16 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 19 Oct 2016 12:21:49 -0700
 
 snaplog (1.0.4.0~xenial) xenial; urgency=high
 
