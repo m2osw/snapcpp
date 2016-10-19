@@ -1,3 +1,9 @@
+iplock (3.0.5.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 02:16:18 -0700
+
 iplock (3.0.5.0~xenial) xenial; urgency=high
 
   * SNAP-479: Allow iptables to wait on its lock until available.
