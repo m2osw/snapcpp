@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# You may find the original of this code in the snaplog bundle which
+# installs mysql if not already installed and sets up the snaplog
+# user, database, and table
+#
+# This script supposes that mysql is installed and you entered a
+# root password of some sort. When you invoke it, you must specify
+# the root password when prompted.
+#
+
+
+# -r is to avoid \ special meaning
+# -s is to avoid showing the password being typed
+# -p is to show a prompt
+read -r -s -p "Enter MySQL root password: " PASSWORD
+
+mysql --user=root --password="$PASSWORD" <<EOF
+CREATE USER 'snaplog'@'localhost' IDENTIFIED BY 'snaplog';
+GRANT ALL PRIVILEGES ON snaplog.* TO 'snaplog'@'localhost';
+FLUSH PRIVILEGES;
+CREATE DATABASE snaplog;
+CREATE TABLE snaplog.log
+  ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT
+  , timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
+  , command     VARCHAR(30)
+  , server      VARCHAR(25)
+  , service     VARCHAR(25)
+  , level       VARCHAR(10)
+  , msgid       VARCHAR(20)
+  , ipaddr      VARCHAR(15)
+  , file        VARCHAR(120)
+  , line        INT
+  , func        VARCHAR(100)
+  , message     LONGTEXT
+  );
+EOF
+
+
