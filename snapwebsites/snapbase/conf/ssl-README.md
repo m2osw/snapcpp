@@ -13,8 +13,8 @@ CREATING CERTIFICATES
 =====================
 
 When you want to create a new certificate, we strongly suggest that
-you create a new directory as the domain name for which you are
-creating that certificate. Then cd into it and run the necessary
+you create a new directory named after the domain name for which you
+are creating that certificate. Then cd into it and run the necessary
 command to create the certificate (`openssl gendsa ...`)
 
 The Apache2 settings can then be tweaked to include another

@@ -2632,9 +2632,34 @@ void snap_child::connect_messenger()
 
 void snap_child::stop_messenger()
 {
-    // This causes the background thread to stop.
-    //
-    f_communicator->remove_connection( f_messenger );
+    if(f_communicator)
+    {
+        if(f_messenger)
+        {
+            // since we have the messenger, we should unregister
+            // but the truth is that the following would just cache
+            // the message and exepect the `snap_communicator::run()`
+            // to process the message at leisure...
+            //
+            // but since we are exiting, we ignore that step at the
+            // moment...
+            //
+            //snap::snap_communicator_message unregister_snapchild;
+            //unregister_snapchild.set_command("UNREGISTER");
+            //unregister_snapchild.add_parameter("service", f_service_name);
+            //send_message(unregister_snapchild);
+
+            // This causes the background thread to stop.
+            //
+            f_messenger->mark_done();
+            f_communicator->remove_connection( f_messenger );
+            f_messenger.reset();
+        }
+
+        f_communicator.reset();
+    }
+
+    f_messenger_thread.stop();
 }
 
 
@@ -2725,11 +2750,11 @@ void snap_child::child_messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
-    snap::snap_communicator_message register_snapserver;
-    register_snapserver.set_command("REGISTER");
-    register_snapserver.add_parameter("service", f_service_name);
-    register_snapserver.add_parameter("version", snap::snap_communicator::VERSION);
-    send_message(register_snapserver);
+    snap::snap_communicator_message register_snapchild;
+    register_snapchild.set_command("REGISTER");
+    register_snapchild.add_parameter("service", f_service_name);
+    register_snapchild.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_snapchild);
 }
 
 
@@ -2820,7 +2845,14 @@ pid_t snap_child::fork_child()
             // So we need to create a new snapcommunicator connection, register it, and add it
             // into the logging facility.
             //
-            connect_messenger();
+            // At this point we are marking this call off because it breaks
+            // the entire child environment. We'll have to find a way to
+            // just send messages to snapcommunicator without the need
+            // for the complicated messages going back and forth or pile
+            // up all the messages and have them handled at the end only
+            // (i.e. no threads need in that case...)
+            //
+            //connect_messenger();
 
             // always reconfigure the logger in the child
             logging::reconfigure();
@@ -5942,7 +5974,12 @@ QString snap_child::cookie(QString const & name) const
  */
 void snap_child::exit(int code)
 {
+    // if we have a messenger, make sure to get rid of it
+    //
+    stop_messenger();
+
     // make sure the socket data is pushed to the caller
+    //
     f_client.reset();
 
     // after we close the socket the answer is sent to the client so

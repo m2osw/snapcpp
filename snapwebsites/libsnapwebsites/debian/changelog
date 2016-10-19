@@ -1,8 +1,15 @@
 libsnapwebsites (1.1.28.0~xenial) xenial; urgency=high
 
+  * SNAP-266: Commenting out the connect_messenger() in snap_child. At the
+    moment that makes the whole thing crash like crazy.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 18 Oct 2016 18:33:47 -0700
+
+libsnapwebsites (1.1.28.0~xenial) xenial; urgency=high
+
   * SNAP-266: Check whether there is a messenger before getting an instance.
 
- -- Build Server <build@m2osw.com>  Sat, 15 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 18 Oct 2016 11:00:47 -0700
 
 libsnapwebsites (1.1.27.0~xenial) xenial; urgency=high
 
