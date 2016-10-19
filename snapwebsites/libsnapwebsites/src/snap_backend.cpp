@@ -1137,9 +1137,13 @@ bool snap_backend::process_timeout()
  */
 void snap_backend::process_message(snap::snap_communicator_message const & message)
 {
-    SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_action);
-
     QString const command(message.get_command());
+
+    // STATUS is sent too many times, so do not trace them all...
+    if(command != "STATUS")
+    {
+        SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_action);
+    }
 
     if(command == "PING")
     {
@@ -1278,6 +1282,10 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
     {
         if(message.get_parameter("service") == "snaplock")
         {
+            // show the one STATUS that we manage here
+            //
+            SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_action);
+
             f_snaplock = message.has_parameter("status")
                       && message.get_parameter("status") == "up";
         }

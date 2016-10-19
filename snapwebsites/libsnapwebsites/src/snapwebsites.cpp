@@ -2023,9 +2023,13 @@ void server::process_message(snap_communicator_message const & message)
         return;
     }
 
-    SNAP_LOG_TRACE("received message [")(message.to_message())("]");
-
     QString const command(message.get_command());
+
+    // STATUS is sent too many times, so do not trace them all...
+    if(command != "STATUS")
+    {
+        SNAP_LOG_TRACE("received message [")(message.to_message())("] for server");
+    }
 
     if(command == "STOP")
     {
@@ -2109,6 +2113,10 @@ void server::process_message(snap_communicator_message const & message)
     {
         if(message.get_parameter("service") == "snaplock")
         {
+            // show the one STATUS that we manage here
+            //
+            SNAP_LOG_TRACE("received message [")(message.to_message())("]");
+
             f_snaplock = message.has_parameter("status")
                       && message.get_parameter("status") == "up";
         }
