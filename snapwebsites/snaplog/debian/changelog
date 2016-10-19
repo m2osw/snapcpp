@@ -1,3 +1,9 @@
+snaplog (1.0.5.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:07 -0700
+
 snaplog (1.0.5.0~xenial) xenial; urgency=high
 
   * SNAP-461: Removed "Requires=..." since all servers can run by themselves.

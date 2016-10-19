@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.13.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:08 -0700
+
 snapserver-core-plugins (1.0.13.0~xenial) xenial; urgency=high
 
   * SNAP-276: Fixed the check of bounced emails: it was using == instead of !=.

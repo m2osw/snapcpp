@@ -1,3 +1,9 @@
+snapdbproxy (1.1.15.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:08 -0700
+
 snapdbproxy (1.1.15.0~xenial) xenial; urgency=high
 
   * SNAP-461: Removed "Requires=..." since all servers can run by themselves.
