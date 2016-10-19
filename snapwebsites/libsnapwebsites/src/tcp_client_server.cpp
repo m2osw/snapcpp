@@ -1601,7 +1601,15 @@ int bio_client::read(char * buf, size_t size)
             errno = EAGAIN;
             return 0;
         }
-        // the BIO generated an error (TBD should we check BIO_eof() too?)
+        // did we reach the "end of the file"? i.e. did the server
+        // close our connection? (this better replicates what a
+        // normal socket does when reading from a closed socket)
+        //
+        if(BIO_eof(f_bio.get()))
+        {
+            return 0;
+        }
+        // the BIO generated an error
         bio_log_errors();
         errno = EIO;
         return -1;

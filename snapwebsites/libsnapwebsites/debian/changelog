@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.29.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.30.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-443: Fixed the return value when BIO_eof() is true and a read "failed".
 
- -- Build Server <build@m2osw.com>  Tue, 18 Oct 2016 18:37:32 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 18 Oct 2016 21:02:47 -0700
 
 libsnapwebsites (1.1.29.0~xenial) xenial; urgency=high
 
