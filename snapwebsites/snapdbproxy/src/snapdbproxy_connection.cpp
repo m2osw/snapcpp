@@ -164,8 +164,16 @@ void snapdbproxy_connection::run()
             {
                 // order can be executed now
                 //
-//SNAP_LOG_WARNING("got an order: ")(static_cast<int>(order.get_type_of_result()))(", CQL \"")(order.cql())("\" (")(order.columnCount())(" columns).");
+// TODO: remark this code off after we have resolved SNAP-493.
+//
+#if 1
+SNAP_LOG_TRACE("got an order: ")
+        (static_cast<int>(order.get_type_of_result()))
+        (", CQL \"")(order.cql())
+        ("\" (")(order.columnCount())
+        (" columns).");
 //std::cerr << "[" << getpid() << ":" << gettid() << "] got new order \"" << order.cql() << "\" in snapdbproxy at " << timeofday() << "\n";
+#endif
                 switch(order.get_type_of_result())
                 {
                 case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_CLOSE:
