@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snapserver daemon
-After=snapcommunicator.service snapfirewall.service snaplock.service snapdbproxy.service
+After=snapbase.service snapcommunicator.service snapfirewall.service snaplock.service snapdbproxy.service
 
 [Service]
 Type=simple
@@ -11,7 +11,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapserver
-ExecStop=/usr/bin/snapsignal "snapserver/STOP cache=no"
+ExecStop=/usr/bin/snapstop $MAINPID
 Restart=on-failure
 RestartSec=5
 User=snapwebsites

@@ -53,9 +53,10 @@ include_directories(
 add_executable( ${PROJECT_NAME}
     bundle_loader.cpp
     main.cpp
-    snapmanagerdaemon.cpp
+    manager_interrupt.cpp
     manager_messenger.cpp
     manager_status.cpp
+    snapmanagerdaemon.cpp
     status.cpp
     status_connection.cpp
 )

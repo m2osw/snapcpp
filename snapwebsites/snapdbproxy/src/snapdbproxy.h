@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapdbproxy.h
+ *      snapwebsites/snapdbproxy/src/snapdbproxy.h
  *
  * Description:
  *      Proxy database access for two main reasons:
@@ -62,6 +62,23 @@
 
 
 class snapdbproxy;
+
+
+class snapdbproxy_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<snapdbproxy_interrupt>     pointer_t;
+
+                                snapdbproxy_interrupt(snapdbproxy * s);
+    virtual                     ~snapdbproxy_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal() override;
+
+private:
+    snapdbproxy *               f_snapdbproxy = nullptr;
+};
 
 
 /** \brief Provide a tick in can we cannot immediately connect to Cassandra.
@@ -219,6 +236,7 @@ public:
     void                        process_message(snap::snap_communicator_message const & message);
     void                        process_connection(tcp_client_server::bio_client::pointer_t & client);
     void                        process_timeout();
+    void                        stop(bool quitting);
 
     static void                 sighandler( int sig );
 
@@ -230,7 +248,6 @@ private:
     void                        usage(advgetopt::getopt::status_t status);
     void                        setup_dbproxy();
     void                        next_wakeup();
-    void                        stop(bool quitting);
     void                        no_cassandra();
     void                        cassandra_ready();
 
@@ -247,6 +264,7 @@ private:
     snap::snap_communicator::pointer_t          f_communicator;
     QString                                     f_cassandra_host_list = "localhost";
     int                                         f_cassandra_port = 9042;
+    snapdbproxy_interrupt::pointer_t            f_interrupt;
     snapdbproxy_messenger::pointer_t            f_messenger;
     snapdbproxy_listener::pointer_t             f_listener;
     snapdbproxy_timer::pointer_t                f_timer;

@@ -44,6 +44,23 @@ class manager_daemon;
 class manager_status;
 
 
+class manager_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<manager_interrupt>  pointer_t;
+
+                                manager_interrupt(manager_daemon * md);
+    virtual                     ~manager_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal() override;
+
+private:
+    manager_daemon *            f_manager_daemon = nullptr;
+};
+
+
 class manager_messenger
         : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
 {
@@ -159,10 +176,10 @@ public:
     void                            unreachable_message(snap::snap_communicator_message const & message);
     virtual snap::snap_string_list const & get_snapmanager_frontend() const override;
     virtual bool                    stop_now_prima() const override;
+    void                            stop(bool quitting);
 
 private:
     static void                     sighandler( int sig );
-    void                            stop(bool quitting);
 
     // the MANAGE command and all of its sub-functions
     void                            manager_install(snap::snap_communicator_message const & message);
@@ -173,6 +190,7 @@ private:
     int                                         f_communicator_port = 4040;             // snap server port
     QString                                     f_communicator_address = "127.0.0.1";   // snap server address
     snap::snap_communicator::pointer_t          f_communicator;
+    manager_interrupt::pointer_t                f_interrupt;
     manager_messenger::pointer_t                f_messenger;
     status_connection::pointer_t                f_status_connection;
     manager_status                              f_status_runner;

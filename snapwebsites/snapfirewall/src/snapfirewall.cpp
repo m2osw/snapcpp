@@ -15,19 +15,46 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// ourselves
+//
+#include "version.h"
+
+// snapwebsites lib
+//
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/process.h>
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/snapwebsites.h>
 
-#include "version.h"
-
 
 namespace
 {
 
 class snap_firewall;
+
+
+
+
+
+class snap_firewall_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<snap_firewall_interrupt>    pointer_t;
+
+                                snap_firewall_interrupt(snap_firewall * fw);
+    virtual                     ~snap_firewall_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal() override;
+
+private:
+    snap_firewall *             f_snap_firewall = nullptr;
+};
+
+
+
 
 
 /** \brief Handle messages from the Snap Communicator server.
@@ -148,6 +175,7 @@ public:
     void                        run();
     void                        process_timeout();
     void                        process_message(snap::snap_communicator_message const & message);
+    void                        stop(bool quitting);
 
     static void                 sighandler( int sig );
 
@@ -191,7 +219,6 @@ private:
     void                        usage();
     void                        setup_firewall();
     void                        next_wakeup();
-    void                        stop(bool quitting);
     void                        block_ip(snap::snap_communicator_message const & message);
 
     advgetopt::getopt                           f_opt;
@@ -200,6 +227,7 @@ private:
     QString                                     f_server_name;
     QString                                     f_communicator_addr = "127.0.0.1";
     int                                         f_communicator_port = 4040;
+    snap_firewall_interrupt::pointer_t          f_interrupt;
     snap::snap_communicator::pointer_t          f_communicator;
     snap::snap_cassandra                        f_cassandra;
     QtCassandra::QCassandraTable::pointer_t     f_firewall_table;
@@ -263,6 +291,41 @@ void wakeup_timer::process_timeout()
 {
     f_snap_firewall->process_timeout();
 }
+
+
+
+
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] fw  The snap_firewall server we are listening for.
+ */
+snap_firewall_interrupt::snap_firewall_interrupt(snap_firewall * fw)
+    : snap_signal(SIGINT)
+    , f_snap_firewall(fw)
+{
+    set_name("snapfirewall interrupt");
+}
+
+
+/** \brief Call the stop function of the snaplock object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void snap_firewall_interrupt::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_snap_firewall->stop(false);
+}
+
 
 
 
@@ -947,6 +1010,9 @@ void snap_firewall::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
+    f_interrupt.reset(new snap_firewall_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
+
     f_wakeup_timer.reset(new wakeup_timer(this));
     f_communicator->add_connection(f_wakeup_timer);
 
@@ -1483,6 +1549,7 @@ void snap_firewall::stop(bool quitting)
     {
         //f_communicator->remove_connection(f_messenger); -- this one will get an expected HUP shortly
         f_communicator->remove_connection(f_wakeup_timer);
+        f_communicator->remove_connection(f_interrupt);
     }
 }
 

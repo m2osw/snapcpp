@@ -1,3 +1,9 @@
+snapserver (1.0.15.0~xenial) xenial; urgency=high
+
+  * SNAP-491: Make use of the snapstop command to stop snapbackend processes.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
+
 snapserver (1.0.14.0~xenial) xenial; urgency=high
 
   * SNAP-461: Removed "Requires=..." since all servers can run by themselves.

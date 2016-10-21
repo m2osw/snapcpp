@@ -319,6 +319,11 @@ void snaplog::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new snaplog_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
+
     // create a messenger to communicate with the Snap Communicator process
     // and snapinit as required
     //
@@ -676,6 +681,19 @@ void snaplog::stop(bool quitting)
             cmd.add_parameter("service", "snaplog");
             f_messenger->send_message(cmd);
         }
+        else
+        {
+            f_communicator->remove_connection(f_messenger);
+            f_messenger.reset();
+        }
+    }
+
+    if(f_communicator)
+    {
+        f_communicator->remove_connection(f_interrupt);
+        f_interrupt.reset();
+        f_communicator->remove_connection(f_timer);
+        f_timer.reset();
     }
 }
 

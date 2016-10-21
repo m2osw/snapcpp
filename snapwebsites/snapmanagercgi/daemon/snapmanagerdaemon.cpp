@@ -146,6 +146,11 @@ int manager_daemon::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new manager_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
+
     // create a messenger to communicate with the Snap Communicator process
     // and snapmanager.cgi as required
     //
@@ -547,6 +552,8 @@ void manager_daemon::stop(bool quitting)
         f_communicator->remove_connection(f_status_connection);
         f_status_connection.reset();
     }
+
+    f_communicator->remove_connection(f_interrupt);
 }
 
 

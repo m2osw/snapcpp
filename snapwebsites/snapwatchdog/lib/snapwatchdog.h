@@ -75,6 +75,7 @@ public:
     virtual void        show_version();
     int64_t             get_statistics_period() const { return f_statistics_period; }
     int64_t             get_statistics_ttl() const { return f_statistics_ttl; }
+    void                stop(bool quitting);
 
     SNAP_SIGNAL_WITH_MODE(process_watch, (QDomDocument doc), (doc), NEITHER);
 

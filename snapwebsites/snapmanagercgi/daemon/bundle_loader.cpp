@@ -244,13 +244,13 @@ bool bundle_loader::wget(std::string const & uri, std::string const & filename)
     // fix the ownership of the log file--it should not matter unless we
     // want to give access to the website administrator (on the browser side)
     //
-    snap::snap_config communicator_config("snapcommunicator");
-    QString username(communicator_config["user"]);
+    snap::snap_config server_config("snapserver");
+    QString username(server_config["user"]);
     if(username.isEmpty())
     {
         username = "snapwebsites";
     }
-    QString groupname(communicator_config["group"]);
+    QString groupname(server_config["group"]);
     if(groupname.isEmpty())
     {
         groupname = "snapwebsites";

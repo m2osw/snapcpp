@@ -1,3 +1,10 @@
+libsnapwebsites (1.1.32.0~xenial) xenial; urgency=high
+
+  * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
+  * Hide message about calculate_next_tick() when not required.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
+
 libsnapwebsites (1.1.31.0~xenial) xenial; urgency=high
 
   * SNAP-461: Hide STATUS messages that we ignore.

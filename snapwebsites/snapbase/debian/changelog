@@ -1,8 +1,13 @@
-snapbase (1.0.14.3~xenial) xenial; urgency=high
+snapbase (1.0.15.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
+  * Moved the run_path, lock_path, user, and group parameters from
+    snapcommunicator.conf to snapserver.conf.
+  * Moved the code from snapcommunicator to initialize the /run/...
+    directories to snapbootinit and made that a "runonce" service.
+  * Enhanced start script to it shuffles the daemons each time.
 
- -- Build Server <build@m2osw.com>  Tue, 18 Oct 2016 12:21:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 
 snapbase (1.0.14.0~xenial) xenial; urgency=high
 

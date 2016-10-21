@@ -167,7 +167,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "show the version of the snapdb executable",
+            "show the version of the snaplock executable",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {
@@ -386,6 +386,11 @@ void snaplock::run()
     // initialize the communicator and its connections
     //
     f_communicator = snap::snap_communicator::instance();
+
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new snaplock_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
 
     // create a messenger to communicate with the Snap Communicator process
     // and snapinit as required
@@ -869,6 +874,12 @@ void snaplock::stop(bool quitting)
             cmd.add_parameter("service", f_service_name);
             f_messenger->send_message(cmd);
         }
+    }
+
+    if(f_communicator)
+    {
+        f_communicator->remove_connection(f_interrupt);
+        f_interrupt.reset();
     }
 }
 

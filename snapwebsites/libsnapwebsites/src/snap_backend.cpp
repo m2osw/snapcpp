@@ -140,6 +140,65 @@ namespace
 snap_communicator::pointer_t        g_communicator;
 
 
+/** \brief Handle the SIGINT that is expected to stop the server.
+ *
+ * This class is an implementation of the snap_signal that listens
+ * on the SIGINT.
+ */
+class backend_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<backend_interrupt>  pointer_t;
+
+                        backend_interrupt(snap_backend * b);
+    virtual             ~backend_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void        process_signal() override;
+
+private:
+    snap_backend *      f_snap_backend = nullptr;
+};
+
+
+backend_interrupt::pointer_t       g_interrupt;
+
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] b  The server we are listening for.
+ */
+backend_interrupt::backend_interrupt(snap_backend * b)
+    : snap_signal(SIGINT)
+    , f_snap_backend(b)
+{
+    set_name("snap_backend interrupt");
+}
+
+
+/** \brief Call the stop function of the snaplock object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void backend_interrupt::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_snap_backend->stop(false);
+}
+
+
+
+
+
 /** \brief Capture children death.
  *
  * This class used used to create a connection on started that allows
@@ -844,6 +903,9 @@ void snap_backend::process_action()
     //
     g_communicator = snap_communicator::instance();
 
+    g_interrupt.reset(new backend_interrupt(this));
+    g_communicator->add_connection(g_interrupt);
+
     // create a TCP messenger connected to the Snap! Communicator server
     //
     {
@@ -1418,6 +1480,8 @@ void snap_backend::stop(bool quitting)
         g_communicator->remove_connection(g_tick_timer);
         g_communicator->remove_connection(g_signal_child_death);
     }
+
+    g_communicator->remove_connection(g_interrupt);
 }
 
 
@@ -1736,6 +1800,7 @@ void snap_backend::disconnect()
     //
     g_communicator->remove_connection(g_messenger);
     g_communicator->remove_connection(g_wakeup_timer);
+    g_communicator->remove_connection(g_interrupt);
     g_communicator->remove_connection(g_tick_timer);
     g_communicator->remove_connection(g_signal_child_death);
 }
@@ -1865,6 +1930,8 @@ bool snap_backend::process_backend_uri(QString const & uri)
         g_messenger.reset();
         g_communicator->remove_connection(g_wakeup_timer);
         g_wakeup_timer.reset();
+        g_communicator->remove_connection(g_interrupt);
+        g_interrupt.reset();
         g_communicator->remove_connection(g_tick_timer);
         g_tick_timer.reset();
         g_communicator->remove_connection(g_signal_child_death);

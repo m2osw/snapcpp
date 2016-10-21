@@ -42,19 +42,36 @@ class snaplock;
 
 
 
+class snaplock_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<snaplock_interrupt>     pointer_t;
+
+                                snaplock_interrupt(snaplock * sl);
+    virtual                     ~snaplock_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal() override;
+
+private:
+    snaplock *                  f_snaplock = nullptr;
+};
+
 
 class snaplock_messenger
         : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<snaplock_messenger>    pointer_t;
+    typedef std::shared_ptr<snaplock_messenger>     pointer_t;
 
                                 snaplock_messenger(snaplock * sl, std::string const & addr, int port);
+    virtual                     ~snaplock_messenger() override {}
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void                process_message(snap::snap_communicator_message const & message);
-    virtual void                process_connection_failed(std::string const & error_message);
-    virtual void                process_connected();
+    virtual void                process_message(snap::snap_communicator_message const & message) override;
+    virtual void                process_connection_failed(std::string const & error_message) override;
+    virtual void                process_connected() override;
 
 protected:
     // this is owned by a snaplock function so no need for a smart pointer
@@ -135,7 +152,7 @@ private:
     snaplock *                      f_snaplock = nullptr;
 
     // initialization
-    snaplock_messenger::pointer_t    f_messenger;
+    snaplock_messenger::pointer_t   f_messenger;
     QString                         f_object_name;
     time_t                          f_obtention_timeout = 0;
     int32_t                         f_lock_duration = 0;
@@ -186,6 +203,7 @@ public:
     void                        process_message(snap::snap_communicator_message const & message);
     void                        tool_message(snap::snap_communicator_message const & message);
     void                        process_connection(int const s);
+    void                        stop(bool quitting);
 
     int                         get_computer_count() const;
     int                         quorum() const;
@@ -199,7 +217,6 @@ private:
     void                        usage(advgetopt::getopt::status_t status);
     void                        setup_firewall();
     void                        next_wakeup();
-    void                        stop(bool quitting);
     void                        get_parameters(snap::snap_communicator_message const & message, QString * object_name, pid_t * client_pid, time_t * timeout, QString * key);
     void                        lock(snap::snap_communicator_message const & message);
     void                        unlock(snap::snap_communicator_message const & message);
@@ -235,6 +252,7 @@ private:
     int                                         f_port = 9042;
     int                                         f_max_pending_connections = 20;
     snaplock_messenger::pointer_t               f_messenger;
+    snaplock_interrupt::pointer_t               f_interrupt;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     bool                                        f_debug_lock_messages = false;

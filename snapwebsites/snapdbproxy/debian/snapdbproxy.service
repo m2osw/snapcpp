@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snapdbproxy daemon
-After=snapcommunicator.service
+After=snapbase.service snapcommunicator.service
 
 [Service]
 Type=simple
@@ -11,7 +11,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapdbproxy
-ExecStop=/usr/bin/snapsignal "snapdbproxy/STOP cache=no"
+ExecStop=/usr/bin/snapstop $MAINPID
 Restart=on-failure
 RestartSec=10
 User=snapwebsites

@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snaplog daemon
-After=snapcommunicator.service mysql.service
+After=snapbase.service snapcommunicator.service mysql.service
 
 [Service]
 Type=simple
@@ -11,7 +11,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snaplog
-ExecStop=/usr/bin/snapsignal "snaplog/STOP cache=no"
+ExecStop=/usr/bin/snapstop $MAINPID
 Restart=on-failure
 RestartSec=10
 User=snapwebsites

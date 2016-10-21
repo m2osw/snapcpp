@@ -88,6 +88,67 @@ namespace
 snap_communicator::pointer_t g_communicator;
 
 
+/** \brief Handle the SIGINT that is expected to stop the server.
+ *
+ * This class is an implementation of the snap_signal that listens
+ * on the SIGINT.
+ */
+class watchdog_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<watchdog_interrupt>     pointer_t;
+
+                        watchdog_interrupt(watchdog_server::pointer_t ws);
+    virtual             ~watchdog_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void        process_signal() override;
+
+private:
+    watchdog_server::pointer_t  f_watchdog_server;
+};
+
+
+/** \brief The tick timer.
+ *
+ * We create one tick timer. It is saved in this variable if needed.
+ */
+watchdog_interrupt::pointer_t             g_interrupt;
+
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] ws  The server we are listening for.
+ */
+watchdog_interrupt::watchdog_interrupt(watchdog_server::pointer_t ws)
+    : snap_signal(SIGINT)
+    , f_watchdog_server(ws)
+{
+    set_name("watchdog interrupt");
+}
+
+
+/** \brief Call the stop function of the snaplock object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void watchdog_interrupt::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_watchdog_server->stop(false);
+}
+
+
+
 /** \brief The timer to produce ticks once every minute.
  *
  * This timer is the one used to know when to gather the data again.
@@ -449,6 +510,11 @@ void watchdog_server::watchdog()
 
     g_communicator = snap_communicator::instance();
 
+    // capture Ctrl-C (SIGINT)
+    //
+    g_interrupt.reset(new watchdog_interrupt(instance()));
+    g_communicator->add_connection(g_interrupt);
+
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
@@ -726,27 +792,7 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
     if(command == "STOP"
     || command == "QUITTING")
     {
-        SNAP_LOG_INFO("Stopping watchdog server.");
-
-        f_stopping = true;
-        g_messenger->mark_done();
-
-        // if not snapcommunicator is not quitting, send an UNREGISTER
-        //
-        if(command != "QUITTING")
-        {
-            snap_communicator_message unregister;
-            unregister.set_command("UNREGISTER");
-            unregister.add_parameter("service", "snapwatchdog");
-            g_messenger->send_message(unregister);
-        }
-
-        g_communicator->remove_connection(g_tick_timer);
-        if(f_processes.empty())
-        {
-            g_communicator->remove_connection(g_sigchld_connection);
-        }
-
+        stop(command == "QUITTING");
         return;
     }
 
@@ -865,6 +911,30 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
 
 
 
+void watchdog_server::stop(bool quitting)
+{
+    SNAP_LOG_INFO("Stopping watchdog server.");
+
+    f_stopping = true;
+    g_messenger->mark_done();
+
+    // if not snapcommunicator is not quitting, send an UNREGISTER
+    //
+    if(!quitting)
+    {
+        snap_communicator_message unregister;
+        unregister.set_command("UNREGISTER");
+        unregister.add_parameter("service", "snapwatchdog");
+        g_messenger->send_message(unregister);
+    }
+
+    g_communicator->remove_connection(g_interrupt);
+    g_communicator->remove_connection(g_tick_timer);
+    if(f_processes.empty())
+    {
+        g_communicator->remove_connection(g_sigchld_connection);
+    }
+}
 
 
 

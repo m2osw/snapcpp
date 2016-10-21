@@ -400,6 +400,11 @@ void snapdbproxy::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new snapdbproxy_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
+
     // create a listener
     //
     // Note that the listener changes its priority to 30 in order to
@@ -915,6 +920,9 @@ void snapdbproxy::stop(bool quitting)
     {
         f_communicator->remove_connection(f_listener);
         f_listener.reset(); // TBD: in snapserver I do not reset these pointers...
+
+        f_communicator->remove_connection(f_interrupt);
+        f_interrupt.reset();
     }
 }
 

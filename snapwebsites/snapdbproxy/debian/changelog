@@ -1,3 +1,9 @@
+snapdbproxy (1.1.16.0~xenial) xenial; urgency=high
+
+  * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
+
 snapdbproxy (1.1.15.0~xenial) xenial; urgency=high
 
   * SNAP-461: Removed "Requires=..." since all servers can run by themselves.
