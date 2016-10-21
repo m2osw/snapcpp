@@ -1,3 +1,9 @@
+snapfirewall (1.0.16.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Moved the LOG to /etc/log/iptables.log instead of kern.log.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 21 Oct 2016 14:32:49 -0700
+
 snapfirewall (1.0.15.0~xenial) xenial; urgency=high
 
   * SNAP-461: Removed "Requires=..." since all servers can run by themselves.
