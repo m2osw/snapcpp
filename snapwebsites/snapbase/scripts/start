@@ -22,6 +22,7 @@ HERE=`pwd`
 # Add the snapupgrader for snapmanagerdaemon to find the compiled one on a programmer system
 PATH=${HERE}/BUILD/snapwebsites/snapmanagercgi/upgrader:${PATH}
 
+mkdir -p ${HERE}/tmp
 
 # Daemons can now be started in any order and to prove it we randomize
 # the starting of them...
@@ -52,6 +53,14 @@ do
 	#
 	echo $cmd
 	$cmd &
+	PID=$!
+
+	BASENAME=`echo $cmd | grep :: | sed -e 's/.* [a-z]\+::\([a-z]\+\).*/\1/'`
+	if test -z "$BASENAME"
+	then
+		BASENAME=`basename $cmd`
+	fi
+	echo $PID >tmp/${BASENAME}.pid
 
 	# add one random pause to further prove that it does not need to
 	# all sort exactly at the same time

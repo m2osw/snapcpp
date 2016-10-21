@@ -860,15 +860,23 @@ void snaplock::send_lockready()
  */
 void snaplock::stop(bool quitting)
 {
-    if(f_messenger)
+    if(f_messenger != nullptr)
     {
-        f_messenger->mark_done();
-
-        // unregister if we are still connected to the messenger
-        // and Snap! Communicator is not already quitting
-        //
-        if(!quitting)
+        if(quitting || !f_messenger->is_connected())
         {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            f_communicator->remove_connection(f_messenger);
+            f_messenger.reset();
+        }
+        else
+        {
+            f_messenger->mark_done();
+
+            // unregister if we are still connected to the messenger
+            // and Snap! Communicator is not already quitting
+            //
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", f_service_name);
@@ -876,7 +884,7 @@ void snaplock::stop(bool quitting)
         }
     }
 
-    if(f_communicator)
+    if(f_communicator != nullptr)
     {
         f_communicator->remove_connection(f_interrupt);
         f_interrupt.reset();

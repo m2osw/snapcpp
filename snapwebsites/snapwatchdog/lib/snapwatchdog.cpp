@@ -916,16 +916,28 @@ void watchdog_server::stop(bool quitting)
     SNAP_LOG_INFO("Stopping watchdog server.");
 
     f_stopping = true;
-    g_messenger->mark_done();
 
-    // if not snapcommunicator is not quitting, send an UNREGISTER
-    //
-    if(!quitting)
+    if(g_messenger != nullptr)
     {
-        snap_communicator_message unregister;
-        unregister.set_command("UNREGISTER");
-        unregister.add_parameter("service", "snapwatchdog");
-        g_messenger->send_message(unregister);
+        if(quitting || !g_messenger->is_connected())
+        {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            g_communicator->remove_connection(g_messenger);
+            g_messenger.reset();
+        }
+        else
+        {
+            g_messenger->mark_done();
+
+            // if not snapcommunicator is not quitting, send an UNREGISTER
+            //
+            snap_communicator_message unregister;
+            unregister.set_command("UNREGISTER");
+            unregister.add_parameter("service", "snapwatchdog");
+            g_messenger->send_message(unregister);
+        }
     }
 
     g_communicator->remove_connection(g_interrupt);

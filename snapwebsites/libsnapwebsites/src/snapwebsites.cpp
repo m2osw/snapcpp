@@ -2176,12 +2176,24 @@ void server::stop(bool quitting)
 {
     SNAP_LOG_INFO("Stopping server.");
 
-    if(g_connection->f_messenger)
+    if(g_connection->f_messenger != nullptr)
     {
-        std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
-
-        if(!quitting)
+        messenger::pointer_t msg(std::dynamic_pointer_cast<messenger>(g_connection->f_messenger));
+        if(quitting || (msg && !msg->is_connected()))
         {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            g_connection->f_communicator->remove_connection(g_connection->f_messenger);
+            g_connection->f_messenger.reset();
+        }
+        else
+        {
+            if(msg)
+            {
+                msg->mark_done();
+            }
+
             // snapcommunicator is not quitting, so we also want to unregister
             // to make sure everything works as expected
             //
@@ -2191,12 +2203,6 @@ void server::stop(bool quitting)
             std::static_pointer_cast<messenger>(g_connection->f_messenger)->send_message(cmd);
 
             // f_messenger is expected to HUP after this
-        }
-        else
-        {
-            // snapcommunicator is quitting so we can lose that connection now
-            //
-            g_connection->f_communicator->remove_connection(g_connection->f_messenger);
         }
     }
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
-BUILD/snapwebsites/snapcommunicator/src/snapsignal snapcommunicator/STOP
-exit 0
+#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapcommunicator/STOP
+#exit 0
 
 #BUILD/snapwebsites/snapcommunicator/src/snapsignal snaplock/STOP
 #BUILD/snapwebsites/snapcommunicator/src/snapsignal snapdbproxy/STOP
@@ -19,31 +19,19 @@ exit 0
 # Daemons can now be stopped in any order and to prove it we randomize
 # the stopping of them...
 #
-DAEMON1="BUILD/snapwebsites/snapcommunicator/src/snapcommunicator"
-DAEMON2="BUILD/snapwebsites/snaplog/src/snaplog"
-DAEMON3="BUILD/snapwebsites/snaplock/src/snaplock"
-DAEMON4="BUILD/snapwebsites/snapdbproxy/src/snapdbproxy"
-DAEMON5="BUILD/snapwebsites/snapfirewall/src/snapfirewall"
-DAEMON6="BUILD/snapwebsites/snapserver/src/snapserver"
-DAEMON7="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action images::images"
-DAEMON8="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action list::pagelist"
-DAEMON9="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action sendmail::sendmail --param GLOBAL_LOCK=1"
-DAEMON10="BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon"
-DAEMON11="BUILD/snapwebsites/snapwatchdog/src/snapwatchdogserver"
 
-ORDER=`seq 1 11 | shuf`
+ALL_PIDS=`ls tmp/*.pid | shuf`
 
-for idx in $ORDER
+for pid_file in $ALL_PIDS
 do
 	# Dynamic variable selection in Bourne Shell (and others)
 	#
-	VARNAME=DAEMON${idx}
-	cmd=`eval echo \\\$\${VARNAME}`
+	PID=`cat $pid_file`
 
 	# Now start the command
 	#
-	echo $cmd
-	$cmd &
+	echo "snapstop --service $PID"
+	BUILD/snapwebsites/snapcommunicator/src/snapstop --service $PID
 done
 
 

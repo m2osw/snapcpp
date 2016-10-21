@@ -401,7 +401,7 @@ public:
     void                        broadcast_message(snap::snap_communicator_message const & message, base_connection_vector_t const & accepting_remote_connections = base_connection_vector_t());
     void                        process_load_balancing();
     tcp_client_server::bio_client::mode_t   connection_mode() const;
-    void                        shutdown(bool full);
+    void                        shutdown(bool quitting);
 
 private:
     struct message_cache
@@ -4666,9 +4666,9 @@ void snap_communicator_server::refresh_heard_of()
  * work since we have to send a message to all connections and the message
  * vary depending on the type of connection.
  *
- * \param[in] full  Do a full shutdown (true) or just a stop (false).
+ * \param[in] quitting  Do a full shutdown (true) or just a stop (false).
  */
-void snap_communicator_server::shutdown(bool full)
+void snap_communicator_server::shutdown(bool quitting)
 {
     // from now on, we are shutting down; use this flag to make sure we
     // do not accept any more REGISTER, CONNECT and other similar
@@ -4710,7 +4710,7 @@ void snap_communicator_server::shutdown(bool full)
 
             // a remote snapcommunicator server needs to also
             // shutdown so duplicate that message there
-            if(full)
+            if(quitting)
             {
                 // SHUTDOWN means we shutdown the entire cluster!!!
                 reply.set_command("SHUTDOWN");
@@ -4774,7 +4774,7 @@ void snap_communicator_server::shutdown(bool full)
 
                         // a remote snapcommunicator server needs to also
                         // shutdown so duplicate that message there
-                        if(full)
+                        if(quitting)
                         {
                             // SHUTDOWN means we shutdown the entire cluster!!!
                             reply.set_command("SHUTDOWN");
@@ -4784,23 +4784,32 @@ void snap_communicator_server::shutdown(bool full)
                             // DISCONNECT means only we are going down
                             reply.set_command("DISCONNECT");
                         }
+
+                        verify_command(c, reply);
+                        c->send_message(reply);
+
+                        // we cannot yet remove the connection from the communicator
+                        // or these messages will never be sent... the client is
+                        // expected to reply with UNREGISTER which does the removal
+                        // the remote connections are expected to disconnect when
+                        // they receive a DISCONNECT
                     }
                     else
                     {
                         // a standard client (i.e. pagelist, images, etc.)
                         // needs to stop so send that message instead
                         //
-                        reply.set_command("STOP");
+                        //reply.set_command("STOP");
+
+                        // we do not send anything to locally connected services,
+                        // instead we let them be, so just remove that connection
+                        // immediately
+                        //
+                        // we won't accept new local connections since we also
+                        // remove the f_local_listener (see below) connection
+                        //
+                        f_communicator->remove_connection(connection);
                     }
-
-                    verify_command(c, reply);
-                    c->send_message(reply);
-
-                    // we cannot yet remove the connection from the communicator
-                    // or these messages will never be sent... the client is
-                    // expected to reply with UNREGISTER which does the removal
-                    // the remote connections are expected to disconnect when
-                    // they receive a DISCONNECT
                 }
             }
             // else -- ignore the main TCP and UDP servers which we

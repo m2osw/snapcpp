@@ -515,15 +515,23 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
  */
 void manager_daemon::stop(bool quitting)
 {
-    if(f_messenger)
+    if(f_messenger != nullptr)
     {
-        f_messenger->mark_done();
-
-        // unregister if we are still connected to the messenger
-        // and Snap! Communicator is not already quitting
-        //
-        if(!quitting)
+        if(quitting || !f_messenger->is_connected())
         {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            f_communicator->remove_connection(f_messenger);
+            f_messenger.reset();
+        }
+        else
+        {
+            f_messenger->mark_done();
+
+            // unregister if we are still connected to the messenger
+            // and Snap! Communicator is not already quitting
+            //
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapmanagerdaemon");
@@ -531,7 +539,7 @@ void manager_daemon::stop(bool quitting)
         }
     }
 
-    if(f_status_connection)
+    if(f_status_connection != nullptr)
     {
         // WARNING: we cannot send a message to the status thread
         //          if it was not started

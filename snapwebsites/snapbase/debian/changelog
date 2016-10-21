@@ -6,6 +6,7 @@ snapbase (1.0.15.0~xenial) xenial; urgency=high
   * Moved the code from snapcommunicator to initialize the /run/...
     directories to snapbootinit and made that a "runonce" service.
   * Enhanced start script to it shuffles the daemons each time.
+  * Updated the start script to save the PID so we can have a stop script.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 

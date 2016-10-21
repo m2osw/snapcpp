@@ -1519,11 +1519,6 @@ void snap_firewall::stop(bool quitting)
 {
     f_stop_received = true;
 
-    if(f_messenger)
-    {
-        f_messenger->mark_done();
-    }
-
     // stop the timer immediately, although that will not prevent
     // one more call to their callbacks which thus still have to
     // check the f_stop_received flag
@@ -1534,15 +1529,28 @@ void snap_firewall::stop(bool quitting)
         f_wakeup_timer->set_timeout_date(-1);
     }
 
-    // unregister if we are still connected to the messenger
-    // and Snap! Communicator is not already quitting
-    //
-    if(f_messenger && !quitting)
+    if(f_messenger)
     {
-        snap::snap_communicator_message cmd;
-        cmd.set_command("UNREGISTER");
-        cmd.add_parameter("service", "snapfirewall");
-        f_messenger->send_message(cmd);
+        if(quitting || !f_messenger->is_connected())
+        {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            f_communicator->remove_connection(f_messenger);
+            f_messenger.reset();
+        }
+        else
+        {
+            f_messenger->mark_done();
+
+            // unregister if we are still connected to the messenger
+            // and Snap! Communicator is not already quitting
+            //
+            snap::snap_communicator_message cmd;
+            cmd.set_command("UNREGISTER");
+            cmd.add_parameter("service", "snapfirewall");
+            f_messenger->send_message(cmd);
+        }
     }
 
     if(f_communicator)

@@ -2,6 +2,7 @@ snapmanagercgi (1.1.31.0~xenial) xenial; urgency=high
 
   * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
   * Read the lock_path, user, group from snapserver.conf now.
+  * Fixed the stop() function so it removes the messenger if not connected.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 12:27:49 -0700
 
