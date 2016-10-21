@@ -1,3 +1,10 @@
+snapdbproxy (1.1.16.0~xenial) xenial; urgency=high
+
+  * SNAP-493: Added trace line so we can track what is causing the connection
+    to go south
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Oct 2016 16:30:24 -0700
+
 snapdbproxy (1.1.15.3~xenial) xenial; urgency=high
 
   * Nightly build.
