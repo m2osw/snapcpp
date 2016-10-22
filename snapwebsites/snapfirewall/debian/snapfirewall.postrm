@@ -15,6 +15,14 @@ then
     rm -f /var/log/snapwebsites/${PACKAGENAME}.log*
     rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log*
 
+    # Since we place files in the fail2ban folder, the folder
+    # may not get removed properly
+    #
+    rmdir --ignore-fail-on-non-empty /etc/fail2ban/action.d
+    rmdir --ignore-fail-on-non-empty /etc/fail2ban/filter.d
+    rmdir --ignore-fail-on-non-empty /etc/fail2ban/jail.d
+    rmdir --ignore-fail-on-non-empty /etc/fail2ban
+
     # TBD: reset the firewall to empty? It does not seem wise to me.
 fi
 

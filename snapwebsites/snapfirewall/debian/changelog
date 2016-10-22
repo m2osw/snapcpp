@@ -1,6 +1,10 @@
 snapfirewall (1.0.16.0~xenial) xenial; urgency=high
 
   * SNAP-465: Moved the LOG to /etc/log/iptables.log instead of kern.log.
+  * Added a logrotate configuration file to rotate the iptables.log files.
+  * Added configuration files to reban IP addresses that appear too many
+    times in the iptables.log.
+  * Make sure that snapfirewall starts before fail2ban if both are installed.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 21 Oct 2016 14:32:49 -0700
 

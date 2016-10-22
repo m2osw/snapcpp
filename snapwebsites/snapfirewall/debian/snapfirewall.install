@@ -5,3 +5,7 @@ conf/snapfirewall.conf etc/snapwebsites/
 conf/snapfirewall.properties etc/snapwebsites/logger/
 conf/firewall conf/firewall.conf conf/ip4tables.rules conf/ip6tables.rules etc/network/
 conf/01-iptables.conf etc/rsyslog.d/
+conf/iptables etc/logrotate.d/
+conf/snap-firewall-action.conf etc/fail2ban/action.d/
+conf/snap-iptables-filter.conf etc/fail2ban/filter.d/
+conf/snap-jail.conf etc/fail2ban/jail.d/
