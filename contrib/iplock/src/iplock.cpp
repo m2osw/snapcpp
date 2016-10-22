@@ -294,7 +294,7 @@ advgetopt::getopt::option const g_iplock_block_or_unblock_options[] =
         "whitelist",
         nullptr,
         "List of comma separated IPs to never block.",
-        advgetopt::getopt::argument_mode_t::required_argument
+        advgetopt::getopt::argument_mode_t::optional_argument
     },
     {
         '\0',

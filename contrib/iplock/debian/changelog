@@ -1,8 +1,10 @@
 iplock (3.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added the iplock-action.conf for fail2ban.
+  * Added an "all" scheme so we can block all ports at once.
+  * Added the -w command line option to the defaults.
 
- -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 02:16:18 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 19 Oct 2016 02:16:18 -0700
 
 iplock (3.0.5.0~xenial) xenial; urgency=high
 
