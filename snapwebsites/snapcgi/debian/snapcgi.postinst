@@ -20,6 +20,10 @@ then
     chown www-data:www-data ${SNAPSECURECGI_LOG}
     chmod 640 ${SNAPSECURECGI_LOG}
 
+    # Modify the apache logrotate conf file to suit
+    #
+    snapapachelog.sh
+
     # The snap-httpoxy is part of snapbase, but if apache2 was not yet
     # installed when snapbase got installed, then this command did not
     # run, so run it again now to make sure it is effective
