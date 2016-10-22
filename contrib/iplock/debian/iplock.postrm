@@ -1,0 +1,17 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "purge" ]
+then
+    # Since we place this file in the fail2ban folder, the folder
+    # may not get removed properly
+    #
+    rmdir --ignore-fail-on-non-empty /etc/fail2ban/action.d
+    rmdir --ignore-fail-on-non-empty /etc/fail2ban
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 et nocindent
