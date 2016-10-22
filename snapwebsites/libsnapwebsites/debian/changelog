@@ -4,6 +4,9 @@ libsnapwebsites (1.1.32.0~xenial) xenial; urgency=high
   * Hide message about calculate_next_tick() when not required.
   * Fixed the stop() function so it removes the messenger if not connected.
   * Added a counter so the snapbackend without --action stops after 3 errors.
+  * Fixed the case where we receive a STOP and the child is still running.
+  * Set the f_stop_received flag to true in disconnect() to make sure we know.
+  * Fixed the UNREGISTER of the disconnect(), it was ignored before.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 

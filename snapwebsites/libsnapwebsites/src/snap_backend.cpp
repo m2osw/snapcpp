@@ -947,10 +947,7 @@ void snap_backend::process_action()
         g_communicator->add_connection(g_signal_child_death);
     }
 
-    if(f_cron_action)
-    {
-        SNAP_LOG_INFO("------------------------------------ CRON backend ")(f_action)(" started.");
-    }
+    SNAP_LOG_INFO("------------------------------------ CRON backend ")(f_action)(" started.");
 
     // start our event loop
     //
@@ -1486,7 +1483,7 @@ void snap_backend::stop(bool quitting)
     }
     else
     {
-        //g_communicator->remove_connection(g_messenger); -- this one will get an expected HUP shortly
+        //g_communicator->remove_connection(g_messenger); -- this one will get an expected HUP shortly or when the child dies
         g_communicator->remove_connection(g_wakeup_timer);
         g_communicator->remove_connection(g_tick_timer);
         g_communicator->remove_connection(g_signal_child_death);
@@ -1508,7 +1505,7 @@ void snap_backend::process_connection_failed()
         {
             // too many attempts, just quit
             //
-            stop(false);
+            disconnect();
         }
     }
 }
@@ -1666,6 +1663,20 @@ void snap_backend::capture_zombies(pid_t pid)
     g_communicator->remove_connection(g_child_connection);
     g_child_connection.reset();
 
+    // if we already received a STOP or QUITTING message, then we also
+    // want to get rid of the timers and child death signals
+    //
+    if(f_stop_received)
+    {
+        g_communicator->remove_connection(g_wakeup_timer);
+        g_communicator->remove_connection(g_tick_timer);
+        g_communicator->remove_connection(g_signal_child_death);
+
+        // this was the last straw, now we are quitting...
+        //
+        return;
+    }
+
     // we may have another website to work on right now
     //
     if(f_website.isEmpty() || f_pinged)
@@ -1809,8 +1820,14 @@ void snap_backend::disconnect()
     //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messenger" was marked as erroneous by the kernel.
     //
 
-    if(!f_cron_action && g_messenger && f_action != "list")
+    // this is an equivalent to a STOP message
+    //
+    f_stop_received = true;
+
+    if(!f_cron_action && g_messenger != nullptr && g_messenger->is_connected() && f_action != "list")
     {
+        g_messenger->mark_done();
+
         // this was the CRON action
         //
         QString action(f_action);
@@ -1824,11 +1841,16 @@ void snap_backend::disconnect()
         cmd.set_command("UNREGISTER");
         cmd.add_parameter("service", action);
         g_messenger->send_message(cmd);
+
+        // g_messenger will very quickly receive a HUP now
+    }
+    else
+    {
+        g_communicator->remove_connection(g_messenger);
     }
 
     // now disconnect so we can quit
     //
-    g_communicator->remove_connection(g_messenger);
     g_communicator->remove_connection(g_wakeup_timer);
     g_communicator->remove_connection(g_interrupt);
     g_communicator->remove_connection(g_tick_timer);

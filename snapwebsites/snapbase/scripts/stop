@@ -30,7 +30,7 @@ do
 
 	# Now start the command
 	#
-	echo "snapstop --service $PID"
+	echo "snapstop --service $PID # from $pid_file"
 	BUILD/snapwebsites/snapcommunicator/src/snapstop --service $PID
 done
 
