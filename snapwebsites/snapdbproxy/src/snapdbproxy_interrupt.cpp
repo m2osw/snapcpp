@@ -70,6 +70,7 @@ snapdbproxy_interrupt::snapdbproxy_interrupt(snapdbproxy * s)
     : snap_signal(SIGINT)
     , f_snapdbproxy(s)
 {
+    unblock_signal_on_destruction();
     set_name("snapdbproxy interrupt");
 }
 

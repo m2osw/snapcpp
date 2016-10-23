@@ -7,6 +7,7 @@ libsnapwebsites (1.1.32.0~xenial) xenial; urgency=high
   * Fixed the case where we receive a STOP and the child is still running.
   * Set the f_stop_received flag to true in disconnect() to make sure we know.
   * Fixed the UNREGISTER of the disconnect(), it was ignored before.
+  * Restore the SIGINT signal handler after the first SIGINT received.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 

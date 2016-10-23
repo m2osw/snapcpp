@@ -310,6 +310,7 @@ snap_firewall_interrupt::snap_firewall_interrupt(snap_firewall * fw)
     : snap_signal(SIGINT)
     , f_snap_firewall(fw)
 {
+    unblock_signal_on_destruction();
     set_name("snapfirewall interrupt");
 }
 

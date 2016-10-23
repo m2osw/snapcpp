@@ -179,6 +179,7 @@ backend_interrupt::backend_interrupt(snap_backend * b)
     : snap_signal(SIGINT)
     , f_snap_backend(b)
 {
+    unblock_signal_on_destruction();
     set_name("snap_backend interrupt");
 }
 

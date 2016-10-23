@@ -1662,6 +1662,7 @@ interrupt_impl::interrupt_impl(snap_communicator_server::pointer_t cs)
     : snap_signal(SIGINT)
     , f_communicator_server(cs)
 {
+    unblock_signal_on_destruction();
     set_name("snap communicator interrupt");
 }
 

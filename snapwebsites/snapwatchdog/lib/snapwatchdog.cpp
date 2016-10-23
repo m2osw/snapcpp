@@ -131,6 +131,7 @@ watchdog_interrupt::watchdog_interrupt(watchdog_server::pointer_t ws)
     : snap_signal(SIGINT)
     , f_watchdog_server(ws)
 {
+    unblock_signal_on_destruction();
     set_name("watchdog interrupt");
 }
 

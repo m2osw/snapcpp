@@ -74,6 +74,7 @@ manager_interrupt::manager_interrupt(manager_daemon * md)
     : snap_signal(SIGINT)
     , f_manager_daemon(md)
 {
+    unblock_signal_on_destruction();
     set_name("manager interrupt");
 }
 

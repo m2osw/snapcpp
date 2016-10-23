@@ -4,6 +4,7 @@ snapcommunicator (1.0.36.0~xenial) xenial; urgency=high
   * Added a snapstop tool to send the Ctrl-C (SIGINT) and Term (SIGTERM).
   * Fixed the stop() function so it just disconnect from local services
     instead of shutting them down.
+  * Restore the SIGINT signal handler after the first SIGINT received.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 

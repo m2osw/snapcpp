@@ -2210,6 +2210,7 @@ void server::stop(bool quitting)
         g_connection->f_communicator->remove_connection(g_connection->f_listener);
         g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
         g_connection->f_communicator->remove_connection(g_connection->f_interrupt);
+        g_connection->f_interrupt.reset();
     }
 }
 
@@ -2254,6 +2255,7 @@ server_interrupt::server_interrupt(server * s)
     : snap_signal(SIGINT)
     , f_server(s)
 {
+    unblock_signal_on_destruction();
     set_name("server interrupt");
 }
 

@@ -2,6 +2,7 @@ snapwatchdog (0.2.13.0~xenial) xenial; urgency=high
 
   * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
   * Fixed the stop() function so it removes the messenger if not connected.
+  * Restore the SIGINT signal handler after the first SIGINT received.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 

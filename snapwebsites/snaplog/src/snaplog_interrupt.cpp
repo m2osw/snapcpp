@@ -68,6 +68,7 @@ snaplog_interrupt::snaplog_interrupt(snaplog * sl)
     : snap_signal(SIGINT)
     , f_snaplog(sl)
 {
+    unblock_signal_on_destruction();
     set_name("snaplog interrupt");
 }
 

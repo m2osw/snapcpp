@@ -70,6 +70,7 @@ snaplock_interrupt::snaplock_interrupt(snaplock * sl)
     : snap_signal(SIGINT)
     , f_snaplock(sl)
 {
+    unblock_signal_on_destruction();
     set_name("snaplock interrupt");
 }
 
