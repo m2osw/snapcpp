@@ -3,7 +3,7 @@ LOGROTFILE="/etc/logrotate.d/apache2"
 
 if [ -e "${LOGROTFILE}" ]
 then
-	if ! grep maxsize "${LOGROTFILE}" >&1 /dev/null
+	if ! grep maxsize "${LOGROTFILE}" 2>&1 > /dev/null
 	then
 		sed -i \
 			-e "s/rotate 14/rotate 91/" \
