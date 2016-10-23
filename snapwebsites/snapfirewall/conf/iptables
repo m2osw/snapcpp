@@ -6,7 +6,6 @@
 /var/log/iptables.log {
     weekly
     maxsize 1M
-    su syslog adm
     missingok
     rotate 10
     postrotate
