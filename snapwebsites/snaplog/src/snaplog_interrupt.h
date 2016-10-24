@@ -32,6 +32,7 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#pragma once
 
 // snapwebsites lib
 //
@@ -46,23 +47,20 @@
 class snaplog;
 
 
-class snaplog_messenger
-        : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
+class snaplog_interrupt
+        : public snap::snap_communicator::snap_signal
 {
 public:
-    typedef std::shared_ptr<snaplog_messenger>    pointer_t;
+    typedef std::shared_ptr<snaplog_interrupt>      pointer_t;
 
-                                snaplog_messenger(snaplog * proxy, std::string const & addr, int port);
+                                snaplog_interrupt(snaplog * sl);
+    virtual                     ~snaplog_interrupt() override {}
 
-    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void                process_message(snap::snap_communicator_message const & message);
-    virtual void                process_connection_failed(std::string const & error_message);
-    virtual void                process_connected();
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal() override;
 
 private:
-    // this is owned by a snaplog function so no need for a smart pointer
-    // (and it would create a loop)
-    snaplog *               f_snaplog = nullptr;
+    snaplog *                   f_snaplog = nullptr;
 };
 
 

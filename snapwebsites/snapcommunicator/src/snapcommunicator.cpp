@@ -19,7 +19,7 @@
 //
 #include "version.h"
 
-// our lib
+// snapwebsites lib
 //
 #include <snapwebsites/addr.h>
 #include <snapwebsites/chownnm.h>
@@ -401,6 +401,7 @@ public:
     void                        broadcast_message(snap::snap_communicator_message const & message, base_connection_vector_t const & accepting_remote_connections = base_connection_vector_t());
     void                        process_load_balancing();
     tcp_client_server::bio_client::mode_t   connection_mode() const;
+    void                        shutdown(bool quitting);
 
 private:
     struct message_cache
@@ -411,10 +412,8 @@ private:
         snap::snap_communicator_message     f_message;                  // the message
     };
 
-    void                        do_root_work();
     void                        drop_privileges();
     void                        refresh_heard_of();
-    void                        shutdown(bool full);
     void                        listen_loadavg(snap::snap_communicator_message const & message);
     void                        save_loadavg(snap::snap_communicator_message const & message);
     void                        register_for_loadavg(QString const & ip);
@@ -428,6 +427,7 @@ private:
     QString                                             f_groupname;
     std::string                                         f_public_ip;        // f_listener IP address
     snap::snap_communicator::pointer_t                  f_communicator;
+    snap::snap_communicator::snap_connection::pointer_t f_interrupt;        // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_ping;             // UDP/IP
@@ -1626,6 +1626,62 @@ private:
 
 
 
+/** \brief Handle the SIGINT that is expected to stop the server.
+ *
+ * This class is an implementation of the snap_signal that listens
+ * on the SIGINT.
+ */
+class interrupt_impl
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<interrupt_impl>     pointer_t;
+
+                        interrupt_impl(snap_communicator_server::pointer_t cs);
+    virtual             ~interrupt_impl() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void        process_signal() override;
+
+private:
+    snap_communicator_server::pointer_t     f_communicator_server;
+};
+
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] cs  The snapcommunicator we are listening for.
+ */
+interrupt_impl::interrupt_impl(snap_communicator_server::pointer_t cs)
+    : snap_signal(SIGINT)
+    , f_communicator_server(cs)
+{
+    unblock_signal_on_destruction();
+    set_name("snap communicator interrupt");
+}
+
+
+/** \brief Call the stop function of the snaplock object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void interrupt_impl::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_communicator_server->shutdown(false);
+}
+
+
+
+
 /** \brief Handle new connections from clients.
  *
  * This class is an implementation of the snap server connection so we can
@@ -1867,9 +1923,6 @@ snap_communicator_server::snap_communicator_server(snap::server::pointer_t s)
  */
 void snap_communicator_server::init()
 {
-    // do some work as root, then drop rights to snapwebsites:snapwebsites
-    do_root_work();
-
     // keep a copy of the server name handy
     f_server_name = QString::fromUtf8(snap::server::get_server_name().c_str());
 
@@ -1974,6 +2027,11 @@ void snap_communicator_server::init()
     }
 
     f_communicator = snap::snap_communicator::instance();
+
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new interrupt_impl(shared_from_this()));
+    f_communicator->add_connection(f_interrupt);
 
     int max_pending_connections(-1);
     {
@@ -2111,84 +2169,6 @@ void snap_communicator_server::init()
 tcp_client_server::bio_client::mode_t snap_communicator_server::connection_mode() const
 {
     return f_connection_mode;
-}
-
-
-/** \brief Do some work as the root user before we become snapwebsites.
- *
- * This function is called just before we drop our permissions to
- * snapwebsites:snapwebsites. It creates a few directories that the
- * other services and ourselves may use but may not be available
- * at the time we start (because we use RAM disks for many of our
- * temporary files.)
- */
-void snap_communicator_server::do_root_work()
-{
-    // get the user and group name that we want to use for the directories
-    // we are about to create and then to become (i.e. to drop our permissions)
-    //
-    f_username = f_server->get_parameter("user");
-    if(f_username.isEmpty())
-    {
-        f_username = "snapwebsites";
-    }
-    f_groupname = f_server->get_parameter("group");
-    if(f_groupname.isEmpty())
-    {
-        f_groupname = "snapwebsites";
-    }
-
-    // make sure the path to the lock file exists
-    //
-    {
-        QString lock_path(f_server->get_parameter("lock_path"));
-        if(lock_path.isEmpty())
-        {
-            lock_path = "/run/lock/snapwebsites";
-        }
-        if(snap::mkdir_p(lock_path, false) != 0)
-        {
-            SNAP_LOG_FATAL("the path to the lock filename could not be created (mkdir -p \"")(lock_path)("\").");
-            throw snap::snap_exception(QString("the path to the lock filename could not be created (mkdir -p \"%1\").")
-                                .arg(lock_path));
-        }
-
-        // for sub-processes to be able to access that folder we need to
-        // also setup the user and group as expected
-        //
-        snap::chownnm(lock_path, f_username, f_groupname);
-    }
-
-    // create the run-time directory because other processes may not
-    // otherwise have enough permissions (i.e. not be root as possibly
-    // required for this task)
-    //
-    {
-        // user can change the path in snapinit.conf (although it does not
-        // get passed down at this point... so each tool has to be properly
-        // adjusted if modified here.)
-        //
-        QString run_path(f_server->get_parameter("run_path"));
-        if(run_path.isEmpty())
-        {
-            run_path = "/run/snapwebsites";
-        }
-        if(snap::mkdir_p(run_path, false) != 0)
-        {
-            SNAP_LOG_FATAL("run_path \"")(run_path)("\" could not be created (mkdir -p \"")(run_path)("\").");
-            throw snap::snap_exception(QString("run_path \"%1\" could not be created (mkdir -p \"%1\").")
-                                .arg(run_path));
-        }
-
-        // for sub-processes to be able to access that folder we need to
-        // also setup the user and group as expected
-        //
-        snap::chownnm(run_path, f_username, f_groupname);
-    }
-
-// ------------------- this must be last, any step that require root privileges must be done before this line --------------------
-
-    drop_privileges();
 }
 
 
@@ -4687,9 +4667,9 @@ void snap_communicator_server::refresh_heard_of()
  * work since we have to send a message to all connections and the message
  * vary depending on the type of connection.
  *
- * \param[in] full  Do a full shutdown (true) or just a stop (false).
+ * \param[in] quitting  Do a full shutdown (true) or just a stop (false).
  */
-void snap_communicator_server::shutdown(bool full)
+void snap_communicator_server::shutdown(bool quitting)
 {
     // from now on, we are shutting down; use this flag to make sure we
     // do not accept any more REGISTER, CONNECT and other similar
@@ -4731,7 +4711,7 @@ void snap_communicator_server::shutdown(bool full)
 
             // a remote snapcommunicator server needs to also
             // shutdown so duplicate that message there
-            if(full)
+            if(quitting)
             {
                 // SHUTDOWN means we shutdown the entire cluster!!!
                 reply.set_command("SHUTDOWN");
@@ -4795,7 +4775,7 @@ void snap_communicator_server::shutdown(bool full)
 
                         // a remote snapcommunicator server needs to also
                         // shutdown so duplicate that message there
-                        if(full)
+                        if(quitting)
                         {
                             // SHUTDOWN means we shutdown the entire cluster!!!
                             reply.set_command("SHUTDOWN");
@@ -4805,23 +4785,32 @@ void snap_communicator_server::shutdown(bool full)
                             // DISCONNECT means only we are going down
                             reply.set_command("DISCONNECT");
                         }
+
+                        verify_command(c, reply);
+                        c->send_message(reply);
+
+                        // we cannot yet remove the connection from the communicator
+                        // or these messages will never be sent... the client is
+                        // expected to reply with UNREGISTER which does the removal
+                        // the remote connections are expected to disconnect when
+                        // they receive a DISCONNECT
                     }
                     else
                     {
                         // a standard client (i.e. pagelist, images, etc.)
                         // needs to stop so send that message instead
                         //
-                        reply.set_command("STOP");
+                        //reply.set_command("STOP");
+
+                        // we do not send anything to locally connected services,
+                        // instead we let them be, so just remove that connection
+                        // immediately
+                        //
+                        // we won't accept new local connections since we also
+                        // remove the f_local_listener (see below) connection
+                        //
+                        f_communicator->remove_connection(connection);
                     }
-
-                    verify_command(c, reply);
-                    c->send_message(reply);
-
-                    // we cannot yet remove the connection from the communicator
-                    // or these messages will never be sent... the client is
-                    // expected to reply with UNREGISTER which does the removal
-                    // the remote connections are expected to disconnect when
-                    // they receive a DISCONNECT
                 }
             }
             // else -- ignore the main TCP and UDP servers which we
@@ -4832,6 +4821,7 @@ void snap_communicator_server::shutdown(bool full)
     // remove the two main servers; we will not respond to any more
     // requests anyway
     //
+    f_communicator->remove_connection(f_interrupt);         // TCP/IP
     f_communicator->remove_connection(f_local_listener);    // TCP/IP
     f_communicator->remove_connection(f_listener);          // TCP/IP
     f_communicator->remove_connection(f_ping);              // UDP/IP

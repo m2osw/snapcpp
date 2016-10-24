@@ -74,7 +74,7 @@ snapdbproxy_listener::snapdbproxy_listener(snapdbproxy * proxy, std::string cons
     : snap_tcp_server_connection(addr, port, "", "", tcp_client_server::bio_server::mode_t::MODE_PLAIN, max_connections, reuse_addr)
     , f_snapdbproxy(proxy)
 {
-    set_name("snapdb proxy listener");
+    set_name("snapdbproxy listener");
     non_blocking();
     set_priority(30);
 }

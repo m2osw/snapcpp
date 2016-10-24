@@ -4,11 +4,14 @@ snapdbproxy (1.1.17.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 23 Oct 2016 18:04:01 -0700
 
-snapdbproxy (1.1.15.3~xenial) xenial; urgency=high
+snapdbproxy (1.1.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
+  * Fixed the stop() by adding the removal of the f_timer connection and
+    so it removes the messenger if not connected.
+  * Restore the SIGINT signal handler after the first SIGINT received.
 
- -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:08 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 
 snapdbproxy (1.1.15.0~xenial) xenial; urgency=high
 

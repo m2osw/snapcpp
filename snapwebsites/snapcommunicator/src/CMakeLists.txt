@@ -31,6 +31,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+
 #################################################################################
 ## Snap signal manager
 ##
@@ -54,8 +55,12 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+    TARGETS
+        ${PROJECT_NAME}
+    RUNTIME DESTINATION
+        bin
 )
+
 
 
 #################################################################################
@@ -77,7 +82,37 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+    TARGETS
+        ${PROJECT_NAME}
+    RUNTIME DESTINATION
+        bin
+)
+
+
+#################################################################################
+## Snap send SIGINT to stop a daemon
+##
+project(snapstop)
+
+add_executable(${PROJECT_NAME}
+    snapstop.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+    RUNTIME DESTINATION
+        bin
 )
 
 

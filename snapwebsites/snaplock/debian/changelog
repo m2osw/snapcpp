@@ -1,8 +1,10 @@
-snaplock (1.0.9.6~xenial) xenial; urgency=high
+snaplock (1.0.10.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.
+  * Fixed the stop() function so it removes the messenger if not connected.
+  * Restore the SIGINT signal handler after the first SIGINT received.
 
- -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:07 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 
 snaplock (1.0.9.0~xenial) xenial; urgency=high
 

@@ -319,6 +319,11 @@ void snaplog::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new snaplog_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
+
     // create a messenger to communicate with the Snap Communicator process
     // and snapinit as required
     //
@@ -662,20 +667,36 @@ void snaplog::stop(bool quitting)
 {
     SNAP_LOG_INFO("Stopping server.");
 
-    if(f_messenger)
+    if(f_messenger != nullptr)
     {
-        f_messenger->mark_done();
-
-        // unregister if we are still connected to the messenger
-        // and Snap! Communicator is not already quitting
-        //
-        if(!quitting)
+        if(quitting || !f_messenger->is_connected())
         {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            f_communicator->remove_connection(f_messenger);
+            f_messenger.reset();
+        }
+        else
+        {
+            f_messenger->mark_done();
+
+            // unregister if we are still connected to the messenger
+            // and Snap! Communicator is not already quitting
+            //
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snaplog");
             f_messenger->send_message(cmd);
         }
+    }
+
+    if(f_communicator != nullptr)
+    {
+        f_communicator->remove_connection(f_interrupt);
+        f_interrupt.reset();
+        f_communicator->remove_connection(f_timer);
+        f_timer.reset();
     }
 }
 

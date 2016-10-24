@@ -320,6 +320,7 @@ protected:
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
+    friend class server_interrupt;
     friend class listener_impl;
 
     static void                             sighandler( int sig );

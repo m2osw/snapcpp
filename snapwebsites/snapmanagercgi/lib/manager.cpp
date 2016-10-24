@@ -382,9 +382,9 @@ void manager::init(int argc, char * argv[])
 
     // get the path to a directory where we can create lock files
     //
-    if(f_config.has_parameter("snapcommunicator", "lock_path"))
+    if(f_config.has_parameter("snapserver", "lock_path"))
     {
-        f_lock_path = f_config(QString("snapcommunicator"), "lock_path");
+        f_lock_path = f_config(QString("snapserver"), "lock_path");
     }
 
     // If not defined, keep the default of localhost:4041

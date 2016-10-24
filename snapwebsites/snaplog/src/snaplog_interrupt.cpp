@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapwebsites/snaplog/src/snaplog_messenger.h
+ *      snapwebsites/snaplog/src/snaplog_interrupt.cpp
  *
  * Description:
  *      Logger for the Snap! system. This service uses snapcommunicator to listen
@@ -33,37 +33,57 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// snapwebsites lib
+
+// ourselves
 //
-#include <snapwebsites/snapwebsites.h>
-#include <snapwebsites/snap_communicator.h>
+#include "snaplog.h"
+#include "snaplog_interrupt.h"
 
-// advgetopt lib
+// our lib
 //
-#include <advgetopt/advgetopt.h>
+#include <snapwebsites/log.h>
 
 
-class snaplog;
+
+/** \class snaplog_interrupt
+ * \brief Handle the SIGINT Unix signal.
+ *
+ * This class is an implementation of the signalfd() specifically
+ * listening for the SIGINT signal.
+ */
 
 
-class snaplog_messenger
-        : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] sl  The snaplog server we are listening for.
+ */
+snaplog_interrupt::snaplog_interrupt(snaplog * sl)
+    : snap_signal(SIGINT)
+    , f_snaplog(sl)
 {
-public:
-    typedef std::shared_ptr<snaplog_messenger>    pointer_t;
+    unblock_signal_on_destruction();
+    set_name("snaplog interrupt");
+}
 
-                                snaplog_messenger(snaplog * proxy, std::string const & addr, int port);
 
-    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void                process_message(snap::snap_communicator_message const & message);
-    virtual void                process_connection_failed(std::string const & error_message);
-    virtual void                process_connected();
-
-private:
-    // this is owned by a snaplog function so no need for a smart pointer
-    // (and it would create a loop)
-    snaplog *               f_snaplog = nullptr;
-};
+/** \brief Call the stop function of the snaplog object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void snaplog_interrupt::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_snaplog->stop(false);
+}
 
 
 // vim: ts=4 sw=4 et

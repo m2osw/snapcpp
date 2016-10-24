@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snapmanagerdaemon
-After=snapcommunicator.service snapfirewall.service
+After=snapbase.service snapcommunicator.service snapfirewall.service
 
 [Service]
 Type=simple
@@ -11,7 +11,7 @@ Type=simple
 WorkingDirectory=/var/lib/snapwebsites
 ProtectHome=off
 ExecStart=/usr/bin/snapmanagerdaemon
-ExecStop=/usr/bin/snapsignal "snapmanagerdaemon/STOP cache=no"
+ExecStop=/usr/bin/snapstop $MAINPID
 Restart=on-failure
 RestartSec=1min
 # Be explicit, we need snapmanagerdaemon running as root

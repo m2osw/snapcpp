@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Snap! Websites snapbackend CRON daemon
-After=snapcommunicator.service snapfirewall.service snaplock.service snapdbproxy.service
+After=snapbase.service snapcommunicator.service snapfirewall.service snaplock.service snapdbproxy.service
 
 [Service]
 # See also the snapbackend.timer file
@@ -12,7 +12,7 @@ WorkingDirectory=~
 ProtectHome=true
 NoNewPrivileges=true
 ExecStart=/usr/bin/snapbackend
-ExecStop=/usr/bin/snapsignal "snapbackend/STOP cache=no"
+ExecStop=/usr/bin/snapstop $MAINPID
 User=snapwebsites
 Group=snapwebsites
 # No auto-restart, we use the timer to start once in a while

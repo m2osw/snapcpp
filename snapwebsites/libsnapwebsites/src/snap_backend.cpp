@@ -140,6 +140,66 @@ namespace
 snap_communicator::pointer_t        g_communicator;
 
 
+/** \brief Handle the SIGINT that is expected to stop the server.
+ *
+ * This class is an implementation of the snap_signal that listens
+ * on the SIGINT.
+ */
+class backend_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<backend_interrupt>  pointer_t;
+
+                        backend_interrupt(snap_backend * b);
+    virtual             ~backend_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void        process_signal() override;
+
+private:
+    snap_backend *      f_snap_backend = nullptr;
+};
+
+
+backend_interrupt::pointer_t       g_interrupt;
+
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] b  The server we are listening for.
+ */
+backend_interrupt::backend_interrupt(snap_backend * b)
+    : snap_signal(SIGINT)
+    , f_snap_backend(b)
+{
+    unblock_signal_on_destruction();
+    set_name("snap_backend interrupt");
+}
+
+
+/** \brief Call the stop function of the snaplock object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void backend_interrupt::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_snap_backend->stop(false);
+}
+
+
+
+
+
 /** \brief Capture children death.
  *
  * This class used used to create a connection on started that allows
@@ -444,6 +504,8 @@ void messenger::process_connection_failed(std::string const & error_message)
 
     // also call the default function, just in case
     snap_tcp_client_permanent_message_connection::process_connection_failed(error_message);
+
+    f_snap_backend->process_connection_failed();
 }
 
 
@@ -489,12 +551,13 @@ public:
     typedef std::shared_ptr<child_connection>   pointer_t;
 
                                 child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t context);
+    virtual                     ~child_connection() override {}
 
     bool                        lock(QString const & uri);
     void                        unlock();
 
     // snap::snap_communicator::snap_pipe_message_connection implementation
-    virtual void                process_message(snap_communicator_message const & message);
+    virtual void                process_message(snap_communicator_message const & message) override;
 
 private:
     snap_backend *                              f_snap_backend = nullptr;
@@ -844,6 +907,9 @@ void snap_backend::process_action()
     //
     g_communicator = snap_communicator::instance();
 
+    g_interrupt.reset(new backend_interrupt(this));
+    g_communicator->add_connection(g_interrupt);
+
     // create a TCP messenger connected to the Snap! Communicator server
     //
     {
@@ -882,10 +948,7 @@ void snap_backend::process_action()
         g_communicator->add_connection(g_signal_child_death);
     }
 
-    if(f_cron_action)
-    {
-        SNAP_LOG_INFO("------------------------------------ CRON backend ")(f_action)(" started.");
-    }
+    SNAP_LOG_INFO("------------------------------------ CRON backend ")(f_action)(" started.");
 
     // start our event loop
     //
@@ -1363,11 +1426,6 @@ void snap_backend::stop(bool quitting)
 {
     f_stop_received = true;
 
-    if(g_messenger != nullptr)
-    {
-        g_messenger->mark_done();
-    }
-
     // stop the timers immediately, although that will not prevent
     // one more call to their callbacks which thus still have to
     // check the f_stop_received flag
@@ -1383,22 +1441,35 @@ void snap_backend::stop(bool quitting)
         g_tick_timer->set_timeout_delay(-1);
     }
 
-    // unregister if we are still connected to the messenger
-    // and Snap! Communicator is not already quitting
-    //
-    if(g_messenger != nullptr && !quitting)
+    if(g_messenger != nullptr)
     {
-        QString action(f_action);
-        int const pos(action.indexOf(':'));
-        if(pos >= 0)
+        if(quitting || !g_messenger->is_connected())
         {
-            action = action.mid(pos + 2);
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            g_communicator->remove_connection(g_messenger);
+            g_messenger.reset();
         }
+        else
+        {
+            g_messenger->mark_done();
 
-        snap::snap_communicator_message cmd;
-        cmd.set_command("UNREGISTER");
-        cmd.add_parameter("service", action);
-        g_messenger->send_message(cmd);
+            // unregister if we are still connected to the messenger
+            // and Snap! Communicator is not already quitting
+            //
+            QString action(f_action);
+            int const pos(action.indexOf(':'));
+            if(pos >= 0)
+            {
+                action = action.mid(pos + 2);
+            }
+
+            snap::snap_communicator_message cmd;
+            cmd.set_command("UNREGISTER");
+            cmd.add_parameter("service", action);
+            g_messenger->send_message(cmd);
+        }
     }
 
     // if we still have a child, ask the child to quit first
@@ -1413,12 +1484,33 @@ void snap_backend::stop(bool quitting)
     }
     else
     {
-        //g_communicator->remove_connection(g_messenger); -- this one will get an expected HUP shortly
+        //g_communicator->remove_connection(g_messenger); -- this one will get an expected HUP shortly or when the child dies
         g_communicator->remove_connection(g_wakeup_timer);
         g_communicator->remove_connection(g_tick_timer);
         g_communicator->remove_connection(g_signal_child_death);
     }
+
+    g_communicator->remove_connection(g_interrupt);
 }
+
+
+void snap_backend::process_connection_failed()
+{
+    // if this was not called with --action, increase a counter and
+    // quit after a few tries
+    //
+    if(!f_cron_action)
+    {
+        ++f_error_count;
+        if(f_error_count >= 3)
+        {
+            // too many attempts, just quit
+            //
+            disconnect();
+        }
+    }
+}
+
 
 
 /** \brief Process a "child" message.
@@ -1572,6 +1664,20 @@ void snap_backend::capture_zombies(pid_t pid)
     g_communicator->remove_connection(g_child_connection);
     g_child_connection.reset();
 
+    // if we already received a STOP or QUITTING message, then we also
+    // want to get rid of the timers and child death signals
+    //
+    if(f_stop_received)
+    {
+        g_communicator->remove_connection(g_wakeup_timer);
+        g_communicator->remove_connection(g_tick_timer);
+        g_communicator->remove_connection(g_signal_child_death);
+
+        // this was the last straw, now we are quitting...
+        //
+        return;
+    }
+
     // we may have another website to work on right now
     //
     if(f_website.isEmpty() || f_pinged)
@@ -1715,8 +1821,14 @@ void snap_backend::disconnect()
     //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messenger" was marked as erroneous by the kernel.
     //
 
-    if(g_messenger && !f_cron_action && f_action != "list")
+    // this is an equivalent to a STOP message
+    //
+    f_stop_received = true;
+
+    if(!f_cron_action && g_messenger != nullptr && g_messenger->is_connected() && f_action != "list")
     {
+        g_messenger->mark_done();
+
         // this was the CRON action
         //
         QString action(f_action);
@@ -1730,12 +1842,18 @@ void snap_backend::disconnect()
         cmd.set_command("UNREGISTER");
         cmd.add_parameter("service", action);
         g_messenger->send_message(cmd);
+
+        // g_messenger will very quickly receive a HUP now
+    }
+    else
+    {
+        g_communicator->remove_connection(g_messenger);
     }
 
     // now disconnect so we can quit
     //
-    g_communicator->remove_connection(g_messenger);
     g_communicator->remove_connection(g_wakeup_timer);
+    g_communicator->remove_connection(g_interrupt);
     g_communicator->remove_connection(g_tick_timer);
     g_communicator->remove_connection(g_signal_child_death);
 }
@@ -1865,6 +1983,8 @@ bool snap_backend::process_backend_uri(QString const & uri)
         g_messenger.reset();
         g_communicator->remove_connection(g_wakeup_timer);
         g_wakeup_timer.reset();
+        g_communicator->remove_connection(g_interrupt);
+        g_interrupt.reset();
         g_communicator->remove_connection(g_tick_timer);
         g_tick_timer.reset();
         g_communicator->remove_connection(g_signal_child_death);

@@ -39,6 +39,8 @@ public:
     void                        remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri);
 
     void                        run_backend();
+    void                        stop(bool quitting);
+    void                        process_connection_failed();
 
     // internal functions that need to be public...
     // (we could create friends, too)
@@ -52,7 +54,6 @@ public:
 private:
     void                        process_action();
     bool                        process_backend_uri(QString const & uri);
-    void                        stop(bool quitting);
     void                        disconnect();
     virtual void                disconnect_cassandra() override;
     std::string                 get_signal_name_from_action();
@@ -65,6 +66,7 @@ private:
     QString                                 f_action;
     QString                                 f_website;
     int                                     f_not_ready_counter = 0;
+    int                                     f_error_count = 0;
     bool                                    f_cron_action = false;
     bool                                    f_stop_received = false;
     bool                                    f_auto_retry_cassandra = false;

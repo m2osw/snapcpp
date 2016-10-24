@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplog.h
+ *      snapwebsites/snaplog/src/snaplog.h
  *
  * Description:
  *      Logger for the Snap! system. This service uses snapcommunicator to listen
@@ -32,7 +32,9 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#pragma once
 
+#include "snaplog_interrupt.h"
 #include "snaplog_messenger.h"
 #include "snaplog_timer.h"
 
@@ -63,6 +65,7 @@ public:
     void                        run();
     void                        process_message(snap::snap_communicator_message const & message);
     void                        process_timeout();
+    void                        stop(bool quitting);
 
     static void                 sighandler( int sig );
 
@@ -71,28 +74,28 @@ private:
     snaplog &                   operator = ( snaplog const & ) = delete;
 
     void                        usage(advgetopt::getopt::status_t status);
-    void                        stop(bool quitting);
 
     void                        add_message_to_db( snap::snap_communicator_message const & message );
     void                        mysql_ready();
     void                        no_mysql();
 
-    static pointer_t                          g_instance;
+    static pointer_t                        g_instance;
 
-    advgetopt::getopt                         f_opt;
-    snap::snap_config                         f_config;
-    QString                                   f_log_conf                  = "/etc/snapwebsites/logger/snaplog.properties";
-    QString                                   f_communicator_addr         = "127.0.0.1";
-    int                                       f_communicator_port         = 4040;
-    std::string                               f_server_name;
-    snap::snap_communicator::pointer_t        f_communicator;
-    snaplog_messenger::pointer_t              f_messenger;
-    snaplog_timer::pointer_t                  f_timer;
-    bool                                      f_ready                     = false;
-    bool                                      f_force_restart             = false;
-    bool                                      f_stop_received             = false;
-    bool                                      f_debug                     = false;
-    float                                     f_mysql_connect_timer_index = 1.25f;
+    advgetopt::getopt                       f_opt;
+    snap::snap_config                       f_config;
+    QString                                 f_log_conf                  = "/etc/snapwebsites/logger/snaplog.properties";
+    QString                                 f_communicator_addr         = "127.0.0.1";
+    int                                     f_communicator_port         = 4040;
+    std::string                             f_server_name;
+    snap::snap_communicator::pointer_t      f_communicator;
+    snaplog_interrupt::pointer_t            f_interrupt;
+    snaplog_messenger::pointer_t            f_messenger;
+    snaplog_timer::pointer_t                f_timer;
+    bool                                    f_ready                     = false;
+    bool                                    f_force_restart             = false;
+    bool                                    f_stop_received             = false;
+    bool                                    f_debug                     = false;
+    float                                   f_mysql_connect_timer_index = 1.25f;
 };
 
 

@@ -235,6 +235,8 @@ public:
                                     snap_signal(int posix_signal);
                                     ~snap_signal();
 
+        void                        unblock_signal_on_destruction();
+
         // snap_connection implementation
         virtual bool                is_signal() const override;
         virtual int                 get_socket() const override;
@@ -249,6 +251,7 @@ public:
         int                         f_signal = 0;   // i.e. SIGHUP, SIGTERM...
         int                         f_socket = -1;  // output of signalfd()
         struct signalfd_siginfo     f_signal_info = signalfd_siginfo();
+        bool                        f_unblock = false;
     };
 
     class snap_thread_done_signal

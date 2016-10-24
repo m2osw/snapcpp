@@ -400,6 +400,11 @@ void snapdbproxy::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
+    // capture Ctrl-C (SIGINT)
+    //
+    f_interrupt.reset(new snapdbproxy_interrupt(this));
+    f_communicator->add_connection(f_interrupt);
+
     // create a listener
     //
     // Note that the listener changes its priority to 30 in order to
@@ -896,17 +901,25 @@ void snapdbproxy::cassandra_ready()
  */
 void snapdbproxy::stop(bool quitting)
 {
-    SNAP_LOG_INFO("Stopping server.");
+    SNAP_LOG_INFO("Stopping snapdbproxy server.");
 
-    if(f_messenger)
+    if(f_messenger != nullptr)
     {
-        f_messenger->mark_done();
-
-        // unregister if we are still connected to the messenger
-        // and Snap! Communicator is not already quitting
-        //
-        if(!quitting)
+        if(quitting || !f_messenger->is_connected())
         {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            f_communicator->remove_connection(f_messenger);
+            f_messenger.reset();
+        }
+        else
+        {
+            f_messenger->mark_done();
+
+            // unregister if we are still connected to the messenger
+            // and Snap! Communicator is not already quitting
+            //
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapdbproxy");
@@ -917,10 +930,16 @@ void snapdbproxy::stop(bool quitting)
     // also remove the listener, we will not accept any more
     // database commands...
     //
-    if(f_communicator)
+    if(f_communicator != nullptr)
     {
+        f_communicator->remove_connection(f_timer);
+        f_timer.reset();
+
         f_communicator->remove_connection(f_listener);
         f_listener.reset(); // TBD: in snapserver I do not reset these pointers...
+
+        f_communicator->remove_connection(f_interrupt);
+        f_interrupt.reset();
     }
 }
 

@@ -422,6 +422,7 @@ namespace
     struct connection_t
     {
         snap_communicator::pointer_t                    f_communicator;
+        snap_communicator::snap_connection::pointer_t   f_interrupt;
         snap_communicator::snap_connection::pointer_t   f_listener;
         snap_communicator::snap_connection::pointer_t   f_child_death_listener;
         snap_communicator::snap_connection::pointer_t   f_messenger;
@@ -2175,12 +2176,24 @@ void server::stop(bool quitting)
 {
     SNAP_LOG_INFO("Stopping server.");
 
-    if(g_connection->f_messenger)
+    if(g_connection->f_messenger != nullptr)
     {
-        std::static_pointer_cast<messenger>(g_connection->f_messenger)->mark_done();
-
-        if(!quitting)
+        messenger::pointer_t msg(std::dynamic_pointer_cast<messenger>(g_connection->f_messenger));
+        if(quitting || (msg && !msg->is_connected()))
         {
+            // turn off that connection now, we cannot UNREGISTER since
+            // we are not connected to snapcommunicator
+            //
+            g_connection->f_communicator->remove_connection(g_connection->f_messenger);
+            g_connection->f_messenger.reset();
+        }
+        else
+        {
+            if(msg)
+            {
+                msg->mark_done();
+            }
+
             // snapcommunicator is not quitting, so we also want to unregister
             // to make sure everything works as expected
             //
@@ -2191,20 +2204,73 @@ void server::stop(bool quitting)
 
             // f_messenger is expected to HUP after this
         }
-        else
-        {
-            // snapcommunicator is quitting so we can lose that connection now
-            //
-            g_connection->f_communicator->remove_connection(g_connection->f_messenger);
-        }
     }
 
     {
         g_connection->f_communicator->remove_connection(g_connection->f_listener);
         g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
+        g_connection->f_communicator->remove_connection(g_connection->f_interrupt);
+        g_connection->f_interrupt.reset();
     }
 }
 
+
+
+
+
+
+/** \brief Handle the SIGINT that is expected to stop the server.
+ *
+ * This class is an implementation of the snap_signal that listens
+ * on the SIGINT.
+ */
+class server_interrupt
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<server_interrupt>     pointer_t;
+
+                        server_interrupt(server * s);
+    virtual             ~server_interrupt() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void        process_signal() override;
+
+private:
+    server *            f_server = nullptr;
+};
+
+
+/** \brief The interrupt initialization.
+ *
+ * The interrupt uses the signalfd() function to obtain a way to listen on
+ * incoming Unix signals.
+ *
+ * Specifically, it listens on the SIGINT signal, which is the equivalent
+ * to the Ctrl-C.
+ *
+ * \param[in] s  The server we are listening for.
+ */
+server_interrupt::server_interrupt(server * s)
+    : snap_signal(SIGINT)
+    , f_server(s)
+{
+    unblock_signal_on_destruction();
+    set_name("server interrupt");
+}
+
+
+/** \brief Call the stop function of the snaplock object.
+ *
+ * When this function is called, the signal was received and thus we are
+ * asked to quit as soon as possible.
+ */
+void server_interrupt::process_signal()
+{
+    // we simulate the STOP, so pass 'false' (i.e. not quitting)
+    //
+    f_server->stop(false);
+}
 
 
 
@@ -2449,6 +2515,11 @@ void server::listen()
     //
     g_connection = new connection_t;
     g_connection->f_communicator = snap_communicator::instance();
+
+    // capture Ctrl-C (SIGINT)
+    //
+    g_connection->f_interrupt.reset(new server_interrupt(this));
+    g_connection->f_communicator->add_connection(g_connection->f_interrupt);
 
     // create a listener, for new arriving client connections
     //

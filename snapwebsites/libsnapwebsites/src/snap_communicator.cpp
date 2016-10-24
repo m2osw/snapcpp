@@ -1407,7 +1407,9 @@ void snap_communicator::snap_connection::calculate_next_tick()
         // somehow we got called even though now is still larger
         // than f_timeout_next_date
         //
-        SNAP_LOG_DEBUG("snap_communicator::snap_connection::calculate_next_tick() called even though the next date is still larger than 'now'.");
+        // This message happens all the time, it is not helpful at the moment
+        // so commenting out.
+        //SNAP_LOG_DEBUG("snap_communicator::snap_connection::calculate_next_tick() called even though the next date is still larger than 'now'.");
         return;
     }
 
@@ -1910,6 +1912,13 @@ bool snap_communicator::snap_timer::valid_socket() const
  * The best way in our processes will be to block all signals except
  * while poll() is called (using ppoll() for the feat.)
  *
+ * \note
+ * By default the constructor masks the specified \p posix_signal and
+ * it does not restore the signal on destruction. If you want the
+ * signal to be unmasked on destruction (say to restore the default
+ * functioning of the SIGINT signal,) then make sure to call the
+ * unblock_signal() function right after you create your connection.
+ *
  * \warning
  * The the signal gets masked by this constructor. If you want to make
  * sure that most of your code does not get affected by said signal,
@@ -1920,7 +1929,9 @@ bool snap_communicator::snap_timer::valid_socket() const
  *
  * \bug
  * You should not use signal() and setup a handler for the same signal.
- * It will not play nice to have both types of signal handlers.
+ * It will not play nice to have both types of signal handlers. That
+ * being said, we my current testing (as of Ubuntu 16.04), it seems
+ * to work just fine..
  *
  * \exception snap_communicator_initialization_error
  * Create multiple snap_signal() with the same posix_signal parameter
@@ -1941,6 +1952,7 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
     : f_signal(posix_signal)
     //, f_socket(-1) -- auto-init
     //, f_signal_info() -- auto-init
+    //, f_unblock(false) -- auto-init
 {
     int const r(sigismember(&g_signal_handlers, f_signal));
     if(r != 0)
@@ -1950,7 +1962,7 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
             // this could be fixed, but probably not worth the trouble...
             throw snap_communicator_initialization_error("the same signal cannot be created more than once in your entire process.");
         }
-        // f_singal is not considered valid by this OS
+        // f_signal is not considered valid by this OS
         throw snap_communicator_initialization_error("posix_signal (f_signal) is not a valid/recognized signal number.");
     }
 
@@ -1999,6 +2011,19 @@ snap_communicator::snap_signal::~snap_signal()
 {
     close(f_socket);
     sigdelset(&g_signal_handlers, f_signal);     // ignore error, we already know f_signal is valid
+
+    if(f_unblock)
+    {
+        // also unlock the signal
+        //
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, f_signal); // ignore error, we already know f_signal is valid
+        if(sigprocmask(SIG_UNBLOCK, &set, nullptr) != 0)
+        {
+            throw snap_communicator_runtime_error("sigprocmask() failed to block signal.");
+        }
+    }
 }
 
 
@@ -2098,6 +2123,22 @@ void snap_communicator::snap_signal::process()
         }
     }
 }
+
+
+/** \brief Unmask a signal that was part of a connection.
+ *
+ * If you remove a snap_signal connection, you may want to restore
+ * the mask functionality. By default the signal gets masked but
+ * it does not get unmasked.
+ *
+ * By calling this function just after creation, the signal gets restored
+ * (unblocked) whenever the snap_signal object gets destroyed.
+ */
+void snap_communicator::snap_signal::unblock_signal_on_destruction()
+{
+    f_unblock = true;
+}
+
 
 
 

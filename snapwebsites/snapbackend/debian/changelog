@@ -1,8 +1,8 @@
-snapbackend (1.0.12.6~xenial) xenial; urgency=high
+snapbackend (1.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-491: Make use of the snapstop command to stop snapbackend processes.
 
- -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:07 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 20 Oct 2016 11:17:49 -0700
 
 snapbackend (1.0.12.0~xenial) xenial; urgency=high
 
