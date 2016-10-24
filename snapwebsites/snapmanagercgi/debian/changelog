@@ -1,3 +1,10 @@
+snapmanagercgi (1.1.31.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added a file to enable the bind9 jail for fail2ban.
+  * Added scripts in the DNS bundle to install/remove the jail.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 23 Oct 2016 17:39:38 -0700
+
 snapmanagercgi (1.1.30.0~xenial) xenial; urgency=high
 
   * SNAP-461: Removed "Requires=..." since all servers can run by themselves.

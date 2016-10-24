@@ -80,4 +80,23 @@ install(
 )
 
 
+#################################################################################
+## fail2ban files
+##
+install(
+    FILES 
+        01-iptables.conf
+        apache-auth.local
+        iptables
+        snap-apache-jail.conf
+        snap-firewall-action.conf
+        snap-iptables-filter.conf
+        snap-jail.conf
+        snap-recidive-jail.conf
+
+    DESTINATION
+        share/snapwebsites/fail2ban
+)
+
+
 # vim: ts=4 sw=4 et
