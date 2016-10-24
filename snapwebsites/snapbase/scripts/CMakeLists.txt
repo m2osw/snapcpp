@@ -1,11 +1,9 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapwebsites/snapbase/scripts/CMakeLists.txt
 #
 # Description:
-#      The Snap! Websites Server. The server is the main() of the Snap!
-#      environment. Most everything is however defined in the
-#      libsnapwebsites.so library (see lib/*).
+#      Install common scripts.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -31,19 +29,17 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-cmake_minimum_required( VERSION 3.5 )
 
-project(snapbase_project)
+#################################################################################
+## Script files (chmod a+x)
+##
+install(
+    PROGRAMS
+		snapapachelog.sh
 
-find_package( SnapCMakeModules  REQUIRED )
-find_package( SnapDoxygen )
+    DESTINATION
+       	bin
+)
 
-SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
-
-add_subdirectory( conf    )
-add_subdirectory( doc     )
-add_subdirectory( dtd     )
-add_subdirectory( src     )
-add_subdirectory( scripts )
 
 # vim: ts=4 sw=4 et

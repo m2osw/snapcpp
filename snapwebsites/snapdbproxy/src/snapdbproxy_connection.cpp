@@ -110,15 +110,22 @@ pid_t gettid()
 
 
 
-snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t & client, QString const & cassandra_host_list, int cassandra_port)
-    : snap_runner("snapdbproxy_connection")
-    //, f_proxy()
-    , f_session(session)
-    //, f_cursors() -- auto-init
-    //, f_client(nullptr) -- auto-init
-    , f_socket(client->get_socket())
-    , f_cassandra_host_list(cassandra_host_list)
-    , f_cassandra_port(cassandra_port)
+snapdbproxy_connection::snapdbproxy_connection
+    ( snapdbproxy* proxy
+    , QtCassandra::QCassandraSession::pointer_t session
+    , tcp_client_server::bio_client::pointer_t & client
+    , QString const & cassandra_host_list
+    , int cassandra_port
+    )
+        : snap_runner("snapdbproxy_connection")
+        , f_snapdbproxy(proxy)
+        //, f_proxy()
+        , f_session(session)
+        //, f_cursors() -- auto-init
+        //, f_client(nullptr) -- auto-init
+        , f_socket(client->get_socket())
+        , f_cassandra_host_list(cassandra_host_list)
+        , f_cassandra_port(cassandra_port)
 {
     // take ownership of the client's pointer (we are not in the thread
     // yet, so a simple swap is sufficient)
@@ -166,7 +173,7 @@ void snapdbproxy_connection::run()
                 //
 // TODO: remark this code off after we have resolved SNAP-493.
 //
-#if 1
+#if 0
 SNAP_LOG_TRACE("got an order: ")
         (static_cast<int>(order.get_type_of_result()))
         (", CQL \"")(order.cql())
@@ -229,6 +236,22 @@ SNAP_LOG_TRACE("got an order: ")
 
                 close();
             }
+        }
+    }
+    catch( QtCassandra::QCassandraQuery::query_exception_t const& e )
+    {
+        if( e.getCode() == 16777226 )
+        {
+            SNAP_LOG_ERROR("thread received QCassandraQuery::query_exception \"")(e.what())("\", reconnecting to Cassandra server!");
+
+            // No hosts available! We must have lost the connection.
+            // Tell the parent proxy object we need to reset.
+            //
+            f_snapdbproxy->no_cassandra();
+        }
+        else
+        {
+            SNAP_LOG_WARNING("thread received QCassandraQuery::query_exception \"")(e.what())("\"");
         }
     }
     catch(std::exception const & e)

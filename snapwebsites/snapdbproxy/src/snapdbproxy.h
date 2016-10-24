@@ -148,7 +148,13 @@ class snapdbproxy_connection
         , public QtCassandra::QCassandraProxyIO
 {
 public:
-                                snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t & client, QString const & cassandra_host_list, int cassandra_port);
+                                snapdbproxy_connection
+                                  ( snapdbproxy* proxy
+                                  , QtCassandra::QCassandraSession::pointer_t session
+                                  , tcp_client_server::bio_client::pointer_t & client
+                                  , QString const & cassandra_host_list
+                                  , int cassandra_port
+                                  );
     virtual                     ~snapdbproxy_connection() override;
 
     // implement snap_runner
@@ -177,6 +183,10 @@ private:
     void                        execute_command(QtCassandra::QCassandraOrder const & order);
     void                        close();
 
+    // this is owned by a snapdbproxy function so no need for a smart pointer
+    // (and it would create a loop)
+    snapdbproxy *                               f_snapdbproxy = nullptr;
+
     QtCassandra::QCassandraProxy                f_proxy;
     QtCassandra::QCassandraSession::pointer_t   f_session;
     std::vector<cursor_t>                       f_cursors;
@@ -192,7 +202,13 @@ class snapdbproxy_thread
 public:
     typedef std::shared_ptr<snapdbproxy_thread> pointer_t;
 
-                            snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t session, tcp_client_server::bio_client::pointer_t & client, QString const & cassandra_host_list, int cassandra_port);
+                            snapdbproxy_thread
+                                ( snapdbproxy* proxy
+                                  , QtCassandra::QCassandraSession::pointer_t session
+                                  , tcp_client_server::bio_client::pointer_t & client
+                                  , QString const & cassandra_host_list
+                                  , int cassandra_port
+                                  );
                             ~snapdbproxy_thread();
 
     bool                    is_running() const;
@@ -220,6 +236,9 @@ public:
     void                        process_connection(tcp_client_server::bio_client::pointer_t & client);
     void                        process_timeout();
 
+    void                        no_cassandra();
+    void                        cassandra_ready();
+
     static void                 sighandler( int sig );
 
 private:
@@ -231,8 +250,6 @@ private:
     void                        setup_dbproxy();
     void                        next_wakeup();
     void                        stop(bool quitting);
-    void                        no_cassandra();
-    void                        cassandra_ready();
 
     static pointer_t                            g_instance;
 

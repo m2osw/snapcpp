@@ -35,6 +35,7 @@
  */
 #pragma once
 
+#include <exception>
 #include <map>
 #include <memory>
 #include <string>
@@ -60,6 +61,32 @@ class QCassandraQuery
 public:
     typedef std::shared_ptr<QCassandraQuery>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
+
+    class exception_t : public std::runtime_error
+    {
+    public:
+        exception_t( const QString& what ) : std::runtime_error(qPrintable(what)) {}
+    };
+
+    class query_exception_t : public std::exception
+    {
+    public:
+        query_exception_t( CassTools::future_pointer_t sesson_future, const QString& msg );
+
+        uint32_t        getCode()    const { return f_code;    }
+        QString const&  getError()   const { return f_error;   }
+        QString const&  getErrMsg()  const { return f_errmsg;  }
+        QString const&  getMessage() const { return f_message; }
+
+        virtual const char* what() const throw() override;
+
+    private:
+        uint32_t    f_code;
+        QString     f_error;
+        QString     f_errmsg;
+        QString     f_message;
+        std::string f_what;
+    };
 
     ~QCassandraQuery();
 
