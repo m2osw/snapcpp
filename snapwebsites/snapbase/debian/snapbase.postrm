@@ -42,10 +42,17 @@ then
 
     # delete the settings directory, but leave it if non-empty
     #
-    rmdir --ignore-fail-on-non-empty /etc/snapwebsites
+    if test -d /etc/snapwebsites
+    then
+        rmdir --ignore-fail-on-non-empty /etc/snapwebsites
+    fi
 
-    # if apache is still installed and since we just removed the
-    # snap-httpoxy configuration file, want to restart it
+    # handle apache2 appropriately
+    #
+    # TBD: look into moving this code in the "snapapacheinit remove" section?
+    #      the problem is we do not want to disable the security if snapbase
+    #      remains in place... also by now that script was deleted by the
+    #      system (i.e. we would actually have to call it from `prerm`)
     #
     if hash a2enconf 2>/dev/null
     then
@@ -73,7 +80,7 @@ then
         do
             if [ -d "${dir}" ]
             then
-                # If the dir is not found, this will cause an error
+                # If the dir is not found, this would cause an error
                 rmdir --ignore-fail-on-non-empty ${dir}
             fi
         done

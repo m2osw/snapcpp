@@ -1,8 +1,9 @@
-snapcgi (1.0.13.10~xenial) xenial; urgency=high
+snapcgi (1.0.14.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Call the snapapacheinit script to run the common initialization.
+  * Remove the site configurations on a remove as well.
 
- -- Build Server <build@m2osw.com>  Tue, 18 Oct 2016 12:21:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 16:12:38 -0700
 
 snapcgi (1.0.13.0~xenial) xenial; urgency=high
 

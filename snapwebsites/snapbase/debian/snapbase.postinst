@@ -88,30 +88,11 @@ then
     mkdir -p /var/lib/snapwebsites
     chown snapwebsites:snapwebsites /var/lib/snapwebsites
 
-    # make the snap-acceptfilter and snap-httpoxy configurations
-    # active if apache2 is installed
+    # Now run various common apache initializations
+    # (logrotate, enable/disable configuration/modules/sites)
+    # The external script will restart apache2 as well
     #
-    if hash a2enconf 2>/dev/null
-    then
-        a2dismod -qf autoindex
-        a2dismod -q status
-        a2dismod -qf auth_basic
-        a2dismod -q access_compat
-        a2dismod -q authn_core
-        a2dismod -qf authn_file
-        a2dismod -qf authz_user
-        a2enmod -q headers
-
-        a2disconf -q security
-        a2enconf -q snap-apache2-security
-        a2enconf -q snap-acceptfilter
-        a2enconf -q snap-httpoxy
-        a2enconf -q snap-apache2-ssl-log
-
-        # make sure to force a reload or that's going to be useless
-        #
-        systemctl reload apache2
-    fi
+    /usr/lib/snapwebsites/scripts/snapapacheinit install
 fi
 
 # vim: ts=4 sw=4 et nocindent

@@ -35,12 +35,23 @@
 ##
 install(
     PROGRAMS
-        snapapachelog.sh
-        snapbootinit
+        snapapacheinit
         swap-usage
 
     DESTINATION
        	bin
+)
+
+
+#################################################################################
+## Script files (chmod a+x)
+##
+install(
+    PROGRAMS
+        snapbootinit
+
+    DESTINATION
+       	lib/snapwebsites/scripts
 )
 
 

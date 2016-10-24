@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# Make various changes to the Apache setup
+
+case "$1" in
+"install")
+
+    # Make sure Apache2 is installed, if so run the commands,
+    # otherwise ignore the call entirely
+    #
+    if hash a2enconf 2>/dev/null
+    then
+
+        # update the apache2 logrotate file to try to keep 3 months worth
+        # of logs (if we get a large amount of hits every day, it may still
+        # be less than 3 months at the moment, but we do not have such large
+        # hard drives that we can keep all the data around for too long.)
+        #
+        LOGROTFILE="/etc/logrotate.d/apache2"
+        if [ -e "${LOGROTFILE}" ]
+        then
+            if ! grep maxsize "${LOGROTFILE}" 2>&1 > /dev/null
+            then
+                sed -i \
+                    -e "s/rotate 14/rotate 91/" \
+                    -e "s/}$/\tsu root adm\n\tmaxsize 10M\n}/" \
+                    ${LOGROTFILE}
+            fi
+        fi
+
+        # enable / disable configuration files
+        #
+        a2disconf -q security
+        a2enconf -q snap-apache2-security
+        a2enconf -q snap-acceptfilter
+        a2enconf -q snap-httpoxy
+        a2enconf -q snap-apache2-ssl-log
+
+        # enable / disable Modules
+        #
+        a2dismod -qf autoindex
+        a2dismod -q status
+        a2dismod -qf auth_basic
+        a2dismod -q access_compat
+        a2dismod -q authn_core
+        a2dismod -qf authn_file
+        a2dismod -qf authz_user
+        a2enmod -q headers
+
+        # By default the reqtimeout module is not enabled
+        # Note that the default configuration of reqtimeout is just fine
+        #
+        # We install the reqtimeout module to avoid Slowloris, see:
+        # https://en.wikipedia.org/wiki/Slowloris_(computer_security)
+        # 
+        a2enmod -q reqtimeout
+
+        # make sure to force a reload or that is going to be useless
+        # until the next reboot
+        #
+        systemctl reload apache2
+    fi
+    ;;
+
+"remove")
+    # Note: at this time this script does not get called to remove the
+    #       `snapbase` configuration files, etc. (see snapbase.postrm)
+
+    # Make sure Apache2 is installed, if so run various commands,
+    # otherwise just delete our files
+    #
+    if hash a2enconf 2>/dev/null
+    then
+        # Restore the Apache2 "000-default" site if all our defaults
+        # were removed
+        #
+        if test ! -f /etc/apache2/sites-enabled/000-snap-apache2-default \
+             -a ! -f /etc/apache2/sites-enabled/snapmanager-apache2
+        then
+            a2ensite 000-default
+        fi
+
+        # Remeber that we made a change in our prerm script (disabling our
+        # own apache2 configuration file) so we always want to restart
+        #
+        systemctl restart apache2
+    fi
+    ;;
+
+*)
+    echo "error: unknown mode, expected \"install\" or \"remove\"."
+    exit 1
+    ;;
+
+esac
+
+# vim: ts=4 sw=4 et

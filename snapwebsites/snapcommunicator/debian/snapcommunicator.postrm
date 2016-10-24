@@ -24,7 +24,10 @@ then
 
     # delete the SSL directory, but leave it if non-empty
     #
-    rmdir --ignore-fail-on-non-empty /etc/snapwebsites/ssl
+    if test -d /etc/snapwebsites/ssl
+    then
+        rmdir --ignore-fail-on-non-empty /etc/snapwebsites/ssl
+    fi
 fi
 
 #DEBHELPER#

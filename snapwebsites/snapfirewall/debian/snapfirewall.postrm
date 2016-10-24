@@ -18,10 +18,18 @@ then
     # Since we place files in the fail2ban folder, the folder
     # may not get removed properly
     #
-    rmdir --ignore-fail-on-non-empty /etc/fail2ban/action.d
-    rmdir --ignore-fail-on-non-empty /etc/fail2ban/filter.d
-    rmdir --ignore-fail-on-non-empty /etc/fail2ban/jail.d
-    rmdir --ignore-fail-on-non-empty /etc/fail2ban
+    for dir in \
+        /etc/fail2ban/action.d \
+        /etc/fail2ban/filter.d \
+        /etc/fail2ban/jail.d \
+        /etc/fail2ban
+    do
+        if [ -d "${dir}" ]
+        then
+            # If the dir is not found, this would cause an error
+            rmdir --ignore-fail-on-non-empty ${dir}
+        fi
+    done
 
     # TBD: reset the firewall to empty? It does not seem wise to me.
 fi

@@ -1,8 +1,8 @@
-snapcommunicator (1.0.36.1~xenial) xenial; urgency=high
+snapcommunicator (1.0.37.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Fixed an rmdir, we must make sure the directory exists.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 16:12:38 -0700
 
 snapcommunicator (1.0.36.0~xenial) xenial; urgency=high
 

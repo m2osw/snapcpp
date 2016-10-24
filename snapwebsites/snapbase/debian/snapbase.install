@@ -1,4 +1,5 @@
 usr/bin/*
+usr/lib/*
 usr/share/snapwebsites/apache2/*
 usr/share/snapwebsites/conf/*
 usr/share/snapwebsites/logger/*
