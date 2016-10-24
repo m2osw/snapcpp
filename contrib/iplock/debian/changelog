@@ -2,7 +2,7 @@ iplock (3.0.7.0~xenial) xenial; urgency=high
 
   * SNAP-465: Removed the --syn from the iptable rules, really no need!
 
- -- Alexis Wilke <alexis@m2osw.com>  Sub, 23 Oct 2016 21:44:18 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 23 Oct 2016 21:44:18 -0700
 
 iplock (3.0.6.0~xenial) xenial; urgency=high
 
