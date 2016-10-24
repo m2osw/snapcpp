@@ -35,7 +35,9 @@
 ##
 install(
     PROGRAMS
-		snapapachelog.sh
+        snapapachelog.sh
+        snapbootinit
+        swap-usage
 
     DESTINATION
        	bin

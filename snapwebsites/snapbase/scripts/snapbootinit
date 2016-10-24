@@ -46,16 +46,12 @@ GROUP=`getvalue group snapwebsites`
 # Create the LOCK_PATH
 #
 LOCK_PATH=`getvalue lock_path /run/lock/snapwebsites`
-
-echo "user = $USER, group = $GROUP, lock = $LOCK_PATH ."
-
 mkdir $LOCK_PATH
 chown $USER:$GROUP $LOCK_PATH
 
 # Create the RUN_PATH
 #
 RUN_PATH=`getvalue run_path /run/snapwebsites`
-echo "user = $USER, group = $GROUP, run = $RUN_PATH ."
 mkdir $RUN_PATH
 chown $USER:$GROUP $RUN_PATH
 
