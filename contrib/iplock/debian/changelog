@@ -1,3 +1,7 @@
+iplock (3.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Removed the --syn from the iptable rules, really no need!
+
 iplock (3.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added the iplock-action.conf for fail2ban.
