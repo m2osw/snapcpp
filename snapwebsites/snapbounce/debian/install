@@ -1,5 +1,5 @@
-usr/bin/*
-usr/include/*
-usr/lib/*
-usr/share/*
+debian/snapbounce/usr/bin/*
+debian/snapbounce/usr/include/*
+debian/snapbounce/usr/lib/*
+debian/snapbounce/usr/share/*
 conf/snap-postfix-jail.conf etc/fail2ban/jail.d/
