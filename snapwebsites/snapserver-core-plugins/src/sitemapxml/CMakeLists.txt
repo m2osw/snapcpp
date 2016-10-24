@@ -66,4 +66,16 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+################################################################################
+# Install XSD files.
+#
+install(
+	FILES
+		siteindex.xsd
+		sitemap.xsd
+
+	DESTINATION
+		share/snapwebsites/xsd
+)
+
 # vim: ts=4 sw=4 et
