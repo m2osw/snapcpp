@@ -29,6 +29,7 @@ Package: snapfirewall
 Section: admin
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, snapdbproxy, iplock
+Recommends: fail2ban
 Suggests: snapserver, snapbackend, snapfirewall-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.

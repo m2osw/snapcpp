@@ -1,3 +1,9 @@
+snaplog (1.0.7.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added a file to enable the postfix jail for fail2ban.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 23 Oct 2016 17:39:38 -0700
+
 snaplog (1.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.

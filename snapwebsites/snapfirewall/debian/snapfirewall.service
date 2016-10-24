@@ -4,6 +4,7 @@
 [Unit]
 Description=Snap! Websites snapfirewall daemon
 After=snapbase.service snapcommunicator.service snapdbproxy.service
+Before=fail2ban.service
 
 [Service]
 Type=simple

@@ -54,7 +54,7 @@
     </field>
   </fields>
   <affected-services>snapmanagerdaemon</affected-services>
-  <packages>snapfirewall</packages>
+  <packages>snapfirewall, fail2ban</packages>
   <postinst>
     # Setup the firewall IPs and interfaces.
     # Wed Sep  7 13:16:27 PDT 2016: Now edits firewall.conf, instead of the main firewall script.

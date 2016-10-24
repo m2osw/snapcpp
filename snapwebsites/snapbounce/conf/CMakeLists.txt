@@ -44,4 +44,16 @@ install(
 )
 
 
+#################################################################################
+## fail2ban files
+##
+install(
+    FILES 
+        snap-postfix-jail.conf
+
+    DESTINATION
+        share/snapwebsites/fail2ban
+)
+
+
 # vim: ts=4 sw=4 et

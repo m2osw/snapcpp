@@ -428,6 +428,13 @@ void messenger::process_connected()
 snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const & message)
 {
     // retrieve scheme and IP
+    if(!message.has_parameter("uri")
+    || !message.has_parameter("period"))
+    {
+        // TODO: create a snap_exception instead
+        throw std::runtime_error("a BLOCK message \"uri\" and \"period\" parameters are mandatory.");
+    }
+
     set_uri(message.get_parameter("uri"));
     set_block_limit(message.get_parameter("period"));
 }
@@ -497,7 +504,7 @@ void snap_firewall::block_info_t::set_ip(QString const & ip)
         case snap_addr::addr::network_type_t::NETWORK_TYPE_LINK_LOCAL:
         case snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK:
         case snap_addr::addr::network_type_t::NETWORK_TYPE_ANY:
-            SNAP_LOG_ERROR("BLOCK with an unexpected IP address type in \"")(ip)(". BLOCK will be ignored.");
+            SNAP_LOG_ERROR("BLOCK with an unexpected IP address type in \"")(ip)("\". BLOCK will be ignored.");
             return;
 
         case snap_addr::addr::network_type_t::NETWORK_TYPE_MULTICAST:
@@ -508,7 +515,7 @@ void snap_firewall::block_info_t::set_ip(QString const & ip)
     }
     catch(snap_addr::addr_invalid_argument_exception const & e)
     {
-        SNAP_LOG_ERROR("BLOCK with an invalid IP address in \"")(ip)(". BLOCK will be ignored.");
+        SNAP_LOG_ERROR("BLOCK with an invalid IP address in \"")(ip)("\". BLOCK will be ignored.");
         return;
     }
 
@@ -1086,40 +1093,50 @@ void snap_firewall::setup_firewall()
             //
             QString const uri(cell->value().stringValue());
 
-            block_info_t info(uri);
-
-            QByteArray const key(it.key());
-            int64_t const drop_date(QtCassandra::safeInt64Value(key, 0, -1));
-            if(drop_date < limit)
+            try
             {
-                // unblock the IP
+                // this one should always work since we saved it in the
+                // database, only between versions the format could change
                 //
-                info.iplock_unblock();
+                block_info_t info(uri);
 
-                // drop that row, it is too old
-                //
-                row->dropCell(key);
-            }
-            else
-            {
-                // this IP is still expected to be blocked, so
-                // re-block it
-                //
-                if(first)
+                QByteArray const key(it.key());
+                int64_t const drop_date(QtCassandra::safeInt64Value(key, 0, -1));
+                if(drop_date < limit)
                 {
-                    // on the first one, we want to mark that as the
-                    // time when the block has to be dropped
+                    // unblock the IP
                     //
-                    // Note: only the first one is necessary since these
-                    //       are sorted by date in the database
-                    //
-                    first = false;
-                    f_wakeup_timer->set_timeout_date(drop_date);
-                }
+                    info.iplock_unblock();
 
-                // block the IP
-                //
-                info.iplock_block();
+                    // drop that row, it is too old
+                    //
+                    row->dropCell(key);
+                }
+                else
+                {
+                    // this IP is still expected to be blocked, so
+                    // re-block it
+                    //
+                    if(first)
+                    {
+                        // on the first one, we want to mark that as the
+                        // time when the block has to be dropped
+                        //
+                        // Note: only the first one is necessary since these
+                        //       are sorted by date in the database
+                        //
+                        first = false;
+                        f_wakeup_timer->set_timeout_date(drop_date);
+                    }
+
+                    // block the IP
+                    //
+                    info.iplock_block();
+                }
+            }
+            catch(std::exception const & e)
+            {
+                SNAP_LOG_ERROR("an exception occurred while initializing the firewall: ")(e.what());
             }
         }
     }
@@ -1260,15 +1277,22 @@ void snap_firewall::process_timeout()
             //
             QString const uri(cell->value().stringValue());
 
-            // remove the block, it timed out
-            //
-            block_info_t info(uri);
-            info.iplock_unblock();
+            try
+            {
+                // remove the block, it timed out
+                //
+                block_info_t info(uri);
+                info.iplock_unblock();
 
-            // now drop that row
-            //
-            QByteArray const key(cell->columnKey());
-            row->dropCell(key);
+                // now drop that row
+                //
+                QByteArray const key(cell->columnKey());
+                row->dropCell(key);
+            }
+            catch(std::exception const & e)
+            {
+                SNAP_LOG_ERROR("an exception occurred while checking IPs in the process_timeout() function: ")(e.what());
+            }
         }
     }
 
@@ -1566,34 +1590,44 @@ void snap_firewall::stop(bool quitting)
 
 void snap_firewall::block_ip(snap::snap_communicator_message const & message)
 {
-    // check the "uri" and "period" parameters
+    // message data could be tainted, we need to protect ourselves against
+    // unwanted exceptions
     //
-    // the URI may include a protocol and an IP separated by "://"
-    // if no "://" appears, then only an IP is expected
-    //
-    block_info_t info(message);
-
-    // save in our list of blocked IP addresses
-    //
-    if(f_firewall_table)
+    try
     {
-        info.save(f_firewall_table, f_server_name);
-    }
-    else
-    {
-        // cache in memory for later, once we connect to Cassandra,
-        // we will save those in cassandra
+        // check the "uri" and "period" parameters
         //
-        f_blocks.push_back(info);
+        // the URI may include a protocol and an IP separated by "://"
+        // if no "://" appears, then only an IP is expected
+        //
+        block_info_t info(message);
 
-        std::sort(f_blocks.begin(), f_blocks.end());
+        // save in our list of blocked IP addresses
+        //
+        if(f_firewall_table)
+        {
+            info.save(f_firewall_table, f_server_name);
+        }
+        else
+        {
+            // cache in memory for later, once we connect to Cassandra,
+            // we will save those in cassandra
+            //
+            f_blocks.push_back(info);
+
+            std::sort(f_blocks.begin(), f_blocks.end());
+        }
+
+        // actually add to the firewall
+        //
+        info.iplock_block();
+
+        next_wakeup();
     }
-
-    // actually add to the firewall
-    //
-    info.iplock_block();
-
-    next_wakeup();
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the block_ip() function: ")(e.what());
+    }
 }
 
 

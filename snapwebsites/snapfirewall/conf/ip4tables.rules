@@ -9,6 +9,9 @@
 #
 #      /etc/network/firewall
 #
+# If you add or edit a LOG rule, make sure to keep "[iptables] " at the
+# start of the message, otherwise it will go to the wrong file(s).
+#
 
 *filter
 :INPUT ACCEPT [0:0]
@@ -42,7 +45,7 @@
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
 # Reject any connections (i.e. --syn) from anywhere else on that port
--A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j LOG --log-prefix "unwanted SSH: " --log-uid
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j LOG --log-prefix "[iptables] unwanted SSH: " --log-uid
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j REJECT --reject-with icmp-port-unreachable
 
 # Temporary to initialize website from your computer
@@ -74,9 +77,9 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 
-# Reject anything else!
--A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "block service: " --log-uid
--A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "block service: " --log-uid
+# Drop anything else!
+-A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
+-A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
 -A INPUT -i @PUBLIC_INTERFACE@ -p all -j DROP
 -A INPUT -i @PRIVATE_INTERFACE@ -p all -j DROP
 
@@ -93,34 +96,34 @@
 # Let our local network computers communicate via our VPN
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s @PRIVATE_NETWORK_IPS@ -j RETURN
 
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "[iptables] (192): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "[iptables] (10): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 10.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 172.16.0.0/12 -j LOG --log-prefix "bad_tcp_packet(172): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 172.16.0.0/12 -j LOG --log-prefix "[iptables] (172): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 172.16.0.0/12 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j LOG --log-prefix "bad_tcp_packet(224): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j LOG --log-prefix "[iptables] (224): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(0): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "[iptables] (0): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(1): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "[iptables] (1): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
+-A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "[iptables] (2): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "bad_tcp_packet(192): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "[iptables] (192): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(10): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j LOG --log-prefix "[iptables] (10): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 10.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 172.16.0.0/12 -j LOG --log-prefix "bad_tcp_packet(172): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 172.16.0.0/12 -j LOG --log-prefix "[iptables] (172): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 172.16.0.0/12 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j LOG --log-prefix "bad_tcp_packet(224): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j LOG --log-prefix "[iptables] (224): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(0): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "[iptables] (0): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(1): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "[iptables] (1): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "bad_tcp_packet(2): " --log-uid
+-A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "[iptables] (2): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
 ############
