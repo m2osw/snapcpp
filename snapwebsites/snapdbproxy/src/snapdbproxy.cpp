@@ -759,7 +759,13 @@ void snapdbproxy::process_connection(tcp_client_server::bio_client::pointer_t & 
     // WARNING: the client is passed as a reference so we can cleanly take
     //          ownership in the snapdbproxy_connection object
     //
-    snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>(f_session, client, f_cassandra_host_list, f_cassandra_port));
+    snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>
+                                         ( this
+                                          , f_session
+                                          , client
+                                          , f_cassandra_host_list
+                                          , f_cassandra_port
+                                          ));
     if(thread && thread->is_running())
     {
         f_connections.push_back(thread);

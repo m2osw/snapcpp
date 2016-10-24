@@ -76,7 +76,7 @@ namespace
     {
         if(!iter)
         {
-            throw std::runtime_error( "QtCassandra::<no name namespace>::getRowFromIterator() called without a row iterator." );
+            throw QCassandraQuery::exception_t( "QtCassandra::<no name namespace>::getRowFromIterator() called without a row iterator." );
         }
 
         return cass_iterator_get_row( iter.get() );
@@ -129,6 +129,33 @@ namespace
         save_json->output( out, header );
         data = out->get_string().to_utf8();
     }
+}
+
+
+QCassandraQuery::query_exception_t::query_exception_t( CassTools::future_pointer_t session_future, QString const& msg )
+    : f_message(msg)
+{
+    const CassError code( cass_future_error_code( session_future.get() ) );
+    f_code = static_cast<uint32_t>(code);
+
+    const char* message = 0;
+    size_t length       = 0;
+    cass_future_error_message( session_future.get(), &message, &length );
+    QByteArray const errmsg( message, length );
+    f_errmsg = errmsg.data();
+
+    std::stringstream ss;
+    ss << msg.toUtf8().data() << "! Cassandra error: code=" << f_code
+       << ", error={" << cass_error_desc(code)
+       << "}, message={" << errmsg.data()
+       << "} aborting operation!";
+    f_what = ss.str();
+}
+
+
+const char* QCassandraQuery::query_exception_t::what() const throw()
+{
+    return f_what.c_str();
 }
 
 
@@ -255,11 +282,11 @@ void QCassandraQuery::setStatementConsistency()
     //else if( CONSISTENCY_LEVEL_ANY          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ANY;          
     //else if( CONSISTENCY_LEVEL_TWO          == f_consistencyLevel ) consist = CASS_CONSISTENCY_TWO;          
     //else if( CONSISTENCY_LEVEL_THREE        == f_consistencyLevel ) consist = CASS_CONSISTENCY_THREE;        
-    //else throw std::runtime_error( "Unsupported consistency level!" );
+    //else throw exception_t( "Unsupported consistency level!" );
 
     //if( consist == CASS_CONSISTENCY_UNKNOWN )
     //{
-    //    throw std::runtime_error( "This should never happen! Consistency has not been set!" );
+    //    throw exception_t( "This should never happen! Consistency has not been set!" );
     //}
 
     cass_statement_set_consistency( f_queryStmt.get(), consist );
@@ -478,7 +505,7 @@ void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
     QCassandraQuery* this_query( reinterpret_cast<QCassandraQuery*>(data) );
     if( this_query->f_sessionFuture.get() != future )
     {
-        //throw std::runtime_error( "Unexpected future!" );
+        //throw exception_t( "Unexpected future!" );
         // Do nothing with this future, because this belongs to a different query
         return;
     }
@@ -502,7 +529,7 @@ void QCassandraQuery::onThreadQueryFinished( QCassandraQuery* q )
 {
     if( q != this )
     {
-        throw std::runtime_error("QCassandraQuery::onThreadQueryFinished(): Query objects are not the same!");
+        throw exception_t("QCassandraQuery::onThreadQueryFinished(): Query objects are not the same!");
     }
 
     emit queryFinished( shared_from_this() );
@@ -598,7 +625,7 @@ std::cerr << "*** ...pause is over... ***\n";
                << ", error={" << cass_error_desc(CASS_ERROR_LIB_REQUEST_TIMED_OUT )
                << "}, message={" << errmsg.data()
                << "} aborting operation!";
-            throw std::runtime_error( ss.str().c_str() );
+            throw exception_t( ss.str().c_str() );
         }
         --max_repeat;
         f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
@@ -626,7 +653,7 @@ void QCassandraQuery::start( const bool block )
     if(!f_session->session()
     || !f_queryStmt)
     {
-        throw std::runtime_error( "QCassandraQuery::start() called with an unconnected session or no query statement." );
+        throw exception_t( "QCassandraQuery::start() called with an unconnected session or no query statement." );
     }
 
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
@@ -673,7 +700,7 @@ bool QCassandraQuery::queryActive() const
 
 /** \brief Get the query result. This method blocks if the result is not ready yet.
  *
- * \note Throws std::runtime_error if query failed.
+ * \note Throws exception_t if query failed.
  *
  * /sa isReady(), query()
  */
@@ -706,7 +733,7 @@ size_t QCassandraQuery::rowCount() const
 {
     if(!f_queryResult)
     {
-        throw std::runtime_error( "QCassandraQuery::rowCount() called without a query result." );
+        throw exception_t( "QCassandraQuery::rowCount() called without a query result." );
     }
 
     return cass_result_row_count( f_queryResult.get() );
@@ -725,7 +752,7 @@ bool QCassandraQuery::nextRow()
 {
     if(!f_rowsIterator)
     {
-        throw std::runtime_error( "QCassandraQuery::nextRow() called without a row iterator." );
+        throw exception_t( "QCassandraQuery::nextRow() called without a row iterator." );
     }
 
     return cass_iterator_next( f_rowsIterator.get() );
@@ -746,7 +773,7 @@ bool QCassandraQuery::nextPage( const bool block )
     //
     if(!f_queryResult)
     {
-        throw std::runtime_error( "QCassandraQuery::rowCount() called without a query result." );
+        throw exception_t( "QCassandraQuery::rowCount() called without a query result." );
     }
 
     if( !cass_result_has_more_pages( f_queryResult.get() ) )
@@ -778,22 +805,13 @@ void QCassandraQuery::throwIfError( const QString& msg )
         std::stringstream ss;
         ss << "There is no active session for query [" << f_queryString.toUtf8().data() << "], msg=["
            << msg.toUtf8().data() << "]";
-        throw std::runtime_error( ss.str().c_str() );
+        throw exception_t( ss.str().c_str() );
     }
 
     const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
     if( code != CASS_OK )
     {
-        const char* message = 0;
-        size_t length       = 0;
-        cass_future_error_message( f_sessionFuture.get(), &message, &length );
-        QByteArray errmsg( message, length );
-        std::stringstream ss;
-        ss << msg.toUtf8().data() << "! Cassandra error: code=" << static_cast<unsigned int>(code)
-           << ", error={" << cass_error_desc(code)
-           << "}, message={" << errmsg.data()
-           << "} aborting operation!";
-        throw std::runtime_error( ss.str().c_str() );
+        throw query_exception_t( f_sessionFuture, msg );
     }
 }
 
@@ -827,7 +845,7 @@ void QCassandraQuery::throwIfError( const QString& msg )
                << ", error={" << cass_error_desc(code)
                << "}, message={" << errmsg.data()
                << "} aborting operation!";
-            throw std::runtime_error( ss.str().c_str() );
+            throw exception_t( ss.str().c_str() );
         }
 
     }
@@ -979,7 +997,7 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) con
 {
     if(value == nullptr)
     {
-        throw std::runtime_error("value cannot be nullptr in getByteArrayFromValue()");
+        throw exception_t("value cannot be nullptr in getByteArrayFromValue()");
     }
     const char *    byte_value = nullptr;
     size_t          value_len  = 0;
