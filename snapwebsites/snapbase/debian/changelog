@@ -1,3 +1,9 @@
+snapbase (1.0.16.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:37 -0700
+
 snapbase (1.0.16.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added a script to list processes using swap space.

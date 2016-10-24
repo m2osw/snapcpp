@@ -1,3 +1,9 @@
+snapcommunicator (1.0.36.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:38 -0700
+
 snapcommunicator (1.0.36.0~xenial) xenial; urgency=high
 
   * SNAP-491: Changed Ctrl-C in the equivalent of a STOP.

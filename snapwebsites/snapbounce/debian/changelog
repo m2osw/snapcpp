@@ -1,3 +1,9 @@
+snapbounce (1.0.6.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:37 -0700
+
 snapbounce (1.0.6.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added a file to enable the postfix jail for fail2ban.
