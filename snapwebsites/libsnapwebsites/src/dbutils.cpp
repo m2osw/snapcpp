@@ -740,6 +740,8 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "epayment_paypal::last_attempt"
          || n == "epayment_paypal::oauth2_expires"
          || n == "epayment_stripe::created"
+         || n == "content::files::creation_time"
+         || n == "content::files::modification_time"
          || n == "images::modified"
          || n == "list::last_updated"
          || n == "permissions::last_updated"
@@ -792,9 +794,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
         // 64 bit value (microseconds)
         return column_type_t::CT_time_microseconds;
     }
-    else if(n == "content::files::creation_time"
-         || n == "content::files::modification_time"
-         || n == "sessions::login_limit"
+    else if(n == "sessions::login_limit"
          || n == "sessions::time_limit"
          )
     {
