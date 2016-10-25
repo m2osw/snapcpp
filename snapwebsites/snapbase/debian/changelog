@@ -1,3 +1,11 @@
+snapbase (1.0.20.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Use restart and not reload in the snapapacheinit script.
+  * Fixed the sed in the snapbootinit, the $1 requires we use " and not '.
+  * snapbootinit would break on mkdir if it was already there, use -p now.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 17:18:38 -0700
+
 snapbase (1.0.19.0~xenial) xenial; urgency=high
 
   * SNAP-465: Swapped the snapapacheinit and snapbootinit location.

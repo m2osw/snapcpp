@@ -58,7 +58,7 @@ case "$1" in
         # make sure to force a reload or that is going to be useless
         # until the next reboot
         #
-        systemctl reload apache2
+        systemctl restart apache2
     fi
     ;;
 

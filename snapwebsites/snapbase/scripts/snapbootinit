@@ -26,10 +26,10 @@ getvalue() {
     then
         FILENAME="$3"
     fi
-    VALUE=`grep -s "^$1=" /etc/snapwebsites/snapwebsites.d/$FILENAME | sed -e 's/^$1=//'`
+    VALUE=`grep -s "^$1=" /etc/snapwebsites/snapwebsites.d/$FILENAME | sed -e "s/^$1=//"`
     if test -z "$VALUE"
     then
-        VALUE=`grep -s "^$1=" /etc/snapwebsites/$FILENAME | sed -e 's/^$1=//'`
+        VALUE=`grep -s "^$1=" /etc/snapwebsites/$FILENAME | sed -e "s/^$1=//"`
         if test -z "$VALUE"
         then
             VALUE="$2"
@@ -46,13 +46,13 @@ GROUP=`getvalue group snapwebsites`
 # Create the LOCK_PATH
 #
 LOCK_PATH=`getvalue lock_path /run/lock/snapwebsites`
-mkdir $LOCK_PATH
+mkdir -p $LOCK_PATH
 chown $USER:$GROUP $LOCK_PATH
 
 # Create the RUN_PATH
 #
 RUN_PATH=`getvalue run_path /run/snapwebsites`
-mkdir $RUN_PATH
+mkdir -p $RUN_PATH
 chown $USER:$GROUP $RUN_PATH
 
 # vim: ts=4 sw=4 et
