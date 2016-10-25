@@ -256,6 +256,7 @@ bool bundle_loader::wget(std::string const & uri, std::string const & filename)
         groupname = "snapwebsites";
     }
     snap::chownnm("/var/log/snapwebsites/snapmanager-bundle.log", username, groupname);
+    chmod("/var/log/snapwebsites/snapmanager-bundle.log", 0640);
 
     if(r != 0)
     {

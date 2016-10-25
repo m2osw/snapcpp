@@ -1,8 +1,9 @@
-snapdbproxy (1.1.17.1~xenial) xenial; urgency=high
+snapdbproxy (1.1.18.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: postinst/postrm cleanups.
+  * Properly remove the user defined snapserver.conf file if present.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 23:48:38 -0700
 
 snapdbproxy (1.1.17.0~xenial) xenial; urgency=high
 

@@ -10,6 +10,10 @@ then
     #
     rm -f /var/log/snapwebsites/snapcgi.log*
     rm -f /var/log/snapwebsites/secure/snapcgi.log*
+
+    # delete the user configuration file
+    #
+    rm -f /etc/snapwebsites/snapwebsites.d/snapcgi.conf
 fi
 
 /usr/lib/snapwebsites/scripts/snapapacheinit remove

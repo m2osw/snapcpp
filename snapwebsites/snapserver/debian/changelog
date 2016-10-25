@@ -1,8 +1,8 @@
-snapserver (1.0.15.1~xenial) xenial; urgency=high
+snapserver (1.0.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: postinst/postrm cleanups.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 23:48:38 -0700
 
 snapserver (1.0.15.0~xenial) xenial; urgency=high
 

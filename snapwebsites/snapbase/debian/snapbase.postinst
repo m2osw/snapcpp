@@ -8,6 +8,11 @@
 
 if [ "$1" = "configure" ]
 then
+    # The name disparity is because snapbase installs the logs for
+    # the snapserver and snapbackend packages
+    #
+    PACKAGENAME=snapserver
+
     # add snapwebsites user and group if not there already
     #
     if ! getent group snapwebsites >/dev/null
@@ -45,10 +50,8 @@ then
     chown snapwebsites:www-data ${SECURELOGDIR}
     chmod 770 ${SECURELOGDIR}
 
-    # all.log will be own by root:root if we do not create it ahead of
-    # time with the correct ownership, this is because snapinit runs
-    # as root:root and it often is the very first process that creates
-    # that file...
+    # Create the all.log logfile because the snapwebsites user may
+    # have difficulties with it otherwise during logrotate.
     #
     ALLLOG=${SNAPLOGDIR}/all.log
     touch ${ALLLOG}
@@ -56,19 +59,18 @@ then
     chmod 640 ${ALLLOG}
 
     # Create the snapserver logfile because the snapwebsites user may
-    # have difficulties with it otherwise during logrotate. Also we do
+    # have difficulties with it otherwise during logrotate. Also we initialize
     # snapserver in the snapbase package because it is used by snapserver
-    # and snapbackend, two separate packages
+    # and snapbackend, two separate packages.
     #
-    PKGNAME=snapserver
     SNAPLOGDIR=/var/log/snapwebsites
-    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    LOGFILE=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${LOGFILE}
     chown snapwebsites:snapwebsites ${LOGFILE}
     chmod 640 ${LOGFILE}
 
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}

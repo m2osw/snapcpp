@@ -5,55 +5,31 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+
 if [ "$1" = "configure" ]
 then
-    # Create a default user editable snapmanager.conf file if it does not
-    # exist yet
+    PACKAGENAME=snaplog
+
+    # Create files representing each service offered by this package
     #
-    #CONFFILE=/etc/snapwebsites/snapwebsites.d/snaplog.conf
-    #if test ! -f $CONFFILE
-    #then
-    #    # When first installing, we do not have the public IP address
-    #    # (okay, we do, but we cannot be sure which one is right because
-    #    # the user may have a weird network setup...) so instead we create
-    #    # a default file if it does not already exist and put some info
-    #    # to make it a bit easier to deal with the matter
-    #    #
-    #    echo "# Various variables that you are likely to need to edit for snaplog" >$CONFFILE
-    #    echo "# to communicate remotely for more info and details about the variables" >>$CONFFILE
-    #    echo "# defined here, check the file of the same name one directory up" >>$CONFFILE
-    #    echo "#" >>$CONFFILE
-    #    echo "# In most cases, if your hostname is properly defined, server_name" >>$CONFFILE
-    #    echo "# does not need to be changed." >>$CONFFILE
-    #    echo "#" >>$CONFFILE
-    #    echo "# The my_address and listen variables should be set to the public" >>$CONFFILE
-    #    echo "# IP address of this computer (from eth0 or tun0)." >>$CONFFILE
-    #    echo "#" >>$CONFFILE
-    #    echo "#server_name=" >>$CONFFILE
-    #    echo "#my_address=" >>$CONFFILE
-    #    echo "#listen=" >>$CONFFILE
-    #fi
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/${PACKAGENAME}.service
 
     # Create the logfile because the snapwebsites user may have
     # difficulties with it otherwise during logrotate.
     #
-    PKGNAME=snaplog
     SNAPLOGDIR=/var/log/snapwebsites
-    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    LOGFILE=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${LOGFILE}
     chown snapwebsites:snapwebsites ${LOGFILE}
     chmod 640 ${LOGFILE}
 
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
-
-    # Create files representing each service offered by this package
-    #
-    SERVICES_DIR=/usr/share/snapwebsites/services
-    touch $SERVICES_DIR/snaplog.service
 fi
+
 
 # vim: ts=4 sw=4 et nocindent

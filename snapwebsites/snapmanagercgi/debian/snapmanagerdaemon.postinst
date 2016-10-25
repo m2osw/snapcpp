@@ -7,6 +7,13 @@
 
 if [ "$1" = "configure" ]
 then
+    PACKAGENAME=snapmanagerdaemon
+
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/${PACKAGENAME}.service
+
     # create the directory to be used to save the status files
     #
     CLUSTER_STATUS=/var/lib/snapwebsites/cluster-status
@@ -32,23 +39,17 @@ then
     # Create the logfile because the snapwebsites user may have
     # difficulties with it otherwise during logrotate.
     #
-    PKGNAME=snapmanagerdaemon
     SNAPLOGDIR=/var/log/snapwebsites
-    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    LOGFILE=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${LOGFILE}
     chown snapwebsites:snapwebsites ${LOGFILE}
     chmod 640 ${LOGFILE}
     #
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
-
-    # Create files representing each service offered by this package
-    #
-    SERVICES_DIR=/usr/share/snapwebsites/services
-    touch $SERVICES_DIR/snapmanagerdaemon.service
 fi
 
 # vim: ts=4 sw=4 et nocindent

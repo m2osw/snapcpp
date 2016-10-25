@@ -7,10 +7,16 @@
 
 if [ "$1" = "configure" ]
 then
+    PACKAGENAME=snapwatchdog
+
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/${PACKAGENAME}.service
+
     # make the snapwatchdog lib folder
     #
-    PKGNAME=snapwatchdog
-    SNAPWATCHDOG_LIB_DIR=/var/lib/snapwebsites/${PKGNAME}
+    SNAPWATCHDOG_LIB_DIR=/var/lib/snapwebsites/${PACKAGENAME}
     mkdir -p ${SNAPWATCHDOG_LIB_DIR}
     chown snapwebsites:snapwebsites ${SNAPWATCHDOG_LIB_DIR}
 
@@ -18,21 +24,16 @@ then
     # difficulties with it otherwise during logrotate.
     #
     SNAPLOGDIR=/var/log/snapwebsites
-    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    LOGFILE=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${LOGFILE}
     chown snapwebsites:snapwebsites ${LOGFILE}
     chmod 640 ${LOGFILE}
 
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
-
-    # Create files representing each service offered by this package
-    #
-    SERVICES_DIR=/usr/share/snapwebsites/services
-    touch $SERVICES_DIR/snapwatchdog.service
 
     # Signal snapdbproxy since we just added new tables
     #

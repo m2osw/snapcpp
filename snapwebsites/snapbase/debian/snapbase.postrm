@@ -11,6 +11,10 @@ then
     rm -rf /var/log/snapwebsites
     rm -rf /var/cache/snapwebsites
 
+    # delete the user configuration file
+    #
+    rm -f /etc/snapwebsites/snapwebsites.d/snapserver.conf
+
     USER=snapwebsites
     GROUP=snapwebsites
 

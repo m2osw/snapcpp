@@ -1,8 +1,10 @@
-snaplog (1.0.7.1~xenial) xenial; urgency=high
+snaplog (1.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: postinst/postrm cleanups.
+  * Properly remove the user defined snapserver.conf file if present.
+  * Added the missing removal of the snalog.service file in postrm.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 23:48:38 -0700
 
 snaplog (1.0.7.0~xenial) xenial; urgency=high
 

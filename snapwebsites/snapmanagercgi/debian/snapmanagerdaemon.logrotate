@@ -32,13 +32,13 @@
 }
 
 # We use this specific file whenever we download the bundles.
-# Only errors get output in the file which most the time shoud remain empty.
+# Only errors get output in the file which most the time should remain empty.
 /var/log/snapwebsites/snapmanager-bundle.log {
     weekly
     maxsize 1M
     su snapwebsites snapwebsites
     missingok
-    rotate 10
+    rotate 5
     postrotate
         /usr/bin/snapsignal snapmanagerdaemon/LOG
     endscript

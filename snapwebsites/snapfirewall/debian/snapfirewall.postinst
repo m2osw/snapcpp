@@ -7,26 +7,27 @@
 
 if [ "$1" = "configure" ]
 then
+    PACKAGENAME=snapfirewall
+
+    # Create files representing each service offered by this package
+    #
+    SERVICES_DIR=/usr/share/snapwebsites/services
+    touch $SERVICES_DIR/${PACKAGENAME}.service
+
     # Create the logfile because the snapwebsites user may have
     # difficulties with it otherwise during logrotate.
     #
-    PKGNAME=snapfirewall
     SNAPLOGDIR=/var/log/snapwebsites
-    LOGFILE=${SNAPLOGDIR}/${PKGNAME}.log
+    LOGFILE=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${LOGFILE}
     chown snapwebsites:snapwebsites ${LOGFILE}
     chmod 640 ${LOGFILE}
 
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SECURELOGFILE=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SECURELOGFILE=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SECURELOGFILE}
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
-
-    # Create files representing each service offered by this package
-    #
-    SERVICES_DIR=/usr/share/snapwebsites/services
-    touch $SERVICES_DIR/snapfirewall.service
 
     # Signal snapdbproxy since we just added new tables
     #

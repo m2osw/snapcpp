@@ -7,7 +7,12 @@
 if [ "$1" = "purge" ]
 then
     # delete the data directories
+    #
     rm -rf /var/lib/snapwebsites/cluster-status
+
+    # delete the user configuration file
+    #
+    rm -f /etc/snapwebsites/snapwebsites.d/snapmanager.conf
 fi
 
 #DEBHELPER#

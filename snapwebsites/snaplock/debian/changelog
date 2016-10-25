@@ -1,8 +1,9 @@
-snaplock (1.0.10.1~xenial) xenial; urgency=high
+snaplock (1.0.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: postinst/postrm cleanups.
+  * Properly remove the user defined snapserver.conf file if present.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 23:48:38 -0700
 
 snaplock (1.0.10.0~xenial) xenial; urgency=high
 

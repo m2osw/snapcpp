@@ -3,6 +3,10 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+
+# These are not automatically handled by pbuilder/debhelper scripts
+# because those to do expect more than one service per package.
+#
 for pkg in snapsendmail snapimages snappagelist
 do
     if systemctl is-active ${pkg} 2> /dev/null
@@ -18,6 +22,7 @@ rm -f $SERVICES_DIR/snapbackend.service
 rm -f $SERVICES_DIR/images.service
 rm -f $SERVICES_DIR/pagelist.service
 rm -f $SERVICES_DIR/sendmail.service
+
 
 #DEBHELPER#
 

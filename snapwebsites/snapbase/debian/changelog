@@ -1,3 +1,10 @@
+snapbase (1.0.22.0~xenial) xenial; urgency=high
+
+  * SNAP-465: postinst/postrm cleanups.
+  * Properly remove the user defined snapserver.conf file if present.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 23:48:38 -0700
+
 snapbase (1.0.21.0~xenial) xenial; urgency=high
 
   * SNAP-465: Moved the apache cleanup to the snapapacheinit script.

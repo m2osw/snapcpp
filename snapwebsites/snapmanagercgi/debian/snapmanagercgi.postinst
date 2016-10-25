@@ -5,8 +5,11 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+
 if [ "$1" = "configure" ]
 then
+    PACKAGENAME=snapmanagercgi
+
     # Create a default user editable snapmanager.conf file if it does not
     # exist yet
     #
@@ -26,15 +29,14 @@ then
     # Create the snapmanagercgi.log file because the www-data user may have
     # difficulties with it otherwise
     #
-    PKGNAME=snapmanagercgi
     SNAPLOGDIR=/var/log/snapwebsites
-    SNAPMANAGERCGI_LOG=${SNAPLOGDIR}/${PKGNAME}.log
+    SNAPMANAGERCGI_LOG=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${SNAPMANAGERCGI_LOG}
     chown www-data:www-data ${SNAPMANAGERCGI_LOG}
     chmod 640 ${SNAPMANAGERCGI_LOG}
     
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SNAPSECUREMANAGERCGI_LOG=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SNAPSECUREMANAGERCGI_LOG=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SNAPSECUREMANAGERCGI_LOG}
     chown www-data:www-data ${SNAPSECUREMANAGERCGI_LOG}
     chmod 640 ${SNAPSECUREMANAGERCGI_LOG}
@@ -61,5 +63,6 @@ then
     #
     /usr/lib/snapwebsites/scripts/snapapacheinit install
 fi
+
 
 # vim: ts=4 sw=4 et nocindent

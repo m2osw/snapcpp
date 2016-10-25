@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.13.7~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.14.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: postinst/postrm cleanups.
+  * Removed the restart of snapinit after removing the plugins.
 
- -- Build Server <build@m2osw.com>  Wed, 19 Oct 2016 13:36:08 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 23:48:38 -0700
 
 snapserver-core-plugins (1.0.13.0~xenial) xenial; urgency=high
 

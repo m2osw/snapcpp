@@ -74,10 +74,10 @@ case "$1" in
         # Restore the Apache2 "000-default" site if all our defaults
         # were removed
         #
-        if test ! -f /etc/apache2/sites-enabled/000-snap-apache2-default \
-             -a ! -f /etc/apache2/sites-enabled/snapmanager-apache2
+        if test ! -f /etc/apache2/sites-enabled/000-snap-apache2-default.conf \
+             -a ! -f /etc/apache2/sites-enabled/snapmanager-apache2.conf
         then
-            a2ensite 000-default
+            a2ensite -q 000-default
         fi
 
         # Remeber that we made a change in our prerm script (disabling our
@@ -122,7 +122,7 @@ case "$1" in
         rm -f /etc/apache2/conf-enabled/snap-httpoxy.conf
         rm -f /etc/apache2/conf-enabled/snap-apache2-ssl-log.conf
         for dir in \
-            /etc/apache2/conf-empty \
+            /etc/apache2/conf-enabled \
             /etc/apache2/conf-available \
             /etc/apache2
         do

@@ -4,18 +4,19 @@
 
 if [ "$1" = "configure" ]
 then
+    PACKAGENAME=snapcgi
+
     # Create the snapcgi.log file because the www-data user may have
     # difficulties with it otherwise
     #
-    PKGNAME=snapcgi
     SNAPLOGDIR=/var/log/snapwebsites
-    SNAPCGI_LOG=${SNAPLOGDIR}/${PKGNAME}.log
+    SNAPCGI_LOG=${SNAPLOGDIR}/${PACKAGENAME}.log
     touch ${SNAPCGI_LOG}
     chown www-data:www-data ${SNAPCGI_LOG}
     chmod 640 ${SNAPCGI_LOG}
 
     SNAPSECURELOGDIR=/var/log/snapwebsites/secure
-    SNAPSECURECGI_LOG=${SNAPSECURELOGDIR}/${PKGNAME}.log
+    SNAPSECURECGI_LOG=${SNAPSECURELOGDIR}/${PACKAGENAME}.log
     touch ${SNAPSECURECGI_LOG}
     chown www-data:www-data ${SNAPSECURECGI_LOG}
     chmod 640 ${SNAPSECURECGI_LOG}
