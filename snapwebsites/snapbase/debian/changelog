@@ -1,3 +1,11 @@
+snapbase (1.0.21.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Moved the apache cleanup to the snapapacheinit script.
+  * Call the script from the snapbase.prerm script.
+  * Added the missing apache SSL log removal in snapbase.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 21:19:38 -0700
+
 snapbase (1.0.20.0~xenial) xenial; urgency=high
 
   * SNAP-465: Use restart and not reload in the snapapacheinit script.

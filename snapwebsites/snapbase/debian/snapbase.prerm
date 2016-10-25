@@ -6,9 +6,11 @@
 
 if [ "$1" = "remove" -o "$1" = "deconfigure" ]
 then
-    a2dissite snapmanager-apache2
+    # We have to call the purge now because once in the postrm the
+    # script (snapapacheinit) will be gone
+    #
+    /usr/lib/snapwebsites/scripts/snapapacheinit purge
 fi
-
 
 #DEBHELPER#
 

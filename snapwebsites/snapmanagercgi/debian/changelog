@@ -1,3 +1,11 @@
+snapmanagercgi (1.1.34.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Removed the disabling of the snapmanager-apache2 site from the
+    postrm since it is actually done in the prerm script already.
+  * Remove the site configurations on a remove as well.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 16:12:38 -0700
+
 snapmanagercgi (1.1.33.0~xenial) xenial; urgency=high
 
   * SNAP-465: Call the snapapacheinit script to run the common initialization.

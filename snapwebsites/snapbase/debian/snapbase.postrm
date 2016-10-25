@@ -46,45 +46,6 @@ then
     then
         rmdir --ignore-fail-on-non-empty /etc/snapwebsites
     fi
-
-    # handle apache2 appropriately
-    #
-    # TBD: look into moving this code in the "snapapacheinit remove" section?
-    #      the problem is we do not want to disable the security if snapbase
-    #      remains in place... also by now that script was deleted by the
-    #      system (i.e. we would actually have to call it from `prerm`)
-    #
-    if hash a2enconf 2>/dev/null
-    then
-        a2disconf -q snap-apache2-security
-        a2enconf -q security
-        a2disconf snap-acceptfilter
-        a2disconf snap-httpoxy
-
-        # make sure to force a reload or that's going to be useless
-        #
-        systemctl restart apache2
-    else
-        # here we may still have the soft-link since we did not have
-        # a chance to call a2disconf on it... so we remove it by
-        # hand and then remove all the directories which should now
-        # be empty
-        #
-        rm -f /etc/apache2/conf-enabled/snap-apache2-security.conf
-        rm -f /etc/apache2/conf-enabled/snap-acceptfilter.conf
-        rm -f /etc/apache2/conf-enabled/snap-httpoxy.conf
-        for dir in \
-            /etc/apache2/conf-empty \
-            /etc/apache2/conf-available \
-            /etc/apache2
-        do
-            if [ -d "${dir}" ]
-            then
-                # If the dir is not found, this would cause an error
-                rmdir --ignore-fail-on-non-empty ${dir}
-            fi
-        done
-    fi
 fi
 
 #DEBHELPER#

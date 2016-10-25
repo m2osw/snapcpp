@@ -12,14 +12,6 @@ then
     rm -f /var/log/snapwebsites/secure/snapmanagercgi.log*
 fi
 
-if [ "$1" = "purge" -o "$1" = "remove" ]
-then
-    # "disable" our site configuration file
-    # (this is a soft link that was probably not removed)
-    #
-    a2dissite -q snapmanager-apache2
-fi
-
 /usr/lib/snapwebsites/scripts/snapapacheinit remove
 
 
