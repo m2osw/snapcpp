@@ -1,3 +1,9 @@
+snapfirewall (1.0.19.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:49 -0700
+
 snapfirewall (1.0.19.0~xenial) xenial; urgency=high
 
   * SNAP-465: postinst/postrm cleanups.
