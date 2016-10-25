@@ -530,5 +530,25 @@ void writeTag(QWriter& w, const QString& name, const QString& data)
 }
 
 
+/** \brief Help function used to serialize a string field.
+ *
+ * This function is a helper function used to serialize a
+ * field of type string.
+ *
+ * Note that this is equivalent to w.writeTag(name, data).
+ * It just makes sense to have this helper function so
+ * all writes in a serialization look alike.
+ *
+ * \param[in] w  The QWriter where the field is written.
+ * \param[in] name  The name of the field saved in the 'n' attribute
+ *                  of the \<v> tag.
+ * \param[in] data  The field data.
+ */
+void writeTag(QWriter& w, const QString& name, const char *data)
+{
+    w.writeTag(name, QString::fromUtf8(data));
+}
+
+
 } // namespace QtSerialization
 // vim: ts=4 sw=4 et

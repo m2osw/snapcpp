@@ -90,11 +90,19 @@ then
     mkdir -p /var/lib/snapwebsites
     chown snapwebsites:snapwebsites /var/lib/snapwebsites
 
+    # make sure /run/*/snapwebsites and /run/snapwebsites/* exist
+    #
+    snapbootinit
+
     # Now run various common apache initializations
     # (logrotate, enable/disable configuration/modules/sites)
     # The external script will restart apache2 as well
     #
     /usr/lib/snapwebsites/scripts/snapapacheinit install
+
+    # For some reasons, this one does not get auto-enabled
+    #
+    systemctl enable snapbase
 fi
 
 # vim: ts=4 sw=4 et nocindent

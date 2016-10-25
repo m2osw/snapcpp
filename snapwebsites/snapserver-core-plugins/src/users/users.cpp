@@ -1354,7 +1354,7 @@ void users::user_logout()
  */
 QString users::email_to_user_key(QString const & email)
 {
-    // It's better to use the new strongly typed enumerations.
+    // It is better to use the new strongly typed enumerations.
     //
     enum class force_lowercase_t
     {

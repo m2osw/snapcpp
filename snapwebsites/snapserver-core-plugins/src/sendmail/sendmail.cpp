@@ -2793,10 +2793,10 @@ void sendmail::attach_user_email(email const & e)
 
     // save the email for that user
     // (i.e. emails can be read from within the website)
-    QString serialized_email(e.serialize());
+    QString const serialized_email(e.serialize());
     QtCassandra::QCassandraValue email_value;
     email_value.setStringValue(serialized_email);
-    QString unique_key(e.get_email_key());
+    QString const unique_key(e.get_email_key());
     row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL))->setValue(email_value);
     QtCassandra::QCassandraValue status_value;
     status_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_NEW));
