@@ -35,7 +35,7 @@
 ##
 install(
     PROGRAMS
-        snapapacheinit
+        snapbootinit
         swap-usage
 
     DESTINATION
@@ -48,7 +48,7 @@ install(
 ##
 install(
     PROGRAMS
-        snapbootinit
+        snapapacheinit
 
     DESTINATION
        	lib/snapwebsites/scripts

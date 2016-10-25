@@ -1,3 +1,9 @@
+snapbase (1.0.19.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Swapped the snapapacheinit and snapbootinit location.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Oct 2016 17:18:38 -0700
+
 snapbase (1.0.18.0~xenial) xenial; urgency=high
 
   * SNAP-465: Merged all the apache2 initialization in snapapachelog.sh and
