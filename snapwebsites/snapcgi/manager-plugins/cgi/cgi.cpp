@@ -370,7 +370,7 @@ bool cgi::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                             , s.get_field_name()
                             , s.get_value()
                             , "<p>The <b>Service Mode</b> defines whether the service is currently"
-                             " in-service (0), which means the website serves pages as expected"
+                             " \"in-service\", which means the website serves pages as expected"
                              " or in maintenance (number of seconds the maintenance will take),"
                              " which means we display a maintenance page only.</p>"
                              "<p>Note: You may enter a number followed by 's' for seconds,"
@@ -423,33 +423,36 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
     if(field_name == "maintenance")
     {
         int retry_after(0);
-        std::string const retry_after_str(new_value.toUtf8().data());
-        char const * ra(retry_after_str.c_str());
-        for(; *ra >= '0' && *ra <= '9'; ++ra)
+        if(new_value != "in-service")
         {
-            retry_after = retry_after * 10 + *ra - '0';
-        }
-        for(; isspace(*ra); ++ra);
-        switch(*ra)
-        {
-        case 's':
-            // already in seconds
-            //retry_after *= 1;
-            break;
+            std::string const retry_after_str(new_value.toUtf8().data());
+            char const * ra(retry_after_str.c_str());
+            for(; *ra >= '0' && *ra <= '9'; ++ra)
+            {
+                retry_after = retry_after * 10 + *ra - '0';
+            }
+            for(; isspace(*ra); ++ra);
+            switch(*ra)
+            {
+            case 's':
+                // already in seconds
+                //retry_after *= 1;
+                break;
 
-        case 'm':
-            retry_after *= 60;
-            break;
+            case 'm':
+                retry_after *= 60;
+                break;
 
-        case 'h':
-            retry_after *= 60 * 60;
-            break;
+            case 'h':
+                retry_after *= 60 * 60;
+                break;
 
-        case 'd':
-            retry_after *= 24 * 60 * 60;
-            break;
+            case 'd':
+                retry_after *= 24 * 60 * 60;
+                break;
 
-        //default: error?
+            //default: error?
+            }
         }
 
         snap::process p("go to maintenance");
@@ -462,18 +465,18 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         {
             // go from in-service to maintenance
             //
-            p.add_argument("/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)#\\([^#]\\)/\\1\\2/");
+            p.add_argument("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)#\\([^#]\\)/\\1\\2/'");
 
             // also change the Retry-After in this case
             //
             p.add_argument("-e");
-            p.add_argument(QString("/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/Retry-After \".*\"/Retry-After \"%1\"/").arg(retry_after));
+            p.add_argument(QString("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/Retry-After \".*\"/Retry-After \"%1\"/'").arg(retry_after));
         }
         else
         {
             // go from maintenance to in-service
             //
-            p.add_argument("/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)\\([^#]\\)/\\1#\\2/");
+            p.add_argument("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)\\([^#]\\)/\\1#\\2/'");
 
             // leave the last Retry-After as it was
         }

@@ -1,3 +1,9 @@
+snapcgi (1.0.20.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Command line options need quotes when including spaces.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 15:07:47 -0700
+
 snapcgi (1.0.19.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the handling of the snapserver field, it has to always
