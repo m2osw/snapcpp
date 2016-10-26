@@ -9,6 +9,12 @@
   <description>
     <p>This bundle installs the 'snaplog' package, which includes a MySQL database.</p>
   </description>
+  <fields>
+    <field name="host" type="input">
+      <label>MySQL Host Address</label>
+      <description>Enter the host IP address (or DNS name) of the MySQL server.</description>
+    </field>
+  </fields>
   <packages>mysql-server,snaplog</packages>
   <preinst>
     if ! dpkg -l pwgen 2> /dev/null
@@ -39,6 +45,8 @@
       "mysql-server mysql-server/root_password_again password ${ROOT_PASSWORD}"
   </preinst>
   <postinst>
+    # Create the snaplog user and snaplog database
+    #
     PRIVATE_DIR=/var/lib/snapwebsites/private
     source ${PRIVATE_DIR}/snaplog_password.sh
     mysql --user=root --password="${ROOT_PASSWORD}" &lt;&lt;EOF
@@ -60,6 +68,12 @@ CREATE TABLE snaplog.log
   , message     LONGTEXT
   );
 EOF
+
+    # Now put the HOST ip address into /etc/default/snaplog
+    # and restart the snaplog server.
+    #
+    sed -i.bak -e "s/HOST=.*/HOST=${BUNDLE_INSTALLATION_HOST}/" /etc/default/snaplog
+    systemctl restart snaplog
   </postinst>
   <postrm>
     apt purge -y "mysql-server-*"
