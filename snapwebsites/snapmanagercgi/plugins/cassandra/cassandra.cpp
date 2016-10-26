@@ -104,6 +104,9 @@ void write_node_to_yaml( const YAML::Node& node )
     emitter
         << YAML::Comment(header_comment.toUtf8().data())
         << node
+        // SNAP-497: apparently, you have to specifically tell the emitter
+        // that you want a newline in the output.
+        << YAML::Newline
         << YAML::Comment("vim: ts=4 sw=4 et");
 
     QFile file( g_cassandra_yaml );
