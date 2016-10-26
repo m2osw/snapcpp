@@ -905,7 +905,7 @@ void manager::reboot(bool reboot)
  *
  * \return true if the function encountered no problem. If the "must exist"
  *         flag was used, the function may return true when the field was
- *         not updated nor appened.
+ *         not updated nor appended.
  */
 bool manager::replace_configuration_value(
                   QString const & filename

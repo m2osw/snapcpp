@@ -15,8 +15,11 @@ if [ "$1" = "purge" ]
 then
     # delete all logs
     #
-    rm -f /var/log/snapwebsites/${PACKAGENAME}.log
-    rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log
+    # WARNING: This is done in snapbase.postrm instead because
+    #          these logs are common to snapserver and snapbackend
+    #
+    #rm -f /var/log/snapwebsites/${PACKAGENAME}.log
+    #rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log
 
     # delete the snapserver SSL files
     #

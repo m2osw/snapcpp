@@ -37,7 +37,6 @@ snap_validate_xml( bundle-frontend.xml bundles.xsd )
 ##
 install(
     FILES 
-        # snap configuration files
         snapcgi.conf
 
     DESTINATION
@@ -46,16 +45,29 @@ install(
 
 
 #################################################################################
-## Config files
+## Apache Config files
 ##
 install(
     FILES 
-        # misc files
         000-snap-apache2-default.conf
         snap-apache2.conf
 
     DESTINATION
         share/snapwebsites/apache2
+)
+
+
+#################################################################################
+## Maintenance files
+##
+install(
+    FILES 
+        favicon.ico
+        maintenance.html
+        snap-logo.png
+
+    DESTINATION
+        share/snapwebsites/html/maintenance
 )
 
 
