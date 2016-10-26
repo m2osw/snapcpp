@@ -456,7 +456,7 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         }
 
         snap::process p("go to maintenance");
-        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
         p.set_command("sed");
         p.add_argument("-i.bak");
         p.add_argument("-e");
@@ -482,7 +482,11 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         }
 
         p.add_argument(QString::fromUtf8(g_configuration_apache2));
-        NOTUSED(p.run());
+        int const r(p.run());
+        if(r != 0)
+        {
+            SNAP_LOG_ERROR("The sed command to switch between maintenance and in-service failed with ")(r)(", output: ")(p.get_output(true).trimmed());
+        }
         return true;
     }
 

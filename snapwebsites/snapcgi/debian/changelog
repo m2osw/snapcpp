@@ -1,3 +1,9 @@
+snapcgi (1.0.21.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Keep output to print in logs in case it fails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 15:26:47 -0700
+
 snapcgi (1.0.20.0~xenial) xenial; urgency=high
 
   * SNAP-110: Command line options need quotes when including spaces.
