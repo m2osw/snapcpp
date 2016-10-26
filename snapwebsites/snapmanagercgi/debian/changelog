@@ -1,8 +1,8 @@
-snapmanagercgi (1.1.35.1~xenial) xenial; urgency=high
+snapmanagercgi (1.1.36.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-110: Fixed the saving of the .is-installed scripts, now we use the cache.
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 25 Oct 2016 13:50:49 -0700
 
 snapmanagercgi (1.1.35.0~xenial) xenial; urgency=high
 

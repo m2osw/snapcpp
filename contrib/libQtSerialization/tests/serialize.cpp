@@ -60,17 +60,19 @@ class T1C : public QtSerialization::QSerializationObject
 {
 public:
     T1C()
-        : f_int8(0),
-          f_uint8(0),
-          f_int16(0),
-          f_uint16(0),
-          f_int32(0),
-          f_uint32(0),
-          f_int64(0),
-          f_uint64(0),
-          f_float(0.0f),
-          f_double(0.0)
-          //f_string() -- auto-init to empty
+        : f_int8(0)
+        , f_uint8(0)
+        , f_int16(0)
+        , f_uint16(0)
+        , f_int32(0)
+        , f_uint32(0)
+        , f_int64(0)
+        , f_uint64(0)
+        , f_float(0.0f)
+        , f_double(0.0)
+        //, f_string() -- auto-init to empty
+        //, f_ugly_name() -- auto-init to empty
+        , f_c_string(nullptr)
     {
     }
 
@@ -110,7 +112,10 @@ public:
             printf("error: f_string should be \"This is the perfect string\", it is \"%s\"\n", f_string.toUtf8().data());
         }
         if(f_ugly_name != "<here we test that's working with \"ugly\" characters & that's important>") {
-            printf("error: f_string should be \"<here we test that's working with \"ugly\" characters & that's important>\", it is \"%s\"\n", f_ugly_name.toUtf8().data());
+            printf("error: f_ugly_name should be \"<here we test that's working with \"ugly\" characters & that's important>\", it is \"%s\"\n", f_ugly_name.toUtf8().data());
+        }
+        if(strcmp(f_c_string, "This is a direct C string") == 0) {
+            printf("error: f_c_string should be \"This is a direct C string\", it is \"%s\"\n", f_c_string);
         }
     }
 
@@ -128,6 +133,8 @@ public:
         f_double = 19.307;
         f_string = "This is the perfect string";
         f_ugly_name = "<here we test that's working with \"ugly\" characters & that's important>";
+        f_c_string = strdup("This is a direct C string");
+        //f_std_string = "This is a C++ string";
     }
 
     void write(QtSerialization::QWriter& w)
@@ -145,6 +152,7 @@ public:
         QtSerialization::writeTag(w, "double float", f_double);
         QtSerialization::writeTag(w, "string", f_string);
         QtSerialization::writeTag(w, "&this'name\"is<ugly>", f_ugly_name);
+        QtSerialization::writeTag(w, "c-string", f_c_string);
     }
 
     virtual void readTag(const QString& name, QtSerialization::QReader& r)
@@ -163,23 +171,28 @@ public:
             QtSerialization::QFieldDouble f10(comp, "double float", f_double);
             QtSerialization::QFieldString f11(comp, "string", f_string);
             QtSerialization::QFieldString f12(comp, "&this'name\"is<ugly>", f_ugly_name);
+            QString cstr;
+            QtSerialization::QFieldString f13(comp, "c-string", cstr);
+            f_c_string = strdup(cstr.toUtf8().data());
             r.read(comp);
         }
     }
 
 private:
-    qint8       f_int8;
-    quint8      f_uint8;
-    qint16      f_int16;
-    quint16     f_uint16;
-    qint32      f_int32;
-    quint32     f_uint32;
-    qint64      f_int64;
-    quint64     f_uint64;
-    float       f_float;
-    double      f_double;
-    QString     f_string;
-    QString     f_ugly_name;
+    qint8       f_int8        = 0;
+    quint8      f_uint8       = 0;
+    qint16      f_int16       = 0;
+    quint16     f_uint16      = 0;
+    qint32      f_int32       = 0;
+    quint32     f_uint32      = 0;
+    qint64      f_int64       = 0;
+    quint64     f_uint64      = 0;
+    float       f_float       = 0.0f;
+    double      f_double      = 0.0;
+    QString     f_string      = "";
+    QString     f_ugly_name   = "";
+    char *      f_c_string    = nullptr;
+    //std::string f_std_string  = "";
 };
 
 /** \brief Run test 1.
@@ -192,9 +205,9 @@ void test1()
         T1C c;
         c.init_values();
         QFile out("serialize1.xml");
-        if(out.open(QIODevice::WriteOnly))
+        if(!out.open(QIODevice::WriteOnly))
         {
-            std::cerr << "error: could not open serialize1.xml output test file." << std::endl;
+            std::cerr << "error: could not open serialize1.xml output test file (writing anew)." << std::endl;
             exit(1);
         }
         QtSerialization::QWriter w(out, "serialize1", 2, 3);
@@ -207,7 +220,7 @@ void test1()
         QFile in("serialize1.xml");
         if(!in.open(QIODevice::ReadOnly))
         {
-            std::cerr << "error: could not open serialize1.xml input test file." << std::endl;
+            std::cerr << "error: could not open serialize1.xml input test file (reading back)." << std::endl;
             exit(1);
         }
         QtSerialization::QReader r(in);

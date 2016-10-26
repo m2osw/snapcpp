@@ -5,6 +5,7 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+
 if [ "$1" = "configure" ]
 then
     PACKAGENAME=snapfirewall
@@ -41,5 +42,6 @@ then
     #
     systemctl reload fail2ban
 fi
+
 
 # vim: ts=4 sw=4 et nocindent

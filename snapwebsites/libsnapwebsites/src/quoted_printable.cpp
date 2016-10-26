@@ -209,7 +209,7 @@ std::string encode(std::string const & input, int flags)
             bool const lone_periods((f_flags & QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD) != 0);
             // reset the buffer, just in case
             f_buffer = '\0';
-            for(; *s; ++s)
+            for(; *s != '\0'; ++s)
             {
                 if(lone_periods
                 && *s == '.'

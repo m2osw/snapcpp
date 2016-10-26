@@ -92,6 +92,7 @@ void writeTag(QWriter& w, const QString& name, const quint64 data);
 void writeTag(QWriter& w, const QString& name, const float data);
 void writeTag(QWriter& w, const QString& name, const double data);
 void writeTag(QWriter& w, const QString& name, const QString& data);
+void writeTag(QWriter& w, const QString& name, const char *data);
 
 
 } // namespace QtSerialization

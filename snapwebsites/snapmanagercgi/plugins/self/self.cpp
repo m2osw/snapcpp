@@ -655,7 +655,7 @@ void self::retrieve_bundles_status(snap_manager::server_status & server_status)
         QDomNodeList bundle_is_installed(bundle_xml.elementsByTagName("is-installed"));
         if(bundle_is_installed.size() == 1)
         {
-            std::string path(f_snap->get_data_path().toUtf8().data());
+            std::string path(f_snap->get_cache_path().toUtf8().data());
             path += "/bundle-scripts/";
             path += name.toUtf8().data();
             path += ".is-installed";
