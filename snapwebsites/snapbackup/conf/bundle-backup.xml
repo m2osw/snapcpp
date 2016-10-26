@@ -20,7 +20,18 @@
     after installation.</p>
   </description>
   <affected-services>snapmanagerdaemon</affected-services>
+  <fields>
+    <field name="host" type="input">
+      <label>Cassandra Host Address</label>
+      <description>Enter one of the host IP addresses (or DNS names) of the Cassandra server cluster.</description>
+    </field>
+  </fields>
   <packages>snapbackup</packages>
+  <postinst>
+    # Now put the HOST ip address into /etc/default/snapbackup
+    #
+    sed -i.bak -e "s/HOST=.*/HOST=${BUNDLE_INSTALLATION_HOST}/" /etc/default/snapbackup
+  </postinst>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
