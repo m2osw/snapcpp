@@ -3,6 +3,7 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: cmake,
     debhelper,
+    dh-systemd,
     doxygen,
     graphviz,
     snapcmakemodules (>= 1.0.27.11~xenial)
