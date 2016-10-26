@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# This specifies shell vars defined that the snapbackup cron.daily
+# script uses.
+
+# one of the hosts running Cassandra
+#
+HOST=127.0.0.1

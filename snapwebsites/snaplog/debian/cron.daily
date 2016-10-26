@@ -2,7 +2,7 @@
 
 # the host running MySQL
 #
-HOST=127.0.0.1
+. /etc/default/snaplog
 
 # "Vacuum" out old entries from the database, older than 90 days.
 # This keeps the database small.

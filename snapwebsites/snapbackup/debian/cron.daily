@@ -7,9 +7,9 @@
 # Important note: we are in cron.daily which means we run as root:root
 #
 
-# one of the hosts running Cassandra
+# get one of the hosts running Cassandra
 #
-HOST=127.0.0.1
+. /etc/default/snapbackup
 
 # make sure the output folder exists
 #

@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# This specifies shell vars defined that the snaplog cron.daily
+# script uses.
+
+# the host running mysql
+#
+HOST=127.0.0.1
