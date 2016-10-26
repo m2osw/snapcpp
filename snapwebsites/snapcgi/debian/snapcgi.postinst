@@ -24,6 +24,7 @@ then
     # The snap.cgi also requires the cgi module
     #
     a2enmod -q cgi
+    a2enmod -q rewrite
 
     # disable the default site configuration file and enable ours instead
     #

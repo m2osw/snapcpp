@@ -1,8 +1,8 @@
-snapcgi (1.0.16.1~xenial) xenial; urgency=high
+snapcgi (1.0.17.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Moved the enabling of the rewrite apache2 module to the postinst.
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 25 Oct 2016 18:02:48 -0700
 
 snapcgi (1.0.16.0~xenial) xenial; urgency=high
 
