@@ -1,8 +1,10 @@
-snapcgi (1.0.18.1~xenial) xenial; urgency=high
+snapcgi (1.0.19.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the handling of the snapserver field, it has to always
+    return true because it was handled.
+  * Adding a maintenance mode for Snap!
 
- -- Build Server <build@m2osw.com>  Wed, 26 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 13:26:47 -0700
 
 snapcgi (1.0.18.0~xenial) xenial; urgency=high
 

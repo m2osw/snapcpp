@@ -25,10 +25,12 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/file_content.h>
 #include <snapwebsites/join_strings.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
 #include <snapwebsites/qdomhelpers.h>
 #include <snapwebsites/qdomxpath.h>
 #include <snapwebsites/string_pathinfo.h>
@@ -59,6 +61,8 @@ namespace
 char const * g_configuration_filename = "snapcgi";
 
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcgi.conf";
+
+char const * g_configuration_apache2 = "/etc/apache2/sites-available/000-snap-apache2-default.conf";
 
 
 void file_descriptor_deleter(int * fd)
@@ -227,6 +231,62 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
         server_status.set_field(snapserver);
     }
 
+    // allow for turning maintenance ON or OFF
+    {
+        // TODO: determine the current status
+        //
+        snap::file_content conf(g_configuration_apache2);
+        if(conf.exists())
+        {
+            int retry_after(0);
+            if(conf.read_all())
+            {
+                std::string const content(conf.get_content());
+                std::string::size_type const pos(content.find("##MAINTENANCE-START##"));
+                char const * s(content.c_str() + pos + 21);
+                while(isspace(*s))
+                {
+                    ++s;
+                }
+                if(*s != '#')
+                {
+                    std::string::size_type const ra_pos(content.find("Retry-After"));
+                    char const * ra(content.c_str() + ra_pos + 11);
+                    for(; *ra == '"' || isspace(*ra); ++ra);
+                    for(; *ra >= '0' && *ra <= '9'; ++ra)
+                    {
+                        retry_after = retry_after * 10 + *s - '0';
+                        if(retry_after > 365 * 24 * 60 * 60) // more than 1 year?!?
+                        {
+                            retry_after = 365 * 24 * 60 * 60;
+                            break;
+                        }
+                    }
+                    if(retry_after < 60) // less than a minute?!?
+                    {
+                        retry_after = 60;
+                    }
+                }
+            }
+            // TODO: display retry_after in minutes, hours, days...
+            snap_manager::status_t const maintenance(
+                          snap_manager::status_t::state_t::STATUS_STATE_INFO
+                        , get_plugin_name()
+                        , "maintenance"
+                        , retry_after == 0 ? "in-service" : QString("%1").arg(retry_after));
+            server_status.set_field(maintenance);
+        }
+        else
+        {
+            snap_manager::status_t const maintenance(
+                          snap_manager::status_t::state_t::STATUS_STATE_ERROR
+                        , get_plugin_name()
+                        , "maintenance"
+                        , QString::fromUtf8(g_configuration_apache2) + " is missing");
+            server_status.set_field(maintenance);
+        }
+    }
+
 }
 
 
@@ -275,6 +335,55 @@ bool cgi::display_value(QDomElement parent, snap_manager::status_t const & s, sn
         return true;
     }
 
+    if(s.get_field_name() == "maintenance")
+    {
+        // if there is an error, we do not offer the user to do anything
+        // (i.e. field is in display only mode)
+        //
+        if(s.get_state() == snap_manager::status_t::state_t::STATUS_STATE_ERROR)
+        {
+            snap_manager::form f(
+                      get_plugin_name()
+                    , s.get_field_name()
+                    , snap_manager::form::FORM_BUTTON_NONE
+                    );
+
+            snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                              "Maintenance Mode Not Available"
+                            , s.get_field_name()
+                            , s.get_value() // the value has additional information
+                            ));
+            f.add_widget(field);
+
+            f.generate(parent, uri);
+        }
+        else
+        {
+            snap_manager::form f(
+                      get_plugin_name()
+                    , s.get_field_name()
+                    , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                    );
+
+            snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                              "Service Mode:"
+                            , s.get_field_name()
+                            , s.get_value()
+                            , "<p>The <b>Service Mode</b> defines whether the service is currently"
+                             " in-service (0), which means the website serves pages as expected"
+                             " or in maintenance (number of seconds the maintenance will take),"
+                             " which means we display a maintenance page only.</p>"
+                             "<p>Note: You may enter a number followed by 's' for seconds,"
+                             " 'm' for minutes, 'h' for hours, 'd' for days.</p>"
+                            ));
+            f.add_widget(field);
+
+            f.generate(parent, uri);
+        }
+
+        return true;
+    }
+
     return false;
 }
 
@@ -307,7 +416,71 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         snap_config snap_cgi(g_configuration_filename);
         snap_cgi["snapserver"] = new_value;
 
-        return f_snap->replace_configuration_value(g_configuration_d_filename, "snapserver", new_value);
+        NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, "snapserver", new_value));
+        return true;
+    }
+
+    if(field_name == "maintenance")
+    {
+        int retry_after(0);
+        std::string const retry_after_str(new_value.toUtf8().data());
+        char const * ra(retry_after_str.c_str());
+        for(; *ra >= '0' && *ra <= '9'; ++ra)
+        {
+            retry_after = retry_after * 10 + *ra - '0';
+        }
+        for(; isspace(*ra); ++ra);
+        switch(*ra)
+        {
+        case 's':
+            // already in seconds
+            //retry_after *= 1;
+            break;
+
+        case 'm':
+            retry_after *= 60;
+            break;
+
+        case 'h':
+            retry_after *= 60 * 60;
+            break;
+
+        case 'd':
+            retry_after *= 24 * 60 * 60;
+            break;
+
+        //default: error?
+        }
+
+        snap::process p("go to maintenance");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_COMMAND);
+        p.set_command("sed");
+        p.add_argument("-i.bak");
+        p.add_argument("-e");
+
+        if(retry_after != 0)
+        {
+            // go from in-service to maintenance
+            //
+            p.add_argument("/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)#\\([^#]\\)/\\1\\2/");
+
+            // also change the Retry-After in this case
+            //
+            p.add_argument("-e");
+            p.add_argument(QString("/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/Retry-After \".*\"/Retry-After \"%1\"/").arg(retry_after));
+        }
+        else
+        {
+            // go from maintenance to in-service
+            //
+            p.add_argument("/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)\\([^#]\\)/\\1#\\2/");
+
+            // leave the last Retry-After as it was
+        }
+
+        p.add_argument(QString::fromUtf8(g_configuration_apache2));
+        NOTUSED(p.run());
+        return true;
     }
 
     return false;
