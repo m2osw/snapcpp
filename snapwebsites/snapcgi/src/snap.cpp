@@ -535,9 +535,16 @@ int snap_cgi::process()
 
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
-
 #endif
     SNAP_LOG_DEBUG("f_address=")(f_address)(", f_port=")(f_port)(", secure=")(secure ? "true" : "false");
+
+    {
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGPIPE);
+        sigprocmask(SIG_BLOCK, &set, nullptr);
+    }
+
     tcp_client_server::bio_client socket(
                   f_address
                 , f_port
@@ -612,7 +619,7 @@ int snap_cgi::process()
                 if(socket.write("\n", 1) != 1)
                 {
 #ifdef _DEBUG
-                    SNAP_LOG_DEBUG("socket.write() of '\n' failed!");
+                    SNAP_LOG_DEBUG("socket.write() of '\\n' failed!");
 #endif
                     return 3;
                 }
@@ -698,7 +705,7 @@ int snap_cgi::process()
 
     if(send_error != 0)
     {
-        SNAP_LOG_FATAL("Ready to send a 504 Gateway Timeout to client (")(send_error)(")...");
+        SNAP_LOG_FATAL("Ready to send a 504 Gateway Timeout to client (")(send_error)(") but check for a reply from snapserver first...");
 
         // on error the server may have sent us a reply that we are
         // expected to send to the client
@@ -720,9 +727,9 @@ int snap_cgi::process()
         int const r(socket.read(buf, sizeof(buf)));
         if(r > 0)
         {
-//#ifdef _DEBUG
-//            SNAP_LOG_DEBUG("writing buf=")(buf);
-//#endif
+#ifdef _DEBUG
+            //SNAP_LOG_DEBUG("writing buf=")(buf);
+#endif
             if(fwrite(buf, r, 1, stdout) != 1)
             {
                 // there is not point in calling error() from here because
@@ -752,7 +759,7 @@ int snap_cgi::process()
         }
         else if(r == 0)
         {
-			// normal exit
+            // normal exit
             break;
         }
     }

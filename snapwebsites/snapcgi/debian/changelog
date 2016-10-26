@@ -1,3 +1,10 @@
+snapcgi (1.0.18.0~xenial) xenial; urgency=high
+
+  * SNAP-110: If something is not started yet, snapserver may close the socket
+    early and we need to just get an error so we block the SIGPIPE signal.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 25 Oct 2016 23:59:50 -0700
+
 snapcgi (1.0.17.0~xenial) xenial; urgency=high
 
   * SNAP-465: Moved the enabling of the rewrite apache2 module to the postinst.

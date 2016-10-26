@@ -2572,6 +2572,14 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
     // reply with an instant error
     if(f_snapdbproxy_addr.isEmpty())
     {
+        if(!f_snaplock)
+        {
+            SNAP_LOG_DEBUG("snapserver contacted before cassandra and snaplock is ready.");
+        }
+        else
+        {
+            SNAP_LOG_DEBUG("snapserver contacted before cassandra is ready.");
+        }
         std::string const err("Status: 503 Service Unavailable\n"
                       "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
                       "Content-type: text/html\n"
@@ -2583,6 +2591,7 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
     }
     else if(!f_snaplock)
     {
+        SNAP_LOG_DEBUG("snapserver contacted before snaplock is ready.");
         std::string const err("Status: 503 Service Unavailable\n"
                       "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
                       "Content-type: text/html\n"
@@ -2609,16 +2618,19 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
         if(child->process(client))
         {
             // this child is now busy
+            //
             f_children_running.push_back(child);
         }
         else
         {
             // it failed, we can keep that child as a waiting child
+            //
             f_children_waiting.push_back(child);
 
             // and tell the user about a problem without telling much...
             // (see the logs for more info.)
             // TBD Translation?
+            //
             std::string const err("Status: 503 Service Unavailable\n"
                           "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
                           "Content-type: text/html\n"
