@@ -4,6 +4,18 @@
 . /usr/share/debconf/confmodule
 
 
+#if [ "$1" = "purge" ]
+#then
+#    # delete all logs
+#    #
+#    # WARNING: This is done in snapbase.postrm instead because
+#    #          these logs are common to snapserver and snapbackend
+#    #
+#    #rm -f /var/log/snapwebsites/${PACKAGENAME}.log
+#    #rm -f /var/log/snapwebsites/secure/${PACKAGENAME}.log
+#fi
+
+
 # These are not automatically handled by pbuilder/debhelper scripts
 # because those to do expect more than one service per package.
 #
