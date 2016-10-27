@@ -1,3 +1,15 @@
+snapcgi (1.0.22.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 26 Oct 2016 16:40:15 -0700
+
+snapcgi (1.0.22.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Mark apache2 as in need of a reload after the update.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 16:22:47 -0700
+
 snapcgi (1.0.21.0~xenial) xenial; urgency=high
 
   * SNAP-110: Keep output to print in logs in case it fails.

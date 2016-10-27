@@ -407,7 +407,6 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
 {
     NOTUSED(old_or_installation_value);
     NOTUSED(button_name);
-    NOTUSED(affected_services);
 
     if(field_name == "snapserver")
     {
@@ -487,6 +486,11 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         {
             SNAP_LOG_ERROR("The sed command to switch between maintenance and in-service failed with ")(r)(", output: ")(p.get_output(true).trimmed());
         }
+
+        // make sure apache2 gets reloaded too
+        //
+        affected_services.insert("apache2-reload");
+
         return true;
     }
 
