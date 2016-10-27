@@ -1,3 +1,9 @@
+snapcommunicator (1.0.41.0~xenial) xenial; urgency=high
+
+  * SNAP-110: We also need to send the RELOADCONFIG to snapmanagerdaemon.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 21:37:48 -0700
+
 snapcommunicator (1.0.40.0~xenial) xenial; urgency=high
 
   * SNAP-110: If not root, we have to fix the RELOADCONFIG.

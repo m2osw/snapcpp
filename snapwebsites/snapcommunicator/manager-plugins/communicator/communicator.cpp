@@ -553,12 +553,13 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
     //
     //bool const use_default_value(button_name == "restore_default");
 
-    if(field_name == "my_address")
+    if(field_name == get_name(name_t::SNAP_NAME_SNAPMANAGERCGI_SNAPCOMMUNICATOR_MY_ADDRESS))
     {
         // this address is to connect this snapcommunicator to
         // other snapcommunicators
         //
         affected_services.insert("snapcommunicator");
+        affected_services.insert("snapmanagerdaemon");
 
         // Here we change the "my_address" and "listen" parameters because
         // the two fields are expected to have the exact same IP address in
@@ -577,6 +578,7 @@ bool communicator::apply_setting(QString const & button_name, QString const & fi
         // we have to restart it
         //
         affected_services.insert("snapcommunicator");
+        affected_services.insert("snapmanagerdaemon");
 
         NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, field_name, new_value));
         return true;
