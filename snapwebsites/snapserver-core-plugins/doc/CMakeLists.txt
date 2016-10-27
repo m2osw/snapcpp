@@ -44,7 +44,7 @@ install(
     FILES
         footer.html
     DESTINATION
-        share/doc/snapwebsites/snapserver-core-plugins
+        share/doc/snapserver-core-plugins
 )
 
 # vim: ts=4 sw=4 et nocindent

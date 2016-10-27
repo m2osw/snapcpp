@@ -84,4 +84,18 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  clamav required for antivirus.
  libqrencode3 required for qrcode.
 
+Package: snapserver-core-plugins-doc
+Section: doc
+Architecture: any
+Suggests: ${misc:Depends}, snapserver-core-plugins (= ${binary:Version})
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to
+ use to create their own extensions.
+ .
+ This package contains the documentation for the core plugins dev package.
+
 # vim: ts=4 sw=4 et
