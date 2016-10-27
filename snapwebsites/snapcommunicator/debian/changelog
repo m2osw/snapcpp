@@ -1,8 +1,9 @@
-snapcommunicator (1.0.38.4~xenial) xenial; urgency=high
+snapcommunicator (1.0.39.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Noticed that I did not revert the snapcommunicator user/group
+    for the service to snapwebsites:snapwebsites.
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 18:27:48 -0700
 
 snapcommunicator (1.0.38.0~xenial) xenial; urgency=high
 
