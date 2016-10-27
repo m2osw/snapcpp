@@ -3360,7 +3360,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 // restart so we just skip the feature...
                 //
                 f_force_restart = true;
-                stop(false);
+                shutdown(false);
                 return;
             }
             break;
