@@ -1333,7 +1333,7 @@ void remote_communicator_connections::shutting_down(QString const & addr)
 {
     if(f_smaller_ips.contains(addr))
     {
-        // wait for 15 minutes and try again
+        // wait for 5 minutes and try again
         //
         f_smaller_ips[addr]->set_timeout_delay(remote_snap_communicator::REMOTE_CONNECTION_RECONNECT_TIMEOUT);
     }
@@ -2632,6 +2632,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 
                         // we may also be shutting down
                         //
+                        // Note: we cannot get here if f_shutdown is true...
+                        //
                         if(f_shutdown)
                         {
                             reply.add_parameter("shutdown", "true");
@@ -2649,6 +2651,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             reply.add_parameter("neighbors", f_explicit_neighbors);
                         }
 
+                        // Note: we cannot get here if f_shutdown is true...
+                        //
                         refuse = f_shutdown;
                         if(refuse)
                         {
@@ -2835,7 +2839,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         if(!remote_communicator)
                         {
                             // disconnecting means it is gone so we can remove
-                            // it from the communicator sinec the other end
+                            // it from the communicator since the other end
                             // will be reconnected (we are not responsible
                             // for that in this case)
                             //
@@ -2853,6 +2857,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             // so we want to "induce a long enough pause"
                             // to avoid attempting to reconnect like crazy
                             //
+                            remote_communicator->disconnect();
                             QString const addr(QString::fromUtf8(remote_communicator->get_client_addr().c_str()));
                             f_remote_snapcommunicators->shutting_down(addr);
                         }
@@ -3170,10 +3175,10 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 {
                     addr = QString::fromUtf8(remote_communicator->get_client_addr().c_str());
                 }
-                else if(service_conn)
-                {
-                    addr = QString::fromUtf8(service_conn->get_client_addr().c_str());
-                }
+                //else if(service_conn) -- this should not happen
+                //{
+                //    addr = QString::fromUtf8(service_conn->get_client_addr().c_str());
+                //}
                 else
                 {
                     // we have to have a remote or service connection here
@@ -3189,7 +3194,11 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     f_remote_snapcommunicators->too_busy(addr);
                 }
 
-                f_communicator->remove_connection(connection);
+                // we are responsible to try again later, so we do not
+                // lose the connection, but we need to disconnect
+                //
+                //f_communicator->remove_connection(connection);
+                remote_communicator->disconnect();
                 return;
             }
             else if(command == "REGISTER")
@@ -4820,9 +4829,12 @@ void snap_communicator_server::shutdown(bool quitting)
     f_communicator->remove_connection(f_loadavg_timer);     // load balancer timer
 
 //#ifdef _DEBUG
-    for(auto const & connection : all_connections)
     {
-        SNAP_LOG_DEBUG("Connection still left after the shutdown() call: ")(connection->get_name());
+        snap::snap_communicator::snap_connection::vector_t const all_connections_remaining(f_communicator->get_connections());
+        for(auto const & connection : all_connections_remaining)
+        {
+            SNAP_LOG_DEBUG("Connection still left after the shutdown() call: \"")(connection->get_name())("\"");
+        }
     }
 //#endif
 }

@@ -1,3 +1,10 @@
+snapcommunicator (1.0.43.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Added a debug loop to know what connection(s) do not get removed
+    from snapcommunicator when STOP is sent to it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 21:37:48 -0700
+
 snapcommunicator (1.0.42.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added a debug loop to know what connection(s) do not get removed
