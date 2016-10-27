@@ -178,11 +178,16 @@ public:
         void                        non_blocking() const;
         void                        keep_alive() const;
 
+        bool                        is_done() const;
+        void                        mark_done();
+        void                        mark_not_done();
+
         // callbacks
         virtual void                process_timeout();
         virtual void                process_signal();
         virtual void                process_read();
         virtual void                process_write();
+        virtual void                process_empty_buffer();
         virtual void                process_accept();
         virtual void                process_error();
         virtual void                process_hup();
@@ -292,7 +297,7 @@ public:
         virtual bool                is_reader() const override;
         //virtual bool                is_writer() const override;
         virtual int                 get_socket() const override;
-        virtual void                process_read();
+        virtual void                process_read() override;
 
         void                        send_message(snap_communicator_message const & message);
 
@@ -455,11 +460,14 @@ public:
 
                                     snap_tcp_server_client_buffer_connection(tcp_client_server::bio_client::pointer_t client);
 
+        bool                        has_input() const;
+        bool                        has_output() const;
+
         // snap::snap_communicator::snap_connection
         virtual bool                is_writer() const override;
 
         // snap::snap_communicator::snap_tcp_server_client_connection implementation
-        virtual ssize_t             write(void const * data, size_t length) override;
+        virtual ssize_t             write(void const * data, size_t const length) override;
         virtual void                process_read() override;
         virtual void                process_write() override;
         virtual void                process_hup() override;
@@ -468,7 +476,7 @@ public:
         virtual void                process_line(QString const & line) = 0;
 
     private:
-        std::string                 f_line; // do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
+        std::string                 f_line; // input -- do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
         std::vector<char>           f_output;
         size_t                      f_position = 0;
     };
@@ -502,6 +510,9 @@ public:
 
                                     snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t const mode = mode_t::MODE_PLAIN, bool const blocking = false);
 
+        bool                        has_input() const;
+        bool                        has_output() const;
+
         // snap::snap_communicator::snap_tcp_client_connection implementation
         virtual ssize_t             write(void const * data, size_t length) override;
         virtual bool                is_writer() const override;
@@ -513,7 +524,7 @@ public:
         virtual void                process_line(QString const & line) = 0;
 
     private:
-        std::string                 f_line; // do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
+        std::string                 f_line; // input -- do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
         std::vector<char>           f_output;
         size_t                      f_position = 0;
     };
@@ -550,6 +561,7 @@ public:
         bool                        is_connected() const;
         void                        disconnect();
         void                        mark_done();
+        void                        mark_done(bool messenger);
         size_t                      get_client_address(struct sockaddr_storage & address) const;
         std::string                 get_client_addr() const;
 
@@ -615,7 +627,6 @@ public:
                                     snap_tcp_blocking_client_message_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
 
         void                        run();
-        void                        done();
 
         bool                        send_message(snap_communicator_message const & message);
 
@@ -626,7 +637,6 @@ public:
         virtual void                process_message(snap_communicator_message const & message) = 0;
 
     private:
-        bool                        f_done = false;
     };
 
     static pointer_t                    instance();

@@ -131,7 +131,7 @@ QString const & messenger::result()
  */
 void messenger::process_timeout()
 {
-    done();
+    mark_done();
 }
 
 
@@ -185,7 +185,7 @@ void messenger::process_message(snap::snap_communicator_message const & message)
             // whether it worked on all computers (if broadcast to all) is a
             // different story!
             //
-            done();
+            mark_done();
             return;
         }
         break;
@@ -195,7 +195,7 @@ void messenger::process_message(snap::snap_communicator_message const & message)
         {
             SNAP_LOG_WARNING("we received the QUITTING command while waiting for responses for snapmanager.cgi.");
 
-            done();
+            mark_done();
             return;
         }
         break;
@@ -213,7 +213,7 @@ void messenger::process_message(snap::snap_communicator_message const & message)
         {
             SNAP_LOG_WARNING("we received the STOP command while waiting for responses for snapmanager.cgi.");
 
-            done();
+            mark_done();
             return;
         }
         break;

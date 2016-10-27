@@ -1,8 +1,11 @@
-libsnapwebsites (1.1.34.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.35.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added support to mark any connection as done.
+  * Added a process_empty_buffer() so we know when the last write happened.
+  * Replaced the done() function with mark_done().
+  * Allow us to mark the permanent connection messenger as done.
 
- -- Build Server <build@m2osw.com>  Wed, 26 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 27 Oct 2016 14:14:48 -0700
 
 libsnapwebsites (1.1.34.0~xenial) xenial; urgency=high
 

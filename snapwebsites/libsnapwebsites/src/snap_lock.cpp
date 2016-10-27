@@ -369,7 +369,7 @@ time_t lock_connection::get_obtention_timeout_date() const
  */
 void lock_connection::process_timeout()
 {
-    done();
+    mark_done();
 }
 
 
@@ -463,7 +463,7 @@ void lock_connection::process_message(snap_communicator_message const & message)
 
             // release hand back to the user while lock is still active
             //
-            done();
+            mark_done();
             return;
         }
         else if(command == "LOCKFAILED")
@@ -485,7 +485,7 @@ void lock_connection::process_message(snap_communicator_message const & message)
                                 ("\" (LOCKEDFAILED).");
             }
 
-            done();
+            mark_done();
             return;
         }
         break;
@@ -495,7 +495,7 @@ void lock_connection::process_message(snap_communicator_message const & message)
         {
             SNAP_LOG_WARNING("we received the QUITTING command while waiting for a lock.");
 
-            done();
+            mark_done();
             return;
         }
         break;
@@ -513,7 +513,7 @@ void lock_connection::process_message(snap_communicator_message const & message)
         {
             SNAP_LOG_WARNING("we received the STOP command while waiting for a lock.");
 
-            done();
+            mark_done();
             return;
         }
         break;

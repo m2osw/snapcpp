@@ -1,8 +1,13 @@
-snapcommunicator (1.0.43.1~xenial) xenial; urgency=high
+snapcommunicator (1.0.44.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Keep connections to which we send a SHUTDOWN. We now use the new
+    model of "mark_done()"+"process_empty_buffer()" to remove such connections.
+  * Put IP address in the name of remote communicator connections.
+  * Now send a DISCONNECTING (instead of the STOP) to local services.
+  * Do not remove local connections in shutdown() if they still have something
+    in their output buffer. If so, just use mark_done().
 
- -- Build Server <build@m2osw.com>  Thu, 27 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 27 Oct 2016 16:23:47 -0700
 
 snapcommunicator (1.0.43.0~xenial) xenial; urgency=high
 

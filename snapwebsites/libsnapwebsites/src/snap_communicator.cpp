@@ -1605,6 +1605,94 @@ void snap_communicator::snap_connection::keep_alive() const
 }
 
 
+/** \brief Lets you know whether mark_done() was called.
+ *
+ * This function returns true if mark_done() was called on this connection.
+ */
+bool snap_communicator::snap_connection::is_done() const
+{
+    return f_done;
+}
+
+
+/** \brief Call once you are done with a connection.
+ *
+ * This function lets the connection know that you are done with it.
+ * It is very important to call this function before you send the last
+ * message. For example, with its permanent connection the snapbackend
+ * tool does this:
+ *
+ * \code
+ *      f_messenger->mark_done();
+ *      f_messenger->send_message(stop_message);
+ * \endcode
+ *
+ * The f_done flag is currently used in two situations by the main
+ * system:
+ *
+ * \li write buffer is empty
+ *
+ * There are times when you send one or more last messages to a connection.
+ * The write is generally buffered and will be processed whenever you
+ * next come back in the run() loop.
+ *
+ * So one knows that the write (output) buffer is empty whenever one gets
+ * its process_empty_buffer() callback called. At that point, the connection
+ * can be removed from the snap_communicator instance since we are done with
+ * it. The default process_empty_buffer() does that for us whenver the
+ * mark_done() function was called.
+ *
+ * \li HUP of a permanent connection
+ *
+ * When the f_done flag is set, the next HUP error is properly interpreted
+ * as "we are done". Otherwise, a HUP is interpreted as a lost connection
+ * and since a permanent connection is... permanent, it simply restarts the
+ * connect process to reconnect to the server.
+ *
+ * \todo
+ * Since we remove the connection on a process_empty_buffer(), maybe we
+ * should have the has_output() as a virtual function and if it returns
+ * true (which would be the default,) then we should remove the connection
+ * immediately since it is already done? This may require a quick review
+ * since in some cases we are not to remove the connection at all. But
+ * this function could call the process_empty_buffer(), which can be
+ * overridden so the developer can add its own callback to avoid the
+ * potential side effect.
+ *
+ * \sa is_done()
+ * \sa mark_not_done()
+ */
+void snap_communicator::snap_connection::mark_done()
+{
+    f_done = true;
+
+    //if(!has_output())
+    //{
+    //    process_empty_buffer();
+    //}
+}
+
+
+/** \brief Mark this connection as not done.
+ *
+ * In some cases you may want to mark a connection as done and later
+ * restore it as not done.
+ *
+ * Specifically, this is used by the
+ * snap_tcp_blocking_client_message_connection class. When you call the
+ * run() function, this mark_not_done() function gets called so in
+ * effect you can re-enter the run() loop multiple times. Each time,
+ * you have to call the mark_done() function to exit the loop.
+ *
+ * \sa is_done()
+ * \sa mark_done()
+ */
+void snap_communicator::snap_connection::mark_not_done()
+{
+    f_done = false;
+}
+
+
 /** \brief This callback gets called whenever the connection times out.
  *
  * This function is called whenever a timeout is detected on this
@@ -1661,6 +1749,34 @@ void snap_communicator::snap_connection::process_read()
  */
 void snap_communicator::snap_connection::process_write()
 {
+}
+
+
+/** \brief Sent all data to the other end.
+ *
+ * This function is called whenever a connection bufferized data
+ * to be sent to the other end of the connection and that buffer
+ * just went empty.
+ *
+ * Just at the time the function gets called, the buffer is empty.
+ * You may refill it at that time.
+ *
+ * The callback is often used to remove a connection from the
+ * snapcommunicator instance (i.e. just after we sent a last
+ * message to the other end.)
+ *
+ * By default this function removes the connection from the
+ * snap_communicator instance if the mark_done() function was
+ * called. Otherwise, it just ignores the message.
+ */
+void snap_communicator::snap_connection::process_empty_buffer()
+{
+    if(f_done)
+    {
+        SNAP_LOG_DEBUG("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as done, removing in process_empty_buffer().");
+
+        remove_from_communicator();
+    }
 }
 
 
@@ -2945,6 +3061,9 @@ void snap_communicator::snap_pipe_buffer_connection::process_read()
  * The is_writer() function takes care of returning true if more
  * data is present in the f_output buffer and thus the process_write()
  * needs to be called again.
+ *
+ * Once the write buffer goes empty, this function calls the
+ * process_empty_buffer() callback.
  */
 void snap_communicator::snap_pipe_buffer_connection::process_write()
 {
@@ -2960,6 +3079,7 @@ void snap_communicator::snap_pipe_buffer_connection::process_write()
             {
                 f_output.clear();
                 f_position = 0;
+                process_empty_buffer();
             }
         }
         else if(r != 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
@@ -3232,6 +3352,35 @@ snap_communicator::snap_tcp_client_buffer_connection::snap_tcp_client_buffer_con
 }
 
 
+/** \brief Check whether this connection still has some input in its buffer.
+ *
+ * This function returns true if there is partial incoming data in this
+ * object's buffer.
+ *
+ * \return true if some buffered input is waiting for completion.
+ */
+bool snap_communicator::snap_tcp_client_buffer_connection::has_input() const
+{
+    return !f_line.empty();
+}
+
+
+
+/** \brief Check whether this connection still has some output in its buffer.
+ *
+ * This function returns true if there is still some output in the client
+ * buffer. Output is added by the write() function, which is called by
+ * the send_message() function.
+ *
+ * \return true if some buffered output is waiting to be sent out.
+ */
+bool snap_communicator::snap_tcp_client_buffer_connection::has_output() const
+{
+    return !f_output.empty();
+}
+
+
+
 /** \brief Write data to the connection.
  *
  * This function can be used to send data to this TCP/IP connection.
@@ -3377,8 +3526,12 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_read()
  * This function manages our own internal cache, which we use to allow
  * for out of synchronization (non-blocking) output.
  *
+ * When the output buffer goes empty, this function calls the
+ * process_empty_buffer() callback.
+ *
  * \sa write()
  * \sa process_read()
+ * \sa process_empty_buffer()
  */
 void snap_communicator::snap_tcp_client_buffer_connection::process_write()
 {
@@ -3394,6 +3547,7 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_write()
             {
                 f_output.clear();
                 f_position = 0;
+                process_empty_buffer();
             }
         }
         else if(r < 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
@@ -3978,6 +4132,35 @@ snap_communicator::snap_tcp_server_client_buffer_connection::snap_tcp_server_cli
 }
 
 
+/** \brief Check whether this connection still has some input in its buffer.
+ *
+ * This function returns true if there is partial incoming data in this
+ * object's buffer.
+ *
+ * \return true if some buffered input is waiting for completion.
+ */
+bool snap_communicator::snap_tcp_server_client_buffer_connection::has_input() const
+{
+    return !f_line.empty();
+}
+
+
+
+/** \brief Check whether this connection still has some output in its buffer.
+ *
+ * This function returns true if there is still some output in the client
+ * buffer. Output is added by the write() function, which is called by
+ * the send_message() function.
+ *
+ * \return true if some buffered output is waiting to be sent out.
+ */
+bool snap_communicator::snap_tcp_server_client_buffer_connection::has_output() const
+{
+    return !f_output.empty();
+}
+
+
+
 /** \brief Tells that this connection is a writer when we have data to write.
  *
  * This function checks to know whether there is data to be writen to
@@ -4013,7 +4196,7 @@ bool snap_communicator::snap_tcp_server_client_buffer_connection::is_writer() co
  * \param[in] data  The pointer to the buffer of data to be sent.
  * \param[out] length  The number of bytes to send.
  */
-ssize_t snap_communicator::snap_tcp_server_client_buffer_connection::write(void const * data, size_t length)
+ssize_t snap_communicator::snap_tcp_server_client_buffer_connection::write(void const * data, size_t const length)
 {
     if(get_socket() == -1)
     {
@@ -4113,6 +4296,9 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_read()
  *
  * This function implementation writes as much data as possible to the
  * connection's socket.
+ *
+ * This function calls the process_empty_buffer() callback whenever the
+ * output buffer goes empty.
  */
 void snap_communicator::snap_tcp_server_client_buffer_connection::process_write()
 {
@@ -4128,6 +4314,7 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_write(
             {
                 f_output.clear();
                 f_position = 0;
+                process_empty_buffer();
             }
         }
         else if(r != 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
@@ -4356,11 +4543,20 @@ public:
         : public snap_communicator::snap_tcp_server_client_message_connection
     {
     public:
+        typedef std::shared_ptr<messenger>      pointer_t;
+
         messenger(snap_communicator::snap_tcp_client_permanent_message_connection * parent, tcp_client_server::bio_client::pointer_t client)
             : snap_tcp_server_client_message_connection(client)
             , f_parent(parent)
         {
             set_name("snap_tcp_client_permanent_message_connection_impl::messenger");
+        }
+
+        // snap_connection implementation
+        virtual void process_empty_buffer()
+        {
+            snap_tcp_server_client_message_connection::process_empty_buffer();
+            f_parent->process_empty_buffer();
         }
 
         // snap_connection implementation
@@ -4645,11 +4841,11 @@ public:
         //
         snap_communicator::instance()->remove_connection(f_thread_done);
 
-        // although the message variable is deleted, it would not get
-        // removed from the snap communicator if we were not doing
-        // it explicitly
+        // although the f_messenger variable gets reset automatically in
+        // the destructor, it would not get removed from the snap
+        // communicator instance if we were not doing it explicitly
         //
-        lose_messenger();
+        disconnect();
     }
 
 
@@ -4661,6 +4857,12 @@ public:
      */
     void connect()
     {
+        if(f_done)
+        {
+            SNAP_LOG_ERROR("Permanent connection marked done. Cannot attempt to reconnect.");
+            return;
+        }
+
         // call the thread connect() function from the main thread
         //
         f_thread_runner.connect();
@@ -4680,7 +4882,7 @@ public:
      */
     bool is_connected()
     {
-        return !!f_messenger;
+        return f_messenger != nullptr;
     }
 
 
@@ -4698,6 +4900,12 @@ public:
      */
     bool background_connect()
     {
+        if(f_done)
+        {
+            SNAP_LOG_ERROR("Permanent connection marked done. Cannot attempt to reconnect.");
+            return false;
+        }
+
         if(f_thread.is_running())
         {
             SNAP_LOG_ERROR("A background connection attempt is already in progress. Further requests are ignored.");
@@ -4706,7 +4914,7 @@ public:
 
         // create the f_thread_done only when required
         //
-        if(!f_thread_done)
+        if(f_thread_done == nullptr)
         {
             f_thread_done.reset(new thread_done_signal(this));
         }
@@ -4765,7 +4973,16 @@ public:
         snap_communicator::instance()->remove_connection(f_thread_done);
 
         tcp_client_server::bio_client::pointer_t client(f_thread_runner.release_client());
-        if(!client)
+        if(f_done)
+        {
+            // already marked done, ignore the result and lose the
+            // connection immediately
+            //
+            //f_thread_running.close(); -- not necessary, 'client' is the connection
+            return;
+        }
+
+        if(client == nullptr)
         {
             // we will access the f_last_error member of the thread runner
             // which may not be available to the main thread yet, calling
@@ -4809,6 +5026,9 @@ public:
      * connection, assuming that the connection exists. Otherwise, it
      * may cache the message (if cache is true.)
      *
+     * Note that the message does not get cached if mark_done() was
+     * called earlier since we are trying to close the whole connection.
+     *
      * \param[in] message  The message to send.
      * \param[in] cache  Whether to cache the message if the connection is
      *                   currently down.
@@ -4818,13 +5038,13 @@ public:
      */
     bool send_message(snap_communicator_message const & message, bool cache)
     {
-        if(f_messenger)
+        if(f_messenger != nullptr)
         {
             f_messenger->send_message(message);
             return true;
         }
 
-        if(cache)
+        if(cache && !f_done)
         {
             f_message_cache.push_back(message);
         }
@@ -4833,10 +5053,18 @@ public:
     }
 
 
-    /** \brief Forget about the messenger connect.
+    /** \brief Forget about the messenger connection.
      *
-     * This function resets the f_messenger pointer as an error occurred
-     * on that connection.
+     * This function is used to fully disconnect from the messenger.
+     *
+     * If there is a messenger, this means:
+     *
+     * \li Removing the messenger from the snap_communicator instance.
+     * \li Closing the connection in the thread object.
+     *
+     * In most cases, it is called when an error occur, also it happens
+     * that we call it explicitly through the disconnect() function
+     * of the permanent connection class.
      *
      * \note
      * This is safe, even though it is called from the messenger itself
@@ -4844,15 +5072,16 @@ public:
      * loop has a copy in its own temporary copy of the vector of
      * connections.
      */
-    void lose_messenger()
+    void disconnect()
     {
-        if(f_messenger)
+        if(f_messenger != nullptr)
         {
             snap_communicator::instance()->remove_connection(f_messenger);
             f_messenger.reset();
 
             // just the messenger does not close the TCP connection because
-            // we have a copy in the thread runner
+            // we may have another in the thread runner
+            //
             f_thread_runner.close();
         }
     }
@@ -4864,7 +5093,7 @@ public:
      *
      * \param[out] address  The binary address of the remote computer.
      *
-     * \return The size of the sockaddr structure.
+     * \return The size of the sockaddr structure, 0 if no address is available.
      */
     size_t get_client_address(struct sockaddr_storage & address) const
     {
@@ -4893,19 +5122,23 @@ public:
     }
 
 
-    /** \brief At times, you may want to disconnect a permanent connection.
+    /** \brief Mark the messenger as done.
      *
-     * There are times when you need to disconnect a permanent connection
-     * and reconnect later. This function allows you to handle the
-     * disconnection. The reconnection will be handled using the timer.
+     * This function is used to mark the messenger as done. This means it
+     * will get removed from the snap_communicator instance as soon as it
+     * is done with its current write buffer if there is one.
      *
-     * Specifically, this happens in the snapcommunicator tool which
-     * sends a DISCONNECT message to a remote snapcommunicator and
-     * expects the remote instance to disconnect the socket.
+     * You may also want to call the disconnection() function to actually
+     * reset the pointer along the way.
      */
-    void disconnect()
+    void mark_done()
     {
-        f_messenger.reset();
+        f_done = true;
+
+        if(f_messenger != nullptr)
+        {
+            f_messenger->mark_done();
+        }
     }
 
 
@@ -4916,6 +5149,7 @@ private:
     snap::snap_thread                                                   f_thread;
     messenger::pointer_t                                                f_messenger;
     snap_communicator_message::vector_t                                 f_message_cache;
+    bool                                                                f_done = false;
 };
 
 
@@ -4980,6 +5214,7 @@ snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client
     , f_use_thread(use_thread)
 {
 }
+
 
 /** \brief Destroy instance
  */
@@ -5053,25 +5288,39 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::disconnect
 }
 
 
-/** \brief Call once you are done with a permanent connection.
+/** \brief Overload so we do not have to use namespace everywhere.
  *
- * This function lets the permanent connection know that you are done with
- * it. It is very important to call this function before you send the last
- * message to the server. For example, the snapbackend tool will do:
- *
- * \code
- *      f_messenger->mark_done();
- *      f_messenger->send_message(stop_message);
- * \endcode
- *
- * That way the next HUP error is properly interpreted as "we are done".
- * Otherwise, a HUP is interpreted as a lost connection and since this
- * is a permanent connection, it simply restarts the process and reconnects
- * to the server.
+ * This function overloads the snap_connection::mark_done() function so
+ * we can call it without the need to use snap_timer::mark_done()
+ * everywhere.
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::mark_done()
 {
-    f_done = true;
+    snap_timer::mark_done();
+}
+
+
+/** \brief Mark connection as done.
+ *
+ * This function allows you to mark the permanent connection and the
+ * messenger as done.
+ *
+ * Note that calling this function with false is the same as calling the
+ * base class mark_done() function.
+ *
+ * If the \p message parameter is set to true, we suggest you also call
+ * the disconnect() function. That way the messenger will truly get
+ * removed from everyone quickly.
+ *
+ * \param[in] messenger  If true, also mark the messenger as done.
+ */
+void snap_communicator::snap_tcp_client_permanent_message_connection::mark_done(bool messenger)
+{
+    snap_timer::mark_done();
+    if(messenger)
+    {
+        f_impl->mark_done();
+    }
 }
 
 
@@ -5132,7 +5381,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_ti
 {
     // got a spurious call when already marked done
     //
-    if(f_done)
+    if(is_done())
     {
         return;
     }
@@ -5193,13 +5442,13 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_ti
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_error()
 {
-    if(f_done)
+    if(is_done())
     {
         snap_timer::process_error();
     }
     else
     {
-        f_impl->lose_messenger();
+        f_impl->disconnect();
         set_enable(true);
     }
 }
@@ -5220,13 +5469,13 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_er
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_hup()
 {
-    if(f_done)
+    if(is_done())
     {
         snap_timer::process_hup();
     }
     else
     {
-        f_impl->lose_messenger();
+        f_impl->disconnect();
         set_enable(true);
     }
 }
@@ -5247,13 +5496,13 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_hu
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_invalid()
 {
-    if(f_done)
+    if(is_done())
     {
         snap_timer::process_invalid();
     }
     else
     {
-        f_impl->lose_messenger();
+        f_impl->disconnect();
         set_enable(true);
     }
 }
@@ -5268,7 +5517,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_in
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::connection_removed()
 {
-    f_impl->lose_messenger();
+    f_impl->disconnect();
 }
 
 
@@ -5557,7 +5806,6 @@ void snap_communicator::snap_udp_server_message_connection::process_read()
  */
 snap_communicator::snap_tcp_blocking_client_message_connection::snap_tcp_blocking_client_message_connection(std::string const & addr, int const port, mode_t const mode)
     : snap_tcp_client_message_connection(addr, port, mode, true)
-    //, f_done(false)
 {
 }
 
@@ -5567,7 +5815,7 @@ snap_communicator::snap_tcp_blocking_client_message_connection::snap_tcp_blockin
  * This function reads the incoming messages and calls process_message()
  * on each one of them, in a blocking manner.
  *
- * If you called done() before, the done flag is reset back to false.
+ * If you called mark_done() before, the done flag is reset back to false.
  * You will have to call done() again if you receive a message that
  * is expected to process and that message marks the end of the process.
  *
@@ -5577,7 +5825,7 @@ snap_communicator::snap_tcp_blocking_client_message_connection::snap_tcp_blockin
  */
 void snap_communicator::snap_tcp_blocking_client_message_connection::run()
 {
-    f_done = false;
+    mark_not_done();
 
     do
     {
@@ -5615,7 +5863,7 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::run()
                 // timed out
                 //
                 process_timeout();
-                if(f_done)
+                if(is_done())
                 {
                     return;
                 }
@@ -5702,19 +5950,7 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::run()
         }
         process_line(QString::fromUtf8(line.c_str()));
     }
-    while(!f_done);
-}
-
-
-/** \brief Mark the run() loop as done.
- *
- * This function can be used to ask the run() loop to exit after
- * you return from your process_message() callback. This will
- * break the run loop.
- */
-void snap_communicator::snap_tcp_blocking_client_message_connection::done()
-{
-    f_done = true;
+    while(!is_done());
 }
 
 

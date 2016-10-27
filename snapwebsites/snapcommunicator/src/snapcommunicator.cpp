@@ -1202,7 +1202,7 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
         //
         remote_snap_communicator_pointer_t remote_communicator(std::make_shared<remote_snap_communicator>(f_communicator_server, addr, port));
         f_smaller_ips[addr] = remote_communicator;
-        remote_communicator->set_name("remote communicator connection"); // we connect to remote host
+        remote_communicator->set_name(QString("remote communicator connection: %1").arg(addr)); // we connect to remote host
 
         // make sure not to try to connect to all remote communicators
         // all at once
@@ -4715,40 +4715,27 @@ void snap_communicator_server::shutdown(bool quitting)
             if(quitting)
             {
                 // SHUTDOWN means we shutdown the entire cluster!!!
+                //
                 reply.set_command("SHUTDOWN");
-
-                verify_command(remote_communicator, reply);
-                remote_communicator->send_message(reply);
-
-                // this will prevent the SHUTDOWN from being sent
-                // we need to have something that tells us that
-                // the message was sent and at that time remove
-                // the connection
-                //
-                // TODO: this is wrong, the SHUTDOWN won't get sent
-                //       if we remove the remote_communicator from
-                //       the list...
-                //
-                f_communicator->remove_connection(remote_communicator);
             }
             else
             {
                 // STOP means we do not shutdown the entire cluster
                 // so here we use DISCONNECT instead
-                reply.set_command("DISCONNECT");
-
-                // in this case, the remote server closes the socket so
-                // we will get a HUP and do not need to remove this
-                // connection from here now
                 //
-                //verify_command(remote_communicator, reply);--this is another snapcommunicator, we trust that it knows about DISCONNECT
-                remote_communicator->send_message(reply);
+                reply.set_command("DISCONNECT");
             }
 
-            // we are shutting down so we want the permanent connection
-            // to exit ASAP
+            // we know this a remote snapcommunicator, no need to verify, and
+            // we may not yet have received the ACCEPT message
+            //verify_command(remote_communicator, reply);
+            remote_communicator->send_message(reply);
+
+            // we are quitting so we want the permanent connection
+            // to exit ASAP, by marking as done, it will stop as
+            // soon as the message is written to the socket
             //
-            remote_communicator->mark_done();
+            remote_communicator->mark_done(true);
         }
         else
         {
@@ -4790,27 +4777,54 @@ void snap_communicator_server::shutdown(bool quitting)
                         verify_command(c, reply);
                         c->send_message(reply);
 
-                        // we cannot yet remove the connection from the communicator
-                        // or these messages will never be sent... the client is
-                        // expected to reply with UNREGISTER which does the removal
-                        // the remote connections are expected to disconnect when
-                        // they receive a DISCONNECT
+                        // we cannot yet remove the connection from the
+                        // communicator or the message would never be sent...
+                        //
+                        // the remote connections are expected to disconnect
+                        // us when they receive a DISCONNECT, but really we
+                        // disconnect ourselves as soon as we sent the
+                        // message, no need to wait any longer
+                        //
+                        connection->mark_done();
                     }
                     else
                     {
                         // a standard client (i.e. pagelist, images, etc.)
-                        // needs to stop so send that message instead
+                        // may want to know when it gets disconnected
+                        // from the snapcommunicator...
                         //
-                        //reply.set_command("STOP");
+                        if(c->understand_command("DISCONNECTING"))
+                        {
+                            // close connection as soon as the message was
+                            // sent (i.e. we are "sending the last message")
+                            //
+                            connection->mark_done();
 
-                        // we do not send anything to locally connected services,
-                        // instead we let them be, so just remove that connection
-                        // immediately
-                        //
-                        // we won't accept new local connections since we also
-                        // remove the f_local_listener (see below) connection
-                        //
-                        f_communicator->remove_connection(connection);
+                            reply.set_command("DISCONNECTING");
+                            c->send_message(reply);
+                        }
+                        else if(c->has_output())
+                        {
+                            // we just sent some data to that connection
+                            // so we do not want to kill it immediately
+                            //
+                            // instead we mark it done so once the write
+                            // buffer gets empty, the connection gets
+                            // removed (See process_empty_buffer())
+                            //
+                            connection->mark_done();
+                        }
+                        else
+                        {
+                            // that local connection does not understand
+                            // DISCONNECTING and has nothing more in its
+                            // buffer, so just remove it immediately
+                            //
+                            // we will not accept new local connections since
+                            // we also remove the f_local_listener connection
+                            //
+                            f_communicator->remove_connection(connection);
+                        }
                     }
                 }
             }

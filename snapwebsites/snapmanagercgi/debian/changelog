@@ -1,8 +1,8 @@
-snapmanagercgi (1.1.49.1~xenial) xenial; urgency=high
+snapmanagercgi (1.1.50.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: done() is now mark_done() for all connections.
 
- -- Build Server <build@m2osw.com>  Thu, 27 Oct 2016 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 27 Oct 2016 14:14:46 -0700
 
 snapmanagercgi (1.1.49.0~xenial) xenial; urgency=high
 
