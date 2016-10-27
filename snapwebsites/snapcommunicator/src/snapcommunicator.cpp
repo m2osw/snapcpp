@@ -4667,6 +4667,8 @@ void snap_communicator_server::shutdown(bool quitting)
     //
     f_shutdown = true;
 
+    SNAP_LOG_DEBUG("shutting down snapcommunicator (")(quitting ? "QUIT" : "STOP")(")");
+
     // all gossiping can stop at once, since we cannot recognize those
     // connections in the list returned by f_communicator, we better
     // do that cleanly ahead of time
@@ -4816,6 +4818,13 @@ void snap_communicator_server::shutdown(bool quitting)
     f_communicator->remove_connection(f_listener);          // TCP/IP
     f_communicator->remove_connection(f_ping);              // UDP/IP
     f_communicator->remove_connection(f_loadavg_timer);     // load balancer timer
+
+//#ifdef _DEBUG
+    for(auto const & connection : all_connections)
+    {
+        SNAP_LOG_DEBUG("Connection still left after the shutdown() call: ")(connection->get_name());
+    }
+//#endif
 }
 
 

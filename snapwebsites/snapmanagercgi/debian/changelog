@@ -1,3 +1,10 @@
+snapmanagercgi (1.1.49.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the loop sending the RELOADCONFIG, we must send that
+    message to the snapcommunicator last.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 23:14:34 -0700
+
 snapmanagercgi (1.1.39.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added a title to a few errors.

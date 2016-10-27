@@ -257,17 +257,41 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
         //
         f_status_runner.resend_status(true);
 
+        // send a RELOADCONFIG to all the affected services
+        // however, if one of the services is snapcommunicator, set a flag
+        // and send a message to snapcommunicator last (otherwise we would
+        // very likely lose many of the RELOADCONFIG messages)
+        //
+        bool snapcommunicator_was_affected(false);
         std::for_each(
                 affected_services.begin(),
                 affected_services.end(),
-                [=](QString const & service_name)
+                [=, &snapcommunicator_was_affected](QString const & service_name)
                 {
-                    snap::snap_communicator_message reload_config;
-                    reload_config.set_service(service_name);
-                    reload_config.set_command("RELOADCONFIG");
-                    f_messenger->send_message(reload_config);
+                    if(service_name == "snapcommunicator")
+                    {
+                        snapcommunicator_was_affected = true;
+                    }
+                    else
+                    {
+                        snap::snap_communicator_message reload_config;
+                        reload_config.set_service(service_name);
+                        reload_config.set_command("RELOADCONFIG");
+                        f_messenger->send_message(reload_config);
+                    }
                 }
             );
+
+        // Now we can send the message to the snapcommunicator service
+        // itself (all messages are sent through that service)
+        //
+        if(snapcommunicator_was_affected)
+        {
+            snap::snap_communicator_message reload_config;
+            //reload_config.set_service("snapcommunicator"); -- not necessary
+            reload_config.set_command("RELOADCONFIG");
+            f_messenger->send_message(reload_config);
+        }
     }
 }
 
