@@ -203,7 +203,7 @@ bool manager_cgi::verify()
         || strcmp(snapmanager, "TRUE") != 0)
         {
             SNAP_LOG_FATAL("SNAPMANAGER variable is not set, check your Apache2 setup, you should have a `SetEnv SNAPMANAGER TRUE` line in your snapmanager-apache2.conf file.");
-            std::string body("<html><head><title>Page Not Found</title></head><body><p>Sorry. This page is not accessible from here.</p></body></html>");
+            std::string body("<html><head><title>Page Not Found</title></head><body><h1>Page Not Found</h1><p>Sorry. This page is not accessible from here.</p></body></html>");
             std::cout   << "Status: 404 Page Not Found"             << std::endl
                         << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                         << "Connection: close"                      << std::endl
@@ -227,7 +227,7 @@ bool manager_cgi::verify()
         if(request_method == nullptr)
         {
             SNAP_LOG_FATAL("Request method is not defined.");
-            std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
+            std::string body("<html><head><title>Method Not Defined</title></head><body><h1>Method Not Defined</h1><p>Sorry. We only support GET and POST.</p></body></html>");
             std::cout   << "Status: 405 Method Not Defined"         << std::endl
                         << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                         << "Allow: GET, POST"                       << std::endl
@@ -253,7 +253,7 @@ bool manager_cgi::verify()
                 std::cout << "Status: 405 Method Not Allowed" << std::endl;
             }
             //
-            std::string const body("<html><head><title>Method Not Allowed</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
+            std::string const body("<html><head><title>Method Not Allowed</title></head><body><h1>Method Not Allowed</h1><p>Sorry. We only support GET and POST.</p></body></html>");
             std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                         << "Allow: GET, POST"                       << std::endl
                         << "Connection: close"                      << std::endl
