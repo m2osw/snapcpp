@@ -192,6 +192,30 @@ bool manager_cgi::verify()
         f_communicator_port = a.get_port();
     }
 
+    {
+        // if the SNAPMANAGER environment variable is not set, then we have
+        // a problem and we want to emit an error
+        //
+        // (i.e. we are being accessed from the from domain)
+        //
+        char const * snapmanager(getenv("SNAPMANAGER"));
+        if(snapmanager == nullptr
+        || strcmp(snapmanager, "TRUE") != 0)
+        {
+            SNAP_LOG_FATAL("SNAPMANAGER variable is not set, check your Apache2 setup, you should have a `SetEnv SNAPMANAGER TRUE` line in your snapmanager-apache2.conf file.");
+            std::string body("<html><head><title>Page Not Found</title></head><body><p>Sorry. This page is not accessible from here.</p></body></html>");
+            std::cout   << "Status: 404 Page Not Found"             << std::endl
+                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                        << "Connection: close"                      << std::endl
+                        << "Content-Type: text/html; charset=utf-8" << std::endl
+                        << "Content-Length: " << body.length()      << std::endl
+                        << "X-Powered-By: snapmanager.cgi"          << std::endl
+                        << std::endl
+                        << body;
+            return false;
+        }
+    }
+
     // catch "invalid" methods early so we do not waste
     // any time with methods we do not support at all
     //

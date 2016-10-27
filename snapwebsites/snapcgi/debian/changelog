@@ -1,3 +1,13 @@
+snapcgi (1.0.23.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Tweaked RewriteRule testing whether the client is trying to
+    directly access the snap.cgi binary or not.
+  * Moved the maintenance "error" under /snap-maintenance/ to avoid potential
+    clashes in the future.
+  * Use correct variable to calculate the Retry-After parameter.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 16:22:47 -0700
+
 snapcgi (1.0.22.0~xenial) xenial; urgency=high
 
   * SNAP-110: Mark apache2 as in need of a reload after the update.

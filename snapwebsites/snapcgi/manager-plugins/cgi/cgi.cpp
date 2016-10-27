@@ -255,7 +255,7 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
                     for(; *ra == '"' || isspace(*ra); ++ra);
                     for(; *ra >= '0' && *ra <= '9'; ++ra)
                     {
-                        retry_after = retry_after * 10 + *s - '0';
+                        retry_after = retry_after * 10 + *ra - '0';
                         if(retry_after > 365 * 24 * 60 * 60) // more than 1 year?!?
                         {
                             retry_after = 365 * 24 * 60 * 60;
@@ -326,7 +326,12 @@ bool cgi::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                           "IP Address and Port (IP:Port) to connect to the snapserver service:"
                         , s.get_field_name()
                         , s.get_value()
-                        , "By default this is set to 127.0.0.1:4004 as we expect that the snapserver will also be running on the server running Apache2. It is possible, though, to put snapserver on other computers for safety and increased resources. In that case, enter the Private Network IP address of a snapserver to contact. At some point, this will be a list of such IP:port, but we do not yet support such."
+                        , "By default this is set to 127.0.0.1:4004 as we expect that the snapserver"
+                         " will also be running on the server running Apache2. It is possible, though,"
+                         " to put snapserver on other computers for safety and increased resources. In"
+                         " that case, enter the Private Network IP address of a snapserver to contact."
+                         " At some point, this will be a list of such IP:port, but we do not yet"
+                         " support such."
                         ));
         f.add_widget(field);
 
