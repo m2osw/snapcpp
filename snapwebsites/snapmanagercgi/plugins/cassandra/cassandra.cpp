@@ -794,8 +794,9 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                           "Enter the server_name of the computer to join:"
                         , s.get_field_name()
                         , s.get_value()
-                        , "<p>The <code>server_name</code> parameter is used to contact that specific server, get the"
-                         " Cassandra node information from that server, and then add the Cassandra"
+                        , "<p>The <code>server_name</code> parameter from snapcommunicator.conf"
+                         " is used to contact that specific server, get the Cassandra"
+                         " node information from that server, and then add the Cassandra"
                          " node running on this computer to the one on that other computer.</p>"
                          "<p>Note that to finish up a join quickly, it is important to run"
                          " <code>nodetool cleanup</code> on all the other nodes once the"

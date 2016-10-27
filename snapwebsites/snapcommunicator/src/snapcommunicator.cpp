@@ -445,6 +445,7 @@ private:
     size_t                                              f_max_connections = SNAP_COMMUNICATOR_MAX_CONNECTIONS;
     bool                                                f_shutdown = false;
     bool                                                f_debug_lock = false;
+    bool                                                f_force_restart = false;
     message_cache::vector_t                             f_local_message_cache;
     std::map<QString, time_t>                           f_received_broadcast_messages;
     tcp_client_server::bio_client::mode_t               f_connection_mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN;
@@ -2230,10 +2231,19 @@ void snap_communicator_server::drop_privileges()
 void snap_communicator_server::run()
 {
     // run "forever" (until we receive a QUIT message)
+    //
     f_communicator->run();
 
     // we are done, cleanly get rid of the communicator
+    //
     f_communicator.reset();
+
+    // we received a RELOADCONFIG, exit with 1 so systemd restarts us
+    //
+    if(f_force_restart)
+    {
+        exit(1);
+    }
 }
 
 
@@ -3349,29 +3359,9 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 // also if you are a programmer we cannot do a systemctl
                 // restart so we just skip the feature...
                 //
-                snap::NOTUSED(seteuid(0));
-                if(getuid() == 0)
-                {
-                    // we could become root to restart...
-                    //
-                    // TODO: Look into whether we could instead have a
-                    //       way to send a message (i.e. STOP) and exit
-                    //       with a code that requires systemctl to restart
-                    //       us; that would be cleaner and we could use
-                    //       setuid() again instead of seteuid()...
-                    //       (see drop_privileges() for details)
-                    //
-                    snap::NOTUSED(setegid(0));
-                    snap::NOTUSED(system("systemctl restart snapcommunicator"));
-
-                    // make sure to not continue as root!
-                    //
-                    drop_privileges();
-                }
-                else
-                {
-                    SNAP_LOG_WARNING("You are not running snapcommunicator as root (because you are running as a programmer?) so the RELOADCONFIG will be ignored.");
-                }
+                f_force_restart = true;
+                stop(false);
+                return;
             }
             break;
 

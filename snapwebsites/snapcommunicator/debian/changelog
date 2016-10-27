@@ -1,3 +1,10 @@
+snapcommunicator (1.0.40.0~xenial) xenial; urgency=high
+
+  * SNAP-110: If not root, we have to fix the RELOADCONFIG.
+  * Also added a `return` in that message handler to avoid the UNKNOWN message.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 26 Oct 2016 20:37:48 -0700
+
 snapcommunicator (1.0.39.0~xenial) xenial; urgency=high
 
   * SNAP-110: Noticed that I did not revert the snapcommunicator user/group
