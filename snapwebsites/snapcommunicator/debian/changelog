@@ -1,3 +1,9 @@
+snapcommunicator (1.0.45.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Added IP address to connection name (GOSSIP and remote connection)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 28 Oct 2016 00:13:47 -0700
+
 snapcommunicator (1.0.44.0~xenial) xenial; urgency=high
 
   * SNAP-110: Keep connections to which we send a SHUTDOWN. We now use the new

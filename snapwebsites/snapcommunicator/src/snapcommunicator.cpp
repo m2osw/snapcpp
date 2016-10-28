@@ -1246,7 +1246,7 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
         // application quits
         //
         f_gossip_ips[addr].reset(new gossip_to_remote_snap_communicator(shared_from_this(), addr, port));
-        f_gossip_ips[addr]->set_name("gossip to remote snap communicator");
+        f_gossip_ips[addr]->set_name(QString("gossip to remote snap communicator: %1").arg(addr));
 
         if(!snap::snap_communicator::instance()->add_connection(f_gossip_ips[addr]))
         {
@@ -1787,7 +1787,7 @@ public:
             // we will change the name once we receive the CONNECT message
             // and as we send the ACCEPT message
             //
-            connection->set_name("remote connection"); // remote host connected to us
+            connection->set_name(QString("remote connection from: %1").arg(QString::fromUtf8(addr.c_str()))); // remote host connected to us
             connection->mark_as_remote();
         }
 
