@@ -1,3 +1,9 @@
+snapdbproxy (1.1.22.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Added temporary debugs in an attempt to determine what blocks.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 14:09:49 -0700
+
 snapdbproxy (1.1.21.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the QtCassandraSession::connect() in the

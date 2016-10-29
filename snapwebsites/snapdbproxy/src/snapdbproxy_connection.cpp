@@ -714,6 +714,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
 {
     QtCassandra::QCassandraSession::pointer_t order_session;
 
+SNAP_LOG_WARNING("------- got a simple command: ")(order.cql());
     if(order.timeout() > 0)
     {
         // unfortunately, the request timeout cannot be changed in an
@@ -732,6 +733,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
             QtCassandra::QCassandraRequestTimeout request_timeout(order_session, order.timeout());
             order_session->connect( f_cassandra_host_list, f_cassandra_port, f_use_ssl ); // throws on failure!
         }
+SNAP_LOG_WARNING("created sub-session with timeout: ")(order.timeout());
     }
     else
     {
@@ -739,15 +741,20 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
     }
 
     auto q( QtCassandra::QCassandraQuery::create( order_session ) );
+SNAP_LOG_WARNING("send order now...");
     send_order(q, order);
+SNAP_LOG_WARNING("order done...");
 
     // success
     QtCassandra::QCassandraOrderResult result;
     result.setSucceeded(true);
+SNAP_LOG_WARNING("reply with success...");
     if(!f_proxy.sendResult(*this, result))
     {
+SNAP_LOG_WARNING("reply failed, close connection...");
         close();
     }
+else SNAP_LOG_WARNING("result sent successfully...");
 }
 
 
