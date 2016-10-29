@@ -14,6 +14,24 @@ then
     # delete the user configuration file
     #
     rm -f /etc/snapwebsites/snapwebsites.d/snapcgi.conf
+
+    # delete user editable files and directories that we manage
+    # (i.e. other than the default domain, we do not touch)
+    #
+    rm -f /etc/apache2/snap-conf/snap-apache2-maintenance.conf
+    rm -f /etc/apache2/snap-conf/snap-apache2-security.conf
+    rm -f /etc/apache2/snap-conf/default/*.conf
+    for subdir in /etc/apache2/snap-conf/*
+    do
+        if test -d "$subdir"
+        then
+            rmdir --ignore-fail-on-non-empty "$subdir"
+        fi
+    done
+    if test -d /etc/apache2/snap-conf
+    then
+        rmdir --ignore-fail-on-non-empty /etc/apache2/snap-conf
+    fi
 fi
 
 /usr/lib/snapwebsites/scripts/snapapacheinit remove

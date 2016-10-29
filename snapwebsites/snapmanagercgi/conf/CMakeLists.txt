@@ -65,8 +65,12 @@ install(
 ##
 install(
     FILES
-        # misc files
+        # Sites
         snapmanager-apache2.conf
+
+        # User Configuration Files
+        user-snap-apache2-snapmanager-common.conf
+        user-snap-apache2-snapmanager-443.conf
 
     DESTINATION
         share/snapwebsites/apache2

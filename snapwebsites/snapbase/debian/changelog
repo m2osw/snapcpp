@@ -1,8 +1,9 @@
-snapbase (1.0.23.5~xenial) xenial; urgency=high
+snapbase (1.0.24.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added the -m option to a2en* calls.
+  * Make use of the a2query to know whether a site is enabled.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 25 Oct 2016 18:20:33 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Oct 2016 17:27:33 -0700
 
 snapbase (1.0.23.0~xenial) xenial; urgency=high
 

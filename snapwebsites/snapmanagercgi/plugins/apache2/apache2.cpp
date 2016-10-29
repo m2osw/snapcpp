@@ -46,8 +46,8 @@ SNAP_PLUGIN_START(apache2, 1, 0)
 namespace
 {
 
-    std::string const SNAPMANAGER_APACHE_CONF = "/etc/apache2/sites-available/snapmanager-apache2.conf";
-    std::string const SNAPCGI_APACHE_CONF     = "/etc/apache2/sites-available/000-snap-apache2-default.conf";
+    std::string const g_snapmanager_apache_conf = "/etc/apache2/snap-conf/snapmanager/snapmanager-apache2-common.conf";
+    std::string const g_snapcgi_apache_conf     = "/etc/apache2/snap-conf/default/000-snap-apache2-default-common.conf";
 
 } // no name namespace
 
@@ -195,8 +195,8 @@ void apache2::on_retrieve_status(snap_manager::server_status & server_status)
 
     // retrieve the two status
     //
-    retrieve_status_of_conf(server_status, "snapmanager", SNAPMANAGER_APACHE_CONF );
-    retrieve_status_of_conf(server_status, "snapcgi",     SNAPCGI_APACHE_CONF     );
+    retrieve_status_of_conf(server_status, "snapmanager", g_snapmanager_apache_conf );
+    retrieve_status_of_conf(server_status, "snapcgi",     g_snapcgi_apache_conf     );
 }
 
 
@@ -379,11 +379,20 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
             return false;
         }
 
+        bool const update_snapmanager(field_name.startsWith("snapmanager::"));
+
+        if(!update_snapmanager
+        && comment)
+        {
+            // there is no "default" for the snap.gci configuration
+            return false;
+        }
+
         // generate the path to the id_rsa file
         //
-        std::string const conf_filename(field_name.startsWith("snapmanager::")
-                                            ? SNAPMANAGER_APACHE_CONF
-                                            : SNAPCGI_APACHE_CONF
+        std::string const conf_filename(update_snapmanager
+                                            ? g_snapmanager_apache_conf
+                                            : g_snapcgi_apache_conf
                                        );
 
         // get the current data

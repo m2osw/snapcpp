@@ -47,15 +47,23 @@ then
     chmod 775 /var/lib/snapwebsites/cluster-status
     chown snapwebsites:www-data /var/lib/snapwebsites/cluster-status
 
-    # The snapmanager.cgi also requires the cgi module
+    # create the snapmanager sub-directory to put out ServerName/Webmaster
+    # parameter that the user is likely to change
     #
-    a2enmod -q cgi
+    mkdir -p /usr/share/snapwebsites/apache2/snapmanager
+    cp -n /usr/share/snapwebsites/apache2/user-snap-apache2-snapmanager-common.conf /etc/apache2/snap-conf/snapmanager/snapmanager-apache2-common.conf
+    cp -n /usr/share/snapwebsites/apache2/user-snap-apache2-snapmanager-443.conf /etc/apache2/snap-conf/snapmanager/snapmanager-apache2-443.conf
+
+    # The snapmanager.cgi also requires the cgi and rewrite modules
+    #
+    a2enmod -qm cgi
+    a2enmod -qm rewrite
 
     # enable the snapmanager-apache2.conf site and make sure to remove the
     # default if it is still enabled
     #
-    a2dissite 000-default
-    a2ensite snapmanager-apache2
+    a2dissite -qm 000-default
+    a2ensite -qm snapmanager-apache2
 
     # Now run various common apache initializations
     # (logrotate, enable/disable configuration/modules/sites)

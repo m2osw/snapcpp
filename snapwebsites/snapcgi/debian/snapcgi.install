@@ -2,4 +2,6 @@ usr/lib/*
 usr/share/snapwebsites/*
 conf/snapcgi.conf etc/snapwebsites/
 conf/snapcgi.properties etc/snapwebsites/logger/
-conf/snap-apache2.conf conf/000-snap-apache2-default.conf etc/apache2/sites-available/
+conf/000-snap-apache2-default-80.conf conf/000-snap-apache2-default-443.conf conf/000-snap-apache2-default-any.conf etc/apache2/sites-available/
+conf/README.md etc/apache2/snap-conf/
+conf/default-README.md etc/apache2/snap-conf/default/

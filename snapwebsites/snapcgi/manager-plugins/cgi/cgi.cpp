@@ -62,7 +62,7 @@ char const * g_configuration_filename = "snapcgi";
 
 char const * g_configuration_d_filename = "/etc/snapwebsites/snapwebsites.d/snapcgi.conf";
 
-char const * g_configuration_apache2 = "/etc/apache2/sites-available/000-snap-apache2-default.conf";
+char const * g_configuration_apache2_maintenance = "/etc/apache2/snap-conf/snap-apache2-maintenance.conf";
 
 
 void file_descriptor_deleter(int * fd)
@@ -235,7 +235,7 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
     {
         // TODO: determine the current status
         //
-        snap::file_content conf(g_configuration_apache2);
+        snap::file_content conf(g_configuration_apache2_maintenance);
         if(conf.exists())
         {
             int retry_after(0);
@@ -282,7 +282,7 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
                           snap_manager::status_t::state_t::STATUS_STATE_ERROR
                         , get_plugin_name()
                         , "maintenance"
-                        , QString::fromUtf8(g_configuration_apache2) + " is missing");
+                        , QString::fromUtf8(g_configuration_apache2_maintenance) + " is missing");
             server_status.set_field(maintenance);
         }
     }
@@ -426,6 +426,10 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
 
     if(field_name == "maintenance")
     {
+        // TODO: actually call a script so someone at the console could
+        //       turn on/off the maintenance mode on a computer
+        //
+
         int retry_after(0);
         if(new_value != "in-service")
         {
@@ -469,7 +473,7 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         {
             // go from in-service to maintenance
             //
-            p.add_argument("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)#\\([^#]\\)/\\1\\2/'");
+            p.add_argument("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^#\\([^#]\\)/\\1/'");
 
             // also change the Retry-After in this case
             //
@@ -480,12 +484,12 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         {
             // go from maintenance to in-service
             //
-            p.add_argument("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\(\\s\\s\\)\\([^#]\\)/\\1#\\2/'");
+            p.add_argument("'/##MAINTENANCE-START##/,/##MAINTENANCE-END##/ s/^\\([^#]\\)/#\\1/'");
 
             // leave the last Retry-After as it was
         }
 
-        p.add_argument(QString::fromUtf8(g_configuration_apache2));
+        p.add_argument(QString::fromUtf8(g_configuration_apache2_maintenance));
         int const r(p.run());
         if(r != 0)
         {

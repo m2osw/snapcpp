@@ -49,8 +49,19 @@ install(
 ##
 install(
     FILES 
-        000-snap-apache2-default.conf
-        snap-apache2.conf
+        # Sites
+        000-snap-apache2-default-80.conf
+        000-snap-apache2-default-443.conf
+        000-snap-apache2-default-any.conf
+
+        # User Configuration Templates
+        user-snap-apache2-template-common.conf
+        user-snap-apache2-template-80.conf
+        user-snap-apache2-template-443.conf
+
+        # User Configuration Files
+        snap-apache2-maintenance.conf
+        snap-apache2-security.conf
 
     DESTINATION
         share/snapwebsites/apache2

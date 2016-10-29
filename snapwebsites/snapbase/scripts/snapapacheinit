@@ -30,22 +30,22 @@ case "$1" in
 
         # enable / disable configuration files
         #
-        a2disconf -q security
-        a2enconf -q snap-apache2-security
-        a2enconf -q snap-acceptfilter
-        a2enconf -q snap-httpoxy
-        a2enconf -q snap-apache2-ssl-log
+        a2disconf -qm security
+        a2enconf -qm snap-apache2-security
+        a2enconf -qm snap-acceptfilter
+        a2enconf -qm snap-httpoxy
+        a2enconf -qm snap-apache2-ssl-log
 
         # enable / disable Modules
         #
-        a2dismod -qf autoindex
-        a2dismod -q status
-        a2dismod -qf auth_basic
-        a2dismod -q access_compat
-        a2dismod -q authn_core
-        a2dismod -qf authn_file
-        a2dismod -qf authz_user
-        a2enmod -q headers
+        a2dismod -qmf autoindex
+        a2dismod -qm status
+        a2dismod -qmf auth_basic
+        a2dismod -qm access_compat
+        a2dismod -qm authn_core
+        a2dismod -qmf authn_file
+        a2dismod -qmf authz_user
+        a2enmod -qm headers
 
         # By default the reqtimeout module is not enabled
         # Note that the default configuration of reqtimeout is just fine
@@ -53,7 +53,7 @@ case "$1" in
         # We install the reqtimeout module to avoid Slowloris, see:
         # https://en.wikipedia.org/wiki/Slowloris_(computer_security)
         # 
-        a2enmod -q reqtimeout
+        a2enmod -qm reqtimeout
 
         # make sure to force a reload or that is going to be useless
         # until the next reboot
@@ -74,10 +74,12 @@ case "$1" in
         # Restore the Apache2 "000-default" site if all our defaults
         # were removed
         #
-        if test ! -f /etc/apache2/sites-enabled/000-snap-apache2-default.conf \
-             -a ! -f /etc/apache2/sites-enabled/snapmanager-apache2.conf
+        if ! a2query -q -s 000-snap-apache2-default-any \
+        && ! a2query -q -s 000-snap-apache2-default-80 \
+        && ! a2query -q -s 000-snap-apache2-default-443 \
+        && ! a2query -q -s snapmanager-apache2
         then
-            a2ensite -q 000-default
+            a2ensite -qm 000-default
         fi
 
         # Remeber that we made a change in our prerm script (disabling our
@@ -97,11 +99,11 @@ case "$1" in
     #
     if hash a2enconf 2>/dev/null
     then
-        a2disconf -q snap-apache2-security
-        a2enconf -q security
-        a2disconf -q snap-acceptfilter
-        a2disconf -q snap-httpoxy
-        a2disconf -q snap-apache2-ssl-log
+        a2disconf -qm snap-apache2-security
+        a2enconf -qm security
+        a2disconf -qm snap-acceptfilter
+        a2disconf -qm snap-httpoxy
+        a2disconf -qm snap-apache2-ssl-log
 
         # WARNING: We do not restore the modules the way they were before
         #          we did tweak on those because we do not offer modules

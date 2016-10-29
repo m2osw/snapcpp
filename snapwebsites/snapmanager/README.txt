@@ -4,33 +4,33 @@ your Cassandra cluster:
 
 Start the CLI:
 
-   cassandra-cli
+    cassandra-cli
 
 At the Cassandra prompt:
 
-   connect localhost/9160;
+    connect localhost/9160;
 
-   use snap_websites;
+    use snap_websites;
 
-   list domains;
+    list domains;
 
-   list websites;
+    list websites;
 
-   get domains[utf8('domain.com')];
+    get domains[utf8('domain.com')];
 
-   get websites[utf8('www.domain.com')];
+    get websites[utf8('www.domain.com')];
 
-   list sites;
+    list sites;
 
-   del sites[ascii('http://your.site.key/')][ascii('core::last_updated')];
+    del sites[ascii('http://your.site.key/')][ascii('core::last_updated')];
 
-   list content;
+    list content;
 
-   list branch;
+    list branch;
 
-   list revision;
+    list revision;
 
-   list links;
+    list links;
 
 The 'domain.com' is whatever domains you entered with Snap Manager.
 
@@ -49,9 +49,9 @@ In the Domain Name box enter the name of a domain (i.e. "example.com"). Do
 not include sub-doman names here. It is forbidden. The user can only
 specificy a domain. In the Rules box, enter a valid rule such as:
 
-main {
-  required host = "www\.";
-};
+    main {
+      required host = "www\.";
+    };
 
 At that point, click on Save. The new entry appears in the left column.
 
@@ -64,17 +64,17 @@ our present example, it would be www.example.com (i.e. the domain was
 "example.com" andthe rules defined "www\." as the host name.) Once you entered
 a valid name, youc an enter a rule such as the following:
 
-main {
-  protocol = "http";
-  port = "80";
-};
+    main {
+      protocol = "http";
+      port = "80";
+    };
 
 That should get you going as it is enough to get started. Just make sure
 to replace the "www" with the sub-domain that you assigned to your domain.
 
 Details can be found on the Help page:
 
-   http://snapwebsites.org/help/snap-manager
+    http://snapwebsites.org/help/snap-manager
 
 
 
@@ -82,9 +82,9 @@ Testing on Apache
 
 For developers who did not install the result yet, start Server with
 
-   ../BUILD/snapwebsites/src/snapserver -c src/snapserver.conf -d
+    ../BUILD/snapwebsites/src/snapserver -c src/snapserver.conf -d
 
-   (you may want to edit the snapserver.conf file for your system...)
+    (you may want to edit the snapserver.conf file for your system...)
 
 The -c ... option is not required if you installed everything since
 the file will be under /etc/snapwebsites and automatically found by
@@ -92,16 +92,16 @@ the server (i.e. it will be in the default location.)
 
 Then go to those pages (replace the domain name with yours):
 
-   http://csnap.snapwebsites.com/
-   http://csnap.snapwebsites.com/terms-and-conditions
-   http://csnap.snapwebsites.com/terms-and-conditions/privacy-policy
+    http://csnap.snapwebsites.com/
+    http://csnap.snapwebsites.com/terms-and-conditions
+    http://csnap.snapwebsites.com/terms-and-conditions/privacy-policy
 
 The following are the Apache rules I use for that purpose. Note that it is
 not yet solid enough for a final version of your server, but it works good
 enough.
 
-   # See http://httpd.apache.org/docs/current/mod/mod_rewrite.html
-   RewriteEngine on
-   RewriteRule snap\.cgi - [S=1]
-   RewriteRule ^(.*)$ /cgi-bin/snap.cgi [L,PT,QSA]
+    # See http://httpd.apache.org/docs/current/mod/mod_rewrite.html
+    RewriteEngine on
+    RewriteRule snap\.cgi - [skip=1]
+    RewriteRule ^(.*)$ /cgi-bin/snap.cgi [last,password,qsappend]
 
