@@ -61,7 +61,7 @@ install(
 
         # User Configuration Files
         snap-apache2-maintenance.conf
-        snap-apache2-security.conf
+        snap-apache2-vhost-security.conf
 
     DESTINATION
         share/snapwebsites/apache2
