@@ -28,7 +28,7 @@ then
     # does not happen unless a user delete one of those files.
     #
     for conf in snap-apache2-maintenance \
-                snap-apache2-security
+                snap-apache2-vhost-security
     do
         cp -n /usr/share/snapwebsites/apache2/${conf}.conf /etc/apache2/snap-conf/.
     done

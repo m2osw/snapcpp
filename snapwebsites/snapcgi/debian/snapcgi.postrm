@@ -19,7 +19,7 @@ then
     # (i.e. other than the default domain, we do not touch)
     #
     rm -f /etc/apache2/snap-conf/snap-apache2-maintenance.conf
-    rm -f /etc/apache2/snap-conf/snap-apache2-security.conf
+    rm -f /etc/apache2/snap-conf/snap-apache2-vhost-security.conf
     rm -f /etc/apache2/snap-conf/default/*.conf
     for subdir in /etc/apache2/snap-conf/*
     do

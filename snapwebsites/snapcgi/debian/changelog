@@ -1,3 +1,9 @@
+snapcgi (1.0.26.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the postinst script so the new security file gets installed.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Oct 2016 18:17:33 -0700
+
 snapcgi (1.0.25.0~xenial) xenial; urgency=high
 
   * SNAP-110: Renamed the security file to avoid conflicts.
