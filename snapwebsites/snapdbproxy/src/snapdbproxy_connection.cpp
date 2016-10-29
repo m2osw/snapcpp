@@ -255,14 +255,20 @@ SNAP_LOG_TRACE("got an order: ")
         {
             SNAP_LOG_WARNING("thread received QCassandraQuery::query_exception \"")(e.what())("\"");
         }
+
+        close();
     }
     catch(std::exception const & e)
     {
         SNAP_LOG_WARNING("thread received std::exception \"")(e.what())("\"");
+
+        close();
     }
     catch(...)
     {
         SNAP_LOG_WARNING("thread received an unknown exception");
+
+        close();
     }
     // exit thread normally
 

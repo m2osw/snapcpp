@@ -1,3 +1,10 @@
+snapdbproxy (1.1.23.0~xenial) xenial; urgency=high
+
+  * SNAP-110: There is actually an exception ( Column family ID mismatch).
+  * Added close() calls in case an exception occurs.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 14:24:49 -0700
+
 snapdbproxy (1.1.22.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added temporary debugs in an attempt to determine what blocks.
