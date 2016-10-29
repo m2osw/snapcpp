@@ -46,6 +46,7 @@ case "$1" in
         a2dismod -qmf authn_file
         a2dismod -qmf authz_user
         a2enmod -qm headers
+        a2enmod -qm ssl
 
         # By default the reqtimeout module is not enabled
         # Note that the default configuration of reqtimeout is just fine
