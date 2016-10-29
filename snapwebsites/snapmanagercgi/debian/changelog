@@ -1,3 +1,11 @@
+snapmanagercgi (1.2.0.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Could not install files under /etc/apache2/snap-conf/snapmanager
+    because it did not exist. Added a README.md file in it.
+  * Fixed the path used by Include in snapmanager-apache2.conf
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Oct 2016 19:13:33 -0700
+
 snapmanagercgi (1.1.52.0~xenial) xenial; urgency=high
 
   * SNAP-110: The .install was not installing apache2 files.

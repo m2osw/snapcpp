@@ -1,4 +1,4 @@
-snapcgi (1.0.26.0~xenial) xenial; urgency=high
+snapcgi (1.1.0.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the postinst script so the new security file gets installed.
 
