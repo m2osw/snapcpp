@@ -1,3 +1,10 @@
+snapdbproxy (1.1.21.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the QtCassandraSession::connect() in the
+    snapdbproxy_connection class for slow commands.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 12:59:49 -0700
+
 snapdbproxy (1.1.20.0~xenial) xenial; urgency=high
 
   * SNAP-110: Use snap::process to run the snapcreatecontext/tables tools.

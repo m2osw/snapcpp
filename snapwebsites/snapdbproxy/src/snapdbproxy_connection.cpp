@@ -116,6 +116,7 @@ snapdbproxy_connection::snapdbproxy_connection
     , tcp_client_server::bio_client::pointer_t & client
     , QString const & cassandra_host_list
     , int cassandra_port
+    , bool use_ssl
     )
         : snap_runner("snapdbproxy_connection")
         , f_snapdbproxy(proxy)
@@ -126,6 +127,7 @@ snapdbproxy_connection::snapdbproxy_connection
         , f_socket(client->get_socket())
         , f_cassandra_host_list(cassandra_host_list)
         , f_cassandra_port(cassandra_port)
+        , f_use_ssl(use_ssl)
 {
     // take ownership of the client's pointer (we are not in the thread
     // yet, so a simple swap is sufficient)
@@ -728,7 +730,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
             snap::snap_thread::snap_lock lock(g_connections_mutex);
 
             QtCassandra::QCassandraRequestTimeout request_timeout(order_session, order.timeout());
-            order_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
+            order_session->connect( f_cassandra_host_list, f_cassandra_port, f_use_ssl ); // throws on failure!
         }
     }
     else

@@ -171,6 +171,7 @@ public:
                                   , tcp_client_server::bio_client::pointer_t & client
                                   , QString const & cassandra_host_list
                                   , int cassandra_port
+                                  , bool use_ssl
                                   );
     virtual                     ~snapdbproxy_connection() override;
 
@@ -211,6 +212,7 @@ private:
     std::atomic<int>                            f_socket /* = -1*/;
     QString                                     f_cassandra_host_list = "localhost";
     int                                         f_cassandra_port = 9042;
+    bool                                        f_use_ssl = false;
 };
 
 
@@ -225,6 +227,7 @@ public:
                                   , tcp_client_server::bio_client::pointer_t & client
                                   , QString const & cassandra_host_list
                                   , int cassandra_port
+                                  , bool use_ssl
                                   );
                             ~snapdbproxy_thread();
 

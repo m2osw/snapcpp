@@ -770,6 +770,7 @@ void snapdbproxy::process_connection(tcp_client_server::bio_client::pointer_t & 
                                           , client
                                           , f_cassandra_host_list
                                           , f_cassandra_port
+                                          , use_ssl()
                                           ));
     if(thread && thread->is_running())
     {

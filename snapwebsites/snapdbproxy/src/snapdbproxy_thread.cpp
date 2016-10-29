@@ -63,8 +63,9 @@ snapdbproxy_thread::snapdbproxy_thread
       , tcp_client_server::bio_client::pointer_t & client
       , QString const & cassandra_host_list
       , int cassandra_port
+      , bool use_ssl
       )
-    : f_connection(proxy, session, client, cassandra_host_list, cassandra_port)
+    : f_connection(proxy, session, client, cassandra_host_list, cassandra_port, use_ssl)
     , f_thread("connection", &f_connection)
 {
     if(!f_thread.start())
