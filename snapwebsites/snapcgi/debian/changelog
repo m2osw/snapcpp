@@ -1,3 +1,9 @@
+snapcgi (1.1.1.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the path in the redirect from port 80 to 443.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Oct 2016 20:33:33 -0700
+
 snapcgi (1.1.0.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the postinst script so the new security file gets installed.

@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.2.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the path in the redirect from port 80 to 443.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Oct 2016 20:33:33 -0700
+
 snapmanagercgi (1.2.1.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the destination path for the user-snap-apache2* files.
