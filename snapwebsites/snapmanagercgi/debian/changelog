@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.2.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 29 Oct 2016 02:00:47 -0700
+
 snapmanagercgi (1.2.2.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the path in the redirect from port 80 to 443.
