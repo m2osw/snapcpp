@@ -915,7 +915,7 @@ void snapdbproxy::stop(bool quitting)
         }
         else
         {
-            f_messenger->mark_done();
+            f_messenger->mark_done(true);
 
             // unregister if we are still connected to the messenger
             // and Snap! Communicator is not already quitting

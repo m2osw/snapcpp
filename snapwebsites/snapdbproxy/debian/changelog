@@ -1,8 +1,15 @@
-snapdbproxy (1.1.18.7~xenial) xenial; urgency=high
+snapdbproxy (1.1.19.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the dbproxy plugin so we check the use_ssl flag as defined
+    in snapdbproxy.conf.
+  * Adding a debug message in snapmanagerdaemon plugins when connecting to
+    cassandra to know whether we are using SSL or not.
+  * Fixed the saving of field "cassandra_use_ssl", it has to return true and
+    we do not have to send the RELOADCONFIG twice.
+  * Fixed the mark_done() call in snapdbproxy to use "true" (i.e. kill the
+    messenger as well once done.)
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 11:34:49 -0700
 
 snapdbproxy (1.1.18.0~xenial) xenial; urgency=high
 

@@ -263,8 +263,10 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         }
         if(port > 0)
         {
+            bool const use_ssl(snap_dbproxy_conf["cassandra_use_ssl"] == "true");
+            SNAP_LOG_DEBUG("connection attempt to Cassandra cluster ")(use_ssl ? " with SSL." : " in plain mode.");
             auto session( QtCassandra::QCassandraSession::create() );
-            session->connect(snap_dbproxy_conf["cassandra_host_list"], port);
+            session->connect(snap_dbproxy_conf["cassandra_host_list"], port, use_ssl);
             if( !session->isConnected() )
             {
                 SNAP_LOG_WARNING( "Cannot connect to cassandra host! Check cassandra_host_list and cassandra_port in snapdbproxy.conf!" );
@@ -504,17 +506,21 @@ bool dbproxy::apply_setting(QString const & button_name, QString const & field_n
         snap_config snap_dbproxy_conf(g_configuration_filename);
         snap_dbproxy_conf["cassandra_use_ssl"] = new_value;
 
-        bool const config_set = f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_use_ssl", new_value);
-        if( config_set )
-        {
-            // Send restart message to snapdbproxy, because we changed the configuration.
-            //
-            snap::snap_communicator_message cmd;
-            cmd.set_service("snapdbproxy");         // TODO: Is this correct?
-            cmd.set_command("RELOADCONFIG");
-            f_snap->forward_message(cmd);
-        }
-        return config_set;
+        NOTUSED(f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_use_ssl", new_value));
+
+        // the affected_services.insert() already sends a RELOADCONFIG message
+        //bool const config_set = f_snap->replace_configuration_value(g_configuration_d_filename, "cassandra_use_ssl", new_value);
+        //if( config_set )
+        //{
+        //    // Send restart message to snapdbproxy, because we changed the configuration.
+        //    //
+        //    snap::snap_communicator_message cmd;
+        //    cmd.set_service("snapdbproxy");         // TODO: Is this correct?
+        //    cmd.set_command("RELOADCONFIG");
+        //    f_snap->forward_message(cmd);
+        //}
+
+        return true;
     }
 
     if(field_name == "cassandra_create_context")

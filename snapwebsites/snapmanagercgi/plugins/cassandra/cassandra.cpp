@@ -1837,19 +1837,21 @@ QString cassandra::get_replication_factor()
     //
     try
     {
-        session->connect( cassandra_host_list, cassandra_port, config["cassandra_use_ssl"] == "true" ); // throws on failure!
+        bool const use_ssl(config["cassandra_use_ssl"] == "true");
+        SNAP_LOG_DEBUG("connection attempt to Cassandra cluster ")(use_ssl ? " with SSL." : " in plain mode.");
+        session->connect( cassandra_host_list, cassandra_port, use_ssl ); // throws on failure!
         if(!session->isConnected())
         {
             // this error should not ever appear since the connect()
             // function throws on errors, but for completeness...
             //
-            SNAP_LOG_ERROR("error: could not connect to Cassandra cluster.");
+            SNAP_LOG_ERROR("could not connect to Cassandra cluster.");
             return QString();
         }
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_ERROR("error: could not connect to Cassandra cluster. Exception: ")(e.what());
+        SNAP_LOG_ERROR("could not connect to Cassandra cluster. Exception: ")(e.what());
         return QString();
     }
 
@@ -1859,7 +1861,7 @@ QString cassandra::get_replication_factor()
     auto const & context( keyspaces.find(context_name) );
     if( context == std::end(keyspaces) )
     {
-        SNAP_LOG_ERROR("error: could not find \"")(context_name)("\" context in Cassandra.");
+        SNAP_LOG_ERROR("could not find \"")(context_name)("\" context in Cassandra.");
         return QString();
     }
 
@@ -1873,7 +1875,7 @@ QString cassandra::get_replication_factor()
     auto const replication(fields.find("replication"));
     if(replication == fields.end())
     {
-        SNAP_LOG_ERROR("error: could not find \"replication\" as one of the context fields.");
+        SNAP_LOG_ERROR("could not find \"replication\" as one of the context fields.");
         return QString();
     }
     //QtCassandra::QCassandraSchema::Value const & value(replication->second);
@@ -1889,7 +1891,7 @@ QString cassandra::get_replication_factor()
     auto const item(map.find("dc1"));
     if(item == map.end())
     {
-        SNAP_LOG_ERROR("error: could not find \"dc1\" in the context replication definition.");
+        SNAP_LOG_ERROR("could not find \"dc1\" in the context replication definition.");
         return QString();
     }
 
@@ -1956,7 +1958,9 @@ void cassandra::set_replication_factor(QString const & replication_factor)
     //
     try
     {
-        session->connect( cassandra_host_list, cassandra_port, config["cassandra_use_ssl"] == "true" ); // throws on failure!
+        bool const use_ssl(config["cassandra_use_ssl"] == "true");
+        SNAP_LOG_DEBUG("connection attempt to Cassandra cluster ")(use_ssl ? " with SSL." : " in plain mode.");
+        session->connect( cassandra_host_list, cassandra_port, use_ssl ); // throws on failure!
         if(!session->isConnected())
         {
             // this error should not ever appear since the connect()

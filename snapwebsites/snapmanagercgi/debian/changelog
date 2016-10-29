@@ -1,8 +1,10 @@
-snapmanagercgi (1.2.2.1~xenial) xenial; urgency=high
+snapmanagercgi (1.2.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Adding a debug message in snapmanagerdaemon plugins when
+    connecting to cassandra to know whether we are using SSL or not.
+  * Various clean ups.
 
- -- Build Server <build@m2osw.com>  Sat, 29 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 11:34:49 -0700
 
 snapmanagercgi (1.2.2.0~xenial) xenial; urgency=high
 
