@@ -563,6 +563,9 @@ int manager_cgi::process()
     root.appendChild(menu);
 
     {
+        // we force HTTPS by default, but someone could turn that feature
+        // off...
+        //
         char const * https(getenv("HTTPS"));
         if(https == nullptr
         || strcmp(https, "on") != 0)
@@ -903,6 +906,10 @@ int manager_cgi::process_post()
  *
  * This function checks the various query strings passed to the manager_cgi
  * and depending on those, generates a page.
+ *
+ * \param[in] doc  The document where we save the results.
+ * \param[in] output  The output tag.
+ * \param[in] menu  The menu tag.
  */
 void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomElement menu)
 {

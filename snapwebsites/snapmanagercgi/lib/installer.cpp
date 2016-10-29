@@ -1356,7 +1356,7 @@ service_status_t manager::service_status(std::string const & service_filename, s
         p3.add_argument("is-failed");
         p3.add_argument(QString::fromUtf8(service_name.c_str()));
         int const r3(p3.run());
-        SNAP_LOG_INFO("\"is-failed\" query output (")(r3)("): ")(p3.get_output(true));
+        SNAP_LOG_INFO("\"is-failed\" query output (")(r3)("): ")(p3.get_output(true).trimmed());
         if(r3 != 0)
         {
             // it is enabled and not active, thus we return "enabled"

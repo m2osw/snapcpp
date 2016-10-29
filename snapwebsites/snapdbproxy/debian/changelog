@@ -1,3 +1,9 @@
+snapdbproxy (1.1.20.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Use snap::process to run the snapcreatecontext/tables tools.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 12:17:49 -0700
+
 snapdbproxy (1.1.19.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the dbproxy plugin so we check the use_ssl flag as defined

@@ -29,6 +29,7 @@
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/not_used.h>
+#include <snapwebsites/process.h>
 #include <snapwebsites/qdomhelpers.h>
 #include <snapwebsites/qdomxpath.h>
 #include <snapwebsites/snap_cassandra.h>
@@ -525,17 +526,37 @@ bool dbproxy::apply_setting(QString const & button_name, QString const & field_n
 
     if(field_name == "cassandra_create_context")
     {
-        // TODO: use snap::process to collect the output
-        //
-        NOTUSED(system("snapcreatecontext"));
+        snap::process p("create context");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command("snapcreatecontext");
+        int const r(p.run());
+        QString const output(p.get_output(true));
+        if(!output.isEmpty())
+        {
+            SNAP_LOG_INFO("\"snapcreatecontext\" function output: ")(output);
+        }
+        if(r != 0)
+        {
+            SNAP_LOG_ERROR("creation of the \"snap_websites\" context failed.");
+        }
         return true;
     }
 
     if(field_name == "cassandra_create_tables")
     {
-        // TODO: use snap::process to collect the output
-        //
-        NOTUSED(system("snapcreatetables"));
+        snap::process p("create tables");
+        p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command("snapcreatetables");
+        int const r(p.run());
+        QString const output(p.get_output(true));
+        if(!output.isEmpty())
+        {
+            SNAP_LOG_INFO("\"snapcreatetables\" function output: ")(output);
+        }
+        if(r != 0)
+        {
+            SNAP_LOG_ERROR("creation of the snap tables failed.");
+        }
         return true;
     }
 

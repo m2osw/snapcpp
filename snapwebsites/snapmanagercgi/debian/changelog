@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.4.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Trimmed a log message to avoid the \n at the end of it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 11:34:49 -0700
+
 snapmanagercgi (1.2.3.0~xenial) xenial; urgency=high
 
   * SNAP-110: Adding a debug message in snapmanagerdaemon plugins when
