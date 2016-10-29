@@ -525,6 +525,8 @@ void snap_cassandra::create_table_list()
             table->create();
         }
     }
+
+    SNAP_LOG_DEBUG("all tables are ready now.");
 }
 
 

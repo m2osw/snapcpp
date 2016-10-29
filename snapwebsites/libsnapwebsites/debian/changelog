@@ -1,6 +1,6 @@
-libsnapwebsites (1.1.35.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.36.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added a debug log in the table creation.
 
  -- Build Server <build@m2osw.com>  Fri, 28 Oct 2016 02:00:46 -0700
 

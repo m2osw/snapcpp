@@ -46,10 +46,6 @@ int main(int argc, char * argv[])
             // (it is always available because it is in snapbase)
             //
             snap::snap_config config("snapserver");
-            //if(f_opt->is_defined("config"))
-            //{
-            //    config.set_configuration_path(f_opt->get_string("config"));
-            //}
             QString const log_config(config["log_config"]);
             if(log_config.isEmpty())
             {
