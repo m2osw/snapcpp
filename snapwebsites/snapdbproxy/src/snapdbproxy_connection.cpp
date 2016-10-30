@@ -111,7 +111,7 @@ pid_t gettid()
 
 
 snapdbproxy_connection::snapdbproxy_connection
-    ( snapdbproxy* proxy
+    ( snapdbproxy * proxy
     , QtCassandra::QCassandraSession::pointer_t session
     , tcp_client_server::bio_client::pointer_t & client
     , QString const & cassandra_host_list
@@ -240,16 +240,18 @@ SNAP_LOG_TRACE("got an order: ")
             }
         }
     }
-    catch( QtCassandra::QCassandraQuery::query_exception_t const& e )
+    catch( QtCassandra::QCassandraQuery::query_exception_t const & e )
     {
-        if( e.getCode() == 16777226 )
+        if( e.getCode() == 16777226 )  // 0x0100000A
         {
             SNAP_LOG_ERROR("thread received QCassandraQuery::query_exception \"")(e.what())("\", reconnecting to Cassandra server!");
 
             // No hosts available! We must have lost the connection.
             // Tell the parent proxy object we need to reset.
             //
-            f_snapdbproxy->no_cassandra();
+            //f_snapdbproxy->no_cassandra(); -- we cannot call that function
+            //                                  directly from another thread
+            ::kill(getpid(), SIGUSR1);
         }
         else
         {

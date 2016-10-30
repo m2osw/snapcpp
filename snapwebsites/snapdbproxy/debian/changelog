@@ -1,6 +1,14 @@
+snapdbproxy (1.1.24.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Fixed the no_cassandra() call from the child thread by sending
+    a SIGUSR1 signal instead.
+  * Added a new snapdbproxy_cassandra class to handle the SIGUSR1 signal.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 21:00:49 -0700
+
 snapdbproxy (1.1.23.0~xenial) xenial; urgency=high
 
-  * SNAP-110: There is actually an exception ( Column family ID mismatch).
+  * SNAP-110: There is actually an exception (Column family ID mismatch).
   * Added close() calls in case an exception occurs.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 14:24:49 -0700

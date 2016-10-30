@@ -405,6 +405,11 @@ void snapdbproxy::run()
     f_interrupt.reset(new snapdbproxy_interrupt(this));
     f_communicator->add_connection(f_interrupt);
 
+    // capture "nocassandra" signal (SIGUSR1)
+    //
+    f_nocassandra.reset(new snapdbproxy_nocassandra(this));
+    f_communicator->add_connection(f_nocassandra);
+
     // create a listener
     //
     // Note that the listener changes its priority to 30 in order to
@@ -941,6 +946,9 @@ void snapdbproxy::stop(bool quitting)
 
         f_communicator->remove_connection(f_interrupt);
         f_interrupt.reset();
+
+        f_communicator->remove_connection(f_nocassandra);
+        f_nocassandra.reset();
     }
 }
 

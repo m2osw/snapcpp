@@ -1,11 +1,10 @@
 /*
  * Text:
- *      snapwebsites/snapdbproxy/src/snapdbproxy_interrupt.cpp
+ *      snapwebsites/snapdbproxy/src/snaplock_nocassandra.cpp
  *
  * Description:
- *      The interrupt implementation listens for the Ctrl-C or SIGINT Unix
- *      signal. When the signal is received, it calls the stop function
- *      of the snapdbproxy object to simulate us receiving a STOP message.
+ *      Handling the SIGUSR1 whenever a child (thread) detects that it
+ *      lost its connection.
  *
  * License:
  *      Copyright (c) 2016 Made to Order Software Corp.
@@ -44,44 +43,39 @@
 
 
 
-/** \class snapdbproxy_interrupt
- * \brief Handle the SIGINT Unix signal.
+/** \class snaplock_nocassandra
+ * \brief Handle the SIGUSR1 Unix signal.
  *
  * This class is an implementation of the signalfd() specifically
- * listening for the SIGINT signal.
+ * listening for the SIGUSR1 signal.
  */
 
 
 
-/** \brief The interrupt initialization.
+/** \brief The nocassandra initialization.
  *
- * The interrupt uses the signalfd() function to obtain a way to listen on
- * incoming Unix signals.
- *
- * Specifically, it listens on the SIGINT signal, which is the equivalent
- * to the Ctrl-C.
+ * The nocassandra uses the signalfd() function to obtain a way to listen on
+ * incoming SIGUSR1 signals.
  *
  * \param[in] s  The snapdbproxy server we are listening for.
  */
-snapdbproxy_interrupt::snapdbproxy_interrupt(snapdbproxy * s)
-    : snap_signal(SIGINT)
+snapdbproxy_nocassandra::snapdbproxy_nocassandra(snapdbproxy * s)
+    : snap_signal(SIGUSR1)
     , f_snapdbproxy(s)
 {
     unblock_signal_on_destruction();
-    set_name("snapdbproxy interrupt");
+    set_name("snapdbproxy nocassandra");
 }
 
 
-/** \brief Call the stop function of the snapdbproxy object.
+/** \brief Call the no_cassandra() function of the snapdbproxy object.
  *
  * When this function is called, the signal was received and thus we are
- * asked to quit as soon as possible.
+ * asked to reconnect to Cassandra as soon as convenient.
  */
-void snapdbproxy_interrupt::process_signal()
+void snapdbproxy_nocassandra::process_signal()
 {
-    // we simulate the STOP, so pass 'false' (i.e. not quitting)
-    //
-    f_snapdbproxy->stop(false);
+    f_snapdbproxy->no_cassandra();
 }
 
 

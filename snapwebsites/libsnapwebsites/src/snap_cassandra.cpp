@@ -267,7 +267,7 @@ void snap_cassandra::create_table_list()
         tables.load(p);
     }
 
-    // now we have all the tables loaded,
+    // now we have all the tables loaded
     //
     snap_tables::table_schema_t::map_t const & schemas(tables.get_schemas());
     SNAP_LOG_INFO("check existence of ")(schemas.size())(" tables...");
@@ -522,7 +522,28 @@ void snap_cassandra::create_table_list()
 
             }
 
-            table->create();
+            try
+            {
+                table->create();
+            }
+            catch(std::runtime_error const & e)
+            {
+                if(strcmp(e.what(), "table creation failed") != 0)
+                {
+                    // we do not know anything about that exception,
+                    // let it pass propagate...
+                    //
+                    throw;
+                }
+                // passthrough on "basic" errors... because the gossiping
+                // in Cassandra in regard to creating tables can generate
+                // a safe race condition (note that other changes to the
+                // schema may not be as safe...)
+                //
+                // See https://issues.apache.org/jira/browse/CASSANDRA-5025
+                SNAP_LOG_TRACE("Marking a pause while schema gets synchronized after a CREATE TABLE.");
+                sleep(10);
+            }
         }
     }
 

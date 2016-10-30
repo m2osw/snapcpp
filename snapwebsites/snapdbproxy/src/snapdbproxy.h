@@ -81,6 +81,23 @@ private:
 };
 
 
+class snapdbproxy_nocassandra
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<snapdbproxy_nocassandra>     pointer_t;
+
+                                snapdbproxy_nocassandra(snapdbproxy * s);
+    virtual                     ~snapdbproxy_nocassandra() override {}
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal() override;
+
+private:
+    snapdbproxy *               f_snapdbproxy = nullptr;
+};
+
+
 /** \brief Provide a tick in can we cannot immediately connect to Cassandra.
  *
  * The snapdbproxy tries to connect to Cassandra on startup. It is part
@@ -285,6 +302,7 @@ private:
     QString                                     f_cassandra_host_list = "localhost";
     int                                         f_cassandra_port = 9042;
     snapdbproxy_interrupt::pointer_t            f_interrupt;
+    snapdbproxy_nocassandra::pointer_t          f_nocassandra;
     snapdbproxy_messenger::pointer_t            f_messenger;
     snapdbproxy_listener::pointer_t             f_listener;
     snapdbproxy_timer::pointer_t                f_timer;

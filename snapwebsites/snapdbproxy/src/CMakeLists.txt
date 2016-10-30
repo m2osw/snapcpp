@@ -48,6 +48,7 @@ add_executable(${PROJECT_NAME}
     snapdbproxy_interrupt.cpp
     snapdbproxy_listener.cpp
     snapdbproxy_messenger.cpp
+    snapdbproxy_nocassandra.cpp
     snapdbproxy_thread.cpp
 )
 
