@@ -1,3 +1,9 @@
+snapdbproxy (1.1.25.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Removed temporary logs from 1.1.22.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 29 Oct 2016 22:07:49 -0700
+
 snapdbproxy (1.1.24.0~xenial) xenial; urgency=high
 
   * SNAP-110: Fixed the no_cassandra() call from the child thread by sending
