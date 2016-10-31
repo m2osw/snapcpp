@@ -1,3 +1,9 @@
+snapfirewall (1.0.20.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 31 Oct 2016 02:00:47 -0700
+
 snapfirewall (1.0.20.0~xenial) xenial; urgency=high
 
   * SNAP-465: Create the iptables.log file or fail2ban does not want to
