@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
+#if 0
 typedef struct CassCluster_      CassCluster;
 typedef struct CassCollection_   CassCollection;
 typedef struct CassColumnMeta_   CassColumnMeta;
@@ -58,6 +59,7 @@ typedef struct CassSsl_          CassSsl;
 typedef struct CassStatement_    CassStatement;
 typedef struct CassTableMeta_    CassTableMeta;
 typedef struct CassValue_        CassValue;
+#endif
 
 
 namespace QtCassandra
@@ -66,6 +68,13 @@ namespace QtCassandra
 
 namespace CassTools
 {
+    class   cluster;
+    class   collection;
+    class   column_meta;
+    class   future;
+    class   iterator;
+    class   keyspace_meta;
+#if 0
     typedef std::shared_ptr<CassCluster>            cluster_pointer_t;
     typedef std::shared_ptr<CassCollection>         collection_pointer_t;
     typedef std::shared_ptr<const CassColumnMeta>   column_meta_pointer_t;
@@ -79,6 +88,7 @@ namespace CassTools
     typedef std::shared_ptr<CassSsl>                ssl_pointer_t;
     typedef std::shared_ptr<CassStatement>          statement_pointer_t;
     typedef std::shared_ptr<const CassValue>        value_pointer_t;
+#endif
     typedef int64_t                                 timeout_t;
 
     inline pid_t gettid()

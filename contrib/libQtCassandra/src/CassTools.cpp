@@ -42,10 +42,35 @@ namespace QtCassandra
 namespace CassTools
 {
 
-void collectionDeleter::operator()(CassCollection * p) const
+
+void collection::deleter::operator()(CassCollection* p) const
 {
     cass_collection_free(p);
 }
+
+
+collection::collection( CassCollectionType type, size_t item_count )
+    : f_ptr( cass_collection_new( type, item_count ), deleter_t )
+{
+}
+
+
+collection::~collection()
+{
+    // Empty
+}
+
+
+CassError collection::append_string( const char* value )
+{
+    return cass_collection_append_string( f_ptr.get(), value );
+}
+
+
+column_meta::column_meta( const iterator& iter )
+{
+}
+
 
 void columnMetaDeleter::operator()(const CassColumnMeta * /*p*/) const
 {
@@ -63,10 +88,18 @@ void futureDeleter::operator()(CassFuture * p) const
     cass_future_free(p);
 }
 
-void iteratorDeleter::operator()(CassIterator * p) const
+
+iterator::iterator( CassIterator* iter )
+    : f_ptr(iter)
 {
-    cass_iterator_free(p);
 }
+
+
+iterator::~iterator()
+{
+    cass_iterator_free( f_ptr );
+}
+
 
 void keyspaceMetaDeleter::operator()(const CassKeyspaceMeta * /*p*/) const
 {

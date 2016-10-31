@@ -38,77 +38,202 @@
 
 #include "cassandra.h"
 
+#include <QString>
+
 namespace QtCassandra
 {
 
 namespace CassTools
 {
 
-struct collectionDeleter
+
+class iterator;
+class keyspace;
+class result;
+class schema_meta;
+
+
+class collection
 {
-    void operator()(CassCollection* p) const;
+public:
+    struct deleter_t
+    {
+        void operator()(CassCollection* p) const;
+    };
+
+    collection( CassCollectionType type, size_t item_count );
+    ~collection();
+
+    CassError append_string( const char* value );
+
+private:
+    std::unique_ptr<CassCollection> f_ptr;
 };
 
-struct columnMetaDeleter
+
+class column_meta
 {
-    void operator()(const CassColumnMeta* /*p*/) const;
+public:
+    struct deleter_t
+    {
+        void operator()(CassColumnMeta* p) const;
+    };
+
+    column_meta( const iterator& iter );
+    ~column_meta();
+
+    QString        get_name()        const;
+    CassColumnType get_column_type() const;
+    CassValueType  get_value_type()  const;
+    iterator       get_fields()      const;
+
+private:
+    CassColumnMeta* f_ptr = nullptr;
 };
 
-struct clusterDeleter
-{ 
-    void operator()(CassCluster* p) const;
-};
 
-struct futureDeleter
-{ 
-    void operator()(CassFuture* p) const;
-};
-
-struct iteratorDeleter
+class cluster
 {
-    void operator()(CassIterator* p) const;
+public:
+    cluster( const CassCluster* );
+    ~cluster();
+
+private:
+    CassCluster* f_ptr = nullptr;
 };
 
-struct keyspaceMetaDeleter
+
+class future
 {
-    void operator()(const CassKeyspaceMeta* /*p*/) const;
+public:
+    future( const CassFuture* );
+    ~future();
+
+private:
+    CassFuture* f_ptr = nullptr;
 };
 
-struct resultDeleter
+
+class iterator
 {
-    void operator()(const CassResult* p) const;
+public:
+    iterator( const CassIterator* iter   );
+    ~iterator();
+
+    iterator get_next()                      const;
+
+    value    get_map_key()                   const;
+    value    get_map_value()                 const;
+
+    QString  get_meta_field_name()           const;
+
+    keyspace_meta get_keyspace_meta()        const;
+    table_meta    get_table_meta()           const;
+    column_meta   get_column_meta()          const;
+
+private:
+    CassIterator*   f_ptr = nullptr;
 };
 
-struct tableMetaDeleter
-{ 
-    void operator()(const CassTableMeta* /*p*/) const;
+
+class keyspace_meta
+{
+public:
+    keyspace_meta( const CassKeyspaceMeta* );
+    ~keyspace_meta();
+
+    iterator get_fields() const;
+    iterator get_tables() const;
+
+private:
+    CassKeyspaceMeta* f_ptr = nullptr;
 };
 
-struct schemaMetaDeleter
-{ 
-    void operator()(const CassSchemaMeta* p) const;
+
+class result
+{
+public:
+    result( CassResult* result );
+    ~result();
+
+    iterator get_iterator() const;
+
+private:
+    CassResult* f_ptr = nullptr;
 };
 
-struct sessionDeleter
-{ 
-    void operator()(CassSession* p) const;
+
+class table_meta
+{
+    table_meta( const CassTableMeta* );
+    ~table_meta();
+
+    iterator get_fields()  const;
+    iterator get_columns() const;
+
+private:
+    CassTableMeta*  f_ptr = nullptr;
 };
 
-struct sslDeleter
-{ 
-    void operator()(CassSsl* p) const;
+
+class schema_meta
+{
+public:
+    schema_meta( const CassSchemaMeta* );
+    ~schema_meta();
+
+    iterator    get_keyspaces() const;
+
+private:
+    CassSchemaMeta* f_ptr = nullptr;
 };
 
-struct statementDeleter
-{ 
-    void operator()(CassStatement* p) const;
+
+class session
+{
+    session( const CassSession* );
+    ~session();
+
+    schema_meta get_schema_meta() const;
+
+private:
+    CassSession*    f_ptr = nullptr;
 };
 
-struct valueDeleter
-{ 
-    void operator()(CassValue*       ) const {}
-    void operator()(const CassValue* ) const {}
+
+class ssl
+{
+    ssl( const CassSsl* );
+    ~ssl();
+
+private:
+    CassSsl*    f_ptr = nullptr;
 };
+
+
+class statement
+{
+public:
+    statement( const CassStatement* );
+    ~statement();
+
+private:
+    CassStatement*  f_ptr = nullptr;
+};
+
+
+class value
+{
+public:
+    value( const CassValue* );
+    ~value();
+
+    iterator get_iterator_from_map();
+
+private:
+    CassValue*  f_ptr = nullptr;
+};
+
 
 }
 // namespace CassTools
