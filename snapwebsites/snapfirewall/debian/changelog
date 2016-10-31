@@ -1,8 +1,8 @@
-snapfirewall (1.0.20.1~xenial) xenial; urgency=high
+snapfirewall (1.0.21.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-473: Replacing `pre-up ...` with a oneshot service.
 
- -- Build Server <build@m2osw.com>  Mon, 31 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 31 Oct 2016 12:50:47 -0700
 
 snapfirewall (1.0.20.0~xenial) xenial; urgency=high
 

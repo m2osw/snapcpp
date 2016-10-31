@@ -1,8 +1,8 @@
-snapbounce (1.0.7.1~xenial) xenial; urgency=high
+snapbounce (1.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Create log files so fail2ban works as expected.
 
- -- Build Server <build@m2osw.com>  Mon, 31 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 31 Oct 2016 12:42:47 -0700
 
 snapbounce (1.0.7.0~xenial) xenial; urgency=high
 

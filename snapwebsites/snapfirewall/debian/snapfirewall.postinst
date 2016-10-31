@@ -52,6 +52,12 @@ then
     then
         systemctl reload fail2ban
     fi
+
+    # make sure the snapinitfirewall service is enabled on next reboot
+    # but do not start it yet because when the bundle is running the
+    # configuration file with the variables is not yet setup properly.
+    #
+    systemctl -q enable snapinitfirewall
 fi
 
 

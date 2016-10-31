@@ -339,6 +339,8 @@ private:
     bool                                    f_foreground = false;
     bool                                    f_backend = false;
     bool                                    f_force_restart = false;
+    bool                                    f_firewall_is_active = false;
+    bool                                    f_firewall_up = false;
     QMap<QString, bool>                     f_created_table;
 
     uint64_t                                f_connections_count = 0;

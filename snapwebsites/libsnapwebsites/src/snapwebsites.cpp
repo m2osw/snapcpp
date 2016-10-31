@@ -1117,6 +1117,11 @@ void server::config(int argc, char * argv[])
     // determine the name of the server
     //
     get_server_name();
+
+    // determine whether the snapfirewall daemon is active
+    // (if so we want to wait for the FIREWALLUP message)
+    //
+    f_firewall_is_active = system("systemctl is-active -q snapfirewall") == 0;
 }
 
 
@@ -2076,6 +2081,24 @@ void server::process_message(snap_communicator_message const & message)
         islockready_message.add_parameter("service", "snaplock");
         std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(islockready_message);
 
+        // request snapfirewall to send us a FIREWALLUP
+        // or a FIREWALLDOWN message
+        //
+        if(f_firewall_is_active)
+        {
+            snap::snap_communicator_message islockready_message;
+            islockready_message.set_command("FIREWALLSTATUS");
+            islockready_message.set_service("snapfirewall");
+            std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(islockready_message);
+        }
+        else
+        {
+            // this is not automatically true, but we will not have a
+            // way to know here
+            //
+            f_firewall_up = true;
+        }
+
         return;
     }
 
@@ -2107,6 +2130,18 @@ void server::process_message(snap_communicator_message const & message)
             f_snapdbproxy_port = 0;
         }
 
+        return;
+    }
+
+    if(command == "FIREWALLUP")
+    {
+        f_firewall_up = true;
+        return;
+    }
+
+    if(command == "FIREWALLDOWN")
+    {
+        f_firewall_up = false;
         return;
     }
 
@@ -2599,6 +2634,18 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
                       "\n"
                       "<h1>503 Service Unavailable</h1>\n"
                       "<p>Cannot find <strong>Snap! Lock</strong> at the moment.</p>\n");
+        NOTUSED(client->write(err.c_str(), err.size()));
+    }
+    else if(!f_firewall_up)
+    {
+        SNAP_LOG_DEBUG("snapserver contacted before snapfirewall is ready.");
+        std::string const err("Status: 503 Service Unavailable\n"
+                      "Expires: Sun, 19 Nov 1978 05:00:00 GMT\n"
+                      "Content-type: text/html\n"
+                      "Connection: close\n"
+                      "\n"
+                      "<h1>503 Service Unavailable</h1>\n"
+                      "<p>Cannot find <strong>Snap! Firewall</strong> at the moment.</p>\n");
         NOTUSED(client->write(err.c_str(), err.size()));
     }
     else

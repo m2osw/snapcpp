@@ -3,6 +3,7 @@ usr/lib/*
 usr/share/snapwebsites/*
 conf/snapfirewall.conf etc/snapwebsites/
 conf/snapfirewall.properties etc/snapwebsites/logger/
+conf/snapinitfirewall.service lib/systemd/system/
 conf/firewall conf/firewall.conf conf/ip4tables.rules conf/ip6tables.rules etc/network/
 conf/01-iptables.conf etc/rsyslog.d/
 conf/iptables etc/logrotate.d/

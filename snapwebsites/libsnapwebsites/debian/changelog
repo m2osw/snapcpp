@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.37.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.38.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Check whether the firewall is up (if active) before accepting
+    connections.
 
- -- Build Server <build@m2osw.com>  Sun, 30 Oct 2016 02:00:45 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 31 Oct 2016 12:44:45 -0700
 
 libsnapwebsites (1.1.37.0~xenial) xenial; urgency=high
 

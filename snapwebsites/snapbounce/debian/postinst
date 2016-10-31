@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+
+if [ "$1" = "configure" ]
+then
+    SYSLOGDIR=/var/log
+
+    # fail2ban will need the postfix log files to exist otherwise it
+    # generates an error, so we create them here
+    #
+    MAILLOG=${SYSLOGDIR}/mail.log
+    touch ${MAILLOG}
+    chown syslog.adm ${MAILLOG}
+    chmod 640 ${MAILLOG}
+
+    MAILERR=${SYSLOGDIR}/mail.err
+    touch ${MAILERR}
+    chown syslog.adm ${MAILERR}
+    chmod 640 ${MAILERR}
+
+    MAILWARN=${SYSLOGDIR}/mail.warn
+    touch ${MAILWARN}
+    chown syslog.adm ${MAILWARN}
+    chmod 640 ${MAILWARN}
+fi
+
+
+# vim: ts=4 sw=4 et nocindent
