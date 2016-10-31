@@ -91,7 +91,7 @@ EOF
     # also the tripwire bundle may disable postfix so here we make sure
     # it is enabled
     #
-    if systemctl is-active postfix
+    if systemctl -q is-active postfix
     then
       systemctl reload postfix
     else

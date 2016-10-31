@@ -53,7 +53,7 @@
     can at least copy and create some files as required.
   -->
   <postinst>
-    if systemctl is-active openvpn@server
+    if systemctl -q is-active openvpn@server
     then
       systemctl stop openvpn@server
     fi
@@ -106,7 +106,7 @@
     systemctl start openvpn@server
   </postinst>
   <prerm>
-    if systemctl is-active openvpn@server
+    if systemctl -q is-active openvpn@server
     then
       systemctl stop openvpn@server
     fi

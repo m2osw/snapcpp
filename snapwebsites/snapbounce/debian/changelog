@@ -1,8 +1,9 @@
-snapbounce (1.0.6.9~xenial) xenial; urgency=high
+snapbounce (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Added -q to systemctl when using is-active so we avoid output
+    in our scripts.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 30 Oct 2016 23:44:46 -0700
 
 snapbounce (1.0.6.0~xenial) xenial; urgency=high
 

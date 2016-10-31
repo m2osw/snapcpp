@@ -1,8 +1,11 @@
-snapfirewall (1.0.19.8~xenial) xenial; urgency=high
+snapfirewall (1.0.20.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Create the iptables.log file or fail2ban does not want to
+    start that jail.
+  * Do not attempt to reload fail2ban if not yet active when running our
+    snapfirewall.postinst script.
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 30 Oct 2016 23:51:49 -0700
 
 snapfirewall (1.0.19.0~xenial) xenial; urgency=high
 

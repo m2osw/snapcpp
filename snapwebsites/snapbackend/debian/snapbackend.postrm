@@ -21,7 +21,7 @@
 #
 for pkg in snapsendmail snapimages snappagelist
 do
-    if systemctl is-active ${pkg} 2> /dev/null
+    if systemctl -q is-active ${pkg}
     then
         systemctl stop ${pkg}
     fi
