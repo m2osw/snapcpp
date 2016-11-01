@@ -34,7 +34,7 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-project( QtCassandra )
+project( casswrapper )
 
 include_directories(
     ${AS2JS_INCLUDE_DIR}
@@ -42,31 +42,19 @@ include_directories(
 )
 
 configure_file(
-		QtCassandra/QCassandraVersion.h.in
-		${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+		casswrapper/version.h.in
+		${PROJECT_BINARY_DIR}/casswrapper/version.h
 		)
 
 set( HEADER_FILES
-    QtCassandra/QCassandra.h
-    QtCassandra/QCassandraCell.h
-    QtCassandra/QCassandraConsistencyLevel.h
-    QtCassandra/QCassandraContext.h
-    QtCassandra/QCassandraLock.h
-    QtCassandra/QCassandraOrder.h
-    QtCassandra/QCassandraOrderResult.h
-    QtCassandra/QCassandraPredicate.h
-    QtCassandra/QCassandraProxy.h
-    QtCassandra/QCassandraQuery.h
-    QtCassandra/QCassandraRow.h
-    QtCassandra/QCassandraSchema.h
-    QtCassandra/QCassandraSchemaValue.h
-    QtCassandra/QCassandraSession.h
-    QtCassandra/QCassandraTable.h
-    QtCassandra/QCassandraValue.h
-    QtCassandra/QCassandraVersion.h.in
-    QtCassandra/QStringStream.h
-    QtCassandra/QueryModel.h
-    ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+    casswrapper/CassStubs.h
+    casswrapper/QCassandraQuery.h
+    casswrapper/QCassandraSchema.h
+    casswrapper/QCassandraSchemaValue.h
+    casswrapper/QCassandraSession.h
+    casswrapper/version.h.in
+    casswrapper/QueryModel.h
+    ${PROJECT_BINARY_DIR}/casswrapper/version.h
 )
 
 add_library(${PROJECT_NAME} SHARED
@@ -74,48 +62,37 @@ add_library(${PROJECT_NAME} SHARED
     NotUsed.h
     CassWrapperImpl.h
     CassWrapperImpl.cpp
-    QCassandra.cpp
-    QCassandraCell.cpp
-    QCassandraContext.cpp
-    QCassandraLock.cpp
-    QCassandraOrder.cpp
-    QCassandraOrderResult.cpp
-    QCassandraPredicate.cpp
-    QCassandraProxy.cpp
     QCassandraQuery.cpp
-    QCassandraRow.cpp
     QCassandraSchema.cpp
     QCassandraSchemaValue.cpp
     QCassandraSession.cpp
-    QCassandraTable.cpp
-    QCassandraValue.cpp
     QueryModel.cpp
 )
 
-target_link_libraries(QtCassandra
+target_link_libraries(${PROJECT_NAME}
     ${AS2JS_LIBRARIES}
     ${CASSANDRACPPDRIVER_LIBRARIES}
     Qt5::Core
     Qt5::Xml
 )
 
-set_target_properties( QtCassandra PROPERTIES
-    VERSION ${LIBQTCASSANDRA_VERSION_MAJOR}.${LIBQTCASSANDRA_VERSION_MINOR}
-    SOVERSION ${LIBQTCASSANDRA_VERSION_MAJOR}
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+    VERSION ${CASSWRAPPER_VERSION_MAJOR}.${CASSWRAPPER_VERSION_MINOR}
+    SOVERSION ${CASSWRAPPER_VERSION_MAJOR}
 )
 
 install(
-    TARGETS QtCassandra LIBRARY DESTINATION lib
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
 )
 
 install(
 	FILES ${HEADER_FILES}
-	DESTINATION include/QtCassandra
+	DESTINATION include/casswrapper
 )
 
 install(
-	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
-	DESTINATION include/QtCassandra/
+	FILES ${PROJECT_BINARY_DIR}/casswrapper/version.h
+	DESTINATION include/casswrapper/
 )
 
 # vim: ts=4 sw=4 et

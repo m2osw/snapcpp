@@ -35,6 +35,8 @@
  */
 #pragma once
 
+#include "casswrapper/CassStubs.h"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -45,50 +47,12 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-#if 0
-typedef struct CassCluster_      CassCluster;
-typedef struct CassCollection_   CassCollection;
-typedef struct CassColumnMeta_   CassColumnMeta;
-typedef struct CassFuture_       CassFuture;
-typedef struct CassIterator_     CassIterator;
-typedef struct CassKeyspaceMeta_ CassKeyspaceMeta;
-typedef struct CassResult_       CassResult;
-typedef struct CassSchemaMeta_   CassSchemaMeta;
-typedef struct CassSession_      CassSession;
-typedef struct CassSsl_          CassSsl;
-typedef struct CassStatement_    CassStatement;
-typedef struct CassTableMeta_    CassTableMeta;
-typedef struct CassValue_        CassValue;
-#endif
-
-
 namespace QtCassandra
 {
 
 
 namespace CassTools
 {
-    class   cluster;
-    class   collection;
-    class   column_meta;
-    class   future;
-    class   iterator;
-    class   keyspace_meta;
-#if 0
-    typedef std::shared_ptr<CassCluster>            cluster_pointer_t;
-    typedef std::shared_ptr<CassCollection>         collection_pointer_t;
-    typedef std::shared_ptr<const CassColumnMeta>   column_meta_pointer_t;
-    typedef std::shared_ptr<CassFuture>             future_pointer_t;
-    typedef std::shared_ptr<CassIterator>           iterator_pointer_t;
-    typedef std::shared_ptr<const CassKeyspaceMeta> keyspace_meta_pointer_t;
-    typedef std::shared_ptr<const CassResult>       result_pointer_t;
-    typedef std::shared_ptr<const CassSchemaMeta>   schema_meta_pointer_t;
-    typedef std::shared_ptr<const CassTableMeta>    table_meta_pointer_t;
-    typedef std::shared_ptr<CassSession>            session_pointer_t;
-    typedef std::shared_ptr<CassSsl>                ssl_pointer_t;
-    typedef std::shared_ptr<CassStatement>          statement_pointer_t;
-    typedef std::shared_ptr<const CassValue>        value_pointer_t;
-#endif
     typedef int64_t                                 timeout_t;
 
     inline pid_t gettid()

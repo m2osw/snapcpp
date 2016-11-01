@@ -38,10 +38,6 @@
 #include <QString>
 
 
-namespace QtCassandra
-{
-
-
 namespace CassWrapper
 {
     class cluster;
@@ -66,7 +62,5 @@ namespace CassWrapper
     }
 }
 
-
-}
-// namespace QtCassandra
+// namespace CassWrapper
 // vim: ts=4 sw=4 et
