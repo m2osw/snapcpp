@@ -87,8 +87,12 @@ install(
     FILES 
         01-iptables.conf
         apache-auth.local
+        apache-badbots.local
+        apache-fakegooglebot.local
         iptables
         snap-apache-jail.conf
+        snap-apache-proxy-filter.conf
+        snap-apache-timeout-filter.conf
         snap-firewall-action.conf
         snap-iptables-filter.conf
         snap-jail.conf

@@ -1,3 +1,11 @@
+snapfirewall (1.0.23.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added a fix to the failregex of badbots and fakegooglebot.
+  * Added a proxy fail2ban filter to block all such attempts.
+  * Added a timeout fail2ban filter to block slowloris IPs.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 31 Oct 2016 18:37:47 -0700
+
 snapfirewall (1.0.22.0~xenial) xenial; urgency=high
 
   * SNAP-473: Added a script to count the entries in the unwanted chain.

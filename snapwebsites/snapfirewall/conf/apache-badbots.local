@@ -1,0 +1,9 @@
+# Fail2Ban configuration file
+#
+# The RegExp that comes with the fail2ban package expects the "combine"
+# LogFormat and not the "vhost_combine". Also it puts the badbot name
+# between double quotes which is probably not a good idea.
+
+[Definition]
+failregex = ^.+? <HOST> -.*"(?:GET|POST|HEAD).*HTTP.*(?:%(badbots)s|%(badbotscustom)s)
+
