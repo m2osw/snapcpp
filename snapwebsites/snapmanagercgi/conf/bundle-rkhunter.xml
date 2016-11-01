@@ -25,7 +25,7 @@
   <packages>rkhunter</packages>
   <postinst>
     cat &gt;/etc/rkhunter.d/50-snap.conf &lt;&lt;EOF
-# My specific settings for my halk system
+# Specific settings for a Snap! system
 
 # Email a message to this address
 #MAIL-ON-WARNING=$BUNDLE_INSTALLATION_CONTACT_EMAIL
@@ -38,7 +38,7 @@ USE_SYSLOG=authpriv.notice
 # No need for any colors
 AUTO_X_DETECT=0
 
-# TBD: old script white list entries
+# Old scripts white list entries
 #SCRIPTWHITELIST=/usr/bin/groups
 #SCRIPTWHITELIST=/usr/bin/lwp-request
 
@@ -53,6 +53,7 @@ ALLOWHIDDENDIR=/etc/.java
 #ALLOWHIDDENDIR=/dev/.mdadm
 #ALLOWHIDDENDIR=/dev/.blkid.tab
 #ALLOWHIDDENDIR=/dev/.blkid.tab.old
+ALLOWHIDDENDIR=/dev/shm/byobu-*/.last.screen
 
 # Allow various device files
 #ALLOWDEVFILE=/dev/abc
@@ -61,6 +62,7 @@ ALLOWHIDDENDIR=/etc/.java
 #ALLOWDEVFILE=/dev/shm/sem.ADBE_ReadPrefs_*
 #ALLOWDEVFILE=/dev/shm/sem.ADBE_REL_*
 #ALLOWDEVFILE=/dev/shm/sem.ADBE_WritePrefs_*
+ALLOWDEVFILE=/dev/shm/byobu-*/.last.screen/*
 
 # Allow Cassandra which uses port 7000 often detected as a rogue IRC port
 # TODO: add support to turn this on only on Cassandra nodes

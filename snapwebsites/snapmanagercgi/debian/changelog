@@ -1,8 +1,9 @@
-snapmanagercgi (1.2.6.2~xenial) xenial; urgency=high
+snapmanagercgi (1.2.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added entries to accept byobu files to rkhunter exceptions.
+  * Fixed a couple of comments.
 
- -- Build Server <build@m2osw.com>  Mon, 31 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Oct 2016 13:53:47 -0700
 
 snapmanagercgi (1.2.6.0~xenial) xenial; urgency=high
 
