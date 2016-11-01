@@ -67,7 +67,7 @@ ConfigureMakeProject( PROJECT_NAME as2js )
 
 ConfigureMakeProject( PROJECT_NAME csspp )
 
-ConfigureMakeProject( PROJECT_NAME libQtCassandra )
+ConfigureMakeProject( PROJECT_NAME libcasswrapper )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization )
 
