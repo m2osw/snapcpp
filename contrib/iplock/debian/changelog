@@ -1,8 +1,8 @@
-iplock (3.0.7.11~xenial) xenial; urgency=high
+iplock (3.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Test whether fail2ban is active before doing a reload.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 16:16:37 -0700
 
 iplock (3.0.7.0~xenial) xenial; urgency=high
 
