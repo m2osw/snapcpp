@@ -64,6 +64,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt          REQUIRED )
 find_package( Boost              REQUIRED )
+find_package( CassandraCppDriver REQUIRED )
 find_package( CSSPP              REQUIRED )
 find_package( LibTLD             REQUIRED )
 find_package( LibXml2            REQUIRED )
@@ -79,7 +80,6 @@ find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
 find_package( As2Js              REQUIRED )
-find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( ZLIB               REQUIRED )
@@ -87,6 +87,7 @@ find_package( ZipIos             REQUIRED 2.1 )
 find_package( SnapDoxygen )
 
 include_directories( SYSTEM
+    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
     ${Qt5Script_INCLUDE_DIRS}
@@ -130,7 +131,6 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_BINARY_DIR}/src
     ${ADVGETOPT_INCLUDE_DIRS}
-    ${QTCASSANDRA_INCLUDE_DIRS}
     ${QTSERIALIZATION_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
     ${LIBTLD_INCLUDE_DIRS}

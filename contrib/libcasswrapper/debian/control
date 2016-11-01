@@ -1,4 +1,4 @@
-Source: libqtcassandra
+Source: libcasswrapper
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: cassandra-cpp-driver-dev (>= 2.2.2-1),
@@ -20,12 +20,12 @@ Homepage: http://snapwebsites.org/project/libqtcassandra
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libQtCassandra
 
-Package: libqtcassandra-dev
+Package: libcasswrapper-dev
 Section: libdevel
 Architecture: any
-Depends: libqtcassandra (= ${binary:Version}), ${misc:Depends}
+Depends: libcasswrapper (= ${binary:Version}), ${misc:Depends}
 Description: C++ bindings to the Cassandra database server.
- The libQtCassandra library is an advanced C++ library used to access Cassandra
+ The libcasswrapper library is an advanced C++ library used to access Cassandra
  servers in C++.
  Contrary to the basic Cassadra server interface, this C++ library brings you
  separate objects that handle each level of the server data, i.e. the cluster,
@@ -34,12 +34,12 @@ Description: C++ bindings to the Cassandra database server.
  Doxygen documentation of the library including source code and working
  examples.)
 
-Package: libqtcassandra
+Package: libcasswrapper
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: C++ bindings to the Cassandra database server.
- The libQtCassandra library is an advanced C++ library used to access Cassandra
+ The libcasswrapper library is an advanced C++ library used to access Cassandra
  servers in C++.
  Contrary to the basic Cassadra server interface, this C++ library brings you
  separate objects that handle each level of the server data, i.e. the cluster,

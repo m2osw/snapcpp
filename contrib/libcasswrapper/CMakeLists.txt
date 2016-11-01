@@ -35,10 +35,6 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(LIBQTCASSANDRA_VERSION_MAJOR 0)
-set(LIBQTCASSANDRA_VERSION_MINOR 6)
-set(LIBQTCASSANDRA_VERSION_PATCH 0)
-
 cmake_minimum_required(VERSION 2.8)
 project(libQtCassandra)
 
@@ -53,6 +49,8 @@ find_package( SnapCMakeModules   REQUIRED )
 find_package( Qt5Core   	     REQUIRED )
 find_package( Qt5Xml    	     REQUIRED )
 find_package( SnapDoxygen )
+
+SnapGetVersion( LIBCASSWRAPPER ${CMAKE_SOURCE_DIR} )
 
 ## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 ##

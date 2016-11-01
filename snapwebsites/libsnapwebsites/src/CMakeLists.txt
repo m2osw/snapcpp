@@ -58,8 +58,39 @@ include_directories(
 qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
     snap.qrc
 )
+set( QTCASSANDRA_HEADER_FILES
+    QCassandra.h
+    QCassandraCell.h
+    QCassandraConsistencyLevel.h
+    QCassandraContext.h
+    QCassandraLock.h
+    QCassandraOrder.h
+    QCassandraOrderResult.h
+    QCassandraPredicate.h
+    QCassandraProxy.h
+    QCassandraRow.h
+    QCassandraTable.h
+    QCassandraValue.h
+    QCassandraVersion.h.in
+)
+
+set( QTCASSANDRA_SOURCE_FILES
+    QStringStream.h
+    QCassandra.cpp
+    QCassandraCell.cpp
+    QCassandraContext.cpp
+    QCassandraLock.cpp
+    QCassandraOrder.cpp
+    QCassandraOrderResult.cpp
+    QCassandraPredicate.cpp
+    QCassandraProxy.cpp
+    QCassandraRow.cpp
+    QCassandraTable.cpp
+    QCassandraValue.cpp
+)
 
 set( HEADERS
+    ${QTCASSANDRA_HEADER_FILES}
     snapwebsites/addr.h
     snapwebsites/cache_control.h
     snapwebsites/chownnm.h
@@ -129,6 +160,7 @@ set( HEADERS
 
 add_library( ${PROJECT_NAME} SHARED
     ${HEADERS}
+    ${QTCASSANDRA_SOURCE_FILES}
     addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
     cache_control.cpp                           # parse / handle Cache-Control settings
     chownnm.cpp                                 # chown using user and group names instead of uid/gid
@@ -187,7 +219,6 @@ target_link_libraries( ${PROJECT_NAME}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
     ${AS2JS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${MAGIC_LIBRARIES}
     ${LIBPROCPS_LIBRARIES}
@@ -218,5 +249,7 @@ install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites/version.h
     DESTINATION include/snapwebsites
 )
+
+add_subdirectory( QtCassandra )
 
 # vim: ts=4 sw=4 et nocindent

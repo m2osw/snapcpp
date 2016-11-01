@@ -1,9 +1,9 @@
 /*
  * Header:
- *      QCassandraVersion.h
+ *      version.h
  *
  * Description:
- *      Stores the current version. This file is generated from QCassandraVersion.h.in.
+ *      Stores the current version. This file is generated from version.h.in.
  *
  * Documentation:
  *      See the corresponding .cpp file.
@@ -35,12 +35,12 @@
  */
 #pragma once
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
-static const int   QT_CASSANDRA_LIBRARY_VERSION_MAJOR  = @LIBQTCASSANDRA_VERSION_MAJOR@;
-static const int   QT_CASSANDRA_LIBRARY_VERSION_MINOR  = @LIBQTCASSANDRA_VERSION_MINOR@;
-static const int   QT_CASSANDRA_LIBRARY_VERSION_PATCH  = @LIBQTCASSANDRA_VERSION_PATCH@;
+static const int   CASSWRAPPER_LIBRARY_VERSION_MAJOR  = @LIBCASSWRAPPER_VERSION_MAJOR@;
+static const int   CASSWRAPPER_LIBRARY_VERSION_MINOR  = @LIBCASSWRAPPER_VERSION_MINOR@;
+static const int   CASSWRAPPER_LIBRARY_VERSION_PATCH  = @LIBCASSWRAPPER_VERSION_PATCH@;
 
 /** \brief The library version as a string.
  *
@@ -55,7 +55,7 @@ static const int   QT_CASSANDRA_LIBRARY_VERSION_PATCH  = @LIBQTCASSANDRA_VERSION
  *
  * \sa version()
  */
-static const char *QT_CASSANDRA_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBQTCASSANDRA_VERSION_MAJOR@.@LIBQTCASSANDRA_VERSION_MINOR@.@LIBQTCASSANDRA_VERSION_PATCH@";
+static const char *QT_CASSANDRA_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBCASSWRAPPER_VERSION_MAJOR@.@LIBCASSWRAPPER_VERSION_MINOR@.@LIBCASSWRAPPER_VERSION_PATCH@";
 
 } // namespace QtCassandra
 

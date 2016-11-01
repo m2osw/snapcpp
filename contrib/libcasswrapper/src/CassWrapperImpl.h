@@ -37,6 +37,7 @@
 #pragma once
 
 #include "cassandra.h"
+#include "casswrapper/CassStubs.h"
 
 #include <QString>
 
@@ -45,12 +46,6 @@ namespace QtCassandra
 
 namespace CassWrapper
 {
-
-
-class iterator;
-class keyspace;
-class result;
-class schema_meta;
 
 
 class collection
