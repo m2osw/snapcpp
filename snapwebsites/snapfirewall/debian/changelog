@@ -1,3 +1,9 @@
+snapfirewall (1.0.25.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Adding the badrequest jail to the configuration.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 16:39:37 -0700
+
 snapfirewall (1.0.24.0~xenial) xenial; urgency=high
 
   * SNAP-465: Fixed the names to use 'apache' everywhere, instead of apache2.
