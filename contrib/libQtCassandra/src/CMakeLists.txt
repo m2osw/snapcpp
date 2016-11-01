@@ -72,8 +72,8 @@ set( HEADER_FILES
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
     NotUsed.h
-    CassTools.h
-    CassTools.cpp
+    CassWrapperImpl.h
+    CassWrapperImpl.cpp
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraContext.cpp

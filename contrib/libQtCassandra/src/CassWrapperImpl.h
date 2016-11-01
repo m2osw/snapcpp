@@ -1,6 +1,6 @@
 /*
  * Text:
- *      CassTools.h
+ *      CassWrapper.h
  *
  * Description:
  *      Handling of the CQL interface.
@@ -43,7 +43,7 @@
 namespace QtCassandra
 {
 
-namespace CassTools
+namespace CassWrapper
 {
 
 
@@ -236,7 +236,7 @@ private:
 
 
 }
-// namespace CassTools
+// namespace CassWrapper
 
 }
 //namespace QtCassandra

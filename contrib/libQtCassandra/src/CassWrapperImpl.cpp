@@ -1,6 +1,6 @@
 /*
  * Text:
- *      CassTools.cpp
+ *      CassWrapper.cpp
  *
  * Description:
  *      Handling of the CQL interface.
@@ -34,12 +34,12 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "CassTools.h"
+#include "CassWrapper.h"
 
 namespace QtCassandra
 {
 
-namespace CassTools
+namespace CassWrapper
 {
 
 
@@ -137,7 +137,7 @@ void statementDeleter::operator()(CassStatement* p) const
 }
 
 }
-// namespace CassTools
+// namespace CassWrapper
 
 }
 //namespace QtCassandra
