@@ -1,0 +1,39 @@
+#!/bin/sh -e
+#
+# This script counts the number of entries in the unwanted chain of iptables
+
+CHAIN=unwanted
+
+if test -n "$1"
+then
+    CHAIN="$1"
+fi
+
+# First we could the number of entries
+#
+# We ignore the first two lines which are headers.
+#
+COUNT=`iptables -nvx -L "$CHAIN" | sed -e '1,2 d' | wc -l`
+
+# Then we sum column 1, which represents the total number of hits since the
+# block of those IPs occurred
+#
+HITS=`sudo iptables -nvx -L "$CHAIN" | sed -e '1,2 d' -e 's/^\s*\([0-9]\+\)\s.*$/\1/' | awk '{s+=$1} END {print s}'`
+
+# Then we sum column 2, which represents the total number of bytes received
+# since the block of those IPs occurred
+#
+BYTES=`sudo iptables -nvx -L "$CHAIN" | sed -e '1,2 d' -e 's/^\s*[0-9]\+\s*\([0-9]\+\)\s.*$/\1/' | awk '{s+=$1} END {print s}'`
+
+# Compute the average number of bytes per hit
+#
+AVERAGE=`echo "scale = 3\n$BYTES / $HITS" | bc`
+
+# Display the results
+#
+printf "IP addresses: .... %11d\n" $COUNT
+printf "Hits: ............ %11d\n" $HITS
+printf "Bytes: ........... %11d\n" $BYTES
+printf "Bytes per hit: ... %15.3f\n" $AVERAGE
+
+# vim: ts=4 sw=4 et

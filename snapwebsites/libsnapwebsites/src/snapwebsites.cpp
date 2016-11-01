@@ -2068,28 +2068,32 @@ void server::process_message(snap_communicator_message const & message)
         // Cassandra, after that one call, we will receive the
         // statuses just because we understand them.
         //
-        snap::snap_communicator_message isdbready_message;
-        isdbready_message.set_command("CASSANDRASTATUS");
-        isdbready_message.set_service("snapdbproxy");
-        std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(isdbready_message);
+        {
+            snap::snap_communicator_message isdbready_message;
+            isdbready_message.set_command("CASSANDRASTATUS");
+            isdbready_message.set_service("snapdbproxy");
+            std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(isdbready_message);
+        }
 
         // request snapcommunicator to send us a STATUS message
         // about the current status of the snaplock service
         //
-        snap::snap_communicator_message islockready_message;
-        islockready_message.set_command("SERVICESTATUS");
-        islockready_message.add_parameter("service", "snaplock");
-        std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(islockready_message);
+        {
+            snap::snap_communicator_message islockready_message;
+            islockready_message.set_command("SERVICESTATUS");
+            islockready_message.add_parameter("service", "snaplock");
+            std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(islockready_message);
+        }
 
         // request snapfirewall to send us a FIREWALLUP
         // or a FIREWALLDOWN message
         //
         if(f_firewall_is_active)
         {
-            snap::snap_communicator_message islockready_message;
-            islockready_message.set_command("FIREWALLSTATUS");
-            islockready_message.set_service("snapfirewall");
-            std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(islockready_message);
+            snap::snap_communicator_message isfirewallready_message;
+            isfirewallready_message.set_command("FIREWALLSTATUS");
+            isfirewallready_message.set_service("snapfirewall");
+            std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(isfirewallready_message);
         }
         else
         {
