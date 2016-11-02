@@ -1,3 +1,10 @@
+snapfirewall (1.0.30.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Changed the proxy filter, it matches whatever the method.
+  * Fixed the timeout datepattern and added \d+ at the end to check the size.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:25:37 -0700
+
 snapfirewall (1.0.29.0~xenial) xenial; urgency=high
 
   * SNAP-465: Renamed the 3 apache filters where we redefined the failregex.
