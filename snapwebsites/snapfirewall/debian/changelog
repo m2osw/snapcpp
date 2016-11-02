@@ -1,4 +1,12 @@
-snapfirewall (1.0.30.1~xenial) xenial; urgency=high
+snapfirewall (1.0.31.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Enhanced the order in which things are done in our firewall.
+  * Removed one rule that is not necessary.
+  * Added a rule to accept tcp RST requests as they ought to be.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  2 Oct 2016 15:12:46 -0700
+
+snapfirewall (1.0.30.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added '\d+' to the failregex of the badrequest.
   * Added a new 'unwanted' apache jail for valid requests we do not want.

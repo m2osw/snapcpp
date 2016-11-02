@@ -25,8 +25,9 @@
 #########
 # INPUT #
 #########
+
+# prevent unauthorized local traffic
 -A INPUT -j bad_tcp_packets
--A INPUT -j unwanted
 
 # local network
 -A INPUT -i lo -s 127.0.0.1 -j ACCEPT
@@ -40,7 +41,14 @@
 # Accept all existing connections
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PUBLIC_IP@ -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_IP@ -j ACCEPT
--A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+#-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+
+# prevent banned traffic
+-A INPUT -j unwanted
+
+# Accept RESET commands to avoid some timeout on the client side
+# (to make things faster)
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL RST -d @PUBLIC_IP@ -j ACCEPT
 
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
