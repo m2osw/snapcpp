@@ -93,6 +93,7 @@ install(
         snap-apache-jail.conf
         snap-apache-proxy-filter.conf
         snap-apache-timeout-filter.conf
+        snap-apache-unwanted-filter.conf
         snap-firewall-action.conf
         snap-iptables-filter.conf
         snap-jail.conf

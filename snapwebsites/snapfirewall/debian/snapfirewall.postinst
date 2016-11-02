@@ -58,6 +58,11 @@ then
     # configuration file with the variables is not yet setup properly.
     #
     systemctl -q enable snapinitfirewall
+
+    # in case the firewall was modified, we want to update it
+    # (i.e. updates in ip4tables.rules / ip6tables.rules and similar)
+    #
+    /etc/network/firewall
 fi
 
 
