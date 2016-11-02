@@ -1,3 +1,10 @@
+snapfirewall (1.0.28.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Fixed the failregex of the 3 new filters.
+  * Removed the common.conf and fixed the date pattern.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:25:37 -0700
+
 snapfirewall (1.0.27.0~xenial) xenial; urgency=high
 
   * SNAP-465: Correctly spelled Restart.
