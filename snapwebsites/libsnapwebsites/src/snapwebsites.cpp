@@ -1742,7 +1742,7 @@ void server::udp_rusage(QString const & process_name)
  *
  * \li "5min" -- this is mainly for test purposes, blocks the IP for 5 minutes.
  * \li "hour" -- block the IP address for one hour.
- * \li "day" -- block the IP address for 24h.
+ * \li "day" -- block the IP address for 24h. (default)
  * \li "week" -- block the IP address for 7 days.
  * \li "month" -- block the IP address for 31 days.
  * \li "year" -- block the IP address for 366 days.
@@ -1774,6 +1774,7 @@ void server::block_ip( QString const & uri, QString const & period )
     {
         message.add_parameter("period", period);
     }
+    //else -- snapfirewall will use "day" by default
 
     // send the message using a UDP signal
     //

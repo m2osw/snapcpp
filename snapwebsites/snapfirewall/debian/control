@@ -28,7 +28,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapfirewall
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, snapdbproxy, iplock
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapdbproxy, iplock, bc
 Recommends: fail2ban
 Suggests: snapserver, snapbackend, snapfirewall-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.

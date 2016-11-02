@@ -428,15 +428,24 @@ void messenger::process_connected()
 snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const & message)
 {
     // retrieve scheme and IP
-    if(!message.has_parameter("uri")
-    || !message.has_parameter("period"))
+    if(!message.has_parameter("uri"))
     {
         // TODO: create a snap_exception instead
         throw std::runtime_error("a BLOCK message \"uri\" and \"period\" parameters are mandatory.");
     }
 
     set_uri(message.get_parameter("uri"));
-    set_block_limit(message.get_parameter("period"));
+
+    if(!message.has_parameter("period"))
+    {
+        // if period was not specified, block for a day
+        //
+        set_block_limit("day");
+    }
+    else
+    {
+        set_block_limit(message.get_parameter("period"));
+    }
 }
 
 

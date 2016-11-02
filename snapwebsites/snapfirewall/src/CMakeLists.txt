@@ -65,6 +65,7 @@ install(
 
 install(
     PROGRAMS
+        count-unwanted
         showfw
 
     DESTINATION

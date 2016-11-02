@@ -1,8 +1,10 @@
-snapcgi (1.1.2.4~xenial) xenial; urgency=high
+snapcgi (1.1.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Fixed the test to block proxy attempts received by snap.cgi.
+  * Changed the block to 1 year on a proxy attempt.
+  * Added a test, if snap.cgi receives /xmlrpc.php, block immediately.
 
- -- Build Server <build@m2osw.com>  Sun, 30 Oct 2016 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  2 Oct 2016 10:35:46 -0700
 
 snapcgi (1.1.2.0~xenial) xenial; urgency=high
 
