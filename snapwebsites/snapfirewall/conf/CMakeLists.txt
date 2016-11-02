@@ -86,10 +86,10 @@ install(
 install(
     FILES 
         01-iptables.conf
-        apache-auth.local
-        apache-badbots.local
-        apache-fakegooglebot.local
         iptables
+        snap-apache-auth-filter.conf
+        snap-apache-badbots-filter.conf
+        snap-apache-fakegooglebot-filter.conf
         snap-apache-jail.conf
         snap-apache-proxy-filter.conf
         snap-apache-timeout-filter.conf
