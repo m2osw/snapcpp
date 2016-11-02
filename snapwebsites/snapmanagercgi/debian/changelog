@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.8.0~xenial) xenial; urgency=high
+
+  * SNAP-110: rkhunter does not create the /etc/rkhunter.d folder.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Oct 2016 22:21:47 -0700
+
 snapmanagercgi (1.2.7.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added entries to accept byobu files to rkhunter exceptions.

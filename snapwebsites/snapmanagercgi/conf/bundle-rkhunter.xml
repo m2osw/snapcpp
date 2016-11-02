@@ -24,6 +24,10 @@
   </fields>
   <packages>rkhunter</packages>
   <postinst>
+    # rkhunter knows about /etc/rkhunter.d but it does not create it!?
+    mkdir /etc/rkhunter.d
+
+    # change the setup for snap purposes
     cat &gt;/etc/rkhunter.d/50-snap.conf &lt;&lt;EOF
 # Specific settings for a Snap! system
 
