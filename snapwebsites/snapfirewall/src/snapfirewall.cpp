@@ -185,8 +185,17 @@ private:
     public:
         typedef std::vector<block_info_t>   block_info_vector_t;
 
+        enum class status_t
+        {
+            BLOCK_INFO_UNDEFINED,       // never banned before
+            BLOCK_INFO_BANNED,
+            BLOCK_INFO_UNBANNED         // has been banned before
+        };
+
                             block_info_t(QString const & uri);
-                            block_info_t(snap::snap_communicator_message const & message);
+                            block_info_t(snap::snap_communicator_message const & message, status_t status = status_t::BLOCK_INFO_BANNED);
+
+        bool                is_valid() const;
 
         void                save(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name);
 
@@ -194,12 +203,22 @@ private:
         void                set_scheme(QString scheme);
         void                set_ip(QString const & scheme);
         void                set_block_limit(QString const & period);
+        void                keep_longest(block_info_t const & block);
+
+        void                set_ban_count(int64_t count);
+        int64_t             get_ban_count() const;
+        int64_t             get_total_ban_count(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name) const;
+        void                set_packet_count(int64_t count);
+        int64_t             get_packet_count() const;
+        void                set_byte_count(int64_t count);
+        int64_t             get_byte_count() const;
 
         QString             canonicalized_uri() const;
         //QString             get_scheme() const;
         //QString             get_ip() const;
         int64_t             get_block_limit() const;
 
+        bool                operator == (block_info_t const & rhs) const;
         bool                operator < (block_info_t const & rhs) const;
 
         bool                iplock_block();
@@ -208,9 +227,14 @@ private:
     private:
         bool                iplock(QString const & cmd);
 
+        status_t            f_status = status_t::BLOCK_INFO_BANNED;
         QString             f_scheme;
         QString             f_ip;
+        QString             f_reason;
         int64_t             f_block_limit = 0LL;
+        int64_t             f_ban_count = 0LL;
+        int64_t             f_packet_count = 0LL;
+        int64_t             f_byte_count = 0LL;
     };
 
                                 snap_firewall( snap_firewall const & ) = delete;
@@ -220,6 +244,7 @@ private:
     void                        setup_firewall();
     void                        next_wakeup();
     void                        block_ip(snap::snap_communicator_message const & message);
+    void                        unblock_ip(snap::snap_communicator_message const & message);
 
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
@@ -425,12 +450,14 @@ void messenger::process_connected()
 
 
 
-snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const & message)
+snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const & message, status_t status)
 {
     // retrieve scheme and IP
+    //
     if(!message.has_parameter("uri"))
     {
         // TODO: create a snap_exception instead
+        //
         throw std::runtime_error("a BLOCK message \"uri\" and \"period\" parameters are mandatory.");
     }
 
@@ -446,6 +473,13 @@ snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const 
     {
         set_block_limit(message.get_parameter("period"));
     }
+
+    if(message.has_parameter("reason"))
+    {
+        f_reason = message.get_parameter("reason");
+    }
+
+    f_status = status;
 }
 
 
@@ -453,15 +487,136 @@ snap_firewall::block_info_t::block_info_t(QString const & uri)
 {
     set_uri(uri);
     set_block_limit(QString());
+
+    // TBD: call load() but then we need a pointer to server_name
+    //      and the snapfirewall_table
+}
+
+
+/** \brief Check whether this block info is considered valid.
+ *
+ * A block info may be setup to an invalid IP address or some other
+ * invalid parameter. In that case we may end up with an invalid
+ * \p block_info_t object. For example, a local IP address is never
+ * blocked by snapfirewall since the default set of rules already
+ * blocks all local network IP addresses.
+ *
+ * This function returns true if the object is considered valid and
+ * can be used for a block and saved in the database.
+ *
+ * \return true if valid.
+ *
+ * \sa set_uri()
+ */
+bool snap_firewall::block_info_t::is_valid() const
+{
+    return !f_ip.isEmpty();
 }
 
 
 void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name)
 {
-    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(server_name));
-    QByteArray key;
-    QtCassandra::setInt64Value(key, f_block_limit);
-    row->cell(key)->setValue(canonicalized_uri());
+    if(!is_valid())
+    {
+        return;
+    }
+
+    // this is probably wrong, we may not want to save anything
+    // if still undefined
+    //
+    if(f_status == status_t::BLOCK_INFO_UNDEFINED)
+    {
+        f_status = status_t::BLOCK_INFO_BANNED;
+    }
+
+    // here we create a row if the item is banned
+    // and we drop the row if the item got unbanned
+    //
+    // TODO: we need to handle the case where the item get re-banned before
+    //       it gets unbanned; we need to delete the old one
+    //
+    {
+        QtCassandra::QCassandraRow::pointer_t ban_row(firewall_table->row(server_name));
+        QByteArray key;
+        QtCassandra::setInt64Value(key, f_block_limit);
+        if(f_status == status_t::BLOCK_INFO_BANNED)
+        {
+            ban_row->cell(key)->setValue(canonicalized_uri());
+        }
+        else
+        {
+            ban_row->dropCell(key);
+        }
+    }
+
+    {
+        QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+        row->cell(QString("%1::block_limit").arg(server_name))->setValue(f_block_limit);
+        row->cell(QString("%1::status").arg(server_name))->setValue(QString(f_status == status_t::BLOCK_INFO_BANNED ? "banned" : "unbanned"));
+
+        if(!f_reason.isEmpty())
+        {
+            QString const reason_key(QString("%1::reason").arg(server_name));
+            if(row->exists(reason_key))
+            {
+                QString const old_reasons(row->cell(reason_key)->value().stringValue());
+                if(old_reasons.indexOf(f_reason) == -1)
+                {
+                    // separate reasons with a "\n"
+                    row->cell(reason_key)->setValue(old_reasons + "\n" + f_reason);
+                }
+                else
+                {
+                    row->cell(reason_key)->setValue(f_reason);
+                }
+            }
+            else
+            {
+                row->cell(reason_key)->setValue(f_reason);
+            }
+        }
+
+        // TODO: what we really want here are statistics such as # of packets
+        //       per hour, etc. so we know whether we should extend the ban
+        //       or remove it, dynamically. Also this will be part of the
+        //       history of this IP address with our services.
+        //
+        // No lock is required to increase that counter because the counter
+        // is specific to this computer and only one instance of snapfirewall
+        // runs on one computer
+        //
+        if(f_ban_count > 0)
+        {
+            QString const ban_count_key(QString("%1::ban_count").arg(server_name));
+            // add the existing value first
+            //
+            f_ban_count += row->cell(ban_count_key)->value().safeInt64Value();
+            row->cell(ban_count_key)->setValue(f_ban_count);
+
+            // since this counter is cumulative, we have to reset it to zero
+            // each time otherwise we would double it each time we save
+            //
+            f_ban_count = 0;
+        }
+        if(f_packet_count > 0)
+        {
+            row->cell(QString("%1::packet_count").arg(server_name))->setValue(f_packet_count);
+        }
+        if(f_byte_count > 0)
+        {
+            row->cell(QString("%1::byte_count").arg(server_name))->setValue(f_byte_count);
+        }
+
+        // save when it was created / modified
+        //
+        int64_t const now(snap::snap_communicator::get_current_date());
+        QString const created_key(QString("%1::created").arg(server_name));
+        if(!row->exists(created_key))
+        {
+            row->cell(created_key)->setValue(now);
+        }
+        row->cell(QString("%1::modified").arg(server_name))->setValue(now);
+    }
 }
 
 
@@ -680,6 +835,105 @@ void snap_firewall::block_info_t::set_block_limit(QString const & period)
 }
 
 
+/** \brief Received the another ban on the same IP, so extend the duration.
+ *
+ * This should not happen since a first ban should prevent further access
+ * from that one user and thus further sight of the IP.
+ *
+ * Yet it can happen if the scheme does not block all the ports and the
+ * new scheme is "all". Note that the 'this' object will have its scheme
+ * set to "all" if the scheme of \p block is "all".
+ *
+ * As a side effect, this function adds all the counters from \p block
+ * to 'this' counters.
+ *
+ * \param[in] block  The block being checked against 'this' block.
+ */
+void snap_firewall::block_info_t::keep_longest(block_info_t const & block)
+{
+    if(block.f_scheme == "all"
+    && f_scheme != "all")
+    {
+        // for obvious security reasons, we first block with the "all"
+        // scheme then unblock with the specific scheme used by that
+        // entry before the change
+        //
+        QString const old_scheme(f_scheme);
+        f_scheme = "all";
+        iplock_block();
+        f_scheme = old_scheme;
+        iplock_unblock();
+        f_scheme = "all";
+    }
+
+    if(f_block_limit < block.f_block_limit)
+    {
+        f_block_limit = block.f_block_limit;
+    }
+
+    f_ban_count += block.f_ban_count;
+    f_packet_count += block.f_packet_count;
+    f_byte_count += block.f_byte_count;
+}
+
+
+void snap_firewall::block_info_t::set_ban_count(int64_t count)
+{
+    f_ban_count = count;
+}
+
+
+int64_t snap_firewall::block_info_t::get_ban_count() const
+{
+    return f_ban_count;
+}
+
+
+/** \brief Get the total number of bans that this IP received.
+ *
+ * \note
+ * This is mainly for documentation at this point as we are more likely
+ * to get the counter directly from the database without the pending
+ * value that may be in the running snapfirewalls. also the grand
+ * total would include all the computers and not just the one running.
+ */
+int64_t snap_firewall::block_info_t::get_total_ban_count(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name) const
+{
+    // the total number of bans is the current counter plus the saved
+    // counter so we have to retrieve the saved counter first
+    //
+    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    QString const ban_count_key(QString("%1::ban_count").arg(server_name));
+    int64_t const saved_ban_count(row->cell(ban_count_key)->value().safeInt64Value());
+
+    return f_ban_count + saved_ban_count;
+}
+
+
+void snap_firewall::block_info_t::set_packet_count(int64_t count)
+{
+    f_packet_count = count;
+}
+
+
+int64_t snap_firewall::block_info_t::get_packet_count() const
+{
+    return f_packet_count;
+}
+
+
+void snap_firewall::block_info_t::set_byte_count(int64_t count)
+{
+    f_byte_count = count;
+}
+
+
+int64_t snap_firewall::block_info_t::get_byte_count() const
+{
+    return f_byte_count;
+}
+
+
 QString snap_firewall::block_info_t::canonicalized_uri() const
 {
     // if no IP defined, return an empty string
@@ -721,6 +975,29 @@ int64_t snap_firewall::block_info_t::get_block_limit() const
 }
 
 
+/** \brief Check whether two block_info_t objects are considered equal.
+ *
+ * Note that the test compares the scheme and the ip. If either one of
+ * the block_info_t objects has as the scheme "all", then it automatically
+ * matches the other scheme.
+ *
+ * \param[in] rhs  The right hand side object to test.
+ *
+ * \return true if both info objects are considered equal.
+ */
+bool snap_firewall::block_info_t::operator == (block_info_t const & rhs) const
+{
+    if(f_scheme == "all"
+    || rhs.f_scheme == "all")
+    {
+        return f_ip == rhs.f_ip;
+    }
+
+    return f_scheme == rhs.f_scheme
+        && f_ip == rhs.f_ip;
+}
+
+
 bool snap_firewall::block_info_t::operator < (block_info_t const & rhs) const
 {
     return f_block_limit < rhs.f_block_limit;
@@ -729,18 +1006,26 @@ bool snap_firewall::block_info_t::operator < (block_info_t const & rhs) const
 
 bool snap_firewall::block_info_t::iplock_block()
 {
+    f_status = status_t::BLOCK_INFO_BANNED;
     return iplock("--block");
 }
 
 
 bool snap_firewall::block_info_t::iplock_unblock()
 {
+    f_status = status_t::BLOCK_INFO_UNBANNED;
     return iplock("--unblock");
 }
 
 
 bool snap_firewall::block_info_t::iplock(QString const & cmd)
 {
+    if(!is_valid())
+    {
+        // the IP or period are missing
+        return false;
+    }
+
     QString command("iplock ");
 
     snap::process iplock_process("block/unblock an IP address");
@@ -757,7 +1042,7 @@ bool snap_firewall::block_info_t::iplock(QString const & cmd)
     {
         iplock_process.add_argument("--scheme");
         iplock_process.add_argument(f_scheme);
-    
+
         command += " --scheme ";
         command += f_scheme;
     }
@@ -1067,7 +1352,7 @@ void snap_firewall::setup_firewall()
     }
 
     int64_t const now(snap::snap_communicator::get_current_date());
-    int64_t const limit(now + 60LL * 1000000LL);
+    int64_t const limit(now + 60LL * 1000000LL); // "lose" 1 min. precision
 
     QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
     row->clearCache();
@@ -1113,13 +1398,13 @@ void snap_firewall::setup_firewall()
                 int64_t const drop_date(QtCassandra::safeInt64Value(key, 0, -1));
                 if(drop_date < limit)
                 {
-                    // unblock the IP
+                    // unblock the IP, just in case
                     //
                     info.iplock_unblock();
 
-                    // drop that row, it is too old
+                    // save with the new status of UNBANNED
                     //
-                    row->dropCell(key);
+                    info.save(f_firewall_table, f_server_name);
                 }
                 else
                 {
@@ -1141,6 +1426,8 @@ void snap_firewall::setup_firewall()
                     // block the IP
                     //
                     info.iplock_block();
+
+                    // no save necessary, it is already as it needs to be
                 }
             }
             catch(std::exception const & e)
@@ -1155,21 +1442,18 @@ void snap_firewall::setup_firewall()
             , f_blocks.end()
             , [&, limit](block_info_t & info)
             {
-                if(limit < info.get_block_limit())
+                if(limit >= info.get_block_limit())
                 {
-                    // this one did not yet time out, but it's already in
-                    // the firewall so no need to call iplock(), however
-                    // we want to save the info to the database
-                    //
-                    info.save(f_firewall_table, f_server_name);
-                }
-                else
-                {
-                    // this one already timed out, unblock from the
-                    // firewall and ignore
+                    // passed the limit already so we can unblock now
                     //
                     info.iplock_unblock();
                 }
+                //else -- it is already blocked, so no need for more here
+
+                // always save the IP so we know that such and such was
+                // banned before (i.e. recidivists can be counted now)
+                //
+                info.save(f_firewall_table, f_server_name);
             }
         );
     f_blocks.clear();
@@ -1224,13 +1508,17 @@ void snap_firewall::process_timeout()
                     if(now > info.get_block_limit())
                     {
                         // this one timed out, remove from the
-                        // firewall
+                        // firewall and the f_blocks vector
+                        // (so in effect we "lose" that IP information
+                        // but we do not want to use too much RAM either;
+                        // in a properly setup system it should be really
+                        // rare)
                         //
                         info.iplock_unblock();
-                
+
                         return true;
                     }
-                
+
                     return false;
                 }
             )
@@ -1239,68 +1527,70 @@ void snap_firewall::process_timeout()
 
     // make sure we are connected to cassandra
     //
-    if(!f_firewall_table)
+    if(f_firewall_table)
     {
-        return;
-    }
-
-    // we are interested only by the columns that concern us, which
-    // means columns that have a name starting with the server name
-    // as defined in the snapserver.conf file
-    //
-    //      <server-name> '/' <date with leading zeroes in minutes (10 digits)>
-    //
-
-    QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
-    row->clearCache();
-
-    // unblock IP addresses which have a timeout in the past
-    //
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
-    QByteArray limit;
-    QtCassandra::setInt64Value(limit, 0);  // whatever the first column is
-    column_predicate->setStartCellKey(limit);
-    QtCassandra::setInt64Value(limit, now + 60LL * 1000000LL);  // until now within 1 minute
-    column_predicate->setEndCellKey(limit);
-    column_predicate->setCount(100);
-    column_predicate->setIndex(); // behave like an index
-    for(;;)
-    {
-        row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const cells(row->cells());
-        if(cells.isEmpty())
-        {
-            // it looks like we are done
-            break;
-        }
-
-        // any entries we grab here, we drop right now
+        // we are interested only by the columns that concern us, which
+        // means columns that have a name starting with the server name
+        // as defined in the snapserver.conf file
         //
-        for(QtCassandra::QCassandraCells::const_iterator it(cells.begin());
-                                                         it != cells.end();
-                                                         ++it)
+        //      <server-name> '/' <date with leading zeroes in minutes (10 digits)>
+        //
+
+        QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+        row->clearCache();
+
+        // unblock IP addresses which have a timeout in the past
+        //
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        QByteArray limit;
+        QtCassandra::setInt64Value(limit, 0);  // whatever the first column is
+        column_predicate->setStartCellKey(limit);
+        QtCassandra::setInt64Value(limit, now + 60LL * 1000000LL);  // until now within 1 minute
+        column_predicate->setEndCellKey(limit);
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
+        for(;;)
         {
-            QtCassandra::QCassandraCell::pointer_t cell(*it);
-
-            // first we want to unblock that IP address
-            //
-            QString const uri(cell->value().stringValue());
-
-            try
+            row->readCells(column_predicate);
+            QtCassandra::QCassandraCells const cells(row->cells());
+            if(cells.isEmpty())
             {
-                // remove the block, it timed out
-                //
-                block_info_t info(uri);
-                info.iplock_unblock();
-
-                // now drop that row
-                //
-                QByteArray const key(cell->columnKey());
-                row->dropCell(key);
+                // it looks like we are done
+                break;
             }
-            catch(std::exception const & e)
+
+            // any entries we grab here, we drop right now
+            //
+            for(QtCassandra::QCassandraCells::const_iterator it(cells.begin());
+                                                             it != cells.end();
+                                                             ++it)
             {
-                SNAP_LOG_ERROR("an exception occurred while checking IPs in the process_timeout() function: ")(e.what());
+                QtCassandra::QCassandraCell::pointer_t cell(*it);
+
+                // first we want to unblock that IP address
+                //
+                QString const uri(cell->value().stringValue());
+
+                try
+                {
+                    // remove the block, it timed out
+                    //
+                    block_info_t info(uri);
+                    info.iplock_unblock();
+
+                    // save the entry with the new status
+                    //
+                    info.save(f_firewall_table, f_server_name);
+
+                    // now drop that row (the save() does that)
+                    //
+                    //QByteArray const key(cell->columnKey());
+                    //row->dropCell(key);
+                }
+                catch(std::exception const & e)
+                {
+                    SNAP_LOG_ERROR("an exception occurred while checking IPs in the process_timeout() function: ")(e.what());
+                }
             }
         }
     }
@@ -1392,6 +1682,14 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         // BLOCK an ip address
         //
         block_ip(message);
+        return;
+    }
+
+    if(command == "UNBLOCK")
+    {
+        // UNBLOCK an ip address
+        //
+        unblock_ip(message);
         return;
     }
 
@@ -1610,6 +1908,91 @@ void snap_firewall::block_ip(snap::snap_communicator_message const & message)
         // if no "://" appears, then only an IP is expected
         //
         block_info_t info(message);
+        info.set_ban_count( /*info.get_ban_count() +*/ 1); // newly created ban count is always 0, so just set to 1
+
+        // save in our list of blocked IP addresses
+        //
+        if(f_firewall_table)
+        {
+            // actually add to the firewall
+            //
+            info.iplock_block();
+
+            info.save(f_firewall_table, f_server_name);
+        }
+        else
+        {
+            // cache in memory for later, once we connect to Cassandra,
+            // we will save those in cassandra
+            //
+            // TODO: I do not, right now, think that we could have such an
+            //       attack that memory would be a problem because some of
+            //       the largest DDoS only make use of 10 to 20,000 IPs
+            //       Even a 50,000 IPs attack is just not quite likely
+            //       before you connect to the databse unless somehow
+            //       snapfirewall never gets a connection...
+            //
+            auto const & it(std::find(
+                      f_blocks.begin()
+                    , f_blocks.end()
+                    , info));
+            if(it == f_blocks.end())
+            {
+                // block the IP now
+                //
+                info.iplock_block();
+
+                // this is a new block, keep it as is
+                //
+                f_blocks.push_back(info);
+            }
+            else
+            {
+                // there is a matching old block, keep the new info in
+                // the old block but update as required
+                //
+                it->keep_longest(info);
+
+                // no need to block the IP, it already is
+                //
+                // (Note: it may have changed from some scheme to "all"
+                //        inside the keep_longest() function...)
+            }
+
+            // keep them sorted, as in the Cassandra database
+            //
+            // even if we do not push a new entry, the keep_longest()
+            // may end up changing the order of the existing items...
+            //
+            std::sort(f_blocks.begin(), f_blocks.end());
+        }
+
+        next_wakeup();
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the block_ip() function: ")(e.what());
+    }
+}
+
+
+void snap_firewall::unblock_ip(snap::snap_communicator_message const & message)
+{
+    // message data could be tainted, we need to protect ourselves against
+    // unwanted exceptions
+    //
+    try
+    {
+        // check the "uri" and "period" parameters
+        //
+        // the URI may include a protocol and an IP separated by "://"
+        // if no "://" appears, then only an IP is expected
+        //
+        block_info_t info(message);
+
+        // remove from the firewall
+        //
+        info.iplock_unblock();
 
         // save in our list of blocked IP addresses
         //
@@ -1619,23 +2002,30 @@ void snap_firewall::block_ip(snap::snap_communicator_message const & message)
         }
         else
         {
-            // cache in memory for later, once we connect to Cassandra,
-            // we will save those in cassandra
+            // find the block in the cache, it should be there unless we
+            // lost the connection with the Cassandra cluster
             //
-            f_blocks.push_back(info);
-
-            std::sort(f_blocks.begin(), f_blocks.end());
+            auto const & it(std::find(
+                      f_blocks.begin()
+                    , f_blocks.end()
+                    , info));
+            if(it == f_blocks.end())
+            {
+                // by erasing the info we lose that data, but that only
+                // happens when we are not connected to the database;
+                // the connection to the database should happen very
+                // quickly so most blocks will not be removed before
+                // they get saved
+                //
+                f_blocks.erase(it);
+            }
         }
-
-        // actually add to the firewall
-        //
-        info.iplock_block();
 
         next_wakeup();
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the block_ip() function: ")(e.what());
+        SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the unblock_ip() function: ")(e.what());
     }
 }
 

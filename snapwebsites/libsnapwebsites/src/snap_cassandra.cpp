@@ -217,7 +217,7 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const 
     QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
     if(!table)
     {
-        SNAP_LOG_FATAL;
+        SNAP_LOG_FATAL("could not find table \"")(table_name)("\" in Cassandra.");
         throw snap_cassandra_not_available_exception(QString("Table \"%1\" does not exist. Did you install a *-tables.xml file for it?").arg(table_name));
     }
 

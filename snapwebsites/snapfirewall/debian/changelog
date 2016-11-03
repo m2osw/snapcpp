@@ -1,3 +1,17 @@
+snapfirewall (1.0.33.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Enhanced the block_info_t to support saving statistics about each block.
+  * Properly support multiple BLOCK messages with the same IP address and scheme: keep the longest ban time.
+  * Implemented merging any scheme to the "all" scheme.
+  * Make sure the IP address is considered valid before saving it.
+  * Accept a "reason" parameter in the BLOCK message so we can better track what address does what.
+  * Added support for an UNBLOCK message in case an IP address of a friendly gets blocked by mistake.
+  * Save the time of removal of an IP with the IP as the key so we can easily remove that entry.
+  * Fixed the process_timeout(), it had to call wakeup_next() even when no connection to the database exists yet.
+  * We now keep information about all the IPs we ever block in the database. This will be useful to implement a recidive duration elongation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  3 Nov 2016 00:45:46 -0700
+
 snapfirewall (1.0.32.0~xenial) xenial; urgency=high
 
   * SNAP-465: Actually install the unwanted filter.
