@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.11.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Removing the 50-snap.conf and rkhunter.d folder on an uninstall.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 12:47:47 -0700
+
 snapmanagercgi (1.2.10.0~xenial) xenial; urgency=high
 
   * SNAP-110: Put "true" in CRON_DAILY_RUN.

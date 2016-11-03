@@ -85,6 +85,11 @@ EOF
     #
     rkhunter --propupd
   </postinst>
+  <postrm>
+    # We created that file and folder, we have to remove them
+    rm /etc/rkhunter.d/50-snap.conf
+    rmdir --ignore-fail-on-non-empty /etc/rkhunter.d
+  </postrm>
 </bundle>
 <!--
   vim: ts=2 sw=2 et
