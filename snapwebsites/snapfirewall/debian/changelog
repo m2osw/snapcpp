@@ -1,3 +1,9 @@
+snapfirewall (1.0.34.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 03 Nov 2016 02:00:48 -0700
+
 snapfirewall (1.0.34.0~xenial) xenial; urgency=high
 
   * SNAP-465: Run the firewall script before the daemon gets started.
