@@ -404,7 +404,7 @@ QString dbutils::get_column_name( const QByteArray& key ) const
     }
     else if(f_tableName == "tracker"
          || (f_tableName == "backend" && !f_rowName.startsWith("*"))
-         || f_tableName == "firewall")
+         || (f_tableName == "firewall" && !f_rowName.startsWith("ip_info::")))
     {
         QtCassandra::QCassandraValue const start_date(key);
         name = microseconds_to_string(start_date.safeInt64Value(), true);
@@ -505,7 +505,7 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
     }
     else if(f_tableName == "tracker"
          || (f_tableName == "backend" && !f_rowName.startsWith("*"))
-         || f_tableName == "firewall")
+         || (f_tableName == "firewall" && !f_rowName.startsWith("ip_info::")))
     {
         const uint64_t microsec( string_to_microseconds( name ) );
         QtCassandra::appendInt64Value( key, microsec );

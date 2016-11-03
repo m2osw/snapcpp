@@ -550,7 +550,7 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
     }
 
     {
-        QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+        QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip_info::%1").arg(f_ip)));
         row->cell(QString("%1::block_limit").arg(server_name))->setValue(f_block_limit);
         row->cell(QString("%1::status").arg(server_name))->setValue(QString(f_status == status_t::BLOCK_INFO_BANNED ? "banned" : "unbanned"));
 
@@ -902,7 +902,7 @@ int64_t snap_firewall::block_info_t::get_total_ban_count(QtCassandra::QCassandra
     // the total number of bans is the current counter plus the saved
     // counter so we have to retrieve the saved counter first
     //
-    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip_info::%1").arg(f_ip)));
     QString const ban_count_key(QString("%1::ban_count").arg(server_name));
     int64_t const saved_ban_count(row->cell(ban_count_key)->value().safeInt64Value());
 

@@ -1,3 +1,9 @@
+snapfirewall (1.0.36.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Renamed the "ip" rows as "ip_info::..." to distinguish from time.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 12:14:46 -0700
+
 snapfirewall (1.0.35.0~xenial) xenial; urgency=high
 
   * SNAP-465: Include '[iptables] ' in the IPv6 rules.

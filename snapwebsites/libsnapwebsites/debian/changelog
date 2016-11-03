@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.38.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.39.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Added support for "ip_info::..." rows in "snapfirewall".
 
- -- Build Server <build@m2osw.com>  Tue, 01 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 12:12:47 -0700
 
 libsnapwebsites (1.1.38.0~xenial) xenial; urgency=high
 
