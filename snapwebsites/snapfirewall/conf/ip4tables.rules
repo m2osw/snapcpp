@@ -46,10 +46,6 @@
 # prevent banned traffic
 -A INPUT -j unwanted
 
-# Accept RESET commands to avoid some timeout on the client side
-# (to make things faster)
--A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL RST -d @PUBLIC_IP@ -j ACCEPT
-
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
 # Reject any connections (i.e. --syn) from anywhere else on that port
@@ -85,6 +81,12 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 
+# RST and FIN,ACK happen from legitimate IPs, but they are not always properly
+# established connections; however, logging such is not a good idea because
+# it will block otherwise legitimate connections
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL RST -d @PUBLIC_IP@ -j REJECT
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL FIN,ACK -d @PUBLIC_IP@ -j REJECT
+
 # Drop anything else!
 -A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
 -A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
@@ -114,10 +116,6 @@
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j DROP
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "[iptables] (0): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "[iptables] (1): " --log-uid
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "[iptables] (2): " --log-uid
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "[iptables] (192): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j DROP
@@ -129,10 +127,6 @@
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j DROP
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "[iptables] (0): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "[iptables] (1): " --log-uid
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "[iptables] (2): " --log-uid
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
 ############
 # unwanted #

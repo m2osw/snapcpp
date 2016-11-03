@@ -636,6 +636,13 @@ std::string addr::get_ipv4or6_string(bool include_port, bool include_brackets) c
  * The function checks the address either as IPv4 when is_ipv4()
  * returns true, otherwise as IPv6.
  *
+ * See
+ *
+ * \li https://en.wikipedia.org/wiki/Reserved_IP_addresses
+ * \li https://tools.ietf.org/html/rfc3330
+ * \li https://tools.ietf.org/html/rfc5735 (IPv4)
+ * \li https://tools.ietf.org/html/rfc5156 (IPv6)
+ *
  * \return One of the possible network types as defined in the
  *         network_type_t enumeration.
  */

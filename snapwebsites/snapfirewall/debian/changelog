@@ -1,3 +1,11 @@
+snapfirewall (1.0.37.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Moved the RST and FIN,ACK and REJECT those invalid entries.
+  * Do not block 1.x.x.x and 2.x.x.x which are now allocated.
+  * Updated the iptables filter, the port may be in SPT.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 16:48:46 -0700
+
 snapfirewall (1.0.36.0~xenial) xenial; urgency=high
 
   * SNAP-465: Renamed the "ip" rows as "ip_info::..." to distinguish from time.
