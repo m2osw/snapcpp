@@ -1,8 +1,12 @@
-snapmanagercgi (1.2.9.1~xenial) xenial; urgency=high
+snapmanagercgi (1.2.10.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Put "true" in CRON_DAILY_RUN.
+  * Set "true" in CRON_DB_UPDATE so we won't have to run --propupd
+  * Set "true" in APT_AUTOGEN so it gets updated when upgrading/installing.
+  * Set "19" in NICE so it is less likely to bother other processes.
+  * Moved the REPORT_EMAIL to /etc/default/rkhunter.
 
- -- Build Server <build@m2osw.com>  Thu, 03 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 11:33:47 -0700
 
 snapmanagercgi (1.2.9.0~xenial) xenial; urgency=high
 

@@ -33,8 +33,6 @@
 
 # Email a message to this address
 #MAIL-ON-WARNING=$BUNDLE_INSTALLATION_CONTACT_EMAIL
-# /etc/default/rkhunter (may need to be in ...)
-REPORT_EMAIL=$BUNDLE_INSTALLATION_CONTACT_EMAIL
 
 # Change the syslog level to notice instead of the default of warning
 USE_SYSLOG=authpriv.notice
@@ -72,6 +70,16 @@ ALLOWDEVFILE=/dev/shm/byobu-*/.last.screen/*
 # TODO: add support to turn this on only on Cassandra nodes
 PORT_PATH_WHITELIST=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java:TCP:7000
 EOF
+
+    # change the CRON_DAILY_RUN to yes
+    #
+    sed -i.bak \
+        -e 's/CRON_DAILY_RUN=""/CRON_DAILY_RUN="true"/' \
+        -e 's/CRON_DB_UPDATE=""/CRON_DB_UPDATE="true"/' \
+        -e 's/APT_AUTOGEN="false"/APT_AUTOGEN="true"/' \
+        -e 's/NICE="0"/NICE="19"/' \
+        -e 's/REPORT_EMAIL="root"/REPORT_EMAIL="'$BUNDLE_INSTALLATION_CONTACT_EMAIL'"/' \
+              /etc/default/rkhunter
 
     # do a refresh now otherwise we are likely to have errors up front
     #

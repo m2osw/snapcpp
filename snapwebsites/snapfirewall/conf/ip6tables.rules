@@ -7,11 +7,11 @@
 # We want to accept traffic on IPv6 but only on the local loop
 
 -A INPUT -i lo -j ACCEPT
--A INPUT -j LOG --log-prefix "reject_ipv6: " --log-uid
+-A INPUT -j LOG --log-prefix "[iptables] reject_ipv6: " --log-uid
 -A INPUT -j DROP
 
 -A OUTPUT -o lo -j ACCEPT
--A OUTPUT -j LOG --log-prefix "reject_ipv6: " --log-uid
+-A OUTPUT -j LOG --log-prefix "[iptables] reject_ipv6: " --log-uid
 -A OUTPUT -j DROP
 
 COMMIT

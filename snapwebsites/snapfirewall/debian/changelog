@@ -1,14 +1,14 @@
-snapfirewall (1.0.34.1~xenial) xenial; urgency=high
+snapfirewall (1.0.35.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Include '[iptables] ' in the IPv6 rules.
 
- -- Build Server <build@m2osw.com>  Thu, 03 Nov 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 11:31:46 -0700
 
 snapfirewall (1.0.34.0~xenial) xenial; urgency=high
 
   * SNAP-465: Run the firewall script before the daemon gets started.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed,  3 Nov 2016 01:29:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 01:29:46 -0700
 
 snapfirewall (1.0.33.0~xenial) xenial; urgency=high
 
