@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.40.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Somehow the ip_info did not take, trying again.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 16:52:47 -0700
+
 libsnapwebsites (1.1.39.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added support for "ip_info::..." rows in "snapfirewall".
