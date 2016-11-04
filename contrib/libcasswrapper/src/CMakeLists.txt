@@ -49,6 +49,7 @@ configure_file(
 set( HEADER_FILES
     casswrapper/CassStubs.h
     casswrapper/exception.h
+    casswrapper/QCassandraEncoder.h
     casswrapper/QCassandraQuery.h
     casswrapper/QCassandraSchema.h
     casswrapper/QCassandraSchemaValue.h
