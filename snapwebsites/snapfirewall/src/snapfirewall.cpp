@@ -529,6 +529,13 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
         f_status = status_t::BLOCK_INFO_BANNED;
     }
 
+    // we want to check the info row to see whether we had an old entry
+    // because we have to remove it! (otherwise the block would stop
+    // at the time the old entry was entered instead of the new time!)
+    //
+    QtCassandra::QCassandraRow::pointer_t info_row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    QString const block_limit_key(QString("%1::block_limit").arg(server_name));
+
     // here we create a row if the item is banned
     // and we drop the row if the item got unbanned
     //
@@ -547,32 +554,48 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
         {
             ban_row->dropCell(key);
         }
+
+        // now remove the old one if there is such
+        //
+        // Note: whether we are banning or unbanning we attempt to remove
+        //       the old entry
+        //
+        QtCassandra::QCassandraValue old_limit;
+        if(info_row->exists(block_limit_key))
+        {
+            old_limit = info_row->cell(block_limit_key)->value();
+        }
+
+        if(old_limit.safeInt64Value() != f_block_limit
+        && old_limit.size() == sizeof(int64_t))
+        {
+            ban_row->dropCell(old_limit.binaryValue());
+        }
     }
 
     {
-        QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip_info::%1").arg(f_ip)));
-        row->cell(QString("%1::block_limit").arg(server_name))->setValue(f_block_limit);
-        row->cell(QString("%1::status").arg(server_name))->setValue(QString(f_status == status_t::BLOCK_INFO_BANNED ? "banned" : "unbanned"));
+        info_row->cell(block_limit_key)->setValue(f_block_limit);
+        info_row->cell(QString("%1::status").arg(server_name))->setValue(QString(f_status == status_t::BLOCK_INFO_BANNED ? "banned" : "unbanned"));
 
         if(!f_reason.isEmpty())
         {
             QString const reason_key(QString("%1::reason").arg(server_name));
-            if(row->exists(reason_key))
+            if(info_row->exists(reason_key))
             {
-                QString const old_reasons(row->cell(reason_key)->value().stringValue());
+                QString const old_reasons(info_row->cell(reason_key)->value().stringValue());
                 if(old_reasons.indexOf(f_reason) == -1)
                 {
                     // separate reasons with a "\n"
-                    row->cell(reason_key)->setValue(old_reasons + "\n" + f_reason);
+                    info_row->cell(reason_key)->setValue(old_reasons + "\n" + f_reason);
                 }
                 else
                 {
-                    row->cell(reason_key)->setValue(f_reason);
+                    info_row->cell(reason_key)->setValue(f_reason);
                 }
             }
             else
             {
-                row->cell(reason_key)->setValue(f_reason);
+                info_row->cell(reason_key)->setValue(f_reason);
             }
         }
 
@@ -590,8 +613,8 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
             QString const ban_count_key(QString("%1::ban_count").arg(server_name));
             // add the existing value first
             //
-            f_ban_count += row->cell(ban_count_key)->value().safeInt64Value();
-            row->cell(ban_count_key)->setValue(f_ban_count);
+            f_ban_count += info_row->cell(ban_count_key)->value().safeInt64Value();
+            info_row->cell(ban_count_key)->setValue(f_ban_count);
 
             // since this counter is cumulative, we have to reset it to zero
             // each time otherwise we would double it each time we save
@@ -600,22 +623,22 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
         }
         if(f_packet_count > 0)
         {
-            row->cell(QString("%1::packet_count").arg(server_name))->setValue(f_packet_count);
+            info_row->cell(QString("%1::packet_count").arg(server_name))->setValue(f_packet_count);
         }
         if(f_byte_count > 0)
         {
-            row->cell(QString("%1::byte_count").arg(server_name))->setValue(f_byte_count);
+            info_row->cell(QString("%1::byte_count").arg(server_name))->setValue(f_byte_count);
         }
 
         // save when it was created / modified
         //
         int64_t const now(snap::snap_communicator::get_current_date());
         QString const created_key(QString("%1::created").arg(server_name));
-        if(!row->exists(created_key))
+        if(!info_row->exists(created_key))
         {
-            row->cell(created_key)->setValue(now);
+            info_row->cell(created_key)->setValue(now);
         }
-        row->cell(QString("%1::modified").arg(server_name))->setValue(now);
+        info_row->cell(QString("%1::modified").arg(server_name))->setValue(now);
     }
 }
 
@@ -902,7 +925,7 @@ int64_t snap_firewall::block_info_t::get_total_ban_count(QtCassandra::QCassandra
     // the total number of bans is the current counter plus the saved
     // counter so we have to retrieve the saved counter first
     //
-    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip_info::%1").arg(f_ip)));
+    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
     QString const ban_count_key(QString("%1::ban_count").arg(server_name));
     int64_t const saved_ban_count(row->cell(ban_count_key)->value().safeInt64Value());
 
