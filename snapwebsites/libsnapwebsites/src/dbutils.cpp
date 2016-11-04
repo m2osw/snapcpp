@@ -678,6 +678,9 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "users::administrative_session_duration"
          || n == "users::total_session_duration"
          || n == "users::user_session_duration"
+         || (f_tableName == "firewall" && (n.endsWith("::ban_count")
+                                        || n.endsWith("::packet_count")
+                                        || n.endsWith("::byte_count")))
          )
     {
         return column_type_t::CT_int64_value;
@@ -751,6 +754,9 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "sendmail::bounce_arrival_date3"
          || n == "sendmail::bounce_arrival_date4"
          || n.endsWith("::sendmail::created")
+         || (f_tableName == "firewall" && (n.endsWith("::created")
+                                        || n.endsWith("::modified")
+                                        || n.endsWith("::block_limit")))
          || n == "sendmail::unsubscribe_on"
          || n == "sessions::date"
          || n == "snap_software_description::last_update"
