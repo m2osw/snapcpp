@@ -71,10 +71,10 @@ namespace CassWrapper
 
 struct data_impl
 {
-    cluster                 f_cluster;
-    session                 f_session;
-    std::unique_ptr<ssl>    f_ssl;
-    std::unique_ptr<future> f_connection;
+    std::unique_ptr<cluster>    f_cluster;
+    std::unique_ptr<session>    f_session;
+    std::unique_ptr<ssl>        f_ssl;
+    std::unique_ptr<future>     f_connection;
 };
 
 
@@ -184,26 +184,26 @@ void QCassandraSession::connect( const QStringList& host_list, const int port, c
 
     // Create the cluster and specify settings.
     //
-    f_data->f_cluster.reset();
-    f_data->f_cluster.set_contact_points( host_list.join(",") );
+    f_data->f_cluster = std::make_unique<cluster>();
+    f_data->f_cluster->set_contact_points( host_list.join(",") );
 
-    f_data->f_cluster.set_port                        ( port              );
-    f_data->f_cluster.set_request_timeout             ( f_timeout         );
-    f_data->f_cluster.set_write_bytes_high_water_mark ( f_high_water_mark );
-    f_data->f_cluster.set_write_bytes_low_water_mark  ( f_low_water_mark  );
+    f_data->f_cluster->set_port                        ( port              );
+    f_data->f_cluster->set_request_timeout             ( f_timeout         );
+    f_data->f_cluster->set_write_bytes_high_water_mark ( f_high_water_mark );
+    f_data->f_cluster->set_write_bytes_low_water_mark  ( f_low_water_mark  );
 
     // Attach the SSL server trusted certificate if
     // it exists.
     //
     if( f_data->f_ssl )
     {
-        f_data->f_cluster.set_ssl( *(f_data->f_ssl) );
+        f_data->f_cluster->set_ssl( *(f_data->f_ssl) );
     }
 
     // Create the session now, and create a connection.
     //
-    f_data->f_session.reset();
-    f_data->f_connection = std::make_unique<future>(f_data->f_session, f_data->f_cluster);
+    f_data->f_session = std::make_unique<session>();
+    f_data->f_connection = std::make_unique<future>(*f_data->f_session, *f_data->f_cluster);
 
     // This operation will block until the result is ready
     //
@@ -238,7 +238,11 @@ void QCassandraSession::disconnect()
 {
     f_data->f_connection.reset();
     //
-    f_data->f_session.close().wait();
+    if( f_data->f_session )
+    {
+        f_data->f_session->close().wait();
+    }
+    //
     f_data->f_session.reset();
     f_data->f_cluster.reset();
 }
@@ -266,7 +270,10 @@ bool QCassandraSession::isConnected() const
 void QCassandraSession::reset_ssl_keys()
 {
     f_data->f_ssl.reset();
-    f_data->f_cluster.reset_ssl();
+    if( f_data->f_cluster )
+    {
+        f_data->f_cluster->reset_ssl();
+    }
 }
 
 
@@ -373,14 +380,14 @@ void QCassandraSession::add_ssl_keys()
  */
 cluster QCassandraSession::getCluster() const
 {
-    return f_data->f_cluster;
+    return *(f_data->f_cluster);
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp session object.
  */
 session QCassandraSession::getSession() const
 {
-    return f_data->f_session;
+    return *(f_data->f_session);
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp connection future object.
@@ -482,7 +489,7 @@ int64_t QCassandraSession::setTimeout(timeout_t timeout_ms)
     timeout_t const old_timeout(f_timeout);
     f_timeout = timeout_ms;
     // the cluster may not yet have been allocated
-    f_data->f_cluster.set_request_timeout( f_timeout );
+    f_data->f_cluster->set_request_timeout( f_timeout );
     return old_timeout;
 }
 
@@ -501,14 +508,14 @@ uint32_t QCassandraSession::lowWaterMark() const
 void QCassandraSession::setHighWaterMark( uint32_t val )
 {
     f_high_water_mark = val;
-    f_data->f_cluster.set_write_bytes_high_water_mark( f_high_water_mark );
+    f_data->f_cluster->set_write_bytes_high_water_mark( f_high_water_mark );
 }
 
 
 void QCassandraSession::setLowWaterMark( uint32_t val )
 {
     f_low_water_mark = val;
-    f_data->f_cluster.set_write_bytes_low_water_mark( f_low_water_mark );
+    f_data->f_cluster->set_write_bytes_low_water_mark( f_low_water_mark );
     
 }
 
