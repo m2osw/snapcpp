@@ -770,6 +770,72 @@ std::string addr::get_iface_name() const
 }
 
 
+/** \brief Transform the IP into a domain name.
+ *
+ * This function transforms the IP address in this `addr` object in a
+ * name such as "snap.website".
+ *
+ * \note
+ * The function does not cache the result because it is rarely used (at least
+ * at this time). So you should cache the result and avoid calling this
+ * function more than once as the process can be very slow.
+ *
+ * \todo
+ * Speed enhancement can be achieved by using getaddrinfo_a(). That would
+ * work with a vector of addr objects.
+ *
+ * \return The domain name. If not available, an empty string.
+ */
+std::string addr::get_name() const
+{
+    char host[NI_MAXHOST];
+
+    int flags(NI_NAMEREQD);
+    if(f_protocol == IPPROTO_UDP)
+    {
+        flags |= NI_DGRAM;
+    }
+
+    // TODO: test with the NI_IDN* flags and make sure we know what we get
+    //       (i.e. we want UTF-8 as a result)
+    //
+    int const r(getnameinfo(reinterpret_cast<sockaddr const *>(&f_address), sizeof(f_address), host, sizeof(host), nullptr, 0, flags));
+
+    // return value is 0, then it worked
+    //
+    return r == 0 ? host : std::string();
+}
+
+
+/** \brief Transform the port into a service name.
+ *
+ * This function transforms the port in this `addr` object in a
+ * name such as "http".
+ *
+ * \note
+ * The function does not cache the result because it is rarely used (at least
+ * at this time). So you should cache the result and avoid calling this
+ * function more than once as the process is somewhat slow.
+ *
+ * \return The service name. If not available, an empty string.
+ */
+std::string addr::get_service() const
+{
+    char service[NI_MAXSERV];
+
+    int flags(NI_NAMEREQD);
+    if(f_protocol == IPPROTO_UDP)
+    {
+        flags |= NI_DGRAM;
+    }
+    int const r(getnameinfo(reinterpret_cast<sockaddr const *>(&f_address), sizeof(f_address), nullptr, 0, service, sizeof(service), flags));
+
+    // return value is 0, then it worked
+    //
+    return r == 0 ? service : std::string();
+}
+
+
 /** \brief Retrieve the port.
  *
  * This function retrieves the port of the IP address in host order.

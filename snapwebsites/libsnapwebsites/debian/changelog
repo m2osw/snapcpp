@@ -1,8 +1,11 @@
-libsnapwebsites (1.1.42.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.43.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: snapserver gets many connections to snapdbproxy. I added debug
+    logs to try to determine where it happens.
+  * Added the get_name()/get_service() functions to the addr class.
+  * Removed the create_table(), it is not used at all anymore.
 
- -- Build Server <build@m2osw.com>  Fri, 04 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Nov 2016 11:20:47 -0700
 
 libsnapwebsites (1.1.42.0~xenial) xenial; urgency=high
 

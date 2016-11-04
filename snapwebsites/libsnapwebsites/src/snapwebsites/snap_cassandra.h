@@ -51,11 +51,11 @@ public:
     typedef std::shared_ptr<snap_cassandra>     pointer_t;
 
                                                 snap_cassandra();
+                                                ~snap_cassandra();
 
     void                                        connect();
     void                                        disconnect();
     QtCassandra::QCassandraContext::pointer_t   get_snap_context();
-    QtCassandra::QCassandraTable::pointer_t     create_table(QString const & table_name, QString const & comment);
     void                                        create_table_list();
     QtCassandra::QCassandraTable::pointer_t     get_table(QString const & table_name);
 

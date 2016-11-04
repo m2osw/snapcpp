@@ -36,6 +36,15 @@ snap_cassandra::snap_cassandra()
 }
 
 
+snap_cassandra::~snap_cassandra()
+{
+    if(f_cassandra != nullptr)
+    {
+SNAP_LOG_WARNING("cassandra count in destructor: ")(f_cassandra.use_count());
+    }
+}
+
+
 void snap_cassandra::connect()
 {
     // We now connect to our proxy instead. This allows us to have many
@@ -63,6 +72,8 @@ void snap_cassandra::connect()
         SNAP_LOG_FATAL(msg);
         throw snap_cassandra_not_available_exception(msg);
     }
+
+SNAP_LOG_WARNING("f_cassandra exiting connect() = ")(f_cassandra.use_count());
 }
 
 
@@ -86,7 +97,10 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     //
     f_cassandra->contexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    return f_cassandra->findContext(context_name);
+    //return f_cassandra->findContext(context_name);
+QtCassandra::QCassandraContext::pointer_t c(f_cassandra->findContext(context_name));
+SNAP_LOG_WARNING("f_cassandra exiting connect() = ")(f_cassandra.use_count());
+return c;
 
     //QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     //return f_cassandra->context(context_name);
@@ -111,103 +125,11 @@ bool snap_cassandra::is_connected() const
 }
 
 
-/** \brief Create a table in the snap context.
- *
- * The function checks whether the named table exists, if not it
- * creates it with default parameters. The result is a shared pointer
- * to the table in question.
- *
- * By default tables are just created in the Cassandra node you are
- * connected with. In order to use the table, it has to have been
- * propagated. This is done with a synchronization call. That call
- * is performed by this very function the first time a table is
- * queried if that table was created in an earlier call to this
- * function, then the synchronization function gets called and blocks
- * the process until the table was propagated. The current initialization
- * process expects the create_table() to be called a first time when
- * your plugin initial_update() is called, then called again once the
- * table is necessary. Therefore, this create_table() uses a 'call me
- * twice' scheme where the second call ensures the synchrony.
- *
- * \code
- *      // first call creates the table
- *      //
- *      create_table("my_table", "This is my table");
- *
- *      // second call get the table pointer, if necessary, it synchronizes
- *      //
- *      QtCassandra::QCassandraTable::pointer_t tbl(create_table("my_table", "This is my table"));
- * \endcode
- *
- * \todo
- * Provide a structure that includes the different table parameters
- * instead of using hard coded defaults. [This is partially done, we
- * already have the *-tables.xml files that define the type of tables,
- * we still need to get the table schema in place.]
- *
- * \param[in] table_name  The name of the new table, if it exists, nothing happens.
- * \param[in] comment  A comment about the new table.
- */
-QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString const & table_name, QString const & comment)
-{
-
-// TODO: we do not want to create tables from anywhere except one place
-//       while first installing or through snapmanager.cgi or such
-//       All other calls should use a "get_table(name)" instead!
-SNAP_LOG_WARNING("create_table() should not be called anymore, use get_table() instead... the create_table_list() creates all the tables as required.");
-
-
-    QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
-    if(!context)
-    {
-        throw snap_cassandra_not_available_exception("The snap_websites context is not available in this Cassandra database.");
-    }
-
-    // does table exist?
-    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-    if(!table)
-    {
-        // table is not there yet, create it
-        table = context->table(table_name);
-
-        QtCassandra::QCassandraSchema::Value compaction;
-        auto & compaction_map(compaction.map());
-        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-        compaction_map["min_threshold"] = QVariant(4);
-        compaction_map["max_threshold"] = QVariant(22);
-
-        auto & table_fields(table->fields());
-        table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
-        table_fields["gc_grace_seconds"]            = QVariant(86400);
-        table_fields["compaction"]                  = compaction;
-
-        table->create();
-
-        f_created_table[table_name] = true;
-    }
-    else if(f_created_table.contains(table_name))
-    {
-        // TODO: add support for Future in case we create tables
-        //       so we can properly synchronize with the tables
-        //       here (although that requires a thread or something
-        //       like that... so we will have to be careful!)
-        //for(auto const & tbl : created_table)
-        //{
-        //    tbl->wait_until_done();
-        //}
-
-        // a single synchronization is enough for all created tables
-        //
-        f_created_table.clear();
-    }
-    return table;
-}
-
-
 QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const & table_name)
 {
+SNAP_LOG_WARNING("f_cassandra get_table() on entry = ")(f_cassandra.use_count());
     QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
+SNAP_LOG_WARNING("f_cassandra get_table() got context = ")(f_cassandra.use_count());
     if(!context)
     {
         throw snap_cassandra_not_available_exception("The snap_websites context is not available in this Cassandra database.");
@@ -215,6 +137,7 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const 
 
     // does table exist?
     QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+SNAP_LOG_WARNING("f_cassandra findTable() = ")(f_cassandra.use_count());
     if(!table)
     {
         SNAP_LOG_FATAL("could not find table \"")(table_name)("\" in Cassandra.");

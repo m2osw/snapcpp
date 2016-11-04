@@ -108,6 +108,8 @@ public:
     computer_interface_address_t    is_computer_interface_address() const;
 
     std::string                     get_iface_name() const;
+    std::string                     get_name() const;
+    std::string                     get_service() const;
     int                             get_port() const;
     int                             get_protocol() const;
 
