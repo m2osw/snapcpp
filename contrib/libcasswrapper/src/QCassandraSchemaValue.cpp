@@ -34,15 +34,13 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchemaValue.h"
-#include "CassTools.h"
-#include "cassandra.h"
+#include "casswrapper/QCassandraQuery.h"
+#include "casswrapper/QCassandraSchemaValue.h"
+#include "CassWrapperImpl.h"
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
-using namespace CassTools;
 
 namespace QCassandraSchema
 {
@@ -61,17 +59,15 @@ Value::Value( const QVariant& var )
 }
 
 
-void Value::readValue( iterator iter )
+void Value::readValue( const iterator& iter )
 {
-    value val( iter->get_meta_field_value() );
-    readValue( val );
+    readValue( iter.get_meta_field_value() );
 }
 
 
-void Value::readValue( value val )
+void Value::readValue( const value& val )
 {
-    f_value = val;
-    parseValue();
+    parseValue( val );
 }
 
 
@@ -243,14 +239,14 @@ void Value::decodeValue(const QCassandraDecoder& decoder)
 }
 
 
-void Value::parseValue()
+void Value::parseValue( const value& val )
 {
     f_map.clear();
     f_list.clear();
     f_variant.clear();
     f_stringOutput.clear();
 
-    switch( f_value.get_type() )
+    switch( val.get_type() )
     {
         case CASS_VALUE_TYPE_UNKNOWN    :
         case CASS_VALUE_TYPE_CUSTOM     :
@@ -263,17 +259,17 @@ void Value::parseValue()
         case CASS_VALUE_TYPE_LIST       :
         case CASS_VALUE_TYPE_SET        :
             f_type = TypeList;
-            parseList();
+            parseList( val );
             break;
 
         case CASS_VALUE_TYPE_TUPLE      :
             f_type = TypeList;
-            parseTuple();
+            parseTuple( val );
             break;
 
         case CASS_VALUE_TYPE_MAP        :
             f_type = TypeMap;
-            parseMap();
+            parseMap( val );
             break;
 
         case CASS_VALUE_TYPE_BLOB       :
@@ -296,15 +292,15 @@ void Value::parseValue()
         case CASS_VALUE_TYPE_TIMEUUID   :
         case CASS_VALUE_TYPE_INET       :
             f_type = TypeVariant;
-            parseVariant();
+            parseVariant( val );
             break;
     }
 }
 
 
-void Value::parseMap()
+void Value::parseMap( const value& val )
 {
-    iterator const iter( f_value.get_iterator_from_map() );
+    iterator const iter( val.get_iterator_from_map() );
     while( iter.next() )
     {
         Value the_val;
@@ -314,65 +310,65 @@ void Value::parseMap()
 }
 
 
-void Value::parseList()
+void Value::parseList( const value& val )
 {
-    iterator const iter( f_value.get_iterator_from_collection() );
+    iterator const iter( val.get_iterator_from_collection() );
     while( iter.next() )
     {
-        Value val;
-        val.readValue( iter.get_value() );
-        f_list.push_back( val );
+        Value the_val;
+        the_val.readValue( iter.get_value() );
+        f_list.push_back( the_val );
     }
 }
 
 
-void Value::parseTuple()
+void Value::parseTuple( const value& val )
 {
-    iterator const iter( f_value.get_iterator_from_tuple() );
+    iterator const iter( val.get_iterator_from_tuple() );
     while( iter.next() )
     {
-        Value val;
-        val.readValue( iter );
-        f_list.push_back( val );
+        Value the_val;
+        the_val.readValue( iter );
+        f_list.push_back( the_val );
     }
 }
 
 
-void Value::parseVariant()
+void Value::parseVariant( const value& val )
 {
-    switch( f_value.get_type() )
+    switch( val.get_type() )
     {
         case CASS_VALUE_TYPE_BLOB       :
-            f_variant = f_value.get_blob();
+            f_variant = val.get_blob();
             break;
 
         case CASS_VALUE_TYPE_BOOLEAN    :
-            f_variant = f_value.get_bool();
+            f_variant = val.get_bool();
             break;
 
         case CASS_VALUE_TYPE_FLOAT      :
-            f_variant = f_value.get_float();
+            f_variant = val.get_float();
             break;
 
         case CASS_VALUE_TYPE_DOUBLE     :
-            f_variant = f_value.get_double();
+            f_variant = val.get_double();
             break;
 
         case CASS_VALUE_TYPE_TINY_INT  :
-            f_variant = f_value.get_int8();
+            f_variant = val.get_int8();
             break;
 
         case CASS_VALUE_TYPE_SMALL_INT :
-            f_variant = f_value.get_int16();
+            f_variant = val.get_int16();
             break;
 
         case CASS_VALUE_TYPE_VARINT    :
-            f_variant = f_value.get_int32();
+            f_variant = val.get_int32();
             break;
 
         case CASS_VALUE_TYPE_BIGINT     :
         case CASS_VALUE_TYPE_COUNTER    :
-            f_variant = f_value.get_int64();
+            f_variant = static_cast<qlonglong>(val.get_int64());
             break;
 
         case CASS_VALUE_TYPE_ASCII     :
@@ -381,19 +377,19 @@ void Value::parseVariant()
         case CASS_VALUE_TYPE_TIME      :
         case CASS_VALUE_TYPE_TIMESTAMP :
         case CASS_VALUE_TYPE_VARCHAR   :
-            f_variant = f_value.get_string();
+            f_variant = val.get_string();
             break;
 
         case CASS_VALUE_TYPE_UUID      :
-            f_variant = f_value.get_uuid();
+            f_variant = val.get_uuid();
             break;
 
         case CASS_VALUE_TYPE_TIMEUUID  :
-            f_variant = f_value.get_uuid_timestamp();
+            f_variant = val.get_uuid_timestamp();
             break;
 
         case CASS_VALUE_TYPE_INET      :
-            f_variant = f_value.get_inet();
+            f_variant = val.get_inet();
             break;
 
         default:
@@ -464,5 +460,5 @@ const QString& Value::output() const
 
 
 } // namespace QCassandraSchema
-} //namespace QtCassandra
+} //namespace CassWrapper
 // vim: ts=4 sw=4 et

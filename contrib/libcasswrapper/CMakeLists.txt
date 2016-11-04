@@ -35,7 +35,7 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(libcasswrapper)
 
 set( CMAKE_INCLUDE_CURRENT_DIR ON   )
@@ -76,7 +76,7 @@ endif()
 add_subdirectory(cmake)
 add_subdirectory(src)
 #add_subdirectory(tools)
-#add_subdirectory(tests)
+add_subdirectory(tests)
 add_subdirectory(doc)
 
 # vim: ts=4 sw=4 et

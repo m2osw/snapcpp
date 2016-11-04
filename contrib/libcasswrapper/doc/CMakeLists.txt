@@ -3,7 +3,7 @@
 #      doc/CMakeLists.txt
 #
 # Description:
-#      Generate the libQtCassandra documentation.
+#      Generate the casswrapper documentation.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -38,7 +38,7 @@
 ##
 ## Documentation
 ##
-AddDoxygenTarget( libQtCassandra
+AddDoxygenTarget( libcasswrapper
     ${LIBCASSWRAPPER_VERSION_MAJOR}
     ${LIBCASSWRAPPER_VERSION_MINOR}
     ${LIBCASSWRAPPER_VERSION_PATCH}

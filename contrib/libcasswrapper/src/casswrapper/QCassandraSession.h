@@ -51,6 +51,9 @@ namespace CassWrapper
 {
 
 
+struct data_impl;
+
+
 class QCassandraSession
         : public std::enable_shared_from_this<QCassandraSession>
 {
@@ -73,9 +76,9 @@ public:
     void           add_ssl_trusted_cert( const QString& cert     );
     void           add_ssl_cert_file   ( const QString& filename );
 
-    cluster cluster()    const;
-    session session()    const;
-    future  connection() const;
+    cluster getCluster()    const;
+    session getSession()    const;
+    future  getConnection() const;
 
     timeout_t timeout() const;
     timeout_t setTimeout(timeout_t timeout_ms);
@@ -91,10 +94,8 @@ private:
     void reset_ssl_keys();
     void add_ssl_keys();
 
-    cluster   f_cluster;
-    session   f_session;
-    std::unique_ptr<ssl>       f_ssl;
-    future    f_connection;
+    std::unique_ptr<data_impl> f_data;
+    //
     timeout_t f_timeout         = DEFAULT_TIMEOUT;                         // 12s
     uint32_t  f_high_water_mark = 65536;
     uint32_t  f_low_water_mark  = 0;

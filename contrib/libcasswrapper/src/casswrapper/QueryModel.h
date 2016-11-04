@@ -16,8 +16,8 @@
 //
 #pragma once
 
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/QCassandraQuery.h>
+#include <casswrapper/QCassandraSession.h>
 
 #include <QAbstractItemModel>
 #include <QModelIndex>
@@ -28,7 +28,7 @@
 #include <vector>
 
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
 
@@ -97,6 +97,6 @@ private slots:
 
 
 }
-// namespace QtCassandra
+// namespace CassWrapper
 
 // vim: ts=4 sw=4 et

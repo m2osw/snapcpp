@@ -53,6 +53,7 @@ set( HEADER_FILES
     casswrapper/QCassandraSchema.h
     casswrapper/QCassandraSchemaValue.h
     casswrapper/QCassandraSession.h
+    casswrapper/QStringStream.h
     casswrapper/version.h.in
     casswrapper/QueryModel.h
     ${PROJECT_BINARY_DIR}/casswrapper/version.h

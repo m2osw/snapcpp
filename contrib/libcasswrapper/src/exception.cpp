@@ -5,7 +5,7 @@
 
 #include <cassandra.h>
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
 
@@ -32,6 +32,6 @@ const char* cassandra_exception_t::what() const throw()
 
 
 }
-// namespace QtCassandra
+// namespace CassWrapper
 
 // vim: ts=4 sw=4 et

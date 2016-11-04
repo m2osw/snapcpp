@@ -8,7 +8,7 @@
 #include <QString>
 
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
 
@@ -17,6 +17,7 @@ class exception_t : public std::runtime_error
 public:
     exception_t( const QString&     what ) : std::runtime_error(qPrintable(what)) {}
     exception_t( const std::string& what ) : std::runtime_error(what.c_str())     {}
+    exception_t( const char*        what ) : std::runtime_error(what)             {}
 };
 
 
@@ -42,6 +43,6 @@ private:
 
 
 }
-// namespace QtCassandra
+// namespace CassWrapper
 
 // vim: ts=4 sw=4 et

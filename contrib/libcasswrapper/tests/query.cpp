@@ -35,15 +35,15 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchema.h"
-#include "QtCassandra/QStringStream.h"
+#include "casswrapper/QCassandraQuery.h"
+#include "casswrapper/QCassandraSchema.h"
+#include "casswrapper/QStringStream.h"
 #include <QtCore>
 
 #include <exception>
 #include <iostream>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 using namespace QCassandraSchema;
 
 class QueryTest

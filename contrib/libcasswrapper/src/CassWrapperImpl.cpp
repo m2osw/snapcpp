@@ -44,15 +44,15 @@ namespace CassWrapper
 //===============================================================================
 // collection
 //
-void collection::deleter_t::operator()(CassCollection* p) const
-{
-    cass_collection_free(p);
-}
-
-
 collection::collection( CassCollectionType type, size_t item_count )
     : f_ptr( cass_collection_new( type, item_count ), deleter_t() )
 {
+}
+
+
+void collection::deleter_t::operator()(CassCollection* p) const
+{
+    cass_collection_free(p);
 }
 
 
@@ -73,16 +73,16 @@ void collection::append_string( const std::string& value ) const
 //===============================================================================
 // column_meta
 //
+column_meta::column_meta( CassColumnMeta* p )
+    : f_ptr( p, deleter_t() )
+{
+}
+
+
 void column_meta::deleter_t::operator()(const CassColumnMeta*) const
 {
     // No need to delete anything
     //cass_column_meta_free(p);
-}
-
-
-column_meta::column_meta( const CassColumnMeta* p )
-    : f_ptr( p, deleter_t() )
-{
 }
 
 
@@ -130,7 +130,7 @@ void cluster::deleter_t::operator()( CassCluster * p) const
 
 void cluster::set_contact_points( const QString& host_list )
 {
-    cass_cluster_set_contact_points( f_ptr.get(), host_list );
+    cass_cluster_set_contact_points( f_ptr.get(), host_list.toUtf8().data() );
 }
 
 
@@ -178,7 +178,7 @@ future::future()
 }
 
 
-future::future( const CassFuture* p )
+future::future( CassFuture* p )
     : f_ptr( p, deleter_t() )
 {
 }
@@ -213,7 +213,7 @@ QString future::get_error_message() const
 
 result future::get_result() const
 {
-    return result( cass_future_get_result(f_ptr.get()) );
+    return result( const_cast<CassResult*>(cass_future_get_result(f_ptr.get())) );
 }
 
 
@@ -223,9 +223,9 @@ bool future::is_ready() const
 }
 
 
-void future::set_callback( CassFutureCallback callback, void* data )
+void future::set_callback( void* callback, void* data )
 {
-    cass_future_set_callback( f_ptr.get() , callback , data );
+    cass_future_set_callback( f_ptr.get(), reinterpret_cast<CassFutureCallback>(callback), data );
 }
 
 
@@ -235,23 +235,29 @@ void future::wait() const
 }
 
 
-bool future::operator ==( const CassFuture * f )
+bool future::operator ==( const future& f )
 {
-    return f_ptr.get() == f;
+    return f_ptr == f.f_ptr;
 }
 
 
-bool future::operator !=( const CassFuture * f )
+bool future::operator !=( const future& f )
 {
-    return (*this == f);
+    return !(*this == f);
 }
 
 
 //===============================================================================
 // iterator
 //
-iterator::iterator( const CassIterator* p )
+iterator::iterator( CassIterator* p )
     : f_ptr(p, deleter_t())
+{
+}
+
+
+iterator::iterator( const iterator& iter )
+    : f_ptr( iter.f_ptr )
 {
 }
 
@@ -270,19 +276,19 @@ bool iterator::next() const
 
 value iterator::get_map_key() const
 {
-    return value( cass_iterator_get_map_key(f_ptr.get()) );
+    return value( const_cast<CassValue*>(cass_iterator_get_map_key(f_ptr.get())) );
 }
 
 
 value iterator::get_map_value() const
 {
-    return value( cass_iterator_get_map_value(f_ptr.get()) );
+    return value( const_cast<CassValue*>(cass_iterator_get_map_value(f_ptr.get())) );
 }
 
 
 value iterator::get_value() const
 {
-    return value( cass_iterator_get_value(f_ptr.get()) );
+    return value( const_cast<CassValue*>(cass_iterator_get_value(f_ptr.get())) );
 }
 
 
@@ -305,45 +311,45 @@ QString iterator::get_meta_field_name() const
 
 value iterator::get_meta_field_value() const
 {
-    return value( cass_iterator_get_meta_field_value( f_ptr.get() ) );
+    return value( const_cast<CassValue*>(cass_iterator_get_meta_field_value( f_ptr.get() )) );
 }
 
 
 row iterator::get_row() const
 {
-    return iterator( cass_iterator_get_row(f_ptr.get()) );
+    return row( const_cast<CassRow*>(cass_iterator_get_row(f_ptr.get())) );
 }
 
 
 keyspace_meta iterator::get_keyspace_meta() const
 {
-    return keyspace_meta( cass_iterator_get_keyspace_meta(f_ptr.get()) );
+    return keyspace_meta( const_cast<CassKeyspaceMeta*>(cass_iterator_get_keyspace_meta(f_ptr.get())) );
 }
 
 
 table_meta iterator::get_table_meta() const
 {
-    return table_meta( cass_iterator_get_table_meta(f_ptr.get()) );
+    return table_meta( const_cast<CassTableMeta*>(cass_iterator_get_table_meta(f_ptr.get())) );
 }
 
 
 column_meta iterator::get_column_meta() const
 {
-    return column_meta( cass_iterator_get_column_meta(f_ptr.get()) );
+    return column_meta( const_cast<CassColumnMeta*>(cass_iterator_get_column_meta(f_ptr.get())) );
 }
 
 
 //===============================================================================
 // keyspace_meta
 //
-keyspace_meta::keyspace_meta( const CassKeyspaceMeta* p )
+keyspace_meta::keyspace_meta( CassKeyspaceMeta* p )
     : f_ptr( p, deleter_t() )
 {
     //cass_keyspace_meta_deleter(p);
 }
 
 
-void keyspace_meta::deleter_t::operator()( CassKeyspaceMeta* )
+void keyspace_meta::deleter_t::operator()( CassKeyspaceMeta* ) const
 {
     // No need to do this...
     //
@@ -351,23 +357,38 @@ void keyspace_meta::deleter_t::operator()( CassKeyspaceMeta* )
 }
 
 
-iterator keyspace_meta::get_fields()
+iterator keyspace_meta::get_fields() const
 {
     return iterator( cass_iterator_fields_from_keyspace_meta( f_ptr.get() ) );
 }
 
 
-iterator keyspace_meta::get_tables()
+iterator keyspace_meta::get_tables() const
 {
     return iterator( cass_iterator_tables_from_keyspace_meta( f_ptr.get() ) );
+}
+
+
+QString keyspace_meta::get_name() const
+{
+    const char* name = 0;
+    size_t length    = 0;
+    cass_keyspace_meta_name( f_ptr.get(), &name, &length );
+    return QString::fromUtf8( name, length );
 }
 
 
 //===============================================================================
 // result
 //
-result::result( const CassResult* p )
+result::result( CassResult* p )
     : f_ptr(p, deleter_t() )
+{
+}
+
+
+result::result( const result& res )
+    : f_ptr( res.f_ptr )
 {
 }
 
@@ -405,7 +426,7 @@ row::row( CassRow* p )
 }
 
 
-void row::deleter_t( CassRow* )
+void row::deleter_t::operator()( CassRow* ) const
 {
     // Not needed, API deletes it on its own.
     //cass_row_free(p);
@@ -415,7 +436,7 @@ void row::deleter_t( CassRow* )
 value row::get_column_by_name( const QString& name ) const
 {
     return value(
-            cass_row_get_column_by_name( f_ptr, name.toUtf8().data() )
+            const_cast<CassValue*>(cass_row_get_column_by_name( f_ptr.get(), name.toUtf8().data() ))
             );
 }
 
@@ -423,44 +444,8 @@ value row::get_column_by_name( const QString& name ) const
 value row::get_column( const int num ) const
 {
     return value(
-            cass_row_get_column( f_ptr, num )
+            const_cast<CassValue*>(cass_row_get_column( f_ptr.get(), num ))
             );
-}
-
-
-//===============================================================================
-// table_meta
-//
-table_meta::table_meta( CassTableMeta* p )
-    : f_ptr( p, deleter_t() )
-{
-}
-
-
-void table_meta::deleter_t( CassTableMeta* )
-{
-    //cass_table_meta_free(p);
-}
-
-
-iterator table_meta::get_fields() const
-{
-    return iterator( cass_iterator_fields_from_table_meta( f_ptr.get() ) );
-}
-
-
-iterator table_meta::get_columns() const
-{
-    return iterator( cass_iterator_columns_from_table_meta( f_ptr.get() ) );
-}
-
-
-QString table_meta::get_name() const
-{
-    const char * name;
-    size_t len;
-    cass_table_meta_name( f_ptr.get(), &name, &len );
-    return QString::fromUtf8( name, len );
 }
 
 
@@ -468,7 +453,7 @@ QString table_meta::get_name() const
 // schema_meta
 //
 schema_meta::schema_meta( const session& s )
-    : f_ptr( cass_session_get_schema_meta(s.f_ptr), deleter_t() )
+    : f_ptr( const_cast<CassSchemaMeta*>(cass_session_get_schema_meta(s.f_ptr.get())), deleter_t() )
 {
 }
 
@@ -485,6 +470,9 @@ iterator schema_meta::get_keyspaces() const
 }
 
 
+//===============================================================================
+// session
+//
 session::session()
     : f_ptr(cass_session_new(), deleter_t())
 {
@@ -494,12 +482,6 @@ session::session()
 void session::deleter_t::operator()(CassSession* p) const
 {
     cass_session_free(p);
-}
-
-
-schema_meta session::get_schema_meta() const
-{
-    return( cass_session_get_schema_meta(f_ptr.get()) );
 }
 
 
@@ -523,7 +505,7 @@ future session::close() const
 ssl::ssl()
     : f_ptr( cass_ssl_new(), deleter_t() )
 {
-    cass_ssl_set_verify_flags( f_get.get(), CASS_SSL_VERIFY_PEER_CERT | CASS_SSL_VERIFY_PEER_IDENTITY );
+    cass_ssl_set_verify_flags( f_ptr.get(), CASS_SSL_VERIFY_PEER_CERT | CASS_SSL_VERIFY_PEER_IDENTITY );
 }
 
 
@@ -551,7 +533,7 @@ void ssl::add_trusted_cert( const QString& cert )
 // statement
 //
 statement::statement( const QString& query, const int bind_count  )
-    : f_ptr( cass_statement_new( query.toUtf8().data(), bind_count )
+    : f_ptr(const_cast<CassStatement*>(cass_statement_new(query.toUtf8().data(), bind_count)), deleter_t())
     , f_query(query)
 {
 }
@@ -563,76 +545,118 @@ void statement::deleter_t::operator()(CassStatement* p) const
 }
 
 
-void statement::set_consistency( const CassConsistency consist )
+void statement::set_consistency( const CassConsistency consist ) const
 {
     cass_statement_set_consistency( f_ptr.get(), consist );
 }
 
 
-void statement::set_timestamp( const int64_t timestamp )
+void statement::set_timestamp( const int64_t timestamp ) const
 {
     cass_int64_t const cass_time( static_cast<cass_int64_t>(timestamp) );
     cass_statement_set_timestamp( f_ptr.get(), cass_time );
 }
 
 
-void statement::set_paging_size( const int size )
+void statement::set_paging_size( const int size ) const
 {
     cass_statement_set_paging_size( f_ptr.get(), size );
 }
 
 
-void statement::bind_bool( const size_t num, const bool value )
+void statement::set_paging_state( const result& res ) const
+{
+    cass_statement_set_paging_state( f_ptr.get(), res.f_ptr.get() );
+}
+
+
+void statement::bind_bool( const size_t num, const bool value ) const
 {
    cass_statement_bind_bool( f_ptr.get(), num, value? cass_true: cass_false );
 }
 
 
-void statement::bind_int32( const size_t num, const int32_t value )
+void statement::bind_int32( const size_t num, const int32_t value ) const
 {
    cass_statement_bind_int32( f_ptr.get(), num, value );
 }
 
 
-void statement::bind_int64( const size_t num, const int64_t value )
+void statement::bind_int64( const size_t num, const int64_t value ) const
 {
    cass_statement_bind_int64( f_ptr.get(), num, value );
 }
 
 
-void statement::bind_float( const size_t num, const float value )
+void statement::bind_float( const size_t num, const float value ) const
 {
    cass_statement_bind_float( f_ptr.get(), num, value );
 }
 
 
-void statement::bind_double( const size_t num, const double value )
+void statement::bind_double( const size_t num, const double value ) const
 {
    cass_statement_bind_double( f_ptr.get(), num, value );
 }
 
 
-void statement::bind_string( const size_t num, const std::string& value )
+void statement::bind_string( const size_t num, const std::string& value ) const
 {
     bind_blob( num, value.c_str() );
 }
 
 
-void statement::bind_string( const size_t num, const QString& value )
+void statement::bind_string( const size_t num, const QString& value ) const
 {
     bind_blob( num, value.toUtf8() );
 }
 
 
-void statement::bind_blob( const size_t num, const QString& value )
+void statement::bind_blob( const size_t num, const QByteArray& value ) const
 {
     cass_statement_bind_string_n( f_ptr.get(), num, value.constData(), value.size() );
 }
 
 
-void statement::bind_collection ( const size_t num, const collection& value )
+void statement::bind_collection ( const size_t num, const collection& value ) const
 {
-    cass_statement_bind_collection( f_ptr.get(), num, value.get() );
+    cass_statement_bind_collection( f_ptr.get(), num, value.f_ptr.get() );
+}
+
+
+//===============================================================================
+// table_meta
+//
+table_meta::table_meta( CassTableMeta* p )
+    : f_ptr( p, deleter_t() )
+{
+}
+
+
+void table_meta::deleter_t::operator()( CassTableMeta* ) const
+{
+    //cass_table_meta_free(p);
+}
+
+
+iterator table_meta::get_fields() const
+{
+    return iterator( cass_iterator_fields_from_table_meta( f_ptr.get() ) );
+}
+
+
+iterator table_meta::get_columns() const
+{
+    return iterator( cass_iterator_columns_from_table_meta( f_ptr.get() ) );
+}
+
+
+QString table_meta::get_name() const
+{
+    const char * name;
+    size_t len;
+    cass_table_meta_name( f_ptr.get(), &name, &len );
+    return QString::fromUtf8( name, len );
 }
 
 
@@ -640,13 +664,13 @@ void statement::bind_collection ( const size_t num, const collection& value )
 //===============================================================================
 // value
 //
-value::value( const CassValue* p )
+value::value( CassValue* p )
     : f_ptr(p, deleter_t() )
 {
 }
 
 
-void value::deleter_t::operator()(CassValue*p)
+void value::deleter_t::operator()(CassValue*) const
 {
     // no deletion necessary
 }
@@ -689,11 +713,11 @@ QString value::get_string() const
 }
 
 
-QByteArray value::get_blob()           const
+QByteArray value::get_blob() const
 {
     const cass_byte_t* buff;
     size_t len = 0;
-    CassError rc = cass_value_get_bytes( f_value.get(), &buff, &len );
+    CassError rc = cass_value_get_bytes( f_ptr.get(), &buff, &len );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value blob!" );
@@ -705,7 +729,7 @@ QByteArray value::get_blob()           const
 bool value::get_bool() const
 {
     cass_bool_t b;
-    CassError rc = cass_value_get_bool( f_value.get(), &b );
+    CassError rc = cass_value_get_bool( f_ptr.get(), &b );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -714,10 +738,10 @@ bool value::get_bool() const
 }
 
 
-float      value::get_float()          const
+float value::get_float() const
 {
     cass_float_t f;
-    CassError rc = cass_value_get_float( f_value.get(), &f );
+    CassError rc = cass_value_get_float( f_ptr.get(), &f );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -726,10 +750,10 @@ float      value::get_float()          const
 }
 
 
-double     value::get_double()         const
+double value::get_double() const
 {
     cass_double_t d;
-    CassError rc = cass_value_get_double( f_value.get(), &d );
+    CassError rc = cass_value_get_double( f_ptr.get(), &d );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -738,10 +762,10 @@ double     value::get_double()         const
 }
 
 
-int8_t     value::get_int8()           const
+int8_t value::get_int8() const
 {
     cass_int8_t i;
-    CassError rc = cass_value_get_int8( f_value.get(), &i );
+    CassError rc = cass_value_get_int8( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -750,10 +774,10 @@ int8_t     value::get_int8()           const
 }
 
 
-int16_t    value::get_int16()          const
+int16_t value::get_int16() const
 {
     cass_int16_t i;
-    CassError rc = cass_value_get_int16( f_value.get(), &i );
+    CassError rc = cass_value_get_int16( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -762,10 +786,10 @@ int16_t    value::get_int16()          const
 }
 
 
-int32_t    value::get_int32()          const
+int32_t value::get_int32() const
 {
     cass_int32_t i;
-    CassError rc = cass_value_get_int32( f_value.get(), &i );
+    CassError rc = cass_value_get_int32( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -774,10 +798,10 @@ int32_t    value::get_int32()          const
 }
 
 
-int64_t    value::get_int64()          const
+int64_t value::get_int64() const
 {
     cass_int64_t i;
-    CassError rc = cass_value_get_int64( f_value.get(), &i );
+    CassError rc = cass_value_get_int64( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
         throw std::runtime_error( "Cannot extract value!" );
@@ -786,23 +810,25 @@ int64_t    value::get_int64()          const
 }
 
 
-QString    value::get_uuid()           const
+QString value::get_uuid() const
 {
     CassUuid uuid;
-    CassError rc = cass_value_get_uuid( f_value.get(), &uuid );
+    CassError rc = cass_value_get_uuid( f_ptr.get(), &uuid );
     if( rc == CASS_OK )
     {
         char str[CASS_UUID_STRING_LENGTH+1];
         cass_uuid_string( uuid, str );
         return QString(str);
     }
+
+    return QString();
 }
 
 
 qulonglong value::get_uuid_timestamp() const
 {
     CassUuid uuid;
-    CassError rc = cass_value_get_uuid( f_value.get(), &uuid );
+    CassError rc = cass_value_get_uuid( f_ptr.get(), &uuid );
     if( rc == CASS_OK )
     {
         return static_cast<qulonglong>(cass_uuid_timestamp( uuid ));
@@ -812,10 +838,10 @@ qulonglong value::get_uuid_timestamp() const
 }
 
 
-QString    value::get_inet()           const
+QString value::get_inet() const
 {
     CassInet inet;
-    rc = cass_value_get_inet( f_value.get(), &inet );
+    CassError rc = cass_value_get_inet( f_ptr.get(), &inet );
     if( rc == CASS_OK )
     {
         char str[CASS_UUID_STRING_LENGTH+1];

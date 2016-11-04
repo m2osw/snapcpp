@@ -59,7 +59,9 @@ public:
 
     void append_string( const std::string& value ) const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
+
+    friend class statement;
 
 private:
     std::shared_ptr<CassCollection> f_ptr;
@@ -74,14 +76,14 @@ public:
         void operator()(const CassColumnMeta* p) const;
     };
 
-    column_meta( const CassColumnMeta* );
+    column_meta( CassColumnMeta* );
 
     QString        get_name()        const;
     CassColumnType get_column_type() const;
     CassValueType  get_value_type()  const;
     iterator       get_fields()      const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
 private:
     std::shared_ptr<CassColumnMeta> f_ptr;
@@ -96,7 +98,7 @@ public:
         void operator()(CassCluster* p) const;
     };
 
-    cluster( const CassCluster* );
+    cluster();
 
     void set_contact_points              ( const QString&  host_list );
     void set_port                        ( const int       port      );
@@ -107,7 +109,7 @@ public:
     void reset_ssl() const;
     void set_ssl( const ssl& ) const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
     friend class future;
 
@@ -125,7 +127,7 @@ public:
     };
 
     future();
-    future( const CassFuture* );
+    future( CassFuture* );
     future( const session&, const cluster& );
 
     CassError   get_error_code()    const;
@@ -133,13 +135,13 @@ public:
     result      get_result()        const;
     bool        is_ready() const;
 
-    void set_callback( CassFutureCallback callback, void* data );
+    void set_callback( void* callback, void* data );
 
     void wait() const;
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
-    bool operator ==( const CassFuture * );
-    bool operator !=( const CassFuture * );
+    bool operator ==( const future& );
+    bool operator !=( const future& );
 
 private:
     std::shared_ptr<CassFuture> f_ptr;
@@ -154,7 +156,8 @@ public:
         void operator()(CassIterator* p) const;
     };
 
-    iterator( const CassIterator* iter   );
+    iterator( CassIterator*   );
+    iterator( const iterator& );
 
     bool          next()                 const;
 
@@ -172,7 +175,7 @@ public:
     table_meta    get_table_meta()       const;
     column_meta   get_column_meta()      const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
 private:
     std::shared_ptr<CassIterator> f_ptr;
@@ -187,12 +190,13 @@ public:
         void operator()(CassKeyspaceMeta* p) const;
     };
 
-    keyspace_meta( const CassKeyspaceMeta* );
+    keyspace_meta( CassKeyspaceMeta* );
 
     iterator get_fields() const;
     iterator get_tables() const;
+    QString  get_name()   const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
 private:
     std::shared_ptr<CassKeyspaceMeta> f_ptr;
@@ -207,13 +211,16 @@ public:
         void operator()(const CassResult* p) const;
     };
 
-    result( CassResult* result );
+    result( CassResult*   );
+    result( const result& );
 
     iterator    get_iterator()   const;
     size_t      get_row_count()  const;
     bool        has_more_pages() const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
+
+    friend class statement;
 
 private:
     std::shared_ptr<CassResult> f_ptr;
@@ -238,41 +245,19 @@ private:
 };
 
 
-class table_meta
-{
-public:
-    struct deleter_t
-    {
-        void operator()(CassTableMeta* p) const;
-    };
-
-    table_meta( const CassTableMeta* );
-
-    iterator get_fields()  const;
-    iterator get_columns() const;
-
-    QString  get_name() const;
-
-    void reset() const { f_ptr.reset(); }
-
-private:
-    std::shared_ptr<CassTableMeta>  f_ptr;
-};
-
-
 class schema_meta
 {
 public:
     struct deleter_t
     {
-        void operator()(CassSchemaMeta* p) const;
+        void operator()(const CassSchemaMeta* p) const;
     };
 
     schema_meta( const session& );
 
     iterator    get_keyspaces() const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
 private:
     std::shared_ptr<CassSchemaMeta> f_ptr;
@@ -289,13 +274,13 @@ public:
 
     session();
 
-    schema_meta get_schema_meta() const;
+    //schema_meta get_schema_meta() const;
     future      execute( const statement& ) const;
     future      close() const;
     void        reset() { f_ptr.reset(); }
 
     friend class future;
-    //friend class statement;
+    friend class schema_meta;
 
 private:
     std::shared_ptr<CassSession>    f_ptr;
@@ -313,9 +298,9 @@ public:
     ssl();
 
     void add_trusted_cert( const QString& cert );
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
-    friend class ssl;
+    friend class cluster;
 
 private:
     std::shared_ptr<CassSsl>    f_ptr;
@@ -347,13 +332,35 @@ public:
     void bind_blob       ( const size_t num, const QByteArray&  value ) const;
     void bind_collection ( const size_t num, const collection&  value ) const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
     friend class session;
 
 private:
     std::shared_ptr<CassStatement>  f_ptr;
     QString                         f_query;
+};
+
+
+class table_meta
+{
+public:
+    struct deleter_t
+    {
+        void operator()(CassTableMeta* p) const;
+    };
+
+    table_meta( CassTableMeta* );
+
+    iterator get_fields()  const;
+    iterator get_columns() const;
+
+    QString  get_name() const;
+
+    void reset() { f_ptr.reset(); }
+
+private:
+    std::shared_ptr<CassTableMeta>  f_ptr;
 };
 
 
@@ -365,7 +372,7 @@ public:
         void operator()(CassValue* p) const;
     };
 
-    value( const CassValue* );
+    value( CassValue* );
 
     iterator      get_iterator_from_map()        const;
     iterator      get_iterator_from_collection() const;
@@ -385,7 +392,7 @@ public:
     qulonglong    get_uuid_timestamp() const;
     QString       get_inet()           const;
 
-    void reset() const { f_ptr.reset(); }
+    void reset() { f_ptr.reset(); }
 
 private:
     std::shared_ptr<CassValue>  f_ptr;

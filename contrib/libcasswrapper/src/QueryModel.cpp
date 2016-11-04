@@ -16,9 +16,9 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "QtCassandra/QueryModel.h"
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSession.h"
+#include "casswrapper/QueryModel.h"
+#include "casswrapper/QCassandraQuery.h"
+#include "casswrapper/QCassandraSession.h"
 
 #include "NotUsed.h"
 
@@ -32,7 +32,7 @@
 //#include "poison.h"
 
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
 
@@ -280,6 +280,6 @@ int QueryModel::columnCount( QModelIndex const & prnt ) const
 
 
 }
-// namespace QtCassandra
+// namespace CassWrapper
 
 // vim: ts=4 sw=4 et

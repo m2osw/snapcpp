@@ -57,6 +57,6 @@ static const int   CASSWRAPPER_LIBRARY_VERSION_PATCH  = @LIBCASSWRAPPER_VERSION_
  */
 static const char *QT_CASSANDRA_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBCASSWRAPPER_VERSION_MAJOR@.@LIBCASSWRAPPER_VERSION_MINOR@.@LIBCASSWRAPPER_VERSION_PATCH@";
 
-} // namespace QtCassandra
+} // namespace CassWrapper
 
 // vim: ts=4 sw=4 et

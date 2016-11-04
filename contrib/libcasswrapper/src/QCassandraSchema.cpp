@@ -50,9 +50,6 @@ namespace CassWrapper
 {
 
 
-using namespace CassTools;
-
-
 namespace QCassandraSchema
 {
 
@@ -79,7 +76,7 @@ SessionMeta::pointer_t SessionMeta::create( QCassandraSession::pointer_t s )
 
 void SessionMeta::loadSchema()
 {
-    schema_meta schema( f_session->session() );
+    schema_meta schema( f_session->getSession() );
 
     iterator iter( schema.get_keyspaces() );
 
@@ -102,6 +99,8 @@ void SessionMeta::loadSchema()
         iterator tables_iter( p_keyspace.get_tables() );
         while( tables_iter.next() )
         {
+            table_meta p_table(tables_iter.get_table_meta());
+
             using TableMeta = KeyspaceMeta::TableMeta;
             TableMeta::pointer_t table
                     ( std::make_shared<TableMeta>(keyspace) );
@@ -110,7 +109,7 @@ void SessionMeta::loadSchema()
             keyspace->f_tables[table->f_name] = table;
 
             iterator table_fields_iter( p_table.get_fields() );
-            while( table_fields.iter.next() )
+            while( table_fields_iter.next() )
             {
                 const QString field_name( table_fields_iter.get_meta_field_name() );
                 Value val;
@@ -173,9 +172,9 @@ void SessionMeta::loadSchema()
                 }
 
                 iterator meta_iter( p_col.get_fields() );
-                while( p_col.next() )
+                while( meta_iter.next() )
                 {
-                    const QString field_name( p_col.get_meta_field_name() );
+                    const QString field_name( meta_iter.get_meta_field_name() );
                     Value val;
                     val.readValue(meta_iter);
                     column->f_fields[field_name] = val;

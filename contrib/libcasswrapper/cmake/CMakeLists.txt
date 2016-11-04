@@ -26,8 +26,8 @@
 # THE SOFTWARE.
 #
 
-project(qtcassandra_cmake)
+project(casswrapper_cmake)
 
-install( FILES QtCassandraConfig.cmake DESTINATION share/cmake/QtCassandra )
+install( FILES CassWrapperConfig.cmake DESTINATION share/cmake/CassWrapper )
 
 # vim: ts=4 sw=4 et nocindent

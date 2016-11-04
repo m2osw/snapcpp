@@ -35,6 +35,8 @@
  */
 #pragma once
 
+#include <stdint.h>
+
 namespace CassWrapper
 {
     class cluster;

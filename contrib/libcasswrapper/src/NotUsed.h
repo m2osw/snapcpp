@@ -1,4 +1,4 @@
-// QtCassandra -- wrap functions where we don't care about the return value
+// casswrapper -- wrap functions where we don't care about the return value
 // Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-namespace QtCassandra
+namespace CassWrapper
 {
     template <class T>
         inline void NOTUSED( T const & result )
@@ -27,6 +27,6 @@ namespace QtCassandra
 #pragma GCC diagnostic pop
         }
 }
-//namespace QtCassandra
+//namespace CassWrapper
 
 // vim: ts=4 sw=4 et

@@ -36,8 +36,9 @@
 
 #pragma once
 
+#include "casswrapper/CassStubs.h"
+#include "casswrapper/QCassandraEncoder.h"
 #include "casswrapper/QCassandraQuery.h"
-#include "casswrapper/QCassandraValue.h"
 
 #include <map>
 #include <memory>
@@ -47,7 +48,7 @@
 #include <QVariant>
 
 
-namespace casswrapper
+namespace CassWrapper
 {
 
 
@@ -70,8 +71,8 @@ public:
                         Value();
                         Value( const QVariant& var );
 
-    void                readValue( iterator iter );
-    void                readValue( value iter );
+    void                readValue( const iterator& iter );
+    void                readValue( const value&    iter );
     type_t              type() const { return f_type; }
 
     const QVariant&     variant()    const { return f_variant;                          }
@@ -87,13 +88,12 @@ public:
     void                decodeValue(const QCassandraDecoder& decoder);
 
 private:
-    void                parseValue();
-    void                parseMap();
-    void                parseList();
-    void                parseTuple();
-    void                parseVariant();
+    void                parseValue   ( const value& val );
+    void                parseMap     ( const value& val );
+    void                parseList    ( const value& val );
+    void                parseTuple   ( const value& val );
+    void                parseVariant ( const value& val );
 
-    value               f_value;
     type_t              f_type;
     QVariant            f_variant;
     list_t              f_list;
@@ -106,5 +106,5 @@ private:
 
 
 } // namespace QCassandraSchema
-} //namespace casswrapper
+} //namespace CassWrapper
 // vim: ts=4 sw=4 et

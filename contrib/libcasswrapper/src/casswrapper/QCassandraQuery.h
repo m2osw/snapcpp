@@ -83,7 +83,7 @@ public:
     class query_exception_t : public std::exception
     {
     public:
-        query_exception_t( CassTools::future_pointer_t sesson_future, const QString& msg );
+        query_exception_t( future sesson_future, const QString& msg );
 
         uint32_t        getCode()    const { return f_code;    }
         QString const&  getError()   const { return f_error;   }
@@ -174,9 +174,9 @@ private:
     QString                      f_queryString;
     //
     std::unique_ptr<statement>   f_queryStmt;
-    future                       f_sessionFuture;
-    result                       f_queryResult;
-    iterator                     f_rowsIterator;
+    std::unique_ptr<future>      f_sessionFuture;
+    std::unique_ptr<result>      f_queryResult;
+    std::unique_ptr<iterator>    f_rowsIterator;
     //
     consistency_level_t          f_consistencyLevel = consistency_level_t::level_default;
     int64_t                      f_timestamp        = 0;
@@ -188,7 +188,7 @@ private:
     string_map_t        getMapFromValue       ( const value& value ) const;
     void                throwIfError          ( const QString& msg );
 
-    static void		    queryCallbackFunc( CassFuture* future, void *data );
+    static void		    queryCallbackFunc( void* future, void *data );
 };
 
 
