@@ -1,3 +1,10 @@
+snapfirewall (1.1.0.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added the UNBLOCK and FIREWALLSTATUS messages to the COMMANDS.
+  * Bumped version as we modified the database handling in 1.0.38.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 17:25:46 -0700
+
 snapfirewall (1.0.38.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added a reason parameter to the snapfirewall action.

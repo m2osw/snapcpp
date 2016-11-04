@@ -1822,7 +1822,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
         // list of commands understood by service
         //
-        reply.add_parameter("list", "BLOCK,CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "BLOCK,CASSANDRAREADY,FIREWALLSTATUS,HELP,LOG,NOCASSANDRA,QUITTING,READY,STOP,UNBLOCK,UNKNOWN");
 
         f_messenger->send_message(reply);
 
