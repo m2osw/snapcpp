@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.42.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 04 Nov 2016 02:00:47 -0700
+
 libsnapwebsites (1.1.42.0~xenial) xenial; urgency=high
 
   * SNAP-465: Well... renamed those rows "ip::..." instead of "ip_info::...".
