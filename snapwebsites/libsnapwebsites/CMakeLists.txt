@@ -65,6 +65,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 find_package( AdvGetOpt          REQUIRED )
 find_package( Boost              REQUIRED )
 find_package( CassandraCppDriver REQUIRED )
+find_package( CassWrapper        REQUIRED )
 find_package( CSSPP              REQUIRED )
 find_package( LibTLD             REQUIRED )
 find_package( LibXml2            REQUIRED )
@@ -87,6 +88,7 @@ find_package( ZipIos             REQUIRED 2.1 )
 find_package( SnapDoxygen )
 
 include_directories( SYSTEM
+    ${CASSWRAPPER_INCLUDE_DIR}
     ${CASSANDRACPPDRIVER_INCLUDE_DIR}
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}

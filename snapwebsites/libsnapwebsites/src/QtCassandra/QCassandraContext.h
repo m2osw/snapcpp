@@ -60,8 +60,8 @@ public:
 
     // fields
     //
-    const QCassandraSchema::Value::map_t& fields() const;
-    QCassandraSchema::Value::map_t&       fields();
+    const CassWrapper::QCassandraSchema::Value::map_t& fields() const;
+    CassWrapper::QCassandraSchema::Value::map_t&       fields();
 
     // tables
     QCassandraTable::pointer_t table(const QString& table_name);
@@ -106,7 +106,7 @@ private:
     QCassandraContext & operator = (QCassandraContext const &) = delete;
 
     void resetSchema();
-    void parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
+    void parseContextDefinition( CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
     //void prepareContextDefinition(KsDef *ks) const;
 
     QString getKeyspaceOptions();
@@ -121,7 +121,7 @@ private:
     // Also, it cannot be a shared_ptr unless you make a restriction that
     // all instances must be allocated on the heap. Thus is the deficiency of
     // std::enabled_shared_from_this<>.
-    QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t		f_schema;
+    CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t		f_schema;
     //
     std::shared_ptr<QCassandra>                 f_cassandra;
     QString										f_contextName;

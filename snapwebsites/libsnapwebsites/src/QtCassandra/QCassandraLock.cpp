@@ -34,11 +34,15 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <casswrapper/QCassandraEncoder.h>
+
 #include "QtCassandra/QCassandraLock.h"
 #include "QtCassandra/QCassandra.h"
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
+
+using namespace CassWrapper;
 
 namespace QtCassandra
 {

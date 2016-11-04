@@ -742,7 +742,7 @@ void snap_backend::add_uri_for_processing(QString const & action, int64_t date, 
     if(previous_entry != -1)
     {
         QByteArray column_key;
-        QtCassandra::appendInt64Value(column_key, previous_entry);
+        CassWrapper::appendInt64Value(column_key, previous_entry);
 
         // is entry already outdated and thus still effective?
         //
@@ -768,7 +768,7 @@ void snap_backend::add_uri_for_processing(QString const & action, int64_t date, 
     }
 
     QByteArray date_key;
-    QtCassandra::appendInt64Value(date_key, date);
+    CassWrapper::appendInt64Value(date_key, date);
     f_backend_table->row(action)->cell(date_key)->setValue(website_uri);
 
     // save a reference so we can drop the entry as required
@@ -798,7 +798,7 @@ void snap_backend::remove_processed_uri(QString const & action, QByteArray const
     {
         // drop the actual entry and the reference
         QByteArray column_key;
-        QtCassandra::appendInt64Value(column_key, previous_entry);
+        CassWrapper::appendInt64Value(column_key, previous_entry);
         f_backend_table->row(action)->dropCell(column_key);
     }
 
@@ -1152,7 +1152,7 @@ bool snap_backend::process_timeout()
             // processing that website now
             //
             QByteArray const key(cells.begin().key());
-            int64_t const time_limit(QtCassandra::safeInt64Value(key, 0, 0));
+            int64_t const time_limit(CassWrapper::safeInt64Value(key, 0, 0));
             if(time_limit <= get_current_date() + 10000LL)
             {
                 // note how we remove the URI from the backend table before

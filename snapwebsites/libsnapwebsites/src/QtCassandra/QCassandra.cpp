@@ -40,8 +40,9 @@
 #include <sys/time.h>
 #pragma GCC pop
 
+#include <casswrapper/QCassandraSchema.h>
+
 #include "QtCassandra/QCassandra.h"
-#include "QtCassandra/QCassandraSchema.h"
 
 #include <QtCore>
 
@@ -52,6 +53,7 @@
 
 #include <unistd.h>
 
+using namespace CassWrapper;
 
 /** \brief The QtCassandra namespace includes all the Cassandra extensions.
  *

@@ -49,6 +49,7 @@
 
 #include <unistd.h>
 
+using namespace CassWrapper;
 
 namespace QtCassandra
 {

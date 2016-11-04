@@ -45,6 +45,7 @@
 #include <QtCore>
 //#include <QDebug>
 
+using namespace CassWrapper;
 
 namespace QtCassandra
 {
@@ -304,7 +305,7 @@ void QCassandraContext::resetSchema()
 {
     f_schema = std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>();
 
-    QtCassandra::QCassandraSchema::Value replication;
+    CassWrapper::QCassandraSchema::Value replication;
     auto& replication_map(replication.map());
     replication_map["class"]              = QVariant("SimpleStrategy");
     replication_map["replication_factor"] = QVariant(1);

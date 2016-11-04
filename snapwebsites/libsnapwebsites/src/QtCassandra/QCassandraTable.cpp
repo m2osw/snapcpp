@@ -37,8 +37,9 @@
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraTable.h"
 #include "QtCassandra/QCassandraContext.h"
-#include "QtCassandra/QCassandraSession.h"
-#include "QtCassandra/QCassandraSchema.h"
+
+#include <casswrapper/QCassandraSession.h>
+#include <casswrapper/QCassandraSchema.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -48,6 +49,7 @@
 
 #include <unistd.h>
 
+using namespace CassWrapper;
 
 namespace QtCassandra
 {

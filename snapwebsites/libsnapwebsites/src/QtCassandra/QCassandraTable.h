@@ -35,11 +35,12 @@
  */
 #pragma once
 
+#include <casswrapper/QCassandraSchema.h>
+
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraProxy.h"
 #include "QtCassandra/QCassandraRow.h"
-#include "QtCassandra/QCassandraSchema.h"
 
 #include <cstdint>
 #include <memory>
@@ -68,8 +69,8 @@ public:
 
     // fields
     //
-    const QCassandraSchema::Value::map_t& fields() const;
-    QCassandraSchema::Value::map_t&       fields();
+    const CassWrapper::QCassandraSchema::Value::map_t& fields() const;
+    CassWrapper::QCassandraSchema::Value::map_t&       fields();
 
     // handling
     void create();
@@ -108,7 +109,7 @@ private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
     void        setFromCassandra();
-    void        parseTableDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta );
+    void        parseTableDefinition( CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta );
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
@@ -131,7 +132,7 @@ private:
     friend class QCassandraContext;
     friend class QCassandraRow;
 
-    QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t	f_schema;
+    CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t	f_schema;
 
     bool                                        f_from_cassandra = false;
     std::shared_ptr<QCassandraContext>          f_context;

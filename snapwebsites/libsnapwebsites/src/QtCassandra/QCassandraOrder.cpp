@@ -39,14 +39,17 @@
 //#include <sys/time.h>
 //#pragma GCC pop
 
-#include "QtCassandra/QCassandraOrder.h"
+#include <casswrapper/QCassandraEncoder.h>
 
+#include "QtCassandra/QCassandraOrder.h"
 #include "QtCassandra/QCassandraValue.h"
 
 #include <QtCore>
 
 #include <iostream>
 #include <sstream>
+
+using namespace CassWrapper;
 
 namespace QtCassandra
 {

@@ -59,34 +59,33 @@ qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
     snap.qrc
 )
 set( QTCASSANDRA_HEADER_FILES
-    QCassandra.h
-    QCassandraCell.h
-    QCassandraConsistencyLevel.h
-    QCassandraContext.h
-    QCassandraLock.h
-    QCassandraOrder.h
-    QCassandraOrderResult.h
-    QCassandraPredicate.h
-    QCassandraProxy.h
-    QCassandraRow.h
-    QCassandraTable.h
-    QCassandraValue.h
-    QCassandraVersion.h.in
+    QtCassandra/QCassandra.h
+    QtCassandra/QCassandraCell.h
+    QtCassandra/QCassandraConsistencyLevel.h
+    QtCassandra/QCassandraContext.h
+    QtCassandra/QCassandraLock.h
+    QtCassandra/QCassandraOrder.h
+    QtCassandra/QCassandraOrderResult.h
+    QtCassandra/QCassandraPredicate.h
+    QtCassandra/QCassandraProxy.h
+    QtCassandra/QCassandraRow.h
+    QtCassandra/QCassandraTable.h
+    QtCassandra/QCassandraValue.h
+    QtCassandra/QCassandraVersion.h
 )
 
 set( QTCASSANDRA_SOURCE_FILES
-    QStringStream.h
-    QCassandra.cpp
-    QCassandraCell.cpp
-    QCassandraContext.cpp
-    QCassandraLock.cpp
-    QCassandraOrder.cpp
-    QCassandraOrderResult.cpp
-    QCassandraPredicate.cpp
-    QCassandraProxy.cpp
-    QCassandraRow.cpp
-    QCassandraTable.cpp
-    QCassandraValue.cpp
+    QtCassandra/QCassandra.cpp
+    QtCassandra/QCassandraCell.cpp
+    QtCassandra/QCassandraContext.cpp
+    QtCassandra/QCassandraLock.cpp
+    QtCassandra/QCassandraOrder.cpp
+    QtCassandra/QCassandraOrderResult.cpp
+    QtCassandra/QCassandraPredicate.cpp
+    QtCassandra/QCassandraProxy.cpp
+    QtCassandra/QCassandraRow.cpp
+    QtCassandra/QCassandraTable.cpp
+    QtCassandra/QCassandraValue.cpp
 )
 
 set( HEADERS
@@ -215,6 +214,7 @@ add_library( ${PROJECT_NAME} SHARED
 
 target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
+    ${CASSWRAPPER_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -246,10 +246,13 @@ install(
     FILES_MATCHING PATTERN "snapwebsites/*.h"
 )
 install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include
+    FILES_MATCHING PATTERN "QtCassandra/*.h"
+)
+install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites/version.h
     DESTINATION include/snapwebsites
 )
-
-add_subdirectory( QtCassandra )
 
 # vim: ts=4 sw=4 et nocindent
