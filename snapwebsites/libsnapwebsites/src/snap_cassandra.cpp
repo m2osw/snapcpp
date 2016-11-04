@@ -40,7 +40,7 @@ snap_cassandra::~snap_cassandra()
 {
     if(f_cassandra != nullptr)
     {
-SNAP_LOG_WARNING("cassandra count in destructor: ")(f_cassandra.use_count());
+SNAP_LOG_WARNING("f_cassandra.use_count() in destructor: ")(f_cassandra.use_count());
     }
 }
 
@@ -99,7 +99,7 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     //return f_cassandra->findContext(context_name);
 QtCassandra::QCassandraContext::pointer_t c(f_cassandra->findContext(context_name));
-SNAP_LOG_WARNING("f_cassandra exiting connect() = ")(f_cassandra.use_count());
+SNAP_LOG_WARNING("f_cassandra exiting context() = ")(f_cassandra.use_count());
 return c;
 
     //QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
