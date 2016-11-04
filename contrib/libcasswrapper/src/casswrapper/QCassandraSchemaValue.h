@@ -68,6 +68,14 @@ public:
     typedef std::vector<Value>            list_t;
     typedef std::map<QString, Value>      map_t;
 
+    class exception_t : public std::runtime_error
+    {
+    public:
+        exception_t( const QString& what     ) : std::runtime_error(qPrintable(what)) {}
+        exception_t( const std::string& what ) : std::runtime_error(what.c_str())     {}
+        exception_t( const char* what )        : std::runtime_error(what)             {}
+    };
+
                         Value();
                         Value( const QVariant& var );
 

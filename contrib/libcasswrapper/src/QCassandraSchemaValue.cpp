@@ -120,7 +120,7 @@ void Value::encodeValue(QCassandraEncoder& encoder) const
             // (at this time we throw to make sure we capture
             // invalid data; otherwise the whole thing breaks
             // anyway...)
-            throw std::runtime_error("unsupported QVariant type");
+            throw exception_t("unsupported QVariant type");
 
         }
         break;
@@ -200,7 +200,7 @@ void Value::decodeValue(const QCassandraDecoder& decoder)
                 // (at this time we throw to make sure we capture
                 // invalid data; otherwise the whole thing breaks
                 // anyway...)
-                throw std::runtime_error("unsupported QVariant type");
+                throw exception_t("unsupported QVariant type");
 
             }
         }
@@ -336,7 +336,8 @@ void Value::parseTuple( const value& val )
 
 void Value::parseVariant( const value& val )
 {
-    switch( val.get_type() )
+    CassValueType const type(val.get_type());
+    switch( type )
     {
         case CASS_VALUE_TYPE_BLOB       :
             f_variant = val.get_blob();
@@ -362,6 +363,7 @@ void Value::parseVariant( const value& val )
             f_variant = val.get_int16();
             break;
 
+        case CASS_VALUE_TYPE_INT       :
         case CASS_VALUE_TYPE_VARINT    :
             f_variant = val.get_int32();
             break;
@@ -393,7 +395,8 @@ void Value::parseVariant( const value& val )
             break;
 
         default:
-            throw std::runtime_error( "This type is not a bare type!" );
+            throw exception_t( QString("This type [%1] is not a bare type!")
+                               .arg(static_cast<uint32_t>(type)) );
     }
 }
 

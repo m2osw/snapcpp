@@ -233,7 +233,7 @@ void QueryTest::simpleSelect()
     std::cout << "Select from table 'data'..." << std::endl;
     auto q = QCassandraQuery::create( f_session );
     q->query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
-             //",COUNT(*) AS count\n"
+             ",COUNT(*) AS count\n"
              ",WRITETIME(blob_value) AS timestamp\n"
              "FROM qtcassandra_query_test.data" );
     q->start();
@@ -365,7 +365,7 @@ int main( int argc, char *argv[] )
         }
     }
 
-    try
+    //try
     {
         QueryTest test( host );
         test.describeSchema();
@@ -375,11 +375,13 @@ int main( int argc, char *argv[] )
         test.simpleSelect();
         test.largeTableTest();
     }
+#if 0
     catch( const std::exception& ex )
     {
         std::cerr << "Exception caught! what=[" << ex.what() << "]" << std::endl;
         return 1;
     }
+#endif
 
     return 0;
 }
