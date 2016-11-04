@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.42.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Well... renamed those rows "ip::..." instead of "ip_info::...".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 17:57:47 -0700
+
 libsnapwebsites (1.1.41.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added a few more fields so we see the correct data with snapdb.
