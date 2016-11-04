@@ -45,23 +45,10 @@
 #include <QByteArray>
 
 #include <unistd.h>
-#include <sys/syscall.h>
+//#include <sys/syscall.h>
 
-namespace QtCassandra
+namespace CassWrapper
 {
-
-
-namespace CassTools
-{
-    typedef int64_t                                 timeout_t;
-
-    inline pid_t gettid()
-    {
-        return syscall(SYS_gettid);
-    }
-}
-
-
 
 
 class QCassandraSession
@@ -70,7 +57,7 @@ class QCassandraSession
 public:
     typedef std::shared_ptr<QCassandraSession> pointer_t;
 
-    static CassTools::timeout_t const       DEFAULT_TIMEOUT = 12 * 1000; // 12s
+    static timeout_t const       DEFAULT_TIMEOUT = 12 * 1000; // 12s
 
     static pointer_t create();
     ~QCassandraSession();
@@ -86,12 +73,12 @@ public:
     void           add_ssl_trusted_cert( const QString& cert     );
     void           add_ssl_cert_file   ( const QString& filename );
 
-    CassTools::cluster_pointer_t cluster()    const;
-    CassTools::session_pointer_t session()    const;
-    CassTools::future_pointer_t  connection() const;
+    cluster cluster()    const;
+    session session()    const;
+    future  connection() const;
 
-    CassTools::timeout_t timeout() const;
-    CassTools::timeout_t setTimeout(CassTools::timeout_t timeout_ms);
+    timeout_t timeout() const;
+    timeout_t setTimeout(timeout_t timeout_ms);
 
     uint32_t highWaterMark () const;
     uint32_t lowWaterMark  () const;
@@ -104,14 +91,14 @@ private:
     void reset_ssl_keys();
     void add_ssl_keys();
 
-    CassTools::cluster_pointer_t        f_cluster;
-    CassTools::session_pointer_t        f_session;
-    CassTools::ssl_pointer_t            f_ssl;
-    CassTools::future_pointer_t         f_connection;
-    CassTools::timeout_t                f_timeout         = DEFAULT_TIMEOUT; // 12s
-    uint32_t                            f_high_water_mark = 65536;
-    uint32_t                            f_low_water_mark  = 0;
-    QString                             f_keys_path       = "/var/lib/snapwebsites/cassandra-keys/";
+    cluster   f_cluster;
+    session   f_session;
+    std::unique_ptr<ssl>       f_ssl;
+    future    f_connection;
+    timeout_t f_timeout         = DEFAULT_TIMEOUT;                         // 12s
+    uint32_t  f_high_water_mark = 65536;
+    uint32_t  f_low_water_mark  = 0;
+    QString   f_keys_path       = "/var/lib/snapwebsites/cassandra-keys/";
 };
 
 
@@ -120,7 +107,7 @@ class QCassandraRequestTimeout
 public:
     typedef std::shared_ptr<QCassandraRequestTimeout> pointer_t;
 
-    QCassandraRequestTimeout(QCassandraSession::pointer_t session, CassTools::timeout_t timeout_ms)
+    QCassandraRequestTimeout(QCassandraSession::pointer_t session, timeout_t timeout_ms)
         : f_session(session)
         , f_old_timeout(f_session->setTimeout(timeout_ms))
     {
@@ -133,10 +120,11 @@ public:
 
 private:
     QCassandraSession::pointer_t    f_session;
-    CassTools::timeout_t            f_old_timeout;
+    timeout_t                       f_old_timeout;
 };
 
 
 }
-// namespace QtCassandra
+// namespace CassWrapper
+
 // vim: ts=4 sw=4 et

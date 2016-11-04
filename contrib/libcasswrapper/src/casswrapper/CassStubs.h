@@ -35,9 +35,6 @@
  */
 #pragma once
 
-#include <QString>
-
-
 namespace CassWrapper
 {
     class cluster;
@@ -47,6 +44,7 @@ namespace CassWrapper
     class iterator;
     class keyspace_meta;
     class result;
+    class row;
     class schema_meta;
     class table_meta;
     class session;
@@ -55,12 +53,7 @@ namespace CassWrapper
     class value;
 
     typedef int64_t timeout_t;
-
-    inline pid_t gettid()
-    {
-        return syscall(SYS_gettid);
-    }
 }
-
 // namespace CassWrapper
+
 // vim: ts=4 sw=4 et

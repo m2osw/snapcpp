@@ -36,13 +36,13 @@
 
 #pragma once
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchemaValue.h"
+#include "casswrapper/QCassandraQuery.h"
+#include "casswrapper/QCassandraSchemaValue.h"
 
 #include <QString>
 
 
-namespace QtCassandra
+namespace CassWrapper
 {
 namespace QCassandraSchema
 {
@@ -213,6 +213,6 @@ private:
 };
 
 
-} //namespace QtCassandra
 } //namespace QCassandraSchema
+} //namespace CassWrapper
 // vim: ts=4 sw=4 et

@@ -36,8 +36,8 @@
 
 #pragma once
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraValue.h"
+#include "casswrapper/QCassandraQuery.h"
+#include "casswrapper/QCassandraValue.h"
 
 #include <map>
 #include <memory>
@@ -47,7 +47,7 @@
 #include <QVariant>
 
 
-namespace QtCassandra
+namespace casswrapper
 {
 
 
@@ -64,15 +64,14 @@ public:
         TypeMap,
         TypeList
     };
-    //typedef std::shared_ptr<Value>        pointer_t;
     typedef std::vector<Value>            list_t;
     typedef std::map<QString, Value>      map_t;
 
                         Value();
                         Value( const QVariant& var );
 
-    void                readValue( CassTools::iterator_pointer_t iter );
-    void                readValue( CassTools::value_pointer_t iter );
+    void                readValue( iterator iter );
+    void                readValue( value iter );
     type_t              type() const { return f_type; }
 
     const QVariant&     variant()    const { return f_variant;                          }
@@ -94,18 +93,18 @@ private:
     void                parseTuple();
     void                parseVariant();
 
-    CassTools::value_pointer_t  f_value;
-    type_t                      f_type;
-    QVariant                    f_variant;
-    list_t                      f_list;
-    map_t                       f_map;
+    value               f_value;
+    type_t              f_type;
+    QVariant            f_variant;
+    list_t              f_list;
+    map_t               f_map;
 
-    mutable QString             f_stringOutput;
+    mutable QString     f_stringOutput;
 };
 
 
 
 
 } // namespace QCassandraSchema
-} //namespace QtCassandra
+} //namespace casswrapper
 // vim: ts=4 sw=4 et

@@ -4,7 +4,7 @@
 #
 # Description:
 #      Top level project definitions which includes the C++ files and the
-#      header files as required to compile the libQtCassandra and tests
+#      header files as required to compile the libcasswrapper and tests
 #
 # Documentation:
 #      See the CMake documentation.
@@ -36,7 +36,7 @@
 #
 
 cmake_minimum_required(VERSION 2.8)
-project(libQtCassandra)
+project(libcasswrapper)
 
 set( CMAKE_INCLUDE_CURRENT_DIR ON   )
 set( CMAKE_AUTOMOC             TRUE )
@@ -75,8 +75,8 @@ endif()
 
 add_subdirectory(cmake)
 add_subdirectory(src)
-add_subdirectory(tools)
-add_subdirectory(tests)
+#add_subdirectory(tools)
+#add_subdirectory(tests)
 add_subdirectory(doc)
 
 # vim: ts=4 sw=4 et

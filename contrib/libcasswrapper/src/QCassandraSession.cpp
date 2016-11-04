@@ -34,8 +34,8 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraSession.h"
-#include "CassTools.h"
+#include "casswrapper/QCassandraSession.h"
+#include "casswrapper/CassWrapper.h"
 
 #include "cassandra.h"
 
@@ -64,7 +64,7 @@
  */
 
 
-namespace QtCassandra
+namespace CassWrapper
 {
 
 
@@ -177,47 +177,41 @@ void QCassandraSession::connect( const QStringList& host_list, const int port, c
 
     // Create the cluster and specify settings.
     //
-    f_cluster.reset( cass_cluster_new(), CassTools::clusterDeleter() );
-    cass_cluster_set_contact_points( f_cluster.get(),
-                                     host_list.join(",").toUtf8().data() );
+    f_cluster.reset();
+    f_cluster.set_contact_points( host_list.join(",") );
 
-    cass_cluster_set_port                        ( f_cluster.get(), port );
-    cass_cluster_set_request_timeout             ( f_cluster.get(), static_cast<unsigned>(f_timeout) );
-    cass_cluster_set_write_bytes_high_water_mark ( f_cluster.get(), f_high_water_mark );
-    cass_cluster_set_write_bytes_low_water_mark  ( f_cluster.get(), f_low_water_mark  );
+    f_cluster.set_port                        ( port              );
+    f_cluster.set_request_timeout             ( f_timeout         );
+    f_cluster.set_write_bytes_high_water_mark ( f_high_water_mark );
+    f_cluster.set_write_bytes_low_water_mark  ( f_low_water_mark  );
 
     // Attach the SSL server trusted certificate if
     // it exists.
     //
     if( f_ssl )
     {
-        cass_cluster_set_ssl( f_cluster.get(), f_ssl.get() );
+        f_cluster.set_ssl( *f_ssl );
     }
 
     // Create the session now, and create a connection.
     //
-    f_session.reset( cass_session_new(), CassTools::sessionDeleter() );
-    f_connection.reset(
-        cass_session_connect( f_session.get(), f_cluster.get() ),
-        CassTools::futureDeleter() );
+    f_session.reset();
+    f_connection = connection( f_session, f_cluster );
 
     // This operation will block until the result is ready
     //
-    CassError rc = cass_future_error_code( f_connection.get() );
+    CassError rc = future.get_error_code();
     if ( rc != CASS_OK )
     {
-        const char *message;
-        size_t message_length;
-        cass_future_error_message( f_connection.get(), &message,
-                                   &message_length );
+        QString const message( future.get_error_message() );
         std::stringstream msg;
         msg << "Cannot connect to cassandra server! Reason=["
-            << std::string( message ) << "]";
+            << std::string( message.toUtf8().data() ) << "]";
 
         f_connection.reset();
         f_session.reset();
         f_cluster.reset();
-        throw std::runtime_error( msg.str().c_str() );
+        throw exception_t( msg.str() );
     }
 }
 
@@ -237,13 +231,7 @@ void QCassandraSession::disconnect()
 {
     f_connection.reset();
     //
-    if ( f_session )
-    {
-        CassTools::future_pointer_t result( cass_session_close( f_session.get() ),
-                                 CassTools::futureDeleter() );
-        cass_future_wait( result.get() );
-    }
-    //
+    f_session.close().wait();
     f_session.reset();
     f_cluster.reset();
 }
@@ -271,11 +259,7 @@ bool QCassandraSession::isConnected() const
 void QCassandraSession::reset_ssl_keys()
 {
     f_ssl.reset();
-    //
-    if( f_cluster )
-    {
-        cass_cluster_set_ssl( f_cluster.get(), nullptr );
-    }
+    f_cluster.reset_ssl();
 }
 
 
@@ -291,24 +275,12 @@ void QCassandraSession::add_ssl_trusted_cert( const QString& cert )
 {
     if( !f_ssl )
     {
-        f_ssl.reset( cass_ssl_new(), CassTools::sslDeleter() );
-        cass_ssl_set_verify_flags( f_ssl.get(), CASS_SSL_VERIFY_PEER_CERT | CASS_SSL_VERIFY_PEER_IDENTITY );
+        f_ssl = std::make_shared<ssl>();
     }
 
     // Add the trusted certificate (or chain) to the driver
     //
-    CassError rc = cass_ssl_add_trusted_cert_n
-        ( f_ssl.get()
-        , cert.toUtf8().data()
-        , cert.size()
-        );
-    if( rc != CASS_OK )
-    {
-        std::stringstream msg;
-        msg << "Error loading SSL certificate: "
-            << cass_error_desc(rc);
-        throw std::runtime_error( msg.str().c_str() );
-    }
+    f_ssl->add_trusted_cert( cert );
 }
 
 
@@ -392,21 +364,21 @@ void QCassandraSession::add_ssl_keys()
 
 /** \brief Return a smart pointer to the cassandra-cpp cluster object.
  */
-CassTools::cluster_pointer_t QCassandraSession::cluster() const
+cluster QCassandraSession::cluster() const
 {
     return f_cluster;
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp session object.
  */
-CassTools::session_pointer_t QCassandraSession::session() const
+session QCassandraSession::session() const
 {
     return f_session;
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp connection future object.
  */
-CassTools::future_pointer_t QCassandraSession::connection() const
+future QCassandraSession::connection() const
 {
     return f_connection;
 }
@@ -443,7 +415,7 @@ CassTools::timeout_t QCassandraSession::timeout() const
 /** \brief Change the current timeout of CQL requests.
  *
  * WARNING: In the snapdbproxy the request timeout is only implemented
- *          for QtCassandra::QCassandraOrder::TYPE_OF_RESULT_SUCCESS.
+ *          for CassWrapper::QCassandraOrder::TYPE_OF_RESULT_SUCCESS.
  *          If you are using sessions directly, make sure to create
  *          a new session after this change!
  *
@@ -469,7 +441,7 @@ CassTools::timeout_t QCassandraSession::timeout() const
  *
  * \code
  *      {
- *          QtCassandra::QCassandraRequestTimeout safe_timeout(session, 5 * 60 * 1000); // 5 minutes
+ *          CassWrapper::QCassandraRequestTimeout safe_timeout(session, 5 * 60 * 1000); // 5 minutes
  *          ... do some work ...
  *      }
  * \endcode
@@ -480,11 +452,11 @@ CassTools::timeout_t QCassandraSession::timeout() const
  * if you are using threads:
  *
  * \code
- *      session = QtCassandra::QCassandraSession::create();
+ *      session = CassWrapper::QCassandraSession::create();
  *      {
  *          guard lock(some_mutex);
  *
- *          QtCassandra::QCassandraRequestTimeout safe_timeout(session, 5 * 60 * 1000);
+ *          CassWrapper::QCassandraRequestTimeout safe_timeout(session, 5 * 60 * 1000);
  *          session->connect(...);
  *      }
  * \endcode
@@ -493,16 +465,12 @@ CassTools::timeout_t QCassandraSession::timeout() const
  *
  * \return The old timeout.
  */
-int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
+int64_t QCassandraSession::setTimeout(timeout_t timeout_ms)
 {
-    CassTools::timeout_t const old_timeout(f_timeout);
+    timeout_t const old_timeout(f_timeout);
     f_timeout = timeout_ms;
     // the cluster may not yet have been allocated
-    if(f_cluster.get())
-    {
-//std::cerr << "*** setting cluster " << f_cluster.get() << " timeout to: " << f_timeout << "\n";
-        cass_cluster_set_request_timeout(f_cluster.get(), static_cast<unsigned>(f_timeout));
-    }
+    f_cluster.set_request_timeout( f_timeout );
     return old_timeout;
 }
 
@@ -521,23 +489,18 @@ uint32_t QCassandraSession::lowWaterMark() const
 void QCassandraSession::setHighWaterMark( uint32_t val )
 {
     f_high_water_mark = val;
-    if( f_cluster )
-    {
-        cass_cluster_set_write_bytes_high_water_mark( f_cluster.get(), f_high_water_mark );
-    }
+    f_cluster.set_write_bytes_high_water_mark( f_high_water_mark );
 }
 
 
 void QCassandraSession::setLowWaterMark( uint32_t val )
 {
     f_low_water_mark = val;
-    if( f_cluster )
-    {
-        cass_cluster_set_write_bytes_low_water_mark( f_cluster.get(), f_low_water_mark );
-    }
+    f_cluster.set_write_bytes_low_water_mark( f_low_water_mark );
+    
 }
 
 
-} // namespace QtCassandra
+} // namespace CassWrapper
 
 // vim: ts=4 sw=4 et

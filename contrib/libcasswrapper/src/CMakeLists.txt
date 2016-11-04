@@ -48,6 +48,7 @@ configure_file(
 
 set( HEADER_FILES
     casswrapper/CassStubs.h
+    casswrapper/exception.h
     casswrapper/QCassandraQuery.h
     casswrapper/QCassandraSchema.h
     casswrapper/QCassandraSchemaValue.h
@@ -62,6 +63,7 @@ add_library(${PROJECT_NAME} SHARED
     NotUsed.h
     CassWrapperImpl.h
     CassWrapperImpl.cpp
+    exception.cpp
     QCassandraQuery.cpp
     QCassandraSchema.cpp
     QCassandraSchemaValue.cpp
