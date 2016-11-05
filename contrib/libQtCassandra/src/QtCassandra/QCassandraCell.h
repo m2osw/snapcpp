@@ -91,7 +91,7 @@ private:
     friend class QCassandraRow;
     friend class QCassandraTable;
 
-    std::shared_ptr<QCassandraRow>      f_row;
+    std::weak_ptr<QCassandraRow>        f_row;
     QByteArray                          f_key;
     mutable bool                        f_cached = false;
     QCassandraValue                     f_value;

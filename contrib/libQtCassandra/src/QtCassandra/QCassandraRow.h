@@ -102,8 +102,8 @@ private:
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    std::shared_ptr<QCassandraTable>    f_table;
-    QByteArray                  	    f_key;
+    std::weak_ptr<QCassandraTable>      f_table;
+    QByteArray                          f_key;
     QCassandraCells                     f_cells;
     int32_t                             f_cursor_index = -1;
 };

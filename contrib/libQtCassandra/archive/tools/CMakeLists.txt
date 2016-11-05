@@ -3,14 +3,13 @@
 #      CMakeLists.txt
 #
 # Description:
-#      Top level project definitions which includes the C++ files and the
-#      header files as required to compile the libQtCassandra and tests
+#      Compile libQtCassandra tools.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2013-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -35,49 +34,25 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(LIBQTCASSANDRA_VERSION_MAJOR 0)
-set(LIBQTCASSANDRA_VERSION_MINOR 6)
-set(LIBQTCASSANDRA_VERSION_PATCH 0)
-
-cmake_minimum_required(VERSION 2.8)
-project(libQtCassandra)
-
-set( CMAKE_INCLUDE_CURRENT_DIR ON   )
-set( CMAKE_AUTOMOC             TRUE )
-
-## Include support modules
-##
-find_package( As2Js              REQUIRED )
-find_package( CassandraCppDriver REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-find_package( Qt5Core            REQUIRED )
-find_package( Qt5Xml             REQUIRED )
-find_package( SnapDoxygen )
-
-## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
-##
-link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
-
 include_directories(
-    SYSTEM
-        ${Qt5Core_INCLUDE_DIRS}
-        ${Qt5Xml_INCLUDE_DIRS}
+    ${QtCassandra_SOURCE_DIR}
+    ${QtCassandra_BINARY_DIR}
+    )
+
+################################################################################
+project(qcassandra-lock)
+
+add_executable(qcassandra-lock
+    qcassandra-lock.cpp
 )
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}/src
-    ${CMAKE_BINARY_DIR}
+target_link_libraries(qcassandra-lock
+    QtCassandra
 )
 
-option( RUN_TESTS "Enable CTest support and turn on the 'test' make target." OFF )
-if( ${RUN_TESTS} )
-    enable_testing()
-endif()
-
-add_subdirectory(cmake)
-add_subdirectory(src)
-add_subdirectory(tests)
-add_subdirectory(doc)
+install(
+    TARGETS qcassandra-lock
+    RUNTIME DESTINATION bin
+)
 
 # vim: ts=4 sw=4 et

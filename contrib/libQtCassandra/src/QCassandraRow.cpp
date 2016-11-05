@@ -207,7 +207,7 @@ const QByteArray& QCassandraRow::rowKey() const
 int QCassandraRow::cellCount( const QCassandraCellPredicate::pointer_t column_predicate )
 {
     //return static_cast<int>(f_cells.size());
-    return f_table->getCellCount(f_key, column_predicate);
+    return parentTable()->getCellCount(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -284,7 +284,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         QCassandraOrder select_more_cells;
         select_more_cells.setCql("FETCH", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_FETCH);
         select_more_cells.setCursorIndex(f_cursor_index);
-        QCassandraOrderResult select_more_cells_result(f_table->proxy()->sendOrder(select_more_cells));
+        QCassandraOrderResult select_more_cells_result(parentTable()->proxy()->sendOrder(select_more_cells));
         selected_cells_result.swap(select_more_cells_result);
         if(!selected_cells_result.succeeded())
         {
@@ -303,20 +303,22 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         row_predicate->setRowKey( f_key );
 
         // setup the consistency level
-        consistency_level_t consistency_level( f_table->f_context->parentCassandra()->defaultConsistencyLevel() );
+        consistency_level_t consistency_level( parentTable()->parentContext()->parentCassandra()->defaultConsistencyLevel() );
         if( column_predicate )
         {
+            consistency_level_t const default_consistency_level(consistency_level);
             consistency_level = column_predicate->consistencyLevel();
             if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
             {
-                    consistency_level = f_table->f_context->parentCassandra()->defaultConsistencyLevel();
+                // reset back to default if not defined in the column_predicate
+                consistency_level = default_consistency_level;
             }
         }
 
         // prepare the CQL order
         QString query_string( QString("SELECT column1,value FROM %1.%2")
-                       .arg(f_table->contextName())
-                       .arg(f_table->tableName())
+                       .arg(parentTable()->contextName())
+                       .arg(parentTable()->tableName())
                        );
         int bind_count = 0;
         if( column_predicate )
@@ -342,7 +344,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         }
         //
 
-        QCassandraOrderResult select_cells_result(f_table->proxy()->sendOrder(select_cells));
+        QCassandraOrderResult select_cells_result(parentTable()->proxy()->sendOrder(select_cells));
         selected_cells_result.swap(select_cells_result);
         if(!selected_cells_result.succeeded())
         {
@@ -629,7 +631,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
     QCassandraValue value;
     try
     {
-        if(!f_table->getValue(f_key, column_key, value))
+        if(!parentTable()->getValue(f_key, column_key, value))
         {
             return false;
         }
@@ -807,7 +809,7 @@ void QCassandraRow::closeCursor()
         QCassandraOrder close_cursor;
         close_cursor.setCql("CLOSE", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_CLOSE);
         close_cursor.setCursorIndex(f_cursor_index);
-        QCassandraOrderResult close_cursor_result(f_table->proxy()->sendOrder(close_cursor));
+        QCassandraOrderResult close_cursor_result(parentTable()->proxy()->sendOrder(close_cursor));
         if(!close_cursor_result.succeeded())
         {
             throw std::runtime_error("QCassandraTable::clearCache(): closing cursor failed.");
@@ -911,7 +913,7 @@ void QCassandraRow::dropCell( const QByteArray& column_key )
 {
     QCassandraCell::pointer_t c(cell(column_key));
 
-    f_table->remove( f_key, column_key, c->consistencyLevel() );
+    parentTable()->remove( f_key, column_key, c->consistencyLevel() );
     f_cells.remove(column_key);
 }
 
@@ -922,7 +924,13 @@ void QCassandraRow::dropCell( const QByteArray& column_key )
  */
 QCassandraTable::pointer_t QCassandraRow::parentTable() const
 {
-    return f_table;
+    QCassandraTable::pointer_t table(f_table.lock());
+    if(table == nullptr)
+    {
+        throw std::runtime_error("this row was dropped and is not attached to a table anymore");
+    }
+
+    return table;
 }
 
 
@@ -936,7 +944,7 @@ QCassandraTable::pointer_t QCassandraRow::parentTable() const
  */
 void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraValue& value)
 {
-    f_table->insertValue(f_key, column_key, value);
+    parentTable()->insertValue(f_key, column_key, value);
 }
 
 
@@ -954,7 +962,7 @@ void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraVa
  */
 bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& value)
 {
-    return f_table->getValue(f_key, column_key, value);
+    return parentTable()->getValue(f_key, column_key, value);
 }
 
 
@@ -974,7 +982,7 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
  */
 void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
-    return f_table->insertValue(f_key, column_key, value);
+    return parentTable()->insertValue(f_key, column_key, value);
 }
 
 

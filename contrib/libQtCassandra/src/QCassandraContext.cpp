@@ -3,7 +3,7 @@
  *      QCassandraContext.cpp
  *
  * Description:
- *      Handling of the cassandra::KsDef which is a context.
+ *      Handling of Cassandra Keyspace which is a context.
  *
  * Documentation:
  *      See each function below.
@@ -262,7 +262,7 @@ namespace QtCassandra
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
     //: f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>())
     : f_cassandra(cassandra)
-    , f_contextName(context_name)
+    , f_context_name(context_name)
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
     , f_lock_table_name("lock_table")
@@ -326,7 +326,7 @@ void QCassandraContext::resetSchema()
  */
 const QString& QCassandraContext::contextName() const
 {
-    return f_contextName;
+    return f_context_name;
 }
 
 
@@ -693,12 +693,7 @@ void QCassandraContext::parseContextDefinition( QCassandraSchema::SessionMeta::K
  */
 void QCassandraContext::makeCurrent()
 {
-    if(!f_cassandra)
-    {
-        throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
-    }
-
-    f_cassandra->setCurrentContext( shared_from_this() );
+    parentCassandra()->setCurrentContext( shared_from_this() );
 }
 
 
@@ -772,18 +767,13 @@ QString QCassandraContext::getKeyspaceOptions()
  */
 void QCassandraContext::create()
 {
-    if(!f_cassandra)
-    {
-        throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
-    }
-
-    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(contextName()) );
+    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(f_context_name) );
     q_str += getKeyspaceOptions();
 
     QCassandraOrder create_keyspace;
     create_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     create_keyspace.setClearClusterDescription(true);
-    QCassandraOrderResult const create_keyspace_result(f_cassandra->proxy()->sendOrder(create_keyspace));
+    QCassandraOrderResult const create_keyspace_result(parentCassandra()->proxy()->sendOrder(create_keyspace));
     if(!create_keyspace_result.succeeded())
     {
         throw std::runtime_error("keyspace creation failed");
@@ -803,18 +793,13 @@ void QCassandraContext::create()
  */
 void QCassandraContext::update()
 {
-    if(!f_cassandra)
-    {
-        throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
-    }
-
-    QString q_str( QString("ALTER KEYSPACE %1").arg(contextName()) );
+    QString q_str( QString("ALTER KEYSPACE %1").arg(f_context_name) );
     q_str += getKeyspaceOptions();
 
     QCassandraOrder alter_keyspace;
     alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     alter_keyspace.setClearClusterDescription(true);
-    QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
+    QCassandraOrderResult const alter_keyspace_result(parentCassandra()->proxy()->sendOrder(alter_keyspace));
     if(alter_keyspace_result.succeeded())
     {
         throw std::runtime_error("keyspace creation failed");
@@ -848,17 +833,12 @@ void QCassandraContext::update()
  */
 void QCassandraContext::drop()
 {
-    if( !f_cassandra )
-    {
-        throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
-    }
-
-    QString q_str(QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName));
+    QString q_str(QString("DROP KEYSPACE IF EXISTS %1").arg(f_context_name));
 
     QCassandraOrder drop_keyspace;
     drop_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     drop_keyspace.setClearClusterDescription(true);
-    QCassandraOrderResult const drop_keyspace_result(f_cassandra->proxy()->sendOrder(drop_keyspace));
+    QCassandraOrderResult const drop_keyspace_result(parentCassandra()->proxy()->sendOrder(drop_keyspace));
     if(drop_keyspace_result.succeeded())
     {
         throw std::runtime_error("drop keyspace failed");
@@ -897,12 +877,12 @@ void QCassandraContext::dropTable(const QString& table_name)
     // remove from the Cassandra database
     makeCurrent();
 
-    QString q_str(QString("DROP TABLE IF EXISTS %1.%2").arg(f_contextName).arg(table_name));
+    QString q_str(QString("DROP TABLE IF EXISTS %1.%2").arg(f_context_name).arg(table_name));
 
     QCassandraOrder drop_table;
     drop_table.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     drop_table.setClearClusterDescription(true);
-    QCassandraOrderResult const drop_table_result(f_cassandra->proxy()->sendOrder(drop_table));
+    QCassandraOrderResult const drop_table_result(parentCassandra()->proxy()->sendOrder(drop_table));
     if(drop_table_result.succeeded())
     {
         throw std::runtime_error("drop table failed");
@@ -923,7 +903,7 @@ void QCassandraContext::dropTable(const QString& table_name)
 void QCassandraContext::clearCache()
 {
     f_tables.clear();
-    f_cassandra->retrieveContextMeta( shared_from_this(), f_contextName );
+    parentCassandra()->retrieveContextMeta( shared_from_this(), f_context_name );
 }
 
 /** \brief The hosts are listed in the locks table under this name.
@@ -1134,7 +1114,13 @@ QString QCassandraContext::hostName() const
  */
 QCassandra::pointer_t QCassandraContext::parentCassandra() const
 {
-    return f_cassandra;
+    QCassandra::pointer_t cassandra(f_cassandra.lock());
+    if(cassandra == nullptr)
+    {
+        throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
+    }
+
+    return cassandra;
 }
 
 
