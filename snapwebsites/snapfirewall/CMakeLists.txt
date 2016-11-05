@@ -45,6 +45,7 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 find_package( AdvGetOpt        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
+find_package( Qt5Sql           REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
@@ -67,10 +68,12 @@ include_directories(
     SYSTEM
         ${Qt5Core_INCLUDE_DIRS}
         ${Qt5Xml_INCLUDE_DIRS}
+        ${Qt5Sql_INCLUDE_DIRS}
 )
 set( QT_LIBRARIES
     Qt5::Core
     Qt5::Xml
+    Qt5::Sql
 )
 
 add_subdirectory( conf            )

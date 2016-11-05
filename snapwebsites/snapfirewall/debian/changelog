@@ -1,22 +1,23 @@
-snapfirewall (1.1.0.1~xenial) xenial; urgency=high
+snapfirewall (1.1.1.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Added a small command line tool to reset the fail2ban database
+    and start over (very practical while you tweak your rules).
 
- -- Build Server <build@m2osw.com>  Fri, 04 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Nov 2016 21:34:47 -0700
 
 snapfirewall (1.1.0.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added the UNBLOCK and FIREWALLSTATUS messages to the COMMANDS.
   * Bumped version as we modified the database handling in 1.0.38.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 17:25:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 17:25:46 -0700
 
 snapfirewall (1.0.38.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added a reason parameter to the snapfirewall action.
   * Remove the old limit if there is one, only keep the latest limit of an IP.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 17:25:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 17:25:46 -0700
 
 snapfirewall (1.0.37.0~xenial) xenial; urgency=high
 
@@ -24,25 +25,25 @@ snapfirewall (1.0.37.0~xenial) xenial; urgency=high
   * Do not block 1.x.x.x and 2.x.x.x which are now allocated.
   * Updated the iptables filter, the port may be in SPT.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 16:48:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 16:48:46 -0700
 
 snapfirewall (1.0.36.0~xenial) xenial; urgency=high
 
   * SNAP-465: Renamed the "ip" rows as "ip_info::..." to distinguish from time.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 12:14:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 12:14:46 -0700
 
 snapfirewall (1.0.35.0~xenial) xenial; urgency=high
 
   * SNAP-465: Include '[iptables] ' in the IPv6 rules.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 11:31:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 11:31:46 -0700
 
 snapfirewall (1.0.34.0~xenial) xenial; urgency=high
 
   * SNAP-465: Run the firewall script before the daemon gets started.
 
- -- Alexis Wilke <alexis@m2osw.com>  Thu,  3 Nov 2016 01:29:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 01:29:46 -0700
 
 snapfirewall (1.0.33.0~xenial) xenial; urgency=high
 
@@ -63,14 +64,14 @@ snapfirewall (1.0.33.0~xenial) xenial; urgency=high
   * We now keep information about all the IPs we ever block in the database.
     This will be useful to implement a recidive duration elongation.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed,  3 Nov 2016 00:45:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 03 Nov 2016 00:45:46 -0700
 
 snapfirewall (1.0.32.0~xenial) xenial; urgency=high
 
   * SNAP-465: Actually install the unwanted filter.
   * Run the firewall script in postinst so it gets updated with the latest.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed,  2 Oct 2016 16:32:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 02 Oct 2016 16:32:46 -0700
 
 snapfirewall (1.0.31.0~xenial) xenial; urgency=high
 
@@ -78,7 +79,7 @@ snapfirewall (1.0.31.0~xenial) xenial; urgency=high
   * Removed one rule that is not necessary.
   * Added a rule to accept tcp RST requests as they ought to be.
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed,  2 Oct 2016 15:12:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 02 Oct 2016 15:12:46 -0700
 
 snapfirewall (1.0.30.0~xenial) xenial; urgency=high
 
@@ -89,53 +90,53 @@ snapfirewall (1.0.30.0~xenial) xenial; urgency=high
   * Made 'bc' a dependency of snapfirewall since we use it in a script.
   * Changed the BLOCK behavior, accept an undefined period as "day".
 
- -- Alexis Wilke <alexis@m2osw.com>  Wed,  2 Oct 2016 10:35:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 02 Oct 2016 10:35:46 -0700
 
 snapfirewall (1.0.30.0~xenial) xenial; urgency=high
 
   * SNAP-465: Changed the proxy filter, it matches whatever the method.
   * Fixed the timeout datepattern and added \d+ at the end to check the size.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:25:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 17:25:37 -0700
 
 snapfirewall (1.0.29.0~xenial) xenial; urgency=high
 
   * SNAP-465: Renamed the 3 apache filters where we redefined the failregex.
     Because it looks like .local is reserved for administrators only.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:25:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 17:25:37 -0700
 
 snapfirewall (1.0.28.0~xenial) xenial; urgency=high
 
   * SNAP-465: Fixed the failregex of the 3 new filters.
   * Removed the common.conf and fixed the date pattern.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:25:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 17:25:37 -0700
 
 snapfirewall (1.0.27.0~xenial) xenial; urgency=high
 
   * SNAP-465: Correctly spelled Restart.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:25:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 17:25:37 -0700
 
 snapfirewall (1.0.26.0~xenial) xenial; urgency=high
 
   * SNAP-465: Adding an override.conf file for fail2ban to extend the amount
     of time it takes to start and stop that thing (yeah... making it 30min.)
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 17:19:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 17:19:37 -0700
 
 snapfirewall (1.0.25.0~xenial) xenial; urgency=high
 
   * SNAP-465: Adding the badrequest jail to the configuration.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 16:39:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 16:39:37 -0700
 
 snapfirewall (1.0.24.0~xenial) xenial; urgency=high
 
   * SNAP-465: Fixed the names to use 'apache' everywhere, instead of apache2.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  1 Nov 2016 16:16:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Nov 2016 16:16:37 -0700
 
 snapfirewall (1.0.23.0~xenial) xenial; urgency=high
 
