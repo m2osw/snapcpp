@@ -1,3 +1,10 @@
+libcasswrapper (1.0.0.0~xenial) xenial; urgency=high
+
+  * SNAP-506: refactored legacy QtCassandra code out into libsnapwebsites.
+  * Better encapsulation of cassandra-cpp-driver code.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 05 Nov 2016 09:24:11 -0700
+
 libqtcassandra (0.6.7.45~xenial) xenial; urgency=high
 
   * Nightly build.

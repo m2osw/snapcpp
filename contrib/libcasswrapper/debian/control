@@ -24,6 +24,8 @@ Package: libcasswrapper-dev
 Section: libdevel
 Architecture: any
 Depends: libcasswrapper (= ${binary:Version}), ${misc:Depends}
+Replaces: libqtcassandra-dev
+Breaks: libqtcassandra-dev
 Description: C++ bindings to the Cassandra database server.
  The libcasswrapper library is an advanced C++ library used to access Cassandra
  servers in C++.
@@ -38,6 +40,8 @@ Package: libcasswrapper
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: libqtcassandra
+Breaks: libqtcassandra
 Description: C++ bindings to the Cassandra database server.
  The libcasswrapper library is an advanced C++ library used to access Cassandra
  servers in C++.
