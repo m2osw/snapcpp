@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.44.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 05 Nov 2016 02:00:48 -0700
+
 libsnapwebsites (1.1.44.0~xenial) xenial; urgency=high
 
   * SNAP-393: Added an implementation of the inotify in our snap_communicator
