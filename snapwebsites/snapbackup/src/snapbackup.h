@@ -34,7 +34,7 @@
 // Snap suppot libs
 //
 #include <advgetopt/advgetopt.h>
-#include <QtCassandra/QCassandraQuery.h>
+#include <casswrapper/QCassandraQuery.h>
 
 // 3rd party libs
 //
@@ -66,11 +66,11 @@ public:
     void restoreContext();
 
 private:
-    QtCassandra::QCassandraSession::pointer_t f_session;
+    CassWrapper::QCassandraSession::pointer_t f_session;
     getopt_ptr_t                              f_opt;
 
     void setSqliteDbFile( const QString& sqlDbFile );
-    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery::pointer_t cass_query, const QString& table_name );
+    void appendRowsToSqliteDb( CassWrapper::QCassandraQuery::pointer_t cass_query, const QString& table_name );
 
     void exec( QSqlQuery& q );
 

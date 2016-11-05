@@ -48,8 +48,8 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
+    ${CASSWRAPPER_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
 )
 
 install(

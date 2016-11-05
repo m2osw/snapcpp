@@ -36,8 +36,6 @@
 
 #include "QtCassandra/QCassandraValue.h"
 
-#include <casswrapper/QCassandraEncoder.h>
-
 #include <stdexcept>
 
 namespace QtCassandra
@@ -588,7 +586,7 @@ QCassandraValue::QCassandraValue(bool value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setBoolValue(f_value, value);
+    QtCassandra::setBoolValue(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -605,7 +603,7 @@ QCassandraValue::QCassandraValue(char value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setCharValue(f_value, value);
+    QtCassandra::setCharValue(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -621,7 +619,7 @@ QCassandraValue::QCassandraValue(signed char value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setSignedCharValue(f_value, value);
+    QtCassandra::setSignedCharValue(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -637,7 +635,7 @@ QCassandraValue::QCassandraValue(unsigned char value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setUnsignedCharValue(f_value, value);
+    QtCassandra::setUnsignedCharValue(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -653,7 +651,7 @@ QCassandraValue::QCassandraValue(int16_t value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setInt16Value(f_value, value);
+    QtCassandra::setInt16Value(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -669,7 +667,7 @@ QCassandraValue::QCassandraValue(uint16_t value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setUInt16Value(f_value, value);
+    QtCassandra::setUInt16Value(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -685,7 +683,7 @@ QCassandraValue::QCassandraValue(int32_t value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setInt32Value(f_value, value);
+    QtCassandra::setInt32Value(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -701,7 +699,7 @@ QCassandraValue::QCassandraValue(uint32_t value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setUInt32Value(f_value, value);
+    QtCassandra::setUInt32Value(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -717,7 +715,7 @@ QCassandraValue::QCassandraValue(int64_t value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setInt64Value(f_value, value);
+    QtCassandra::setInt64Value(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -733,7 +731,7 @@ QCassandraValue::QCassandraValue(uint64_t value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setUInt64Value(f_value, value);
+    QtCassandra::setUInt64Value(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -749,7 +747,7 @@ QCassandraValue::QCassandraValue(float value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setFloatValue(f_value, value);
+    QtCassandra::setFloatValue(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -765,7 +763,7 @@ QCassandraValue::QCassandraValue(double value)
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
-    CassWrapper::setDoubleValue(f_value, value);
+    QtCassandra::setDoubleValue(f_value, value);
 }
 
 /** \brief Initialize a QCassandraValue object.
@@ -821,7 +819,7 @@ QCassandraValue::QCassandraValue(const char *data, int data_size)
  */
 void QCassandraValue::setNullValue()
 {
-    CassWrapper::setNullValue(f_value);
+    QtCassandra::setNullValue(f_value);
 }
 
 /** \brief Set the value to the bool parameter.
@@ -835,7 +833,7 @@ void QCassandraValue::setNullValue()
  */
 void QCassandraValue::setBoolValue(bool value)
 {
-    CassWrapper::setBoolValue(f_value, value);
+    QtCassandra::setBoolValue(f_value, value);
 }
 
 /** \brief Set the value to the char parameter.
@@ -849,7 +847,7 @@ void QCassandraValue::setBoolValue(bool value)
  */
 void QCassandraValue::setCharValue(char value)
 {
-    CassWrapper::setCharValue(f_value, value);
+    QtCassandra::setCharValue(f_value, value);
 }
 
 /** \brief Set the value to the signed char parameter.
@@ -863,7 +861,7 @@ void QCassandraValue::setCharValue(char value)
  */
 void QCassandraValue::setSignedCharValue(signed char value)
 {
-    CassWrapper::setSignedCharValue(f_value, value);
+    QtCassandra::setSignedCharValue(f_value, value);
 }
 
 /** \brief Set the value to the unsigned char parameter.
@@ -877,7 +875,7 @@ void QCassandraValue::setSignedCharValue(signed char value)
  */
 void QCassandraValue::setUnsignedCharValue(unsigned char value)
 {
-    CassWrapper::setUnsignedCharValue(f_value, value);
+    QtCassandra::setUnsignedCharValue(f_value, value);
 }
 
 /** \brief Set the value to the int16_t parameter.
@@ -891,7 +889,7 @@ void QCassandraValue::setUnsignedCharValue(unsigned char value)
  */
 void QCassandraValue::setInt16Value(int16_t value)
 {
-    CassWrapper::setInt16Value(f_value, value);
+    QtCassandra::setInt16Value(f_value, value);
 }
 
 /** \brief Set the value to the uint16_t parameter.
@@ -905,7 +903,7 @@ void QCassandraValue::setInt16Value(int16_t value)
  */
 void QCassandraValue::setUInt16Value(uint16_t value)
 {
-    CassWrapper::setUInt16Value(f_value, value);
+    QtCassandra::setUInt16Value(f_value, value);
 }
 
 /** \brief Set the value to the int32_t parameter.
@@ -917,7 +915,7 @@ void QCassandraValue::setUInt16Value(uint16_t value)
  */
 void QCassandraValue::setInt32Value(int32_t value)
 {
-    CassWrapper::setInt32Value(f_value, value);
+    QtCassandra::setInt32Value(f_value, value);
 }
 
 /** \brief Set the value to the uint32_t parameter.
@@ -931,7 +929,7 @@ void QCassandraValue::setInt32Value(int32_t value)
  */
 void QCassandraValue::setUInt32Value(uint32_t value)
 {
-    CassWrapper::setUInt32Value(f_value, value);
+    QtCassandra::setUInt32Value(f_value, value);
 }
 
 /** \brief Set the value to the int64_t parameter.
@@ -943,7 +941,7 @@ void QCassandraValue::setUInt32Value(uint32_t value)
  */
 void QCassandraValue::setInt64Value(int64_t value)
 {
-    CassWrapper::setInt64Value(f_value, value);
+    QtCassandra::setInt64Value(f_value, value);
 }
 
 /** \brief Set the value to the uint64_t parameter.
@@ -955,7 +953,7 @@ void QCassandraValue::setInt64Value(int64_t value)
  */
 void QCassandraValue::setUInt64Value(uint64_t value)
 {
-    CassWrapper::setUInt64Value(f_value, value);
+    QtCassandra::setUInt64Value(f_value, value);
 }
 
 /** \brief Set the value to the float parameter.
@@ -967,7 +965,7 @@ void QCassandraValue::setUInt64Value(uint64_t value)
  */
 void QCassandraValue::setFloatValue(float value)
 {
-    CassWrapper::setFloatValue(f_value, value);
+    QtCassandra::setFloatValue(f_value, value);
 }
 
 /** \brief Set the value to the double parameter.
@@ -979,7 +977,7 @@ void QCassandraValue::setFloatValue(float value)
  */
 void QCassandraValue::setDoubleValue(double value)
 {
-    CassWrapper::setDoubleValue(f_value, value);
+    QtCassandra::setDoubleValue(f_value, value);
 }
 
 /** \brief Set the value to the string data.
@@ -997,7 +995,7 @@ void QCassandraValue::setDoubleValue(double value)
  */
 void QCassandraValue::setStringValue(const QString& value)
 {
-    CassWrapper::setStringValue(f_value, value);
+    QtCassandra::setStringValue(f_value, value);
 }
 
 /** \brief Set value to this binary buffer.
@@ -1016,7 +1014,7 @@ void QCassandraValue::setStringValue(const QString& value)
  */
 void QCassandraValue::setBinaryValue(const QByteArray& value)
 {
-    CassWrapper::setBinaryValue(f_value, value);
+    QtCassandra::setBinaryValue(f_value, value);
 }
 
 /** \brief Set value to this binary buffer.
@@ -1085,7 +1083,7 @@ bool QCassandraValue::nullValue() const
  */
 bool QCassandraValue::boolValue(int index) const
 {
-    return CassWrapper::boolValue(f_value, index);
+    return QtCassandra::boolValue(f_value, index);
 }
 
 /** \brief Retrieve a Boolean from the value.
@@ -1106,7 +1104,7 @@ bool QCassandraValue::boolValue(int index) const
  */
 bool QCassandraValue::boolValueOrNull(int index, const bool default_value) const
 {
-    return CassWrapper::boolValueOrNull(f_value, index, default_value);
+    return QtCassandra::boolValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve a Boolean from the value.
@@ -1132,7 +1130,7 @@ bool QCassandraValue::boolValueOrNull(int index, const bool default_value) const
  */
 bool QCassandraValue::safeBoolValue(int index, const bool default_value) const
 {
-    return CassWrapper::boolValueOrNull(f_value, index, default_value);
+    return QtCassandra::boolValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified byte of the value.
@@ -1152,7 +1150,7 @@ bool QCassandraValue::safeBoolValue(int index, const bool default_value) const
  */
 char QCassandraValue::charValue(int index) const
 {
-    return CassWrapper::charValue(f_value, index);
+    return QtCassandra::charValue(f_value, index);
 }
 
 /** \brief Retrieve the specified byte from the value.
@@ -1173,7 +1171,7 @@ char QCassandraValue::charValue(int index) const
  */
 char QCassandraValue::charValueOrNull(int index, const char default_value) const
 {
-    return CassWrapper::charValueOrNull(f_value, index, default_value);
+    return QtCassandra::charValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve a Boolean from the value.
@@ -1199,7 +1197,7 @@ char QCassandraValue::charValueOrNull(int index, const char default_value) const
  */
 char QCassandraValue::safeCharValue(int index, const char default_value) const
 {
-    return CassWrapper::charValueOrNull(f_value, index, default_value);
+    return QtCassandra::charValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified byte of the value.
@@ -1218,7 +1216,7 @@ char QCassandraValue::safeCharValue(int index, const char default_value) const
  */
 signed char QCassandraValue::signedCharValue(int index) const
 {
-    return CassWrapper::signedCharValue(f_value, index);
+    return QtCassandra::signedCharValue(f_value, index);
 }
 
 /** \brief Retrieve the specified byte from the value.
@@ -1239,7 +1237,7 @@ signed char QCassandraValue::signedCharValue(int index) const
  */
 signed char QCassandraValue::signedCharValueOrNull(int index, const signed char default_value) const
 {
-    return CassWrapper::signedCharValueOrNull(f_value, index, default_value);
+    return QtCassandra::signedCharValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve a Boolean from the value.
@@ -1265,7 +1263,7 @@ signed char QCassandraValue::signedCharValueOrNull(int index, const signed char 
  */
 signed char QCassandraValue::safeSignedCharValue(int index, const signed char default_value) const
 {
-    return CassWrapper::signedCharValueOrNull(f_value, index, default_value);
+    return QtCassandra::signedCharValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified byte of the value.
@@ -1285,7 +1283,7 @@ signed char QCassandraValue::safeSignedCharValue(int index, const signed char de
  */
 unsigned char QCassandraValue::unsignedCharValue(int index) const
 {
-    return CassWrapper::unsignedCharValue(f_value, index);
+    return QtCassandra::unsignedCharValue(f_value, index);
 }
 
 /** \brief Retrieve the specified byte from the value.
@@ -1306,7 +1304,7 @@ unsigned char QCassandraValue::unsignedCharValue(int index) const
  */
 unsigned char QCassandraValue::unsignedCharValueOrNull(int index, const unsigned char default_value) const
 {
-    return CassWrapper::unsignedCharValueOrNull(f_value, index, default_value);
+    return QtCassandra::unsignedCharValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve a Boolean from the value.
@@ -1332,7 +1330,7 @@ unsigned char QCassandraValue::unsignedCharValueOrNull(int index, const unsigned
  */
 unsigned char QCassandraValue::safeUnsignedCharValue(int index, const unsigned char default_value) const
 {
-    return CassWrapper::unsignedCharValueOrNull(f_value, index, default_value);
+    return QtCassandra::unsignedCharValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified two bytes from the value.
@@ -1352,7 +1350,7 @@ unsigned char QCassandraValue::safeUnsignedCharValue(int index, const unsigned c
  */
 int16_t QCassandraValue::int16Value(int index) const
 {
-    return CassWrapper::int16Value(f_value, index);
+    return QtCassandra::int16Value(f_value, index);
 }
 
 /** \brief Retrieve the specified two bytes from the value.
@@ -1378,7 +1376,7 @@ int16_t QCassandraValue::int16Value(int index) const
  */
 int16_t QCassandraValue::int16ValueOrNull(int index, const int16_t default_value) const
 {
-    return CassWrapper::int16ValueOrNull(f_value, index, default_value);
+    return QtCassandra::int16ValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified two bytes from the value.
@@ -1400,7 +1398,7 @@ int16_t QCassandraValue::int16ValueOrNull(int index, const int16_t default_value
  */
 int16_t QCassandraValue::safeInt16Value(int index, const int16_t default_value) const
 {
-    return CassWrapper::safeInt16Value(f_value, index, default_value);
+    return QtCassandra::safeInt16Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified two bytes of the value.
@@ -1420,7 +1418,7 @@ int16_t QCassandraValue::safeInt16Value(int index, const int16_t default_value) 
  */
 uint16_t QCassandraValue::uint16Value(int index) const
 {
-    return CassWrapper::uint16Value(f_value, index);
+    return QtCassandra::uint16Value(f_value, index);
 }
 
 /** \brief Retrieve the specified two bytes from the value.
@@ -1446,7 +1444,7 @@ uint16_t QCassandraValue::uint16Value(int index) const
  */
 uint16_t QCassandraValue::uint16ValueOrNull(int index, const uint16_t default_value) const
 {
-    return CassWrapper::uint16ValueOrNull(f_value, index, default_value);
+    return QtCassandra::uint16ValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified two bytes from the value.
@@ -1468,7 +1466,7 @@ uint16_t QCassandraValue::uint16ValueOrNull(int index, const uint16_t default_va
  */
 uint16_t QCassandraValue::safeUInt16Value(int index, const uint16_t default_value) const
 {
-    return CassWrapper::safeUInt16Value(f_value, index, default_value);
+    return QtCassandra::safeUInt16Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes of the value.
@@ -1488,7 +1486,7 @@ uint16_t QCassandraValue::safeUInt16Value(int index, const uint16_t default_valu
  */
 int32_t QCassandraValue::int32Value(int index) const
 {
-    return CassWrapper::int32Value(f_value, index);
+    return QtCassandra::int32Value(f_value, index);
 }
 
 /** \brief Retrieve the specified four bytes from the value.
@@ -1515,7 +1513,7 @@ int32_t QCassandraValue::int32Value(int index) const
  */
 int32_t QCassandraValue::int32ValueOrNull(int index, const int32_t default_value) const
 {
-    return CassWrapper::int32ValueOrNull(f_value, index, default_value);
+    return QtCassandra::int32ValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes from the value.
@@ -1537,7 +1535,7 @@ int32_t QCassandraValue::int32ValueOrNull(int index, const int32_t default_value
  */
 int32_t QCassandraValue::safeInt32Value(int index, const int32_t default_value) const
 {
-    return CassWrapper::safeInt32Value(f_value, index, default_value);
+    return QtCassandra::safeInt32Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes of the value.
@@ -1557,7 +1555,7 @@ int32_t QCassandraValue::safeInt32Value(int index, const int32_t default_value) 
  */
 uint32_t QCassandraValue::uint32Value(int index) const
 {
-    return CassWrapper::uint32Value(f_value, index);
+    return QtCassandra::uint32Value(f_value, index);
 }
 
 /** \brief Retrieve the specified four bytes from the value.
@@ -1584,7 +1582,7 @@ uint32_t QCassandraValue::uint32Value(int index) const
  */
 uint32_t QCassandraValue::uint32ValueOrNull(int index, const uint32_t default_value) const
 {
-    return CassWrapper::uint32ValueOrNull(f_value, index, default_value);
+    return QtCassandra::uint32ValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes from the value.
@@ -1606,7 +1604,7 @@ uint32_t QCassandraValue::uint32ValueOrNull(int index, const uint32_t default_va
  */
 uint32_t QCassandraValue::safeUInt32Value(int index, const uint32_t default_value) const
 {
-    return CassWrapper::safeUInt32Value(f_value, index, default_value);
+    return QtCassandra::safeUInt32Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified eight bytes of the value.
@@ -1626,7 +1624,7 @@ uint32_t QCassandraValue::safeUInt32Value(int index, const uint32_t default_valu
  */
 int64_t QCassandraValue::int64Value(int index) const
 {
-    return CassWrapper::int64Value(f_value, index);
+    return QtCassandra::int64Value(f_value, index);
 }
 
 /** \brief Retrieve the specified eight bytes from the value.
@@ -1653,7 +1651,7 @@ int64_t QCassandraValue::int64Value(int index) const
  */
 int64_t QCassandraValue::int64ValueOrNull(int index, const int64_t default_value) const
 {
-    return CassWrapper::int64ValueOrNull(f_value, index, default_value);
+    return QtCassandra::int64ValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified eight bytes from the value.
@@ -1675,7 +1673,7 @@ int64_t QCassandraValue::int64ValueOrNull(int index, const int64_t default_value
  */
 int64_t QCassandraValue::safeInt64Value(int index, const int64_t default_value) const
 {
-    return CassWrapper::safeInt64Value(f_value, index, default_value);
+    return QtCassandra::safeInt64Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified eight bytes of the value.
@@ -1695,7 +1693,7 @@ int64_t QCassandraValue::safeInt64Value(int index, const int64_t default_value) 
  */
 uint64_t QCassandraValue::uint64Value(int index) const
 {
-    return CassWrapper::uint64Value(f_value, index);
+    return QtCassandra::uint64Value(f_value, index);
 }
 
 /** \brief Retrieve the specified eight bytes from the value.
@@ -1722,7 +1720,7 @@ uint64_t QCassandraValue::uint64Value(int index) const
  */
 uint64_t QCassandraValue::uint64ValueOrNull(int index, const uint64_t default_value) const
 {
-    return CassWrapper::uint64ValueOrNull(f_value, index, default_value);
+    return QtCassandra::uint64ValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified eight bytes from the value.
@@ -1744,7 +1742,7 @@ uint64_t QCassandraValue::uint64ValueOrNull(int index, const uint64_t default_va
  */
 uint64_t QCassandraValue::safeUInt64Value(int index, const uint64_t default_value) const
 {
-    return CassWrapper::safeUInt64Value(f_value, index, default_value);
+    return QtCassandra::safeUInt64Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes of the value.
@@ -1764,7 +1762,7 @@ uint64_t QCassandraValue::safeUInt64Value(int index, const uint64_t default_valu
  */
 float QCassandraValue::floatValue(int index) const
 {
-    return CassWrapper::floatValue(f_value, index);
+    return QtCassandra::floatValue(f_value, index);
 }
 
 /** \brief Retrieve the specified four bytes from the value.
@@ -1791,7 +1789,7 @@ float QCassandraValue::floatValue(int index) const
  */
 float QCassandraValue::floatValueOrNull(int index, const float default_value) const
 {
-    return CassWrapper::floatValueOrNull(f_value, index, default_value);
+    return QtCassandra::floatValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes from the value.
@@ -1813,7 +1811,7 @@ float QCassandraValue::floatValueOrNull(int index, const float default_value) co
  */
 float QCassandraValue::safeFloatValue(int index, const float default_value) const
 {
-    return CassWrapper::safeFloatValue(f_value, index, default_value);
+    return QtCassandra::safeFloatValue(f_value, index, default_value);
 }
 
 /** \brief Retrieve the first eight bytes of the value.
@@ -1833,7 +1831,7 @@ float QCassandraValue::safeFloatValue(int index, const float default_value) cons
  */
 double QCassandraValue::doubleValue(int index) const
 {
-    return CassWrapper::doubleValue(f_value, index);
+    return QtCassandra::doubleValue(f_value, index);
 }
 
 /** \brief Retrieve the specified eight bytes from the value.
@@ -1860,7 +1858,7 @@ double QCassandraValue::doubleValue(int index) const
  */
 double QCassandraValue::doubleValueOrNull(int index, const double default_value) const
 {
-    return CassWrapper::doubleValueOrNull(f_value, index, default_value);
+    return QtCassandra::doubleValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified eight bytes from the value.
@@ -1882,7 +1880,7 @@ double QCassandraValue::doubleValueOrNull(int index, const double default_value)
  */
 double QCassandraValue::safeDoubleValue(int index, const double default_value) const
 {
-    return CassWrapper::safeDoubleValue(f_value, index, default_value);
+    return QtCassandra::safeDoubleValue(f_value, index, default_value);
 }
 
 /** \brief Get a string from the value.
@@ -1902,7 +1900,7 @@ double QCassandraValue::safeDoubleValue(int index, const double default_value) c
  */
 QString QCassandraValue::stringValue(int index, int the_size) const
 {
-    return CassWrapper::stringValue(f_value, index, the_size);
+    return QtCassandra::stringValue(f_value, index, the_size);
 }
 
 /** \brief Get a reference to the internal buffer value.
@@ -1936,7 +1934,7 @@ const QByteArray& QCassandraValue::binaryValue() const
  */
 QByteArray QCassandraValue::binaryValue(int index, int the_size) const
 {
-    return CassWrapper::binaryValue(f_value, index, the_size);
+    return QtCassandra::binaryValue(f_value, index, the_size);
 }
 
 /** \brief Make the value empty.
@@ -1950,7 +1948,7 @@ QByteArray QCassandraValue::binaryValue(int index, int the_size) const
  */
 QCassandraValue& QCassandraValue::operator = (const char * /*null_value*/)
 {
-    CassWrapper::setNullValue(f_value);
+    QtCassandra::setNullValue(f_value);
     return *this;
 }
 
@@ -1965,7 +1963,7 @@ QCassandraValue& QCassandraValue::operator = (const char * /*null_value*/)
  */
 QCassandraValue& QCassandraValue::operator = (bool value)
 {
-    CassWrapper::setBoolValue(f_value, value);
+    QtCassandra::setBoolValue(f_value, value);
     return *this;
 }
 
@@ -1980,7 +1978,7 @@ QCassandraValue& QCassandraValue::operator = (bool value)
  */
 QCassandraValue& QCassandraValue::operator = (char value)
 {
-    CassWrapper::setCharValue(f_value, value);
+    QtCassandra::setCharValue(f_value, value);
     return *this;
 }
 
@@ -1995,7 +1993,7 @@ QCassandraValue& QCassandraValue::operator = (char value)
  */
 QCassandraValue& QCassandraValue::operator = (signed char value)
 {
-    CassWrapper::setSignedCharValue(f_value, value);
+    QtCassandra::setSignedCharValue(f_value, value);
     return *this;
 }
 
@@ -2010,7 +2008,7 @@ QCassandraValue& QCassandraValue::operator = (signed char value)
  */
 QCassandraValue& QCassandraValue::operator = (unsigned char value)
 {
-    CassWrapper::setUnsignedCharValue(f_value, value);
+    QtCassandra::setUnsignedCharValue(f_value, value);
     return *this;
 }
 
@@ -2025,7 +2023,7 @@ QCassandraValue& QCassandraValue::operator = (unsigned char value)
  */
 QCassandraValue& QCassandraValue::operator = (int16_t value)
 {
-    CassWrapper::setInt16Value(f_value, value);
+    QtCassandra::setInt16Value(f_value, value);
     return *this;
 }
 
@@ -2040,7 +2038,7 @@ QCassandraValue& QCassandraValue::operator = (int16_t value)
  */
 QCassandraValue& QCassandraValue::operator = (uint16_t value)
 {
-    CassWrapper::setUInt16Value(f_value, value);
+    QtCassandra::setUInt16Value(f_value, value);
     return *this;
 }
 
@@ -2055,7 +2053,7 @@ QCassandraValue& QCassandraValue::operator = (uint16_t value)
  */
 QCassandraValue& QCassandraValue::operator = (int32_t value)
 {
-    CassWrapper::setInt32Value(f_value, value);
+    QtCassandra::setInt32Value(f_value, value);
     return *this;
 }
 
@@ -2070,7 +2068,7 @@ QCassandraValue& QCassandraValue::operator = (int32_t value)
  */
 QCassandraValue& QCassandraValue::operator = (uint32_t value)
 {
-    CassWrapper::setUInt32Value(f_value, value);
+    QtCassandra::setUInt32Value(f_value, value);
     return *this;
 }
 
@@ -2085,7 +2083,7 @@ QCassandraValue& QCassandraValue::operator = (uint32_t value)
  */
 QCassandraValue& QCassandraValue::operator = (int64_t value)
 {
-    CassWrapper::setInt64Value(f_value, value);
+    QtCassandra::setInt64Value(f_value, value);
     return *this;
 }
 
@@ -2100,7 +2098,7 @@ QCassandraValue& QCassandraValue::operator = (int64_t value)
  */
 QCassandraValue& QCassandraValue::operator = (uint64_t value)
 {
-    CassWrapper::setUInt64Value(f_value, value);
+    QtCassandra::setUInt64Value(f_value, value);
     return *this;
 }
 
@@ -2115,7 +2113,7 @@ QCassandraValue& QCassandraValue::operator = (uint64_t value)
  */
 QCassandraValue& QCassandraValue::operator = (float value)
 {
-    CassWrapper::setFloatValue(f_value, value);
+    QtCassandra::setFloatValue(f_value, value);
     return *this;
 }
 
@@ -2130,7 +2128,7 @@ QCassandraValue& QCassandraValue::operator = (float value)
  */
 QCassandraValue& QCassandraValue::operator = (double value)
 {
-    CassWrapper::setDoubleValue(f_value, value);
+    QtCassandra::setDoubleValue(f_value, value);
     return *this;
 }
 
@@ -2149,7 +2147,7 @@ QCassandraValue& QCassandraValue::operator = (double value)
  */
 QCassandraValue& QCassandraValue::operator = (const QString& value)
 {
-    CassWrapper::setStringValue(f_value, value);
+    QtCassandra::setStringValue(f_value, value);
     return *this;
 }
 
@@ -2163,7 +2161,7 @@ QCassandraValue& QCassandraValue::operator = (const QString& value)
  */
 QCassandraValue& QCassandraValue::operator = (const QByteArray& value)
 {
-    CassWrapper::setBinaryValue(f_value, value);
+    QtCassandra::setBinaryValue(f_value, value);
     return *this;
 }
 

@@ -40,11 +40,11 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package( AdvGetOpt        REQUIRED )
+find_package( CassWrapper      REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
@@ -62,6 +62,7 @@ set( QT_LIBRARIES
 )
 
 include_directories(
+    ${CASSWRAPPER_INCLUDE_DIRS}
     ${SNAPWEBSITES_INCLUDE_DIRS}
     ${ZIPIOSCC_INCLUDE_DIRS}
 )

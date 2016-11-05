@@ -32,6 +32,10 @@
 find_package( Catch )
 
 if(CATCH_FOUND)
+    find_package( CassWrapper REQUIRED )
+
+    include_directories( ${CASSWRAPPER_INCLUDE_DIRS} )
+
     set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
     ##
     ## Test the snap_lock from one or multiple computers
@@ -41,9 +45,9 @@ if(CATCH_FOUND)
         test_snap_lock.cpp
     )
     target_link_libraries(${PROJECT_NAME}
+        ${CASSWRAPPER_LIBRARIES}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl

@@ -41,8 +41,8 @@
 #include "snapbackup.h"
 #include "snap_table_list.h"
 
-#include <QtCassandra/QCassandraSchema.h>
-#include <QtCassandra/QStringStream.h>
+#include <casswrapper/QCassandraSchema.h>
+#include <casswrapper/QStringStream.h>
 
 // 3rd party libs
 //
@@ -55,7 +55,7 @@
 #include <iostream>
 #include <sstream>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 using namespace QCassandraSchema;
 
 snapbackup::snapbackup( getopt_ptr_t opt )

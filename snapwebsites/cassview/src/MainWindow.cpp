@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 
 MainWindow::MainWindow(QWidget *p)
     : QMainWindow(p)

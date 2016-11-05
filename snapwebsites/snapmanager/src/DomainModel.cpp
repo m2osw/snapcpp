@@ -27,7 +27,7 @@
 
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 
 
 DomainModel::DomainModel()

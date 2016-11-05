@@ -80,7 +80,6 @@ find_package( Qt5Sql             REQUIRED )
 find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
-find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapWebsites       REQUIRED )
@@ -141,7 +140,6 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(
     ${ADVGETOPT_INCLUDE_DIRS}
-    ${QTCASSANDRA_INCLUDE_DIRS}
     ${QTSERIALIZATION_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
     ${LIBTLD_INCLUDE_DIRS}

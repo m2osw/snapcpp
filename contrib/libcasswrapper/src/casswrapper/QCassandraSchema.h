@@ -44,6 +44,9 @@
 
 namespace CassWrapper
 {
+
+class Encoder;
+
 namespace QCassandraSchema
 {
 
@@ -130,8 +133,8 @@ public:
 
                 Value&                          operator [] ( const QString& name );
 
-                void                            encodeColumnMeta(QCassandraEncoder& encoded) const;
-                void                            decodeColumnMeta(const QCassandraDecoder& decoder);
+                void                            encodeColumnMeta(Encoder& encoded) const;
+                void                            decodeColumnMeta(const Decoder& decoder);
 
                 QString     					getCqlString() const;
 
@@ -155,8 +158,8 @@ public:
 
             const ColumnMeta::map_t&        getColumns() const;
 
-            void                            encodeTableMeta(QCassandraEncoder& encoded) const;
-            void                            decodeTableMeta(const QCassandraDecoder& decoder);
+            void                            encodeTableMeta(Encoder& encoded) const;
+            void                            decodeTableMeta(const Decoder& decoder);
 
             QString      					getCqlString() const;
 
@@ -181,8 +184,8 @@ public:
 
         const TableMeta::map_t&         getTables() const;
 
-        void                            encodeKeyspaceMeta(QCassandraEncoder& encoded) const;
-        void                            decodeKeyspaceMeta(const QCassandraDecoder& decoder);
+        void                            encodeKeyspaceMeta(Encoder& encoded) const;
+        void                            decodeKeyspaceMeta(const Decoder& decoder);
 
         QString							getKeyspaceCql() const;
         string_map_t					getTablesCql() const;
@@ -214,5 +217,7 @@ private:
 
 
 } //namespace QCassandraSchema
+
 } //namespace CassWrapper
+
 // vim: ts=4 sw=4 et

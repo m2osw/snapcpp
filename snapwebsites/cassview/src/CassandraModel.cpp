@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 using namespace QCassandraSchema;
 
 

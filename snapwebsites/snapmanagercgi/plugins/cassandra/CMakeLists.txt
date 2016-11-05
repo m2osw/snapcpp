@@ -32,12 +32,14 @@
 
 project(plugin_cassandra)
 
+find_package( CassWrapper REQUIRED )
 find_package( Qt5Core  REQUIRED )
 find_package( Qt5Xml   REQUIRED )
 find_package( YAML-CPP REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CASSWRAPPER_INCLUDE_DIR}
     ${YAML_CPP_INCLUDE_DIR}
 )
 
@@ -55,6 +57,7 @@ add_library(cassandra SHARED
 
 target_link_libraries(cassandra
     snapmanager
+    ${CASSWRAPPER_LIBRARIES}
     ${QT_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
     ${YAML_CPP_LIBRARIES}

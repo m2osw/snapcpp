@@ -24,8 +24,7 @@
 #include "snapwebsites/log.h"
 #include "snapwebsites/mkgmtime.h"
 #include "snapwebsites/snap_string_list.h"
-
-#include <casswrapper/QCassandraEncoder.h>
+#include "QtCassandra/QCassandraEncoder.h"
 
 #include <iostream>
 
@@ -349,17 +348,17 @@ QString dbutils::get_column_name( const QByteArray& key ) const
     }
     else if((f_tableName == "list" && f_rowName != "*standalone*"))
     {
-        unsigned char priority(CassWrapper::safeUnsignedCharValue(key, 0));
-        QString const time(microseconds_to_string(CassWrapper::safeInt64Value(key, sizeof(unsigned char)), true));
+        unsigned char priority(QtCassandra::safeUnsignedCharValue(key, 0));
+        QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, sizeof(unsigned char)), true));
         name = QString("%1 %2 %3")
                 .arg(static_cast<int>(priority))
                 .arg(time)
-                .arg(CassWrapper::stringValue(key, sizeof(unsigned char) + sizeof(uint64_t)));
+                .arg(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(uint64_t)));
     }
     else if((f_tableName == "files" && f_rowName == "images"))
     {
-        QString const time(microseconds_to_string(CassWrapper::safeInt64Value(key, 0), true));
-        name = QString("%1 %2").arg(time).arg(CassWrapper::stringValue(key, sizeof(uint64_t)));
+        QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, 0), true));
+        name = QString("%1 %2").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
     else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toLatin1())) )
     {
@@ -393,7 +392,7 @@ QString dbutils::get_column_name( const QByteArray& key ) const
             {
                 name += ".";
             }
-            name += QString("%1").arg(CassWrapper::safeUInt32Value(key, i));
+            name += QString("%1").arg(QtCassandra::safeUInt32Value(key, i));
         }
     }
     else if((f_tableName == "users"    && f_rowName == "*index_row*")
@@ -421,7 +420,7 @@ QString dbutils::get_column_name( const QByteArray& key ) const
         // 128 bit UUID
         if( static_cast<size_t>(start_date.size()) >= sizeof(int64_t) + sizeof(uuid_t) )
         {
-            QByteArray const bytes(CassWrapper::binaryValue( start_date.binaryValue(), sizeof(int64_t), sizeof(uuid_t) ));
+            QByteArray const bytes(QtCassandra::binaryValue( start_date.binaryValue(), sizeof(int64_t), sizeof(uuid_t) ));
             uuid_t uuid;
             memcpy( uuid, bytes.data(), sizeof(uuid) );
             char unique_key[37];
@@ -456,11 +455,11 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
         }
 
         const char priority = arr[0][0].toLatin1();
-        CassWrapper::appendUnsignedCharValue( key, priority );
+        QtCassandra::appendUnsignedCharValue( key, priority );
 
         const uint64_t microsec( string_to_microseconds( arr[1] ) );
-        CassWrapper::appendInt64Value( key, microsec );
-        CassWrapper::appendStringValue( key, arr[2] );
+        QtCassandra::appendInt64Value( key, microsec );
+        QtCassandra::appendStringValue( key, arr[2] );
     }
     else if((f_tableName == "files" && f_rowName == "images"))
     {
@@ -471,14 +470,14 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
         }
 
         const uint64_t microsec( string_to_microseconds( arr[0] ) );
-        CassWrapper::appendInt64Value( key, microsec );
+        QtCassandra::appendInt64Value( key, microsec );
 
-        CassWrapper::appendStringValue( key, arr[1] );
+        QtCassandra::appendStringValue( key, arr[1] );
     }
     else if(f_tableName == "branch" && (name.startsWith(content_attachment_reference.toLatin1())) )
     {
-        CassWrapper::appendStringValue( key, content_attachment_reference );
-        CassWrapper::appendStringValue( key, name );
+        QtCassandra::appendStringValue( key, content_attachment_reference );
+        QtCassandra::appendStringValue( key, name );
     }
     else if((f_tableName == "files" && f_rowName == "javascripts")
          || (f_tableName == "files" && f_rowName == "css"))
@@ -490,27 +489,27 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
             throw std::runtime_error( "The column key is expected to be in the form: <name>_<browser>_<version>!" );
         }
 
-        CassWrapper::appendStringValue( key, arr[0] + "_" );       // name
-        CassWrapper::appendStringValue( key, arr[1] + "_" );       // browser
+        QtCassandra::appendStringValue( key, arr[0] + "_" );       // name
+        QtCassandra::appendStringValue( key, arr[1] + "_" );       // browser
 
         QStringList version( arr[2].split('.') );
         for( auto rev : version )
         {
-            CassWrapper::appendUInt32Value( key, static_cast<uint32_t>(rev.toUInt()) );
+            QtCassandra::appendUInt32Value( key, static_cast<uint32_t>(rev.toUInt()) );
         }
     }
     else if((f_tableName == "users"    && f_rowName == "*index_row*")
          || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
          || f_tableName == "serverstats")
     {
-        CassWrapper::appendInt64Value( key, static_cast<int64_t>(name.toLong()) );
+        QtCassandra::appendInt64Value( key, static_cast<int64_t>(name.toLong()) );
     }
     else if(f_tableName == "tracker"
          || (f_tableName == "backend" && !f_rowName.startsWith("*"))
          || f_tableName == "firewall")
     {
         const uint64_t microsec( string_to_microseconds( name ) );
-        CassWrapper::appendInt64Value( key, microsec );
+        QtCassandra::appendInt64Value( key, microsec );
     }
     else if(f_tableName == "emails" && f_rowName == "bounced_raw")
     {
@@ -518,18 +517,18 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
         if( arr.size() == 2 )
         {
             const uint64_t microsec( string_to_microseconds( arr[0] ) );
-            CassWrapper::appendInt64Value( key, microsec );
+            QtCassandra::appendInt64Value( key, microsec );
             //
             uuid_t uuid;
             uuid_parse( arr[1].toUtf8().data(), uuid );
             char unique_key[sizeof(uuid)];
             memcpy( unique_key, uuid, sizeof(uuid) );
-            CassWrapper::appendBinaryValue( key, QByteArray(unique_key, sizeof(unique_key)) );
+            QtCassandra::appendBinaryValue( key, QByteArray(unique_key, sizeof(unique_key)) );
         }
         else
         {
             const uint64_t microsec( string_to_microseconds( name ) );
-            CassWrapper::appendInt64Value( key, microsec );
+            QtCassandra::appendInt64Value( key, microsec );
         }
     }
     else
@@ -998,17 +997,17 @@ QString dbutils::get_column_value( const QByteArray& key, const QtCassandra::QCa
             case column_type_t::CT_time_microseconds_and_string:
             {
                 v = QString("%1 %2")
-                            .arg(microseconds_to_string(CassWrapper::safeInt64Value(value.binaryValue(), 0), true))
-                            .arg(CassWrapper::stringValue(value.binaryValue(), sizeof(int64_t)));
+                            .arg(microseconds_to_string(QtCassandra::safeInt64Value(value.binaryValue(), 0), true))
+                            .arg(QtCassandra::stringValue(value.binaryValue(), sizeof(int64_t)));
             }
             break;
 
             case column_type_t::CT_priority_and_time_microseconds_and_string:
             {
                 v = QString("%1 %2 %3")
-                            .arg(static_cast<int>(CassWrapper::safeUnsignedCharValue(value.binaryValue(), 0)))
-                            .arg(microseconds_to_string(CassWrapper::safeInt64Value(value.binaryValue(), sizeof(unsigned char)), true))
-                            .arg(CassWrapper::stringValue(value.binaryValue(), sizeof(unsigned char) + sizeof(int64_t)));
+                            .arg(static_cast<int>(QtCassandra::safeUnsignedCharValue(value.binaryValue(), 0)))
+                            .arg(microseconds_to_string(QtCassandra::safeInt64Value(value.binaryValue(), sizeof(unsigned char)), true))
+                            .arg(QtCassandra::stringValue(value.binaryValue(), sizeof(unsigned char) + sizeof(int64_t)));
             }
             break;
 
@@ -1323,8 +1322,8 @@ void dbutils::set_column_value( const QByteArray& key, QtCassandra::QCassandraVa
 
             // concatenate the result
             QByteArray tms;
-            CassWrapper::appendInt64Value( tms, tt * 1000000 + ns );
-            CassWrapper::appendStringValue( tms, str );
+            QtCassandra::appendInt64Value( tms, tt * 1000000 + ns );
+            QtCassandra::appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
         }
         break;
@@ -1376,9 +1375,9 @@ void dbutils::set_column_value( const QByteArray& key, QtCassandra::QCassandraVa
 
             // concatenate the result
             QByteArray tms;
-            CassWrapper::appendUnsignedCharValue( tms, static_cast<unsigned char>(priority) );
-            CassWrapper::appendInt64Value( tms, tt * 1000000 + ns );
-            CassWrapper::appendStringValue( tms, str );
+            QtCassandra::appendUnsignedCharValue( tms, static_cast<unsigned char>(priority) );
+            QtCassandra::appendInt64Value( tms, tt * 1000000 + ns );
+            QtCassandra::appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
         }
         break;
@@ -1547,7 +1546,7 @@ void dbutils::set_column_value( const QByteArray& key, QtCassandra::QCassandraVa
             // by '\n'
             QString convert( v );
             QByteArray buffer;
-            CassWrapper::setInt64Value( buffer, string_to_microseconds(v) );
+            QtCassandra::setInt64Value( buffer, string_to_microseconds(v) );
             int pos(v.indexOf(')'));
             if(pos > 0)
             {
@@ -1556,7 +1555,7 @@ void dbutils::set_column_value( const QByteArray& key, QtCassandra::QCassandraVa
                 {
                     ++pos;
                 }
-                CassWrapper::appendStringValue( buffer, v.mid(pos + 1) );
+                QtCassandra::appendStringValue( buffer, v.mid(pos + 1) );
             }
             cvalue.setBinaryValue(buffer);
         }

@@ -64,7 +64,6 @@ target_link_libraries( ${PROJECT_NAME}
     Qt5::Core
     Qt5::Xml
     Qt5::XmlPatterns
-    #${QTCASSANDRA_LIBRARIES}
     #${QTSERIALIZATION_LIBRARIES}
     #${MAGIC_LIBRARY}
     #pthread

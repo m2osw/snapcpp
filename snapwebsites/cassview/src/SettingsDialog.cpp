@@ -32,15 +32,15 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <QtCassandra/QCassandraSchema.h>
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/QCassandraSchema.h>
+#include <casswrapper/QCassandraSession.h>
 #include <algorithm>
 
 #include <QtWidgets>
 
 #include "SettingsDialog.h"
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 
 namespace
 {

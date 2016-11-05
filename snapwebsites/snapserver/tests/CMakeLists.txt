@@ -65,7 +65,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
@@ -89,7 +88,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
@@ -105,7 +103,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
@@ -119,7 +116,6 @@ if(CATCH_FOUND)
     ##)
     ##target_link_libraries(test_snap_udp_message
     ##    ${SNAPWEBSITES_LIBRARIES}
-    ##    ${QTCASSANDRA_LIBRARIES}
     ##    ${LIBTLD_LIBRARIES}
     ##    ${QT_LIBRARIES}
     ##    dl
@@ -133,7 +129,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
@@ -149,7 +144,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
@@ -165,7 +159,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
@@ -186,7 +179,6 @@ if(CATCH_FOUND)
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl

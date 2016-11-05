@@ -18,14 +18,14 @@
 
 #pragma once
 
-#include <QtCassandra/QueryModel.h>
+#include <casswrapper/QueryModel.h>
 
 #include <snapwebsites/dbutils.h>
 
 #include <memory>
 
 class RowModel
-    : public QtCassandra::QueryModel
+    : public CassWrapper::QueryModel
 {
     Q_OBJECT
 

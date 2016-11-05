@@ -63,6 +63,7 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 include_directories(
+    ${CASSWRAPPER_INCLUDE_DIRS}
     ${SNAPWEBSITES_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}/src
 )

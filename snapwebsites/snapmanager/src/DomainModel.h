@@ -16,14 +16,14 @@
 //
 #pragma once
 
-#include <QtCassandra/QueryModel.h>
+#include <casswrapper/QueryModel.h>
 
 #include <snapwebsites/dbutils.h>
 
 #include <QModelIndex>
 
 class DomainModel
-    : public QtCassandra::QueryModel
+    : public CassWrapper::QueryModel
 {
     Q_OBJECT
 
@@ -36,7 +36,7 @@ public:
     //
     virtual bool     fetchFilter( const QByteArray& key ) override;
     virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
-    virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
+    virtual void     fetchCustomData( CassWrapper::QCassandraQuery::pointer_t q ) override;
 
 private:
     typedef std::map<QString,QByteArray> sort_map_t;

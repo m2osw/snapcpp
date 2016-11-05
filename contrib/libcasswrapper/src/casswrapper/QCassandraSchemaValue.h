@@ -37,7 +37,6 @@
 #pragma once
 
 #include "casswrapper/CassStubs.h"
-#include "casswrapper/QCassandraEncoder.h"
 #include "casswrapper/QCassandraQuery.h"
 
 #include <map>
@@ -51,6 +50,8 @@
 namespace CassWrapper
 {
 
+class Encoder;
+class Decoder;
 
 namespace QCassandraSchema
 {
@@ -92,8 +93,8 @@ public:
 
     const QString&      output() const;
 
-    void                encodeValue(QCassandraEncoder& encoder) const;
-    void                decodeValue(const QCassandraDecoder& decoder);
+    void                encodeValue(Encoder& encoder) const;
+    void                decodeValue(const Decoder& decoder);
 
 private:
     void                parseValue   ( const value& val );

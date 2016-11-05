@@ -191,7 +191,7 @@ snapdbproxy::pointer_t                    snapdbproxy::g_instance;
 snapdbproxy::snapdbproxy(int argc, char * argv[])
     : f_opt( argc, argv, g_snapdbproxy_options, g_configuration_files, nullptr )
     , f_config( "snapdbproxy" )
-    , f_session( QtCassandra::QCassandraSession::create() )
+    , f_session( CassWrapper::QCassandraSession::create() )
 {
     // --help
     if( f_opt.is_defined( "help" ) )

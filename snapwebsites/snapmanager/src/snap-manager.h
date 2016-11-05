@@ -27,8 +27,8 @@
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_string_list.h>
 
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/QCassandraQuery.h>
+#include <casswrapper/QCassandraSession.h>
 
 #include <QMap>
 #include <QMainWindow>
@@ -82,18 +82,18 @@ private slots:
     void onCurrentTabChanged         ( int index );
 
     void create_context              ( int replication_factor, int strategy, snap::snap_string_list const & data_centers );
-    void onQueryFinished             ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onContextCreated            ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedSaveDomain        ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedDeleteDomain      ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadWebsite               ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedSaveWebsite       ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onDeleteWebsite             ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onQueryFinished             ( CassWrapper::QCassandraQuery::pointer_t q );
+    void onContextCreated            ( CassWrapper::QCassandraQuery::pointer_t q );
+    void onFinishedSaveDomain        ( CassWrapper::QCassandraQuery::pointer_t q );
+    void onFinishedDeleteDomain      ( CassWrapper::QCassandraQuery::pointer_t q );
+    void onLoadWebsite               ( CassWrapper::QCassandraQuery::pointer_t q );
+    void onFinishedSaveWebsite       ( CassWrapper::QCassandraQuery::pointer_t q );
+    void onDeleteWebsite             ( CassWrapper::QCassandraQuery::pointer_t q );
 
     void onSitesListCurrentChanged   ( QModelIndex current, QModelIndex previous );
     void onSitesParamsCurrentChanged ( QModelIndex current, QModelIndex previous );
     void onSitesParamsDataChanged    ( const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles );
-    void onSitesParamSaveFinished    ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onSitesParamSaveFinished    ( CassWrapper::QCassandraQuery::pointer_t q );
 
     void onSitesNewClicked           ( bool checked );
     void onSitesSaveClicked          ( bool checked );
@@ -180,10 +180,10 @@ private:
     // cassandra data
     QString                                     f_cassandra_host;
     int32_t                                     f_cassandra_port = 0;
-    QtCassandra::QCassandraSession::pointer_t   f_session;
+    CassWrapper::QCassandraSession::pointer_t   f_session;
     QStringList                                 f_domains_to_check;
 
-    std::queue<QtCassandra::QCassandraQuery::pointer_t>	f_queryQueue;
+    std::queue<CassWrapper::QCassandraQuery::pointer_t>	f_queryQueue;
 
     void loadDomains          ();
     void domainWithSelection  ();
@@ -199,15 +199,15 @@ private:
 
     virtual void closeEvent(QCloseEvent *event);
 
-    QtCassandra::QCassandraQuery::pointer_t createQuery
+    CassWrapper::QCassandraQuery::pointer_t createQuery
         ( const QString& q_str
         );
-    QtCassandra::QCassandraQuery::pointer_t createQuery
+    CassWrapper::QCassandraQuery::pointer_t createQuery
         ( const QString& table_name
         , const QString& q_str
         );
-    void addQuery( QtCassandra::QCassandraQuery::pointer_t q );
-    bool getQueryResult( QtCassandra::QCassandraQuery::pointer_t q );
+    void addQuery( CassWrapper::QCassandraQuery::pointer_t q );
+    bool getQueryResult( CassWrapper::QCassandraQuery::pointer_t q );
     void startQuery();
 
     void create_table(QString const & table_name, QString const & comment);

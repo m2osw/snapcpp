@@ -55,7 +55,6 @@ message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(firewall
     #${AS2JS_LIBRARIES}
-    #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     #${LOG4CPLUS_LIBRARY}
     #${SNAPWEBSITES_LIBRARIES}

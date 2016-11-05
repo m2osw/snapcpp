@@ -35,8 +35,6 @@
 #include "MainWindow.h"
 #include "SettingsDialog.h"
 
-using namespace QtCassandra;
-
 int main( int argc, char * argv[] )
 {
     QApplication app(argc, argv);

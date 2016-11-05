@@ -52,7 +52,6 @@ add_executable( ${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME}
     ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
     dl
@@ -66,7 +65,6 @@ add_executable( ${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME}
     ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
     dl

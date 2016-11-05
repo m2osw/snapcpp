@@ -56,7 +56,6 @@ message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 target_link_libraries(snapserver_manager
     #${AS2JS_LIBRARIES}
     #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
-    #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     #${LOG4CPLUS_LIBRARY}
     #${SNAPWEBSITES_LIBRARIES}

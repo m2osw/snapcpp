@@ -36,8 +36,7 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <casswrapper/QCassandraEncoder.h>
-
+#include "QtCassandra/QCassandraEncoder.h"
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraTable.h"
 #include "QtCassandra/QCassandraContext.h"

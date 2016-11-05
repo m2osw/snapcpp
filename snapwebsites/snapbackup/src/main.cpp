@@ -43,7 +43,7 @@
 
 #include <QCoreApplication>
 
-#include <QtCassandra/QStringStream.h>
+#include <casswrapper/QStringStream.h>
 
 #include <exception>
 #include <iostream>

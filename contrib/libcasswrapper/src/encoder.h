@@ -782,10 +782,10 @@ inline QByteArray binaryValue(const QByteArray& array, const int index = 0, int 
 
 
 
-class QCassandraEncoder
+class Encoder
 {
 public:
-    QCassandraEncoder(int reserve_size)
+    Encoder(int reserve_size)
     {
         f_array.reserve(reserve_size);
     }
@@ -877,10 +877,10 @@ private:
 };
 
 
-class QCassandraDecoder
+class Decoder
 {
 public:
-    QCassandraDecoder(QByteArray const & encoded)
+    Decoder(QByteArray const & encoded)
         : f_array(encoded)
         //, f_index(0)
     {

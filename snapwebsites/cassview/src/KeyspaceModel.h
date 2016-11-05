@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtCassandra/QCassandraSchema.h>
+#include <casswrapper/QCassandraSchema.h>
 #include <QtGui>
 
 #include <memory>
@@ -16,7 +16,7 @@ class KeyspaceModel
 
         KeyspaceModel() {}
 
-        void setCassandra( QtCassandra::QCassandraSession::pointer_t c, const QString& keyspace_name );
+        void setCassandra( CassWrapper::QCassandraSession::pointer_t c, const QString& keyspace_name );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;

@@ -21,8 +21,8 @@
 #include "snap-manager-decode-utf8.h"
 #include "get_child.h"
 
-#include <QtCassandra/QCassandraSchema.h>
-#include <QtCassandra/QCassandraVersion.h>
+#include <casswrapper/QCassandraSchema.h>
+#include <casswrapper/version.h>
 
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/not_used.h>
@@ -41,7 +41,7 @@
 
 #include <stdio.h>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 using namespace QCassandraSchema;
 
 namespace
@@ -102,7 +102,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
 
     // Cassandra Info
     console = getChild<QListWidget>(this, "cassandraConsole");
-    console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
+    console->addItem("libCassWrapper version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Not connected.");
 
     // get domain friends that are going to be used here and there
@@ -371,11 +371,11 @@ void snap_manager::snapTest()
             }
             else if(name == "LIBQTCASSANDRA")
             {
-                console->addItem("Snap Server compiled with libQtCassandra v" + value);
+                console->addItem("Snap Server compiled with libCassWrapper v" + value);
             }
             else if(name == "RUNTIME_LIBQTCASSANDRA")
             {
-                console->addItem("Snap Server running with libQtCassandra v" + value);
+                console->addItem("Snap Server running with libCassWrapper v" + value);
             }
             else if(name == "LIBQTSERIALIZATION")
             {
@@ -547,7 +547,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
 
     QListWidget *console = getChild<QListWidget>(this, "cassandraConsole");
     console->clear();
-    console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
+    console->addItem("libCassWrapper version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Host: " + f_cassandra_host);
     console->addItem("Port: " + QString::number(f_cassandra_port));
 
@@ -695,7 +695,7 @@ void snap_manager::cassandraDisconnectButton_clicked()
 
     QListWidget *console = getChild<QListWidget>(this, "cassandraConsole");
     console->clear();
-    console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
+    console->addItem("libCassWrapper version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Not connected.");
 
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
@@ -935,10 +935,10 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
 {
 
     // use RAII at some point, although an exception and we exit anyway...
-    QtCassandra::QCassandraSession::pointer_t save_session(f_session);
+    CassWrapper::QCassandraSession::pointer_t save_session(f_session);
 
     {
-        f_session = QtCassandra::QCassandraSession::create();
+        f_session = CassWrapper::QCassandraSession::create();
 
         // increase timeout to 5 min. while creating tables
         // (must be done before the connect() below)
@@ -1320,7 +1320,7 @@ void snap_manager::saveDomain()
     QByteArray compiled_rules;
     domain_rules.parse_domain_rules(rules, compiled_rules);
 
-    // (*table)[name][QString("core::original_rules")] = QtCassandra::QCassandraValue(rules);
+    // (*table)[name][QString("core::original_rules")] = CassWrapper::QCassandraValue(rules);
     auto query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
     query->setDescription( QString("Update core rules for %1").arg(name) );
     size_t num = 0;
@@ -1329,7 +1329,7 @@ void snap_manager::saveDomain()
     query->bindByteArray( num++, rules.toUtf8() );
     addQuery(query);
 
-    // (*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
+    // (*table)[name][QString("core::rules")] = CassWrapper::QCassandraValue(compiled_rules);
     query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
     query->setDescription( QString("Update core rules for %1").arg(name) );
     num = 0;
@@ -1816,7 +1816,7 @@ void snap_manager::on_websiteSave_clicked()
         QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
         // Save the results into the websites table
-        //(*table)[name][QString("core::original_rules")] = QtCassandra::QCassandraValue(rules);
+        //(*table)[name][QString("core::original_rules")] = CassWrapper::QCassandraValue(rules);
 
         auto query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
         query->setDescription( QString("Insert/update original core rules for %1").arg(name) );
@@ -1826,7 +1826,7 @@ void snap_manager::on_websiteSave_clicked()
         query->bindByteArray( num++, rules.toUtf8() );
         addQuery(query);
 
-        //(*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
+        //(*table)[name][QString("core::rules")] = CassWrapper::QCassandraValue(compiled_rules);
         query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
         query->setDescription( QString("Update core rules for %1").arg(name) );
         num = 0;

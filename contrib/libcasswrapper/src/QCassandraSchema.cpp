@@ -36,6 +36,7 @@
 
 #include "casswrapper/QCassandraSchema.h"
 #include "casswrapper/QCassandraQuery.h"
+#include "encoder.h"
 
 #include "cassandra.h"
 
@@ -209,7 +210,7 @@ QByteArray SessionMeta::encodeSessionMeta() const
     // at this time ours is nearly 120Kb... so reserve one block
     // 200Kb from the get go
     //
-    QCassandraEncoder encoder(200 * 1024);
+    Encoder encoder(200 * 1024);
 
     // save the number of keyspaces
     //
@@ -225,7 +226,7 @@ QByteArray SessionMeta::encodeSessionMeta() const
 
 void SessionMeta::decodeSessionMeta(const QByteArray& encoded)
 {
-    QCassandraDecoder const decoder(encoded);
+    Decoder const decoder(encoded);
 
     size_t const keyspace_max(decoder.uint16Value());
     for(size_t idx(0); idx < keyspace_max; ++idx)
@@ -326,7 +327,7 @@ const SessionMeta::KeyspaceMeta::TableMeta::map_t&
  *
  * \return The meta data in a blob.
  */
-void SessionMeta::KeyspaceMeta::encodeKeyspaceMeta(QCassandraEncoder& encoder) const
+void SessionMeta::KeyspaceMeta::encodeKeyspaceMeta(Encoder& encoder) const
 {
     // save the name as a PSTR with a size on 2 bytes
     //
@@ -357,7 +358,7 @@ void SessionMeta::KeyspaceMeta::encodeKeyspaceMeta(QCassandraEncoder& encoder) c
 /** \brief Decode a KeyspaceMeta object from a blob.
  *
  */
-void SessionMeta::KeyspaceMeta::decodeKeyspaceMeta(const QCassandraDecoder& decoder)
+void SessionMeta::KeyspaceMeta::decodeKeyspaceMeta(const Decoder& decoder)
 {
     // retrieve the keyspace name
     //
@@ -441,7 +442,7 @@ const SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::map_t&
  *
  * \return The meta data in a blob.
  */
-void SessionMeta::KeyspaceMeta::TableMeta::encodeTableMeta(QCassandraEncoder& encoder) const
+void SessionMeta::KeyspaceMeta::TableMeta::encodeTableMeta(Encoder& encoder) const
 {
     // save the name as a PSTR with a size on 2 bytes
     //
@@ -473,7 +474,7 @@ void SessionMeta::KeyspaceMeta::TableMeta::encodeTableMeta(QCassandraEncoder& en
 /** \brief Decode a TableMeta object from a blob.
  *
  */
-void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const QCassandraDecoder& decoder)
+void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const Decoder& decoder)
 {
     // retrieve the table name
     //
@@ -635,7 +636,7 @@ Value& SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QStri
  *
  * \return The meta data in a blob.
  */
-void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::encodeColumnMeta(QCassandraEncoder& encoder) const
+void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::encodeColumnMeta(Encoder& encoder) const
 {
     // save the name as a PSTR with a size on 2 bytes
     //
@@ -662,7 +663,7 @@ void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::encodeColumnMeta(QCassand
 /** \brief Decode a ColumnMeta object from a blob.
  *
  */
-void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::decodeColumnMeta(const QCassandraDecoder& decoder)
+void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::decodeColumnMeta(const Decoder& decoder)
 {
     // retrieve the column name
     //

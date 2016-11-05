@@ -39,7 +39,7 @@
 //
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
+using namespace CassWrapper;
 
 
 TableModel::TableModel()

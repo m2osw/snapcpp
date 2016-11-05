@@ -37,6 +37,7 @@
 #include "casswrapper/QCassandraQuery.h"
 #include "casswrapper/QCassandraSchemaValue.h"
 #include "CassWrapperImpl.h"
+#include "encoder.h"
 
 namespace CassWrapper
 {
@@ -71,7 +72,7 @@ void Value::readValue( const value& val )
 }
 
 
-void Value::encodeValue(QCassandraEncoder& encoder) const
+void Value::encodeValue(Encoder& encoder) const
 {
     encoder.appendUnsignedCharValue(static_cast<unsigned char>(f_type));
 
@@ -150,7 +151,7 @@ void Value::encodeValue(QCassandraEncoder& encoder) const
 }
 
 
-void Value::decodeValue(const QCassandraDecoder& decoder)
+void Value::decodeValue(const Decoder& decoder)
 {
     f_type = static_cast<type_t>(decoder.unsignedCharValue());
 

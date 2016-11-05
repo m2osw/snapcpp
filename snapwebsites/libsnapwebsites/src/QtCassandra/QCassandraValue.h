@@ -35,7 +35,7 @@
  */
 #pragma once
 
-#include "casswrapper/QCassandraEncoder.h"
+#include "QtCassandra/QCassandraEncoder.h"
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 
 #include <QString>

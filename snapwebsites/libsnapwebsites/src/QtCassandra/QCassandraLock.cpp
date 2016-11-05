@@ -34,8 +34,7 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <casswrapper/QCassandraEncoder.h>
-
+#include "QtCassandra/QCassandraEncoder.h"
 #include "QtCassandra/QCassandraLock.h"
 #include "QtCassandra/QCassandra.h"
 #include <sys/time.h>

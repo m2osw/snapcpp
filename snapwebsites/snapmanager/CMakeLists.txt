@@ -58,6 +58,7 @@ set( CMAKE_MODULE_PATH
 ## Find required packages
 ##
 find_package( AdvGetOpt        REQUIRED )
+find_package( CassWrapper      REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
@@ -66,7 +67,6 @@ find_package( Qt5Widgets       REQUIRED )
 find_package( Qt5WebKit        REQUIRED )
 find_package( Qt5WebKitWidgets REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
@@ -99,10 +99,10 @@ set( QT_LIBRARIES
 #set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
 
 include_directories(
+    ${CASSWRAPPER_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIR}
-    ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 

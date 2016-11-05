@@ -39,8 +39,7 @@
 //#include <sys/time.h>
 //#pragma GCC pop
 
-#include <casswrapper/QCassandraEncoder.h>
-
+#include "QtCassandra/QCassandraEncoder.h"
 #include "QtCassandra/QCassandraOrder.h"
 #include "QtCassandra/QCassandraValue.h"
 
@@ -48,8 +47,6 @@
 
 #include <iostream>
 #include <sstream>
-
-using namespace CassWrapper;
 
 namespace QtCassandra
 {

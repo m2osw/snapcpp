@@ -20,7 +20,8 @@
 #include <snapwebsites/snap_config.h>
 #include <snapwebsites/snapwebsites.h>
 
-
+#include <casswrapper/QCassandraQuery.h>
+#include <casswrapper/QCassandraSession.h>
 
 
 
@@ -70,7 +71,7 @@ int main(int argc, char * argv[])
 
         // create a new Cassandra session
         //
-        auto session( QtCassandra::QCassandraSession::create() );
+        auto session( CassWrapper::QCassandraSession::create() );
 
         // increase the request timeout "dramatically" because creating a
         // context is very slow
@@ -125,7 +126,7 @@ int main(int argc, char * argv[])
             query_str += QString( " AND replication = { 'class': 'NetworkTopologyStrategy', 'dc1': '1' }" );
         //}
 
-        auto query( QtCassandra::QCassandraQuery::create( session ) );
+        auto query( CassWrapper::QCassandraQuery::create( session ) );
         query->query( query_str, 0 );
         //query->setConsistencyLevel( ... );
         //query->setTimestamp(...);

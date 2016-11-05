@@ -36,11 +36,15 @@
 //
 #include "snapdbproxy.h"
 
+// CassWrapper
+//
+#include <casswrapper/QCassandraSession.h>
+
 // our lib
 //
 #include <snapwebsites/log.h>
 
-
+using namespace CassWrapper;
 
 /** \brief Initialize the thread.
  *
@@ -59,7 +63,7 @@
  */
 snapdbproxy_thread::snapdbproxy_thread
     ( snapdbproxy* proxy
-      , QtCassandra::QCassandraSession::pointer_t session
+      , QCassandraSession::pointer_t session
       , tcp_client_server::bio_client::pointer_t & client
       , QString const & cassandra_host_list
       , int cassandra_port
