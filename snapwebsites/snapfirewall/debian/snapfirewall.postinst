@@ -44,14 +44,6 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
-    # fail2ban will need the iptables.log file to exist otherwise it
-    # generates an error, so we create it here
-    #
-    IPTABLESLOG=/var/log/iptables.log
-    touch ${IPTABLESLOG}
-    chown syslog.adm ${IPTABLESLOG}
-    chmod 640 ${IPTABLESLOG}
-
     # Signal snapdbproxy since we just added new tables
     #
     snapsignal snapdbproxy/NEWTABLE

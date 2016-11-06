@@ -1,8 +1,8 @@
-snapfirewall (1.1.1.1~xenial) xenial; urgency=high
+snapfirewall (1.1.2.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: The iptables.log has to be created in a preinst script.
 
- -- Build Server <build@m2osw.com>  Sat, 05 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 05 Nov 2016 23:32:47 -0700
 
 snapfirewall (1.1.1.0~xenial) xenial; urgency=high
 
