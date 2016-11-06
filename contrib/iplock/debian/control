@@ -16,7 +16,7 @@ Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Package: iplock
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: iplock-doc
+Suggests: iplock-doc, fail2ban, snapfirewall
 Description: Add or remove IP addresses from your iptables firewall.
  The iplock tool is a very simple executable used to add or remove IP addresses
  to your iptables firewall to protect your services such as Apache and Postfix.

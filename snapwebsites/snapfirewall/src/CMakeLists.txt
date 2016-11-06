@@ -64,10 +64,43 @@ install(
 
 install(
     PROGRAMS
+        count-unwanted
         showfw
 
     DESTINATION
         bin
 )
+
+
+#################################################################################
+## Snap firewall manager
+##
+project(snapresetfail2ban)
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+
+add_executable(${PROJECT_NAME}
+    snapresetfail2ban.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${AS2JS_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+)
+
 
 # vim: ts=4 sw=4 et

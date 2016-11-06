@@ -405,7 +405,7 @@ QString dbutils::get_column_name( const QByteArray& key ) const
     }
     else if(f_tableName == "tracker"
          || (f_tableName == "backend" && !f_rowName.startsWith("*"))
-         || f_tableName == "firewall")
+         || (f_tableName == "firewall" && !f_rowName.startsWith("ip::")))
     {
         QtCassandra::QCassandraValue const start_date(key);
         name = microseconds_to_string(start_date.safeInt64Value(), true);
@@ -506,7 +506,7 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
     }
     else if(f_tableName == "tracker"
          || (f_tableName == "backend" && !f_rowName.startsWith("*"))
-         || f_tableName == "firewall")
+         || (f_tableName == "firewall" && !f_rowName.startsWith("ip::")))
     {
         const uint64_t microsec( string_to_microseconds( name ) );
         QtCassandra::appendInt64Value( key, microsec );
@@ -679,6 +679,9 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "users::administrative_session_duration"
          || n == "users::total_session_duration"
          || n == "users::user_session_duration"
+         || (f_tableName == "firewall" && (n.endsWith("::ban_count")
+                                        || n.endsWith("::packet_count")
+                                        || n.endsWith("::byte_count")))
          )
     {
         return column_type_t::CT_int64_value;
@@ -752,6 +755,9 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "sendmail::bounce_arrival_date3"
          || n == "sendmail::bounce_arrival_date4"
          || n.endsWith("::sendmail::created")
+         || (f_tableName == "firewall" && (n.endsWith("::created")
+                                        || n.endsWith("::modified")
+                                        || n.endsWith("::block_limit")))
          || n == "sendmail::unsubscribe_on"
          || n == "sessions::date"
          || n == "snap_software_description::last_update"

@@ -25,8 +25,9 @@
 #########
 # INPUT #
 #########
+
+# prevent unauthorized local traffic
 -A INPUT -j bad_tcp_packets
--A INPUT -j unwanted
 
 # local network
 -A INPUT -i lo -s 127.0.0.1 -j ACCEPT
@@ -40,7 +41,10 @@
 # Accept all existing connections
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PUBLIC_IP@ -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_IP@ -j ACCEPT
--A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+#-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+
+# prevent banned traffic
+-A INPUT -j unwanted
 
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
@@ -77,6 +81,12 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 
+# RST and FIN,ACK happen from legitimate IPs, but they are not always properly
+# established connections; however, logging such is not a good idea because
+# it will block otherwise legitimate connections
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL RST -d @PUBLIC_IP@ -j REJECT
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL FIN,ACK -d @PUBLIC_IP@ -j REJECT
+
 # Drop anything else!
 -A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
 -A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
@@ -106,10 +116,6 @@
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 224.0.0.0/3 -j DROP
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "[iptables] (0): " --log-uid
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 0.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "[iptables] (1): " --log-uid
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 1.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "[iptables] (2): " --log-uid
--A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "[iptables] (192): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 192.168.0.0/16 -j DROP
@@ -121,10 +127,6 @@
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 224.0.0.0/3 -j DROP
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j LOG --log-prefix "[iptables] (0): " --log-uid
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 0.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j LOG --log-prefix "[iptables] (1): " --log-uid
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 1.0.0.0/8 -j DROP
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j LOG --log-prefix "[iptables] (2): " --log-uid
--A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s 2.0.0.0/8 -j DROP
 
 ############
 # unwanted #

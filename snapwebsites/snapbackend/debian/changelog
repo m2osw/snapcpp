@@ -1,8 +1,21 @@
-snapbackend (1.0.13.10~xenial) xenial; urgency=high
+snapbackend (1.0.15.5~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 24 Oct 2016 02:00:39 -0700
+ -- Build Server <build@m2osw.com>  Tue, 01 Nov 2016 02:00:47 -0700
+
+snapbackend (1.0.15.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Added -q on the `systemctl is-enabled ...` command.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 31 Oct 2016 12:43:47 -0700
+
+snapbackend (1.0.14.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added -q to systemctl when using is-active so we avoid output
+    in our scripts.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 30 Oct 2016 23:44:46 -0700
 
 snapbackend (1.0.13.0~xenial) xenial; urgency=high
 

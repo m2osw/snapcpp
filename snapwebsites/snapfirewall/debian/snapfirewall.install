@@ -3,9 +3,11 @@ usr/lib/*
 usr/share/snapwebsites/*
 conf/snapfirewall.conf etc/snapwebsites/
 conf/snapfirewall.properties etc/snapwebsites/logger/
+conf/snapinitfirewall.service lib/systemd/system/
 conf/firewall conf/firewall.conf conf/ip4tables.rules conf/ip6tables.rules etc/network/
 conf/01-iptables.conf etc/rsyslog.d/
 conf/iptables etc/logrotate.d/
 conf/snap-firewall-action.conf etc/fail2ban/action.d/
-conf/apache-auth.local conf/snap-iptables-filter.conf etc/fail2ban/filter.d/
+conf/snap-apache-auth-filter.conf conf/snap-apache-badbots-filter.conf conf/snap-apache-fakegooglebot-filter.conf conf/snap-apache-badrequest-filter.conf conf/snap-iptables-filter.conf conf/snap-apache-proxy-filter.conf conf/snap-apache-timeout-filter.conf conf/snap-apache-unwanted-filter.conf etc/fail2ban/filter.d/
 conf/snap-apache-jail.conf conf/snap-jail.conf conf/snap-recidive-jail.conf conf/snap-sshd-jail.conf etc/fail2ban/jail.d/
+conf/override.conf /etc/systemd/system/fail2ban.service.d/

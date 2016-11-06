@@ -1,5 +1,19 @@
 #!/bin/sh -e
 
+
+# in case the firewall was modified, we want to update it
+# (i.e. updates in ip4tables.rules / ip6tables.rules and similar)
+#
+# We MUST run this command before the deb helpers otherwise it
+# will possibly remove the unwanted rules that snapfirewall will
+# add and thus we would not have the correct firewall rules
+#
+if [ "$1" = "configure" ]
+then
+    /etc/network/firewall
+fi
+
+
 #DEBHELPER#
 
 # Source debconf library.
@@ -30,6 +44,14 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
+    # fail2ban will need the iptables.log file to exist otherwise it
+    # generates an error, so we create it here
+    #
+    IPTABLESLOG=/var/log/iptables.log
+    touch ${IPTABLESLOG}
+    chown syslog.adm ${IPTABLESLOG}
+    chmod 640 ${IPTABLESLOG}
+
     # Signal snapdbproxy since we just added new tables
     #
     snapsignal snapdbproxy/NEWTABLE
@@ -40,7 +62,16 @@ then
 
     # We install some files for fail2ban, so we need to restart it
     #
-    systemctl reload fail2ban
+    if systemctl -q is-active fail2ban
+    then
+        systemctl reload fail2ban
+    fi
+
+    # make sure the snapinitfirewall service is enabled on next reboot
+    # but do not start it yet because when the bundle is running the
+    # configuration file with the variables is not yet setup properly.
+    #
+    systemctl -q enable snapinitfirewall
 fi
 
 

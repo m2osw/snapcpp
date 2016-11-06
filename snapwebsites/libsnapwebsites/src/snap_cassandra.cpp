@@ -36,6 +36,15 @@ snap_cassandra::snap_cassandra()
 }
 
 
+snap_cassandra::~snap_cassandra()
+{
+    if(f_cassandra != nullptr)
+    {
+SNAP_LOG_WARNING("f_cassandra.use_count() in destructor: ")(f_cassandra.use_count());
+    }
+}
+
+
 void snap_cassandra::connect()
 {
     // We now connect to our proxy instead. This allows us to have many
@@ -63,6 +72,8 @@ void snap_cassandra::connect()
         SNAP_LOG_FATAL(msg);
         throw snap_cassandra_not_available_exception(msg);
     }
+
+SNAP_LOG_WARNING("f_cassandra exiting connect() = ")(f_cassandra.use_count());
 }
 
 
@@ -86,7 +97,10 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     //
     f_cassandra->contexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    return f_cassandra->findContext(context_name);
+    //return f_cassandra->findContext(context_name);
+QtCassandra::QCassandraContext::pointer_t c(f_cassandra->findContext(context_name));
+SNAP_LOG_WARNING("f_cassandra exiting context() = ")(f_cassandra.use_count());
+return c;
 
     //QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     //return f_cassandra->context(context_name);
@@ -207,7 +221,9 @@ SNAP_LOG_WARNING("create_table() should not be called anymore, use get_table() i
 
 QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const & table_name)
 {
+SNAP_LOG_WARNING("f_cassandra get_table() on entry = ")(f_cassandra.use_count());
     QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
+SNAP_LOG_WARNING("f_cassandra get_table() got context = ")(f_cassandra.use_count());
     if(!context)
     {
         throw snap_cassandra_not_available_exception("The snap_websites context is not available in this Cassandra database.");
@@ -215,9 +231,10 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const 
 
     // does table exist?
     QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+SNAP_LOG_WARNING("f_cassandra findTable() = ")(f_cassandra.use_count());
     if(!table)
     {
-        SNAP_LOG_FATAL;
+        SNAP_LOG_FATAL("could not find table \"")(table_name)("\" in Cassandra.");
         throw snap_cassandra_not_available_exception(QString("Table \"%1\" does not exist. Did you install a *-tables.xml file for it?").arg(table_name));
     }
 

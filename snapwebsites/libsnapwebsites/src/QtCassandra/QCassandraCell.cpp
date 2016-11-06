@@ -208,7 +208,7 @@ const QCassandraValue& QCassandraCell::value() const
 {
     if(!f_cached)
     {
-        f_row->getValue( f_key, const_cast<QCassandraValue&>(f_value) );
+        parentRow()->getValue( f_key, const_cast<QCassandraValue&>(f_value) );
         f_cached = true;
     }
     return f_value;
@@ -241,7 +241,7 @@ void QCassandraCell::setValue(const QCassandraValue& val)
         // TODO: if the cell represents a counter, it should be resized
         //       to a 64 bit value to work in all places
         f_value = val;
-        f_row->insertValue(f_key, f_value);
+        parentRow()->insertValue(f_key, f_value);
         f_cached = true;
     }
 }
@@ -387,7 +387,7 @@ void QCassandraCell::add(int64_t val)
         f_cached = true;
     }
 
-    f_row->insertValue( f_key, f_value );
+    parentRow()->insertValue( f_key, f_value );
 }
 
 /** \brief Add to a counter.
@@ -633,7 +633,13 @@ void QCassandraCell::setTimestamp(int64_t val)
  */
 QCassandraRow::pointer_t QCassandraCell::parentRow() const
 {
-    return f_row;
+    QCassandraRow::pointer_t row(f_row.lock());
+    if(row == nullptr)
+    {
+        throw std::runtime_error("this cell was dropped and is not attached to a row anymore");
+    }
+
+    return row;
 }
 
 

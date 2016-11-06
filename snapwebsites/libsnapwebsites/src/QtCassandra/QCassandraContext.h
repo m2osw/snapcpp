@@ -107,13 +107,9 @@ private:
 
     void resetSchema();
     void parseContextDefinition( CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
-    //void prepareContextDefinition(KsDef *ks) const;
-
     QString getKeyspaceOptions();
 
     friend class QCassandra;
-    friend class QCassandraTable;
-    friend class QCassandraLock;
 
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
@@ -123,9 +119,9 @@ private:
     // std::enabled_shared_from_this<>.
     CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t		f_schema;
     //
-    std::shared_ptr<QCassandra>                 f_cassandra;
-    QString										f_contextName;
-    QCassandraTables                   			f_tables;
+    std::weak_ptr<QCassandra>                   f_cassandra;
+    QString                                     f_context_name;
+    QCassandraTables                            f_tables;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;
     mutable bool                                f_lock_accessed = false;

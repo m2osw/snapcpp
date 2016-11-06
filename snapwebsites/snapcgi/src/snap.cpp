@@ -423,14 +423,23 @@ bool snap_cgi::verify()
             return false;
         }
 
-        // TBD: we could test <protocol>:// instead of specifically http[s]
+        // if we receive this, someone is trying to log in through the XMLRPC
+        // interface, but ours uses a different URL
         //
-        if(strncasecmp(request_uri, "http://", 7) == 0
-        || strncasecmp(request_uri, "https://", 8) == 0)
+        if(strncasecmp(request_uri, "/xmlrpc.php", 11) == 0)
+        {
+            error("404 Page Not Found", "We could not find the page you were looking for.", "Our XMLRPC is not under /xmlrpc.php, wrong REQUEST_URI.");
+            snap::server::block_ip(remote_addr, "year");
+            return false;
+        }
+
+        // We do not allow any kind of proxy
+        //
+        if(*request_uri != '/')
         {
             // avoid proxy accesses
-            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot start with \"http[s]://\".");
-            snap::server::block_ip(remote_addr);
+            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot represent a proxy access.");
+            snap::server::block_ip(remote_addr, "year");
             return false;
         }
 

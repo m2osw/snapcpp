@@ -29,14 +29,14 @@
   -->
   <postinst>
     # Remove any default configuration
-    if systemctl is-active openvpn@client
+    if systemctl -q is-active openvpn@client
     then
       systemctl stop openvpn@client
     fi
     rm -f /etc/openvpn/*.conf
   </postinst>
   <prerm>
-    if systemctl is-active openvpn@client
+    if systemctl -q is-active openvpn@client
     then
       systemctl stop openvpn@client
     fi

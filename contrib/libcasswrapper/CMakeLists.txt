@@ -46,8 +46,8 @@ set( CMAKE_AUTOMOC             TRUE )
 find_package( As2Js              REQUIRED )
 find_package( CassandraCppDriver REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
-find_package( Qt5Core   	     REQUIRED )
-find_package( Qt5Xml    	     REQUIRED )
+find_package( Qt5Core            REQUIRED )
+find_package( Qt5Xml             REQUIRED )
 find_package( SnapDoxygen )
 
 SnapGetVersion( LIBCASSWRAPPER ${CMAKE_SOURCE_DIR} )
@@ -75,7 +75,6 @@ endif()
 
 add_subdirectory(cmake)
 add_subdirectory(src)
-#add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(doc)
 

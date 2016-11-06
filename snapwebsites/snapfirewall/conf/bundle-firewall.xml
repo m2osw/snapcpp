@@ -69,48 +69,6 @@
       -e "s/@BUNDLE_SECURE_IP@/$BUNDLE_INSTALLATION_SECURE_IP/" \
             /etc/network/firewall.conf
 
-      # We need to put "pre-up /etc/network/firewall" in the interfaces
-      # file so the firewall comes back on each reboot
-      #
-      # sine we know the name of the interface, we have all we need
-      #
-      INTERFACES=/etc/network/interfaces
-      cp ${INTERFACES} ${INTERFACES}.bak
-      awk --assign PUBLIC_INTERFACE="^iface ${BUNDLE_INSTALLATION_PUBLIC_INTERFACE}" \
-        'BEGIN {
-          found=0
-        }
-        {
-          if(found) {
-            if($0 ~ /^$/ || $0 !~ /^[[:space:]]/) {
-              print "\tpre-up /etc/network/firewall"
-              print
-              found=0
-            }
-            else {
-              if($0 !~ /pre-up .etc.network.firewall/) {
-                print
-              }
-            }
-          }
-          else {
-            if($0 ~ PUBLIC_INTERFACE) {
-              print
-              found=1
-            }
-            else {
-              print
-            }
-          }
-        }
-        END {
-          if(found) {
-            print "\tpre-up /etc/network/firewall"
-          }
-        }' ${INTERFACES}.bak &gt;${INTERFACES}.new
-        mv ${INTERFACES}.new ${INTERFACES}
-
-
     # The packager does not install the firewall since it requires
     # those IP addresses and interface names, so we set it up now
     #

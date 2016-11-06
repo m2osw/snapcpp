@@ -636,6 +636,13 @@ std::string addr::get_ipv4or6_string(bool include_port, bool include_brackets) c
  * The function checks the address either as IPv4 when is_ipv4()
  * returns true, otherwise as IPv6.
  *
+ * See
+ *
+ * \li https://en.wikipedia.org/wiki/Reserved_IP_addresses
+ * \li https://tools.ietf.org/html/rfc3330
+ * \li https://tools.ietf.org/html/rfc5735 (IPv4)
+ * \li https://tools.ietf.org/html/rfc5156 (IPv6)
+ *
  * \return One of the possible network types as defined in the
  *         network_type_t enumeration.
  */
@@ -760,6 +767,72 @@ std::string addr::get_network_type_string() const
 std::string addr::get_iface_name() const
 {
     return f_iface_name;
+}
+
+
+/** \brief Transform the IP into a domain name.
+ *
+ * This function transforms the IP address in this `addr` object in a
+ * name such as "snap.website".
+ *
+ * \note
+ * The function does not cache the result because it is rarely used (at least
+ * at this time). So you should cache the result and avoid calling this
+ * function more than once as the process can be very slow.
+ *
+ * \todo
+ * Speed enhancement can be achieved by using getaddrinfo_a(). That would
+ * work with a vector of addr objects.
+ *
+ * \return The domain name. If not available, an empty string.
+ */
+std::string addr::get_name() const
+{
+    char host[NI_MAXHOST];
+
+    int flags(NI_NAMEREQD);
+    if(f_protocol == IPPROTO_UDP)
+    {
+        flags |= NI_DGRAM;
+    }
+
+    // TODO: test with the NI_IDN* flags and make sure we know what we get
+    //       (i.e. we want UTF-8 as a result)
+    //
+    int const r(getnameinfo(reinterpret_cast<sockaddr const *>(&f_address), sizeof(f_address), host, sizeof(host), nullptr, 0, flags));
+
+    // return value is 0, then it worked
+    //
+    return r == 0 ? host : std::string();
+}
+
+
+/** \brief Transform the port into a service name.
+ *
+ * This function transforms the port in this `addr` object in a
+ * name such as "http".
+ *
+ * \note
+ * The function does not cache the result because it is rarely used (at least
+ * at this time). So you should cache the result and avoid calling this
+ * function more than once as the process is somewhat slow.
+ *
+ * \return The service name. If not available, an empty string.
+ */
+std::string addr::get_service() const
+{
+    char service[NI_MAXSERV];
+
+    int flags(NI_NAMEREQD);
+    if(f_protocol == IPPROTO_UDP)
+    {
+        flags |= NI_DGRAM;
+    }
+    int const r(getnameinfo(reinterpret_cast<sockaddr const *>(&f_address), sizeof(f_address), nullptr, 0, service, sizeof(service), flags));
+
+    // return value is 0, then it worked
+    //
+    return r == 0 ? service : std::string();
 }
 
 

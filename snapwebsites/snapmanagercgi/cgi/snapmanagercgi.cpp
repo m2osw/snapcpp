@@ -437,14 +437,23 @@ bool manager_cgi::verify()
             return false;
         }
 
-        // TBD: we could test <protocol>:// instead of specifically http
+        // if we receive this, someone is trying to log in through the XMLRPC
+        // interface, however, we do not offer that feature in snapmanager.cgi
         //
-        if(strncasecmp(request_uri, "http://", 7) == 0
-        || strncasecmp(request_uri, "https://", 8) == 0)
+        if(strncasecmp(request_uri, "/xmlrpc", 7) == 0)
+        {
+            error("404 Page Not Found", "We could not find the page you were looking for.", "snapmanager.cgi has no XMLRPC interface.");
+            snap::server::block_ip(remote_addr, "year");
+            return false;
+        }
+
+        // We do not allow any kind of proxy
+        //
+        if(*request_uri != '/')
         {
             // avoid proxy accesses
-            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot start with \"http[s]://\".");
-            snap::server::block_ip(remote_addr);
+            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot represent a proxy access.");
+            snap::server::block_ip(remote_addr, "year");
             return false;
         }
 

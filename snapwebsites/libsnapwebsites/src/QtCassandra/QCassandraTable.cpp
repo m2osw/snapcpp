@@ -163,6 +163,10 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     , f_context(context)
     //f_rows() -- auto-init
 {
+    // cache the name because we need it for each other we send
+    //
+    f_context_name = context->contextName();
+
     // verify the name here (faster than waiting for the server and good documentation)
     //
     // Note: we support uppercase names, however, this is only because
@@ -247,13 +251,13 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     if(has_uppercase && !has_quotes)
     {
         // surround the name with double quotes...
-        f_tableName = QString("\"%1\"").arg(table_name);
+        f_table_name = QString("\"%1\"").arg(table_name);
     }
     else
     {
-        f_tableName = table_name;
+        f_table_name = table_name;
     }
-    f_proxy = f_context->parentCassandra()->proxy();
+    f_proxy = context->parentCassandra()->proxy();
 }
 
 
@@ -286,7 +290,7 @@ QCassandraTable::~QCassandraTable()
  */
 const QString& QCassandraTable::contextName() const
 {
-    return f_context->contextName();
+    return f_context_name;
 }
 
 
@@ -299,12 +303,12 @@ const QString& QCassandraTable::contextName() const
  */
 QString QCassandraTable::tableName() const
 {
-    if(f_tableName[0] == '"')
+    if(f_table_name[0] == '"')
     {
         // remove the quotes if present
-        return f_tableName.mid(1, f_tableName.length() - 2);
+        return f_table_name.mid(1, f_table_name.length() - 2);
     }
-    return f_tableName;
+    return f_table_name;
 }
 
 
@@ -477,8 +481,8 @@ void QCassandraTable::create()
         "(key BLOB,column1 BLOB,value BLOB,PRIMARY KEY(key, column1))"
         "WITH COMPACT STORAGE"
         " AND CLUSTERING ORDER BY(column1 ASC)" )
-                .arg(f_context->contextName())
-                .arg(f_tableName)
+                .arg(f_context_name)
+                .arg(f_table_name)
             );
     query_string += getTableOptions();
 
@@ -523,8 +527,8 @@ void QCassandraTable::truncate()
 
     const QString query_string(
         QString("TRUNCATE %1.%2")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_context_name)
+            .arg(f_table_name)
             );
 
     QCassandraOrder truncate_table;
@@ -665,8 +669,8 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
     else
     {
         QString query_string( QString("SELECT key,column1,value FROM %1.%2")
-                       .arg(f_context->contextName())
-                       .arg(f_tableName)
+                       .arg(f_context_name)
+                       .arg(f_table_name)
                        );
         // Note: with the proxy we do not care about the bind_count
         //       but the appendQuery() function does the same thing
@@ -681,16 +685,17 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
 //std::cerr << "query=[" << query_string.toUtf8().data() << "]" << std::endl;
 
         // setup the consistency level
-        consistency_level_t consistency_level( f_context->parentCassandra()->defaultConsistencyLevel() );
+        consistency_level_t consistency_level( parentContext()->parentCassandra()->defaultConsistencyLevel() );
         if( row_predicate )
         {
+            consistency_level_t const default_consistency_level(consistency_level);
             consistency_level = row_predicate->consistencyLevel();
             if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
             {
                 consistency_level = row_predicate->cellPredicate()->consistencyLevel();
                 if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
                 {
-                    consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+                    consistency_level = default_consistency_level;
                 }
             }
         }
@@ -1279,7 +1284,13 @@ void QCassandraTable::dropRow(const QByteArray& row_key)
  */
 QCassandraContext::pointer_t QCassandraTable::parentContext() const
 {
-    return f_context;
+    QCassandraContext::pointer_t context(f_context.lock());
+    if(context == nullptr)
+    {
+        throw std::runtime_error("this table was dropped and is not attached to a context anymore");
+    }
+
+    return context;
 }
 
 
@@ -1307,8 +1318,8 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     //
     int64_t const timestamp(QCassandra::timeofday());
     QString query_string(QString("INSERT INTO %1.%2(key,column1,value)VALUES(?,?,?)USING TIMESTAMP %3")
-        .arg(f_context->contextName())
-        .arg(f_tableName)
+        .arg(f_context_name)
+        .arg(f_table_name)
         .arg(timestamp)
         );
 
@@ -1316,7 +1327,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     consistency_level_t consistency_level( value.consistencyLevel() );
     if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
     {
-        consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+        consistency_level = parentContext()->parentCassandra()->defaultConsistencyLevel();
     }
 
     // define TTL only if the user defined it (Cassandra uses a 'null' when
@@ -1364,14 +1375,14 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
     const QString query_string( QString("SELECT value FROM %1.%2 WHERE key=? AND column1=?")
-                         .arg(f_context->contextName())
-                         .arg(f_tableName) );
+                         .arg(f_context_name)
+                         .arg(f_table_name) );
 
     // setup the consistency level
     consistency_level_t consistency_level( value.consistencyLevel() );
     if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
     {
-        consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+        consistency_level = parentContext()->parentCassandra()->defaultConsistencyLevel();
     }
 
     QCassandraOrder get_value;
@@ -1420,8 +1431,8 @@ int32_t QCassandraTable::getCellCount
     if( f_rows.find( row_key ) == f_rows.end() )
     {
         const QString query_string ( QString("SELECT COUNT(*)AS count FROM %1.%2")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_context_name)
+            .arg(f_table_name)
             );
 
         // setup the consistency level
@@ -1430,7 +1441,7 @@ int32_t QCassandraTable::getCellCount
                                 : CONSISTENCY_LEVEL_DEFAULT );
         if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
         {
-            consistency_level = f_context->parentCassandra()->defaultConsistencyLevel();
+            consistency_level = parentContext()->parentCassandra()->defaultConsistencyLevel();
         }
 
         QCassandraOrder cell_count;
@@ -1473,8 +1484,8 @@ void QCassandraTable::remove
 
     const QString query_string(
         QString("DELETE FROM %1.%2 WHERE key=? AND column1=?")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_context_name)
+            .arg(f_table_name)
             );
 
     QCassandraOrder drop_cell;
@@ -1506,13 +1517,13 @@ void QCassandraTable::remove( const QByteArray& row_key )
 
     const QString query_string(
         QString("DELETE FROM %1.%2 WHERE key=?")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_context_name)
+            .arg(f_table_name)
             );
 
     QCassandraOrder drop_cell;
     drop_cell.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS);
-    drop_cell.setConsistencyLevel(f_context->parentCassandra()->defaultConsistencyLevel());
+    drop_cell.setConsistencyLevel(parentContext()->parentCassandra()->defaultConsistencyLevel());
     drop_cell.setTimestamp(QCassandra::timeofday()); // make sure it gets deleted no matter when it was created
     drop_cell.addParameter(row_key);
     QCassandraOrderResult const drop_cell_result(f_proxy->sendOrder(drop_cell));

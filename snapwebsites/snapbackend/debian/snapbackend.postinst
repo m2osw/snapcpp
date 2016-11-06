@@ -24,7 +24,7 @@ then
 
     for pkg in snapsendmail snapimages snappagelist
     do
-        if systemctl is-enabled ${pkg} 2> /dev/null
+        if systemctl -q is-enabled ${pkg}
         then
             systemctl start ${pkg}
         fi

@@ -1,8 +1,55 @@
-libsnapwebsites (1.1.37.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.44.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sun, 30 Oct 2016 02:00:45 -0700
+ -- Build Server <build@m2osw.com>  Sat, 05 Nov 2016 02:00:48 -0700
+
+libsnapwebsites (1.1.44.0~xenial) xenial; urgency=high
+
+  * SNAP-393: Added an implementation of the inotify in our snap_communicator
+    environment: `snap_file_changed`.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Nov 2016 16:34:47 -0700
+
+libsnapwebsites (1.1.43.0~xenial) xenial; urgency=high
+
+  * SNAP-110: snapserver gets many connections to snapdbproxy. I added debug
+    logs to try to determine where it happens.
+  * Added the get_name()/get_service() functions to the addr class.
+  * Removed the create_table(), it is not used at all anymore.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Nov 2016 11:20:47 -0700
+
+libsnapwebsites (1.1.42.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Well... renamed those rows "ip::..." instead of "ip_info::...".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 17:57:47 -0700
+
+libsnapwebsites (1.1.41.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added a few more fields so we see the correct data with snapdb.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 17:16:47 -0700
+
+libsnapwebsites (1.1.40.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Somehow the ip_info did not take, trying again.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 16:52:47 -0700
+
+libsnapwebsites (1.1.39.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added support for "ip_info::..." rows in "snapfirewall".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 03 Nov 2016 12:12:47 -0700
+
+libsnapwebsites (1.1.38.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Check whether the firewall is up (if active) before accepting
+    connections.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 31 Oct 2016 12:44:45 -0700
 
 libsnapwebsites (1.1.37.0~xenial) xenial; urgency=high
 

@@ -114,18 +114,18 @@ private:
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     int32_t     getCellCount(const QByteArray& row_key, QCassandraCellPredicate::pointer_t column_predicate);
-    void 		remove
-                ( const QByteArray& row_key
-                , const QByteArray& column_key
-                , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
-                );
-    void 		remove( const QByteArray& row_key );
+    void        remove
+                    ( const QByteArray& row_key
+                    , const QByteArray& column_key
+                    , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
+                    );
+    void        remove( const QByteArray& row_key );
     void        closeCursor();
 
-    bool		isCounterClass();
+    bool        isCounterClass();
 
-    void 		loadTables();
-    void		addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
+    void        loadTables();
+    void        addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
 
     QString     getTableOptions() const;
 
@@ -134,13 +134,14 @@ private:
 
     CassWrapper::QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t	f_schema;
 
-    bool                                        f_from_cassandra = false;
-    std::shared_ptr<QCassandraContext>          f_context;
-    QString										f_tableName;
-    QCassandraRows                              f_rows;
+    bool                                f_from_cassandra = false;
+    std::weak_ptr<QCassandraContext>    f_context;
+    QString                             f_context_name;
+    QString                             f_table_name;
+    QCassandraRows                      f_rows;
 
-    QCassandraProxy::pointer_t                  f_proxy;
-    int32_t                                     f_cursor_index = -1;
+    QCassandraProxy::pointer_t          f_proxy;
+    int32_t                             f_cursor_index = -1;
 };
 
 // list of table definitions mapped against their name (see tableName())

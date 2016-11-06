@@ -94,6 +94,8 @@ add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 #	Qt5::Xml
 #)
 #
+#    Qt5::Xml
+#)
 #add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 #
 #################################################################################
@@ -201,7 +203,6 @@ add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 #    Qt5::Core
 #	Qt5::Xml
 #)
-
 #add_test( NAME ${PROJECT_NAME}-create COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -c 1 )
 #add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -i 4 -n 5 )
 
