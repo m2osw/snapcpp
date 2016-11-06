@@ -1,3 +1,9 @@
+snapfirewall (1.1.3.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Always create the iptables.log in snapfirewall.preinst.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 05 Nov 2016 23:32:47 -0700
+
 snapfirewall (1.1.2.0~xenial) xenial; urgency=high
 
   * SNAP-465: The iptables.log has to be created in a preinst script.

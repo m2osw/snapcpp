@@ -5,18 +5,15 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-if [ "$1" = "install" ]
+# fail2ban will need the iptables.log file to exist otherwise it
+# generates an error, so we create it here
+#
+IPTABLESLOG=/var/log/iptables.log
+if test ! -f ${IPTABLESLOG}
 then
-    # fail2ban will need the iptables.log file to exist otherwise it
-    # generates an error, so we create it here
-    #
-    IPTABLESLOG=/var/log/iptables.log
-    if test ! -f ${IPTABLESLOG}
-    then
-        touch ${IPTABLESLOG}
-        chown syslog.adm ${IPTABLESLOG}
-        chmod 640 ${IPTABLESLOG}
-    fi
+    touch ${IPTABLESLOG}
+    chown syslog.adm ${IPTABLESLOG}
+    chmod 640 ${IPTABLESLOG}
 fi
 
 # vim: ts=4 sw=4 et nocindent
