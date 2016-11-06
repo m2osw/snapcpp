@@ -63,7 +63,6 @@ set( QTCASSANDRA_HEADER_FILES
     QtCassandra/QCassandraCell.h
     QtCassandra/QCassandraConsistencyLevel.h
     QtCassandra/QCassandraContext.h
-    QtCassandra/QCassandraLock.h
     QtCassandra/QCassandraOrder.h
     QtCassandra/QCassandraOrderResult.h
     QtCassandra/QCassandraPredicate.h
@@ -78,7 +77,6 @@ set( QTCASSANDRA_SOURCE_FILES
     QtCassandra/QCassandra.cpp
     QtCassandra/QCassandraCell.cpp
     QtCassandra/QCassandraContext.cpp
-    QtCassandra/QCassandraLock.cpp
     QtCassandra/QCassandraOrder.cpp
     QtCassandra/QCassandraOrderResult.cpp
     QtCassandra/QCassandraPredicate.cpp
