@@ -47,4 +47,3 @@ Description: Password input error (empty)
  log in screen. They should not because of the clients IP addresses, but if
  it does happen, you want to have a reasonable password.
 
-# vim: ts=4 sw=4 et syntax=debcontrol
