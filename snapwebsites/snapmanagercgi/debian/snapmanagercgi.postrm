@@ -10,6 +10,10 @@ then
     #
     rm -f /var/log/snapwebsites/snapmanagercgi.log*
     rm -f /var/log/snapwebsites/secure/snapmanagercgi.log*
+
+    # we create that file, so we want to remove it on a purge
+    #
+    rm -f /etc/snapwebsites/passwords/snapmanagercgi.pwd
 fi
 
 /usr/lib/snapwebsites/scripts/snapapacheinit remove
