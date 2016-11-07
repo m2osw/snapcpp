@@ -452,7 +452,7 @@ bool manager_cgi::verify()
         //
         if(strncasecmp(request_uri, "/cgi-bin/", 9) != 0)
         {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
+            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI must start with \"/cgi-bin/\".");
             snap::server::block_ip(remote_addr);
             return false;
         }
@@ -721,7 +721,9 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
                     << "X-Powered-By: snapmanager.cgi"           << std::endl
                     << std::endl
                     << login_html;
-        return 0;
+
+        // it worked--return 2
+        return 2;
     };
 
     auto read_user_info = [&](std::string const & user_name, std::map<std::string, std::string> & user_info)
