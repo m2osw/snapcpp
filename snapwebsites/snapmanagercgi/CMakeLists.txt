@@ -99,7 +99,8 @@ add_subdirectory( lib      )          # Common code to CGI, daemon, plugins
 add_subdirectory( cgi      )          # The snapmanager.cgi application
 add_subdirectory( daemon   )          # The snapmanagerdaemon to apply commands on any computer
 add_subdirectory( plugins  )          # "Core" plugins used to gather and update the status
-add_subdirectory( upgrader )          # "Core" plugins used to gather and update the status
+add_subdirectory( upgrader )          # Tool to run "apt-get upgrade" without getting smashed
+add_subdirectory( password )          # Tool to manager password files
 add_subdirectory( doc      )          # Documentation generation
 
 snap_build_xml_targets()

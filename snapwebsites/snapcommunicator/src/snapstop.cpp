@@ -70,7 +70,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "timeout",
             "60",
-            "number of seconds to wait for the process to die, default is 60 seconds",
+            "number of seconds to wait for the process to die, default is 60 seconds.",
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {
@@ -78,7 +78,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "show the version of the snapstop executable",
+            "show the version of %p and exit.",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {

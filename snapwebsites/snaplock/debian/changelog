@@ -1,8 +1,8 @@
-snaplock (1.0.11.15~xenial) xenial; urgency=high
+snaplock (1.0.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snaplock (1.0.11.0~xenial) xenial; urgency=high
 

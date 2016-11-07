@@ -1,8 +1,9 @@
-snapdbproxy (1.1.25.8~xenial) xenial; urgency=high
+snapdbproxy (1.1.26.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
+  * Fixed the return value from 1 to 0 when using --version.
 
- -- Build Server <build@m2osw.com>  Sun, 30 Oct 2016 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snapdbproxy (1.1.25.0~xenial) xenial; urgency=high
 

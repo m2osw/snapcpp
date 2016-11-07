@@ -398,7 +398,7 @@ namespace
             0,
             "version",
             nullptr,
-            "Show the version of the server and exit.",
+            "Show the version of %p and exit.",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {

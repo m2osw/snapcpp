@@ -146,6 +146,7 @@ add_library( ${PROJECT_NAME} SHARED
     mkdir_p.cpp                                 # make directories so path is valid
     mkgmtime.c                                  # mktime() with a UTC time
     mounts.cpp                                  # read /proc/mounts or some other mount point file
+    password.cpp                                # generate hashed password of various types
     plugins.cpp                                 # plugins loader and list
     process.cpp                                 # run a process optionally with pipes
     qdomhelpers.cpp                             # Qt extensions to help with the DOM

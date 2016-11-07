@@ -131,7 +131,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "[optional] show the version of the snapbounce executable",
+            "[optional] show the version of %p and exit",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {
@@ -199,7 +199,7 @@ snap_bounce::snap_bounce( int argc, char * argv[] )
     if(f_opt.is_defined("version"))
     {
         std::cerr << SNAPBOUNCE_VERSION_STRING << std::endl;
-        exit(1);
+        exit(0);
     }
 
     if( f_opt.is_defined( "help" ) || !f_opt.is_defined( "sender" ) || !f_opt.is_defined( "recipient" ) )

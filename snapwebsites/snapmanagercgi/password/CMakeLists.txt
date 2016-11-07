@@ -1,6 +1,6 @@
 #
 # File:
-#      snapwebsites/snapmanagercgi/upgrader/CMakeLists.txt
+#      snapwebsites/snapmanager/password/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites upgrader to upgrade software on a system.
@@ -28,7 +28,7 @@
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-project(snapupgrader)
+project(snappassword)
 
 include_directories(
     ${PROJECT_BINARY_DIR}
@@ -36,17 +36,17 @@ include_directories(
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${snapmanager_SOURCE_DIR}
+    #${snapmanager_SOURCE_DIR}
 )
 
 
 add_executable(${PROJECT_NAME}
-    snapupgrader.cpp
+    snappassword.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapmanager
-    #${SNAPWEBSITES_LIBRARIES}
+    #snapmanager
+    ${SNAPWEBSITES_LIBRARIES}
     ${ADVGETOPT_LIBRARIES}
     ${AS2JS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -57,7 +57,10 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+    TARGETS
+        ${PROJECT_NAME}
+    RUNTIME DESTINATION
+        bin
 )
 
 # vim: ts=4 sw=4 et

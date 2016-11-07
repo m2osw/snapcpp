@@ -1,8 +1,9 @@
-snapbounce (1.0.8.6~xenial) xenial; urgency=high
+snapbounce (1.0.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
+  * The --version also exit(0) now, instead of 1.
 
- -- Build Server <build@m2osw.com>  Tue, 01 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snapbounce (1.0.8.0~xenial) xenial; urgency=high
 

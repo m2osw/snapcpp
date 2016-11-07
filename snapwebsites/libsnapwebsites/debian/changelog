@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.44.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.45.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-484: Moved the users password implementation to the library.
+  * Fixed the --version help string to use %p for the project name.
 
- -- Build Server <build@m2osw.com>  Sat, 05 Nov 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 libsnapwebsites (1.1.44.0~xenial) xenial; urgency=high
 

@@ -1,8 +1,9 @@
-snapdb (1.0.7.42~xenial) xenial; urgency=high
+snapdb (1.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
+  * Moved the old snapdb.cpp, snapdb.h, snapsiteinfo.cpp to the archive area.
 
- -- Build Server <build@m2osw.com>  Sat, 08 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snapdb (1.0.7.0~xenial) xenial; urgency=high
 

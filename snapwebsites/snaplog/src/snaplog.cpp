@@ -123,7 +123,7 @@ const advgetopt::getopt::option g_snaplog_options[] =
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "version",
         nullptr,
-        "show the version of the snapdb executable",
+        "show the version of %p and exit.",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {
@@ -190,7 +190,7 @@ snaplog::snaplog(int argc, char * argv[])
     if(f_opt.is_defined("version"))
     {
         std::cerr << SNAPLOG_VERSION_STRING << std::endl;
-        exit(1);
+        exit(0);
         snap::NOTREACHED();
     }
 

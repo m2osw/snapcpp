@@ -23,8 +23,26 @@ then
         echo "# for more info and details about the variables defined here, check" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
         echo "# the file of the same name one directory up" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
         echo "#" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
-        echo "#clients=" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
+
+        db_get snapmanagercgi/clients && clients="$RET"
+        echo "clients=$clients" >>$SNAPMANAGER_USER_CONFIGURATION_FILENAME
     fi
+
+    # Handle the first user name and his password
+    #
+    db_get snapmanagercgi/user_name && user_name="$RET"
+    db_get snapmanagercgi/user_password && user_password="$RET"
+    if test -n "$user_name" -a -n "$user_password"
+    then
+        # XXX look into not passing the password on a command line?
+        #
+        snappassword --add --username $user_name --password $user_password
+    fi
+
+    # forget the clear password in the dpkg installation database
+    #
+    db_set snapmanagercgi/user_password
+    db_set snapmanagercgi/user_password_again
 
     # Create the snapmanagercgi.log file because the www-data user may have
     # difficulties with it otherwise

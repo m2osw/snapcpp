@@ -1,8 +1,9 @@
-snaplog (1.0.8.16~xenial) xenial; urgency=high
+snaplog (1.0.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
+  * Now the --version exit(0) instead of exit(1).
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snaplog (1.0.8.0~xenial) xenial; urgency=high
 

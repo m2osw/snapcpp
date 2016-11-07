@@ -139,7 +139,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "show the version of the snapdb executable",
+            "show the version of the %p executable",
             advgetopt::getopt::no_argument
         },
         {

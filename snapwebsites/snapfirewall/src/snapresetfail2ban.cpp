@@ -78,7 +78,7 @@ advgetopt::getopt::option const g_snapresetfail2ban_options[] =
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "version",
         nullptr,
-        "Show the version of the snapresetfail2ban executable.",
+        "Show the version of %p and exit.",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {

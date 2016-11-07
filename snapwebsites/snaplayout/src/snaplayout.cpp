@@ -175,7 +175,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         0,
         "version",
         nullptr,
-        "show the version of the server and exit",
+        "show the version of %p and exit",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {

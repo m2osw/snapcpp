@@ -130,7 +130,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "show the version of the snapdb executable",
+            "show the version of %p and exit",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {
@@ -204,7 +204,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     if(f_opt.is_defined("version"))
     {
         std::cerr << SNAPDBPROXY_VERSION_STRING << std::endl;
-        exit(1);
+        exit(0);
         snap::NOTREACHED();
     }
 

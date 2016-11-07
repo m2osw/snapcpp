@@ -1,8 +1,8 @@
-snapcommunicator (1.0.45.10~xenial) xenial; urgency=high
+snapcommunicator (1.0.46.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
 
- -- Build Server <build@m2osw.com>  Fri, 28 Oct 2016 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snapcommunicator (1.0.45.0~xenial) xenial; urgency=high
 

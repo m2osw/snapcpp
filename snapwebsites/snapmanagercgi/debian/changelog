@@ -1,8 +1,11 @@
-snapmanagercgi (1.2.11.3~xenial) xenial; urgency=high
+snapmanagercgi (1.2.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-484: Added a command line tool one can use to setup passwords.
+  * SNAP-110: Fixed the --version help string to use %p for the project name.
+  * Added a .config to ask for the administrator IP addresses and the first
+    user and password. Updated the postinst accordingly.
 
- -- Build Server <build@m2osw.com>  Fri, 04 Nov 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 20:16:48 -0700
 
 snapmanagercgi (1.2.11.0~xenial) xenial; urgency=high
 

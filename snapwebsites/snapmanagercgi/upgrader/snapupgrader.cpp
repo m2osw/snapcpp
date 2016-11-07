@@ -199,21 +199,21 @@ int main(int argc, char * argv[])
     catch(std::runtime_error const & e)
     {
         // this should rarely happen!
-        std::cerr << "upgrader: caught a runtime exception: " << e.what() << std::endl;
+        std::cerr << "snapupgrader: caught a runtime exception: " << e.what() << std::endl;
     }
     catch(std::logic_error const & e)
     {
         // this should never happen!
-        std::cerr << "upgrader: caught a logic exception: " << e.what() << std::endl;
+        std::cerr << "snapupgrader: caught a logic exception: " << e.what() << std::endl;
     }
     catch(std::exception const & e)
     {
         // we are in trouble, we cannot even answer!
-        std::cerr << "upgrader: standard exception: " << e.what() << std::endl;
+        std::cerr << "snapupgrader: standard exception: " << e.what() << std::endl;
     }
     catch(...)
     {
-        std::cerr << "upgrader: caught an unknown exception.";
+        std::cerr << "snapupgrader: caught an unknown exception.";
     }
 
     return 1;
