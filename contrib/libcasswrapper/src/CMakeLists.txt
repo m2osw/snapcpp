@@ -47,11 +47,11 @@ configure_file(
 		)
 
 set( HEADER_FILES
-    casswrapper/cass_stubs.h
+    casswrapper/casswrapper.h
     casswrapper/exception.h
     casswrapper/query.h
     casswrapper/schema.h
-    casswrapper/schemavalue.h
+    casswrapper/schema_value.h
     casswrapper/session.h
     casswrapper/qstring_stream.h
     casswrapper/version.h.in
@@ -61,7 +61,7 @@ set( HEADER_FILES
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    NotUsed.h
+    not_used.h
     casswrapper_impl.h
     casswrapper_impl.cpp
     encoder.h

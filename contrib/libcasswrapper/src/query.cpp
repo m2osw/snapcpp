@@ -35,7 +35,7 @@
  */
 
 #include "casswrapper/query.h"
-#include "casswrapperImpl.h"
+#include "casswrapper_impl.h"
 
 #include <as2js/json.h>
 
@@ -60,7 +60,7 @@
  * thread-safe and exception-safe.
  *
  * Modification: I moved all of the cass_* calls into a new layer of classes,
- * defined in casswrapperImpl.h/.cpp
+ * defined in casswrapper_impl.h/.cpp
  *
  * \sa session
  */
@@ -70,7 +70,7 @@ namespace casswrapper
 
 namespace
 {
-    void getMapFromJsonObject( query::string_map_t& json_map, const QString& data )
+    void getMapFromJsonObject( Query::string_map_t& json_map, const QString& data )
     {
         json_map.clear();
         if( data.isEmpty() || data == "null" )
@@ -89,7 +89,7 @@ namespace
         }
     }
 
-    void getDataFromJsonMap( const query::string_map_t& json_map, std::string& data )
+    void getDataFromJsonMap( const Query::string_map_t& json_map, std::string& data )
     {
         data.clear();
         if( json_map.empty() )
@@ -120,7 +120,7 @@ namespace
 }
 
 
-query::query_exception_t::query_exception_t( future session_future, QString const& msg )
+Query::query_exception_t::query_exception_t( future session_future, QString const& msg )
     : f_message(msg)
 {
     const CassError code( session_future.get_error_code() );
@@ -136,7 +136,7 @@ query::query_exception_t::query_exception_t( future session_future, QString cons
 }
 
 
-const char* query::query_exception_t::what() const throw()
+const char* Query::query_exception_t::what() const throw()
 {
     return f_what.c_str();
 }
@@ -147,10 +147,10 @@ const char* query::query_exception_t::what() const throw()
  *
  * \sa query
  */
-query::query( session::pointer_t session )
+Query::Query( Session::pointer_t session )
     : f_session( session )
 {
-    connect( this, &query::threadQueryFinished, this, &query::onThreadQueryFinished );
+    connect( this, &Query::threadQueryFinished, this, &Query::onThreadQueryFinished );
 }
 
 
@@ -158,15 +158,15 @@ query::query( session::pointer_t session )
  *
  * \sa end()
  */
-query::~query()
+Query::~Query()
 {
     end();
 }
 
 
-query::pointer_t query::create( session::pointer_t session )
+Query::pointer_t Query::create( Session::pointer_t session )
 {
-    return pointer_t(new query( session ));
+    return pointer_t(new Query( session ));
 }
 
 
@@ -178,12 +178,12 @@ query::pointer_t query::create( session::pointer_t session )
  * referencing and want to output details to the user as to
  * which one is returning status.
  */
-const QString& query::description() const
+const QString& Query::description() const
 {
     return f_description;
 }
 
-void query::setDescription( const QString& val )
+void Query::setDescription( const QString& val )
 {
     f_description = val;
 }
@@ -194,7 +194,7 @@ void query::setDescription( const QString& val )
  * The default is CONSISTENCY_LEVEL_DEFAULT, which leaves the level to whatever
  * the cassandra-cpp-driver library deems appropriate.
  */
-query::consistency_level_t	query::consistencyLevel() const
+Query::consistency_level_t	Query::consistencyLevel() const
 {
     return f_consistencyLevel;
 }
@@ -208,20 +208,20 @@ query::consistency_level_t	query::consistencyLevel() const
  * \sa query()
  * \sa consistencyLevel()
  */
-void query::setConsistencyLevel( consistency_level_t level )
+void Query::setConsistencyLevel( consistency_level_t level )
 {
     f_consistencyLevel = level;
     setStatementConsistency();
 }
 
 
-int64_t query::timestamp() const
+int64_t Query::timestamp() const
 {
     return f_timestamp;
 }
 
 
-void query::setTimestamp( int64_t val )
+void Query::setTimestamp( int64_t val )
 {
     f_timestamp = val;
     setStatementTimestamp();
@@ -230,7 +230,7 @@ void query::setTimestamp( int64_t val )
 
 /** \brief Internal method which sets the consistency in the query statement.
  */
-void query::setStatementConsistency()
+void Query::setStatementConsistency()
 {
     if( !f_queryStmt )
     {
@@ -278,7 +278,7 @@ void query::setStatementConsistency()
 
 /** \brief Internal method which sets the timestamp in the query statement.
  */
-void query::setStatementTimestamp()
+void Query::setStatementTimestamp()
 {
     if( !f_queryStmt )
     {
@@ -313,7 +313,7 @@ void query::setStatementTimestamp()
  * \param bind_count[in]    number of parameters to bind
  * 
  */
-void query::query( const QString &query_string, int bind_count )
+void Query::query( const QString &query_string, int bind_count )
 {
     if( bind_count == -1 )
     {
@@ -329,7 +329,7 @@ void query::query( const QString &query_string, int bind_count )
 }
 
 
-int query::pagingSize() const
+int Query::pagingSize() const
 {
     return f_pagingSize;
 }
@@ -345,7 +345,7 @@ int query::pagingSize() const
  *
  * \sa query()
  */
-void query::setPagingSize( const int size )
+void Query::setPagingSize( const int size )
 {
     f_pagingSize = size;
     f_queryStmt->set_paging_size( size );
@@ -361,7 +361,7 @@ void query::setPagingSize( const int size )
  *
  * \sa query()
  */
-void query::bindBool( const size_t num, const bool value )
+void Query::bindBool( const size_t num, const bool value )
 {
    f_queryStmt->bind_bool( num, value );
 }
@@ -376,7 +376,7 @@ void query::bindBool( const size_t num, const bool value )
  *
  * \sa query()
  */
-void query::bindInt32( const size_t num, const int32_t value )
+void Query::bindInt32( const size_t num, const int32_t value )
 {
    f_queryStmt->bind_int32( num, value );
 }
@@ -391,7 +391,7 @@ void query::bindInt32( const size_t num, const int32_t value )
  *
  * \sa query()
  */
-void query::bindInt64( const size_t num, const int64_t value )
+void Query::bindInt64( const size_t num, const int64_t value )
 {
    f_queryStmt->bind_int64( num, value );
 }
@@ -406,7 +406,7 @@ void query::bindInt64( const size_t num, const int64_t value )
  *
  * \sa query()
  */
-void query::bindFloat( const size_t num, const float value )
+void Query::bindFloat( const size_t num, const float value )
 {
    f_queryStmt->bind_float( num, value );
 }
@@ -421,7 +421,7 @@ void query::bindFloat( const size_t num, const float value )
  *
  * \sa query()
  */
-void query::bindDouble( const size_t num, const double value )
+void Query::bindDouble( const size_t num, const double value )
 {
    f_queryStmt->bind_double( num, value );
 }
@@ -436,7 +436,7 @@ void query::bindDouble( const size_t num, const double value )
  *
  * \sa query()
  */
-void query::bindString( const size_t num, const QString &value )
+void Query::bindString( const size_t num, const QString &value )
 {
     f_queryStmt->bind_string( num, value );
 }
@@ -451,13 +451,13 @@ void query::bindString( const size_t num, const QString &value )
  *
  * \sa query()
  */
-void query::bindByteArray( const size_t num, const QByteArray& value )
+void Query::bindByteArray( const size_t num, const QByteArray& value )
 {
     f_queryStmt->bind_blob( num, value );
 }
 
 
-void query::bindJsonMap( const size_t num, const string_map_t& value )
+void Query::bindJsonMap( const size_t num, const string_map_t& value )
 {
     std::string data;
     getDataFromJsonMap( value, data );
@@ -465,7 +465,7 @@ void query::bindJsonMap( const size_t num, const string_map_t& value )
 }
 
 
-void query::bindMap( const size_t num, const string_map_t& value )
+void Query::bindMap( const size_t num, const string_map_t& value )
 {
     collection coll( CASS_COLLECTION_TYPE_MAP, value.size() );
     for( const auto& pair : value )
@@ -478,10 +478,10 @@ void query::bindMap( const size_t num, const string_map_t& value )
 }
 
 
-void query::queryCallbackFunc( void* f, void *data )
+void Query::queryCallbackFunc( void* f, void *data )
 {
     future*          this_future( reinterpret_cast<future*>(f) );
-    query* this_query( reinterpret_cast<query*>(data) );
+    Query* this_query( reinterpret_cast<Query*>(data) );
     if( *(this_query->f_sessionFuture.get()) != *this_future )
     {
         //throw exception_t( "Unexpected future!" );
@@ -504,11 +504,11 @@ void query::queryCallbackFunc( void* f, void *data )
 }
 
 
-void query::onThreadQueryFinished( query* q )
+void Query::onThreadQueryFinished( Query* q )
 {
     if( q != this )
     {
-        throw exception_t("query::onThreadQueryFinished(): Query objects are not the same!");
+        throw exception_t("Query::onThreadQueryFinished(): Query objects are not the same!");
     }
 
     emit queryFinished( shared_from_this() );
@@ -516,7 +516,7 @@ void query::onThreadQueryFinished( query* q )
 
 
 #if 0
-void query::testMetrics()
+void Query::testMetrics()
 {
 // The following loops are a couple of attempts to get things to work when we
 // send loads of data to Cassandra all at once. All failed though. The cluster
@@ -623,7 +623,7 @@ std::cerr << "*** ...pause is over... ***\n";
  *
  * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
  */
-void query::start( const bool block )
+void Query::start( const bool block )
 {
     //testMetrics();
     //int64_t const now(QCassandra::timeofday());
@@ -631,7 +631,7 @@ void query::start( const bool block )
 
     if( !f_queryStmt )
     {
-        throw exception_t( "query::start() called with an unconnected session or no query statement." );
+        throw exception_t( "Query::start() called with an unconnected session or no query statement." );
     }
 
     f_sessionFuture = std::make_unique<future>();
@@ -645,7 +645,7 @@ void query::start( const bool block )
         // This will call back on a background thread
         //
         f_sessionFuture->set_callback
-            ( reinterpret_cast<void*>(&query::queryCallbackFunc)
+            ( reinterpret_cast<void*>(&Query::queryCallbackFunc)
             , reinterpret_cast<void*>(this)
             );
     }
@@ -664,13 +664,13 @@ void query::start( const bool block )
  *
  * /return false if not ready, true otherwise
  */
-bool query::isReady() const
+bool Query::isReady() const
 {
     return f_sessionFuture->is_ready();
 }
 
 
-bool query::queryActive() const
+bool Query::queryActive() const
 {
     return (f_queryResult && f_rowsIterator);
 }
@@ -682,7 +682,7 @@ bool query::queryActive() const
  *
  * /sa isReady(), query()
  */
-void query::getQueryResult()
+void Query::getQueryResult()
 {
     throwIfError( QString("Error in query string:\n%1").arg(f_queryString) );
 
@@ -697,7 +697,7 @@ void query::getQueryResult()
  *
  * \sa start()
  */
-void query::end()
+void Query::end()
 {
     f_queryString.clear();
     f_rowsIterator.reset();
@@ -707,7 +707,7 @@ void query::end()
 }
 
 
-size_t query::rowCount() const
+size_t Query::rowCount() const
 {
     return f_queryResult->get_row_count();
 }
@@ -721,7 +721,7 @@ size_t query::rowCount() const
  *
  * \sa query(), start(), nextPage()
  */
-bool query::nextRow()
+bool Query::nextRow()
 {
     return f_rowsIterator->next();
 }
@@ -735,7 +735,7 @@ bool query::nextRow()
  *
  * \sa query(), start(), setPagingSize(), nextRow()
  */
-bool query::nextPage( const bool block )
+bool Query::nextPage( const bool block )
 {
     if( !f_queryResult->has_more_pages() )
     {
@@ -759,7 +759,7 @@ bool query::nextPage( const bool block )
  *
  * \sa start()
  */
-void query::throwIfError( const QString& msg )
+void Query::throwIfError( const QString& msg )
 {
     if( !f_sessionFuture )
     {
@@ -818,7 +818,7 @@ void query::throwIfError( const QString& msg )
  *
  * \param name[in] name of column
  */
-bool query::getBoolColumn( const QString &name ) const
+bool Query::getBoolColumn( const QString &name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_bool();
 }
@@ -828,7 +828,7 @@ bool query::getBoolColumn( const QString &name ) const
  *
  * \param num[in] position of column in the result set
  */
-bool query::getBoolColumn( const int num ) const
+bool Query::getBoolColumn( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_bool();
 }
@@ -838,7 +838,7 @@ bool query::getBoolColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-int32_t query::getInt32Column( const QString& name ) const
+int32_t Query::getInt32Column( const QString& name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_int32();
 }
@@ -848,7 +848,7 @@ int32_t query::getInt32Column( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-int32_t query::getInt32Column( const int num ) const
+int32_t Query::getInt32Column( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_int32();
 }
@@ -858,7 +858,7 @@ int32_t query::getInt32Column( const int num ) const
  *
  * \param name[in] name of column
  */
-int64_t query::getInt64Column( const QString& name ) const
+int64_t Query::getInt64Column( const QString& name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_int64();
 }
@@ -868,7 +868,7 @@ int64_t query::getInt64Column( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-int64_t query::getInt64Column( const int num ) const
+int64_t Query::getInt64Column( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_int64();
 }
@@ -878,7 +878,7 @@ int64_t query::getInt64Column( const int num ) const
  *
  * \param name[in] name of column
  */
-float query::getFloatColumn( const QString& name ) const
+float Query::getFloatColumn( const QString& name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_float();
 }
@@ -888,7 +888,7 @@ float query::getFloatColumn( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-float query::getFloatColumn( const int num ) const
+float Query::getFloatColumn( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_float();
 }
@@ -898,7 +898,7 @@ float query::getFloatColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-double query::getDoubleColumn( const QString &name ) const
+double Query::getDoubleColumn( const QString &name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_double();
 }
@@ -908,7 +908,7 @@ double query::getDoubleColumn( const QString &name ) const
  *
  * \param num[in] position of column in the result set
  */
-double query::getDoubleColumn( const int num ) const
+double Query::getDoubleColumn( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_double();
 }
@@ -918,7 +918,7 @@ double query::getDoubleColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-QString query::getStringColumn( const QString& name ) const
+QString Query::getStringColumn( const QString& name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_string();
 }
@@ -928,7 +928,7 @@ QString query::getStringColumn( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-QString query::getStringColumn( const int num ) const
+QString Query::getStringColumn( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_string();
 }
@@ -938,7 +938,7 @@ QString query::getStringColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-QByteArray query::getByteArrayColumn( const char * name ) const
+QByteArray Query::getByteArrayColumn( const char * name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_blob();
 }
@@ -948,7 +948,7 @@ QByteArray query::getByteArrayColumn( const char * name ) const
  *
  * \param name[in] name of column
  */
-QByteArray query::getByteArrayColumn( const QString& name ) const
+QByteArray Query::getByteArrayColumn( const QString& name ) const
 {
     return f_rowsIterator->get_row().get_column_by_name( name ).get_blob();
 }
@@ -958,7 +958,7 @@ QByteArray query::getByteArrayColumn( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-QByteArray query::getByteArrayColumn( const int num ) const
+QByteArray Query::getByteArrayColumn( const int num ) const
 {
     return f_rowsIterator->get_row().get_column( num ).get_blob();
 }
@@ -968,7 +968,7 @@ QByteArray query::getByteArrayColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-query::string_map_t query::getJsonMapColumn ( const QString& name ) const
+Query::string_map_t Query::getJsonMapColumn ( const QString& name ) const
 {
     string_map_t json_map;
     getMapFromJsonObject( json_map, getStringColumn( name ) );
@@ -980,7 +980,7 @@ query::string_map_t query::getJsonMapColumn ( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-query::string_map_t query::getJsonMapColumn ( const int num ) const
+Query::string_map_t Query::getJsonMapColumn ( const int num ) const
 {
     string_map_t json_map;
     getMapFromJsonObject( json_map, getStringColumn( num ) );
@@ -992,7 +992,7 @@ query::string_map_t query::getJsonMapColumn ( const int num ) const
  *
  * \param value[in] pointer to Cassandra value
  */
-query::string_map_t query::getMapFromValue( const casswrapper::value& value ) const
+Query::string_map_t Query::getMapFromValue( const casswrapper::value& value ) const
 {
     string_map_t ret_map;
     iterator map_iter( value.get_iterator_from_map() );
@@ -1014,7 +1014,7 @@ query::string_map_t query::getMapFromValue( const casswrapper::value& value ) co
  *
  * \param name[in] name of column
  */
-query::string_map_t query::getMapColumn ( const QString& name ) const
+Query::string_map_t Query::getMapColumn ( const QString& name ) const
 {
     return getMapFromValue( f_rowsIterator->get_row().get_column_by_name( name ) );
 }
@@ -1024,7 +1024,7 @@ query::string_map_t query::getMapColumn ( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-query::string_map_t query::getMapColumn ( const int num ) const
+Query::string_map_t Query::getMapColumn ( const int num ) const
 {
     return getMapFromValue( f_rowsIterator->get_row().get_column( num ) );
 }

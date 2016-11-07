@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-namespace CassWrapper
+namespace casswrapper
 {
     template <class T>
         inline void NOTUSED( T const & result )
@@ -27,6 +27,6 @@ namespace CassWrapper
 #pragma GCC diagnostic pop
         }
 }
-//namespace CassWrapper
+//namespace casswrapper
 
 // vim: ts=4 sw=4 et

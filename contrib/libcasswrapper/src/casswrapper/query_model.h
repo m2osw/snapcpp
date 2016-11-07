@@ -41,7 +41,7 @@ public:
     query_model();
 
     void init
-        ( session::pointer_t session
+        ( Session::pointer_t session
         , const QString& keyspace_name
         , const QString& table_name
         , const QRegExp& filter = QRegExp()
@@ -50,7 +50,7 @@ public:
 
     const QString&              keyspaceName() const { return f_keyspaceName; }
     const QString&              tableName()    const { return f_tableName;    }
-    query::pointer_t  query()        const { return f_query;        }
+    Query::pointer_t  			query()        const { return f_query;        }
 
     // Read only access
     //
@@ -64,14 +64,14 @@ public:
     // Local virtual methods
     //
     virtual bool			fetchFilter     ( const QByteArray& key );
-    virtual void			fetchCustomData ( query::pointer_t q );
+    virtual void			fetchCustomData ( Query::pointer_t q );
 
 signals:
     void exceptionCaught( const QString & what, const QString & message ) const;
     void queryFinished() const;
 
 protected:
-    session::pointer_t           f_session;
+    Session::pointer_t           f_session;
     QString                      f_keyspaceName;
     QString                      f_tableName;
     std::vector<QByteArray>      f_rows;
@@ -80,11 +80,11 @@ protected:
     int                          f_columnCount = 1;
     const int                    f_rowPageSize = 10;    // This is for internal pagination--it has nothing to do with the query.
 
-    void doQuery      ( query::pointer_t query );
+    void doQuery      ( Query::pointer_t query );
     void displayError ( const std::exception & except, const QString & message ) const;
 
 private:
-    query::pointer_t        f_query;
+    Query::pointer_t        f_query;
     std::queue<QByteArray>  f_pendingRows;
 
     void reset();
@@ -92,7 +92,7 @@ private:
 
 private slots:
     void onFetchMore();
-    void onQueryFinished( query::pointer_t q );
+    void onQueryFinished( Query::pointer_t q );
 };
 
 

@@ -36,7 +36,7 @@
 
 #include "casswrapper/session.h"
 #include "casswrapper/exception.h"
-#include "casswrapperImpl.h"
+#include "casswrapper_impl.h"
 
 #include "cassandra.h"
 
@@ -81,25 +81,25 @@ struct data_impl
 /** \brief Initialize a session object
  *
  */
-session::session()
+Session::Session()
     : f_data(std::make_unique<data_impl>())
 {
 }
 
-/** \brief Clean up the session object.
+/** \brief Clean up the Session object.
  *
  */
-session::~session()
+Session::~Session()
 {
     disconnect();
 }
 
 
-session::pointer_t session::create()
+Session::pointer_t Session::create()
 {
     // Can't use make_shared<> here
     //
-    return pointer_t( new session );
+    return pointer_t( new Session );
 }
 
 
@@ -133,7 +133,7 @@ session::pointer_t session::create()
  *
  * \return throws std::runtime_error on failure
  */
-void session::connect( const QString& host, const int port, const bool use_ssl )
+void Session::connect( const QString& host, const int port, const bool use_ssl )
 {
     QStringList host_list;
     host_list << host;
@@ -169,7 +169,7 @@ void session::connect( const QString& host, const int port, const bool use_ssl )
  *
  * \return throws std::runtime_error on failure
  */
-void session::connect( const QStringList& host_list, const int port, const bool use_ssl )
+void Session::connect( const QStringList& host_list, const int port, const bool use_ssl )
 {
     // disconnect any existing connection
     //
@@ -234,7 +234,7 @@ void session::connect( const QStringList& host_list, const int port, const bool 
  * the default time out used by the schema synchronization. Those
  * can be changed by calling their respective functions.
  */
-void session::disconnect()
+void Session::disconnect()
 {
     f_data->f_connection.reset();
     //
@@ -257,7 +257,7 @@ void session::disconnect()
  *
  * \return true if connect() was called and succeeded.
  */
-bool session::isConnected() const
+bool Session::isConnected() const
 {
     return f_data->f_connection.get() != nullptr;
 }
@@ -267,7 +267,7 @@ bool session::isConnected() const
  *
  * Also, remove the ssl object from the cluster if the cluster is live.
  */
-void session::reset_ssl_keys()
+void Session::reset_ssl_keys()
 {
     f_data->f_ssl.reset();
     if( f_data->f_cluster )
@@ -285,7 +285,7 @@ void session::reset_ssl_keys()
  * first. When the session is connected is when it is added into the
  * session.
  */
-void session::add_ssl_trusted_cert( const QString& cert )
+void Session::add_ssl_trusted_cert( const QString& cert )
 {
     if( !f_data->f_ssl )
     {
@@ -308,7 +308,7 @@ void session::add_ssl_trusted_cert( const QString& cert )
  *
  * /sa add_ssl_trusted_cert()
  */
-void session::add_ssl_cert_file( const QString& filename )
+void Session::add_ssl_cert_file( const QString& filename )
 {
     QFile file( filename );
     if( !file.open( QIODevice::ReadOnly | QIODevice::Text ) )
@@ -329,7 +329,7 @@ void session::add_ssl_cert_file( const QString& filename )
  *
  * \sa set_keys_path()
  */
-QString const& session::get_keys_path() const
+QString const& Session::get_keys_path() const
 {
     return f_keys_path;
 }
@@ -339,7 +339,7 @@ QString const& session::get_keys_path() const
  *
  * \sa get_keys_path(), add_ssl_keys()
  */
-void session::set_keys_path( QString const& path )
+void Session::set_keys_path( QString const& path )
 {
     f_keys_path = path;
 }
@@ -351,7 +351,7 @@ void session::set_keys_path( QString const& path )
  *
  * \sa set_keys_path()
  */
-void session::add_ssl_keys()
+void Session::add_ssl_keys()
 {
     reset_ssl_keys();
 
@@ -378,21 +378,21 @@ void session::add_ssl_keys()
 
 /** \brief Return a smart pointer to the cassandra-cpp cluster object.
  */
-cluster session::getCluster() const
+cluster Session::getCluster() const
 {
     return *(f_data->f_cluster);
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp session object.
  */
-session session::getSession() const
+session Session::getSession() const
 {
     return *(f_data->f_session);
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp connection future object.
  */
-future session::getConnection() const
+future Session::getConnection() const
 {
     if( !isConnected() )
     {
@@ -425,7 +425,7 @@ future session::getConnection() const
  *
  * \return The timeout amount.
  */
-casswrapper::timeout_t session::timeout() const
+casswrapper::timeout_t Session::timeout() const
 {
     return f_timeout;
 }
@@ -471,7 +471,7 @@ casswrapper::timeout_t session::timeout() const
  * if you are using threads:
  *
  * \code
- *      session = casswrapper::session::create();
+ *      session = casswrapper::Session::create();
  *      {
  *          guard lock(some_mutex);
  *
@@ -484,7 +484,7 @@ casswrapper::timeout_t session::timeout() const
  *
  * \return The old timeout.
  */
-int64_t session::setTimeout(timeout_t timeout_ms)
+int64_t Session::setTimeout(timeout_t timeout_ms)
 {
     timeout_t const old_timeout(f_timeout);
     f_timeout = timeout_ms;
@@ -494,25 +494,25 @@ int64_t session::setTimeout(timeout_t timeout_ms)
 }
 
 
-uint32_t session::highWaterMark() const
+uint32_t Session::highWaterMark() const
 {
     return f_high_water_mark;
 }
 
 
-uint32_t session::lowWaterMark() const
+uint32_t Session::lowWaterMark() const
 {
     return f_low_water_mark;
 }
 
-void session::setHighWaterMark( uint32_t val )
+void Session::setHighWaterMark( uint32_t val )
 {
     f_high_water_mark = val;
     f_data->f_cluster->set_write_bytes_high_water_mark( f_high_water_mark );
 }
 
 
-void session::setLowWaterMark( uint32_t val )
+void Session::setLowWaterMark( uint32_t val )
 {
     f_low_water_mark = val;
     f_data->f_cluster->set_write_bytes_low_water_mark( f_low_water_mark );

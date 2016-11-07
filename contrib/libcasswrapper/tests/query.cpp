@@ -63,13 +63,13 @@ public:
     void largeTableTest();
 
 private:
-    session::pointer_t f_session;
+    Session::pointer_t f_session;
 };
 
 
 query_test::query_test( const QString& host )
 {
-    f_session = session::create();
+    f_session = Session::create();
     f_session->connect( host );
     //
     if( !f_session->isConnected() )
@@ -143,7 +143,7 @@ void query_test::describeSchema()
 void query_test::createSchema()
 {
     std::cout << "Creating keyspace and tables..." << std::endl;
-    auto q = query::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "CREATE KEYSPACE IF NOT EXISTS qtcassandra_query_test "
         "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} "
         "AND durable_writes = true"
@@ -185,7 +185,7 @@ void query_test::dropSchema()
 {
     std::cout << "Dropping keyspace... (this may timeout if auto_snapshot is true in conf/cassandra.yaml)" << std::endl;
 
-    auto q = query::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
     q->start();
 }
@@ -194,7 +194,7 @@ void query_test::dropSchema()
 void query_test::simpleInsert()
 {
     std::cout << "Insert into table 'data'..." << std::endl;
-    auto q = query::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "INSERT INTO qtcassandra_query_test.data "
                 "(id, name, test, float_value, double_value, blob_value, json_value, map_value) "
                 "VALUES "
@@ -213,13 +213,13 @@ void query_test::simpleInsert()
     arr += " and yet more chars...";
     q->bindByteArray( bind_num++, arr );
 
-    query::string_map_t json_map;
+    Query::string_map_t json_map;
     json_map["foo"]   = "bar";
     json_map["meyer"] = "bidge";
     json_map["silly"] = "walks";
     q->bindJsonMap( bind_num++, json_map );
 
-    query::string_map_t cass_map;
+    Query::string_map_t cass_map;
     cass_map["test"] = "more tests";
     cass_map["map"]  = "this";
     cass_map["fun"]  = "work";
@@ -231,7 +231,7 @@ void query_test::simpleInsert()
 void query_test::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
-    auto q = query::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
              ",COUNT(*) AS count\n"
              ",WRITETIME(blob_value) AS timestamp\n"
@@ -246,8 +246,8 @@ void query_test::simpleSelect()
         const float                         float_value  = q->getFloatColumn     ( "float_value"  );
         const double                        double_value = q->getDoubleColumn    ( "double_value" );
         const QByteArray                    blob_value   = q->getByteArrayColumn ( "blob_value"   );
-        const query::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
-        const query::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
+        const Query::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
+        const Query::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
         const int64_t	                    timestamp    = q->getInt64Column     ( "timestamp"    );
 
         std::cout   << "id ="          << id                << std::endl
@@ -280,7 +280,7 @@ void query_test::largeTableTest()
     const int32_t row_count = 10000;
 
     std::cout << "Insert into table 'large_table'..." << std::endl;
-    auto q = query::create( f_session );
+    auto q = Query::create( f_session );
 
     for( int32_t i = 0; i < row_count; ++i )
     {

@@ -54,16 +54,16 @@ namespace casswrapper
 struct data_impl;
 
 
-class session
-        : public std::enable_shared_from_this<session>
+class Session
+        : public std::enable_shared_from_this<Session>
 {
 public:
-    typedef std::shared_ptr<session> pointer_t;
+    typedef std::shared_ptr<Session> pointer_t;
 
     static timeout_t const       DEFAULT_TIMEOUT = 12 * 1000; // 12s
 
     static pointer_t create();
-    ~session();
+    ~Session();
 
     void connect( const QString& host = "localhost", const int port = 9042, const bool use_ssl = true );
     void connect( const QStringList& host_list     , const int port = 9042, const bool use_ssl = true );
@@ -89,7 +89,7 @@ public:
     void setLowWaterMark   ( uint32_t val );
 
 private:
-    session();
+    Session();
 
     void reset_ssl_keys();
     void add_ssl_keys();
@@ -108,7 +108,7 @@ class request_timeout
 public:
     typedef std::shared_ptr<request_timeout> pointer_t;
 
-    request_timeout(session::pointer_t session, timeout_t timeout_ms)
+    request_timeout(Session::pointer_t session, timeout_t timeout_ms)
         : f_session(session)
         , f_old_timeout(f_session->setTimeout(timeout_ms))
     {
@@ -120,7 +120,7 @@ public:
     }
 
 private:
-    session::pointer_t    f_session;
+    Session::pointer_t    f_session;
     timeout_t             f_old_timeout;
 };
 

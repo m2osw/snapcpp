@@ -174,7 +174,7 @@ public:
 
         KeyspaceMeta( SessionMeta::pointer_t SessionMeta = SessionMeta::pointer_t() );
 
-        session::pointer_t    session() const;
+        Session::pointer_t    get_session() const;
 
         const QString&                  getName()   const;
         const Value::map_t&             getFields() const;
@@ -199,19 +199,19 @@ public:
         TableMeta::map_t                f_tables;
     };
 
-    SessionMeta( session::pointer_t session = session::pointer_t() );
+    SessionMeta( Session::pointer_t session = Session::pointer_t() );
     ~SessionMeta();
 
-    static pointer_t                create( session::pointer_t session );
+    static pointer_t                create( Session::pointer_t session );
     void                            loadSchema();
-    session::pointer_t              get_session() const;
+    Session::pointer_t              get_session() const;
     uint32_t                        snapshotVersion() const;
     const KeyspaceMeta::map_t &     getKeyspaces();
     QByteArray                      encodeSessionMeta() const;
     void                            decodeSessionMeta(const QByteArray& encoded);
 
 private:
-    session::pointer_t              f_session;
+    Session::pointer_t              f_session;
     KeyspaceMeta::map_t             f_keyspaces;
 };
 

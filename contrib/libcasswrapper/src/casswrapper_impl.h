@@ -36,14 +36,14 @@
 
 #pragma once
 
-#include "casswrapper/CassStubs.h"
+#include "casswrapper/casswrapper.h"
 #include "cassandra.h"
 
 #include <memory>
 
 #include <QString>
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
@@ -400,6 +400,6 @@ private:
 
 
 }
-// namespace CassWrapper
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et

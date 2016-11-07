@@ -36,7 +36,7 @@
 
 #include "casswrapper/query.h"
 #include "casswrapper/schema_value.h"
-#include "casswrapperImpl.h"
+#include "casswrapper_impl.h"
 #include "encoder.h"
 
 namespace casswrapper

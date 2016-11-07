@@ -17,10 +17,9 @@
 //===============================================================================
 
 #include "casswrapper/query_model.h"
-#include "casswrapper/QCassandraQuery.h"
-#include "casswrapper/QCassandraSession.h"
-
-#include "NotUsed.h"
+#include "casswrapper/query.h"
+#include "casswrapper/session.h"
+#include "not_used.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -62,7 +61,7 @@ void query_model::displayError( std::exception const& except, QString const& mes
 
 
 void query_model::init
-    ( QCassandraSession::pointer_t session
+    ( Session::pointer_t session
     , const QString& keyspace_name
     , const QString& table_name
     , const QRegExp& filter
@@ -75,11 +74,11 @@ void query_model::init
 }
 
 
-void query_model::doQuery( QCassandraQuery::pointer_t q )
+void query_model::doQuery( Query::pointer_t q )
 {
     if( f_query )
     {
-        disconnect( f_query.get(), &QCassandraQuery::queryFinished, this, &query_model::onQueryFinished );
+        disconnect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
     }
 
     f_rows.clear();
@@ -89,7 +88,7 @@ void query_model::doQuery( QCassandraQuery::pointer_t q )
     try
     {
         f_query = q;
-        connect( f_query.get(), &QCassandraQuery::queryFinished, this, &query_model::onQueryFinished );
+        connect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
         f_query->start( false /*don't block*/ );
     }
     catch( const std::exception& except )
@@ -105,7 +104,7 @@ void query_model::clear()
 {
     if( f_query )
     {
-        disconnect( f_query.get(), &QCassandraQuery::queryFinished, this, &query_model::onQueryFinished );
+        disconnect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
     }
     f_query.reset();
     f_session.reset();
@@ -131,7 +130,7 @@ bool query_model::fetchFilter( const QByteArray& key )
 }
 
 
-void query_model::onQueryFinished( QCassandraQuery::pointer_t q )
+void query_model::onQueryFinished( Query::pointer_t q )
 {
     try
     {
@@ -159,7 +158,7 @@ void query_model::onQueryFinished( QCassandraQuery::pointer_t q )
 }
 
 
-void query_model::fetchCustomData( QCassandraQuery::pointer_t q )
+void query_model::fetchCustomData( Query::pointer_t q )
 {
     // Default does nothing
     //

@@ -44,7 +44,7 @@
 #include <iostream>
 #include <memory>
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 namespace {
@@ -792,47 +792,47 @@ public:
 
     void appendSignedCharValue(signed char value)
     {
-        CassWrapper::appendSignedCharValue(f_array, value);
+        casswrapper::appendSignedCharValue(f_array, value);
     }
 
     void appendUnsignedCharValue(unsigned char value)
     {
-        CassWrapper::appendUnsignedCharValue(f_array, value);
+        casswrapper::appendUnsignedCharValue(f_array, value);
     }
 
     void appendInt16Value(int16_t value)
     {
-        CassWrapper::appendInt16Value(f_array, value);
+        casswrapper::appendInt16Value(f_array, value);
     }
 
     void appendUInt16Value(uint16_t value)
     {
-        CassWrapper::appendUInt16Value(f_array, value);
+        casswrapper::appendUInt16Value(f_array, value);
     }
 
     void appendInt32Value(int32_t value)
     {
-        CassWrapper::appendInt32Value(f_array, value);
+        casswrapper::appendInt32Value(f_array, value);
     }
 
     void appendUInt32Value(uint32_t value)
     {
-        CassWrapper::appendUInt32Value(f_array, value);
+        casswrapper::appendUInt32Value(f_array, value);
     }
 
     void appendInt64Value(int64_t value)
     {
-        CassWrapper::appendInt64Value(f_array, value);
+        casswrapper::appendInt64Value(f_array, value);
     }
 
     void appendUInt64Value(uint64_t value)
     {
-        CassWrapper::appendUInt64Value(f_array, value);
+        casswrapper::appendUInt64Value(f_array, value);
     }
 
     void appendDoubleValue(double value)
     {
-        CassWrapper::appendDoubleValue(f_array, value);
+        casswrapper::appendDoubleValue(f_array, value);
     }
 
     void appendP16StringValue(const QString& value)
@@ -847,19 +847,19 @@ public:
             throw std::runtime_error("strings are limited to 64Kb");
         }
 
-        CassWrapper::appendUInt16Value(f_array, utf8.length());
-        CassWrapper::appendBinaryValue(f_array, utf8);
+        casswrapper::appendUInt16Value(f_array, utf8.length());
+        casswrapper::appendBinaryValue(f_array, utf8);
     }
 
     void appendBinaryValue(const QByteArray& value)
     {
-        CassWrapper::appendUInt32Value(f_array, value.length());
-        CassWrapper::appendBinaryValue(f_array, value);
+        casswrapper::appendUInt32Value(f_array, value.length());
+        casswrapper::appendBinaryValue(f_array, value);
     }
 
     void replaceUInt32Value(uint32_t value, int index)
     {
-        CassWrapper::replaceUInt32Value(f_array, value, index);
+        casswrapper::replaceUInt32Value(f_array, value, index);
     }
 
     size_t size() const
@@ -888,63 +888,63 @@ public:
 
     signed char signedCharValue() const
     {
-        signed char const result(CassWrapper::signedCharValue(f_array, f_index));
+        signed char const result(casswrapper::signedCharValue(f_array, f_index));
         f_index += 1;
         return result;
     }
 
     unsigned char unsignedCharValue() const
     {
-        unsigned char const result(CassWrapper::unsignedCharValue(f_array, f_index));
+        unsigned char const result(casswrapper::unsignedCharValue(f_array, f_index));
         f_index += 1;
         return result;
     }
 
     int16_t int16Value() const
     {
-        int16_t const result(CassWrapper::int16Value(f_array, f_index));
+        int16_t const result(casswrapper::int16Value(f_array, f_index));
         f_index += 2;
         return result;
     }
 
     uint16_t uint16Value() const
     {
-        uint16_t const result(CassWrapper::uint16Value(f_array, f_index));
+        uint16_t const result(casswrapper::uint16Value(f_array, f_index));
         f_index += 2;
         return result;
     }
 
     int32_t int32Value() const
     {
-        int32_t result(CassWrapper::int32Value(f_array, f_index));
+        int32_t result(casswrapper::int32Value(f_array, f_index));
         f_index += 4;
         return result;
     }
 
     uint32_t uint32Value() const
     {
-        uint32_t const result(CassWrapper::uint32Value(f_array, f_index));
+        uint32_t const result(casswrapper::uint32Value(f_array, f_index));
         f_index += 4;
         return result;
     }
 
     int64_t int64Value() const
     {
-        int64_t const result(CassWrapper::int64Value(f_array, f_index));
+        int64_t const result(casswrapper::int64Value(f_array, f_index));
         f_index += 8;
         return result;
     }
 
     uint64_t uint64Value() const
     {
-        uint64_t const result(CassWrapper::uint64Value(f_array, f_index));
+        uint64_t const result(casswrapper::uint64Value(f_array, f_index));
         f_index += 8;
         return result;
     }
 
     double doubleValue() const
     {
-        double const result(CassWrapper::doubleValue(f_array, f_index));
+        double const result(casswrapper::doubleValue(f_array, f_index));
         f_index += 8;
         return result;
     }
@@ -952,14 +952,14 @@ public:
     QString p16StringValue() const
     {
         uint16_t const length(uint16Value());
-        QString const result(QString::fromUtf8(CassWrapper::binaryValue(f_array, f_index, length)));
+        QString const result(QString::fromUtf8(casswrapper::binaryValue(f_array, f_index, length)));
         f_index += length;
         return result;
     }
 
     QString stringValue(int length) const
     {
-        QString const result(QString::fromUtf8(CassWrapper::binaryValue(f_array, f_index, length)));
+        QString const result(QString::fromUtf8(casswrapper::binaryValue(f_array, f_index, length)));
         f_index += length;
         return result;
     }
@@ -967,7 +967,7 @@ public:
     QByteArray binaryValue() const
     {
         uint32_t const length(uint32Value());
-        QByteArray const result(CassWrapper::binaryValue(f_array, f_index, length));
+        QByteArray const result(casswrapper::binaryValue(f_array, f_index, length));
         f_index += length;
         return result;
     }
@@ -977,6 +977,6 @@ private:
     mutable int     f_index = 0;
 };
 
-} // namespace CassWrapper
+} // namespace casswrapper
 
 // vim: ts=4 sw=4 et

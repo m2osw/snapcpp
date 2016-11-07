@@ -51,9 +51,9 @@ namespace casswrapper
 {
 
 
-class query
+class Query
     : public QObject
-    , public std::enable_shared_from_this<query>
+    , public std::enable_shared_from_this<Query>
 {
     Q_OBJECT
 
@@ -71,7 +71,7 @@ public:
         level_three
     };
 
-    typedef std::shared_ptr<query>  pointer_t;
+    typedef std::shared_ptr<Query>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
 
     class exception_t : public std::runtime_error
@@ -100,9 +100,9 @@ public:
         std::string f_what;
     };
 
-    ~query();
+    ~Query();
 
-    static pointer_t    create( session::pointer_t session );
+    static pointer_t    create( Session::pointer_t session );
 
     const QString&      description         () const;
     void                setDescription      ( const QString& val );
@@ -158,18 +158,18 @@ public:
     string_map_t        getMapColumn        ( const int num ) const;
 
 signals:
-    void                threadQueryFinished( query* q );
-    void                queryFinished( query::pointer_t q );
+    void                threadQueryFinished( Query* q );
+    void                queryFinished( Query::pointer_t q );
 
 private slots:
-    void                onThreadQueryFinished( query* q );
+    void                onThreadQueryFinished( Query* q );
 
 private:
-    query( session::pointer_t session );
+    Query( Session::pointer_t session );
 
     // Current query
     //
-    session::pointer_t           f_session;
+    Session::pointer_t           f_session;
     QString                      f_description;
     QString                      f_queryString;
     //
@@ -195,6 +195,6 @@ private:
 }
 // namespace casswrapper
 
-Q_DECLARE_METATYPE( casswrapper::query::pointer_t )
+Q_DECLARE_METATYPE( casswrapper::Query::pointer_t )
 
 // vim: ts=4 sw=4 et

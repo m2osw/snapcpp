@@ -34,7 +34,7 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "casswrapperImpl.h"
+#include "casswrapper_impl.h"
 #include "casswrapper/exception.h"
 
 namespace casswrapper

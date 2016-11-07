@@ -40,7 +40,7 @@
 
 #include "cassandra.h"
 
-#include "casswrapperImpl.h"
+#include "casswrapper_impl.h"
 
 #include <memory>
 #include <map>
@@ -58,7 +58,7 @@ namespace schema
 //================================================================/
 // SessionMeta
 //
-SessionMeta::SessionMeta( session::pointer_t s )
+SessionMeta::SessionMeta( Session::pointer_t s )
     : f_session(s)
 {
 }
@@ -69,7 +69,7 @@ SessionMeta::~SessionMeta()
 }
 
 
-SessionMeta::pointer_t SessionMeta::create( session::pointer_t s )
+SessionMeta::pointer_t SessionMeta::create( Session::pointer_t s )
 {
     return std::make_shared<SessionMeta>(s);
 }
@@ -186,7 +186,7 @@ void SessionMeta::loadSchema()
 }
 
 
-session::pointer_t SessionMeta::session() const
+Session::pointer_t SessionMeta::get_session() const
 {
     return f_session;
 }
