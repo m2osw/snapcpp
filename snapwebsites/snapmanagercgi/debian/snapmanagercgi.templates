@@ -16,18 +16,22 @@ Type: string
 Description: Name of the first user to access snapmanager.cgi.
  Enter the name of the very first user. Once fully installed, you will
  be able to access the snapmanager.cgi front end by logging in with
- that one user.
+ that one user. This name does not need to match your Linux account
+ name.
  .
- Note: that user will be able to create new accounts for other
- administrators (who in turn will be abel to create new accounts.)
+ Note: this user will be able to create new accounts for other
+ administrators (who in turn will be able to create new accounts.)
 
 Template: snapmanagercgi/user_password
 Type: password
 Description: Password for your first user.
- Enter the password of your first user. snapmanager.cgi passwords are
- saved in a password file that only root has access to under:
- "/etc/snapwebsites/passwords". The snappassword tool can be used to
- manage that file.
+ Enter the password of your first user. This password can be used from
+ anywhere on the Internet. So do not use a weak password unless it is a
+ test syste.
+ .
+ snapmanager.cgi passwords are saved in a password file that only root
+ has access to under: "/etc/snapwebsites/passwords". The snappassword
+ tool can be used to manage that file.
 
 Template: snapmanagercgi/user_password_again
 Type: password

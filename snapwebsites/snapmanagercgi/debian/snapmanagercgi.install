@@ -1,3 +1,4 @@
+debian/tmp/usr/bin/snappassword usr/bin/
 debian/tmp/usr/lib/cgi-bin/* usr/lib/cgi-bin/
 debian/tmp/usr/share/snapwebsites/bundles/bundle-*.xml usr/share/snapwebsites/bundles/
 debian/tmp/usr/share/snapwebsites/html/snapmanager/index.html usr/share/snapwebsites/html/snapmanager/
