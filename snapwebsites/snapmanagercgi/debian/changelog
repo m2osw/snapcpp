@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.17.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Fixed a couple of bugs in the config script.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 23:16:48 -0700
+
 snapmanagercgi (1.2.16.0~xenial) xenial; urgency=high
 
   * SNAP-484: The templates file cannot include comments anywhere.
