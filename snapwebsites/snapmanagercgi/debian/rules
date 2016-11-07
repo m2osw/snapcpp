@@ -24,4 +24,5 @@ override_dh_auto_configure:
 override_dh_fixperms:
 	dh_fixperms
 	chmod u+s debian/snapmanagerdaemon/usr/bin/snapmanagerdaemon
+	chmod go-rwx debian/snapmanagerdaemon/etc/snapwebsites/passwords
 

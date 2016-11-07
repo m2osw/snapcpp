@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.14.0~xenial) xenial; urgency=high
+
+  * SNAP-484: It is required to have the /etc/snapwebsites/passwords folder.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 21:46:48 -0700
+
 snapmanagercgi (1.2.13.0~xenial) xenial; urgency=high
 
   * SNAP-484: The templates file cannot include comments.
