@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.15.0~xenial) xenial; urgency=high
+
+  * SNAP-484: The passwords folder is in snapmanagercgi, not -daemon.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 22:55:48 -0700
+
 snapmanagercgi (1.2.14.0~xenial) xenial; urgency=high
 
   * SNAP-484: It is required to have the /etc/snapwebsites/passwords folder.
