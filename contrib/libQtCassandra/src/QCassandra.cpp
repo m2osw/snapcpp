@@ -41,7 +41,6 @@
 #pragma GCC pop
 
 #include "QtCassandra/QCassandra.h"
-#include "QtCassandra/QCassandraSchema.h"
 
 #include <QtCore>
 

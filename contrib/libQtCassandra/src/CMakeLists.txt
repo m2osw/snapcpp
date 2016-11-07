@@ -60,15 +60,12 @@ set( HEADER_FILES
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
     QtCassandra/QStringStream.h
-    QtCassandra/QueryModel.h
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 )
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
     NotUsed.h
-    CassTools.h
-    CassTools.cpp
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraContext.cpp
@@ -79,7 +76,6 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraRow.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
-    QueryModel.cpp
 )
 
 target_link_libraries(QtCassandra

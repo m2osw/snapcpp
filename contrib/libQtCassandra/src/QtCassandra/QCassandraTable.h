@@ -39,7 +39,6 @@
 #include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraProxy.h"
 #include "QtCassandra/QCassandraRow.h"
-#include "QtCassandra/QCassandraSchema.h"
 
 #include <cstdint>
 #include <memory>
