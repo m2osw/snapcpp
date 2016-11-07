@@ -714,7 +714,7 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
                     , "Could not load the login page from /usr/share/snapwebsites/html/snapmanager/snapmanagercgi-login.html");
         }
         std::string login_html(login_page.get_content());
-        boost::replace_all_copy(login_html, "@error@", error_msg);
+        boost::replace_all(login_html, "@error@", error_msg);
         std::cout   //<< "Status: 200 OK"                         << std::endl
                     << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"   << std::endl
                     << "Connection: close"                       << std::endl

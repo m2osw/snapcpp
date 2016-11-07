@@ -66,10 +66,15 @@
       color: #660000;
       text-align: center;
     }
+    .mandatory
+    {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <form method="POST">
+  <form name="login" method="POST" action="/cgi-bin/snapmanager.cgi" autocomplete="off">
     <table class="frame">
       <tr>
         <td class="frame" colspan="2">
@@ -81,12 +86,16 @@
               <td class="error-col" colspan="2">@error@</td>
             </tr>
             <tr>
-              <td class="left-col">Username:</td>
-              <td class="right-col"><input name="user_name"/></td>
+              <td class="left-col"><label for="user_name">Username: <span class="mandatory">*</span></label></td>
+              <td class="right-col"><input id="user_name" name="user_name" autocorrect="false"
+                                           autofocus="true" pattern=".+" required="true"
+                                           title="Enter your snapmanager.cgi username."/></td>
             </tr>
             <tr>
-              <td class="left-col">Password:</td>
-              <td class="right-col"><input type="password" name="user_password"/></td>
+              <td class="left-col"><label for="user_password">Password: <span class="mandatory">*</span></label></td>
+              <td class="right-col"><input id="user_password" type="password" name="user_password"
+                                           pattern=".+" required="true"
+                                           title="Enter your snapmanager.cgi password."/></td>
             </tr>
             <tr>
               <td class="left-col">&nbsp;</td>

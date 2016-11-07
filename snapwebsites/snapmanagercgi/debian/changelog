@@ -1,3 +1,11 @@
+snapmanagercgi (1.2.24.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Fixed the replace_all_copy() with just replace_all().
+  * Enhanced the form, added validation of at least one character.
+  * Fixed the form declaration, it now includes an action.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 15:53:48 -0700
+
 snapmanagercgi (1.2.23.0~xenial) xenial; urgency=high
 
   * SNAP-484: Printed the HTML twice, removed first output.
