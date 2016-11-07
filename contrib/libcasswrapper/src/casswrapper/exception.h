@@ -1,6 +1,6 @@
 #pragma once
 
-#include "casswrapper/CassStubs.h"
+#include "casswrapper/casswrapper.h"
 
 #include <stdexcept>
 #include <string>
@@ -8,7 +8,7 @@
 #include <QString>
 
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
@@ -24,7 +24,7 @@ public:
 class cassandra_exception_t : public std::exception
 {
 public:
-    cassandra_exception_t( const CassWrapper::future& future, const QString& msg );
+    cassandra_exception_t( const casswrapper::future& future, const QString& msg );
 
     uint32_t        getCode()    const { return f_code;    }
     QString const&  getError()   const { return f_error;   }
@@ -43,6 +43,6 @@ private:
 
 
 }
-// namespace CassWrapper
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et

@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraSchemaValue.cpp
+ *      schema_value.cpp
  *
  * Description:
  *      Handling of the CQL interface.
@@ -34,16 +34,16 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "casswrapper/QCassandraQuery.h"
-#include "casswrapper/QCassandraSchemaValue.h"
-#include "CassWrapperImpl.h"
+#include "casswrapper/query.h"
+#include "casswrapper/schema_value.h"
+#include "casswrapperImpl.h"
 #include "encoder.h"
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
-namespace QCassandraSchema
+namespace schema
 {
 
 
@@ -463,6 +463,6 @@ const QString& Value::output() const
 
 
 
-} // namespace QCassandraSchema
-} //namespace CassWrapper
+} // namespace schema
+} //namespace casswrapper
 // vim: ts=4 sw=4 et

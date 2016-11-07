@@ -1,8 +1,7 @@
 Source: libqtcassandra
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: cassandra-cpp-driver-dev (>= 2.2.2-1),
-    cmake,
+Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,

@@ -55,11 +55,7 @@ set( HEADER_FILES
     QtCassandra/QCassandraOrderResult.h
     QtCassandra/QCassandraPredicate.h
     QtCassandra/QCassandraProxy.h
-    QtCassandra/QCassandraQuery.h
     QtCassandra/QCassandraRow.h
-    QtCassandra/QCassandraSchema.h
-    QtCassandra/QCassandraSchemaValue.h
-    QtCassandra/QCassandraSession.h
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
@@ -80,11 +76,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraOrderResult.cpp
     QCassandraPredicate.cpp
     QCassandraProxy.cpp
-    QCassandraQuery.cpp
     QCassandraRow.cpp
-    QCassandraSchema.cpp
-    QCassandraSchemaValue.cpp
-    QCassandraSession.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
     QueryModel.cpp

@@ -1,9 +1,9 @@
 /*
  * Text:
- *      QCassandraSession.h
+ *      session.h
  *
  * Description:
- *      Handling of the connection to the QCassandra database via the cassandra-cpp-driver API.
+ *      Handling of the connection to the Cassandra database via the cassandra-cpp-driver API.
  *
  * Documentation:
  *      See each function below.
@@ -35,7 +35,7 @@
  */
 #pragma once
 
-#include "casswrapper/CassStubs.h"
+#include "casswrapper/casswrapper.h"
 
 #include <map>
 #include <memory>
@@ -47,23 +47,23 @@
 #include <unistd.h>
 //#include <sys/syscall.h>
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
 struct data_impl;
 
 
-class QCassandraSession
-        : public std::enable_shared_from_this<QCassandraSession>
+class session
+        : public std::enable_shared_from_this<session>
 {
 public:
-    typedef std::shared_ptr<QCassandraSession> pointer_t;
+    typedef std::shared_ptr<session> pointer_t;
 
     static timeout_t const       DEFAULT_TIMEOUT = 12 * 1000; // 12s
 
     static pointer_t create();
-    ~QCassandraSession();
+    ~session();
 
     void connect( const QString& host = "localhost", const int port = 9042, const bool use_ssl = true );
     void connect( const QStringList& host_list     , const int port = 9042, const bool use_ssl = true );
@@ -89,7 +89,7 @@ public:
     void setLowWaterMark   ( uint32_t val );
 
 private:
-    QCassandraSession();
+    session();
 
     void reset_ssl_keys();
     void add_ssl_keys();
@@ -103,29 +103,29 @@ private:
 };
 
 
-class QCassandraRequestTimeout
+class request_timeout
 {
 public:
-    typedef std::shared_ptr<QCassandraRequestTimeout> pointer_t;
+    typedef std::shared_ptr<request_timeout> pointer_t;
 
-    QCassandraRequestTimeout(QCassandraSession::pointer_t session, timeout_t timeout_ms)
+    request_timeout(session::pointer_t session, timeout_t timeout_ms)
         : f_session(session)
         , f_old_timeout(f_session->setTimeout(timeout_ms))
     {
     }
 
-    ~QCassandraRequestTimeout()
+    ~request_timeout()
     {
         f_session->setTimeout(f_old_timeout);
     }
 
 private:
-    QCassandraSession::pointer_t    f_session;
-    timeout_t                       f_old_timeout;
+    session::pointer_t    f_session;
+    timeout_t             f_old_timeout;
 };
 
 
 }
-// namespace CassWrapper
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et

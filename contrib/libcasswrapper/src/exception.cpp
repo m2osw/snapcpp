@@ -1,15 +1,15 @@
 #include "casswrapper/exception.h"
-#include "CassWrapperImpl.h"
+#include "casswrapperImpl.h"
 
 #include <sstream>
 
 #include <cassandra.h>
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
-cassandra_exception_t::cassandra_exception_t( const CassWrapper::future& future, QString const& msg )
+cassandra_exception_t::cassandra_exception_t( const casswrapper::future& future, QString const& msg )
     : f_message(msg)
 {
     const CassError code( future.get_error_code() );
@@ -32,6 +32,6 @@ const char* cassandra_exception_t::what() const throw()
 
 
 }
-// namespace CassWrapper
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et

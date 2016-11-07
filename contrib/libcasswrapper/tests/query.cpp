@@ -3,7 +3,7 @@
  *      query.cpp
  *
  * Description:
- *      Test the QCassandraQuery class
+ *      Test the query class
  *
  * Documentation:
  *      Run with no options.
@@ -35,22 +35,22 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "casswrapper/QCassandraQuery.h"
-#include "casswrapper/QCassandraSchema.h"
-#include "casswrapper/QStringStream.h"
+#include "casswrapper/query.h"
+#include "casswrapper/schema.h"
+#include "casswrapper/qstring_stream.h"
 #include <QtCore>
 
 #include <exception>
 #include <iostream>
 
-using namespace CassWrapper;
-using namespace QCassandraSchema;
+using namespace casswrapper;
+using namespace schema;
 
-class QueryTest
+class query_test
 {
 public:
-    QueryTest( const QString& host );
-    ~QueryTest();
+    query_test( const QString& host );
+    ~query_test();
 
     void describeSchema();
 
@@ -63,13 +63,13 @@ public:
     void largeTableTest();
 
 private:
-    QCassandraSession::pointer_t f_session;
+    session::pointer_t f_session;
 };
 
 
-QueryTest::QueryTest( const QString& host )
+query_test::query_test( const QString& host )
 {
-    f_session = QCassandraSession::create();
+    f_session = session::create();
     f_session->connect( host );
     //
     if( !f_session->isConnected() )
@@ -79,13 +79,13 @@ QueryTest::QueryTest( const QString& host )
 }
 
 
-QueryTest::~QueryTest()
+query_test::~query_test()
 {
     f_session->disconnect();
 }
 
 
-void QueryTest::describeSchema()
+void query_test::describeSchema()
 {
     SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
     sm->loadSchema();
@@ -140,10 +140,10 @@ void QueryTest::describeSchema()
 }
 
 
-void QueryTest::createSchema()
+void query_test::createSchema()
 {
     std::cout << "Creating keyspace and tables..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = query::create( f_session );
     q->query( "CREATE KEYSPACE IF NOT EXISTS qtcassandra_query_test "
         "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} "
         "AND durable_writes = true"
@@ -181,20 +181,20 @@ void QueryTest::createSchema()
 }
 
 
-void QueryTest::dropSchema()
+void query_test::dropSchema()
 {
     std::cout << "Dropping keyspace... (this may timeout if auto_snapshot is true in conf/cassandra.yaml)" << std::endl;
 
-    auto q = QCassandraQuery::create( f_session );
+    auto q = query::create( f_session );
     q->query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
     q->start();
 }
 
 
-void QueryTest::simpleInsert()
+void query_test::simpleInsert()
 {
     std::cout << "Insert into table 'data'..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = query::create( f_session );
     q->query( "INSERT INTO qtcassandra_query_test.data "
                 "(id, name, test, float_value, double_value, blob_value, json_value, map_value) "
                 "VALUES "
@@ -213,13 +213,13 @@ void QueryTest::simpleInsert()
     arr += " and yet more chars...";
     q->bindByteArray( bind_num++, arr );
 
-    QCassandraQuery::string_map_t json_map;
+    query::string_map_t json_map;
     json_map["foo"]   = "bar";
     json_map["meyer"] = "bidge";
     json_map["silly"] = "walks";
     q->bindJsonMap( bind_num++, json_map );
 
-    QCassandraQuery::string_map_t cass_map;
+    query::string_map_t cass_map;
     cass_map["test"] = "more tests";
     cass_map["map"]  = "this";
     cass_map["fun"]  = "work";
@@ -228,10 +228,10 @@ void QueryTest::simpleInsert()
 }
 
 
-void QueryTest::simpleSelect()
+void query_test::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = query::create( f_session );
     q->query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
              ",COUNT(*) AS count\n"
              ",WRITETIME(blob_value) AS timestamp\n"
@@ -246,8 +246,8 @@ void QueryTest::simpleSelect()
         const float                         float_value  = q->getFloatColumn     ( "float_value"  );
         const double                        double_value = q->getDoubleColumn    ( "double_value" );
         const QByteArray                    blob_value   = q->getByteArrayColumn ( "blob_value"   );
-        const QCassandraQuery::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
-        const QCassandraQuery::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
+        const query::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
+        const query::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
         const int64_t	                    timestamp    = q->getInt64Column     ( "timestamp"    );
 
         std::cout   << "id ="          << id                << std::endl
@@ -275,12 +275,12 @@ void QueryTest::simpleSelect()
 }
 
 
-void QueryTest::largeTableTest()
+void query_test::largeTableTest()
 {
     const int32_t row_count = 10000;
 
     std::cout << "Insert into table 'large_table'..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = query::create( f_session );
 
     for( int32_t i = 0; i < row_count; ++i )
     {
@@ -367,7 +367,7 @@ int main( int argc, char *argv[] )
 
     //try
     {
-        QueryTest test( host );
+        query_test test( host );
         test.describeSchema();
         test.dropSchema();
         test.createSchema();

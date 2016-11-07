@@ -693,7 +693,6 @@ namespace QtCassandra
  * \sa setDefaultConsistencyLevel()
  */
 QCassandra::QCassandra()
-    // f_session( QCassandraSession::create() ) -- was this really correct? (i.e. the disconnect resets that pointer...)
     // f_proxy( nullptr )
     // f_current_context(nullptr) -- auto-init
     // f_contexts() -- auto-init

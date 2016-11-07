@@ -45,8 +45,7 @@ static const int   CASSWRAPPER_LIBRARY_VERSION_PATCH  = @LIBCASSWRAPPER_VERSION_
 /** \brief The library version as a string.
  *
  * This variable represents the full library version at the time
- * you compile your program. To get the library you are linked
- * to at runtime use QCassandra::version().
+ * you compile your program.
  *
  * \warning
  * This variable uses an attribute supported by the GNU C++ compiler
@@ -55,7 +54,7 @@ static const int   CASSWRAPPER_LIBRARY_VERSION_PATCH  = @LIBCASSWRAPPER_VERSION_
  *
  * \sa version()
  */
-static const char *QT_CASSANDRA_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBCASSWRAPPER_VERSION_MAJOR@.@LIBCASSWRAPPER_VERSION_MINOR@.@LIBCASSWRAPPER_VERSION_PATCH@";
+static const char *LIBCASSWRAPPER_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBCASSWRAPPER_VERSION_MAJOR@.@LIBCASSWRAPPER_VERSION_MINOR@.@LIBCASSWRAPPER_VERSION_PATCH@";
 
 } // namespace CassWrapper
 

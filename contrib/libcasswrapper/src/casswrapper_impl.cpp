@@ -1,6 +1,6 @@
 /*
  * Text:
- *      CassWrapper.cpp
+ *      casswrapper.cpp
  *
  * Description:
  *      Handling of the CQL interface.
@@ -34,10 +34,10 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "CassWrapperImpl.h"
+#include "casswrapperImpl.h"
 #include "casswrapper/exception.h"
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
@@ -856,6 +856,6 @@ QString value::get_inet() const
 
 
 }
-// namespace CassWrapper
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et

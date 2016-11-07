@@ -37,7 +37,6 @@
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraTable.h"
 #include "QtCassandra/QCassandraContext.h"
-#include "QtCassandra/QCassandraSession.h"
 #include "QtCassandra/QCassandraSchema.h"
 
 #include <iostream>

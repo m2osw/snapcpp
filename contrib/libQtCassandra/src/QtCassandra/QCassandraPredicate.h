@@ -38,7 +38,6 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraOrder.h"
-#include "QtCassandra/QCassandraQuery.h"
 
 #include <QByteArray>
 #include <QRegExp>

@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraQuery.h
+ *      query.h
  *
  * Description:
  *      Handling of the cassandra::CfDef (Column Family Definition).
@@ -44,16 +44,16 @@
 #include <QObject>
 #include <QString>
 
-#include "casswrapper/QCassandraSession.h"
+#include "casswrapper/session.h"
 
 
-namespace CassWrapper
+namespace casswrapper
 {
 
 
-class QCassandraQuery
+class query
     : public QObject
-    , public std::enable_shared_from_this<QCassandraQuery>
+    , public std::enable_shared_from_this<query>
 {
     Q_OBJECT
 
@@ -71,7 +71,7 @@ public:
         level_three
     };
 
-    typedef std::shared_ptr<QCassandraQuery>  pointer_t;
+    typedef std::shared_ptr<query>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
 
     class exception_t : public std::runtime_error
@@ -100,9 +100,9 @@ public:
         std::string f_what;
     };
 
-    ~QCassandraQuery();
+    ~query();
 
-    static pointer_t    create( QCassandraSession::pointer_t session );
+    static pointer_t    create( session::pointer_t session );
 
     const QString&      description         () const;
     void                setDescription      ( const QString& val );
@@ -158,18 +158,18 @@ public:
     string_map_t        getMapColumn        ( const int num ) const;
 
 signals:
-    void                threadQueryFinished( QCassandraQuery* q );
-    void                queryFinished( QCassandraQuery::pointer_t q );
+    void                threadQueryFinished( query* q );
+    void                queryFinished( query::pointer_t q );
 
 private slots:
-    void                onThreadQueryFinished( QCassandraQuery* q );
+    void                onThreadQueryFinished( query* q );
 
 private:
-    QCassandraQuery( QCassandraSession::pointer_t session );
+    query( session::pointer_t session );
 
     // Current query
     //
-    QCassandraSession::pointer_t f_session;
+    session::pointer_t           f_session;
     QString                      f_description;
     QString                      f_queryString;
     //
@@ -193,8 +193,8 @@ private:
 
 
 }
-// namespace CassWrapper
+// namespace casswrapper
 
-Q_DECLARE_METATYPE( CassWrapper::QCassandraQuery::pointer_t )
+Q_DECLARE_METATYPE( casswrapper::query::pointer_t )
 
 // vim: ts=4 sw=4 et

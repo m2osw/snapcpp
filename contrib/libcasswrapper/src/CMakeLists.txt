@@ -47,30 +47,30 @@ configure_file(
 		)
 
 set( HEADER_FILES
-    casswrapper/CassStubs.h
+    casswrapper/cass_stubs.h
     casswrapper/exception.h
-    casswrapper/QCassandraQuery.h
-    casswrapper/QCassandraSchema.h
-    casswrapper/QCassandraSchemaValue.h
-    casswrapper/QCassandraSession.h
-    casswrapper/QStringStream.h
+    casswrapper/query.h
+    casswrapper/schema.h
+    casswrapper/schemavalue.h
+    casswrapper/session.h
+    casswrapper/qstring_stream.h
     casswrapper/version.h.in
-    casswrapper/QueryModel.h
+    casswrapper/query_model.h
     ${PROJECT_BINARY_DIR}/casswrapper/version.h
 )
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
     NotUsed.h
-    CassWrapperImpl.h
-    CassWrapperImpl.cpp
+    casswrapper_impl.h
+    casswrapper_impl.cpp
     encoder.h
     exception.cpp
-    QCassandraQuery.cpp
-    QCassandraSchema.cpp
-    QCassandraSchemaValue.cpp
-    QCassandraSession.cpp
-    QueryModel.cpp
+    query.cpp
+    schema.cpp
+    schema_value.cpp
+    session.cpp
+    query_model.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
