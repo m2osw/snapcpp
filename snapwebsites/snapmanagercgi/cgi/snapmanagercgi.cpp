@@ -577,9 +577,7 @@ int manager_cgi::process()
     // make sure the user is logged in
     //
     {
-SNAP_LOG_TRACE("Check whether we need to log in the user...");
         int const r(is_logged_in(request_method, query_string));
-SNAP_LOG_TRACE("Log in result is: ")(r)("...");
         if(r != 0)
         {
             // return value is 2 if we are showing the logging screen
@@ -587,7 +585,6 @@ SNAP_LOG_TRACE("Log in result is: ")(r)("...");
             //
             return r == 2 ? 0 : 1;
         }
-SNAP_LOG_TRACE("Well... no login page means we can go on...");
     }
 
     if(strcmp(request_method, "POST") == 0)
@@ -718,7 +715,6 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
         }
         std::string login_html(login_page.get_content());
         boost::replace_all_copy(login_html, "@error@", error_msg);
-        std::cout << login_html;
         std::cout   //<< "Status: 200 OK"                         << std::endl
                     << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"   << std::endl
                     << "Connection: close"                       << std::endl
