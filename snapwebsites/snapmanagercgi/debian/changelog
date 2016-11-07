@@ -1,8 +1,15 @@
+snapmanagercgi (1.2.19.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Implemented the support for a cookie.
+  * Added a login HTML file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 13:38:48 -0700
+
 snapmanagercgi (1.2.18.0~xenial) xenial; urgency=high
 
   * SNAP-484: snappassword needs to be explicitly installed.
 
- -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 23:16:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 23:26:48 -0700
 
 snapmanagercgi (1.2.17.0~xenial) xenial; urgency=high
 

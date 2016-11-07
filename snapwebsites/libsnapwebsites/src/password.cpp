@@ -17,6 +17,7 @@
 
 // ourselves
 //
+#include <snapwebsites/hexadecimal_string.h>
 #include "snapwebsites/not_used.h"
 #include "snapwebsites/password.h"
 
@@ -578,115 +579,6 @@ std::string const & password::get_salt() const
 }
 
 
-/** \brief Retrieve the password salt as a string of hexadecimal.
- *
- * This function returns the salt with each byte transformed into
- * the corresponding non-signed hexadecimal value. This will look
- * like an MD5 sum.
- *
- * \return The current salt key or an empty string if not defined.
- */
-std::string password::get_salt_as_string() const
-{
-    if(f_salt.empty())
-    {
-        return std::string();
-    }
-
-    std::string result;
-
-    std::for_each(
-              f_salt.begin()
-            , f_salt.end()
-            , [&result](char const & c)
-            {
-                auto to_hex([](char d)
-                {
-                    return d < 10 ? d + '0' : d + ('a' - 10);
-                });
-
-                result.push_back(to_hex((c >> 4) & 15));
-                result.push_back(to_hex(c & 15));
-            });
-
-    return result;
-}
-
-
-/** \brief Convert an hexadecimal string to a binary string.
- *
- * This function is the inverse of the get_salt_as_string() and
- * get_encrypted_password() functions. It converts a text string
- * of hexadecimal numbers (exactly 2 digits each) into a binary
- * string representing a password or its salt.
- *
- * \exception password_exception_invalid_parameter
- * If the input string is not considered valid, then this exception is
- * raised. To be valid every single character must be an hexadecimal
- * digit (0-9, a-f, A-F) and the length of the string must be even.
- *
- * \param[in] hex  The salt as an hexadecimal string of characters.
- *
- * \return The converted value in a binary string.
- */
-std::string password::hex_to_bin(std::string const & hex)
-{
-    std::string result;
-
-    if((hex.length() & 1) != 0)
-    {
-        throw password_exception_invalid_parameter("the hex parameter must have an even size");
-    }
-
-    for(char const * s(hex.c_str()); *s != '\0'; s += 2)
-    {
-        int value(0);
-
-        // first digit
-        //
-        if(s[0] >= '0' && s[0] <= '9')
-        {
-            value = (s[0] - '0') * 16;
-        }
-        else if(s[0] >= 'a' && s[0] <= 'f')
-        {
-            value = (s[0] - 'a' + 10) * 16;
-        }
-        else if(s[0] >= 'A' && s[0] <= 'F')
-        {
-            value = (s[0] - 'A' + 10) * 16;
-        }
-        else
-        {
-            throw password_exception_invalid_parameter("the hex parameter must only contain valid hexadecimal digits");
-        }
-
-        // second digit
-        //
-        if(s[1] >= '0' && s[1] <= '9')
-        {
-            value += s[1] - '0';
-        }
-        else if(s[1] >= 'a' && s[1] <= 'f')
-        {
-            value += s[1] - 'a' + 10;
-        }
-        else if(s[1] >= 'A' && s[1] <= 'F')
-        {
-            value += s[1] - 'A' + 10;
-        }
-        else
-        {
-            throw password_exception_invalid_parameter("the hex parameter must only contain valid hexadecimal digits");
-        }
-
-        result.push_back(value);
-    }
-
-    return result;
-}
-
-
 /** \brief Define the encrypted password.
  *
  * You may use this function to define the password object as an encrypted
@@ -735,43 +627,6 @@ std::string const & password::get_encrypted_password() const
     }
 
     return f_encrypted_password;
-}
-
-
-/** \brief Retrieve the password as a string of hexadecimal.
- *
- * This function returns the password with each byte transformed into
- * the corresponding non-signed hexadecimal value. This will look
- * like an MD5 sum.
- *
- * \return The current password key or an empty string if not defined.
- */
-std::string password::get_encrypted_password_as_string() const
-{
-    get_encrypted_password();
-
-    if(f_encrypted_password.empty())
-    {
-        return std::string();
-    }
-
-    std::string result;
-
-    std::for_each(
-              f_encrypted_password.begin()
-            , f_encrypted_password.end()
-            , [&result](char const & c)
-            {
-                auto to_hex([](char d)
-                {
-                    return d < 10 ? d + '0' : d + ('a' - 10);
-                });
-
-                result.push_back(to_hex((c >> 4) & 15));
-                result.push_back(to_hex(c & 15));
-            });
-
-    return result;
 }
 
 
@@ -1112,9 +967,9 @@ bool password_file::find(std::string const & name, password & p)
     // setup the encrypted password and salt
     //
     std::string password_hex_salt(ptr + salt_position + 1, password_position - salt_position - 1);
-    std::string password_salt(password::hex_to_bin(password_hex_salt));
+    std::string password_salt(hex_to_bin(password_hex_salt));
     std::string encrypted_hex_password(ptr + password_position + 1, end_position - password_position - 1);
-    std::string encrypted_password(password::hex_to_bin(encrypted_hex_password));
+    std::string encrypted_password(hex_to_bin(encrypted_hex_password));
     p.set_encrypted_password(encrypted_password, password_salt);
     password::clear_string(password_hex_salt);
     password::clear_string(password_salt);
@@ -1164,9 +1019,9 @@ bool password_file::save(std::string const & name, password const & p)
             + ":"
             + p.get_digest()
             + ":"
-            + p.get_salt_as_string()
+            + bin_to_hex(p.get_salt())
             + ":"
-            + p.get_encrypted_password_as_string()
+            + bin_to_hex(p.get_encrypted_password())
             + "\n");
 
     // search the user

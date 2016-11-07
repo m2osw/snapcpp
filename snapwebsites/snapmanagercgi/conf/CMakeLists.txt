@@ -99,6 +99,7 @@ install(
         # HTML files
         index.html
         favicon.ico
+        snapmanagercgi-login.html
 
     DESTINATION
         share/snapwebsites/html/snapmanager

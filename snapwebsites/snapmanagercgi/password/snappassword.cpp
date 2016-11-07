@@ -21,6 +21,7 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/hexadecimal_string.h>
 #include <snapwebsites/password.h>
 
 // advgetopt
@@ -251,9 +252,9 @@ int snappassword::list_all()
                       << ":"
                       << p.get_digest()
                       << ":"
-                      << p.get_salt_as_string()
+                      << snap::bin_to_hex(p.get_salt())
                       << ":"
-                      << p.get_encrypted_password_as_string()
+                      << snap::bin_to_hex(p.get_encrypted_password())
                       << std::endl;
         }
     }
