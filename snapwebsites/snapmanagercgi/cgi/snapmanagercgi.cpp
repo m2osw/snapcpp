@@ -577,11 +577,17 @@ int manager_cgi::process()
     // make sure the user is logged in
     //
     {
+SNAP_LOG_TRACE("Check whether we need to log in the user...");
         int const r(is_logged_in(request_method, query_string));
+SNAP_LOG_TRACE("Log in result is: ")(r)("...");
         if(r != 0)
         {
-            return 0;
+            // return value is 2 if we are showing the logging screen
+            // and 1 in all other cases (i.e. errors)
+            //
+            return r == 2 ? 0 : 1;
         }
+SNAP_LOG_TRACE("Well... no login page means we can go on...");
     }
 
     if(strcmp(request_method, "POST") == 0)
