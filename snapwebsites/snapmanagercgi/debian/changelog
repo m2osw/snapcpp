@@ -1,3 +1,16 @@
+snapmanagercgi (1.2.28.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Prevent reinterpretation of the POST after a log in.
+  * Added a snappassword.log file to log output of snappassword.
+  * Added a corresponding logrotate entry.
+  * exit(2) if password file cannot be read or user cannot be found.
+  * Fixed the test of the exit code using proper macros.
+  * Added a monthly deletion of session files.
+  * Added a '\n' at the end of the session file.
+  * Added a link back to home when outputting an error.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 17:43:48 -0700
+
 snapmanagercgi (1.2.27.0~xenial) xenial; urgency=high
 
   * SNAP-484: Fixed session ID generation (race condition and loop test.)

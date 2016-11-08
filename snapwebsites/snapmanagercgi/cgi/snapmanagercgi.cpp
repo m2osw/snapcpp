@@ -148,6 +148,7 @@ int manager_cgi::error(char const * code, char const * msg, char const * details
     body += "</h1><p>";
     body += (msg == nullptr ? "Sorry! We found an invalid server configuration or some other error occurred." : msg);
     body += "</p>";
+    body += "<p><a href=\"/cgi-bin/snapmanager.cgi\">Home</a></p>";
 
     std::cout   << "Status: " << code                       << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
@@ -551,8 +552,8 @@ bool manager_cgi::verify()
 int manager_cgi::process()
 {
     // WARNING: do not use std::string because nullptr will crash
-    char const * request_method( getenv("REQUEST_METHOD") );
-    if(request_method == nullptr)
+    char const * request_method_str( getenv("REQUEST_METHOD") );
+    if(request_method_str == nullptr)
     {
         // the method was already checked in verify(), before this
         // call so it should always be defined here...
@@ -573,6 +574,18 @@ int manager_cgi::process()
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 #endif
+    std::string request_method(request_method_str);
+
+    if(request_method == "POST")
+    {
+        // a form posted?
+        // convert the POST variables in a map
+        //
+        if(read_post_variables() != 0)
+        {
+            return 1;
+        }
+    }
 
     // retrieve the query string, that's all we use in this one (i.e.
     // at this point we ignore the path)
@@ -599,7 +612,7 @@ int manager_cgi::process()
         }
     }
 
-    if(strcmp(request_method, "POST") == 0)
+    if(request_method == "POST")
     {
         if(process_post() != 0)
         {
@@ -711,9 +724,13 @@ int manager_cgi::read_post_variables()
 }
 
 
-int manager_cgi::is_logged_in(char const * request_method, char const * query_string)
+int manager_cgi::is_logged_in(std::string & request_method, char const * query_string)
 {
     snap::NOTUSED(query_string);
+
+    // session duration (TODO: make a parameter from the .conf)
+    //
+    int64_t const session_duration(3 * 24 * 60 * 60);
 
     auto login_form = [&](std::string const error_msg = "")
     {
@@ -787,142 +804,157 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
         return 0;
     };
 
+    auto setup_cookie = [&](std::string const & session_id)
+    {
+        // we are logged in and session_id needs to be saved in the cookie
+        //
+        // TODO: add the domain, which should come from the .conf
+        //
+        // Note: session_id is a set of hexadecimal digits so it is safe to
+        //       save it as is in the cookie
+        //
+        // Note: we add 5 min. to the duration so the age on the client side
+        //       can be a bit off and we should not inadvertendly lose the
+        //       connection
+        //
+        f_cookie = "Set-Cookie: snapmanager=" + session_id
+                 + "; Max-Age=" + std::to_string(session_duration + 300)
+                 + "; Path=/; Secure; HttpOnly\n";
+    };
+
     // try to log the user in on a POST
     // verify whether the user is logged in on a GET
     // if not logged in, display the login form
     //
-
     std::string session_id;
 
-    if(strcmp(request_method, "POST") == 0)
+    if(request_method == "POST")
     {
-        // login form posted?
-        //
-        if(read_post_variables() != 0)
-        {
-            return 1;
-        }
-
-        // check that the login button was clicked (i.e. is defined)
+        // check whether this is a log in attempt or another POST
         //
         auto const & user_login_it(f_post_variables.find("user_login"));
-        if(user_login_it == f_post_variables.end())
-        {
-            return error("400 Bad Request", "The POST is expected to include a user_login variable representing the button clicked.", nullptr);
-        }
-
-        // check that the user name is defined
-        //
         auto const & user_name_it(f_post_variables.find("user_name"));
-        if(user_name_it == f_post_variables.end())
-        {
-            return error("400 Bad Request", "The POST is expected to include a user_name variable.", nullptr);
-        }
-        std::string const user_name(user_name_it->second);
-
-        // check that the user password is defined
-        //
         auto const & user_password_it(f_post_variables.find("user_password"));
-        if(user_password_it == f_post_variables.end())
-        {
-            return error("400 Bad Request", "The POST is expected to include a user_4password variable.", nullptr);
-        }
-        std::string const user_password(user_password_it->second);
 
-        // check that the user exists and that the password is correct
-        // for that user
-        //
-        // for that to work, we use the snappassword tool which can become
-        // root on a --check command
-        //
-        std::string const command("snappassword --check --username " + user_name + " --password " + user_password);
-        int const r(system(command.c_str()));
-        if(r != 0)
+        if(user_login_it != f_post_variables.end()
+        && user_name_it != f_post_variables.end()
+        && user_password_it == f_post_variables.end())
         {
-            if(r == 2)
-            {
-                // invalid credentials
-                //
-                // TODO: somehow we should show an error of some sort...
-                //
-                return login_form("Invalid credentials. Please try again.");
-            }
-            return error(
-                      "500 Internal Server Error"
-                    , "An internal error occurred."
-                    , "Somehow the snappassword command failed.");
-        }
+            std::string user_name(user_name_it->second);
+            std::string const user_password(user_password_it->second);
 
-        // user credentials were accepted, generate a session and a cookie
-        //
-        // loop until we get a unique session ID, it should be really rare
-        // since the session_id is 16 bytes
-        //
-        // Note: we use open(2) so we can have the O_EXCL & O_CREAT flags
-        //       used together to avoid any kind of race condition
-        //
-        std::string session_path;
-        int session_fd(-1);
-        do
-        {
-            unsigned char buf[16];
-            int const rs(RAND_bytes(buf, sizeof(buf)));
-            if(rs != 1)
+            // check that the user exists and that the password is correct
+            // for that user
+            //
+            // for that to work, we use the snappassword tool which can become
+            // root on a --check command
+            //
+            std::string const command("snappassword --check --username "
+                                     + user_name
+                                     + " --password "
+                                     + user_password
+                                     + " >>/var/log/snapwebsites/secure/snappassword.log 2>&1");
+            int const r(system(command.c_str()));
+            if(r != 0)
             {
+                if(WIFEXITED(r)
+                && WEXITSTATUS(r) == 2)
+                {
+                    // invalid credentials
+                    //
+                    // TODO: somehow we should show an error of some sort...
+                    //
+                    return login_form("Invalid credentials. Please try again.");
+                }
                 return error(
                           "500 Internal Server Error"
-                        , "Could not generate a session number."
-                        , "Somehow RAND_bytes() failed.");
+                        , "An internal error occurred."
+                        , "Somehow the snappassword command failed.");
             }
-            session_id = snap::bin_to_hex(std::string(reinterpret_cast<char *>(buf), sizeof(buf)));
-            session_path = g_session_path + ("/" + session_id) + ".session";
 
-            session_fd = open(session_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0700);
-        }
-        while(session_fd == -1);
-        std::unique_ptr<int, decltype(&close_file)> raii_session_fd(&session_fd, close_file);
+            // user credentials were accepted, generate a session and a cookie
+            //
+            // loop until we get a unique session ID, it should be really rare
+            // since the session_id is 16 bytes
+            //
+            // Note: we use open(2) so we can have the O_EXCL & O_CREAT flags
+            //       used together to avoid any kind of race condition
+            //
+            std::string session_path;
+            int session_fd(-1);
+            do
+            {
+                unsigned char buf[16];
+                int const rs(RAND_bytes(buf, sizeof(buf)));
+                if(rs != 1)
+                {
+                    return error(
+                              "500 Internal Server Error"
+                            , "Could not generate a session number."
+                            , "Somehow RAND_bytes() failed.");
+                }
+                session_id = snap::bin_to_hex(std::string(reinterpret_cast<char *>(buf), sizeof(buf)));
+                session_path = g_session_path + ("/" + session_id) + ".session";
 
-        // check whether a user reference already exists, if so delete the
-        // old session
-        //
-        std::map<std::string, std::string> user_info;
-        if(read_user_info(user_name, user_info) != 0)
-        {
-            return 1;
-        }
+                session_fd = open(session_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0700);
+            }
+            while(session_fd == -1);
+            std::unique_ptr<int, decltype(&close_file)> raii_session_fd(&session_fd, close_file);
 
-        if(user_info.find("Session") == user_info.end())
-        {
-            std::string const old_session_id(user_info["Session"]);
-            unlink((g_session_path + ("/" + old_session_id) + ".session").c_str());
-        }
+            // check whether a user reference already exists, if so delete the
+            // old session
+            //
+            std::map<std::string, std::string> user_info;
+            if(read_user_info(user_name, user_info) != 0)
+            {
+                return 1;
+            }
 
-        // clear in case we make changes with various version it is safer
-        //
-        user_info.clear();
-        user_info["Session"] = session_id;
-        std::string const now(std::to_string(time(nullptr)));
-        user_info["Date"] = now;
-        user_info["Last-Access"] = now;
+            if(user_info.find("Session") == user_info.end())
+            {
+                std::string const old_session_id(user_info["Session"]);
+                unlink((g_session_path + ("/" + old_session_id) + ".session").c_str());
+            }
 
-        if(write_user_info(user_name, user_info) != 0)
-        {
-            return 1;
-        }
+            // clear in case we make changes with various version it is safer
+            //
+            user_info.clear();
+            user_info["Session"] = session_id;
+            std::string const now(std::to_string(time(nullptr)));
+            user_info["Date"] = now;
+            user_info["Last-Access"] = now;
 
-        // the session file is just the user name
-        if(::write(session_fd, user_name.c_str(), user_name.length()) != static_cast<ssize_t>(user_name.length()))
-        {
-            raii_session_fd.reset();
-            unlink(session_path.c_str());
+            if(write_user_info(user_name, user_info) != 0)
+            {
+                return 1;
+            }
 
-            return error(
-                      "500 Internal Server Error"
-                    , "Could not properly log you in."
-                    , "The write to the session file failed.");
+            // the session file is just the user name
+            // we just add a newline for courtesy
+            //
+            user_name += "\n";
+            if(::write(session_fd, user_name.c_str(), user_name.length()) != static_cast<ssize_t>(user_name.length()))
+            {
+                raii_session_fd.reset();
+                unlink(session_path.c_str());
+
+                return error(
+                          "500 Internal Server Error"
+                        , "Could not properly log you in."
+                        , "The write to the session file failed.");
+            }
+
+            // "forget" about the POST, it is not compatible with the other
+            // posts and we already used up the data here
+            //
+            request_method = "GET";
+
+            setup_cookie(session_id);
+            return 0;
         }
     }
-    else if(strcmp(request_method, "GET") == 0)
+
+    if(request_method == "GET" || request_method == "POST")
     {
         // the GET must have a cookie or we immediately display the login form
         //
@@ -1024,10 +1056,6 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
                     break;
                 }
 
-                // session duration (TODO: make a parameter from the .conf)
-                //
-                int64_t const session_duration(3 * 24 * 60 * 60);
-
                 time_t const last_access(boost::lexical_cast<time_t>(user_info["Last-Access"]));
                 time_t const now(time(nullptr));
                 if(now < last_access + session_duration)
@@ -1084,47 +1112,29 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
             //
             return login_form();
         }
-    }
-    else
-    {
-        SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
-        std::string const body("<html><head><title>Method Not Allowed</title></head><body><h1>Method Not Allowed</h1><p>Sorry. We only support GET and POST.</p></body></html>");
-        std::cout   << "Status: 405 Method Not Allowed"         << std::endl
-                    << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                    << "Allow: GET, POST"                       << std::endl
-                    << "Connection: close"                      << std::endl
-                    << "Content-Type: text/html; charset=utf-8" << std::endl
-                    << "Content-Length: " << body.length()      << std::endl
-                    << "X-Powered-By: snapamanager.cgi"         << std::endl
-                    << std::endl
-                    << body;
-        return 1;
+
+        setup_cookie(session_id);
+        return 0;
     }
 
-    // we are logged in and session_id needs to be saved in the cookie
-    //
-    // TODO: add the domain, which should come from the .conf
-    //
-    // Note: session_id is a set of hexadecimal digits so it is safe to
-    //       save it as is in the cookie
-    //
-    f_cookie = "Set-Cookie: snapmanager=" + session_id
-             + "; Max-Age=31536000; Path=/; Secure; HttpOnly\n";
-
-    return 0;
+    SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
+    std::string const body("<html><head><title>Method Not Allowed</title></head><body><h1>Method Not Allowed</h1><p>Sorry. We only support GET and POST.</p></body></html>");
+    std::cout   << "Status: 405 Method Not Allowed"         << std::endl
+                << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                << "Allow: GET, POST"                       << std::endl
+                << "Connection: close"                      << std::endl
+                << "Content-Type: text/html; charset=utf-8" << std::endl
+                << "Content-Length: " << body.length()      << std::endl
+                << "X-Powered-By: snapamanager.cgi"         << std::endl
+                << std::endl
+                << body;
+    return 1;
 }
 
 
 int manager_cgi::process_post()
 {
     SNAP_LOG_WARNING("processing POST now!");
-
-    // convert the POST variables in a map
-    //
-    if(read_post_variables() != 0)
-    {
-        return 1;
-    }
 
     // check that the plugin name is defined
     //

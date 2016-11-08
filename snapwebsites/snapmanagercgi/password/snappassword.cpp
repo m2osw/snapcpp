@@ -361,7 +361,7 @@ int snappassword::check_password()
                   << f_opt.get_string("filename")
                   << "\""
                   << std::endl;
-        return 1;
+        return 2;
     }
 
     // get the password to check against existing password

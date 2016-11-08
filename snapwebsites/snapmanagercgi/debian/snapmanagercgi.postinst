@@ -59,6 +59,11 @@ then
     chown www-data:www-data ${SNAPSECUREMANAGERCGI_LOG}
     chmod 640 ${SNAPSECUREMANAGERCGI_LOG}
 
+    SNAPPASSWORD_LOG=${SNAPSECURELOGDIR}/snappassword.log
+    touch ${SNAPPASSWORD_LOG}
+    chown www-data:www-data ${SNAPPASSWORD_LOG}
+    chmod 640 ${SNAPPASSWORD_LOG}
+
     # create the directory to be used to save the status files
     #
     mkdir -p /var/lib/snapwebsites/cluster-status
