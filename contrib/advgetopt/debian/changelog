@@ -1,3 +1,9 @@
+advgetopt (1.1.6.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:48 -0800
+
 advgetopt (1.1.6.0~xenial) xenial; urgency=high
 
   * SNAP-484: Print the parameter that generates an error when no standalone

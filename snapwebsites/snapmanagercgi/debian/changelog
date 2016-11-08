@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.32.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:49 -0800
+
 snapmanagercgi (1.2.32.0~xenial) xenial; urgency=high
 
   * SNAP-484: Remove all the snapmanager sessions on a --purge.
