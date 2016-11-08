@@ -842,7 +842,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
         {
             SNAP_LOG_TRACE("Received data from logging form, processing...");
 
-            std::string user_name(user_name_it->second);
+            f_user_name = user_name_it->second;
             std::string const user_password(user_password_it->second);
 
             // check that the user exists and that the password is correct
@@ -852,7 +852,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
             // root on a --check command
             //
             std::string const command("snappassword --check --username "
-                                     + user_name
+                                     + f_user_name
                                      + " --password "
                                      + user_password
                                      + " >>/var/log/snapwebsites/secure/snappassword.log 2>&1");
@@ -870,7 +870,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     //
                     SNAP_LOG_INFO(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                  ("Credential check failed. User \"")
-                                 (user_name)
+                                 (f_user_name)
                                  ("\" will not get logged in.");
 
                     // invalid credentials
@@ -918,12 +918,12 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
             // old session
             //
             std::map<std::string, std::string> user_info;
-            if(read_user_info(user_name, user_info) != 0)
+            if(read_user_info(f_user_name, user_info) != 0)
             {
                 return 1;
             }
 
-            if(user_info.find("Session") == user_info.end())
+            if(user_info.find("Session") != user_info.end())
             {
                 std::string const old_session_id(user_info["Session"]);
                 unlink((g_session_path + ("/" + old_session_id) + ".session").c_str());
@@ -937,7 +937,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
             user_info["Date"] = now;
             user_info["Last-Access"] = now;
 
-            if(write_user_info(user_name, user_info) != 0)
+            if(write_user_info(f_user_name, user_info) != 0)
             {
                 return 1;
             }
@@ -945,8 +945,8 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
             // the session file is just the user name
             // we just add a newline for courtesy
             //
-            user_name += "\n";
-            if(::write(session_fd, user_name.c_str(), user_name.length()) != static_cast<ssize_t>(user_name.length()))
+            std::string const line(f_user_name + "\n");
+            if(::write(session_fd, line.c_str(), line.length()) != static_cast<ssize_t>(line.length()))
             {
                 raii_session_fd.reset();
                 unlink(session_path.c_str());
@@ -963,7 +963,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
             request_method = "GET";
 
             SNAP_LOG_INFO("User \"")
-                         (user_name)
+                         (f_user_name)
                          ("\" is logged in.");
 
             setup_cookie(session_id);
@@ -1002,9 +1002,10 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                 continue;
             }
 
-            std::string const name(snap::snap_uri::urldecode(QString::fromUtf8(name_value[0].c_str()), true).toUtf8().data());
-            if(name != "snapmanager")
+            std::string const cookie_name(snap::snap_uri::urldecode(QString::fromUtf8(name_value[0].c_str()), true).toUtf8().data());
+            if(cookie_name != "snapmanager")
             {
+                SNAP_LOG_TRACE("Found cookie \"")(cookie_name)("\", ignore.");
                 continue;
             }
 
@@ -1012,14 +1013,14 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
 
             // we found out cookie, get the value (i.e. session ID)
             //
-            std::string const value(snap::snap_uri::urldecode(QString::fromUtf8(name_value[1].c_str()), true).toUtf8().data());
-            if(value.length() != 16 * 2)
+            std::string const attempt_session_id(snap::snap_uri::urldecode(QString::fromUtf8(name_value[1].c_str()), true).toUtf8().data());
+            if(attempt_session_id.length() != 16 * 2)
             {
                 // invalid cookie
                 //
                 SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                 ("Cookie value (")
-                                (value)
+                                (attempt_session_id)
                                 (") is not exactly 32 characters as expected.");
                 break;
             }
@@ -1028,7 +1029,11 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
             //
             try
             {
-                std::string const attempt_session_id(snap::hex_to_bin(value));
+                // verify that it is hexadecimal, but we do not care about
+                // the binary code here
+                //
+                snap::NOTUSED(snap::hex_to_bin(attempt_session_id));
+
                 std::string const session_filename(g_session_path + ("/" + attempt_session_id) + ".session");
                 snap::file_content session_data(session_filename);
                 if(!session_data.read_all())
@@ -1037,27 +1042,27 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     //
                     SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                     ("No session corresponds to cookie \"")
-                                    (value)
+                                    (attempt_session_id)
                                     ("\".");
                     break;
                 }
-                std::string user_name(session_data.get_content());
-                if(user_name.empty())
+                f_user_name = session_data.get_content();
+                if(f_user_name.empty())
                 {
                     // invalid cookie
                     //
                     SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                     ("File of session \"")
-                                    (value)
+                                    (attempt_session_id)
                                     ("\" is empty.");
                     break;
                 }
 
                 // lose the ending '\n' if present
                 //
-                if(user_name[user_name.length() - 1] == '\n')
+                if(f_user_name[f_user_name.length() - 1] == '\n')
                 {
-                    user_name.resize(user_name.length() - 1);
+                    f_user_name.resize(f_user_name.length() - 1);
                 }
 
                 // with the user name we can read the user file
@@ -1065,15 +1070,15 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                 // checking the date
                 //
                 std::map<std::string, std::string> user_info;
-                if(read_user_info(user_name, user_info) != 0)
+                if(read_user_info(f_user_name, user_info) != 0)
                 {
                     // invalid cookie
                     //
                     SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                     ("File of session \"")
-                                    (value)
+                                    (attempt_session_id)
                                     ("\" references user \"")
-                                    (user_name)
+                                    (f_user_name)
                                     ("\" who does not have a corresponding user file.");
                     return 1;
                 }
@@ -1085,7 +1090,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     //
                     SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                     ("User file of \"")
-                                    (user_name)
+                                    (f_user_name)
                                     ("\" is missing some information (no Session or Last-Access field found.)");
                     break;
                 }
@@ -1096,7 +1101,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     //
                     SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                     ("User file for \"")
-                                    (user_name)
+                                    (f_user_name)
                                     ("\" has session \"")
                                     (existing_session_id)
                                     ("\" and the cookie we received has session \"")
@@ -1117,10 +1122,10 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     // extend the session
                     //
                     user_info["Last-Access"] = std::to_string(now);
-                    if(write_user_info(user_name, user_info) != 0)
+                    if(write_user_info(f_user_name, user_info) != 0)
                     {
                         SNAP_LOG_ERROR("Could not save the user \"")
-                                      (user_name)
+                                      (f_user_name)
                                       ("\" new Last-Access information.");
                         return 1;
                     }
@@ -1129,7 +1134,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                 {
                     SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
                                     ("The session of user \"")
-                                    (user_name)
+                                    (f_user_name)
                                     ("\" has expired.");
 
                     // session timed out, get rid of it
@@ -1168,7 +1173,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
         //
         if(session_id.empty())
         {
-            SNAP_LOG_ERROR("Login failed. Offer login form again.");
+            SNAP_LOG_ERROR("Cookie auto-login failed. Offer login form again.");
 
             // there is no specific error in this case, it should not
             // happen unless some sort of error occurs

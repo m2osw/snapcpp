@@ -92,6 +92,7 @@ private:
     snap::snap_uri              f_uri;
     std::string                 f_communicator_address;
     std::string                 f_cookie;
+    std::string                 f_user_name;
     int                         f_communicator_port = -1;
     post_variables_t            f_post_variables;
 };
