@@ -602,7 +602,7 @@ int manager_cgi::process()
     // make sure the user is logged in
     //
     {
-        int const r(is_logged_in(request_method, query_string));
+        int const r(is_logged_in(request_method));
         if(r != 0)
         {
             // return value is 2 if we are showing the logging screen
@@ -724,15 +724,13 @@ int manager_cgi::read_post_variables()
 }
 
 
-int manager_cgi::is_logged_in(std::string & request_method, char const * query_string)
+int manager_cgi::is_logged_in(std::string & request_method)
 {
-    snap::NOTUSED(query_string);
-
     // session duration (TODO: make a parameter from the .conf)
     //
     int64_t const session_duration(3 * 24 * 60 * 60);
 
-    auto login_form = [&](std::string const error_msg = "")
+    auto login_form = [&](std::string const error_msg = "", bool logout = false)
     {
         snap::file_content login_page("/usr/share/snapwebsites/html/snapmanager/snapmanagercgi-login.html");
         if(!login_page.read_all())
@@ -742,6 +740,13 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     , "An internal error occurred."
                     , "Could not load the login page from /usr/share/snapwebsites/html/snapmanager/snapmanagercgi-login.html");
         }
+        std::string cookie;
+        if(logout)
+        {
+            // delete the cookie on the client side when logging out
+            //
+            cookie += "Set-Cookie: snapmanager=void; Expires=Thu, 01-Jan-1970 00:00:01 GMT; Path=/; Secure; HttpOnly\n";
+        }
         std::string login_html(login_page.get_content());
         boost::replace_all(login_html, "@error@", error_msg);
         std::cout   //<< "Status: 200 OK"                         << std::endl
@@ -749,6 +754,7 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                     << "Connection: close"                       << std::endl
                     << "Content-Type: text/html; charset=utf-8"  << std::endl
                     << "Content-Length: " << login_html.length() << std::endl
+                    << cookie
                     << "X-Powered-By: snapmanager.cgi"           << std::endl
                     << std::endl
                     << login_html;
@@ -828,7 +834,8 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
     //
     std::string session_id;
 
-    if(request_method == "POST")
+    bool const logout(f_uri.has_query_option("logout"));
+    if(request_method == "POST" && !logout)
     {
         // check whether this is a log in attempt or another POST
         //
@@ -1108,6 +1115,23 @@ int manager_cgi::is_logged_in(std::string & request_method, char const * query_s
                                     (attempt_session_id)
                                     ("\".");
                     break;
+                }
+
+                if(logout)
+                {
+                    // void the session
+                    //
+                    user_info["Last-Access"] = "0";
+                    if(write_user_info(f_user_name, user_info) != 0)
+                    {
+                        SNAP_LOG_ERROR("Could not save the user \"")
+                                      (f_user_name)
+                                      ("\" new Last-Access information.");
+                        return 1;
+                    }
+
+                    unlink(session_filename.c_str());
+                    return login_form("Your were logged out.", true);
                 }
 
                 time_t const last_access(boost::lexical_cast<time_t>(user_info["Last-Access"]));

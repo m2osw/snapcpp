@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.31.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Added a logout link.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 20:45:48 -0700
+
 snapmanagercgi (1.2.30.0~xenial) xenial; urgency=high
 
   * SNAP-484: Made the user_name variable a field so we know who is logged in.
