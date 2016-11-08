@@ -880,7 +880,7 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
             session_fd = open(session_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0700);
         }
         while(session_fd == -1);
-        std::unique_ptr<int, decltype(&close_file)> raii_session_id(&session_id, close_file);
+        std::unique_ptr<int, decltype(&close_file)> raii_session_fd(&session_fd, close_file);
 
         // check whether a user reference already exists, if so delete the
         // old session
@@ -911,7 +911,16 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
         }
 
         // the session file is just the user name
-        write(session_fd, user_name.c_str(), user_name.length());
+        if(::write(session_fd, user_name.c_str(), user_name.length()) != static_cast<ssize_t>(user_name.length()))
+        {
+            raii_session_fd.reset();
+            unlink(session_path.c_str());
+
+            return error(
+                      "500 Internal Server Error"
+                    , "Could not properly log you in."
+                    , "The write to the session file failed.");
+        }
     }
     else if(strcmp(request_method, "GET") == 0)
     {
