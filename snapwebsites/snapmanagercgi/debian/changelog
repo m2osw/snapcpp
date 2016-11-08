@@ -1,3 +1,10 @@
+snapmanagercgi (1.2.29.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Fixed the user_password check, it needed to use !=.
+  * Added logs to the login operation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:46:48 -0700
+
 snapmanagercgi (1.2.28.0~xenial) xenial; urgency=high
 
   * SNAP-484: Prevent reinterpretation of the POST after a log in.
