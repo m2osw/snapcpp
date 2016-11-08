@@ -100,6 +100,18 @@ int glob_err_callback(const char * epath, int eerrno)
 }
 
 
+/** \brief Close a file descriptor.
+ *
+ * This function will close the file descriptor pointer by fd.
+ *
+ * \param[in] fd  Pointer to the file descriptor to close.
+ */
+void close_file(int * fd)
+{
+    close(*fd);
+}
+
+
 } // no name namespace
 
 
@@ -846,7 +858,11 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
         // loop until we get a unique session ID, it should be really rare
         // since the session_id is 16 bytes
         //
+        // Note: we use open(2) so we can have the O_EXCL & O_CREAT flags
+        //       used together to avoid any kind of race condition
+        //
         std::string session_path;
+        int session_fd(-1);
         do
         {
             unsigned char buf[16];
@@ -860,8 +876,11 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
             }
             session_id = snap::bin_to_hex(std::string(reinterpret_cast<char *>(buf), sizeof(buf)));
             session_path = g_session_path + ("/" + session_id) + ".session";
+
+            session_fd = open(session_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0700);
         }
-        while(access(session_path.c_str(), R_OK) != 0);
+        while(session_fd == -1);
+        std::unique_ptr<int, decltype(&close_file)> raii_session_id(&session_id, close_file);
 
         // check whether a user reference already exists, if so delete the
         // old session
@@ -892,10 +911,7 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
         }
 
         // the session file is just the user name
-        {
-            std::ofstream session_file(session_path);
-            session_file << user_name << std::endl;
-        }
+        write(session_fd, user_name.c_str(), user_name.length());
     }
     else if(strcmp(request_method, "GET") == 0)
     {
