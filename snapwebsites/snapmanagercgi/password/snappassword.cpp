@@ -35,6 +35,7 @@
 // C lib
 //
 #include <fnmatch.h>
+#include <unistd.h>
 
 // last entry
 //
@@ -326,6 +327,19 @@ int snappassword::check_password()
     {
         std::cerr << "snappassword:error: --password must be specified with --check." << std::endl;
         return 1;
+    }
+
+    // at this point only the check command is allowed to switch to root:root
+    //
+    if(setuid(0) != 0)
+    {
+        perror("snappassword:setuid(0)");
+        throw std::runtime_error("fatal error: could not setup executable to run as user root.");
+    }
+    if(setgid(0) != 0)
+    {
+        perror("snappassword:setgid(0)");
+        throw std::runtime_error("fatal error: could not setup executable to run as group root.");
     }
 
     // initialize the password file

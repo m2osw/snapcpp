@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.26.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Making snappassword --check work for non-root users.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:13:48 -0700
+
 snapmanagercgi (1.2.25.0~xenial) xenial; urgency=high
 
   * SNAP-484: Test the cookie on the GET only.
