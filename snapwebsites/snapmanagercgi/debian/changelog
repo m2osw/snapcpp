@@ -1,3 +1,10 @@
+snapmanagercgi (1.2.32.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Remove all the snapmanager sessions on a --purge.
+  * Added the signal handlers to the snapmanagercgi/snapmanagerdaemon.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 22:16:48 -0700
+
 snapmanagercgi (1.2.31.0~xenial) xenial; urgency=high
 
   * SNAP-484: Added a logout link.

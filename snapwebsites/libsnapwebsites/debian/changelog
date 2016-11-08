@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.47.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Use QString() instead of "" in setting up query strings.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 22:16:48 -0700
+
 libsnapwebsites (1.1.46.0~xenial) xenial; urgency=high
 
   * SNAP-484: Moved string hex conversions to a separate file.
