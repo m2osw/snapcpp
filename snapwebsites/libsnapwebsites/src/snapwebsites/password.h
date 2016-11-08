@@ -25,12 +25,12 @@
 namespace snap
 {
 
-class password_exception : public snap::snap_logic_exception
+class password_exception : public snap::snap_exception
 {
 public:
-    password_exception(char const *        what_msg) : snap_logic_exception(what_msg) {}
-    password_exception(std::string const & what_msg) : snap_logic_exception(what_msg) {}
-    password_exception(QString const &     what_msg) : snap_logic_exception(what_msg) {}
+    password_exception(char const *        what_msg) : snap_exception(what_msg) {}
+    password_exception(std::string const & what_msg) : snap_exception(what_msg) {}
+    password_exception(QString const &     what_msg) : snap_exception(what_msg) {}
 };
 
 class password_exception_function_failure : public password_exception
@@ -82,17 +82,14 @@ public:
     bool                get_password_from_console(std::string const & salt = std::string());
 
     std::string const & get_salt() const;
-    std::string         get_salt_as_string() const;
 
     void                set_encrypted_password(std::string const & encrypted_password, std::string const & salt = std::string());
     std::string const & get_encrypted_password() const;
-    std::string         get_encrypted_password_as_string() const;
 
     bool                operator == (password const & rhs) const;
     bool                operator < (password const & rhs) const;
 
     static void         clear_string(std::string & str);
-    static std::string  hex_to_bin(std::string const & hex);
 
 private:
     void                generate_password_salt();

@@ -21,6 +21,7 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/hexadecimal_string.h>
 #include <snapwebsites/password.h>
 
 // advgetopt
@@ -34,6 +35,7 @@
 // C lib
 //
 #include <fnmatch.h>
+#include <unistd.h>
 
 // last entry
 //
@@ -251,9 +253,9 @@ int snappassword::list_all()
                       << ":"
                       << p.get_digest()
                       << ":"
-                      << p.get_salt_as_string()
+                      << snap::bin_to_hex(p.get_salt())
                       << ":"
-                      << p.get_encrypted_password_as_string()
+                      << snap::bin_to_hex(p.get_encrypted_password())
                       << std::endl;
         }
     }
@@ -327,6 +329,19 @@ int snappassword::check_password()
         return 1;
     }
 
+    // at this point only the check command is allowed to switch to root:root
+    //
+    if(setuid(0) != 0)
+    {
+        perror("snappassword:setuid(0)");
+        throw std::runtime_error("fatal error: could not setup executable to run as user root.");
+    }
+    if(setgid(0) != 0)
+    {
+        perror("snappassword:setgid(0)");
+        throw std::runtime_error("fatal error: could not setup executable to run as group root.");
+    }
+
     // initialize the password file
     //
     snap::password_file f(f_opt.get_string("filename"));
@@ -346,7 +361,7 @@ int snappassword::check_password()
                   << f_opt.get_string("filename")
                   << "\""
                   << std::endl;
-        return 1;
+        return 2;
     }
 
     // get the password to check against existing password

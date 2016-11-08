@@ -31,6 +31,7 @@
 // C lib
 //
 #include <glob.h>
+#include <signal.h>
 
 // C++ lib
 //
@@ -248,6 +249,22 @@ manager::~manager()
  */
 void manager::init(int argc, char * argv[])
 {
+    // Stop on these signals, log them, then terminate.
+    //
+    signal( SIGSEGV, sighandler );
+    signal( SIGBUS,  sighandler );
+    signal( SIGFPE,  sighandler );
+    signal( SIGILL,  sighandler );
+    signal( SIGTERM, sighandler );
+    signal( SIGINT,  sighandler );
+    signal( SIGQUIT, sighandler );
+
+    // ignore console signals
+    //
+    signal( SIGTSTP,  SIG_IGN );
+    signal( SIGTTIN,  SIG_IGN );
+    signal( SIGTTOU,  SIG_IGN );
+
     g_instance = shared_from_this();
 
     // parse the arguments
@@ -413,6 +430,44 @@ void manager::init(int argc, char * argv[])
 manager::pointer_t manager::instance()
 {
     return g_instance;
+}
+
+
+/** \brief Handle caught signals
+ *
+ * Catch the signal, then log the signal, then terminate with 1 status.
+ */
+void manager::sighandler( int sig )
+{
+    QString signame;
+    bool output_stack_trace(true);
+    switch( sig )
+    {
+        case SIGSEGV : signame = "SIGSEGV"; break;
+        case SIGBUS  : signame = "SIGBUS";  break;
+        case SIGFPE  : signame = "SIGFPE";  break;
+        case SIGILL  : signame = "SIGILL";  break;
+        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
+        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
+        case SIGQUIT : signame = "SIGQUIT"; output_stack_trace = false; break;
+        default      : signame = "UNKNOWN"; break;
+    }
+
+    if( output_stack_trace )
+    {
+        snap::snap_exception_base::output_stack_trace();
+    }
+    //
+    SNAP_LOG_FATAL("signal caught: ")(signame);
+
+    // is server available?
+    if(g_instance)
+    {
+        g_instance->exit(1);
+    }
+
+    // server not available, exit directly
+    ::exit(1);
 }
 
 

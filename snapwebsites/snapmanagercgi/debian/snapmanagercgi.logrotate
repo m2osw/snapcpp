@@ -25,4 +25,17 @@
     create 600 www-data www-data
 }
 
+# snapamanager.cgi also generates logs in snappassword.log
+/var/log/snapwebsites/secure/snappassword.log {
+    monthly
+    maxsize 1M
+    su www-data www-data
+    missingok
+    rotate 2
+    compress
+    delaycompress
+    notifempty
+    create 640 www-data www-data
+}
+
 # vim: ts=4 sw=4 et

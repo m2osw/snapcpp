@@ -63,4 +63,13 @@ target_link_libraries(${PROJECT_NAME}
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
+##
+## NetLink to track processes (forks())
+##
+project(pmon)
+add_executable( ${PROJECT_NAME}
+    pmon.c
+)
+
+
 # vim: ts=4 sw=4 et

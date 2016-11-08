@@ -718,7 +718,7 @@ QString snap_uri::get_part(QString const& name, int part) const
         }
         if(name == "query-string-count")
         {
-            QString count(QString("%1").arg(f_query_strings.size()));
+            QString const count(QString("%1").arg(f_query_strings.size()));
             return count;
         }
         break;
@@ -734,7 +734,7 @@ QString snap_uri::get_part(QString const& name, int part) const
         }
         if(name == "sub-domain-count")
         {
-            QString count(QString("%1").arg(f_sub_domains.size()));
+            QString const count(QString("%1").arg(f_sub_domains.size()));
             return count;
         }
         break;
@@ -1464,6 +1464,12 @@ void snap_uri::set_query_option(QString const& name, QString const& value)
         return;
     }
 
+    // TODO: see whether we currently use this feature, because it is rather
+    //       incorrect, it is possible to have an empty value in a query
+    //       string (i.e. "...?logout")
+    //
+    //       we should use unset_query_option() instead
+    //
     if(value.isEmpty())
     {
         f_query_strings.remove(name);
@@ -1523,7 +1529,7 @@ void snap_uri::set_query_string(QString const & uri_query_string)
         if(pos == -1)
         {
             // no value
-            f_query_strings[urldecode(*it)] = "";
+            f_query_strings[urldecode(*it)] = QString();
         }
         else if(pos == 0)
         {

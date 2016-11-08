@@ -1,14 +1,113 @@
-snapmanagercgi (1.2.18.2~xenial) xenial; urgency=high
+snapmanagercgi (1.2.32.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 07 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:49 -0800
+
+snapmanagercgi (1.2.32.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Remove all the snapmanager sessions on a --purge.
+  * Added the signal handlers to the snapmanagercgi/snapmanagerdaemon.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 22:16:48 -0700
+
+snapmanagercgi (1.2.31.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Added a logout link.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 20:45:48 -0700
+
+snapmanagercgi (1.2.30.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Made the user_name variable a field so we know who is logged in.
+  * Fixed the write() to the session to include a "\n".
+  * Fixed a test with == instead of !=, so old sessions do get deleted.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:46:48 -0700
+
+snapmanagercgi (1.2.29.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Fixed the user_password check, it needed to use !=.
+  * Added logs to the login operation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:46:48 -0700
+
+snapmanagercgi (1.2.28.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Prevent reinterpretation of the POST after a log in.
+  * Added a snappassword.log file to log output of snappassword.
+  * Added a corresponding logrotate entry.
+  * exit(2) if password file cannot be read or user cannot be found.
+  * Fixed the test of the exit code using proper macros.
+  * Added a '\n' at the end of the session file.
+  * Added a link back to home when outputting an error.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 17:43:48 -0700
+
+snapmanagercgi (1.2.27.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Fixed session ID generation (race condition and loop test.)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:46:48 -0700
+
+snapmanagercgi (1.2.26.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Making snappassword --check work for non-root users.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:13:48 -0700
+
+snapmanagercgi (1.2.25.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Test the cookie on the GET only.
+  * Fixed the form further, especially, the button is a "submit" now.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:13:48 -0700
+
+snapmanagercgi (1.2.24.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Fixed the replace_all_copy() with just replace_all().
+  * Enhanced the form, added validation of at least one character.
+  * Fixed the form declaration, it now includes an action.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 15:53:48 -0700
+
+snapmanagercgi (1.2.23.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Printed the HTML twice, removed first output.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 15:20:48 -0700
+
+snapmanagercgi (1.2.22.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Try again with logs. It is still not work right.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 14:58:48 -0700
+
+snapmanagercgi (1.2.21.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Wrong return when the loging page is displayed.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 14:58:48 -0700
+
+snapmanagercgi (1.2.20.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Properly installed the snapmanager-login.html file.
+  * On purge, delete the snapmanagercgi.pwd file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 14:28:48 -0700
+
+snapmanagercgi (1.2.19.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Implemented the support for a cookie.
+  * Added a login HTML file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 13:38:48 -0700
 
 snapmanagercgi (1.2.18.0~xenial) xenial; urgency=high
 
   * SNAP-484: snappassword needs to be explicitly installed.
 
- -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 23:16:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Nov 2016 23:26:48 -0700
 
 snapmanagercgi (1.2.17.0~xenial) xenial; urgency=high
 

@@ -1,12 +1,19 @@
-advgetopt (1.1.5.43~xenial) xenial; urgency=high
+advgetopt (1.1.6.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 10 Oct 2016 15:39:37 -0700
+ -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:48 -0800
+
+advgetopt (1.1.6.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Print the parameter that generates an error when no standalone
+    parameters are allowed.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 23:02:37 -0700
 
 advgetopt (1.1.5.0~xenial) xenial; urgency=high
 
-  * SNAP-355: Fixed the loading a arguments in configuration files when
+  * SNAP-355: Fixed the loading of arguments in configuration files when
     they are not expecting multiple arguments.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 10 Oct 2016 00:34:46 -0700
