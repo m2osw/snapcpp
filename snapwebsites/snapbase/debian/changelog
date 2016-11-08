@@ -1,8 +1,8 @@
-snapbase (1.0.25.10~xenial) xenial; urgency=high
+snapbase (1.0.26.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-484: Added a monthly deletion of session files.
 
- -- Build Server <build@m2osw.com>  Sat, 29 Oct 2016 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 17:43:48 -0700
 
 snapbase (1.0.25.0~xenial) xenial; urgency=high
 

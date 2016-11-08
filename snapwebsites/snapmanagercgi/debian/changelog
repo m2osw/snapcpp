@@ -5,7 +5,6 @@ snapmanagercgi (1.2.28.0~xenial) xenial; urgency=high
   * Added a corresponding logrotate entry.
   * exit(2) if password file cannot be read or user cannot be found.
   * Fixed the test of the exit code using proper macros.
-  * Added a monthly deletion of session files.
   * Added a '\n' at the end of the session file.
   * Added a link back to home when outputting an error.
 
