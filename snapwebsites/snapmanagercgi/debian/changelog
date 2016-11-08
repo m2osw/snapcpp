@@ -1,3 +1,10 @@
+snapmanagercgi (1.2.25.0~xenial) xenial; urgency=high
+
+  * SNAP-484: Test the cookie on the GET only.
+  * Fixed the form further, especially, the button is a "submit" now.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Nov 2016 16:13:48 -0700
+
 snapmanagercgi (1.2.24.0~xenial) xenial; urgency=high
 
   * SNAP-484: Fixed the replace_all_copy() with just replace_all().

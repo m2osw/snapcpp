@@ -775,19 +775,10 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
         return 0;
     };
 
-    char const * http_cookies(getenv("HTTP_COOKIE"));
-    if(http_cookies == nullptr)
-    {
-        // no cookies, the user is not logged in yet, present the login screen
-        //
-        // Note that we reach here even on a POST or HEAD...
-        //
-        return login_form();
-    }
-
-    // we have cookies, check to see whether we have ours
+    // try to log the user in on a POST
+    // verify whether the user is logged in on a GET
+    // if not logged in, display the login form
     //
-    snap::NOTUSED(request_method);
 
     std::string session_id;
 
@@ -800,7 +791,7 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
             return 1;
         }
 
-        // check that the user name is defined
+        // check that the login button was clicked (i.e. is defined)
         //
         auto const & user_login_it(f_post_variables.find("user_login"));
         if(user_login_it == f_post_variables.end())
@@ -908,6 +899,18 @@ int manager_cgi::is_logged_in(char const * request_method, char const * query_st
     }
     else if(strcmp(request_method, "GET") == 0)
     {
+        // the GET must have a cookie or we immediately display the login form
+        //
+        char const * http_cookies(getenv("HTTP_COOKIE"));
+        if(http_cookies == nullptr)
+        {
+            // no cookies, the user is not logged in yet, present the login screen
+            //
+            // Note that we reach here even on a POST or HEAD...
+            //
+            return login_form();
+        }
+
         // we have cookies, make sure one of them is our cookie
         // and if so, check whether the session is still valid
         //
