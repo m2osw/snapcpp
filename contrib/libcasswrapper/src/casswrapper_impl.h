@@ -1,6 +1,6 @@
 /*
  * Text:
- *      CassWrapper.h
+ *      casswrapper_impl.h
  *
  * Description:
  *      Handling of the CQL interface.

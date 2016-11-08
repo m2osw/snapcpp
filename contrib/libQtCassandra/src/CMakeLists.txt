@@ -38,7 +38,8 @@ project( QtCassandra )
 
 include_directories(
     ${AS2JS_INCLUDE_DIR}
-    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    #${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    ${CASSWRAPPER_INCLUDE_DIR}
 )
 
 configure_file(
@@ -80,7 +81,8 @@ add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries(QtCassandra
     ${AS2JS_LIBRARIES}
-    ${CASSANDRACPPDRIVER_LIBRARIES}
+    #${CASSANDRACPPDRIVER_LIBRARIES}
+    ${CASSWRAPPER_LIBRARIES}
     Qt5::Core
     Qt5::Xml
 )

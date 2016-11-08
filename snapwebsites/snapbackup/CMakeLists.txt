@@ -50,10 +50,10 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv"                       )
 
 find_package( AdvGetOpt          REQUIRED )
+find_package( CassWrapper        REQUIRED )
 find_package( Qt5Core            REQUIRED )
 find_package( Qt5Network         REQUIRED )
 find_package( Qt5Sql             REQUIRED )
-find_package( QtCassandra        REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapWebsites       REQUIRED )
 
@@ -72,7 +72,7 @@ set( QT_LIBRARIES
 
 include_directories(
     ${ADVGETOPT_INCLUDE_DIRS}
-    ${QTCASSANDRA_INCLUDE_DIRS}
+    ${CASSWRAPPER_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
 )
 

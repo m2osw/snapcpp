@@ -51,10 +51,13 @@
 
 // QtCassandra lib
 //
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
 #include <QtCassandra/QCassandraOrder.h>
 #include <QtCassandra/QCassandraProxy.h>
+
+// CassWrapper lib
+//
+#include <casswrapper/query.h>
+#include <casswrapper/session.h>
 
 // C++
 //
@@ -184,7 +187,7 @@ class snapdbproxy_connection
 public:
                                 snapdbproxy_connection
                                   ( snapdbproxy* proxy
-                                  , QtCassandra::QCassandraSession::pointer_t session
+                                  , casswrapper::Session::pointer_t session
                                   , tcp_client_server::bio_client::pointer_t & client
                                   , QString const & cassandra_host_list
                                   , int cassandra_port
@@ -204,11 +207,11 @@ public:
 private:
     struct cursor_t
     {
-        QtCassandra::QCassandraQuery::pointer_t f_query;
+        casswrapper::Query::pointer_t f_query;
         int                                     f_column_count = 0;
     };
 
-    void                        send_order(QtCassandra::QCassandraQuery::pointer_t q, QtCassandra::QCassandraOrder const & order);
+    void                        send_order(casswrapper::Query::pointer_t q, QtCassandra::QCassandraOrder const & order);
     void                        declare_cursor(QtCassandra::QCassandraOrder const & order);
     void                        describe_cluster(QtCassandra::QCassandraOrder const & order);
     void                        clear_cluster_description();
@@ -223,7 +226,7 @@ private:
     snapdbproxy *                               f_snapdbproxy = nullptr;
 
     QtCassandra::QCassandraProxy                f_proxy;
-    QtCassandra::QCassandraSession::pointer_t   f_session;
+    casswrapper::Session::pointer_t   f_session;
     std::vector<cursor_t>                       f_cursors;
     tcp_client_server::bio_client::pointer_t    f_client;
     std::atomic<int>                            f_socket /* = -1*/;
@@ -240,7 +243,7 @@ public:
 
                             snapdbproxy_thread
                                 ( snapdbproxy* proxy
-                                  , QtCassandra::QCassandraSession::pointer_t session
+                                  , casswrapper::Session::pointer_t session
                                   , tcp_client_server::bio_client::pointer_t & client
                                   , QString const & cassandra_host_list
                                   , int cassandra_port
@@ -313,7 +316,7 @@ private:
     bool                                        f_debug = false;
     bool                                        f_no_cassandra_sent = false;
     float                                       f_cassandra_connect_timer_index = 1.25f;
-    QtCassandra::QCassandraSession::pointer_t   f_session;
+    casswrapper::Session::pointer_t   f_session;
 
     std::vector<snapdbproxy_thread::pointer_t>  f_connections;
 };

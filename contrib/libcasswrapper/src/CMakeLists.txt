@@ -48,24 +48,24 @@ configure_file(
 
 set( HEADER_FILES
     casswrapper/casswrapper.h
+    casswrapper/encoder.h
     casswrapper/exception.h
     casswrapper/query.h
     casswrapper/schema.h
     casswrapper/schema_value.h
     casswrapper/session.h
     casswrapper/qstring_stream.h
-    casswrapper/version.h.in
     casswrapper/query_model.h
     ${PROJECT_BINARY_DIR}/casswrapper/version.h
 )
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    not_used.h
+    casswrapper/version.h.in
     casswrapper_impl.h
     casswrapper_impl.cpp
-    encoder.h
     exception.cpp
+    not_used.h
     query.cpp
     schema.cpp
     schema_value.cpp
@@ -92,11 +92,6 @@ install(
 install(
 	FILES ${HEADER_FILES}
 	DESTINATION include/casswrapper
-)
-
-install(
-	FILES ${PROJECT_BINARY_DIR}/casswrapper/version.h
-	DESTINATION include/casswrapper/
 )
 
 # vim: ts=4 sw=4 et

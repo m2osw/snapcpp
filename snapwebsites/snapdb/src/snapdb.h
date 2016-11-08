@@ -43,7 +43,7 @@
 // 3rd party libs
 //
 #include <QtCore>
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/session.h>
 #include <advgetopt/advgetopt.h>
 
 // system
@@ -81,7 +81,7 @@ private:
     void display_cell()          const;
     void set_cell()              const;
 
-    QtCassandra::QCassandraSession::pointer_t   f_session;
+    casswrapper::Session::pointer_t   f_session;
     QString                                     f_host = "localhost";
     int32_t                                     f_port = 9042;
     int32_t                                     f_count = 100;

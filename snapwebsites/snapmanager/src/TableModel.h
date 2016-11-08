@@ -18,12 +18,12 @@
 
 #include <QModelIndex>
 
-#include <QtCassandra/QueryModel.h>
+#include <casswrapper/query_model.h>
 
 #include <snapwebsites/dbutils.h>
 
 class TableModel
-    : public QtCassandra::QueryModel
+    : public casswrapper::query_model
 {
     Q_OBJECT
 
@@ -36,7 +36,7 @@ public:
     //
     virtual bool     fetchFilter( const QByteArray& key ) override;
     virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
-    virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
+    virtual void     fetchCustomData( casswrapper::Query::pointer_t q ) override;
 
 private:
     typedef std::map<QString,QByteArray> sort_map_t;

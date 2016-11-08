@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 MainWindow::MainWindow(QWidget *p)
     : QMainWindow(p)
@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *p)
 
     f_context = settings.value("snap_keyspace", "snap_websites").toString();
 
-    f_session = QCassandraSession::create();
+    f_session = Session::create();
     connectCassandra();
     //
     f_contextModel = std::make_shared<KeyspaceModel>();
@@ -345,7 +345,7 @@ void MainWindow::saveValue( const QModelIndex& index )
                             .arg(f_rowModel->keyspaceName())
                             .arg(f_rowModel->tableName())
                             );
-                auto query = QCassandraQuery::create( f_session );
+                auto query = Query::create( f_session );
                 query->query( q_str, 3 );
                 int num = 0;
                 query->bindByteArray( num++, value                );
@@ -420,7 +420,7 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
                     .arg(f_rowModel->keyspaceName())
                     .arg(f_rowModel->tableName())
                     );
-            auto query = QCassandraQuery::create( f_session );
+            auto query = Query::create( f_session );
             query->query( q_str );
             int num = 0;
             query->bindByteArray( num++, f_rowModel->rowKey() );

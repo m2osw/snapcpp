@@ -42,9 +42,9 @@
 
 #include "QtCassandra/QCassandra.h"
 
-#include <QtCore>
+#include <casswrapper/schema.h>
 
-#include <cassandra.h>
+#include <QtCore>
 
 #include <iostream>
 #include <sstream>
@@ -989,7 +989,7 @@ QCassandraContext::pointer_t QCassandra::context( const QString& context_name )
  *
  * \return A shared pointer to a cassandra context.
  */
-QCassandraContext::pointer_t QCassandra::context( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+QCassandraContext::pointer_t QCassandra::context( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
 {
     // get the list of existing contexts
     const QCassandraContexts& cs(contexts());
@@ -1104,7 +1104,7 @@ void QCassandra::retrieveContextMeta( QCassandraContext::pointer_t c, const QStr
         throw std::runtime_error( "QCassandra::retrieveContextMeta(): result does not have one blob as expected" );
     }
 
-    QCassandraSchema::SessionMeta::pointer_t session_meta(new QCassandraSchema::SessionMeta);
+    casswrapper::schema::SessionMeta::pointer_t session_meta(new casswrapper::schema::SessionMeta);
     session_meta->decodeSessionMeta(describe_cluster_result.result(0));
     const auto & keyspaces(session_meta->getKeyspaces());
     auto iter(keyspaces.find(context_name));
@@ -1167,7 +1167,7 @@ const QCassandraContexts& QCassandra::contexts() const
         //
         f_contexts_read = true;
 
-        QCassandraSchema::SessionMeta::pointer_t session_meta(new QCassandraSchema::SessionMeta);
+        casswrapper::schema::SessionMeta::pointer_t session_meta(new casswrapper::schema::SessionMeta);
         session_meta->decodeSessionMeta(describe_cluster_result.result(0));
 
         for( auto keyspace : session_meta->getKeyspaces() )

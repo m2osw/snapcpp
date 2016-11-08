@@ -26,7 +26,7 @@
 
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 
 RowModel::RowModel()
@@ -38,7 +38,7 @@ RowModel::RowModel()
 void RowModel::clear()
 {
     f_columnsChanged.clear();
-    QueryModel::clear();
+    query_model::clear();
 }
 
 
@@ -82,7 +82,7 @@ void RowModel::clearModified()
 
 void RowModel::doQuery()
 {
-    auto q = QCassandraQuery::create(f_session);
+    auto q = Query::create(f_session);
     q->query(
         QString("SELECT column1,value FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
@@ -92,11 +92,11 @@ void RowModel::doQuery()
     q->setPagingSize( 10 );
     q->bindByteArray( 0, f_rowKey );
 
-    QueryModel::doQuery( q );
+    query_model::doQuery( q );
 }
 
 
-void RowModel::fetchCustomData( QCassandraQuery::pointer_t q )
+void RowModel::fetchCustomData( Query::pointer_t q )
 {
     f_columns.push_back( q->getByteArrayColumn(1) );
 }
@@ -117,7 +117,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
 {
     if( role == Qt::UserRole )
     {
-        return QueryModel::data( idx, role );
+        return query_model::data( idx, role );
     }
 
     if( role != Qt::DisplayRole && role != Qt::EditRole )
@@ -160,7 +160,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
         displayError( except, tr("Cannot read data from database.") );
     }
 
-    return QueryModel::data( idx, role );
+    return query_model::data( idx, role );
 }
 
 
@@ -219,7 +219,7 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
         f_columnsChanged[idx.row()] = true;
 
 #if 0
-        QCassandraQuery q( f_session );
+        Query q( f_session );
         q.query(
                     QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                         .arg(f_keyspaceName)
@@ -305,7 +305,7 @@ bool RowModel::removeRows ( int row, int count, const QModelIndex & )
         {
             // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
             //
-            auto q = QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query(
                         QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
                         .arg(f_keyspaceName)

@@ -27,7 +27,7 @@
 
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 
 DomainModel::DomainModel()
@@ -42,7 +42,7 @@ void DomainModel::doQuery()
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
 
-    auto q = QCassandraQuery::create(f_session);
+    auto q = Query::create(f_session);
     q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
             .arg(context_name)
@@ -50,7 +50,7 @@ void DomainModel::doQuery()
         );
     q->setPagingSize( 100 );
 
-    QueryModel::doQuery( q );
+    query_model::doQuery( q );
 }
 
 
@@ -95,7 +95,7 @@ QVariant DomainModel::data( QModelIndex const & idx, int role ) const
 }
 
 
-void DomainModel::fetchCustomData( QCassandraQuery::pointer_t q )
+void DomainModel::fetchCustomData( Query::pointer_t q )
 {
     const QByteArray value(q->getByteArrayColumn(0));
     f_sortMap[f_dbutils->get_row_name(value)] = value;

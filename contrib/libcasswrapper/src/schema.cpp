@@ -36,7 +36,7 @@
 
 #include "casswrapper/schema.h"
 #include "casswrapper/query.h"
-#include "encoder.h"
+#include "casswrapper/encoder.h"
 
 #include "cassandra.h"
 

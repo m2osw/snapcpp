@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
         qDebug() << "++ Setup new context...";
         QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_large_rw"));
         //
-        QtCassandra::QCassandraSchema::Value replication;
+        casswrapper::schema::Value replication;
         auto& replication_map(replication.map());
         replication_map["class"]              = QVariant("SimpleStrategy");
         replication_map["replication_factor"] = QVariant(replication_factor);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
         QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
         //
-        QtCassandra::QCassandraSchema::Value compaction;
+        casswrapper::schema::Value compaction;
         auto& compaction_map(compaction.map());
         compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
         compaction_map["min_threshold"] = QVariant(4);

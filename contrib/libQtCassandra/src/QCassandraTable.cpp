@@ -37,7 +37,8 @@
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraTable.h"
 #include "QtCassandra/QCassandraContext.h"
-#include "QtCassandra/QCassandraSchema.h"
+
+#include <casswrapper/schema.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -155,7 +156,7 @@ namespace QtCassandra
  * \param[in] table_name  The name of the table definition being created.
  */
 QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QString& table_name)
-    : f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta>())
+    : f_schema(std::make_shared<casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta>())
     //f_from_cassandra(false) -- auto-init
     , f_context(context)
     //f_rows() -- auto-init
@@ -309,13 +310,13 @@ QString QCassandraTable::tableName() const
 }
 
 
-const QCassandraSchema::Value::map_t& QCassandraTable::fields() const
+const casswrapper::schema::Value::map_t& QCassandraTable::fields() const
 {
     return f_schema->getFields();
 }
 
 
-QCassandraSchema::Value::map_t& QCassandraTable::fields()
+casswrapper::schema::Value::map_t& QCassandraTable::fields()
 {
     return f_schema->getFields();
 }
@@ -342,7 +343,7 @@ void QCassandraTable::setFromCassandra()
  *
  * \param[in] data  The pointer to the CfDef object.
  */
-void QCassandraTable::parseTableDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta )
+void QCassandraTable::parseTableDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta )
 {
     f_schema         = table_meta;
     f_from_cassandra = true;

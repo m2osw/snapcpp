@@ -1,6 +1,6 @@
 /*
  * Text:
- *      casswrapper.cpp
+ *      casswrapper_impl.cpp
  *
  * Description:
  *      Handling of the CQL interface.

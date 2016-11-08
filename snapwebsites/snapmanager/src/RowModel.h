@@ -18,13 +18,13 @@
 
 #pragma once
 
-#include <QtCassandra/QueryModel.h>
+#include <casswrapper/query_model.h>
 
 #include <map>
 #include <vector>
 
 class RowModel
-    : public QtCassandra::QueryModel
+    : public casswrapper::query_model
 {
     Q_OBJECT
 
@@ -48,7 +48,7 @@ public:
     virtual int             columnCount     ( const QModelIndex & parent = QModelIndex() ) const;
     virtual QVariant        headerData      ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
 
-    virtual void            fetchCustomData ( QtCassandra::QCassandraQuery::pointer_t q );
+    virtual void            fetchCustomData ( casswrapper::Query::pointer_t q );
 
     // Write access
     //

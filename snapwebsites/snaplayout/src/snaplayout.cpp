@@ -41,9 +41,11 @@
 
 #include <advgetopt/advgetopt.h>
 
-#include <QtCassandra/QCassandraSchema.h>
-#include <QtCassandra/QCassandraSession.h>
-#include <QtCassandra/QCassandraQuery.h>
+#include <QtCassandra/QCassandraValue.h>
+
+#include <casswrapper/schema.h>
+#include <casswrapper/session.h>
+#include <casswrapper/query.h>
 
 #include <zipios/zipfile.hpp>
 
@@ -63,6 +65,8 @@
 
 #include <snapwebsites/poison.h>
 
+using namespace casswrapper;
+using namespace QtCassandra;
 
 namespace
 {
@@ -283,7 +287,7 @@ private:
 
     // Common attributes
     //
-    QtCassandra::QCassandraSession::pointer_t f_session;
+    Session::pointer_t f_session;
     fileinfo_list_t                 f_fileinfo_list;
     getopt_ptr_t                    f_opt;
     bool                            f_verbose = false;
@@ -291,7 +295,7 @@ private:
 
 
 snap_layout::snap_layout(int argc, char * argv[])
-    : f_session( QtCassandra::QCassandraSession::create() )
+    : f_session( Session::create() )
     //, f_fileinfo_list -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, "SNAPSERVER_OPTIONS" ) )
     , f_verbose(f_opt->is_defined("verbose"))
@@ -760,7 +764,7 @@ bool snap_layout::tableExists( const QString& table_name ) const
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto meta( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
+        auto meta( schema::SessionMeta::create(f_session) );
         meta->loadSchema();
         const auto& tables( meta->getKeyspaces().at(context_name)->getTables() );
         return tables.find(table_name) != tables.end();
@@ -781,7 +785,7 @@ bool snap_layout::rowExists( QString const & table_name, QByteArray const & row_
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
+        auto q( Query::create(f_session) );
         q->query( QString("SELECT COUNT(*) FROM %1.%2 WHERE key = ?;")
                 .arg(context_name)
                 .arg(table_name)
@@ -807,7 +811,7 @@ bool snap_layout::cellExists( const QString& table_name, const QByteArray& row_k
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
+        auto q( Query::create(f_session) );
         q->query( QString("SELECT COUNT(*) FROM %1.%2 WHERE key = ? AND column1 = ?;")
                 .arg(context_name)
                 .arg(table_name)
@@ -863,7 +867,7 @@ void snap_layout::add_files()
         //            );
 
         //    std::cout << "Creating table layout";
-        //    auto q( QCassandraQuery::create(f_session) );
+        //    auto q( Query::create(f_session) );
         //    q->query( query_template.arg(context_name) );
         //    q->start(false);
         //    while( !q->isReady() )
@@ -877,7 +881,7 @@ void snap_layout::add_files()
         //catch( const std::exception& ex )
         //{
         //    std::cout << "error!" << std::endl;
-        //    std::cerr << "Layout table creation QCassandraQuery exception caught! What=" << ex.what() << std::endl;
+        //    std::cerr << "Layout table creation Query exception caught! What=" << ex.what() << std::endl;
         //    exit(1);
         //    snap::NOTREACHED();
         //}
@@ -989,11 +993,11 @@ void snap_layout::add_files()
             if( rowExists("layout", row_name.toUtf8()) )
             {
                 // the row already exists, try getting the area
-                //QtCassandra::QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
-                QtCassandra::QCassandraValue existing;
+                //QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
+                QCassandraValue existing;
                 try
                 {
-                    auto q( QtCassandra::QCassandraQuery::create(f_session) );
+                    auto q( Query::create(f_session) );
                     q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
                     int bind = 0;
                     q->bindString( bind++, row_name  );
@@ -1006,7 +1010,7 @@ void snap_layout::add_files()
                 }
                 catch( const std::exception& ex )
                 {
-                    std::cerr << "Get existing layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+                    std::cerr << "Get existing layout Query exception caught! what=" << ex.what() << std::endl;
                     continue;
                 }
                 if(!existing.nullValue())
@@ -1057,7 +1061,7 @@ void snap_layout::add_files()
 
         try
         {
-            auto q( QtCassandra::QCassandraQuery::create(f_session) );
+            auto q( Query::create(f_session) );
             q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? and column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindByteArray( bind++, content            );
@@ -1068,7 +1072,7 @@ void snap_layout::add_files()
         }
         catch( const std::exception& ex )
         {
-            std::cerr << "UPDATE layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            std::cerr << "UPDATE layout Query exception caught! what=" << ex.what() << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
@@ -1086,10 +1090,10 @@ void snap_layout::add_files()
     {
         // mtimes holds times in seconds, convert to microseconds
         const int64_t last_updated(i.value() * 1000000);
-        QtCassandra::QCassandraValue existing_last_updated;
+        QCassandraValue existing_last_updated;
         try
         {
-            auto q( QtCassandra::QCassandraQuery::create(f_session) );
+            auto q( Query::create(f_session) );
             q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindByteArray( bind++, i.key().toUtf8()  );
@@ -1103,7 +1107,7 @@ void snap_layout::add_files()
         }
         catch( const std::exception& ex )
         {
-            std::cerr << "SELECT existing layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            std::cerr << "SELECT existing layout Query exception caught! what=" << ex.what() << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
@@ -1112,7 +1116,7 @@ void snap_layout::add_files()
         {
             if( existing_last_updated.nullValue() || existing_last_updated.int64Value() < last_updated )
             {
-                auto q( QtCassandra::QCassandraQuery::create(f_session) );
+                auto q( Query::create(f_session) );
                 q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? and column1 = ?;").arg(context_name) );
                 int bind = 0;
                 q->bindInt64    ( bind++, last_updated      );
@@ -1124,12 +1128,12 @@ void snap_layout::add_files()
         }
         catch( const std::exception& ex )
         {
-            std::cerr << "UPDATE layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            std::cerr << "UPDATE layout Query exception caught! what=" << ex.what() << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
 #if 0
-        QtCassandra::QCassandraValue existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value());
+        QCassandraValue existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value());
         if(existing_last_updated.nullValue()
         || existing_last_updated.int64Value() < last_updated)
         {
@@ -1152,7 +1156,7 @@ void snap_layout::set_theme()
 
     connect();
 
-    //QtCassandra::QCassandraTable::pointer_t table(context->findTable("content"));
+    //Table::pointer_t table(context->findTable("content"));
     //if(!table)
     if( !tableExists("content") )
     {
@@ -1203,7 +1207,7 @@ void snap_layout::set_theme()
         {
             // remove the theme definition
             //table->row(key)->dropCell(field);
-            auto q( QtCassandra::QCassandraQuery::create(f_session) );
+            auto q( Query::create(f_session) );
             q->query( QString("DELETE FROM %1.content WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindString( bind++, key   );
@@ -1219,7 +1223,7 @@ void snap_layout::set_theme()
             // TODO: add a test so we can transform a simple string to a valid
             //       JavaScript string
             //table->row(key)->cell(field)->setValue(theme);
-            auto q( QtCassandra::QCassandraQuery::create(f_session) );
+            auto q( Query::create(f_session) );
             q->query( QString("UPDATE %1.content SET value = ? WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindString( bind++, theme );
@@ -1231,7 +1235,7 @@ void snap_layout::set_theme()
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Theme set QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Theme set Query exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -1250,7 +1254,7 @@ void snap_layout::remove_theme()
 
     connect();
 
-    //QtCassandra::QCassandraTable::pointer_t table(context->findTable("layout"));
+    //Table::pointer_t table(context->findTable("layout"));
     //if(!table)
     if( !tableExists("layout") )
     {
@@ -1280,7 +1284,7 @@ void snap_layout::remove_theme()
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
+        auto q( Query::create(f_session) );
         q->query( QString("DELETE FROM %1.layout WHERE key = ?;").arg(context_name) );
         int bind = 0;
         q->bindString( bind++, row_name );
@@ -1289,7 +1293,7 @@ void snap_layout::remove_theme()
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Remove theme Query exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -1313,7 +1317,7 @@ void snap_layout::extract_file()
 
     connect();
 
-    //QtCassandra::QCassandraTable::pointer_t table(context->findTable("layout"));
+    //Table::pointer_t table(context->findTable("layout"));
     //if(!table)
     if( !tableExists("layout") )
     {
@@ -1338,7 +1342,7 @@ void snap_layout::extract_file()
         // try to continue anyway
     }
 
-    //QtCassandra::QCassandraRow::pointer_t row(table->row(row_name));
+    //Row::pointer_t row(table->row(row_name));
 
     QString const filename( f_opt->get_string( "--", 1 ).c_str() );
     int const slash_pos(filename.lastIndexOf('/'));
@@ -1369,12 +1373,12 @@ void snap_layout::extract_file()
     }
 
     // TODO: if we reach here, the cell may have been dropped earlier...
-    //QtCassandra::QCassandraValue value(row->cell(basename)->value());
+    //QCassandraValue value(row->cell(basename)->value());
 
     try
     {
         const QString context_name( f_opt->get_string("context").c_str() );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
+        auto q( Query::create(f_session) );
         q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
         int bind = 0;
         q->bindByteArray( bind++, row_name.toUtf8() );
@@ -1396,7 +1400,7 @@ void snap_layout::extract_file()
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "Extract file QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Extract file Query exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }

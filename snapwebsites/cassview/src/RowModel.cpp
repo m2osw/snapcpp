@@ -26,7 +26,7 @@
 
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 
 RowModel::RowModel()
@@ -38,7 +38,7 @@ void RowModel::doQuery()
 {
     f_dbutils = std::make_shared<snap::dbutils>( f_tableName, QString::fromUtf8(f_rowKey.data()) );
 
-    auto q = QCassandraQuery::create(f_session);
+    auto q = Query::create(f_session);
     q->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
@@ -48,7 +48,7 @@ void RowModel::doQuery()
     q->setPagingSize( 10 );
     q->bindByteArray( 0, f_rowKey );
 
-    QueryModel::doQuery( q );
+    query_model::doQuery( q );
 }
 
 
@@ -88,7 +88,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
 {
     if( role == Qt::UserRole )
     {
-        return QueryModel::data( idx, role );
+        return query_model::data( idx, role );
     }
 
     if( role != Qt::DisplayRole && role != Qt::EditRole )
@@ -128,7 +128,7 @@ bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_vari
                     .arg(f_keyspaceName)
                     .arg(f_tableName)
                     );
-            auto q = QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query( q_str );
             int num = 0;
             q->bindByteArray( num++, f_rowKey );
@@ -165,7 +165,7 @@ bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_vari
 
             // Now do the query:
             //
-            auto q = QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query(
                     QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                     .arg(f_keyspaceName)
@@ -181,7 +181,7 @@ bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_vari
 
         // Remove the old column key record.
         {
-            auto q = QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query(
                     QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
                     .arg(f_keyspaceName)
@@ -224,7 +224,7 @@ bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index
 
             // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
             //
-            auto q = QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query(
                         QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                         .arg(f_keyspaceName)
@@ -267,7 +267,7 @@ bool RowModel::removeRows( int row, int count, const QModelIndex & )
         {
             // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
             //
-            auto q = QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query(
                         QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
                         .arg(f_keyspaceName)

@@ -20,8 +20,8 @@
 
 #include <snapwebsites/snap_string_list.h>
 
-#include <QtCassandra/QCassandraSession.h>
-#include <QtCassandra/QCassandraQuery.h>
+#include <casswrapper/session.h>
+#include <casswrapper/query.h>
 
 #include <QPointer>
 

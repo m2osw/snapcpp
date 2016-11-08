@@ -925,7 +925,7 @@ bool cassandra::apply_setting(QString const & button_name, QString const & field
     {
         if( new_value == "purge_ssl_keys" )
         {
-            auto session( QtCassandra::QCassandraSession::create() );
+            auto session( casswrapper::Session::create() );
             QString const rm_cmd(
                         QString("rm -rf /etc/cassandra/ssl /etc/cassandra/public %1")
                             .arg(session->get_keys_path())
@@ -1674,7 +1674,7 @@ void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
         }
         if(port > 0)
         {
-            auto session( QtCassandra::QCassandraSession::create() );
+            auto session( casswrapper::Session::create() );
             session->connect(snap_dbproxy_conf["cassandra_host_list"], port);
             if( !session->isConnected() )
             {
@@ -1682,7 +1682,7 @@ void cassandra::get_cassandra_info(snap::snap_communicator_message & status)
             }
             else
             {
-                auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
+                auto meta( casswrapper::schema::SessionMeta::create( session ) );
                 meta->loadSchema();
                 auto const & keyspaces( meta->getKeyspaces() );
                 QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
@@ -1821,7 +1821,7 @@ QString cassandra::get_replication_factor()
 
     // create a new Cassandra session
     //
-    auto session( QtCassandra::QCassandraSession::create() );
+    auto session( casswrapper::Session::create() );
 
     // increase the request timeout "dramatically" because creating a
     // context is very slow
@@ -1855,7 +1855,7 @@ QString cassandra::get_replication_factor()
         return QString();
     }
 
-    auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
+    auto meta( casswrapper::schema::SessionMeta::create( session ) );
     meta->loadSchema();
     auto const & keyspaces( meta->getKeyspaces() );
     auto const & context( keyspaces.find(context_name) );
@@ -1878,12 +1878,12 @@ QString cassandra::get_replication_factor()
         SNAP_LOG_ERROR("could not find \"replication\" as one of the context fields.");
         return QString();
     }
-    //QtCassandra::QCassandraSchema::Value const & value(replication->second);
+    //casswrapper::schema::Value const & value(replication->second);
 //SNAP_LOG_ERROR("value type: ")(static_cast<int>(value.type()));
     //QVariant const v(value.variant());
     //QString const json(v.toString());
 
-    QtCassandra::QCassandraSchema::Value::map_t const map(replication->second.map());
+    casswrapper::schema::Value::map_t const map(replication->second.map());
 //for(auto m : map)
 //{
 //    SNAP_LOG_ERROR("map: [")(m.first)("] value type: ")(static_cast<int>(m.second.type()));
@@ -1942,7 +1942,7 @@ void cassandra::set_replication_factor(QString const & replication_factor)
 
     // create a new Cassandra session
     //
-    auto session( QtCassandra::QCassandraSession::create() );
+    auto session( casswrapper::Session::create() );
 
     // increase the request timeout "dramatically" because creating a
     // context is very slow
@@ -1982,7 +1982,7 @@ void cassandra::set_replication_factor(QString const & replication_factor)
 
     query_str += QString( " WITH replication = { 'class': 'NetworkTopologyStrategy', 'dc1': '%1' }" ).arg(replication_factor);
 
-    auto query( QtCassandra::QCassandraQuery::create( session ) );
+    auto query( casswrapper::Query::create( session ) );
     query->query( query_str, 0 );
     //query->setConsistencyLevel( ... );
     //query->setTimestamp(...);

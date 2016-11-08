@@ -37,6 +37,8 @@
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandra.h"
 
+#include <casswrapper/schema.h>
+
 #include <stdexcept>
 #include <unistd.h>
 
@@ -128,7 +130,7 @@ namespace QtCassandra
  */
 
 /** \var QCassandraContext::f_schema
- * \brief The pointer to the QCassandraSchema meta object.
+ * \brief The pointer to the casswrapper::schema meta object.
  *
  * This pointer is a shared pointer to the private definition of
  * the Cassandra context (i.e. a keyspace definition.)
@@ -260,7 +262,7 @@ namespace QtCassandra
  * \sa QCassandra::context()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
-    //: f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>())
+    //: f_schema(std::make_shared<casswrapper::schema::SessionMeta::KeyspaceMeta>())
     : f_cassandra(cassandra)
     , f_context_name(context_name)
       //f_tables() -- auto-init
@@ -302,9 +304,9 @@ QCassandraContext::~QCassandraContext()
 
 void QCassandraContext::resetSchema()
 {
-    f_schema = std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>();
+    f_schema = std::make_shared<casswrapper::schema::SessionMeta::KeyspaceMeta>();
 
-    QtCassandra::QCassandraSchema::Value replication;
+    casswrapper::schema::Value replication;
     auto& replication_map(replication.map());
     replication_map["class"]              = QVariant("SimpleStrategy");
     replication_map["replication_factor"] = QVariant(1);
@@ -330,13 +332,13 @@ const QString& QCassandraContext::contextName() const
 }
 
 
-const QCassandraSchema::Value::map_t& QCassandraContext::fields() const
+const casswrapper::schema::Value::map_t& QCassandraContext::fields() const
 {
     return f_schema->getFields();
 }
 
 
-QCassandraSchema::Value::map_t& QCassandraContext::fields()
+casswrapper::schema::Value::map_t& QCassandraContext::fields()
 {
     return f_schema->getFields();
 }
@@ -668,7 +670,7 @@ QString QCassandraContext::generateReplicationStanza() const
  *
  * \sa prepareContextDefinition()
  */
-void QCassandraContext::parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+void QCassandraContext::parseContextDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
 {
     f_schema = keyspace_meta;
     for( const auto pair : keyspace_meta->getTables() )
@@ -947,20 +949,20 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
     // TODO: determine what the best parameters are for a session table
     QCassandraTable::pointer_t lock_table(table(table_name));
 
-    QCassandraSchema::Value compaction_value;
+    casswrapper::schema::Value compaction_value;
     auto& compaction_value_map(compaction_value.map());
-    compaction_value_map["class"]         = QCassandraSchema::Value("SizeTieredCompactionStrategy");
-    compaction_value_map["max_threshold"] = QCassandraSchema::Value(22);
-    compaction_value_map["min_threshold"] = QCassandraSchema::Value(4);
+    compaction_value_map["class"]         = casswrapper::schema::Value("SizeTieredCompactionStrategy");
+    compaction_value_map["max_threshold"] = casswrapper::schema::Value(22);
+    compaction_value_map["min_threshold"] = casswrapper::schema::Value(4);
 
-    QCassandraSchema::Value caching_value;
+    casswrapper::schema::Value caching_value;
     auto& caching_value_map(caching_value.map());
-    caching_value_map["keys"]               = QCassandraSchema::Value("ALL");
-    caching_value_map["rows_per_partition"] = QCassandraSchema::Value("NONE");
+    caching_value_map["keys"]               = casswrapper::schema::Value("ALL");
+    caching_value_map["rows_per_partition"] = casswrapper::schema::Value("NONE");
 
     auto& fields_map( lock_table->fields() );
-    fields_map["gc_grace_seconds"]            = QCassandraSchema::Value(3600);
-    fields_map["memtable_flush_period_in_ms"] = QCassandraSchema::Value(3600000); // 1 hour
+    fields_map["gc_grace_seconds"]            = casswrapper::schema::Value(3600);
+    fields_map["memtable_flush_period_in_ms"] = casswrapper::schema::Value(3600000); // 1 hour
     fields_map["compaction"]                  = compaction_value;
     fields_map["caching"]                     = caching_value;
 

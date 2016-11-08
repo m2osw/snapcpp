@@ -36,9 +36,10 @@
 #include <snapwebsites/string_pathinfo.h>
 #include <snapwebsites/tokenize_string.h>
 
-// libQtCassandra
+// CassWrapper
 //
-#include <QtCassandra/QCassandraSchema.h>
+#include <casswrapper/schema.h>
+#include <casswrapper/session.h>
 
 // Qt lib
 //
@@ -266,7 +267,7 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
         {
             bool const use_ssl(snap_dbproxy_conf["cassandra_use_ssl"] == "true");
             SNAP_LOG_DEBUG("connection attempt to Cassandra cluster ")(use_ssl ? " with SSL." : " in plain mode.");
-            auto session( QtCassandra::QCassandraSession::create() );
+            auto session( casswrapper::Session::create() );
             session->connect(snap_dbproxy_conf["cassandra_host_list"], port, use_ssl);
             if( !session->isConnected() )
             {
@@ -274,7 +275,7 @@ void dbproxy::on_retrieve_status(snap_manager::server_status & server_status)
             }
             else
             {
-                auto meta( QtCassandra::QCassandraSchema::SessionMeta::create( session ) );
+                auto meta( casswrapper::schema::SessionMeta::create( session ) );
                 meta->loadSchema();
                 auto const & keyspaces( meta->getKeyspaces() );
                 QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));

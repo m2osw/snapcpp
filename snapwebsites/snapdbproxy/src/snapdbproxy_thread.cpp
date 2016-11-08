@@ -59,7 +59,7 @@
  */
 snapdbproxy_thread::snapdbproxy_thread
     ( snapdbproxy* proxy
-      , QtCassandra::QCassandraSession::pointer_t session
+      , casswrapper::Session::pointer_t session
       , tcp_client_server::bio_client::pointer_t & client
       , QString const & cassandra_host_list
       , int cassandra_port

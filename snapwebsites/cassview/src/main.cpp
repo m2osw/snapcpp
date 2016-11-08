@@ -35,7 +35,7 @@
 #include "MainWindow.h"
 #include "SettingsDialog.h"
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 int main( int argc, char * argv[] )
 {

@@ -1533,7 +1533,7 @@ bool server::check_cassandra(QString const & mandatory_table)
 //        // table is not there yet, create it
 //        table = context->table(table_name);
 //
-//        QtCassandra::QCassandraSchema::Value compaction;
+//        casswrapper::schema::Value compaction;
 //        auto& compaction_map(compaction.map());
 //        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
 //        compaction_map["min_threshold"] = QVariant(4);
