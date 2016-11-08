@@ -819,7 +819,9 @@ void getopt::parse_arguments(int argc, char * argv[], option const * opts, int d
             // direct entry (filename or whatever the tool expects as a default)
             if(def_opt == NO_DEFAULT_OPT)
             {
-                usage(status_t::error, "no default option defined; thus stand alone parameters are not accepted by this tool");
+                usage(status_t::error,
+                    "no default option defined; we do not know what to do of \"%s\"; thus standalone parameters are not accepted by this tool",
+                    argv[i]);
                 /*NOTREACHED*/
             }
             if(only_environment_variable && (opts[def_opt].f_flags & GETOPT_FLAG_ENVIRONMENT_VARIABLE) == 0)

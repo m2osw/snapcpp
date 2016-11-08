@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
 
 /*
  * connect to netlink
@@ -109,11 +110,39 @@ static int handle_proc_ev(int nl_sock)
                 printf("set mcast listen ok\n");
                 break;
             case PROC_EVENT_FORK:
-                printf("fork: parent tid=%d pid=%d -> child tid=%d pid=%d\n",
+                {
+                char proc[256];
+                int fd;
+                sprintf(proc, "/proc/%d/cmdline", nlcn_msg.proc_ev.event_data.fork.child_pid);
+                fd = open(proc, O_RDONLY);
+                char cmd[1024];
+                if(fd == -1)
+                {
+                    strcpy(cmd, "[no cmdline]");
+                }
+                else
+                {
+                    ssize_t r = read(fd, cmd, sizeof(cmd));
+                    if(r < 0)
+                    {
+                        strcpy(cmd, "[cmdline not accessible]");
+                    }
+                    else
+                    {
+                        if((size_t)r > sizeof(cmd) - 1)
+                        {
+                            r = (ssize_t)(sizeof(cmd) - 1);
+                        }
+                        cmd[r] = '\0';
+                    }
+                }
+                printf("fork: parent tid=%d pid=%d -> child tid=%d pid=%d -> %s\n",
                         nlcn_msg.proc_ev.event_data.fork.parent_pid,
                         nlcn_msg.proc_ev.event_data.fork.parent_tgid,
                         nlcn_msg.proc_ev.event_data.fork.child_pid,
-                        nlcn_msg.proc_ev.event_data.fork.child_tgid);
+                        nlcn_msg.proc_ev.event_data.fork.child_tgid,
+                        cmd);
+                }
                 break;
             case PROC_EVENT_EXEC:
                 printf("exec: tid=%d pid=%d\n",
@@ -151,11 +180,15 @@ static int handle_proc_ev(int nl_sock)
 
 static void on_sigint(int unused)
 {
+    (void)unused;
     need_exit = true;
 }
 
 int main(int argc, const char *argv[])
 {
+    (void)argc;
+    (void)argv;
+
     int nl_sock;
     int rc = EXIT_SUCCESS;
 
@@ -178,7 +211,7 @@ int main(int argc, const char *argv[])
         goto out;
     }
 
-	set_proc_ev_listen(nl_sock, false);
+    set_proc_ev_listen(nl_sock, false);
 
 out:
     close(nl_sock);
@@ -213,3 +246,6 @@ out:
 // exec: tid=17600 pid=17600
 // exit: tid=17600 pid=17600 exit_code=0
 // exit: tid=17598 pid=17598 exit_code=0
+
+
+// vim: ts=4 sw=4 et
