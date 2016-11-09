@@ -487,6 +487,8 @@ bool manager_cgi::verify()
             // We use 302 so it will be possible to see the index.html again
             // if we decide to set the status back to "new"
             //
+            // We already tested and know that `http_host != nullptr`
+            //
             char const * http_host(getenv("HTTP_HOST"));
             std::cout   << "Status: 302"                                       << std::endl
                         << "Location: https://" << http_host << "/snapmanager" << std::endl
