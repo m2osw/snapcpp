@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.34.0~xenial) xenial; urgency=high
+
+  * SNAP-509: Access to snapmanager.cgi is now through "/snapmanager" only.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 08 Nov 2016 21:29:50 -0800
+
 snapmanagercgi (1.2.33.0~xenial) xenial; urgency=high
 
   * SNAP-509: Ignore all parameters on command line of snapmanager.cgi.

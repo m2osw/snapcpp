@@ -463,9 +463,20 @@ bool manager_cgi::verify()
         // snapmanager.cgi without specifying /cgi-bin/... which is not
         // correct
         //
-        if(strncasecmp(request_uri, "/cgi-bin/", 9) != 0)
+        if(strncasecmp(request_uri, "/cgi-bin/", 9) == 0)
         {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI must start with \"/cgi-bin/\".");
+            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI must be with \"/snapmanager\".");
+            snap::server::block_ip(remote_addr);
+            return false;
+        }
+
+        // make sure the user is trying to access exactly "/snapmanager/?"
+        // at this point we do not support any other paths
+        //
+        if(strcasecmp(request_uri, "/snapmanager") != 0
+        && strcasecmp(request_uri, "/snapmanager/") != 0)
+        {
+            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI must be with \"/snapmanager\".");
             snap::server::block_ip(remote_addr);
             return false;
         }
