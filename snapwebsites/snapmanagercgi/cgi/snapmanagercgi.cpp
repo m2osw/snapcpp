@@ -474,10 +474,14 @@ bool manager_cgi::verify()
         }
 
         // make sure the user is trying to access exactly "/snapmanager/?"
+        // (with the '/' and '?' being optional)
+        //
         // at this point we do not support any other paths
         //
         if(strcasecmp(request_uri, "/snapmanager") != 0
-        && strcasecmp(request_uri, "/snapmanager/") != 0)
+        && strcasecmp(request_uri, "/snapmanager/") != 0
+        && strncasecmp(request_uri, "/snapmanager?", 13) != 0
+        && strncasecmp(request_uri, "/snapmanager/?", 14) != 0)
         {
             error(
                 "404 Page Not Found",
@@ -487,17 +491,12 @@ bool manager_cgi::verify()
             return false;
         }
 
-        // if we receive this, someone is trying to log in through the XMLRPC
-        // interface, however, we do not offer that feature in snapmanager.cgi
-        //
-        if(strncasecmp(request_uri, "/xmlrpc", 7) == 0)
-        {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "snapmanager.cgi has no XMLRPC interface.");
-            snap::server::block_ip(remote_addr, "year");
-            return false;
-        }
-
         // We do not allow any kind of proxy
+        //
+        // Note: Yes. This is not required at this point since we check that
+        //       the path is "/snapmanager" and since it starts with "/"...
+        //       However, we may change that later and we think it is
+        //       preferable to keep things this way.
         //
         if(*request_uri != '/')
         {
