@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.37.0~xenial) xenial; urgency=high
+
+  * SNAP-509: Missed a couple of /cgi-bin/snapmanager.cgi, converted now.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 08 Nov 2016 22:25:50 -0800
+
 snapmanagercgi (1.2.36.0~xenial) xenial; urgency=high
 
   * SNAP-509: The REQUEST_URI actually includes the Query String...

@@ -148,7 +148,7 @@ int manager_cgi::error(char const * code, char const * msg, char const * details
     body += "</h1><p>";
     body += (msg == nullptr ? "Sorry! We found an invalid server configuration or some other error occurred." : msg);
     body += "</p>";
-    body += "<p><a href=\"/cgi-bin/snapmanager.cgi\">Home</a></p>";
+    body += "<p><a href=\"/snapmanager\">Home</a></p>";
 
     std::cout   << "Status: " << code                       << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
