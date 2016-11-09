@@ -405,7 +405,6 @@ bool manager_cgi::verify()
         }
     }
 
-#if 0
     {
         // WARNING: do not use std::string because nullptr will crash
         //
@@ -418,6 +417,11 @@ bool manager_cgi::verify()
 #ifdef _DEBUG
         //SNAP_LOG_DEBUG("HTTP_HOST=")(http_host);
 #endif
+
+#if 0
+        // we test that it is not null, but we accept access with plain IP
+        // addresses (which may be used for the first few accesses)
+        //
         if(tcp_client_server::is_ipv4(http_host))
         {
             SNAP_LOG_ERROR("The host cannot be an IPv4 address.");
@@ -440,8 +444,8 @@ bool manager_cgi::verify()
             snap::server::block_ip(remote_addr, "week");
             return false;
         }
-    }
 #endif
+    }
 
     {
         // WARNING: do not use std::string because nullptr will crash
@@ -470,6 +474,26 @@ bool manager_cgi::verify()
                 "We could not find the page you were looking for.",
                 (std::string("The REQUEST_URI must be \"/snapmanager\", it cannot include \"/cgi-bin/\" as in \"") + request_uri + "\".").c_str());
             snap::server::block_ip(remote_addr);
+            return false;
+        }
+
+        // once the index.html page is blocked, we would end up with a 404
+        // instead we can just redirect the user to /snapmanager
+        //
+        if(strcmp(request_uri, "/") == 0)
+        {
+            SNAP_LOG_FATAL("Redirect user to \"/snapmanager\".");
+
+            // We use 302 so it will be possible to see the index.html again
+            // if we decide to set the status back to "new"
+            //
+            char const * http_host(getenv("HTTP_HOST"));
+            std::cout   << "Status: 302"                                       << std::endl
+                        << "Location: https://" << http_host << "/snapmanager" << std::endl
+                        << "Expires: Sun, 19 Nov 1978 05:00:00 GMT"            << std::endl
+                        << "Connection: close"                                 << std::endl
+                        << std::endl
+                        ;
             return false;
         }
 
