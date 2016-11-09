@@ -571,10 +571,11 @@ int manager_cgi::process()
                     << body;
         return 0;
     }
+
+    std::string request_method(request_method_str);
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 #endif
-    std::string request_method(request_method_str);
 
     if(request_method == "POST")
     {

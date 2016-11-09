@@ -1826,6 +1826,9 @@ QString cassandra::get_replication_factor()
     // increase the request timeout "dramatically" because creating a
     // context is very slow
     //
+    // The timeout will be buffered for when the cluster is actually
+    // connected below.
+    //
     // note: we do not make use of the QCassandraRequestTimeout class
     //       because we will just create the context and be done with it
     //       so there is no real need for us to restore the timeout

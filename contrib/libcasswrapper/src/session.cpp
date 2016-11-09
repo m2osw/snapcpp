@@ -380,6 +380,11 @@ void Session::add_ssl_keys()
  */
 cluster Session::getCluster() const
 {
+    if( !f_data->f_cluster )
+    {
+        throw exception_t( "The cluster is not connected!" );
+    }
+    //
     return *(f_data->f_cluster);
 }
 
@@ -387,6 +392,11 @@ cluster Session::getCluster() const
  */
 session Session::getSession() const
 {
+    if( !f_data->f_session )
+    {
+        throw exception_t( "The session is not connected!" );
+    }
+    //
     return *(f_data->f_session);
 }
 
@@ -396,7 +406,7 @@ future Session::getConnection() const
 {
     if( !isConnected() )
     {
-        throw exception_t( "The session is not connected!" );
+        throw exception_t( "The cluster and session are not connected!" );
     }
 
     return *(f_data->f_connection);
@@ -488,8 +498,13 @@ int64_t Session::setTimeout(timeout_t timeout_ms)
 {
     timeout_t const old_timeout(f_timeout);
     f_timeout = timeout_ms;
+    //
     // the cluster may not yet have been allocated
-    f_data->f_cluster->set_request_timeout( f_timeout );
+    //
+    if( f_data->f_cluster )
+    {
+        f_data->f_cluster->set_request_timeout( f_timeout );
+    }
     return old_timeout;
 }
 
@@ -508,14 +523,20 @@ uint32_t Session::lowWaterMark() const
 void Session::setHighWaterMark( uint32_t val )
 {
     f_high_water_mark = val;
-    f_data->f_cluster->set_write_bytes_high_water_mark( f_high_water_mark );
+    if( f_data->f_cluster )
+    {
+        f_data->f_cluster->set_write_bytes_high_water_mark( f_high_water_mark );
+    }
 }
 
 
 void Session::setLowWaterMark( uint32_t val )
 {
     f_low_water_mark = val;
-    f_data->f_cluster->set_write_bytes_low_water_mark( f_low_water_mark );
+    if( f_data->f_cluster )
+    {
+        f_data->f_cluster->set_write_bytes_low_water_mark( f_low_water_mark );
+    }
     
 }
 
