@@ -465,7 +465,10 @@ bool manager_cgi::verify()
         //
         if(strncasecmp(request_uri, "/cgi-bin/", 9) == 0)
         {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI must be with \"/snapmanager\".");
+            error(
+                "404 Page Not Found",
+                "We could not find the page you were looking for.",
+                (std::string("The REQUEST_URI must be \"/snapmanager\", it cannot include \"/cgi-bin/\" as in \"") + request_uri + "\".").c_str());
             snap::server::block_ip(remote_addr);
             return false;
         }
@@ -476,7 +479,10 @@ bool manager_cgi::verify()
         if(strcasecmp(request_uri, "/snapmanager") != 0
         && strcasecmp(request_uri, "/snapmanager/") != 0)
         {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI must be with \"/snapmanager\".");
+            error(
+                "404 Page Not Found",
+                "We could not find the page you were looking for.",
+                (std::string("The REQUEST_URI must be \"/snapmanager\", not \"") + request_uri + "\".").c_str());
             snap::server::block_ip(remote_addr);
             return false;
         }

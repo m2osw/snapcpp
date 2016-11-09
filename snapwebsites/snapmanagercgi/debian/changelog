@@ -1,3 +1,11 @@
+snapmanagercgi (1.2.35.0~xenial) xenial; urgency=high
+
+  * SNAP-509: Added wrong path to log so we can see why it fails.
+  * Made a few more updated to the index.html.
+  * Fixed the path in the Home and Log Out links.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 08 Nov 2016 21:54:50 -0800
+
 snapmanagercgi (1.2.34.0~xenial) xenial; urgency=high
 
   * SNAP-509: Access to snapmanager.cgi is now through "/snapmanager" only.

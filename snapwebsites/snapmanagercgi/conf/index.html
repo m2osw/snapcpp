@@ -75,6 +75,7 @@ License:
 		border: 1px solid #888888;
 		background-color: #e0e0e0;
 		padding: 3px;
+		white-space: pre;
 	}
 	pre
 	{
@@ -126,9 +127,9 @@ License:
 		<p>It looks like Snap Manager CGI was installed properly since
 		you see this Apache2 webpage.</p>
 
-		<h2>Security (403 Forbidden&mdash;how to fix)</h2>
+		<h2>Manual Administration</h2>
 
-			<h3>Snap Manager CGI</h3>
+			<h3>Security: Snap Manager CGI (403 Forbidden&mdash;how to fix)</h3>
 				<p>For security reasons, we prevent access to
 				<code>snapmanager.cgi</code> from all by default.
 				The installation script should ask you to enter
@@ -159,12 +160,12 @@ License:
 				<p>We, on purpose, do not support a mask because only a very
 				few computers should be used to manage your Snap! Websites
 				cluster.</p>
-				<p><strong>NOTE:</strong> It is not recommended that you edit the
+				<p class="notes"><strong>Note:</strong> It is not recommended that you edit the
 				<code>/etc/snapwebsites/snapmanager.conf</code> file.
 				Please only make changes in the
 				<code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code>
 				file. In fact, this is recommended for any
-				<i>Snap!</i> service in general (<i>.conf</i> files).</p>
+				<strong>Snap!</strong> service in general (<u>.conf</u> files).</em></p>
 
 			<h3>Server Name</h3>
 				<p>It is recommended that you set the <code>server_name</code> variable in
@@ -230,8 +231,8 @@ License:
 			will be required on just one computer. However, at this time
 			many of the manager features do not work right across computers
 			so really you will want to install <code>snapmanagercgi</code>
-			on all the computers in your cluster.
-			<p>To access the actual online snapmanager, go to the
+			on all the computers in your cluster.</p>
+			<p>Now, to access the actual online snapmanager, go to the
 			following address:</p>
 			<blockquote>
 				<pre><a href="/snapmanager">http://&lt;your domain name or IP address&gt;/snapmanager</a></pre>
