@@ -472,35 +472,38 @@ bool versions::versions_tools_impl(filter::filter::token_info_t & token)
         token.f_replacement += "</li>";
     }
 
-        // snap.cgi
-    if(access("/usr/lib/cgi-bin/snap.cgi", X_OK))
-    {
-        token.f_replacement += "<li>snap.cgi ";
-        {
-            process p("check snap.cgi version");
-            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
-            p.set_command("/usr/lib/cgi-bin/snap.cgi");
-            p.add_argument("--version");
-            p.run();
-            token.f_replacement += p.get_output();
-        }
-        token.f_replacement += "</li>";
-    }
-
-        // snapmanager.cgi
-    if(access("/usr/lib/cgi-bin/snapmanager.cgi", X_OK))
-    {
-        token.f_replacement += "<li>snapmanager.cgi ";
-        {
-            process p("check snapmanager.cgi version");
-            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
-            p.set_command("/usr/lib/cgi-bin/snapmanager.cgi");
-            p.add_argument("--version");
-            p.run();
-            token.f_replacement += p.get_output();
-        }
-        token.f_replacement += "</li>";
-    }
+// 1. these two binaries moved
+// 2. they do not support --version anymore (See SNAP-509)
+//
+//        // snap.cgi
+//    if(access("/usr/lib/cgi-bin/snap.cgi", X_OK))
+//    {
+//        token.f_replacement += "<li>snap.cgi ";
+//        {
+//            process p("check snap.cgi version");
+//            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+//            p.set_command("/usr/lib/cgi-bin/snap.cgi");
+//            p.add_argument("--version");
+//            p.run();
+//            token.f_replacement += p.get_output();
+//        }
+//        token.f_replacement += "</li>";
+//    }
+//
+//        // snapmanager.cgi
+//    if(access("/usr/lib/cgi-bin/snapmanager.cgi", X_OK))
+//    {
+//        token.f_replacement += "<li>snapmanager.cgi ";
+//        {
+//            process p("check snapmanager.cgi version");
+//            p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
+//            p.set_command("/usr/lib/cgi-bin/snapmanager.cgi");
+//            p.add_argument("--version");
+//            p.run();
+//            token.f_replacement += p.get_output();
+//        }
+//        token.f_replacement += "</li>";
+//    }
 
     return true;
 }

@@ -2,7 +2,7 @@
 <!--
 
 File:
-     conf/index.html
+     snapwebsites/snapmanagercgi/conf/index.html
 
 Description:
      Offer a default page to eventually make it easier to handle the
@@ -75,6 +75,7 @@ License:
 		border: 1px solid #888888;
 		background-color: #e0e0e0;
 		padding: 3px;
+		white-space: pre;
 	}
 	pre
 	{
@@ -120,21 +121,32 @@ License:
 		<h1>Snap Manager CGI</h1>
 	</div>
 	<div class="content">
+
 		<h2>Installation Success</h2>
+
 		<p>It looks like Snap Manager CGI was installed properly since
 		you see this Apache2 webpage.</p>
-		<h2>Security (403 Forbidden&mdash;how to fix)</h2>
-			<h3>Snap Manager CGI</h3>
+
+		<h2>Manual Administration</h2>
+
+			<h3>Security: Snap Manager CGI (403 Forbidden&mdash;how to fix)</h3>
 				<p>For security reasons, we prevent access to
-				snapmanager.cgi from all by default. To allow
-				yourself, edit the
+				<code>snapmanager.cgi</code> from all by default.
+				The installation script should ask you to enter
+				a list of IP addresses separated by commas. If
+				you made a mistake, or did not include yourself,
+				then you will get a <strong>403 Forbidden</strong>
+				error.</p>
+
+				<p>To allow yourself, edit the
 				<code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code>
-				file and put your IP address which the browser
+				file and put your IP address which your browser
 				connects <i>from</i> into the variable named
 				<code>clients</code>. Do not put in the IP address
 				which the webserver runs on, unless that is also
 				a desktop system with a browser which will access
-				the frontend machine.</p>
+				the frontend machine (i.e. you are testing on your
+				own development machine.)</p>
 				<p>For example:</p>
 				<blockquote>
 					<pre>clients=192.168.0.3</pre>
@@ -148,12 +160,13 @@ License:
 				<p>We, on purpose, do not support a mask because only a very
 				few computers should be used to manage your Snap! Websites
 				cluster.</p>
-				<p><b>NOTE:</b> It is not recommended that you edit the
+				<p class="notes"><strong>Note:</strong> It is not recommended that you edit the
 				<code>/etc/snapwebsites/snapmanager.conf</code> file.
 				Please only make changes in the
 				<code>/etc/snapwebsites/snapwebsites.d/snapmanager.conf</code>
 				file. In fact, this is recommended for any
-				<i>Snap!</i> service in general (<i>.conf</i> files).
+				<strong>Snap!</strong> service in general (<u>.conf</u> files).</em></p>
+
 			<h3>Server Name</h3>
 				<p>It is recommended that you set the <code>server_name</code> variable in
 				<code>/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf</code> if you
@@ -169,30 +182,7 @@ License:
 				other than a-z, 0-9, and underscores, or starts with a digit.
 				Note that snapinit knows to change '-' characters into
 				'_', although that may generate other problems.)</p>
-			<h3>Snap Communicator</h3>
-				<p>The Snap Communicator wants to listen to a private
-				network IP address. By default we put 127.0.0.1 as
-				that IP address, although in most cases that's most
-				certainly wrong (i.e. if you have at least 2 computers
-				in your cluster, then it is wrong.)</p>
-				<p>You must create and/or edit the
-				<code>/etc/snapwebsites/snapwebsites.d/snapcommunicator.conf</code>
-				file and change the <code>my_address</code> and
-				<code>listen</code> variables to the correct IP adress.</p>
-				<blockquote>
-					<pre>my_address=192.168.10.11</pre>
-					<pre>listen=192.168.10.11:4040</pre>
-				</blockquote>
-				<p>Make sure to use a private network IP address
-				which is secure. This means if you need to create
-				a tunnelled network with a VPN, make sure to do
-				that first and then setup the secure IP address.</p>
-				<p class="notes"><strong>Note:</strong> It is possible to
-				edit that IP address with <code>snapmanager.cgi</code>
-				but that is not very practical unless you install
-				<code>snapmanager.cgi</code> on all your computers,
-				which we do not recommend unless you want to do so
-				to install OpenVPN automatically.</p>
+
 			<h3>Apache Conflict: The fight between Snap Manager CGI &amp; Snap CGI</h3>
 				<p>Although it is possible (we have done it) to
 				run both, <code>snapmanager.cgi</code> and
@@ -212,69 +202,49 @@ License:
 				server the first time, we suggest you first
 				look for the <code>snapmanager::server_name</code>
 				and enter a name there. For example, you may
-				want to call it <code>snapmanager</code>.</p>
-				<p>Next, edit your administrator's computer
+				want to give it the same name as your computer hostname.
+				Maybe it is <code>snapmanager</code>, <code>snap1</code>, or
+				<code>cassandra3</code>. If you plan to install a DNS, you
+				will also be able to give a sub-domain name to each computer.
+				That can be a lot easier in the long run (i.e. maybe something
+				like: <code>snap1.snap.website</code>.</p>
+				<p>But until then, edit your administrator's computer
 				<code>/etc/hosts</code> file and place the
 				information in there as in:</p>
 				<blockquote>
 					<pre>192.168.55.31    snapmanager</pre>
 				</blockquote>
-				<p class="notes"><strong>Note:</strong> please define your private network
-				IP address instead of the one shown in the
+				<p class="notes"><strong>Note:</strong> please enter <u>your</u>
+				private network IP address instead of the one shown in the
 				example.</p>
 				<p>Now you can access your <code>snapmanager.cgi</code>
 				by entering <code>http://snapmanager/</code>
 				in your browser location bar. This means you
 				are ready to install the <code>frontend</code>
 				bundle.</p>
-			<h3>Restart Snap Communicator</h3>
-				<p>After editing configuration files, make sure you restart the
-				<code>snapcommunicator</code> service. Use the command:</p>
-				<blockquote>
-					<pre># systemctl restart snapcommunicator</pre>
-				</blockquote>
-				<p class="notes"><strong>Note 1:</strong> If you are not root, use <code>sudo</code>.
-				Note that newer versions of Ubuntu should automatically ask
-				you for your sudo password.</p>
-				<p class="notes"><strong>Note 2:</strong> The restart command should restart
-				both: <code>snapcommunicator</code> and
-				<code>snapmanagerdaemon</code>.</p>
-				<p>Assuming everything goes well, you should see
-				<code>snapcommunicator</code> and <code>snapmanagerdaemon</code>
-				running on that computer. You can verify such using the
-				<code>ps</code> command like so:</p>
-				<blockquote>
-					<pre>ps -ef | grep snap</pre>
-				</blockquote>
-				<p class="notes"><strong>Note:</strong> You are likely to see a
-				<code>snapd</code> daemon in the list. This is not
-				from the Snap! Websites environment and it can be
-				ignored. Also, if you are running Cassandra on that
-				computer, it will appear since the command line
-				includes a reference to <code>snappy</code>. You can
-				easily hide Cassandra by appending
-				<code style="white-space: nowrap;">| grep -v java</code>. It is harder to hide
-				<code>snapd</code>, though.</p>
-		<h2>Administer</h2>
+
+		<h2>Browser Administration</h2>
 			<p>Now you should be ready to administer your
 			<a href="http://snapwebsites.org/">Snap! Websites</a>
 			cluster.</p>
-			<p>Note that the <code>snapmanagercgi</code> package
-			is only required on one computer unless you need to use
-			OpenVPN, because until OpenVPN is properly installed, you
-			do not want to have <code>snapcommunicator</code> communicate
-			between various computers. You can install OpenVPN manually
-			or with <code>snapmanager.cgi</code> if you install it on
-			each one of your servers.</p>
-			<p>To access the actual online snapmanager, go to the
+			<p>Note that some day the <code>snapmanagercgi</code> package
+			will be required on just one computer. However, at this time
+			many of the manager features do not work right across computers
+			so really you will want to install <code>snapmanagercgi</code>
+			on all the computers in your cluster.</p>
+			<p>Now, to access the actual online snapmanager, go to the
 			following address:</p>
 			<blockquote>
-				<pre><a href="/cgi-bin/snapmanager.cgi">http://&lt;your domain name or IP address&gt;/cgi-bin/snapmanager.cgi</a></pre>
+				<pre><a href="/snapmanager">http://&lt;your domain name or IP address&gt;/snapmanager</a></pre>
 			</blockquote>
+
 	</div>
 	<div class="footer">Copyright
 	<a href="http://www.m2osw.com/">Made to Order Software Corporation</a>
 	&copy; 2016</div>
 </div>
 </body>
+<!--
+  vim: ts=2 sw=2
+-->
 </html>

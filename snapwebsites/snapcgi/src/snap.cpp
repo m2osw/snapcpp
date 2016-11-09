@@ -798,6 +798,19 @@ int snap_cgi::process()
 
 int main(int argc, char * argv[])
 {
+    // The Apache2 environment will pass parameters to us whenever the
+    // end user enters a query string without an equal sign. For example:
+    //
+    //      http://www.example.com/cgi-bin/snapmanager.cgi?logout
+    //
+    // would add "logout" in argv[1]. That means hackers can pass any
+    // parameter to us (since `-` is a legal character in such query
+    // string parameters.) So here we clear the list and force the count
+    // to exactly 1 (i.e. we keep the program name only.)
+    //
+    argc = 1;
+    argv[1] = nullptr;
+
     try
     {
         snap_cgi cgi( argc, argv );

@@ -214,20 +214,20 @@ void apache2::retrieve_status_of_conf(snap_manager::server_status & server_statu
         bool found(false);
         std::string const content(fc.get_content());
         std::string::size_type const pos(snap_manager::manager::search_parameter(content, "servername", 0, true));
-        if(pos != std::string::size_type(-1))
+        if(pos != std::string::npos)
         {
             if(pos == 0 || content[pos - 1] != '#')
             {
                 // found one, get the name
                 //
                 std::string::size_type const p1(content.find_first_of(" \t", pos));
-                if(p1 != std::string::size_type(-1))
+                if(p1 != std::string::npos)
                 {
                     std::string::size_type const p2(content.find_first_not_of(" \t", p1));
-                    if(p2 != std::string::size_type(-1))
+                    if(p2 != std::string::npos)
                     {
                         std::string::size_type const p3(content.find_first_of(" \t\r\n", p2));
-                        if(p3 != std::string::size_type(-1))
+                        if(p3 != std::string::npos)
                         {
                             std::string const name(content.substr(p2, p3 - p2));
 
@@ -269,6 +269,31 @@ void apache2::retrieve_status_of_conf(snap_manager::server_status & server_statu
                             , QString::fromUtf8((conf_namespace + "::server_name").c_str())
                             , ("\"" + conf_filename + "\" is not editable at the moment.").c_str());
             server_status.set_field(conf_field);
+        }
+
+        // try to see whether we have a RewriteRule setting up an
+        // environment variable named STATUS (it should always be
+        // there)
+        //
+        // at this point only the snapmanager has such
+        //
+        if(conf_namespace == "snapmanager")
+        {
+            std::string::size_type const website_status_pos(content.find("RewriteRule .* - [env=STATUS:"));
+            if(website_status_pos != std::string::npos)
+            {
+                std::string::size_type const website_status_end(content.find("]", website_status_pos + 29));
+                std::string const website_status(content.substr(website_status_pos + 29, website_status_end - website_status_pos - 29));
+
+                snap_manager::status_t const conf_field(
+                                  website_status == "new"
+                                        ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                        : snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                , get_plugin_name()
+                                , QString::fromUtf8((conf_namespace + "::website_status").c_str())
+                                , QString::fromUtf8(website_status.c_str()));
+                server_status.set_field(conf_field);
+            }
         }
     }
     else if(fc.exists())
@@ -327,12 +352,40 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
                   | snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        QString const user_name(s.get_field_name().mid(8));
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
                           "Apache2 'ServerName'"
                         , s.get_field_name()
                         , s.get_value()
                         , "Enter the name of the server. This name becomes mandatory for snapmanager.cgi if you intend to install the snapfront bundle. For snap.cgi, it is a good idea to put your main website name so Apache2 gets a form of fallback."
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
+    if(s.get_field_name().endsWith("::website_status"))
+    {
+        // the website status
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_RESET
+                  | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
+                  | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                          "Website Status"
+                        , s.get_field_name()
+                        , s.get_value()
+                        , "Enter the status of the website. Either \"new\" or \"installed\"."
+                         " When set to \"new\", the end users can see the index.html help page"
+                         " which can make it easy to determine the version of the Snap!"
+                         " environment. We strongly suggest that you use \"installed\"."
                         ));
         f.add_widget(field);
 
@@ -356,7 +409,7 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
  *            (usually ignored,) or the installation values (only
  *            for the self plugin that manages bundles.)
  *
- * \return true if the new_value was applied successfully.
+ * \return true if the new_value was handled by this function.
  */
 bool apache2::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
 {
@@ -376,7 +429,7 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
         if(!comment
         && button_name != "save")
         {
-            return false;
+            return true;
         }
 
         bool const update_snapmanager(field_name.startsWith("snapmanager::"));
@@ -385,7 +438,7 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
         && comment)
         {
             // there is no "default" for the snap.gci configuration
-            return false;
+            return true;
         }
 
         // generate the path to the id_rsa file
@@ -401,14 +454,14 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
         bool success(fc.read_all());
         if(!success)
         {
-            return false;
+            return true;
         }
 
         // make a backup
         //
         if(!fc.write_all(conf_filename + ".bak"))
         {
-            return false;
+            return true;
         }
 
         // retrieve the current content
@@ -454,7 +507,7 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
                 // something went wrong (i.e. the ServerName should not
                 // be the very last thing in the file)
                 //
-                return false;
+                return true;
             }
 
             // we have the start and the end so we can now cut the
@@ -478,7 +531,71 @@ bool apache2::apply_setting(QString const & button_name, QString const & field_n
 
         // the write back to disk failed
         //
-        return false;
+        return true;
+    }
+
+    if(field_name.endsWith("::website_status"))
+    {
+        // if the user was asking to restore the default, the default is
+        // to have the status set to "new"
+        //
+        QString new_website_status(
+                    button_name == "restore_default"
+                        ? "new"
+                        : new_value
+                );
+
+        // get the current data
+        //
+        file_content fc(g_snapmanager_apache_conf);
+        bool success(fc.read_all());
+        if(!success)
+        {
+            return true;
+        }
+
+        // make a backup
+        //
+        if(!fc.write_all(g_snapmanager_apache_conf + ".bak"))
+        {
+            return true;
+        }
+
+        // retrieve the current content
+        //
+        std::string const content(fc.get_content());
+
+        std::string::size_type const website_status_pos(content.find("RewriteRule .* - [env=STATUS:"));
+        if(website_status_pos == std::string::npos)
+        {
+            return true;
+        }
+
+        std::string::size_type const website_status_end(content.find("]", website_status_pos + 29));
+        if(website_status_end == std::string::npos)
+        {
+            return true;
+        }
+
+        std::string const new_content(
+                      content.substr(0, website_status_pos + 29)
+                    + new_website_status
+                    + content.substr(website_status_end));
+
+        // it worked, let's save the result
+        //
+        fc.set_content(new_content);
+        if(!fc.write_all())
+        {
+            // the write back to disk failed
+            //
+            return true;
+        }
+
+        // it worked, make sure apache2 gets restarted
+        //
+        affected_services.insert("apache2-restart");
+        return true;
     }
 
     return false;

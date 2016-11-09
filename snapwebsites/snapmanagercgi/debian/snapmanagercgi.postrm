@@ -10,6 +10,18 @@ then
     #
     rm -f /var/log/snapwebsites/snapmanagercgi.log*
     rm -f /var/log/snapwebsites/secure/snapmanagercgi.log*
+
+    rm -f /var/log/apache2/snapmanager-access.log*
+    rm -f /var/log/apache2/snapmanager-error.log*
+
+    # we create that file, so we want to remove it on a purge
+    #
+    rm -f /etc/snapwebsites/passwords/snapmanagercgi.pwd
+
+    # delete sessions
+    #
+    rm -rf /var/lib/snapwebsites/sessions/snapmanager
+    rmdir --ignore-fail-on-non-empty /var/lib/snapwebsites/sessions
 fi
 
 /usr/lib/snapwebsites/scripts/snapapacheinit remove

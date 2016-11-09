@@ -210,7 +210,7 @@ http_cookie::http_cookie(snap_child * snap, QString const & name, QString const 
     //, f_http_only(false) -- auto-init
 {
     // XXX make this check only in debug-like versions
-    int max_len(f_name.length());
+    int const max_len(f_name.length());
     if(max_len == 0)
     {
         throw http_cookie_parse_exception("the name of a cookie cannot be empty");
@@ -774,8 +774,8 @@ QString http_cookie::to_http_header() const
     // Note: the name was already checked for invalid characters
     QString result("Set-Cookie: " + f_name + "=");
 
-    const char *v(f_value.constData());
-    int max_len(f_value.size());
+    char const * v(f_value.constData());
+    int const max_len(f_value.size());
     for(int i(0); i < max_len; ++i)
     {
         char c(v[i]);

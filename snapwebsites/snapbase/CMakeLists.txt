@@ -38,6 +38,9 @@ project(snapbase_project)
 find_package( SnapCMakeModules  REQUIRED )
 find_package( SnapDoxygen )
 
+##
+## Version
+##
 SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_subdirectory( conf    )

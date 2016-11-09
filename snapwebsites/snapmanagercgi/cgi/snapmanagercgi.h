@@ -87,9 +87,12 @@ private:
     void                        generate_content(QDomDocument doc, QDomElement root, QDomElement menu);
     void                        get_host_status(QDomDocument doc, QDomElement output, QString const host);
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
+    int                         is_logged_in(std::string & request_method);
 
     snap::snap_uri              f_uri;
     std::string                 f_communicator_address;
+    std::string                 f_cookie;
+    std::string                 f_user_name;
     int                         f_communicator_port = -1;
     post_variables_t            f_post_variables;
 };

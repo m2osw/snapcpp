@@ -73,6 +73,20 @@ install(
 ##
 install(
     FILES 
+        # Index file
+        favicon.ico
+        snap-logo.png
+        index.html
+
+    DESTINATION
+        share/snapwebsites/html/snap
+)
+
+#################################################################################
+## Maintenance files
+##
+install(
+    FILES 
         favicon.ico
         maintenance.html
         snap-logo.png

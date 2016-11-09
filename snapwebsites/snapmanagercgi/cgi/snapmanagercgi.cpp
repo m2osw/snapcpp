@@ -38,19 +38,36 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/file_content.h>
+#include <snapwebsites/hexadecimal_string.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomhelpers.h>
 #include <snapwebsites/snap_communicator.h>
+#include <snapwebsites/snap_uri.h>
+#include <snapwebsites/tokenize_string.h>
 
 // Qt lib
 //
 #include <QFile>
+
+// boost lib
+//
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
+
+// C++ lib
+//
+#include <fstream>
 
 // C lib
 //
 #include <fcntl.h>
 #include <glob.h>
 #include <sys/file.h>
+
+// OpenSLL lib
+//
+#include <openssl/rand.h>
 
 // last entry
 //
@@ -65,6 +82,9 @@ namespace
 {
 
 
+char const * g_session_path = "/var/lib/snapwebsites/sessions/snapmanager";
+
+
 int glob_err_callback(const char * epath, int eerrno)
 {
     SNAP_LOG_ERROR("an error occurred while reading directory under \"")
@@ -77,6 +97,18 @@ int glob_err_callback(const char * epath, int eerrno)
 
     // do not abort on a directory read error...
     return 0;
+}
+
+
+/** \brief Close a file descriptor.
+ *
+ * This function will close the file descriptor pointer by fd.
+ *
+ * \param[in] fd  Pointer to the file descriptor to close.
+ */
+void close_file(int * fd)
+{
+    close(*fd);
 }
 
 
@@ -116,6 +148,7 @@ int manager_cgi::error(char const * code, char const * msg, char const * details
     body += "</h1><p>";
     body += (msg == nullptr ? "Sorry! We found an invalid server configuration or some other error occurred." : msg);
     body += "</p>";
+    body += "<p><a href=\"/snapmanager\">Home</a></p>";
 
     std::cout   << "Status: " << code                       << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
@@ -372,7 +405,6 @@ bool manager_cgi::verify()
         }
     }
 
-#if 0
     {
         // WARNING: do not use std::string because nullptr will crash
         //
@@ -385,6 +417,11 @@ bool manager_cgi::verify()
 #ifdef _DEBUG
         //SNAP_LOG_DEBUG("HTTP_HOST=")(http_host);
 #endif
+
+#if 0
+        // we test that it is not null, but we accept access with plain IP
+        // addresses (which may be used for the first few accesses)
+        //
         if(tcp_client_server::is_ipv4(http_host))
         {
             SNAP_LOG_ERROR("The host cannot be an IPv4 address.");
@@ -407,8 +444,8 @@ bool manager_cgi::verify()
             snap::server::block_ip(remote_addr, "week");
             return false;
         }
-    }
 #endif
+    }
 
     {
         // WARNING: do not use std::string because nullptr will crash
@@ -430,24 +467,62 @@ bool manager_cgi::verify()
         // snapmanager.cgi without specifying /cgi-bin/... which is not
         // correct
         //
-        if(strncasecmp(request_uri, "/cgi-bin/", 9) != 0)
+        if(strncasecmp(request_uri, "/cgi-bin/", 9) == 0)
         {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
+            error(
+                "404 Page Not Found",
+                "We could not find the page you were looking for.",
+                (std::string("The REQUEST_URI must be \"/snapmanager\", it cannot include \"/cgi-bin/\" as in \"") + request_uri + "\".").c_str());
             snap::server::block_ip(remote_addr);
             return false;
         }
 
-        // if we receive this, someone is trying to log in through the XMLRPC
-        // interface, however, we do not offer that feature in snapmanager.cgi
+        // once the index.html page is blocked, we would end up with a 404
+        // instead we can just redirect the user to /snapmanager
         //
-        if(strncasecmp(request_uri, "/xmlrpc", 7) == 0)
+        if(strcmp(request_uri, "/") == 0)
         {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "snapmanager.cgi has no XMLRPC interface.");
-            snap::server::block_ip(remote_addr, "year");
+            SNAP_LOG_FATAL("Redirect user to \"/snapmanager\".");
+
+            // We use 302 so it will be possible to see the index.html again
+            // if we decide to set the status back to "new"
+            //
+            // We already tested and know that `http_host != nullptr`
+            //
+            char const * http_host(getenv("HTTP_HOST"));
+            std::cout   << "Status: 302"                                       << std::endl
+                        << "Location: https://" << http_host << "/snapmanager" << std::endl
+                        << "Expires: Sun, 19 Nov 1978 05:00:00 GMT"            << std::endl
+                        << "Connection: close"                                 << std::endl
+                        << std::endl
+                        ;
+            return false;
+        }
+
+        // make sure the user is trying to access exactly "/snapmanager/?"
+        // (with the '/' and '?' being optional)
+        //
+        // at this point we do not support any other paths
+        //
+        if(strcasecmp(request_uri, "/snapmanager") != 0
+        && strcasecmp(request_uri, "/snapmanager/") != 0
+        && strncasecmp(request_uri, "/snapmanager?", 13) != 0
+        && strncasecmp(request_uri, "/snapmanager/?", 14) != 0)
+        {
+            error(
+                "404 Page Not Found",
+                "We could not find the page you were looking for.",
+                (std::string("The REQUEST_URI must be \"/snapmanager\", not \"") + request_uri + "\".").c_str());
+            snap::server::block_ip(remote_addr);
             return false;
         }
 
         // We do not allow any kind of proxy
+        //
+        // Note: Yes. This is not required at this point since we check that
+        //       the path is "/snapmanager" and since it starts with "/"...
+        //       However, we may change that later and we think it is
+        //       preferable to keep things this way.
         //
         if(*request_uri != '/')
         {
@@ -519,8 +594,8 @@ bool manager_cgi::verify()
 int manager_cgi::process()
 {
     // WARNING: do not use std::string because nullptr will crash
-    char const * request_method( getenv("REQUEST_METHOD") );
-    if(request_method == nullptr)
+    char const * request_method_str( getenv("REQUEST_METHOD") );
+    if(request_method_str == nullptr)
     {
         // the method was already checked in verify(), before this
         // call so it should always be defined here...
@@ -536,11 +611,23 @@ int manager_cgi::process()
                     << "X-Powered-By: snapmanager.cgi"          << std::endl
                     << std::endl
                     << body;
-        return false;
+        return 0;
     }
+    std::string request_method(request_method_str);
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 #endif
+
+    if(request_method == "POST")
+    {
+        // a form posted?
+        // convert the POST variables in a map
+        //
+        if(read_post_variables() != 0)
+        {
+            return 1;
+        }
+    }
 
     // retrieve the query string, that's all we use in this one (i.e.
     // at this point we ignore the path)
@@ -554,7 +641,20 @@ int manager_cgi::process()
         f_uri.set_query_string(QString::fromUtf8(query_string));
     }
 
-    if(strcmp(request_method, "POST") == 0)
+    // make sure the user is logged in
+    //
+    {
+        int const r(is_logged_in(request_method));
+        if(r != 0)
+        {
+            // return value is 2 if we are showing the logging screen
+            // and 1 in all other cases (i.e. errors)
+            //
+            return r == 2 ? 0 : 1;
+        }
+    }
+
+    if(request_method == "POST")
     {
         if(process_post() != 0)
         {
@@ -605,6 +705,7 @@ int manager_cgi::process()
                 << "Connection: close"                      << std::endl
                 << "Content-Type: text/html; charset=utf-8" << std::endl
                 << "Content-Length: " << body.length()      << std::endl
+                << f_cookie
                 << "X-Powered-By: snapmanager.cgi"          << std::endl
                 << std::endl
                 << body;
@@ -665,16 +766,509 @@ int manager_cgi::read_post_variables()
 }
 
 
+int manager_cgi::is_logged_in(std::string & request_method)
+{
+    // session duration (TODO: make a parameter from the .conf)
+    //
+    int64_t const session_duration(3 * 24 * 60 * 60);
+
+    auto login_form = [&](std::string const error_msg = "", bool logout = false)
+    {
+        snap::file_content login_page("/usr/share/snapwebsites/html/snapmanager/snapmanagercgi-login.html");
+        if(!login_page.read_all())
+        {
+            return error(
+                      "500 Internal Server Error"
+                    , "An internal error occurred."
+                    , "Could not load the login page from /usr/share/snapwebsites/html/snapmanager/snapmanagercgi-login.html");
+        }
+        std::string cookie;
+        if(logout)
+        {
+            // delete the cookie on the client side when logging out
+            //
+            cookie += "Set-Cookie: snapmanager=void; Expires=Thu, 01-Jan-1970 00:00:01 GMT; Path=/; Secure; HttpOnly\n";
+        }
+        std::string login_html(login_page.get_content());
+        boost::replace_all(login_html, "@error@", error_msg);
+        std::cout   //<< "Status: 200 OK"                         << std::endl
+                    << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"   << std::endl
+                    << "Connection: close"                       << std::endl
+                    << "Content-Type: text/html; charset=utf-8"  << std::endl
+                    << "Content-Length: " << login_html.length() << std::endl
+                    << cookie
+                    << "X-Powered-By: snapmanager.cgi"           << std::endl
+                    << std::endl
+                    << login_html;
+
+        // it worked--return 2
+        return 2;
+    };
+
+    auto read_user_info = [&](std::string const & user_name, std::map<std::string, std::string> & user_info)
+    {
+        user_info.clear();
+
+        snap::file_content user_ref(g_session_path + ("/" + user_name) + ".user");
+        if(user_ref.read_all())
+        {
+            std::string const content(user_ref.get_content());
+
+            std::vector<std::string> lines;
+            snap::NOTUSED(snap::tokenize_string(lines, content, "\n", true, " "));
+
+            for(auto line : lines)
+            {
+                std::vector<std::string> name_value;
+                snap::NOTUSED(snap::tokenize_string(name_value, line, ":", false, " "));
+                if(name_value.size() != 2)
+                {
+                    return error(
+                              "500 Internal Server Error"
+                            , "User session reference is invalid."
+                            , "A line was not exactly composed of a field name and value.");
+                }
+                user_info[name_value[0]] = name_value[1];
+            }
+        }
+        return 0;
+    };
+
+    auto write_user_info = [&](std::string const & user_name, std::map<std::string, std::string> & user_info)
+    {
+        std::ofstream user_file;
+        user_file.open(g_session_path + ("/" + user_name) + ".user");
+        if(!user_file.is_open())
+        {
+            return error(
+                      "500 Internal Server Error"
+                    , "Could not save user session information."
+                    , "The syste could not open the user session information file.");
+        }
+        for(auto f : user_info)
+        {
+            user_file << f.first << ": " << f.second << "\n";
+        }
+        return 0;
+    };
+
+    auto setup_cookie = [&](std::string const & session_id)
+    {
+        // we are logged in and session_id needs to be saved in the cookie
+        //
+        // TODO: add the domain, which should come from the .conf
+        //
+        // Note: session_id is a set of hexadecimal digits so it is safe to
+        //       save it as is in the cookie
+        //
+        // Note: we add 5 min. to the duration so the age on the client side
+        //       can be a bit off and we should not inadvertendly lose the
+        //       connection
+        //
+        f_cookie = "Set-Cookie: snapmanager=" + session_id
+                 + "; Max-Age=" + std::to_string(session_duration + 300)
+                 + "; Path=/; Secure; HttpOnly\n";
+    };
+
+    // try to log the user in on a POST
+    // verify whether the user is logged in on a GET
+    // if not logged in, display the login form
+    //
+    std::string session_id;
+
+    bool const logout(f_uri.has_query_option("logout"));
+    if(request_method == "POST" && !logout)
+    {
+        // check whether this is a log in attempt or another POST
+        //
+        auto const & user_login_it(f_post_variables.find("user_login"));
+        auto const & user_name_it(f_post_variables.find("user_name"));
+        auto const & user_password_it(f_post_variables.find("user_password"));
+
+        if(user_login_it != f_post_variables.end()
+        && user_name_it != f_post_variables.end()
+        && user_password_it != f_post_variables.end())
+        {
+            SNAP_LOG_TRACE("Received data from logging form, processing...");
+
+            f_user_name = user_name_it->second;
+            std::string const user_password(user_password_it->second);
+
+            // check that the user exists and that the password is correct
+            // for that user
+            //
+            // for that to work, we use the snappassword tool which can become
+            // root on a --check command
+            //
+            std::string const command("snappassword --check --username "
+                                     + f_user_name
+                                     + " --password "
+                                     + user_password
+                                     + " >>/var/log/snapwebsites/secure/snappassword.log 2>&1");
+            int const r(system(command.c_str()));
+            if(r != 0)
+            {
+                if(WIFEXITED(r)
+                && WEXITSTATUS(r) == 2)
+                {
+                    // WARNING: The log statement uses the "secure" version
+                    //          because the "user_name" variable could
+                    //          include the user's password (it happens
+                    //          that people space out and type their
+                    //          password in the user_name field...)
+                    //
+                    SNAP_LOG_INFO(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                 ("Credential check failed. User \"")
+                                 (f_user_name)
+                                 ("\" will not get logged in.");
+
+                    // invalid credentials
+                    //
+                    // TODO: somehow we should show an error of some sort...
+                    //
+                    return login_form("Invalid credentials. Please try again.");
+                }
+                return error(
+                          "500 Internal Server Error"
+                        , "An internal error occurred."
+                        , "Somehow the snappassword command failed.");
+            }
+
+            // user credentials were accepted, generate a session and a cookie
+            //
+            // loop until we get a unique session ID, it should be really rare
+            // since the session_id is 16 bytes
+            //
+            // Note: we use open(2) so we can have the O_EXCL & O_CREAT flags
+            //       used together to avoid any kind of race condition
+            //
+            std::string session_path;
+            int session_fd(-1);
+            do
+            {
+                unsigned char buf[16];
+                int const rs(RAND_bytes(buf, sizeof(buf)));
+                if(rs != 1)
+                {
+                    return error(
+                              "500 Internal Server Error"
+                            , "Could not generate a session number."
+                            , "Somehow RAND_bytes() failed.");
+                }
+                session_id = snap::bin_to_hex(std::string(reinterpret_cast<char *>(buf), sizeof(buf)));
+                session_path = g_session_path + ("/" + session_id) + ".session";
+
+                session_fd = open(session_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0700);
+            }
+            while(session_fd == -1);
+            std::unique_ptr<int, decltype(&close_file)> raii_session_fd(&session_fd, close_file);
+
+            // check whether a user reference already exists, if so delete the
+            // old session
+            //
+            std::map<std::string, std::string> user_info;
+            if(read_user_info(f_user_name, user_info) != 0)
+            {
+                return 1;
+            }
+
+            if(user_info.find("Session") != user_info.end())
+            {
+                std::string const old_session_id(user_info["Session"]);
+                unlink((g_session_path + ("/" + old_session_id) + ".session").c_str());
+            }
+
+            // clear in case we make changes with various version it is safer
+            //
+            user_info.clear();
+            user_info["Session"] = session_id;
+            std::string const now(std::to_string(time(nullptr)));
+            user_info["Date"] = now;
+            user_info["Last-Access"] = now;
+
+            if(write_user_info(f_user_name, user_info) != 0)
+            {
+                return 1;
+            }
+
+            // the session file is just the user name
+            // we just add a newline for courtesy
+            //
+            std::string const line(f_user_name + "\n");
+            if(::write(session_fd, line.c_str(), line.length()) != static_cast<ssize_t>(line.length()))
+            {
+                raii_session_fd.reset();
+                unlink(session_path.c_str());
+
+                return error(
+                          "500 Internal Server Error"
+                        , "Could not properly log you in."
+                        , "The write to the session file failed.");
+            }
+
+            // "forget" about the POST, it is not compatible with the other
+            // posts and we already used up the data here
+            //
+            request_method = "GET";
+
+            SNAP_LOG_INFO("User \"")
+                         (f_user_name)
+                         ("\" is logged in.");
+
+            setup_cookie(session_id);
+            return 0;
+        }
+    }
+
+    if(request_method == "GET" || request_method == "POST")
+    {
+        // the GET must have a cookie or we immediately display the login form
+        //
+        char const * http_cookies(getenv("HTTP_COOKIE"));
+        if(http_cookies == nullptr)
+        {
+            // no cookies, the user is not logged in yet, present the login screen
+            //
+            // Note that we reach here even on a POST or HEAD...
+            //
+            return login_form();
+        }
+
+        // we have cookies, make sure one of them is our cookie
+        // and if so, check whether the session is still valid
+        //
+        std::vector<std::string> cookies;
+        snap::NOTUSED(snap::tokenize_string(cookies, http_cookies, ";", true, " "));
+
+        // TBD: could we use the snap_uri() class to handle the raw cookie data?
+
+        for(auto c : cookies)
+        {
+            std::vector<std::string> name_value;
+            snap::NOTUSED(snap::tokenize_string(name_value, c, "=", true, " "));
+            if(name_value.size() != 2)
+            {
+                continue;
+            }
+
+            std::string const cookie_name(snap::snap_uri::urldecode(QString::fromUtf8(name_value[0].c_str()), true).toUtf8().data());
+            if(cookie_name != "snapmanager")
+            {
+                SNAP_LOG_TRACE("Found cookie \"")(cookie_name)("\", ignore.");
+                continue;
+            }
+
+            SNAP_LOG_INFO("Found \"snapmanager\" cookie. Checking validity.");
+
+            // we found out cookie, get the value (i.e. session ID)
+            //
+            std::string const attempt_session_id(snap::snap_uri::urldecode(QString::fromUtf8(name_value[1].c_str()), true).toUtf8().data());
+            if(attempt_session_id.length() != 16 * 2)
+            {
+                // invalid cookie
+                //
+                SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                ("Cookie value (")
+                                (attempt_session_id)
+                                (") is not exactly 32 characters as expected.");
+                break;
+            }
+
+            // this is the correct length
+            //
+            try
+            {
+                // verify that it is hexadecimal, but we do not care about
+                // the binary code here
+                //
+                snap::NOTUSED(snap::hex_to_bin(attempt_session_id));
+
+                std::string const session_filename(g_session_path + ("/" + attempt_session_id) + ".session");
+                snap::file_content session_data(session_filename);
+                if(!session_data.read_all())
+                {
+                    // invalid cookie
+                    //
+                    SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                    ("No session corresponds to cookie \"")
+                                    (attempt_session_id)
+                                    ("\".");
+                    break;
+                }
+                f_user_name = session_data.get_content();
+                if(f_user_name.empty())
+                {
+                    // invalid cookie
+                    //
+                    SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                    ("File of session \"")
+                                    (attempt_session_id)
+                                    ("\" is empty.");
+                    break;
+                }
+
+                // lose the ending '\n' if present
+                //
+                if(f_user_name[f_user_name.length() - 1] == '\n')
+                {
+                    f_user_name.resize(f_user_name.length() - 1);
+                }
+
+                // with the user name we can read the user file
+                // and make sure the session is still valid by
+                // checking the date
+                //
+                std::map<std::string, std::string> user_info;
+                if(read_user_info(f_user_name, user_info) != 0)
+                {
+                    // invalid cookie
+                    //
+                    SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                    ("File of session \"")
+                                    (attempt_session_id)
+                                    ("\" references user \"")
+                                    (f_user_name)
+                                    ("\" who does not have a corresponding user file.");
+                    return 1;
+                }
+
+                if(user_info.find("Session") == user_info.end()
+                || user_info.find("Last-Access") == user_info.end())
+                {
+                    // invalid cookie
+                    //
+                    SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                    ("User file of \"")
+                                    (f_user_name)
+                                    ("\" is missing some information (no Session or Last-Access field found.)");
+                    break;
+                }
+                std::string const existing_session_id(user_info["Session"]);
+                if(existing_session_id != attempt_session_id)
+                {
+                    // invalid cookie
+                    //
+                    SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                    ("User file for \"")
+                                    (f_user_name)
+                                    ("\" has session \"")
+                                    (existing_session_id)
+                                    ("\" and the cookie we received has session \"")
+                                    (attempt_session_id)
+                                    ("\".");
+                    break;
+                }
+
+                if(logout)
+                {
+                    // void the session
+                    //
+                    user_info["Last-Access"] = "0";
+                    if(write_user_info(f_user_name, user_info) != 0)
+                    {
+                        SNAP_LOG_ERROR("Could not save the user \"")
+                                      (f_user_name)
+                                      ("\" new Last-Access information.");
+                        return 1;
+                    }
+
+                    unlink(session_filename.c_str());
+                    return login_form("Your were logged out.", true);
+                }
+
+                time_t const last_access(boost::lexical_cast<time_t>(user_info["Last-Access"]));
+                time_t const now(time(nullptr));
+                if(now < last_access + session_duration)
+                {
+                    // user is still logged in (i.e. the session did not yet
+                    // time out)
+                    //
+                    session_id = attempt_session_id;
+
+                    // extend the session
+                    //
+                    user_info["Last-Access"] = std::to_string(now);
+                    if(write_user_info(f_user_name, user_info) != 0)
+                    {
+                        SNAP_LOG_ERROR("Could not save the user \"")
+                                      (f_user_name)
+                                      ("\" new Last-Access information.");
+                        return 1;
+                    }
+                }
+                else
+                {
+                    SNAP_LOG_WARNING(snap::logging::log_security_t::LOG_SECURITY_SECURE)
+                                    ("The session of user \"")
+                                    (f_user_name)
+                                    ("\" has expired.");
+
+                    // session timed out, get rid of it
+                    //
+                    unlink(session_filename.c_str());
+
+                    // in this case we want to inform the user why he
+                    // is not logged in
+                    //
+                    return login_form("Your session timed out.");
+                }
+            }
+            catch(snap::string_exception_invalid_parameter const &)
+            {
+                // conversion failed, not too surprising from a
+                // tainted variable, ignore; user is not logged in
+                //
+                SNAP_LOG_ERROR("A session parameter is not valid.");
+            }
+            catch(boost::bad_lexical_cast const &)
+            {
+                // this should not happen... we convert a number from a
+                // file that end users have no access to
+                //
+                SNAP_LOG_ERROR("The Last-Access parameter of some user is not a valid decimal number.");
+            }
+
+            // we only check the first cookie named "snapmanager"
+            // whether it failed or not
+            //
+            break;
+        }
+
+        // if no session was defined, then the user is not logged in
+        // so we show him the login form
+        //
+        if(session_id.empty())
+        {
+            SNAP_LOG_ERROR("Cookie auto-login failed. Offer login form again.");
+
+            // there is no specific error in this case, it should not
+            // happen unless some sort of error occurs
+            //
+            return login_form();
+        }
+
+        setup_cookie(session_id);
+        return 0;
+    }
+
+    SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
+    std::string const body("<html><head><title>Method Not Allowed</title></head><body><h1>Method Not Allowed</h1><p>Sorry. We only support GET and POST.</p></body></html>");
+    std::cout   << "Status: 405 Method Not Allowed"         << std::endl
+                << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                << "Allow: GET, POST"                       << std::endl
+                << "Connection: close"                      << std::endl
+                << "Content-Type: text/html; charset=utf-8" << std::endl
+                << "Content-Length: " << body.length()      << std::endl
+                << "X-Powered-By: snapamanager.cgi"         << std::endl
+                << std::endl
+                << body;
+    return 1;
+}
+
+
 int manager_cgi::process_post()
 {
     SNAP_LOG_WARNING("processing POST now!");
-
-    // convert the POST variables in a map
-    //
-    if(read_post_variables() != 0)
-    {
-        return 1;
-    }
 
     // check that the plugin name is defined
     //
