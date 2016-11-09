@@ -380,7 +380,7 @@ void Session::add_ssl_keys()
  */
 cluster Session::getCluster() const
 {
-    if( !f_data->f_cluster() )
+    if( !f_data->f_cluster )
     {
         throw exception_t( "The cluster is not connected!" );
     }
@@ -392,7 +392,7 @@ cluster Session::getCluster() const
  */
 session Session::getSession() const
 {
-    if( !f_data->f_session() )
+    if( !f_data->f_session )
     {
         throw exception_t( "The session is not connected!" );
     }
