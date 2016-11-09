@@ -30,10 +30,12 @@
 #
 
 
-#################################################################################
+################################################################################
 ## Save SRC files in their own directory. These are not compiled, just stand
 ## as source inputs for other projects as needed.
 ##
+project( snapbasetests )
+
 install(
     FILES
         snap_tests.cpp

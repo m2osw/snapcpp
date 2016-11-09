@@ -31,12 +31,14 @@
 #
 project( snamanagercgi )
 
+
 include_directories(
     SYSTEM
         ${Qt5Core_INCLUDE_DIRS}
         ${Qt5Network_INCLUDE_DIRS}
         ${Qt5Xml_INCLUDE_DIRS}
 )
+
 
 include_directories(
     ${PROJECT_BINARY_DIR}
@@ -54,7 +56,6 @@ add_executable( ${PROJECT_NAME}
     snapmanagercgi.cpp
 )
 
-set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snapmanager.cgi )
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries( ${PROJECT_NAME}
@@ -71,7 +72,23 @@ target_link_libraries( ${PROJECT_NAME}
     dl
 )
 
-install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib/cgi-bin )
+
+set_property(
+    TARGET
+        ${PROJECT_NAME}
+
+    PROPERTY OUTPUT_NAME
+        snapmanager.cgi
+)
+
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        lib/cgi-bin
+)
 
 
 # vim: ts=4 sw=4 et nocindent

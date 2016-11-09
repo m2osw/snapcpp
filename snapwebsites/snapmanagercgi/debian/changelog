@@ -1,8 +1,12 @@
-snapmanagercgi (1.2.32.1~xenial) xenial; urgency=high
+snapmanagercgi (1.2.33.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-509: Ignore all parameters on command line of snapmanager.cgi.
+  * Changed snapmanager-apache2.conf to use RewriteRule which prevents unwanted
+    access (because all is sent to snapmanager.cgi which is in control).
+  * SNAP-110: Moved snapmanager.cgi to /var/www/snapmanager/cgi-bin so it is
+    not universally accessible.
 
- -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 08 Nov 2016 12:24:50 -0800
 
 snapmanagercgi (1.2.32.0~xenial) xenial; urgency=high
 

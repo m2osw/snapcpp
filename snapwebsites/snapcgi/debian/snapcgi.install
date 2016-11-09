@@ -1,7 +1,9 @@
-usr/lib/*
+usr/lib/cgi-bin/snap.cgi var/www/snap/cgi-bin/
 usr/share/snapwebsites/*
+conf/index.html conf/favicon.ico conf/snap-logo.png var/www/snap/public_html/
 conf/snapcgi.conf etc/snapwebsites/
 conf/snapcgi.properties etc/snapwebsites/logger/
 conf/000-snap-apache2-default-80.conf conf/000-snap-apache2-default-443.conf conf/000-snap-apache2-default-any.conf etc/apache2/sites-available/
 conf/README.md etc/apache2/snap-conf/
 conf/default-README.md etc/apache2/snap-conf/default/
+conf/snap-apache2-cgi.conf conf/snap-apache2-log.conf conf/snap-apache2-root.conf etc/apache2/snap-others/

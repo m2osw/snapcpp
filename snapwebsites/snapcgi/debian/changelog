@@ -1,8 +1,12 @@
-snapcgi (1.1.4.2~xenial) xenial; urgency=high
+snapcgi (1.1.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-509: Ignore all parameters on command line of snap.cgi.
+  * SNAP-110: Moved snap.cgi to /var/www/snap/cgi-bin so it is not
+    universally accessible.
+  * Adding a default website for snap, although it should not be reachable.
+  * Further broke up the Apache2 settings so it can be shared.
 
- -- Build Server <build@m2osw.com>  Mon, 07 Nov 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 08 Nov 2016 12:24:50 -0800
 
 snapcgi (1.1.4.0~xenial) xenial; urgency=high
 
