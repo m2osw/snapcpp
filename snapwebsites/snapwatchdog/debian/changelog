@@ -1,8 +1,8 @@
-snapwatchdog (0.2.14.18~xenial) xenial; urgency=high
+snapwatchdog (0.2.15.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Increased stop wait from 1 min. to 3 min.
 
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:50 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 22:27:47 -0700
 
 snapwatchdog (0.2.14.0~xenial) xenial; urgency=high
 

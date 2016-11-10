@@ -16,11 +16,12 @@ then
     rm -f /etc/snapwebsites/snapwebsites.d/snapcgi.conf
 
     # delete user editable files and directories that we manage
+    # files may have a .bak hence the "*" at the end
     # (i.e. other than the default domain, we do not touch)
     #
-    rm -f /etc/apache2/snap-conf/snap-apache2-maintenance.conf
-    rm -f /etc/apache2/snap-conf/snap-apache2-vhost-security.conf
-    rm -f /etc/apache2/snap-conf/default/*.conf
+    rm -f /etc/apache2/snap-conf/snap-apache2-maintenance.conf*
+    rm -f /etc/apache2/snap-conf/snap-apache2-vhost-security.conf*
+    rm -f /etc/apache2/snap-conf/default/*.conf*
     for subdir in /etc/apache2/snap-conf/*
     do
         if test -d "$subdir"

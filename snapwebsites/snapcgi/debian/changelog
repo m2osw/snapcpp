@@ -1,8 +1,8 @@
-snapcgi (1.1.5.1~xenial) xenial; urgency=high
+snapcgi (1.1.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Properly erase backup files from /etc/apache2/snap-conf.
 
- -- Build Server <build@m2osw.com>  Wed, 09 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 22:27:47 -0700
 
 snapcgi (1.1.5.0~xenial) xenial; urgency=high
 

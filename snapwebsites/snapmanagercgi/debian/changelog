@@ -1,8 +1,11 @@
-snapmanagercgi (1.2.38.1~xenial) xenial; urgency=high
+snapmanagercgi (1.2.39.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-509: Allow favicon.ico to go through.
+  * SNAP-110: Increased stop wait from 1 min. to 5 min.
+  * Create /etc/apache2/snap-conf instead of /usr/share/snapwebsites/...
+  * Removed the /etc/apache2/snap-conf/snapmanager on a purge.
 
- -- Build Server <build@m2osw.com>  Wed, 09 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 22:27:47 -0700
 
 snapmanagercgi (1.2.38.0~xenial) xenial; urgency=high
 
