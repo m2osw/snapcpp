@@ -1,8 +1,9 @@
 snapmanagercgi (1.2.40.1~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: On a "remove" we have to cancel the dpkg callback.
+    (a.k.a. delete the /etc/dpkg/dpkg.cfg.d/snapmanager-dpkg-update script)
 
- -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 11:34:49 -0800
 
 snapmanagercgi (1.2.40.0~xenial) xenial; urgency=high
 
