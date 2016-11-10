@@ -1,3 +1,9 @@
+snapbase (1.0.28.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:48 -0800
+
 snapbase (1.0.28.0~xenial) xenial; urgency=high
 
   * SNAP-512: Moved the snapwebsites user/group to the preinst.

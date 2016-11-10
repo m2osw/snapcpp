@@ -1,3 +1,9 @@
+snapcgi (1.1.7.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:48 -0800
+
 snapcgi (1.1.7.0~xenial) xenial; urgency=high
 
   * SNAP-110: As I moved snap.cgi, I removed the installation of libcgi.so.

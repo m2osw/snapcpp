@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.40.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:49 -0800
+
 snapmanagercgi (1.2.40.0~xenial) xenial; urgency=high
 
   * SNAP-110: Made the ServerName a comment by default again.
