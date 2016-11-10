@@ -1,3 +1,10 @@
+snapmanagercgi (1.2.40.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Made the ServerName a comment by default again.
+  * Changed the field to a WARNING if ServerName is commented.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 23:48:47 -0700
+
 snapmanagercgi (1.2.39.0~xenial) xenial; urgency=high
 
   * SNAP-509: Allow favicon.ico to go through.

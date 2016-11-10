@@ -1820,7 +1820,10 @@ void snap_communicator::snap_connection::process_error()
     }
     else
     {
-        SNAP_LOG_WARNING("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
+        // this happens all the time, so we changed the WARNING into a
+        // DEBUG, too much logs by default otherwise...
+        //
+        SNAP_LOG_DEBUG("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
     }
 
     remove_from_communicator();
@@ -3040,8 +3043,11 @@ void snap_communicator::snap_pipe_buffer_connection::process_read()
             }
             else //if(r < 0)
             {
+                // this happens all the time (i.e. another process quits)
+                // so we make it a debug and not a warning or an error...
+                //
                 int const e(errno);
-                SNAP_LOG_ERROR("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
+                SNAP_LOG_DEBUG("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
                 process_error();
                 return;
             }
