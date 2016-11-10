@@ -1,19 +1,11 @@
 #!/bin/sh -e
 
-#DEBHELPER#
-
-# Source debconf library.
-. /usr/share/debconf/confmodule
-
-
 if [ "$1" = "configure" ]
 then
-    # The name disparity is because snapbase installs the logs for
-    # the snapserver and snapbackend packages
-    #
-    PACKAGENAME=snapserver
-
     # add snapwebsites user and group if not there already
+    #
+    # this is done before the #DEBHELPER# script which starts the snapbootinit
+    # "too soon" otherwise
     #
     if ! getent group snapwebsites >/dev/null
     then
@@ -32,6 +24,21 @@ then
             -gecos "Snapwebsites Daemons and Tools" \
             snapwebsites
     fi
+fi
+
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+
+if [ "$1" = "configure" ]
+then
+    # The name disparity is because snapbase installs the logs for
+    # the snapserver and snapbackend packages
+    #
+    PACKAGENAME=snapserver
 
     # make the snapwebsites log directory
     # make sure that apache2 can write in there because of snapcgi.log
