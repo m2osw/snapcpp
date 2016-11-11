@@ -1,8 +1,8 @@
-libqtcassandra (0.6.8.6~xenial) xenial; urgency=high
+libqtcassandra (0.6.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-147: Fixed text of exception.
 
- -- Build Server <build@m2osw.com>  Sat, 05 Nov 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 23:10:48 -0700
 
 libqtcassandra (0.6.8.0~xenial) xenial; urgency=high
 

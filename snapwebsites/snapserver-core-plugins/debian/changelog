@@ -1,20 +1,14 @@
-snapserver-core-plugins (1.0.15.15~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-147: Added support to add the capture attribute to the file input.
 
- -- Build Server <build@m2osw.com>  Thu, 27 Oct 2016 02:00:47 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 23:12:47 -0700
 
 snapserver-core-plugins (1.0.15.0~xenial) xenial; urgency=high
 
   * SNAP-501: Added new doc-only packages.
 
  -- Doug Barbieri <doug@kosh>  Wed, 26 Oct 2016 17:11:25 -0700
-
-snapserver-core-plugins (1.0.14.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:49 -0700
 
 snapserver-core-plugins (1.0.14.0~xenial) xenial; urgency=high
 

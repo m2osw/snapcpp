@@ -2,6 +2,7 @@ snapdbproxy (1.1.27.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added test in logrotate script to skip the postrotate in
     case snapsignal is not available anymore.
+  * Fixed --help output of snapinstallwebsite to mention the ?intall-layouts=.
 
  -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
 
