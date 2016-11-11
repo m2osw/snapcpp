@@ -2172,7 +2172,7 @@ void server::process_message(snap_communicator_message const & message)
         reply.set_command("COMMANDS");
 
         // list of commands understood by server
-        reply.add_parameter("list", "CASSANDRAREADY,HELP,LOG,NOCASSANDRA,QUITTING,READY,RELOADCONFIG,STATUS,STOP,UNKNOWN");
+        reply.add_parameter("list", "CASSANDRAREADY,FIREWALLUP,HELP,LOG,NOCASSANDRA,QUITTING,READY,RELOADCONFIG,STATUS,STOP,UNKNOWN");
 
         std::dynamic_pointer_cast<messenger>(g_connection->f_messenger)->send_message(reply);
         return;
