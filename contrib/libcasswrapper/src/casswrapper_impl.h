@@ -140,6 +140,8 @@ public:
     void wait() const;
     void reset() { f_ptr.reset(); }
 
+    CassFuture* get() const { return f_ptr.get(); }
+
     bool operator ==( const future& );
     bool operator !=( const future& );
 

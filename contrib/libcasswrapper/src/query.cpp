@@ -480,9 +480,10 @@ void Query::bindMap( const size_t num, const string_map_t& value )
 
 void Query::queryCallbackFunc( void* f, void *data )
 {
-    future*          this_future( reinterpret_cast<future*>(f) );
-    Query* this_query( reinterpret_cast<Query*>(data) );
-    if( *(this_query->f_sessionFuture.get()) != *this_future )
+    const CassFuture*   this_future( reinterpret_cast<const CassFuture*>(f) );
+    Query*              this_query( reinterpret_cast<Query*>(data) );
+    //
+    if( this_query->f_sessionFuture->get() != this_future )
     {
         //throw exception_t( "Unexpected future!" );
         // Do nothing with this future, because this belongs to a different query
