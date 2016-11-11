@@ -1,3 +1,10 @@
+snapmanagercgi (1.2.43.0~xenial) xenial; urgency=high
+
+  * SNAP-110: The server_name must be highlighted and not be a warning when
+    it is commented out. Otherwise we cannot edit the field at all.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
+
 snapmanagercgi (1.2.42.0~xenial) xenial; urgency=high
 
   * SNAP-110: Actually the script needs to work whether things are installed
