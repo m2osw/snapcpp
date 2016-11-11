@@ -1,3 +1,9 @@
+snapdbproxy (1.1.27.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
+
 snapdbproxy (1.1.27.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added test in logrotate script to skip the postrotate in

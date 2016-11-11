@@ -1,3 +1,9 @@
+snaplog (1.0.10.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:50 -0800
+
 snaplog (1.0.10.0~xenial) xenial; urgency=high
 
   * SNAP-110: CRON script must be smart enough to not execute if the snaplog

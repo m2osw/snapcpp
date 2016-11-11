@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.49.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
+
 libsnapwebsites (1.1.49.0~xenial) xenial; urgency=high
 
   * SNAP-110: The FIREWALLUP message was not documented in COMMANDS.
