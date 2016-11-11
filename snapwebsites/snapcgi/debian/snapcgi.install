@@ -1,4 +1,5 @@
 usr/lib/cgi-bin/snap.cgi var/www/snap/cgi-bin/
+usr/lib/snapwebsites/* usr/lib/snapwebsites/
 usr/share/snapwebsites/*
 conf/index.html conf/favicon.ico conf/snap-logo.png var/www/snap/public_html/
 conf/snapcgi.conf etc/snapwebsites/

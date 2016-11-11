@@ -85,7 +85,7 @@ then
     # create the snapmanager sub-directory to put out ServerName/Webmaster
     # parameter that the user is likely to change
     #
-    mkdir -p /usr/share/snapwebsites/apache2/snapmanager
+    mkdir -p /etc/apache2/snap-conf/snapmanager
     cp -n /usr/share/snapwebsites/apache2/user-snap-apache2-snapmanager-common.conf /etc/apache2/snap-conf/snapmanager/snapmanager-apache2-common.conf
     cp -n /usr/share/snapwebsites/apache2/user-snap-apache2-snapmanager-443.conf /etc/apache2/snap-conf/snapmanager/snapmanager-apache2-443.conf
 

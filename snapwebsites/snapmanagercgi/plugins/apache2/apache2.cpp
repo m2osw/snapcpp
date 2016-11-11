@@ -250,7 +250,7 @@ void apache2::retrieve_status_of_conf(snap_manager::server_status & server_statu
                 // such as ""
                 //
                 snap_manager::status_t const conf_field(
-                                  snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                  snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT
                                 , get_plugin_name()
                                 , QString::fromUtf8((conf_namespace + "::server_name").c_str())
                                 , QString());

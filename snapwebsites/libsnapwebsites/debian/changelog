@@ -1,8 +1,14 @@
-libsnapwebsites (1.1.47.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.48.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:49 -0800
+
+libsnapwebsites (1.1.48.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Changed a couple of logs from error/warning to debug.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 23:47:49 -0800
 
 libsnapwebsites (1.1.47.0~xenial) xenial; urgency=high
 

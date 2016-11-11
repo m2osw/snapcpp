@@ -13,26 +13,6 @@ then
     #
     PACKAGENAME=snapserver
 
-    # add snapwebsites user and group if not there already
-    #
-    if ! getent group snapwebsites >/dev/null
-    then
-        addgroup --system snapwebsites
-    fi
-    #
-    if ! getent passwd snapwebsites >/dev/null
-    then
-        adduser --quiet \
-            --system \
-            --ingroup snapwebsites \
-            --disabled-login \
-            --disabled-password \
-            --home /var/lib/snapwebsites \
-            --no-create-home \
-            -gecos "Snapwebsites Daemons and Tools" \
-            snapwebsites
-    fi
-
     # make the snapwebsites log directory
     # make sure that apache2 can write in there because of snapcgi.log
     # (note: we should look into whether we could use root:adm like apache2)

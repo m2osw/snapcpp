@@ -1,8 +1,42 @@
-snapmanagercgi (1.2.38.2~xenial) xenial; urgency=high
+snapmanagercgi (1.2.43.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: The server_name must be highlighted and not be a warning when
+    it is commented out. Otherwise we cannot edit the field at all.
 
- -- Build Server <build@m2osw.com>  Wed, 09 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
+
+snapmanagercgi (1.2.42.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Actually the script needs to work whether things are installed
+    or not. That's the correct procedure under Debian. So do not remove
+    the /etc/dpkg/dpkg.cfg.d/snapmanager-dpkg-update script...
+  * Added test in logrotate script to skip the postrotate in
+    case snapsignal is not available anymore.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
+
+snapmanagercgi (1.2.41.0~xenial) xenial; urgency=high
+
+  * SNAP-110: On a "remove" we have to cancel the dpkg callback.
+    (a.k.a. delete the /etc/dpkg/dpkg.cfg.d/snapmanager-dpkg-update script)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 11:34:49 -0800
+
+snapmanagercgi (1.2.40.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Made the ServerName a comment by default again.
+  * Changed the field to a WARNING if ServerName is commented.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 23:48:47 -0700
+
+snapmanagercgi (1.2.39.0~xenial) xenial; urgency=high
+
+  * SNAP-509: Allow favicon.ico to go through.
+  * SNAP-110: Increased stop wait from 1 min. to 5 min.
+  * Create /etc/apache2/snap-conf instead of /usr/share/snapwebsites/...
+  * Removed the /etc/apache2/snap-conf/snapmanager on a purge.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Nov 2016 22:27:47 -0700
 
 snapmanagercgi (1.2.38.0~xenial) xenial; urgency=high
 

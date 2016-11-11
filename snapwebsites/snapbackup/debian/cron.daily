@@ -7,6 +7,10 @@
 # Important note: we are in cron.daily which means we run as root:root
 #
 
+# make sure we are still installed, if not exit right away
+#
+test -x /usr/bin/snapbackup || exit 0
+
 # get one of the hosts running Cassandra
 #
 . /etc/default/snapbackup

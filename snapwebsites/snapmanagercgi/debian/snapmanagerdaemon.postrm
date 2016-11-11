@@ -10,6 +10,7 @@ PACKAGENAME=snapmanagerdaemon
 SERVICES_DIR=/usr/share/snapwebsites/services
 rm -f $SERVICES_DIR/${PACKAGENAME}.service
 
+
 if [ "$1" = "purge" ]
 then
     # delete the data and cache files

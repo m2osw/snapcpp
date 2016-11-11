@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# if mysql is not installed anymore, ignore this script
+#
+test -x /usr/bin/mysql || exit 0
+
 # the host running MySQL
 #
 . /etc/default/snaplog
