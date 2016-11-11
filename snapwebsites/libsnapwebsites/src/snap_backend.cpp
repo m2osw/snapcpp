@@ -2010,6 +2010,12 @@ bool snap_backend::process_backend_uri(QString const & uri)
         // this is already done in process_action() so we have to reset the
         // pointer before we can call this function again otherwise it throws
         //
+
+        // keep a copy of the parent's cassandra pointer so it does not
+        // send unwanted messages when getting destroyed below.
+        //
+        QtCassandra::QCassandra::pointer_t cassandra(f_cassandra);
+
         snap_expr::expr::set_cassandra_context(nullptr);
         f_sites_table.reset();
         f_backend_table.reset();
