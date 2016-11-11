@@ -1,3 +1,9 @@
+snaplock (1.0.13.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Thu, 10 Nov 2016 20:21:22 -0800
+
 snaplock (1.0.13.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added test in logrotate script to skip the postrotate in
