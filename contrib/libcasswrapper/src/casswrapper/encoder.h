@@ -59,6 +59,11 @@ namespace {
     const uint64_t BUFFER_MAX_SIZE = 64 * 1024 * 1024;
 }
 
+inline uint64_t getBufferMaxSize()
+{
+    return BUFFER_MAX_SIZE;
+}
+
 // Verify final buffer size against limit
 inline void checkBufferSize(const uint64_t new_size)
 {
