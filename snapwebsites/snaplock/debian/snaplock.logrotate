@@ -6,7 +6,7 @@
     missingok
     rotate 10
     postrotate
-        /usr/bin/snapsignal snaplock/LOG
+        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal snaplock/LOG; fi
     endscript
     compress
     delaycompress
@@ -21,7 +21,7 @@
     missingok
     rotate 5
     postrotate
-        /usr/bin/snapsignal snaplock/LOG
+        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal snaplock/LOG; fi
     endscript
     compress
     delaycompress

@@ -1,8 +1,9 @@
-snapbackup (1.0.0.4~xenial) xenial; urgency=high
+snapbackup (1.0.1.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: CRON script must be smart enough to not execute if the snapbackup
+    package was removed (opposed to purge).
 
- -- Build Server <build@m2osw.com>  Mon, 07 Nov 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
 
 snapbackup (1.0.0.0~xenial) xenial; urgency=high
 

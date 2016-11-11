@@ -1,8 +1,9 @@
-snapbase (1.0.28.1~xenial) xenial; urgency=high
+snapbase (1.0.29.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Removed the server.log and secure.log entries from logrotate.
+    Those where in case we were using the log4cplus loggingserver.
 
- -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
 
 snapbase (1.0.28.0~xenial) xenial; urgency=high
 

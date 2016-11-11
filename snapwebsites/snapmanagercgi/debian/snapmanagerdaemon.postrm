@@ -11,16 +11,6 @@ SERVICES_DIR=/usr/share/snapwebsites/services
 rm -f $SERVICES_DIR/${PACKAGENAME}.service
 
 
-if [ "$1" = "remove" ]
-then
-    # when removing snapmanagerdaemon, there is nothing to signal
-    # anymore so we remove this script; it should get reinstalled
-    # (from the unpack process) properly on a new install
-    #
-    rm -f /etc/dpkg/dpkg.cfg.d/snapmanager-dpkg-update
-fi
-
-
 if [ "$1" = "purge" ]
 then
     # delete the data and cache files

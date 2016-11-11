@@ -1,8 +1,9 @@
-snapwatchdog (0.2.15.1~xenial) xenial; urgency=high
+snapwatchdog (0.2.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added test in logrotate script to skip the postrotate in
+    case snapsignal is not available anymore.
 
- -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
 
 snapwatchdog (0.2.15.0~xenial) xenial; urgency=high
 

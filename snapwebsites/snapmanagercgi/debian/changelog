@@ -1,4 +1,14 @@
-snapmanagercgi (1.2.40.1~xenial) xenial; urgency=high
+snapmanagercgi (1.2.42.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Actually the script needs to work whether things are installed
+    or not. That's the correct procedure under Debian. So do not remove
+    the /etc/dpkg/dpkg.cfg.d/snapmanager-dpkg-update script...
+  * Added test in logrotate script to skip the postrotate in
+    case snapsignal is not available anymore.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
+
+snapmanagercgi (1.2.41.0~xenial) xenial; urgency=high
 
   * SNAP-110: On a "remove" we have to cancel the dpkg callback.
     (a.k.a. delete the /etc/dpkg/dpkg.cfg.d/snapmanager-dpkg-update script)
