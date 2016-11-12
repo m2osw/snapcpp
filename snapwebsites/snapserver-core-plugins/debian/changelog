@@ -1,4 +1,4 @@
-snapserver-core-plugins (1.0.16.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.17.0~xenial) xenial; urgency=high
 
   * EX-133: Added a flag so we can ignore the User-Agent when verifying a user.
 
