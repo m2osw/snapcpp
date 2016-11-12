@@ -75,6 +75,8 @@ public:
 
     void reset() { f_ptr.reset(); }
 
+    friend class session;
+
 private:
     std::shared_ptr<CassBatch> f_ptr;
 };
@@ -359,8 +361,8 @@ public:
 
     session();
 
-    //schema_meta get_schema_meta() const;
     future      execute( const statement& ) const;
+    future      execute_batch( const batch& ) const;
     future      close() const;
     void        reset() { f_ptr.reset(); }
 

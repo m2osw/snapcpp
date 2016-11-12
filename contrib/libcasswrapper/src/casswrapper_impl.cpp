@@ -662,6 +662,14 @@ future session::execute( const statement& s ) const
 }
 
 
+future session::execute_batch( const batch& b ) const
+{
+    return future(
+            cass_session_execute_batch( f_ptr.get(), b.f_ptr.get() )
+            );
+}
+
+
 future session::close() const
 {
     return future( cass_session_close(f_ptr.get()) );
