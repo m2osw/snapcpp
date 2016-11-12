@@ -1,8 +1,8 @@
 snapserver-core-plugins (1.0.16.1~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-133: Added a flag so we can ignore the User-Agent when verifying a user.
 
- -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 16:42:49 -0800
 
 snapserver-core-plugins (1.0.16.0~xenial) xenial; urgency=high
 

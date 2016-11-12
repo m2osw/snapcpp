@@ -307,6 +307,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_VERIFY_EMAIL:
         return "users::verify_email";
 
+    case name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT:
+        return "users::verify_ignore_user_agent";
+
     case name_t::SNAP_NAME_USERS_WEBSITE_REFERENCE:
         return "users::website_reference";
 
@@ -1917,9 +1920,12 @@ void users::verify_user(content::path_info_t & ipath)
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
+    QtCassandra::QCassandraValue verify_ignore_user_agent(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT)));
     QString const path(info.get_object_path());
     if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-    || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0 && info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
+    || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0
+            && verify_ignore_user_agent.safeSignedCharValue(0, 0) == 0
+            && info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
     || path.mid(0, 6) != "/user/")
     {
         // it failed, the session could not be loaded properly

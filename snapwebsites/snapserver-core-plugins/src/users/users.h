@@ -90,6 +90,7 @@ enum class name_t
     SNAP_NAME_USERS_VERIFIED_IP,
     SNAP_NAME_USERS_VERIFIED_ON,
     SNAP_NAME_USERS_VERIFY_EMAIL,
+    SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT,
     SNAP_NAME_USERS_WEBSITE_REFERENCE
 };
 char const * get_name(name_t name) __attribute__ ((const));
