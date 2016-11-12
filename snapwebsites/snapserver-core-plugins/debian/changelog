@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.19.0~xenial) xenial; urgency=high
+
+  * EX-147: Fixed the regular expression so it works with Qt5.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 19:15:49 -0800
+
 snapserver-core-plugins (1.0.18.0~xenial) xenial; urgency=high
 
   * EX-147: Added support for mime-types (i.e. the accept=... in an <input>).

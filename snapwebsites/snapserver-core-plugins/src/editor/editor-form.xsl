@@ -129,7 +129,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                   <xsl:attribute name="capture">true</xsl:attribute>
                 </xsl:if>
                 <xsl:if test="filters/mime-types">
-                  <xsl:attribute name="accept"><xsl:value-of select="string-join(replace(filters/mime-types/mime, '^\s*(.+?)\s*$', '$1'), ',')"/></xsl:attribute>
+                  <xsl:attribute name="accept"><xsl:value-of select="string-join(replace(filters/mime-types/mime, '^\s*(.+)\s*$', '$1'), ',')"/></xsl:attribute>
                 </xsl:if>
               </div>
               <div class="button upload"><u>U</u>pload</div>
