@@ -48,7 +48,8 @@ then
         doxygen \
         graphviz \
         libicu-dev \
-        libqxcppunit-dev
+        libqxcppunit-dev \
+        qtxmlpatterns5-dev-tools
 else
     echo
     echo "WARNING:"

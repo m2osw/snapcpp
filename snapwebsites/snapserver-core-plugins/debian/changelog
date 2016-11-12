@@ -1,3 +1,10 @@
+snapserver-core-plugins (1.0.20.0~xenial) xenial; urgency=high
+
+  * EX-147: Placed the attributes inside the input tag instead of after.
+  * Removed the replace() which does not work right.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 20:07:49 -0800
+
 snapserver-core-plugins (1.0.19.0~xenial) xenial; urgency=high
 
   * EX-147: Fixed the regular expression so it works with Qt5.
