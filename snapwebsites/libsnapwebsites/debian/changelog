@@ -1,5 +1,11 @@
 libsnapwebsites (1.1.50.0~xenial) xenial; urgency=high
 
+  * EX-133: Define the type of the users::verify_ignore_user_agent cell.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 20:57:49 -0800
+
+libsnapwebsites (1.1.50.0~xenial) xenial; urgency=high
+
   * SNAP-61: Attempt to avoid the CLOSE of the parent's CURSOR by the child.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 11:25:49 -0800
