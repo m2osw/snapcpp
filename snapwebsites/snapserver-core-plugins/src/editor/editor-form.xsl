@@ -123,11 +123,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </div>
           <div class="dropped-file-buttons">
             <xsl:if test="$action = 'edit'">
-              <div class='hidden file-input'>
+              <div class='file-input'>
                 <input type='file'>
                   <!-- because the "capture" element indicates that as the
                        "preferred" way to get the media, it is optional and
                        not the default -->
+                  <xsl:attribute name="class">file-input</xsl:attribute>
                   <xsl:if test="(@capture or /editor-form/capture) and $action = 'edit'">
                     <xsl:attribute name="capture">true</xsl:attribute>
                   </xsl:if>
