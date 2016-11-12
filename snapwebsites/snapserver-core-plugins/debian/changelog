@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.22.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 22:30:35 -0800
+
 snapserver-core-plugins (1.0.22.0~xenial) xenial; urgency=high
 
   * EX-147: Put the hidden class back.
