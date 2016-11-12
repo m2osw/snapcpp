@@ -1,3 +1,9 @@
+snapbase (1.0.30.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+
 snapbase (1.0.30.0~xenial) xenial; urgency=high
 
   * SNAP-110: Remove the /run/lock/snapwebsites and /run/snapwebsites folders
