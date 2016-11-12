@@ -40,6 +40,114 @@
 namespace casswrapper
 {
 
+//===============================================================================
+// cass_exception_t
+//
+cass_exception_t::cass_exception_t( const QString& what, CassError rc )
+    : std::runtime_error(
+            qPrintable(QString("Cassandra Error[%1=%2]: %3")
+                .arg(static_cast<uint32_t>(rc))
+                .arg(cass_error_desc(rc))
+                .arg(what)
+            ))
+{
+}
+
+
+//===============================================================================
+// batch
+//
+void batch::deleter_t::operator()(CassBatch* p) const
+{
+    cass_batch_free( p );
+}
+
+
+batch::batch( CassBatchType type )
+    : f_ptr(cass_batch_new(type),deleter_t())
+{
+}
+
+
+void batch::set_consistency ( CassConsistency const c ) const
+{
+    CassError const rc = cass_batch_set_consistency( f_ptr.get(), c );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch consistency!",rc);
+    }
+}
+
+
+void batch::set_serial_consistency ( CassConsistency const c ) const
+{
+    CassError const rc = cass_batch_set_serial_consistency( f_ptr.get(), c );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch serial consistency!",rc);
+    }
+}
+
+
+void batch::set_timestamp ( int64_t const timestamp ) const
+{
+    CassError rc = cass_batch_set_timestamp( f_ptr.get(), timestamp );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch timestamp!",rc);
+    }
+}
+
+
+void batch::set_request_timeout ( int64_t const timeout ) const
+{
+    CassError rc = cass_batch_set_request_timeout( f_ptr.get(), timeout );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch request timeout!",rc);
+    }
+}
+
+
+void batch::set_is_idempotent ( bool const val ) const
+{
+    CassError rc = cass_batch_set_is_idempotent( f_ptr.get(), val? cass_true: cass_false );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch idempotent status!",rc);
+    }
+}
+
+
+void batch::set_retry_policy ( retry_policy const& p ) const
+{
+    CassError rc = cass_batch_set_retry_policy( f_ptr.get(), p.f_ptr.get() );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch retry policy!",rc);
+    }
+}
+
+
+void batch::set_custom_payload ( custom_payload const& p ) const
+{
+    CassError rc = cass_batch_set_custom_payload( f_ptr.get(), p.f_ptr.get() );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot set batch custom payload!",rc);
+    }
+}
+
+
+void batch::add_statement ( statement const& p ) const
+{
+    CassError rc = cass_batch_add_statement( f_ptr.get(), p.f_ptr.get() );
+    if( rc != CASS_OK )
+    {
+        throw cass_exception_t("Cannot add statement to batch!",rc);
+    }
+}
+
 
 //===============================================================================
 // collection
@@ -61,11 +169,11 @@ void collection::append_string( const std::string& value ) const
     const CassError rc = cass_collection_append_string( f_ptr.get(), value.c_str() );
     if( rc != CASS_OK )
     {
-        throw exception_t(
-                QString("Cannot append string '%1' to collection! Error code=[%2].")
+        throw cass_exception_t(
+            QString("Cannot append string '%1' to collection!")
                 .arg(value.c_str())
-                .arg(static_cast<uint32_t>(rc))
-                );
+            , rc
+            );
     }
 }
 
@@ -167,6 +275,43 @@ void cluster::reset_ssl() const
 void cluster::set_ssl( const ssl& ssl ) const
 {
     cass_cluster_set_ssl( f_ptr.get(), ssl.f_ptr.get() );
+}
+
+
+//===============================================================================
+// custom_payload
+//
+custom_payload::custom_payload()
+    : f_ptr(cass_custom_payload_new(),deleter_t())
+{
+}
+
+
+void custom_payload::deleter_t::operator()(CassCustomPayload* p) const
+{
+    cass_custom_payload_free( p );
+}
+
+
+void custom_payload::payload_set( QString const& name, QByteArray const& value ) const
+{
+    cass_custom_payload_set_n
+        ( f_ptr.get()
+        , name.toUtf8().data()
+        , name.size()
+        , reinterpret_cast<const cass_byte_t*>(value.data())
+        , value.size()
+        );
+}
+
+
+void custom_payload::payload_remove( QString const& name ) const
+{
+    cass_custom_payload_remove_n
+        ( f_ptr.get()
+        , name.toUtf8().data()
+        , name.size()
+        );
 }
 
 
@@ -299,10 +444,7 @@ QString iterator::get_meta_field_name() const
     const CassError rc = cass_iterator_get_meta_field_name( f_ptr.get(), &name, &len );
     if( rc != CASS_OK )
     {
-        throw exception_t(
-                QString("Cannot get field name from iterator! Error code=[%1].")
-                .arg(static_cast<uint32_t>(rc))
-                );
+        throw cass_exception_t( "Cannot get field name from iterator!", rc );
     }
 
     return QString::fromUtf8( name, len );
@@ -375,6 +517,33 @@ QString keyspace_meta::get_name() const
     size_t length    = 0;
     cass_keyspace_meta_name( f_ptr.get(), &name, &length );
     return QString::fromUtf8( name, length );
+}
+
+
+//===============================================================================
+// retry_policy
+//
+retry_policy::retry_policy( type_t const t )
+{
+    switch( t )
+    {
+    case type_t::Default                : f_ptr.reset( cass_retry_policy_default_new()                 , deleter_t() ); break;
+    case type_t::DowngradingConsistency : f_ptr.reset( cass_retry_policy_downgrading_consistency_new() , deleter_t() ); break;
+    case type_t::FallThrough            : f_ptr.reset( cass_retry_policy_fallthrough_new()             , deleter_t() ); break;
+    case type_t::Logging                : throw exception_t("You must use the other constructor for retry_policy. We need a child policy."); break;
+    }
+}
+
+
+retry_policy::retry_policy( retry_policy const& child_policy )
+    : f_ptr( cass_retry_policy_logging_new(child_policy.f_ptr.get()), deleter_t() )
+{
+}
+
+
+void retry_policy::deleter_t::operator()( CassRetryPolicy* p ) const
+{
+    cass_retry_policy_free(p);
 }
 
 
@@ -524,7 +693,7 @@ void ssl::add_trusted_cert( const QString& cert )
         );
     if( rc != CASS_OK )
     {
-        throw exception_t( QString("Error loading SSL certificate: [%1]").arg(cass_error_desc(rc)) );
+        throw cass_exception_t( "Error loading SSL certificate", rc );
     }
 }
 
@@ -707,7 +876,7 @@ QString value::get_string() const
     CassError rc = cass_value_get_string( f_ptr.get(), &str, &len );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Can't extract value string!" );
+        throw cass_exception_t( "Can't extract value string!", rc );
     }
     return QString::fromUtf8( str, len );
 }
@@ -720,7 +889,7 @@ QByteArray value::get_blob() const
     CassError rc = cass_value_get_bytes( f_ptr.get(), &buff, &len );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value blob!" );
+        throw cass_exception_t( "Cannot extract value blob!", rc );
     }
     return QByteArray( reinterpret_cast<const char *>(buff), len );
 }
@@ -732,7 +901,7 @@ bool value::get_bool() const
     CassError rc = cass_value_get_bool( f_ptr.get(), &b );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return b == cass_true;
 }
@@ -744,7 +913,7 @@ float value::get_float() const
     CassError rc = cass_value_get_float( f_ptr.get(), &f );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return static_cast<float>(f);
 }
@@ -756,7 +925,7 @@ double value::get_double() const
     CassError rc = cass_value_get_double( f_ptr.get(), &d );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return static_cast<double>(d);
 }
@@ -768,7 +937,7 @@ int8_t value::get_int8() const
     CassError rc = cass_value_get_int8( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return static_cast<int8_t>(i);
 }
@@ -780,7 +949,7 @@ int16_t value::get_int16() const
     CassError rc = cass_value_get_int16( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return static_cast<int16_t>(i);
 }
@@ -792,7 +961,7 @@ int32_t value::get_int32() const
     CassError rc = cass_value_get_int32( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return static_cast<int32_t>(i);
 }
@@ -804,7 +973,7 @@ int64_t value::get_int64() const
     CassError rc = cass_value_get_int64( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw std::runtime_error( "Cannot extract value!" );
+        throw cass_exception_t( "Cannot extract value!", rc );
     }
     return static_cast<qlonglong>(i);
 }

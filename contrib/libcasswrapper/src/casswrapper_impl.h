@@ -37,7 +37,8 @@
 #pragma once
 
 #include "casswrapper/casswrapper.h"
-#include "cassandra.h"
+
+#include <cassandra.h>
 
 #include <memory>
 
@@ -45,6 +46,38 @@
 
 namespace casswrapper
 {
+
+class cass_exception_t : public std::runtime_error
+{
+public:
+    cass_exception_t( const QString& what, CassError rc );
+};
+
+
+class batch
+{
+public:
+    struct deleter_t
+    {
+        void operator()(CassBatch* p) const;
+    };
+
+    batch( CassBatchType type );
+
+    void set_consistency        ( CassConsistency const  c         ) const;
+    void set_serial_consistency ( CassConsistency const  c         ) const;
+    void set_timestamp          ( int64_t         const  timestamp ) const;
+    void set_request_timeout    ( int64_t         const  timeout   ) const;
+    void set_is_idempotent      ( bool            const  val       ) const;
+    void set_retry_policy       ( retry_policy    const& p         ) const;
+    void set_custom_payload     ( custom_payload  const& p         ) const;
+    void add_statement          ( statement       const& p         ) const;
+
+    void reset() { f_ptr.reset(); }
+
+private:
+    std::shared_ptr<CassBatch> f_ptr;
+};
 
 
 class collection
@@ -115,6 +148,28 @@ public:
 
 private:
     std::shared_ptr<CassCluster> f_ptr;
+};
+
+
+class custom_payload
+{
+public:
+    struct deleter_t
+    {
+        void operator()(CassCustomPayload* p) const;
+    };
+
+    custom_payload();
+
+    void payload_set    ( QString const& name, QByteArray const& value ) const;
+    void payload_remove ( QString const& name                          ) const;
+
+    void reset() { f_ptr.reset(); }
+
+    friend class batch;
+
+private:
+    std::shared_ptr<CassCustomPayload> f_ptr;
 };
 
 
@@ -229,6 +284,34 @@ private:
 };
 
 
+class retry_policy
+{
+public:
+    struct deleter_t
+    {
+        void operator()(CassRetryPolicy* p) const;
+    };
+
+    enum class type_t
+    {
+        Default,
+        DowngradingConsistency,
+        FallThrough,
+        Logging
+    };
+
+    retry_policy( type_t const t );
+    retry_policy( retry_policy const& child_policy );
+
+    void reset() { f_ptr.reset(); }
+
+    friend class batch;
+
+private:
+    std::shared_ptr<CassRetryPolicy> f_ptr;
+};
+
+
 class row
 {
 public:
@@ -336,6 +419,7 @@ public:
 
     void reset() { f_ptr.reset(); }
 
+    friend class batch;
     friend class session;
 
 private:

@@ -39,13 +39,16 @@
 
 namespace casswrapper
 {
+    class batch;
     class cluster;
     class collection;
     class column_meta;
+    class custom_payload;
     class future;
     class iterator;
     class keyspace_meta;
     class result;
+    class retry_policy;
     class row;
     class schema_meta;
     class table_meta;
