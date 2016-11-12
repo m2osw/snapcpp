@@ -1,4 +1,5 @@
 debian/tmp/usr/bin/snapmanagerdaemon debian/tmp/usr/bin/snapupgrader scripts/snapchangeloglevel scripts/snaprestartcassandra usr/bin/
+debian/tmp/usr/share/snapwebsites/fail2ban/snap-named-jail.conf usr/share/snapwebsites/fail2ban/
 conf/snapmanagerdaemon.properties usr/share/snapwebsites/logger/
 conf/snapmanagerdaemon.properties etc/snapwebsites/logger/
 conf/snapmanager-dpkg-update etc/dpkg/dpkg.cfg.d/
