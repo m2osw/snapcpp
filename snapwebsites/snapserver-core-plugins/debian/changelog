@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.22.0~xenial) xenial; urgency=high
+
+  * EX-147: Put the hidden class back.
+  * Cleaned up the capture and accept attributes.
+  * Fixed the capture boolean value, it has to be "capture" and not "true".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 21:12:49 -0800
+
 snapserver-core-plugins (1.0.21.0~xenial) xenial; urgency=high
 
   * EX-147: Trying without the hidden class and adding another attribute.

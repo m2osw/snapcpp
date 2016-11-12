@@ -123,19 +123,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </div>
           <div class="dropped-file-buttons">
             <xsl:if test="$action = 'edit'">
-              <div class='file-input'>
+              <div class='hidden file-input'>
                 <input type='file'>
-                  <!-- because the "capture" element indicates that as the
-                       "preferred" way to get the media, it is optional and
-                       not the default -->
-                  <xsl:attribute name="class">file-input</xsl:attribute>
                   <xsl:if test="(@capture or /editor-form/capture) and $action = 'edit'">
-                    <xsl:attribute name="capture">true</xsl:attribute>
+                    <xsl:attribute name="capture">capture</xsl:attribute>
                   </xsl:if>
                   <xsl:if test="filters/mime-types">
-                    <!-- TODO: make sure mime types are trimmed, the following does not work right with xmlpatterns
-                               replace(filters/mime-types/mime, '^\s*(.+)\s*$', '$1'), ',')
-                    -->
                     <xsl:attribute name="accept"><xsl:value-of select="string-join(filters/mime-types/mime, ',')"/></xsl:attribute>
                   </xsl:if>
                 </input>
