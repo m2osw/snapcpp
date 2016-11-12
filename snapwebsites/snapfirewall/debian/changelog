@@ -1,8 +1,13 @@
-snapfirewall (1.1.5.2~xenial) xenial; urgency=high
+snapfirewall (1.1.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Added the -w option to iptables in count-unwanted.
+  * Retrieve the data just once and save it in a file, then count from that
+    file (i.e. avoid an sed, make sure the counters are the same each time.)
+  * Avoid counting rules with target RETURN.
+  * Avoid the division by zero if HITS is zero.
+  * Removed some useless sed parsing when awk does that for us already.
 
- -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 13:50:47 -0800
 
 snapfirewall (1.1.5.1~xenial) xenial; urgency=high
 
