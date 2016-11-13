@@ -1,3 +1,9 @@
+snapfirewall (1.1.8.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Drop key even though the save() is expected to do it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 13 Nov 2016 00:20:47 -0800
+
 snapfirewall (1.1.7.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added the "unblock-all" script so an adminstrator can remove
