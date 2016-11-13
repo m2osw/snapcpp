@@ -1,3 +1,10 @@
+snapfirewall (1.1.7.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added the "unblock-all" script so an adminstrator can remove
+    all blocks in snapfirewall in one go.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 21:26:47 -0800
+
 snapfirewall (1.1.6.0~xenial) xenial; urgency=high
 
   * SNAP-465: Moved the "unwanted" call after port 22 connections since these

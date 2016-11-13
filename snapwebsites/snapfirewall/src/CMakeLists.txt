@@ -67,6 +67,7 @@ install(
     PROGRAMS
         count-unwanted
         showfw
+        unblock-all
 
     DESTINATION
         bin
@@ -102,6 +103,8 @@ install(
     RUNTIME DESTINATION
         bin
 )
+
+
 
 
 # vim: ts=4 sw=4 et
