@@ -1616,10 +1616,14 @@ void snap_firewall::process_timeout()
                     //
                     info.save(f_firewall_table, f_server_name);
 
-                    // now drop that row (the save() does that)
+                    // now drop that row
                     //
-                    //QByteArray const key(cell->columnKey());
-                    //row->dropCell(key);
+                    // Note: the save() does that for new keys, old keys may
+                    //       not get deleted properly so I kept this code
+                    //       for now...
+                    //
+                    QByteArray const key(cell->columnKey());
+                    row->dropCell(key);
                 }
                 catch(std::exception const & e)
                 {
