@@ -50,6 +50,11 @@ then
     then
         rmdir --ignore-fail-on-non-empty /etc/snapwebsites
     fi
+
+    # Folders created by snapbootinit on each reboot
+    #
+    rm -rf /run/lock/snapwebsites
+    rm -rf /run/snapwebsites
 fi
 
 #DEBHELPER#

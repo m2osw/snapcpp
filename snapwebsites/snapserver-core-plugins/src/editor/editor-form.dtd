@@ -66,6 +66,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                  mode (select-only|editable) "select-only"
                  auto-save (date|double|float64|html|int8|int64|locale_timezone|ms-date-us|no|percent64|plain|string|time|dropdown-date) "string"
                  drop (drop) #IMPLIED
+                 capture (capture) #IMPLIED
                  no-toolbar (no-toolbar) #IMPLIED
                  no-paste (no-paste) #IMPLIED>
 
@@ -134,8 +135,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT min-lines (#PCDATA)>
 <!ELEMENT max-lines (#PCDATA)>
 <!ELEMENT resize (#PCDATA)>
-<!ELEMENT filters (extensions|regex|min-value|max-value|min-date|max-date|min-time|max-time|uri|validate|country)+>
+<!ELEMENT filters (extensions|regex|min-value|max-value|mime-types|min-date|max-date|min-time|max-time|uri|validate|country)+>
 <!ELEMENT extensions (#PCDATA)>
+<!ELEMENT mime-types (mime)+>
+<!ELEMENT mime (#PCDATA)>
 <!ELEMENT min-value (#PCDATA)>
 <!ELEMENT max-value (#PCDATA)>
 <!ELEMENT min-date (#PCDATA)>

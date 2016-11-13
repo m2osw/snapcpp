@@ -1,20 +1,59 @@
-snapserver-core-plugins (1.0.15.16~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.22.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Thu, 27 Oct 2016 02:00:47 -0700
+ -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+
+snapserver-core-plugins (1.0.22.0~xenial) xenial; urgency=high
+
+  * EX-147: Put the hidden class back.
+  * Cleaned up the capture and accept attributes.
+  * Fixed the capture boolean value, it has to be "capture" and not "true".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 21:12:49 -0800
+
+snapserver-core-plugins (1.0.21.0~xenial) xenial; urgency=high
+
+  * EX-147: Trying without the hidden class and adding another attribute.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 20:43:49 -0800
+
+snapserver-core-plugins (1.0.20.0~xenial) xenial; urgency=high
+
+  * EX-147: Placed the attributes inside the input tag instead of after.
+  * Removed the replace() which does not work right.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 20:07:49 -0800
+
+snapserver-core-plugins (1.0.19.0~xenial) xenial; urgency=high
+
+  * EX-147: Fixed the regular expression so it works with Qt5.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 19:15:49 -0800
+
+snapserver-core-plugins (1.0.18.0~xenial) xenial; urgency=high
+
+  * EX-147: Added support for mime-types (i.e. the accept=... in an <input>).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 18:13:49 -0800
+
+snapserver-core-plugins (1.0.17.0~xenial) xenial; urgency=high
+
+  * EX-133: Added a flag so we can ignore the User-Agent when verifying a user.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 16:42:49 -0800
+
+snapserver-core-plugins (1.0.16.0~xenial) xenial; urgency=high
+
+  * EX-147: Added support to add the capture attribute to the file input.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 23:12:47 -0700
 
 snapserver-core-plugins (1.0.15.0~xenial) xenial; urgency=high
 
   * SNAP-501: Added new doc-only packages.
 
  -- Doug Barbieri <doug@kosh>  Wed, 26 Oct 2016 17:11:25 -0700
-
-snapserver-core-plugins (1.0.14.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 25 Oct 2016 02:00:49 -0700
 
 snapserver-core-plugins (1.0.14.0~xenial) xenial; urgency=high
 

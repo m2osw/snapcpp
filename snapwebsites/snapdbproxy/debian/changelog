@@ -1,13 +1,14 @@
-snapdbproxy (1.1.27.1~xenial) xenial; urgency=high
+snapdbproxy (1.1.27.3~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Thu, 10 Nov 2016 20:21:21 -0800
+ -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
 
 snapdbproxy (1.1.27.0~xenial) xenial; urgency=high
 
   * SNAP-110: Added test in logrotate script to skip the postrotate in
     case snapsignal is not available anymore.
+  * Fixed --help output of snapinstallwebsite to mention the ?intall-layouts=.
 
  -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 15:56:50 -0800
 

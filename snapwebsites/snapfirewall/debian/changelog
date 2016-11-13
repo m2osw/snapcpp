@@ -1,8 +1,46 @@
-snapfirewall (1.1.5.1~xenial) xenial; urgency=high
+snapfirewall (1.1.8.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Thu, 10 Nov 2016 20:21:21 -0800
+ -- Build Server <build@m2osw.com>  Sun, 13 Nov 2016 02:00:45 -0800
+
+snapfirewall (1.1.8.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Drop key even though the save() is expected to do it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 13 Nov 2016 00:20:47 -0800
+
+snapfirewall (1.1.7.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added the "unblock-all" script so an adminstrator can remove
+    all blocks in snapfirewall in one go.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 21:26:47 -0800
+
+snapfirewall (1.1.6.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Moved the "unwanted" call after port 22 connections since these
+    are IP protected, they are generally safe.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 18:26:47 -0800
+
+snapfirewall (1.1.6.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added the -w option to iptables in count-unwanted.
+  * Retrieve the data just once and save it in a file, then count from that
+    file (i.e. avoid an sed, make sure the counters are the same each time.)
+  * Avoid counting rules with target RETURN.
+  * Avoid the division by zero if HITS is zero.
+  * Removed some useless sed parsing when awk does that for us already.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 13:50:47 -0800
+
+snapfirewall (1.1.5.1~xenial) xenial; urgency=high
+
+  * SNAP-465: Fixed the message about the BLOCK needing "uri" and "period".
+    We now made "period" optional and default to "day".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 16:15:50 -0800
 
 snapfirewall (1.1.5.0~xenial) xenial; urgency=high
 

@@ -15,25 +15,44 @@ then
     CHAIN="$1"
 fi
 
-# First we could the number of entries
+TMPDATA=/tmp/count.txt
+
+# Retrieve the data once (otherwise our counters could be wrong)
 #
-# We ignore the first two lines which are headers.
+# We ignore the first two lines which are headers and any line with the RETURN
+# target (since those are not IPs being blocked).
 #
-COUNT=`iptables -nvx -L "$CHAIN" | sed -e '1,2 d' | wc -l`
+(
+    umask 077
+    iptables -w -nvx -L "${CHAIN}" | sed -e '1,2 d' | grep -v " RETURN " > ${TMPDATA}
+)
+
+# First we count the number of entries
+#
+# WARNING: `wc -l ${TMPDATA}` returns '<count> <filename>', so keep pipe!
+#
+COUNT=`cat ${TMPDATA} | wc -l`
 
 # Then we sum column 1, which represents the total number of hits since the
 # block of those IPs occurred
 #
-HITS=`iptables -nvx -L "$CHAIN" | sed -e '1,2 d' -e 's/^\s*\([0-9]\+\)\s.*$/\1/' | awk '{s+=$1} END {print s}'`
+HITS=`awk '{s+=$1} END {print s}' ${TMPDATA}`
 
 # Then we sum column 2, which represents the total number of bytes received
 # since the block of those IPs occurred
 #
-BYTES=`iptables -nvx -L "$CHAIN" | sed -e '1,2 d' -e 's/^\s*[0-9]\+\s*\([0-9]\+\)\s.*$/\1/' | awk '{s+=$1} END {print s}'`
+BYTES=`awk '{s+=$2} END {print s}' ${TMPDATA}`
+
+rm -f ${TMPDATA}
 
 # Compute the average number of bytes per hit
 #
-AVERAGE=`echo "scale = 3\n$BYTES / $HITS" | bc`
+if test $HITS -gt 0
+then
+    AVERAGE=`echo "scale = 3\n$BYTES / $HITS" | bc`
+else
+    AVERAGE=0.0
+fi
 
 # Display the results
 #

@@ -577,6 +577,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     || (f_tableName == "content" && f_rowName == "*index*")
     || (f_tableName == "list" && f_rowName != "*standalone*")
     || n == "users::soft_administrative_session"
+    || n == "users::verify_ignore_user_agent"
     || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::data_atm_holiday" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::data_cafe_holiday" // TODO -- remove at some point since that is a cutomer's field

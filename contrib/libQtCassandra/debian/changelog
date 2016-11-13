@@ -1,8 +1,20 @@
+<<<<<<< HEAD
 libqtcassandra (0.6.8.7~xenial) xenial; urgency=high
+||||||| merged common ancestors
+libqtcassandra (0.6.8.6~xenial) xenial; urgency=high
+=======
+libqtcassandra (0.6.9.3~xenial) xenial; urgency=high
+>>>>>>> master
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sat, 05 Nov 2016 02:00:48 -0700
+ -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:50 -0800
+
+libqtcassandra (0.6.9.0~xenial) xenial; urgency=high
+
+  * EX-147: Fixed text of exception.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 10 Nov 2016 23:10:48 -0700
 
 libqtcassandra (0.6.8.0~xenial) xenial; urgency=high
 

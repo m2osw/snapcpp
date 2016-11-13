@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 libtld (1.5.2.78~xenial) xenial; urgency=high
+||||||| merged common ancestors
+libtld (1.5.2.77~xenial) xenial; urgency=high
+=======
+libtld (1.5.2.80~xenial) xenial; urgency=high
+>>>>>>> master
 
   * Nightly build.
 

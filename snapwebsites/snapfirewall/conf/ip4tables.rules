@@ -43,12 +43,13 @@
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_IP@ -j ACCEPT
 #-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
 
-# prevent banned traffic
--A INPUT -j unwanted
-
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
-# Reject any connections (i.e. --syn) from anywhere else on that port
+
+# prevent banned traffic, but after administrators on port 22
+-A INPUT -j unwanted
+
+# Reject any new connections (i.e. --syn) from anywhere else on port 22
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j LOG --log-prefix "[iptables] unwanted SSH: " --log-uid
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ --syn -j REJECT --reject-with icmp-port-unreachable
 

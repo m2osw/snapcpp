@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 snapinit (1.0.3.78~xenial) xenial; urgency=high
+||||||| merged common ancestors
+snapinit (1.0.3.77~xenial) xenial; urgency=high
+=======
+snapinit (1.0.3.80~xenial) xenial; urgency=high
+>>>>>>> master
 
   * Nightly build.
 

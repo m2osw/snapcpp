@@ -59,7 +59,9 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "domain",
             nullptr,
-            "the domain and sub-domain for which a site is to be created (i.e. install.snap.website)",
+            "the domain and sub-domain for which a site is to be created (i.e. install.snap.website)."
+            " You may also include parameters after a '?'. At this time we understand the 'install-latyouts'."
+            " For example, you could use --domain install.snap.website?install-layouts=beautiful.",
             advgetopt::getopt::argument_mode_t::required_argument
         },
         {

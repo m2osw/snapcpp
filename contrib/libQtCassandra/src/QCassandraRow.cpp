@@ -812,7 +812,7 @@ void QCassandraRow::closeCursor()
         QCassandraOrderResult close_cursor_result(parentTable()->proxy()->sendOrder(close_cursor));
         if(!close_cursor_result.succeeded())
         {
-            throw std::runtime_error("QCassandraTable::clearCache(): closing cursor failed.");
+            throw std::runtime_error("QCassandraRow::closeCursor(): closing cursor failed.");
         }
         f_cursor_index = -1;
     }

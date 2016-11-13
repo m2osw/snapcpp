@@ -148,12 +148,23 @@ private:
  * b->a [label="STOP"];
  * a=>a [label="exit(0);"];
  *
+ * c->a [label="kill -INT a"];
+ * a->a [label="STOP"];
+ * a=>a [label="exit(0);"];
+ *
  * #
  * # Block an IP address
  * #
- * c->b [label="snapfirewall/BLOCK ip=...;period=..."];
- * b->a [label="BLOCK ip=...;period=..."];
+ * c->b [label="snapfirewall/BLOCK uri=...;period=...;reason=..."];
+ * b->a [label="BLOCK uri=...;period=...;reason=..."];
  * a->d [label="block IP address with iptables"];
+ *
+ * #
+ * # Unblock an IP address
+ * #
+ * c->b [label="snapfirewall/UNBLOCK uri=..."];
+ * b->a [label="UNBLOCK uri=..."];
+ * a->d [label="unblock IP address with iptables"];
  *
  * #
  * # Wakeup timer
@@ -458,7 +469,7 @@ snap_firewall::block_info_t::block_info_t(snap::snap_communicator_message const 
     {
         // TODO: create a snap_exception instead
         //
-        throw std::runtime_error("a BLOCK message \"uri\" and \"period\" parameters are mandatory.");
+        throw std::runtime_error("a BLOCK message \"uri\" parameter is mandatory.");
     }
 
     set_uri(message.get_parameter("uri"));
@@ -1605,10 +1616,14 @@ void snap_firewall::process_timeout()
                     //
                     info.save(f_firewall_table, f_server_name);
 
-                    // now drop that row (the save() does that)
+                    // now drop that row
                     //
-                    //QByteArray const key(cell->columnKey());
-                    //row->dropCell(key);
+                    // Note: the save() does that for new keys, old keys may
+                    //       not get deleted properly so I kept this code
+                    //       for now...
+                    //
+                    QByteArray const key(cell->columnKey());
+                    row->dropCell(key);
                 }
                 catch(std::exception const & e)
                 {
