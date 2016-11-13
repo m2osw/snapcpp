@@ -1,8 +1,8 @@
-snapmanagercgi (1.2.43.2~xenial) xenial; urgency=high
+snapmanagercgi (1.2.44.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Actually install the snap-named-jail.conf file.
 
- -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 18:33:50 -0800
 
 snapmanagercgi (1.2.43.0~xenial) xenial; urgency=high
 
