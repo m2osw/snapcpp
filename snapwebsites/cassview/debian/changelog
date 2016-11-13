@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-cassview (0.1.5.57~xenial) xenial; urgency=high
-||||||| merged common ancestors
-cassview (0.1.5.56~xenial) xenial; urgency=high
-=======
 cassview (0.1.5.59~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

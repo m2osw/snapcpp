@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-csspp (1.0.11.78~xenial) xenial; urgency=high
-||||||| merged common ancestors
-csspp (1.0.11.77~xenial) xenial; urgency=high
-=======
 csspp (1.0.11.80~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

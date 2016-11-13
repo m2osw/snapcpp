@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-libqtcassandra (0.6.8.7~xenial) xenial; urgency=high
-||||||| merged common ancestors
-libqtcassandra (0.6.8.6~xenial) xenial; urgency=high
-=======
 libqtcassandra (0.6.9.3~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

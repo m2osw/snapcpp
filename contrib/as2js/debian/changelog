@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-as2js (0.1.15.78~xenial) xenial; urgency=high
-||||||| merged common ancestors
-as2js (0.1.15.77~xenial) xenial; urgency=high
-=======
 as2js (0.1.15.80~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

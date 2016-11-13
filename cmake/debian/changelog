@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-snapcmakemodules (1.0.27.66~xenial) xenial; urgency=high
-||||||| merged common ancestors
-snapcmakemodules (1.0.27.65~xenial) xenial; urgency=high
-=======
 snapcmakemodules (1.0.27.68~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

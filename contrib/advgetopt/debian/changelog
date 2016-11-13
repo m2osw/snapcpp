@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-advgetopt (1.1.6.4~xenial) xenial; urgency=high
-||||||| merged common ancestors
-advgetopt (1.1.6.3~xenial) xenial; urgency=high
-=======
 advgetopt (1.1.6.6~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

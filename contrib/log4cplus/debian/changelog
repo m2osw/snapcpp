@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-log4cplus12 (1.2.3.44~xenial) xenial; urgency=high
-||||||| merged common ancestors
-log4cplus12 (1.2.3.43~xenial) xenial; urgency=high
-=======
 log4cplus12 (1.2.3.46~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

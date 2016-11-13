@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-libsnapwebsites (1.1.48.2~xenial) xenial; urgency=high
-||||||| merged common ancestors
-libsnapwebsites (1.1.48.1~xenial) xenial; urgency=high
-=======
 libsnapwebsites (1.1.51.2~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 

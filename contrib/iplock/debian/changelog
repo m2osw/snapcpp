@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-iplock (3.0.8.10~xenial) xenial; urgency=high
-||||||| merged common ancestors
-iplock (3.0.8.9~xenial) xenial; urgency=high
-=======
 iplock (3.0.8.12~xenial) xenial; urgency=high
->>>>>>> master
 
   * Nightly build.
 
