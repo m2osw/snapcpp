@@ -1,5 +1,12 @@
 snapfirewall (1.1.6.0~xenial) xenial; urgency=high
 
+  * SNAP-465: Moved the "unwanted" call after port 22 connections since these
+    are IP protected, they are generally safe.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 18:26:47 -0800
+
+snapfirewall (1.1.6.0~xenial) xenial; urgency=high
+
   * SNAP-465: Added the -w option to iptables in count-unwanted.
   * Retrieve the data just once and save it in a file, then count from that
     file (i.e. avoid an sed, make sure the counters are the same each time.)
