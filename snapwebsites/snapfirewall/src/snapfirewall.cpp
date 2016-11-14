@@ -555,32 +555,69 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
     //
     {
         QtCassandra::QCassandraRow::pointer_t ban_row(firewall_table->row(server_name));
-        QByteArray key;
-        QtCassandra::setInt64Value(key, f_block_limit);
+
+        // for a block, if the existing limit is further in the past,
+        // then it accept the new block, if the existing limit is in
+        // the future, then the old limit still applies and we ignore
+        // the new limit; this happens if an IP is first block for 1 year
+        // and later is blocked for 1 day (although once blocked an IP
+        // should not trigger any more blocks, but it can easily happen
+        // in a cluster)
+        //
+        // Timeline:
+        // =========
+        //
+        //              +-- current block
+        //              |
+        //              v
+        // -----+-------+-----------+------>
+        //      ^                   ^
+        //      |                   |
+        //      |                   +--- new block in the future, accepted
+        //      |
+        //      +--- new block in the past, ignored
+        //
+        //
+        // for an unblock, it does not apply because the unblock must always
+        // happens now.
+        //
+        if(info_row->exists(block_limit_key))
+        {
+            QtCassandra::QCassandraValue old_limit_value(info_row->cell(block_limit_key)->value());
+            int64_t const old_limit(old_limit_value.safeInt64Value());
+
+            if(f_status == status_t::BLOCK_INFO_BANNED
+            && old_limit >= f_block_limit)
+            {
+                // it is already blocked for a longer time than the new
+                // time, keep the longest
+                //
+                // TODO: should we still look into saving the reason?
+                //       and ban counters?
+                //
+                return;
+            }
+            if(old_limit != f_block_limit)
+            {
+                // drop the old row
+                //
+                ban_row->dropCell(old_limit_value.binaryValue());
+            }
+        }
+
+        QByteArray limit_value;
+        QtCassandra::setInt64Value(limit_value, f_block_limit);
         if(f_status == status_t::BLOCK_INFO_BANNED)
         {
-            ban_row->cell(key)->setValue(canonicalized_uri());
+            ban_row->cell(limit_value)->setValue(canonicalized_uri());
         }
         else
         {
-            ban_row->dropCell(key);
-        }
-
-        // now remove the old one if there is such
-        //
-        // Note: whether we are banning or unbanning we attempt to remove
-        //       the old entry
-        //
-        QtCassandra::QCassandraValue old_limit;
-        if(info_row->exists(block_limit_key))
-        {
-            old_limit = info_row->cell(block_limit_key)->value();
-        }
-
-        if(old_limit.size() == sizeof(int64_t)
-        && old_limit.safeInt64Value() != f_block_limit)
-        {
-            ban_row->dropCell(old_limit.binaryValue());
+            // Note: this does not seem useful with the new scheme since
+            //       the cell should be dropped in the previous if() block
+            //       unless `old_limit == f_block_limit`...
+            //
+            ban_row->dropCell(limit_value);
         }
     }
 
