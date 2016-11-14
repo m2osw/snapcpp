@@ -47,7 +47,6 @@ configure_file(
 		)
 
 set( HEADER_FILES
-    casswrapper/casswrapper.h
     casswrapper/encoder.h
     casswrapper/exception.h
     casswrapper/query.h
@@ -64,7 +63,8 @@ add_library(${PROJECT_NAME} SHARED
     casswrapper/version.h.in
     casswrapper_impl.h
     casswrapper_impl.cpp
-    exception.cpp
+    exception_impl.h
+    exception_impl.cpp
     not_used.h
     query.cpp
     schema.cpp

@@ -50,6 +50,7 @@
 namespace casswrapper
 {
 
+struct data;
 
 class Query
     : public QObject
@@ -73,32 +74,6 @@ public:
 
     typedef std::shared_ptr<Query>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
-
-    class exception_t : public std::runtime_error
-    {
-    public:
-        exception_t( const QString& what ) : std::runtime_error(qPrintable(what)) {}
-    };
-
-    class query_exception_t : public std::exception
-    {
-    public:
-        query_exception_t( future sesson_future, const QString& msg );
-
-        uint32_t        getCode()    const { return f_code;    }
-        QString const&  getError()   const { return f_error;   }
-        QString const&  getErrMsg()  const { return f_errmsg;  }
-        QString const&  getMessage() const { return f_message; }
-
-        virtual const char* what() const throw() override;
-
-    private:
-        uint32_t    f_code;
-        QString     f_error;
-        QString     f_errmsg;
-        QString     f_message;
-        std::string f_what;
-    };
 
     ~Query();
 
@@ -126,6 +101,12 @@ public:
     void                bindByteArray       ( const size_t num, const QByteArray&   value );
     void                bindJsonMap         ( const size_t num, const string_map_t& value );
     void                bindMap             ( const size_t num, const string_map_t& value );
+
+    void                startLoggedBatch    ();
+    void                startUnloggedBatch  ();
+    void                startCounterBatch   ();
+    void                addToBatch          ();
+    void                endBatch            ( const bool block = true );
 
     void                start               ( const bool block = true );
     bool	            isReady             () const;
@@ -173,20 +154,17 @@ private:
     QString                      f_description;
     QString                      f_queryString;
     //
-    std::unique_ptr<statement>   f_queryStmt;
-    std::unique_ptr<future>      f_sessionFuture;
-    std::unique_ptr<result>      f_queryResult;
-    std::unique_ptr<iterator>    f_rowsIterator;
+    std::unique_ptr<data>        f_data;
     //
     consistency_level_t          f_consistencyLevel = consistency_level_t::level_default;
     int64_t                      f_timestamp        = 0;
     int64_t                      f_timeout          = 0;
     int                          f_pagingSize       = -1;
 
-    void 		        setStatementConsistency();
-    void 		        setStatementTimestamp();
-    string_map_t        getMapFromValue       ( const value& value ) const;
-    void                throwIfError          ( const QString& msg );
+    void 		        setStatementConsistency ();
+    void 		        setStatementTimestamp   ();
+    void                throwIfError            ( const QString& msg );
+    void                internalStart           ( const bool block   );
 
     static void		    queryCallbackFunc( void* future, void *data );
 };

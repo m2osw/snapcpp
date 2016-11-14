@@ -35,8 +35,6 @@
  */
 #pragma once
 
-#include "casswrapper/casswrapper.h"
-
 #include <map>
 #include <memory>
 #include <string>
@@ -45,13 +43,17 @@
 #include <QByteArray>
 
 #include <unistd.h>
-//#include <sys/syscall.h>
 
 namespace casswrapper
 {
 
 
-struct data_impl;
+struct data;
+typedef int64_t timeout_t;
+
+class cluster;
+class future;
+class session;
 
 
 class Session
@@ -94,7 +96,7 @@ private:
     void reset_ssl_keys();
     void add_ssl_keys();
 
-    std::unique_ptr<data_impl> f_data;
+    std::unique_ptr<data> f_data;
     //
     timeout_t f_timeout         = DEFAULT_TIMEOUT;                         // 12s
     uint32_t  f_high_water_mark = 65536;

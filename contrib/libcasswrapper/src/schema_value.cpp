@@ -34,10 +34,12 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "casswrapper/query.h"
 #include "casswrapper/schema_value.h"
-#include "casswrapper_impl.h"
+
 #include "casswrapper/encoder.h"
+#include "casswrapper/query.h"
+#include "casswrapper_impl.h"
+#include "exception_impl.h"
 
 namespace casswrapper
 {

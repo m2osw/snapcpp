@@ -36,8 +36,6 @@
 
 #pragma once
 
-#include "casswrapper/casswrapper.h"
-
 #include <cassandra.h>
 
 #include <memory>
@@ -47,11 +45,28 @@
 namespace casswrapper
 {
 
-class cass_exception_t : public std::runtime_error
-{
-public:
-    cass_exception_t( const QString& what, CassError rc );
-};
+
+// Forward declarations of all classes here
+//
+class batch;
+class cluster;
+class collection;
+class column_meta;
+class custom_payload;
+class future;
+class iterator;
+class keyspace_meta;
+class result;
+class retry_policy;
+class row;
+class schema_meta;
+class table_meta;
+class session;
+class ssl;
+class statement;
+class value;
+
+typedef int64_t timeout_t;
 
 
 class batch

@@ -37,6 +37,7 @@
 #include "casswrapper/session.h"
 #include "casswrapper/exception.h"
 #include "casswrapper_impl.h"
+#include "exception_impl.h"
 
 #include "cassandra.h"
 
@@ -69,7 +70,7 @@ namespace casswrapper
 {
 
 
-struct data_impl
+struct data
 {
     std::unique_ptr<cluster>    f_cluster;
     std::unique_ptr<session>    f_session;
@@ -82,7 +83,7 @@ struct data_impl
  *
  */
 Session::Session()
-    : f_data(std::make_unique<data_impl>())
+    : f_data(std::make_unique<data>())
 {
 }
 

@@ -60,6 +60,8 @@ public:
     void simpleInsert();
     void simpleSelect();
 
+    void batchTest();
+
     void largeTableTest();
 
 private:
@@ -275,12 +277,91 @@ void query_test::simpleSelect()
 }
 
 
+void query_test::batchTest()
+{
+    const int32_t row_count = 1000;
+
+    std::cout << "Batch insert into table 'large_table'..." << std::endl;
+    auto q = Query::create( f_session );
+
+    q->startLoggedBatch();
+
+    for( int32_t i = 0; i < row_count; ++i )
+    {
+        q->query( "INSERT INTO qtcassandra_query_test.large_table "
+                "(id, name, blob_value) "
+                "VALUES "
+                "(?,?,?)"
+                , 3
+               );
+        int bind_num = 0;
+        q->bindInt32  ( bind_num++, i );
+        q->bindString ( bind_num++, QString("This is test %1.").arg(i) );
+
+        QString blob;
+        blob.fill( 'b', 10 );
+        q->bindByteArray( bind_num++, blob.toUtf8() );
+
+        q->addToBatch();
+    }
+
+    q->endBatch();
+
+    std::map<int32_t,QString> string_map;
+
+    std::cout << "POST BATCH: Select from 'large_table' and test paging functionality..." << std::endl;
+    q->query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
+    q->setPagingSize( 10 );
+    q->start();
+    do
+    {
+//        std::cout << "Iterate through batch page..." << std::endl;
+        while( q->nextRow() )
+        {
+            const int32_t id(q->getInt32Column("id"));
+            const QString name(q->getStringColumn("name"));
+            string_map[id] = name;
+#if 0
+            std::cout
+                    << "id=" << id
+                    << ", name='" << name.toStdString() << "'"
+                    << ", timestamp=" << q->getInt64Column("timestamp")
+                    << std::endl;
+#endif
+        }
+    }
+    while( q->nextPage() );
+
+    std::cout << "Check order of recovered records:" << std::endl;
+    if( string_map.size() != static_cast<size_t>(row_count) )
+    {
+        throw std::runtime_error( "Row count is not correct!" );
+    }
+
+    for( int32_t idx = 0; idx < row_count; ++idx )
+    {
+        if( string_map.find(idx) == string_map.end() )
+        {
+            throw std::runtime_error( QString("Index %1 not found in map!").arg(idx).toStdString().c_str() );
+        }
+    }
+
+    std::cout << "Batch process done!" << std::endl;
+}
+
+
 void query_test::largeTableTest()
 {
     const int32_t row_count = 10000;
 
-    std::cout << "Insert into table 'large_table'..." << std::endl;
+    std::cout << "Insert into table 'large_table' [NO BATCH]..." << std::endl;
     auto q = Query::create( f_session );
+
+    // Empty the table out first
+    //
+    q->query( "TRUNCATE qtcassandra_query_test.large_table" );
+    q->start();
+    q->end();
 
     for( int32_t i = 0; i < row_count; ++i )
     {
@@ -339,7 +420,7 @@ void query_test::largeTableTest()
         }
     }
 
-    std::cout << "Process done!" << std::endl;
+    std::cout << "Non-batch process done!" << std::endl;
 }
 
 
@@ -373,6 +454,7 @@ int main( int argc, char *argv[] )
         test.createSchema();
         test.simpleInsert();
         test.simpleSelect();
+        test.batchTest();
         test.largeTableTest();
     }
 #if 0
