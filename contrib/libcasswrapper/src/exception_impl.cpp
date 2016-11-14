@@ -12,7 +12,7 @@ exception_t::exception_t( const QString&     what ) : std::runtime_error(qPrinta
 exception_t::exception_t( const std::string& what ) : std::runtime_error(what.c_str())     {}
 exception_t::exception_t( const char*        what ) : std::runtime_error(what)             {}
 
-cassandra_exception_t::cassandra_exception_t( const casswrapper::future& future, QString const& msg )
+cassandra_exception_impl::cassandra_exception_impl( const casswrapper::future& future, QString const& msg )
     : f_code(future.get_error_code())
     , f_errmsg(future.get_error_message())
     , f_message(msg)
@@ -21,7 +21,7 @@ cassandra_exception_t::cassandra_exception_t( const casswrapper::future& future,
 }
 
 
-cassandra_exception_t::cassandra_exception_t( const QString& msg, CassError rc )
+cassandra_exception_impl::cassandra_exception_impl( const QString& msg, CassError rc )
     : f_code(rc)
     , f_message(msg)
 {
@@ -29,7 +29,7 @@ cassandra_exception_t::cassandra_exception_t( const QString& msg, CassError rc )
 }
 
 
-cassandra_exception_t::cassandra_exception_t( CassError rc, const QString& msg )
+cassandra_exception_impl::cassandra_exception_impl( CassError rc, const QString& msg )
     : f_code(rc)
     , f_message(msg)
 {
@@ -37,7 +37,7 @@ cassandra_exception_t::cassandra_exception_t( CassError rc, const QString& msg )
 }
 
 
-void cassandra_exception_t::init()
+void cassandra_exception_impl::init()
 {
     std::stringstream ss;
     ss << f_message.toUtf8().data()
@@ -52,7 +52,7 @@ void cassandra_exception_t::init()
 }
 
 
-const char* cassandra_exception_t::what() const throw()
+const char* cassandra_exception_impl::what() const throw()
 {
     return f_what.c_str();
 }

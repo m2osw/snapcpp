@@ -63,7 +63,7 @@ void batch::set_consistency ( CassConsistency const c ) const
     CassError const rc = cass_batch_set_consistency( f_ptr.get(), c );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch consistency!",rc);
+        throw cassandra_exception_impl("Cannot set batch consistency!",rc);
     }
 }
 
@@ -73,7 +73,7 @@ void batch::set_serial_consistency ( CassConsistency const c ) const
     CassError const rc = cass_batch_set_serial_consistency( f_ptr.get(), c );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch serial consistency!",rc);
+        throw cassandra_exception_impl("Cannot set batch serial consistency!",rc);
     }
 }
 
@@ -83,7 +83,7 @@ void batch::set_timestamp ( int64_t const timestamp ) const
     CassError rc = cass_batch_set_timestamp( f_ptr.get(), timestamp );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch timestamp!",rc);
+        throw cassandra_exception_impl("Cannot set batch timestamp!",rc);
     }
 }
 
@@ -93,7 +93,7 @@ void batch::set_request_timeout ( int64_t const timeout ) const
     CassError rc = cass_batch_set_request_timeout( f_ptr.get(), timeout );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch request timeout!",rc);
+        throw cassandra_exception_impl("Cannot set batch request timeout!",rc);
     }
 }
 
@@ -103,7 +103,7 @@ void batch::set_is_idempotent ( bool const val ) const
     CassError rc = cass_batch_set_is_idempotent( f_ptr.get(), val? cass_true: cass_false );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch idempotent status!",rc);
+        throw cassandra_exception_impl("Cannot set batch idempotent status!",rc);
     }
 }
 
@@ -113,7 +113,7 @@ void batch::set_retry_policy ( retry_policy const& p ) const
     CassError rc = cass_batch_set_retry_policy( f_ptr.get(), p.f_ptr.get() );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch retry policy!",rc);
+        throw cassandra_exception_impl("Cannot set batch retry policy!",rc);
     }
 }
 
@@ -123,7 +123,7 @@ void batch::set_custom_payload ( custom_payload const& p ) const
     CassError rc = cass_batch_set_custom_payload( f_ptr.get(), p.f_ptr.get() );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot set batch custom payload!",rc);
+        throw cassandra_exception_impl("Cannot set batch custom payload!",rc);
     }
 }
 
@@ -133,7 +133,7 @@ void batch::add_statement ( statement const& p ) const
     CassError rc = cass_batch_add_statement( f_ptr.get(), p.f_ptr.get() );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t("Cannot add statement to batch!",rc);
+        throw cassandra_exception_impl("Cannot add statement to batch!",rc);
     }
 }
 
@@ -158,7 +158,7 @@ void collection::append_string( const std::string& value ) const
     const CassError rc = cass_collection_append_string( f_ptr.get(), value.c_str() );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t(
+        throw cassandra_exception_impl(
             QString("Cannot append string '%1' to collection!")
                 .arg(value.c_str())
             , rc
@@ -433,7 +433,7 @@ QString iterator::get_meta_field_name() const
     const CassError rc = cass_iterator_get_meta_field_name( f_ptr.get(), &name, &len );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot get field name from iterator!", rc );
+        throw cassandra_exception_impl( "Cannot get field name from iterator!", rc );
     }
 
     return QString::fromUtf8( name, len );
@@ -690,7 +690,7 @@ void ssl::add_trusted_cert( const QString& cert )
         );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Error loading SSL certificate", rc );
+        throw cassandra_exception_impl( "Error loading SSL certificate", rc );
     }
 }
 
@@ -873,7 +873,7 @@ QString value::get_string() const
     CassError rc = cass_value_get_string( f_ptr.get(), &str, &len );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Can't extract value string!", rc );
+        throw cassandra_exception_impl( "Can't extract value string!", rc );
     }
     return QString::fromUtf8( str, len );
 }
@@ -886,7 +886,7 @@ QByteArray value::get_blob() const
     CassError rc = cass_value_get_bytes( f_ptr.get(), &buff, &len );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value blob!", rc );
+        throw cassandra_exception_impl( "Cannot extract value blob!", rc );
     }
     return QByteArray( reinterpret_cast<const char *>(buff), len );
 }
@@ -898,7 +898,7 @@ bool value::get_bool() const
     CassError rc = cass_value_get_bool( f_ptr.get(), &b );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return b == cass_true;
 }
@@ -910,7 +910,7 @@ float value::get_float() const
     CassError rc = cass_value_get_float( f_ptr.get(), &f );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return static_cast<float>(f);
 }
@@ -922,7 +922,7 @@ double value::get_double() const
     CassError rc = cass_value_get_double( f_ptr.get(), &d );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return static_cast<double>(d);
 }
@@ -934,7 +934,7 @@ int8_t value::get_int8() const
     CassError rc = cass_value_get_int8( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return static_cast<int8_t>(i);
 }
@@ -946,7 +946,7 @@ int16_t value::get_int16() const
     CassError rc = cass_value_get_int16( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return static_cast<int16_t>(i);
 }
@@ -958,7 +958,7 @@ int32_t value::get_int32() const
     CassError rc = cass_value_get_int32( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return static_cast<int32_t>(i);
 }
@@ -970,7 +970,7 @@ int64_t value::get_int64() const
     CassError rc = cass_value_get_int64( f_ptr.get(), &i );
     if( rc != CASS_OK )
     {
-        throw cassandra_exception_t( "Cannot extract value!", rc );
+        throw cassandra_exception_impl( "Cannot extract value!", rc );
     }
     return static_cast<qlonglong>(i);
 }

@@ -825,7 +825,7 @@ void Query::throwIfError( const QString& msg )
     const CassError code( f_data->f_sessionFuture->get_error_code() );
     if( code != CASS_OK )
     {
-        throw cassandra_exception_t( *f_data->f_sessionFuture, msg );
+        throw cassandra_exception_impl( *f_data->f_sessionFuture, msg );
     }
 }
 
