@@ -7,7 +7,7 @@
 # CASSWRAPPER_LIBRARY      - The libraries needed to use CassWrapper (none)
 # CASSWRAPPER_DEFINITIONS  - Compiler switches required for using CassWrapper (none)
 
-find_path( CASSWRAPPER_INCLUDE_DIR casswrapper/casswrapper.h
+find_path( CASSWRAPPER_INCLUDE_DIR casswrapper/session.h
 		   PATHS $ENV{CASSWRAPPER_INCLUDE_DIR}
 		   PATH_SUFFIXES casswrapper
 		 )
