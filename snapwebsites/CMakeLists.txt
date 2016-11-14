@@ -76,9 +76,6 @@ ConfigureMakeProject( PROJECT_NAME snapfirewall
         -DSNAPMANAGERCGI_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
 )
 
-#ConfigureMakeProject( PROJECT_NAME snapinit
-#)
-
 ConfigureMakeProject( PROJECT_NAME snaplayout
 )
 
