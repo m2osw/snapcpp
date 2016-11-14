@@ -577,8 +577,8 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
             old_limit = info_row->cell(block_limit_key)->value();
         }
 
-        if(old_limit.safeInt64Value() != f_block_limit
-        && old_limit.size() == sizeof(int64_t))
+        if(old_limit.size() == sizeof(int64_t)
+        && old_limit.safeInt64Value() != f_block_limit)
         {
             ban_row->dropCell(old_limit.binaryValue());
         }
@@ -594,14 +594,17 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
             if(info_row->exists(reason_key))
             {
                 QString const old_reasons(info_row->cell(reason_key)->value().stringValue());
-                if(old_reasons.indexOf(f_reason) == -1)
+                if(old_reasons != f_reason) // avoid an update (i.e. a tombstone) if same
                 {
-                    // separate reasons with a "\n"
-                    info_row->cell(reason_key)->setValue(old_reasons + "\n" + f_reason);
-                }
-                else
-                {
-                    info_row->cell(reason_key)->setValue(f_reason);
+                    if(old_reasons.indexOf(f_reason) == -1)
+                    {
+                        // separate reasons with a "\n"
+                        info_row->cell(reason_key)->setValue(old_reasons + "\n" + f_reason);
+                    }
+                    else
+                    {
+                        info_row->cell(reason_key)->setValue(f_reason);
+                    }
                 }
             }
             else
@@ -1439,6 +1442,15 @@ void snap_firewall::setup_firewall()
                     // save with the new status of UNBANNED
                     //
                     info.save(f_firewall_table, f_server_name);
+
+                    // now drop that row
+                    //
+                    // Note: the save() does that for new keys, old keys may
+                    //       not get deleted properly so I kept this code
+                    //       for now... generally speaking, it is safer
+                    //       to have it here anyway
+                    //
+                    row->dropCell(key);
                 }
                 else
                 {
