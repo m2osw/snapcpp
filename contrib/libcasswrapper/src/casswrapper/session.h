@@ -44,6 +44,8 @@
 
 #include <unistd.h>
 
+#include "casswrapper/exception.h"
+
 namespace casswrapper
 {
 

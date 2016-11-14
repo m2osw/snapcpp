@@ -241,7 +241,7 @@ SNAP_LOG_TRACE("got an order: ")
             }
         }
     }
-    catch( casswrapper::Query::query_exception_t const & e )
+    catch( casswrapper::cassandra_exception_t const & e )
     {
         if( e.getCode() == 16777226 )  // 0x0100000A
         {
