@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 snap_manager_createcontext::snap_manager_createcontext
         ( QWidget * snap_parent

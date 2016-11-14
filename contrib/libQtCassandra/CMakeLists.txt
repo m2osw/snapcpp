@@ -48,7 +48,8 @@ set( CMAKE_AUTOMOC             TRUE )
 ## Include support modules
 ##
 find_package( As2Js              REQUIRED )
-find_package( CassandraCppDriver REQUIRED )
+#find_package( CassandraCppDriver REQUIRED )
+find_package( CassWrapper		 REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( Qt5Core            REQUIRED )
 find_package( Qt5Xml             REQUIRED )

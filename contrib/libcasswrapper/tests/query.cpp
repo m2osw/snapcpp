@@ -3,7 +3,7 @@
  *      query.cpp
  *
  * Description:
- *      Test the QCassandraQuery class
+ *      Test the query class
  *
  * Documentation:
  *      Run with no options.
@@ -35,22 +35,22 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchema.h"
-#include "QtCassandra/QStringStream.h"
+#include "casswrapper/query.h"
+#include "casswrapper/schema.h"
+#include "casswrapper/qstring_stream.h"
 #include <QtCore>
 
 #include <exception>
 #include <iostream>
 
-using namespace QtCassandra;
-using namespace QCassandraSchema;
+using namespace casswrapper;
+using namespace schema;
 
-class QueryTest
+class query_test
 {
 public:
-    QueryTest( const QString& host );
-    ~QueryTest();
+    query_test( const QString& host );
+    ~query_test();
 
     void describeSchema();
 
@@ -60,16 +60,18 @@ public:
     void simpleInsert();
     void simpleSelect();
 
+    void batchTest();
+
     void largeTableTest();
 
 private:
-    QCassandraSession::pointer_t f_session;
+    Session::pointer_t f_session;
 };
 
 
-QueryTest::QueryTest( const QString& host )
+query_test::query_test( const QString& host )
 {
-    f_session = QCassandraSession::create();
+    f_session = Session::create();
     f_session->connect( host );
     //
     if( !f_session->isConnected() )
@@ -79,13 +81,13 @@ QueryTest::QueryTest( const QString& host )
 }
 
 
-QueryTest::~QueryTest()
+query_test::~query_test()
 {
     f_session->disconnect();
 }
 
 
-void QueryTest::describeSchema()
+void query_test::describeSchema()
 {
     SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
     sm->loadSchema();
@@ -140,10 +142,10 @@ void QueryTest::describeSchema()
 }
 
 
-void QueryTest::createSchema()
+void query_test::createSchema()
 {
     std::cout << "Creating keyspace and tables..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "CREATE KEYSPACE IF NOT EXISTS qtcassandra_query_test "
         "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} "
         "AND durable_writes = true"
@@ -181,20 +183,20 @@ void QueryTest::createSchema()
 }
 
 
-void QueryTest::dropSchema()
+void query_test::dropSchema()
 {
     std::cout << "Dropping keyspace... (this may timeout if auto_snapshot is true in conf/cassandra.yaml)" << std::endl;
 
-    auto q = QCassandraQuery::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
     q->start();
 }
 
 
-void QueryTest::simpleInsert()
+void query_test::simpleInsert()
 {
     std::cout << "Insert into table 'data'..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "INSERT INTO qtcassandra_query_test.data "
                 "(id, name, test, float_value, double_value, blob_value, json_value, map_value) "
                 "VALUES "
@@ -213,13 +215,13 @@ void QueryTest::simpleInsert()
     arr += " and yet more chars...";
     q->bindByteArray( bind_num++, arr );
 
-    QCassandraQuery::string_map_t json_map;
+    Query::string_map_t json_map;
     json_map["foo"]   = "bar";
     json_map["meyer"] = "bidge";
     json_map["silly"] = "walks";
     q->bindJsonMap( bind_num++, json_map );
 
-    QCassandraQuery::string_map_t cass_map;
+    Query::string_map_t cass_map;
     cass_map["test"] = "more tests";
     cass_map["map"]  = "this";
     cass_map["fun"]  = "work";
@@ -228,12 +230,12 @@ void QueryTest::simpleInsert()
 }
 
 
-void QueryTest::simpleSelect()
+void query_test::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    auto q = Query::create( f_session );
     q->query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
-             //",COUNT(*) AS count\n"
+             ",COUNT(*) AS count\n"
              ",WRITETIME(blob_value) AS timestamp\n"
              "FROM qtcassandra_query_test.data" );
     q->start();
@@ -246,8 +248,8 @@ void QueryTest::simpleSelect()
         const float                         float_value  = q->getFloatColumn     ( "float_value"  );
         const double                        double_value = q->getDoubleColumn    ( "double_value" );
         const QByteArray                    blob_value   = q->getByteArrayColumn ( "blob_value"   );
-        const QCassandraQuery::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
-        const QCassandraQuery::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
+        const Query::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
+        const Query::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
         const int64_t	                    timestamp    = q->getInt64Column     ( "timestamp"    );
 
         std::cout   << "id ="          << id                << std::endl
@@ -275,12 +277,91 @@ void QueryTest::simpleSelect()
 }
 
 
-void QueryTest::largeTableTest()
+void query_test::batchTest()
+{
+    const int32_t row_count = 1000;
+
+    std::cout << "Batch insert into table 'large_table'..." << std::endl;
+    auto q = Query::create( f_session );
+
+    q->startLoggedBatch();
+
+    for( int32_t i = 0; i < row_count; ++i )
+    {
+        q->query( "INSERT INTO qtcassandra_query_test.large_table "
+                "(id, name, blob_value) "
+                "VALUES "
+                "(?,?,?)"
+                , 3
+               );
+        int bind_num = 0;
+        q->bindInt32  ( bind_num++, i );
+        q->bindString ( bind_num++, QString("This is test %1.").arg(i) );
+
+        QString blob;
+        blob.fill( 'b', 10 );
+        q->bindByteArray( bind_num++, blob.toUtf8() );
+
+        q->addToBatch();
+    }
+
+    q->endBatch();
+
+    std::map<int32_t,QString> string_map;
+
+    std::cout << "POST BATCH: Select from 'large_table' and test paging functionality..." << std::endl;
+    q->query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
+    q->setPagingSize( 10 );
+    q->start();
+    do
+    {
+//        std::cout << "Iterate through batch page..." << std::endl;
+        while( q->nextRow() )
+        {
+            const int32_t id(q->getInt32Column("id"));
+            const QString name(q->getStringColumn("name"));
+            string_map[id] = name;
+#if 0
+            std::cout
+                    << "id=" << id
+                    << ", name='" << name.toStdString() << "'"
+                    << ", timestamp=" << q->getInt64Column("timestamp")
+                    << std::endl;
+#endif
+        }
+    }
+    while( q->nextPage() );
+
+    std::cout << "Check order of recovered records:" << std::endl;
+    if( string_map.size() != static_cast<size_t>(row_count) )
+    {
+        throw std::runtime_error( "Row count is not correct!" );
+    }
+
+    for( int32_t idx = 0; idx < row_count; ++idx )
+    {
+        if( string_map.find(idx) == string_map.end() )
+        {
+            throw std::runtime_error( QString("Index %1 not found in map!").arg(idx).toStdString().c_str() );
+        }
+    }
+
+    std::cout << "Batch process done!" << std::endl;
+}
+
+
+void query_test::largeTableTest()
 {
     const int32_t row_count = 10000;
 
-    std::cout << "Insert into table 'large_table'..." << std::endl;
-    auto q = QCassandraQuery::create( f_session );
+    std::cout << "Insert into table 'large_table' [NO BATCH]..." << std::endl;
+    auto q = Query::create( f_session );
+
+    // Empty the table out first
+    //
+    q->query( "TRUNCATE qtcassandra_query_test.large_table" );
+    q->start();
+    q->end();
 
     for( int32_t i = 0; i < row_count; ++i )
     {
@@ -339,7 +420,7 @@ void QueryTest::largeTableTest()
         }
     }
 
-    std::cout << "Process done!" << std::endl;
+    std::cout << "Non-batch process done!" << std::endl;
 }
 
 
@@ -365,21 +446,24 @@ int main( int argc, char *argv[] )
         }
     }
 
-    try
+    //try
     {
-        QueryTest test( host );
+        query_test test( host );
         test.describeSchema();
         test.dropSchema();
         test.createSchema();
         test.simpleInsert();
         test.simpleSelect();
+        test.batchTest();
         test.largeTableTest();
     }
+#if 0
     catch( const std::exception& ex )
     {
         std::cerr << "Exception caught! what=[" << ex.what() << "]" << std::endl;
         return 1;
     }
+#endif
 
     return 0;
 }

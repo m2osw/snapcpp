@@ -41,11 +41,11 @@ if(CATCH_FOUND)
         test_snap_lock.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
+        ${CASSWRAPPER_LIBRARIES}
         ${LIBTLD_LIBRARIES}
+        ${LOG4CPLUS_LIBRARIES}
         ${QT_LIBRARIES}
+        ${SNAPWEBSITES_LIBRARIES}
         dl
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --cassandra ${CASSANDRA_HOST_IP} )

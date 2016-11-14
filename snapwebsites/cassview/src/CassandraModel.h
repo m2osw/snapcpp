@@ -2,7 +2,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
-#	include <QtCassandra/QCassandraSchema.h>
+#	include <casswrapper/schema.h>
 #	include <QtGui>
 #pragma GCC diagnostic pop
 
@@ -16,7 +16,7 @@ class CassandraModel
 	public:
 		CassandraModel() {}
 
-        void setCassandra( QtCassandra::QCassandraSession::pointer_t c );
+        void setCassandra( casswrapper::Session::pointer_t c );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -24,7 +24,7 @@ class CassandraModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-        QtCassandra::QCassandraSchema::SessionMeta::pointer_t f_sessionMeta;
+        casswrapper::schema::SessionMeta::pointer_t f_sessionMeta;
 
         void reset();
 };

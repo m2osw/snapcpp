@@ -41,8 +41,8 @@
 #include "snapbackup.h"
 #include "snap_table_list.h"
 
-#include <QtCassandra/QCassandraSchema.h>
-#include <QtCassandra/QStringStream.h>
+#include <casswrapper/schema.h>
+#include <casswrapper/qstring_stream.h>
 
 // 3rd party libs
 //
@@ -55,11 +55,11 @@
 #include <iostream>
 #include <sstream>
 
-using namespace QtCassandra;
-using namespace QCassandraSchema;
+using namespace casswrapper;
+using namespace casswrapper::schema;
 
 snapbackup::snapbackup( getopt_ptr_t opt )
-    : f_session( QCassandraSession::create() )
+    : f_session( Session::create() )
     , f_opt(opt)
 {
 }
@@ -199,7 +199,7 @@ void snapbackup::restoreSchema( const QString& context_name )
         const QString name( q.value(name_idx).toString() );
         const QString schema_string( q.value( schema_idx ).toString() );
 
-        auto cass_query = QCassandraQuery::create( f_session );
+        auto cass_query = Query::create( f_session );
         cass_query->query( schema_string );
         cass_query->start( false );
         std::cout << "Creating " << desc << " " << name;
@@ -239,7 +239,7 @@ void snapbackup::dropContext( const QString& context_name )
     {
         const auto table_name( table.first );
 
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( Query::create(f_session) );
         q->query( QString("DROP TABLE %1.%2").arg(context_name).arg(table_name) );
         q->start( false );
         std::cout << "Dropping table " << table_name;
@@ -253,7 +253,7 @@ void snapbackup::dropContext( const QString& context_name )
     }
 
     {
-        auto q( QCassandraQuery::create(f_session) );
+        auto q( Query::create(f_session) );
         q->query( QString("DROP KEYSPACE %1").arg(context_name) );
         q->start( false );
         std::cout << "Dropping keyspace " << context_name;
@@ -300,7 +300,7 @@ void snapbackup::restoreContext()
 }
 
 
-void snapbackup::appendRowsToSqliteDb( QCassandraQuery::pointer_t cass_query, const QString& table_name )
+void snapbackup::appendRowsToSqliteDb( Query::pointer_t cass_query, const QString& table_name )
 {
     const QString q_str = QString( "INSERT OR REPLACE INTO %1 "
             "(key, column1, value ) "
@@ -389,7 +389,7 @@ void snapbackup::storeTables( const int count, const QString& context_name )
         const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1");
         q_str = cql_select_string.arg(table_name);
 
-        auto cass_query = QCassandraQuery::create( f_session );
+        auto cass_query = Query::create( f_session );
         cass_query->query( q_str );
         cass_query->setPagingSize( count );
         cass_query->start();
@@ -484,7 +484,7 @@ void snapbackup::restoreTables( const QString& context_name )
             const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
             const QString qstr( cql_insert_string.arg(table_name) );
 
-            auto cass_query = QCassandraQuery::create( f_session );
+            auto cass_query = Query::create( f_session );
             cass_query->query( qstr, 3 );
             int bind_num = 0;
             cass_query->bindByteArray( bind_num++, key     );

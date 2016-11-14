@@ -16,11 +16,10 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "QtCassandra/QueryModel.h"
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSession.h"
-
-#include "NotUsed.h"
+#include "casswrapper/query_model.h"
+#include "casswrapper/query.h"
+#include "casswrapper/session.h"
+#include "not_used.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -32,7 +31,7 @@
 //#include "poison.h"
 
 
-namespace QtCassandra
+namespace casswrapper
 {
 
 
@@ -42,27 +41,27 @@ namespace
 }
 
 
-QueryModel::QueryModel()
+query_model::query_model()
 {
 }
 
 
-void QueryModel::reset()
+void query_model::reset()
 {
     beginResetModel();
     endResetModel();
 }
 
 
-void QueryModel::displayError( std::exception const& except, QString const& message ) const
+void query_model::displayError( std::exception const& except, QString const& message ) const
 {
     std::cerr << "Exception caught! what=[" << except.what() << "], message=[" << message.toUtf8().data() << "]" << std::endl;
     emit exceptionCaught( except.what(), message );
 }
 
 
-void QueryModel::init
-    ( QCassandraSession::pointer_t session
+void query_model::init
+    ( Session::pointer_t session
     , const QString& keyspace_name
     , const QString& table_name
     , const QRegExp& filter
@@ -75,11 +74,11 @@ void QueryModel::init
 }
 
 
-void QueryModel::doQuery( QCassandraQuery::pointer_t q )
+void query_model::doQuery( Query::pointer_t q )
 {
     if( f_query )
     {
-        disconnect( f_query.get(), &QCassandraQuery::queryFinished, this, &QueryModel::onQueryFinished );
+        disconnect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
     }
 
     f_rows.clear();
@@ -89,7 +88,7 @@ void QueryModel::doQuery( QCassandraQuery::pointer_t q )
     try
     {
         f_query = q;
-        connect( f_query.get(), &QCassandraQuery::queryFinished, this, &QueryModel::onQueryFinished );
+        connect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
         f_query->start( false /*don't block*/ );
     }
     catch( const std::exception& except )
@@ -101,11 +100,11 @@ void QueryModel::doQuery( QCassandraQuery::pointer_t q )
 }
 
 
-void QueryModel::clear()
+void query_model::clear()
 {
     if( f_query )
     {
-        disconnect( f_query.get(), &QCassandraQuery::queryFinished, this, &QueryModel::onQueryFinished );
+        disconnect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
     }
     f_query.reset();
     f_session.reset();
@@ -117,7 +116,7 @@ void QueryModel::clear()
 }
 
 
-bool QueryModel::fetchFilter( const QByteArray& key )
+bool query_model::fetchFilter( const QByteArray& key )
 {
     if( !f_filter.isEmpty() )
     {
@@ -131,7 +130,7 @@ bool QueryModel::fetchFilter( const QByteArray& key )
 }
 
 
-void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
+void query_model::onQueryFinished( Query::pointer_t q )
 {
     try
     {
@@ -151,7 +150,7 @@ void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
         displayError( except, tr("Cannot read from database!") );
     }
 
-    QTimer::singleShot( 1000, this, &QueryModel::onFetchMore );
+    QTimer::singleShot( 1000, this, &query_model::onFetchMore );
 
     // Trigger a new page if there is more
     //
@@ -159,7 +158,7 @@ void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
 }
 
 
-void QueryModel::fetchCustomData( QCassandraQuery::pointer_t q )
+void query_model::fetchCustomData( Query::pointer_t q )
 {
     // Default does nothing
     //
@@ -167,7 +166,7 @@ void QueryModel::fetchCustomData( QCassandraQuery::pointer_t q )
 }
 
 
-void QueryModel::onFetchMore()
+void query_model::onFetchMore()
 {
     try
     {
@@ -204,14 +203,14 @@ void QueryModel::onFetchMore()
 }
 
 
-Qt::ItemFlags QueryModel::flags( QModelIndex const & idx ) const
+Qt::ItemFlags query_model::flags( QModelIndex const & idx ) const
 {
     NOTUSED(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
 
-QVariant QueryModel::data( QModelIndex const & idx, int role ) const
+QVariant query_model::data( QModelIndex const & idx, int role ) const
 {
     if( static_cast<int>(f_rows.size()) <= idx.row() )
     {
@@ -231,7 +230,7 @@ QVariant QueryModel::data( QModelIndex const & idx, int role ) const
 }
 
 
-QModelIndex QueryModel::index( int row, int column, const QModelIndex & ) const
+QModelIndex query_model::index( int row, int column, const QModelIndex & ) const
 {
     if( row < 0 || row >= static_cast<int>(f_rows.size()) )
     {
@@ -247,13 +246,13 @@ QModelIndex QueryModel::index( int row, int column, const QModelIndex & ) const
 }
 
 
-QModelIndex QueryModel::parent( const QModelIndex & ) const
+QModelIndex query_model::parent( const QModelIndex & ) const
 {
     return QModelIndex();
 }
 
 
-int QueryModel::rowCount( QModelIndex const & prnt ) const
+int query_model::rowCount( QModelIndex const & prnt ) const
 {
     if( prnt.isValid() )
     {
@@ -272,7 +271,7 @@ int QueryModel::rowCount( QModelIndex const & prnt ) const
     return 0;
 }
 
-int QueryModel::columnCount( QModelIndex const & prnt ) const
+int query_model::columnCount( QModelIndex const & prnt ) const
 {
     NOTUSED(prnt);
     return f_columnCount;
@@ -280,6 +279,6 @@ int QueryModel::columnCount( QModelIndex const & prnt ) const
 
 
 }
-// namespace QtCassandra
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et

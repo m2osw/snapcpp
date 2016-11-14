@@ -39,7 +39,7 @@
 //
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 
 TableModel::TableModel()
@@ -51,7 +51,7 @@ void TableModel::doQuery()
 {
     f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
 
-    auto q = QCassandraQuery::create(f_session);
+    auto q = Query::create(f_session);
     q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
             .arg(f_keyspaceName)
@@ -59,7 +59,7 @@ void TableModel::doQuery()
             );
     q->setPagingSize( 10 );
 
-    QueryModel::doQuery( q );
+    query_model::doQuery( q );
 }
 
 
@@ -108,7 +108,7 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
     {
         if( role == Qt::UserRole )
         {
-            return QueryModel::data( idx, role );
+            return query_model::data( idx, role );
         }
         else
         {
@@ -118,7 +118,7 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
 }
 
 
-void TableModel::fetchCustomData( QCassandraQuery::pointer_t q )
+void TableModel::fetchCustomData( Query::pointer_t q )
 {
     if( !f_sortModel )
     {

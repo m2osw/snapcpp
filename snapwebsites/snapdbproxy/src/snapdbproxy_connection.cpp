@@ -54,7 +54,8 @@
 // QtCassandra lib
 //
 #include <QtCassandra/QCassandra.h>
-#include <QtCassandra/QCassandraSchema.h>
+#include <casswrapper/schema.h>
+#include <casswrapper/session.h>
 
 // C++ lib
 //
@@ -112,7 +113,7 @@ pid_t gettid()
 
 snapdbproxy_connection::snapdbproxy_connection
     ( snapdbproxy * proxy
-    , QtCassandra::QCassandraSession::pointer_t session
+    , casswrapper::Session::pointer_t session
     , tcp_client_server::bio_client::pointer_t & client
     , QString const & cassandra_host_list
     , int cassandra_port
@@ -240,7 +241,7 @@ SNAP_LOG_TRACE("got an order: ")
             }
         }
     }
-    catch( QtCassandra::QCassandraQuery::query_exception_t const & e )
+    catch( casswrapper::cassandra_exception_t const & e )
     {
         if( e.getCode() == 16777226 )  // 0x0100000A
         {
@@ -501,7 +502,7 @@ void snapdbproxy_connection::kill()
 }
 
 
-void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery::pointer_t q, QtCassandra::QCassandraOrder const & order)
+void snapdbproxy_connection::send_order(casswrapper::Query::pointer_t q, QtCassandra::QCassandraOrder const & order)
 {
     size_t const count(order.parameterCount());
 
@@ -529,7 +530,21 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery::pointer_t 
     }
 
     // Consistency Level
-    q->setConsistencyLevel( order.consistencyLevel() );
+    using lvl = casswrapper::Query::consistency_level_t;
+    lvl level( lvl::level_default );
+    switch( order.consistencyLevel() )
+    {
+        case QtCassandra::CONSISTENCY_LEVEL_DEFAULT      : level = lvl::level_default;      break;
+        case QtCassandra::CONSISTENCY_LEVEL_ONE          : level = lvl::level_one;          break;
+        case QtCassandra::CONSISTENCY_LEVEL_QUORUM       : level = lvl::level_quorum;       break;
+        case QtCassandra::CONSISTENCY_LEVEL_LOCAL_QUORUM : level = lvl::level_local_quorum; break;
+        case QtCassandra::CONSISTENCY_LEVEL_EACH_QUORUM  : level = lvl::level_each_quorum;  break;
+        case QtCassandra::CONSISTENCY_LEVEL_ALL          : level = lvl::level_all;          break;
+        case QtCassandra::CONSISTENCY_LEVEL_ANY          : level = lvl::level_any;          break;
+        case QtCassandra::CONSISTENCY_LEVEL_TWO          : level = lvl::level_two;          break;
+        case QtCassandra::CONSISTENCY_LEVEL_THREE        : level = lvl::level_three;        break;
+    }
+    q->setConsistencyLevel( level );
 
     // Timestamp
     q->setTimestamp(order.timestamp());
@@ -549,7 +564,7 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery::pointer_t 
 void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const & order)
 {
     cursor_t cursor;
-    cursor.f_query = QtCassandra::QCassandraQuery::create(f_session);
+    cursor.f_query = casswrapper::Query::create(f_session);
     cursor.f_column_count = order.columnCount();
 
     // in this case we have to keep the query so we allocate it
@@ -591,7 +606,7 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
         if(g_cluster_description.isEmpty())
         {
             // load the meta data
-            QtCassandra::QCassandraSchema::SessionMeta::pointer_t session_meta( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
+            casswrapper::schema::SessionMeta::pointer_t session_meta( casswrapper::schema::SessionMeta::create(f_session) );
             session_meta->loadSchema();
             g_cluster_description = session_meta->encodeSessionMeta();
         }
@@ -624,7 +639,7 @@ void snapdbproxy_connection::fetch_cursor(QtCassandra::QCassandraOrder const & o
     {
         throw snap::snapwebsites_exception_invalid_parameters("cursor index is out of bounds, it may already have been closed.");
     }
-    QtCassandra::QCassandraQuery::pointer_t q(f_cursors[cursor_index].f_query);
+    casswrapper::Query::pointer_t q(f_cursors[cursor_index].f_query);
     if(!q)
     {
         throw snap::snapwebsites_exception_invalid_parameters("cursor was already closed.");
@@ -695,7 +710,7 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
 
 void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & order)
 {
-    auto q( QtCassandra::QCassandraQuery::create( f_session ) );
+    auto q( casswrapper::Query::create( f_session ) );
     send_order(q, order);
 
     QtCassandra::QCassandraOrderResult result;
@@ -720,7 +735,7 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
 
 void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const & order)
 {
-    QtCassandra::QCassandraSession::pointer_t order_session;
+    casswrapper::Session::pointer_t order_session;
 
     if(order.timeout() > 0)
     {
@@ -733,11 +748,11 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
         //      https://datastax-oss.atlassian.net/browse/CPP-300
         //
         //SNAP_LOG_INFO("creating sub-Cassandra-session for this slow order (")(order.cql())(")");
-        order_session = QtCassandra::QCassandraSession::create();
+        order_session = casswrapper::Session::create();
         {
             snap::snap_thread::snap_lock lock(g_connections_mutex);
 
-            QtCassandra::QCassandraRequestTimeout request_timeout(order_session, order.timeout());
+            casswrapper::request_timeout request_timeout(order_session, order.timeout());
             order_session->connect( f_cassandra_host_list, f_cassandra_port, f_use_ssl ); // throws on failure!
         }
     }
@@ -746,7 +761,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
         order_session = f_session;
     }
 
-    auto q( QtCassandra::QCassandraQuery::create( order_session ) );
+    auto q( casswrapper::Query::create( order_session ) );
     send_order(q, order);
 
     // success

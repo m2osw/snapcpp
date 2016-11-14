@@ -38,7 +38,8 @@ project( QtCassandra )
 
 include_directories(
     ${AS2JS_INCLUDE_DIR}
-    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    #${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    ${CASSWRAPPER_INCLUDE_DIR}
 )
 
 configure_file(
@@ -55,24 +56,17 @@ set( HEADER_FILES
     QtCassandra/QCassandraOrderResult.h
     QtCassandra/QCassandraPredicate.h
     QtCassandra/QCassandraProxy.h
-    QtCassandra/QCassandraQuery.h
     QtCassandra/QCassandraRow.h
-    QtCassandra/QCassandraSchema.h
-    QtCassandra/QCassandraSchemaValue.h
-    QtCassandra/QCassandraSession.h
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
     QtCassandra/QStringStream.h
-    QtCassandra/QueryModel.h
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 )
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
     NotUsed.h
-    CassTools.h
-    CassTools.cpp
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraContext.cpp
@@ -80,19 +74,15 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraOrderResult.cpp
     QCassandraPredicate.cpp
     QCassandraProxy.cpp
-    QCassandraQuery.cpp
     QCassandraRow.cpp
-    QCassandraSchema.cpp
-    QCassandraSchemaValue.cpp
-    QCassandraSession.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
-    QueryModel.cpp
 )
 
 target_link_libraries(QtCassandra
     ${AS2JS_LIBRARIES}
-    ${CASSANDRACPPDRIVER_LIBRARIES}
+    #${CASSANDRACPPDRIVER_LIBRARIES}
+    ${CASSWRAPPER_LIBRARIES}
     Qt5::Core
     Qt5::Xml
 )

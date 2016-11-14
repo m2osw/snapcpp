@@ -136,13 +136,14 @@ int main(int argc, char *argv[])
         // before we connect we can test the in memory object validity
 
         // max. size really limited by Cassandra
+        uint64_t const BUFFER_MAX_SIZE( QtCassandra::getBufferMaxSize() );
         qDebug() << "+ Testing size limit";
-        if(QtCassandra::BUFFER_MAX_SIZE > 0x80000000) {
+        if(BUFFER_MAX_SIZE > 0x80000000) {
             qDebug() << "error: the size of a Cassandra's cell is limited to 2Gb";
             ++err;
         }
 
-        for(uint64_t i(0); i <= QtCassandra::BUFFER_MAX_SIZE; ++i) {
+        for(uint64_t i(0); i <= BUFFER_MAX_SIZE; ++i) {
             try {
                 QtCassandra::checkBufferSize(i);
             }
@@ -162,7 +163,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        for(uint64_t i(QtCassandra::BUFFER_MAX_SIZE + 1); i <= QtCassandra::BUFFER_MAX_SIZE + 1024; ++i) {
+        for(uint64_t i(BUFFER_MAX_SIZE + 1); i <= BUFFER_MAX_SIZE + 1024; ++i) {
             try {
                 QtCassandra::checkBufferSize(i);
                 qDebug() << "error: checkBufferSize() did not generate an error with an invalid size";

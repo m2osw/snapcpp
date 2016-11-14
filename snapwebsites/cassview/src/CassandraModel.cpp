@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-using namespace QtCassandra;
-using namespace QCassandraSchema;
+using namespace casswrapper;
+using namespace casswrapper::schema;
 
 
 void CassandraModel::reset()
@@ -13,7 +13,7 @@ void CassandraModel::reset()
 }
 
 
-void CassandraModel::setCassandra( QCassandraSession::pointer_t c )
+void CassandraModel::setCassandra( Session::pointer_t c )
 {
     f_sessionMeta = SessionMeta::create( c );
     f_sessionMeta->loadSchema();

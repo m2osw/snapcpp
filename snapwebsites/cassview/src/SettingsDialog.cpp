@@ -32,15 +32,15 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <QtCassandra/QCassandraSchema.h>
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/schema.h>
+#include <casswrapper/session.h>
 #include <algorithm>
 
 #include <QtWidgets>
 
 #include "SettingsDialog.h"
 
-using namespace QtCassandra;
+using namespace casswrapper;
 
 namespace
 {
@@ -97,10 +97,10 @@ bool SettingsDialog::tryConnection( QWidget* p )
         const int     port    = settings.value( PORT_ID,    PORT_DEFAULT    ).toInt();
         const QString context = settings.value( CONTEXT_ID, CONTEXT_DEFAULT ).toString();
 
-        QCassandraSession::pointer_t session( QCassandraSession::create() );
+        Session::pointer_t session( Session::create() );
         session->connect( server, port, settings.value( USESSL_ID, USESSL_DEFAULT ).toBool() );
 
-        QCassandraSchema::SessionMeta::pointer_t meta( QCassandraSchema::SessionMeta::create( session ) );
+        schema::SessionMeta::pointer_t meta( schema::SessionMeta::create( session ) );
         meta->loadSchema();
         auto keyspaces( meta->getKeyspaces() );
         if( keyspaces.find(context) == keyspaces.end() )

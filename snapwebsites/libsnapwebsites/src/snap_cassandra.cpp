@@ -21,6 +21,8 @@
 #include "snapwebsites/snap_tables.h"
 #include "snapwebsites/log.h"
 
+#include <casswrapper/schema.h>
+
 #include <unistd.h>
 
 #include "snapwebsites/poison.h"
@@ -354,7 +356,7 @@ void snap_cassandra::create_table_list()
                 // The documentation says to use "" for "no compression"
                 //
                 {
-                    QtCassandra::QCassandraSchema::Value compression;
+                    casswrapper::schema::Value compression;
                     auto & compression_map(compression.map());
                     compression_map["sstable_compression"] = QVariant(QString());
                     table_fields["compression"] = compression;
@@ -372,7 +374,7 @@ void snap_cassandra::create_table_list()
                 //      that much memory to be used too...
                 //
                 {
-                    QtCassandra::QCassandraSchema::Value compression;
+                    casswrapper::schema::Value compression;
                     auto & compression_map(compression.map());
                     compression_map["sstable_compression"] = QVariant("DeflateCompressor");
                     //compression_map["chunk_length_kb"] = QVariant(64);
@@ -401,7 +403,7 @@ void snap_cassandra::create_table_list()
                     // an sstable file when all data within is past its
                     // deadline
                     //
-                    QtCassandra::QCassandraSchema::Value compaction;
+                    casswrapper::schema::Value compaction;
                     auto & compaction_map(compaction.map());
                     compaction_map["class"] = QVariant("DateTieredCompactionStrategy");
                     compaction_map["min_threshold"] = QVariant(4);
@@ -419,7 +421,7 @@ void snap_cassandra::create_table_list()
                     // tables that have mainly just writes are better
                     // handled with a Size Tiered Compaction (50% less I/O)
                     //
-                    QtCassandra::QCassandraSchema::Value compaction;
+                    casswrapper::schema::Value compaction;
                     auto & compaction_map(compaction.map());
                     compaction_map["class"] = QVariant("SizeTieredCompactionStrategy");
                     //compaction_map["min_threshold"] = QVariant(4);
@@ -433,7 +435,7 @@ void snap_cassandra::create_table_list()
 
             default:
                 {
-                    QtCassandra::QCassandraSchema::Value compaction;
+                    casswrapper::schema::Value compaction;
                     auto & compaction_map(compaction.map());
                     compaction_map["class"] = QVariant("LeveledCompactionStrategy");
                     //compaction_map["tombstone_threshold"] = QVariant(0.2); // 20%

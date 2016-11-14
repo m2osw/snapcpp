@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraSchema.cpp
+ *      schema.cpp
  *
  * Description:
  *      Database schema metadata.
@@ -36,15 +36,18 @@
 
 #pragma once
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchemaValue.h"
+#include "casswrapper/query.h"
+#include "casswrapper/schema_value.h"
 
 #include <QString>
 
 
-namespace QtCassandra
+namespace casswrapper
 {
-namespace QCassandraSchema
+
+class Encoder;
+
+namespace schema
 {
 
 enum class column_type_t
@@ -130,8 +133,8 @@ public:
 
                 Value&                          operator [] ( const QString& name );
 
-                void                            encodeColumnMeta(QCassandraEncoder& encoded) const;
-                void                            decodeColumnMeta(const QCassandraDecoder& decoder);
+                void                            encodeColumnMeta(Encoder& encoded) const;
+                void                            decodeColumnMeta(const Decoder& decoder);
 
                 QString     					getCqlString() const;
 
@@ -155,8 +158,8 @@ public:
 
             const ColumnMeta::map_t&        getColumns() const;
 
-            void                            encodeTableMeta(QCassandraEncoder& encoded) const;
-            void                            decodeTableMeta(const QCassandraDecoder& decoder);
+            void                            encodeTableMeta(Encoder& encoded) const;
+            void                            decodeTableMeta(const Decoder& decoder);
 
             QString      					getCqlString() const;
 
@@ -169,9 +172,9 @@ public:
             ColumnMeta::map_t               f_columns;
         };
 
-        KeyspaceMeta( SessionMeta::pointer_t session_meta = SessionMeta::pointer_t() );
+        KeyspaceMeta( SessionMeta::pointer_t SessionMeta = SessionMeta::pointer_t() );
 
-        QCassandraSession::pointer_t    session() const;
+        Session::pointer_t    get_session() const;
 
         const QString&                  getName()   const;
         const Value::map_t&             getFields() const;
@@ -181,8 +184,8 @@ public:
 
         const TableMeta::map_t&         getTables() const;
 
-        void                            encodeKeyspaceMeta(QCassandraEncoder& encoded) const;
-        void                            decodeKeyspaceMeta(const QCassandraDecoder& decoder);
+        void                            encodeKeyspaceMeta(Encoder& encoded) const;
+        void                            decodeKeyspaceMeta(const Decoder& decoder);
 
         QString							getKeyspaceCql() const;
         string_map_t					getTablesCql() const;
@@ -196,23 +199,25 @@ public:
         TableMeta::map_t                f_tables;
     };
 
-    SessionMeta( QCassandraSession::pointer_t session = QCassandraSession::pointer_t() );
+    SessionMeta( Session::pointer_t session = Session::pointer_t() );
     ~SessionMeta();
 
-    static pointer_t                create( QCassandraSession::pointer_t session );
+    static pointer_t                create( Session::pointer_t session );
     void                            loadSchema();
-    QCassandraSession::pointer_t    session() const;
+    Session::pointer_t              get_session() const;
     uint32_t                        snapshotVersion() const;
     const KeyspaceMeta::map_t &     getKeyspaces();
     QByteArray                      encodeSessionMeta() const;
     void                            decodeSessionMeta(const QByteArray& encoded);
 
 private:
-    QCassandraSession::pointer_t    f_session;
+    Session::pointer_t              f_session;
     KeyspaceMeta::map_t             f_keyspaces;
 };
 
 
-} //namespace QtCassandra
-} //namespace QCassandraSchema
+} //namespace schema
+
+} //namespace casswrapper
+
 // vim: ts=4 sw=4 et

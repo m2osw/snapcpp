@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-using namespace QtCassandra;
-using namespace QCassandraSchema;
+using namespace casswrapper;
+using namespace casswrapper::schema;
 
 
 void KeyspaceModel::reset()
@@ -12,7 +12,7 @@ void KeyspaceModel::reset()
     endResetModel();
 }
 
-void KeyspaceModel::setCassandra( QCassandraSession::pointer_t c, const QString& keyspace_name )
+void KeyspaceModel::setCassandra( Session::pointer_t c, const QString& keyspace_name )
 {
     auto sessionMeta = SessionMeta::create( c );
     sessionMeta->loadSchema();

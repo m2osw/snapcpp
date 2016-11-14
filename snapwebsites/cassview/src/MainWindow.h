@@ -6,7 +6,7 @@
 #include "TableModel.h"
 #include "RowModel.h"
 
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/session.h>
 #include <QtGui>
 
 class MainWindow
@@ -44,7 +44,7 @@ private slots:
     void on_f_refreshView_clicked();
 
 private:
-    typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
+    typedef casswrapper::Session::pointer_t cassandra_t;
     typedef std::shared_ptr<KeyspaceModel>  keyspace_model_t;
     typedef std::shared_ptr<TableModel>     table_model_t;
     typedef std::shared_ptr<RowModel>       row_model_t;

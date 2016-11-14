@@ -43,6 +43,7 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package( AdvGetOpt        REQUIRED )
+find_package( CassWrapper	   REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )
@@ -61,6 +62,7 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 include_directories(
+    ${CASSWRAPPER_INCLUDE_DIRS}
     ${QTCASSANDRA_INCLUDE_DIRS}
     ${SNAPWEBSITES_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}/src

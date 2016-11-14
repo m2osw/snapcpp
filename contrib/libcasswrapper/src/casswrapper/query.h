@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraQuery.h
+ *      query.h
  *
  * Description:
  *      Handling of the cassandra::CfDef (Column Family Definition).
@@ -44,53 +44,40 @@
 #include <QObject>
 #include <QString>
 
-#include "QtCassandra/QCassandraConsistencyLevel.h"
-#include "QtCassandra/QCassandraSession.h"
+#include "casswrapper/session.h"
 
 
-namespace QtCassandra
+namespace casswrapper
 {
 
+struct data;
 
-class QCassandraQuery
+class Query
     : public QObject
-    , public std::enable_shared_from_this<QCassandraQuery>
+    , public std::enable_shared_from_this<Query>
 {
     Q_OBJECT
 
 public:
-    typedef std::shared_ptr<QCassandraQuery>  pointer_t;
+    enum class consistency_level_t
+    {
+        level_default       ,
+        level_one           ,
+        level_quorum        ,
+        level_local_quorum  ,
+        level_each_quorum   ,
+        level_all           ,
+        level_any           ,
+        level_two           ,
+        level_three
+    };
+
+    typedef std::shared_ptr<Query>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
 
-    class exception_t : public std::runtime_error
-    {
-    public:
-        exception_t( const QString& what ) : std::runtime_error(qPrintable(what)) {}
-    };
+    ~Query();
 
-    class query_exception_t : public std::exception
-    {
-    public:
-        query_exception_t( CassTools::future_pointer_t sesson_future, const QString& msg );
-
-        uint32_t        getCode()    const { return f_code;    }
-        QString const&  getError()   const { return f_error;   }
-        QString const&  getErrMsg()  const { return f_errmsg;  }
-        QString const&  getMessage() const { return f_message; }
-
-        virtual const char* what() const throw() override;
-
-    private:
-        uint32_t    f_code;
-        QString     f_error;
-        QString     f_errmsg;
-        QString     f_message;
-        std::string f_what;
-    };
-
-    ~QCassandraQuery();
-
-    static pointer_t    create( QCassandraSession::pointer_t session );
+    static pointer_t    create( Session::pointer_t session );
 
     const QString&      description         () const;
     void                setDescription      ( const QString& val );
@@ -114,6 +101,12 @@ public:
     void                bindByteArray       ( const size_t num, const QByteArray&   value );
     void                bindJsonMap         ( const size_t num, const string_map_t& value );
     void                bindMap             ( const size_t num, const string_map_t& value );
+
+    void                startLoggedBatch    ();
+    void                startUnloggedBatch  ();
+    void                startCounterBatch   ();
+    void                addToBatch          ();
+    void                endBatch            ( const bool block = true );
 
     void                start               ( const bool block = true );
     bool	            isReady             () const;
@@ -146,43 +139,40 @@ public:
     string_map_t        getMapColumn        ( const int num ) const;
 
 signals:
-    void                threadQueryFinished( QCassandraQuery* q );
-    void                queryFinished( QCassandraQuery::pointer_t q );
+    void                threadQueryFinished( Query* q );
+    void                queryFinished( Query::pointer_t q );
 
 private slots:
-    void                onThreadQueryFinished( QCassandraQuery* q );
+    void                onThreadQueryFinished( Query* q );
 
 private:
-    QCassandraQuery( QCassandraSession::pointer_t session );
+    Query( Session::pointer_t session );
 
     // Current query
     //
-    QCassandraSession::pointer_t   f_session;
-    QString                        f_description;
-    QString                        f_queryString;
-    CassTools::statement_pointer_t f_queryStmt;
-    CassTools::future_pointer_t    f_sessionFuture;
-    CassTools::result_pointer_t    f_queryResult;
-    CassTools::iterator_pointer_t  f_rowsIterator;
-    consistency_level_t			   f_consistencyLevel = CONSISTENCY_LEVEL_DEFAULT;
-    int64_t						   f_timestamp  = 0;
-    int64_t						   f_timeout    = 0;
-    int                            f_pagingSize = -1;
+    Session::pointer_t           f_session;
+    QString                      f_description;
+    QString                      f_queryString;
+    //
+    std::unique_ptr<data>        f_data;
+    //
+    consistency_level_t          f_consistencyLevel = consistency_level_t::level_default;
+    int64_t                      f_timestamp        = 0;
+    int64_t                      f_timeout          = 0;
+    int                          f_pagingSize       = -1;
 
-    void 		        setStatementConsistency();
-    void 		        setStatementTimestamp();
-    bool 		        getBoolFromValue      ( const CassValue* value ) const;
-    QByteArray          getByteArrayFromValue ( const CassValue* value ) const;
-    string_map_t        getMapFromValue       ( const CassValue* value ) const;
-    void                throwIfError          ( const QString& msg     );
+    void 		        setStatementConsistency ();
+    void 		        setStatementTimestamp   ();
+    void                throwIfError            ( const QString& msg );
+    void                internalStart           ( const bool block   );
 
-    static void		    queryCallbackFunc( CassFuture* future, void *data );
+    static void		    queryCallbackFunc( void* future, void *data );
 };
 
 
 }
-// namespace QtCassandra
+// namespace casswrapper
 
-Q_DECLARE_METATYPE( QtCassandra::QCassandraQuery::pointer_t )
+Q_DECLARE_METATYPE( casswrapper::Query::pointer_t )
 
 // vim: ts=4 sw=4 et

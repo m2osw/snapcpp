@@ -52,21 +52,6 @@ if( NOT DEFAULT_CASSANDRA_IP )
 endif()
 set( CASSANDRA_IP "${DEFAULT_CASSANDRA_IP}" CACHE STRING "IP address of the cassandra server" )
 
-################################################################################
-project(query)
-
-add_executable(${PROJECT_NAME}
-    query.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${AS2JS_LIBRARIES}
-    ${CASSANDRACPPDRIVER_LIBRARIES}
-    QtCassandra
-)
-
-add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
-
 ###############################################################################
 project(cluster)
 

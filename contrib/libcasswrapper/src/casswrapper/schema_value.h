@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraSchemaValue.h
+ *      schema_value.h
  *
  * Description:
  *      Handling of the CQL interface.
@@ -36,8 +36,7 @@
 
 #pragma once
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraValue.h"
+#include "casswrapper/query.h"
 
 #include <map>
 #include <memory>
@@ -47,11 +46,15 @@
 #include <QVariant>
 
 
-namespace QtCassandra
+namespace casswrapper
 {
 
+class Encoder;
+class Decoder;
+class value;
+class iterator;
 
-namespace QCassandraSchema
+namespace schema
 {
 
 
@@ -64,15 +67,14 @@ public:
         TypeMap,
         TypeList
     };
-    //typedef std::shared_ptr<Value>        pointer_t;
     typedef std::vector<Value>            list_t;
     typedef std::map<QString, Value>      map_t;
 
                         Value();
                         Value( const QVariant& var );
 
-    void                readValue( CassTools::iterator_pointer_t iter );
-    void                readValue( CassTools::value_pointer_t iter );
+    void                readValue( const iterator& iter );
+    void                readValue( const value&    iter );
     type_t              type() const { return f_type; }
 
     const QVariant&     variant()    const { return f_variant;                          }
@@ -84,28 +86,27 @@ public:
 
     const QString&      output() const;
 
-    void                encodeValue(QCassandraEncoder& encoder) const;
-    void                decodeValue(const QCassandraDecoder& decoder);
+    void                encodeValue(Encoder& encoder) const;
+    void                decodeValue(const Decoder& decoder);
 
 private:
-    void                parseValue();
-    void                parseMap();
-    void                parseList();
-    void                parseTuple();
-    void                parseVariant();
+    void                parseValue   ( const value& val );
+    void                parseMap     ( const value& val );
+    void                parseList    ( const value& val );
+    void                parseTuple   ( const value& val );
+    void                parseVariant ( const value& val );
 
-    CassTools::value_pointer_t  f_value;
-    type_t                      f_type;
-    QVariant                    f_variant;
-    list_t                      f_list;
-    map_t                       f_map;
+    type_t              f_type;
+    QVariant            f_variant;
+    list_t              f_list;
+    map_t               f_map;
 
-    mutable QString             f_stringOutput;
+    mutable QString     f_stringOutput;
 };
 
 
 
 
-} // namespace QCassandraSchema
-} //namespace QtCassandra
+} // namespace schema
+} //namespace casswrapper
 // vim: ts=4 sw=4 et

@@ -1,19 +1,19 @@
 /*
- * Text:
- *      CassTools.h
+ * Header:
+ *      version.h
  *
  * Description:
- *      Handling of the CQL interface.
+ *      Stores the current version. This file is generated from version.h.in.
  *
  * Documentation:
- *      See each function below.
+ *      See the corresponding .cpp file.
  *
  * License:
  *      Copyright (c) 2011-2016 Made to Order Software Corp.
- *
+ * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
- *
+ * 
  *      Permission is hereby granted, free of charge, to any person obtaining a
  *      copy of this software and associated documentation files (the
  *      "Software"), to deal in the Software without restriction, including
@@ -33,87 +33,29 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 #pragma once
 
-#include "cassandra.h"
-
-namespace QtCassandra
+namespace casswrapper
 {
 
-namespace CassTools
-{
+static const int   CASSWRAPPER_LIBRARY_VERSION_MAJOR  = @LIBCASSWRAPPER_VERSION_MAJOR@;
+static const int   CASSWRAPPER_LIBRARY_VERSION_MINOR  = @LIBCASSWRAPPER_VERSION_MINOR@;
+static const int   CASSWRAPPER_LIBRARY_VERSION_PATCH  = @LIBCASSWRAPPER_VERSION_PATCH@;
 
-struct collectionDeleter
-{
-    void operator()(CassCollection* p) const;
-};
+/** \brief The library version as a string.
+ *
+ * This variable represents the full library version at the time
+ * you compile your program.
+ *
+ * \warning
+ * This variable uses an attribute supported by the GNU C++ compiler
+ * which prevents Doxygen from finding this help block if declared
+ * in the .cpp file. This is why it is in the header.
+ *
+ * \sa version()
+ */
+static const char *LIBCASSWRAPPER_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBCASSWRAPPER_VERSION_MAJOR@.@LIBCASSWRAPPER_VERSION_MINOR@.@LIBCASSWRAPPER_VERSION_PATCH@";
 
-struct columnMetaDeleter
-{
-    void operator()(const CassColumnMeta* /*p*/) const;
-};
-
-struct clusterDeleter
-{ 
-    void operator()(CassCluster* p) const;
-};
-
-struct futureDeleter
-{ 
-    void operator()(CassFuture* p) const;
-};
-
-struct iteratorDeleter
-{
-    void operator()(CassIterator* p) const;
-};
-
-struct keyspaceMetaDeleter
-{
-    void operator()(const CassKeyspaceMeta* /*p*/) const;
-};
-
-struct resultDeleter
-{
-    void operator()(const CassResult* p) const;
-};
-
-struct tableMetaDeleter
-{ 
-    void operator()(const CassTableMeta* /*p*/) const;
-};
-
-struct schemaMetaDeleter
-{ 
-    void operator()(const CassSchemaMeta* p) const;
-};
-
-struct sessionDeleter
-{ 
-    void operator()(CassSession* p) const;
-};
-
-struct sslDeleter
-{ 
-    void operator()(CassSsl* p) const;
-};
-
-struct statementDeleter
-{ 
-    void operator()(CassStatement* p) const;
-};
-
-struct valueDeleter
-{ 
-    void operator()(CassValue*       ) const {}
-    void operator()(const CassValue* ) const {}
-};
-
-}
-// namespace CassTools
-
-}
-//namespace QtCassandra
+} // namespace casswrapper
 
 // vim: ts=4 sw=4 et

@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraQuery.cpp
+ *      query.cpp
  *
  * Description:
  *      Handling of the CQL interface.
@@ -34,11 +34,9 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandra.h"
-#include "CassTools.h"
-
-#include "cassandra.h"
+#include "casswrapper/query.h"
+#include "casswrapper_impl.h"
+#include "exception_impl.h"
 
 #include <as2js/json.h>
 
@@ -49,7 +47,7 @@
 #include <QtCore>
 
 
-/** \class QCassandraQuery
+/** \class query
  * \brief Encapulates the cassandra-cpp driver to handle query and retrieval.
  *
  * The cassandra-cpp driver interface does not manage lifetimes of objects
@@ -62,27 +60,18 @@
  * custom deleters. This should help us avoid memory leaks in addition to being
  * thread-safe and exception-safe.
  *
- * \sa QCassandraSession
+ * Modification: I moved all of the cass_* calls into a new layer of classes,
+ * defined in casswrapper_impl.h/.cpp
+ *
+ * \sa session
  */
 
-namespace QtCassandra
+namespace casswrapper
 {
-
-using namespace CassTools;
 
 namespace
 {
-    const CassRow * getRowFromIterator( CassTools::iterator_pointer_t iter )
-    {
-        if(!iter)
-        {
-            throw QCassandraQuery::exception_t( "QtCassandra::<no name namespace>::getRowFromIterator() called without a row iterator." );
-        }
-
-        return cass_iterator_get_row( iter.get() );
-    }
-
-    void getMapFromJsonObject( QCassandraQuery::string_map_t& json_map, const QString& data )
+    void getMapFromJsonObject( Query::string_map_t& json_map, const QString& data )
     {
         json_map.clear();
         if( data.isEmpty() || data == "null" )
@@ -101,7 +90,7 @@ namespace
         }
     }
 
-    void getDataFromJsonMap( const QCassandraQuery::string_map_t& json_map, std::string& data )
+    void getDataFromJsonMap( const Query::string_map_t& json_map, std::string& data )
     {
         data.clear();
         if( json_map.empty() )
@@ -132,42 +121,25 @@ namespace
 }
 
 
-QCassandraQuery::query_exception_t::query_exception_t( CassTools::future_pointer_t session_future, QString const& msg )
-    : f_message(msg)
+struct data
 {
-    const CassError code( cass_future_error_code( session_future.get() ) );
-    f_code = static_cast<uint32_t>(code);
-
-    const char* message = 0;
-    size_t length       = 0;
-    cass_future_error_message( session_future.get(), &message, &length );
-    QByteArray const errmsg( message, length );
-    f_errmsg = errmsg.data();
-
-    std::stringstream ss;
-    ss << msg.toUtf8().data() << "! Cassandra error: code=" << f_code
-       << ", error={" << cass_error_desc(code)
-       << "}, message={" << errmsg.data()
-       << "} aborting operation!";
-    f_what = ss.str();
-}
-
-
-const char* QCassandraQuery::query_exception_t::what() const throw()
-{
-    return f_what.c_str();
-}
-
+    std::unique_ptr<batch>       f_batch;
+    std::unique_ptr<future>      f_sessionFuture;
+    std::unique_ptr<iterator>    f_rowsIterator;
+    std::unique_ptr<result>      f_queryResult;
+    std::unique_ptr<statement>   f_queryStmt;
+};
 
 
 /** \brief Construct a query object and manage the lifetime of the query session.
  *
- * \sa QCassandraQuery
+ * \sa query
  */
-QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
+Query::Query( Session::pointer_t session )
     : f_session( session )
+    , f_data(std::make_unique<data>())
 {
-    connect( this, &QCassandraQuery::threadQueryFinished, this, &QCassandraQuery::onThreadQueryFinished );
+    connect( this, &Query::threadQueryFinished, this, &Query::onThreadQueryFinished );
 }
 
 
@@ -175,15 +147,15 @@ QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
  *
  * \sa end()
  */
-QCassandraQuery::~QCassandraQuery()
+Query::~Query()
 {
     end();
 }
 
 
-QCassandraQuery::pointer_t QCassandraQuery::create( QCassandraSession::pointer_t session )
+Query::pointer_t Query::create( Session::pointer_t session )
 {
-    return pointer_t(new QCassandraQuery( session ));
+    return pointer_t(new Query( session ));
 }
 
 
@@ -195,12 +167,12 @@ QCassandraQuery::pointer_t QCassandraQuery::create( QCassandraSession::pointer_t
  * referencing and want to output details to the user as to
  * which one is returning status.
  */
-const QString& QCassandraQuery::description() const
+const QString& Query::description() const
 {
     return f_description;
 }
 
-void QCassandraQuery::setDescription( const QString& val )
+void Query::setDescription( const QString& val )
 {
     f_description = val;
 }
@@ -211,7 +183,7 @@ void QCassandraQuery::setDescription( const QString& val )
  * The default is CONSISTENCY_LEVEL_DEFAULT, which leaves the level to whatever
  * the cassandra-cpp-driver library deems appropriate.
  */
-consistency_level_t	QCassandraQuery::consistencyLevel() const
+Query::consistency_level_t	Query::consistencyLevel() const
 {
     return f_consistencyLevel;
 }
@@ -225,20 +197,20 @@ consistency_level_t	QCassandraQuery::consistencyLevel() const
  * \sa query()
  * \sa consistencyLevel()
  */
-void QCassandraQuery::setConsistencyLevel( consistency_level_t level )
+void Query::setConsistencyLevel( consistency_level_t level )
 {
     f_consistencyLevel = level;
     setStatementConsistency();
 }
 
 
-int64_t QCassandraQuery::timestamp() const
+int64_t Query::timestamp() const
 {
     return f_timestamp;
 }
 
 
-void QCassandraQuery::setTimestamp( int64_t val )
+void Query::setTimestamp( int64_t val )
 {
     f_timestamp = val;
     setStatementTimestamp();
@@ -247,9 +219,9 @@ void QCassandraQuery::setTimestamp( int64_t val )
 
 /** \brief Internal method which sets the consistency in the query statement.
  */
-void QCassandraQuery::setStatementConsistency()
+void Query::setStatementConsistency()
 {
-    if( !f_queryStmt )
+    if( !f_data->f_queryStmt )
     {
         // Do nothing if the statement hasn't been made yet.
         return;
@@ -289,15 +261,15 @@ void QCassandraQuery::setStatementConsistency()
     //    throw exception_t( "This should never happen! Consistency has not been set!" );
     //}
 
-    cass_statement_set_consistency( f_queryStmt.get(), consist );
+    f_data->f_queryStmt->set_consistency( consist );
 }
 
 
 /** \brief Internal method which sets the timestamp in the query statement.
  */
-void QCassandraQuery::setStatementTimestamp()
+void Query::setStatementTimestamp()
 {
-    if( !f_queryStmt )
+    if( !f_data->f_queryStmt )
     {
         // Do nothing if the statement hasn't been made yet.
         return;
@@ -309,11 +281,8 @@ void QCassandraQuery::setStatementTimestamp()
         return;
     }
 
-    cass_int64_t const cass_time( static_cast<cass_int64_t>(f_timestamp) );
-
-    cass_statement_set_timestamp( f_queryStmt.get(), cass_time );
+    f_data->f_queryStmt->set_timestamp( f_timestamp );
 }
-
 
 
 /** \brief Create a query statement.
@@ -332,17 +301,14 @@ void QCassandraQuery::setStatementTimestamp()
  * \param bind_count[in]    number of parameters to bind
  * 
  */
-void QCassandraQuery::query( const QString &query_string, int bind_count )
+void Query::query( const QString &query_string, int bind_count )
 {
     if( bind_count == -1 )
     {
         bind_count = query_string.count('?');
     }
 
-    f_queryStmt.reset(
-        cass_statement_new( query_string.toUtf8().data(), bind_count )
-        , statementDeleter()
-        );
+    f_data->f_queryStmt = std::make_unique<statement>( query_string, bind_count );
 
     setStatementConsistency();
     setStatementTimestamp();
@@ -351,7 +317,7 @@ void QCassandraQuery::query( const QString &query_string, int bind_count )
 }
 
 
-int QCassandraQuery::pagingSize() const
+int Query::pagingSize() const
 {
     return f_pagingSize;
 }
@@ -367,10 +333,10 @@ int QCassandraQuery::pagingSize() const
  *
  * \sa query()
  */
-void QCassandraQuery::setPagingSize( const int size )
+void Query::setPagingSize( const int size )
 {
     f_pagingSize = size;
-    cass_statement_set_paging_size( f_queryStmt.get(), size );
+    f_data->f_queryStmt->set_paging_size( size );
 }
 
 
@@ -383,9 +349,9 @@ void QCassandraQuery::setPagingSize( const int size )
  *
  * \sa query()
  */
-void QCassandraQuery::bindBool( const size_t num, const bool value )
+void Query::bindBool( const size_t num, const bool value )
 {
-   cass_statement_bind_bool( f_queryStmt.get(), num, value? cass_true: cass_false );
+   f_data->f_queryStmt->bind_bool( num, value );
 }
 
 
@@ -398,9 +364,9 @@ void QCassandraQuery::bindBool( const size_t num, const bool value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindInt32( const size_t num, const int32_t value )
+void Query::bindInt32( const size_t num, const int32_t value )
 {
-   cass_statement_bind_int32( f_queryStmt.get(), num, value );
+   f_data->f_queryStmt->bind_int32( num, value );
 }
 
 
@@ -413,9 +379,9 @@ void QCassandraQuery::bindInt32( const size_t num, const int32_t value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindInt64( const size_t num, const int64_t value )
+void Query::bindInt64( const size_t num, const int64_t value )
 {
-   cass_statement_bind_int64( f_queryStmt.get(), num, value );
+   f_data->f_queryStmt->bind_int64( num, value );
 }
 
 
@@ -428,9 +394,9 @@ void QCassandraQuery::bindInt64( const size_t num, const int64_t value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindFloat( const size_t num, const float value )
+void Query::bindFloat( const size_t num, const float value )
 {
-   cass_statement_bind_float( f_queryStmt.get(), num, value );
+   f_data->f_queryStmt->bind_float( num, value );
 }
 
 
@@ -443,9 +409,9 @@ void QCassandraQuery::bindFloat( const size_t num, const float value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindDouble( const size_t num, const double value )
+void Query::bindDouble( const size_t num, const double value )
 {
-   cass_statement_bind_double( f_queryStmt.get(), num, value );
+   f_data->f_queryStmt->bind_double( num, value );
 }
 
 
@@ -458,9 +424,9 @@ void QCassandraQuery::bindDouble( const size_t num, const double value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindString( const size_t num, const QString &value )
+void Query::bindString( const size_t num, const QString &value )
 {
-    bindByteArray( num, value.toUtf8() );
+    f_data->f_queryStmt->bind_string( num, value );
 }
 
 
@@ -473,37 +439,39 @@ void QCassandraQuery::bindString( const size_t num, const QString &value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindByteArray( const size_t num, const QByteArray& value )
+void Query::bindByteArray( const size_t num, const QByteArray& value )
 {
-    cass_statement_bind_string_n( f_queryStmt.get(), num, value.constData(), value.size() );
+    f_data->f_queryStmt->bind_blob( num, value );
 }
 
 
-void QCassandraQuery::bindJsonMap( const size_t num, const string_map_t& value )
+void Query::bindJsonMap( const size_t num, const string_map_t& value )
 {
     std::string data;
     getDataFromJsonMap( value, data );
-    cass_statement_bind_string( f_queryStmt.get(), num, data.c_str() );
+    f_data->f_queryStmt->bind_string( num, data );
 }
 
 
-void QCassandraQuery::bindMap( const size_t num, const string_map_t& value )
+void Query::bindMap( const size_t num, const string_map_t& value )
 {
-    collection_pointer_t map( cass_collection_new( CASS_COLLECTION_TYPE_MAP, value.size() ), collectionDeleter() );
+    collection coll( CASS_COLLECTION_TYPE_MAP, value.size() );
     for( const auto& pair : value )
     {
-        cass_collection_append_string( map.get(), pair.first.c_str()  );
-        cass_collection_append_string( map.get(), pair.second.c_str() );
+        coll.append_string( pair.first  );
+        coll.append_string( pair.second );
     }
     //
-    cass_statement_bind_collection( f_queryStmt.get(), num, map.get() );
+    f_data->f_queryStmt->bind_collection( num, coll );
 }
 
 
-void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
+void Query::queryCallbackFunc( void* f, void *data )
 {
-    QCassandraQuery* this_query( reinterpret_cast<QCassandraQuery*>(data) );
-    if( this_query->f_sessionFuture.get() != future )
+    const CassFuture*   this_future( reinterpret_cast<const CassFuture*>(f) );
+    Query*              this_query( reinterpret_cast<Query*>(data) );
+    //
+    if( this_query->f_data->f_sessionFuture->get() != this_future )
     {
         //throw exception_t( "Unexpected future!" );
         // Do nothing with this future, because this belongs to a different query
@@ -525,11 +493,11 @@ void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
 }
 
 
-void QCassandraQuery::onThreadQueryFinished( QCassandraQuery* q )
+void Query::onThreadQueryFinished( Query* q )
 {
     if( q != this )
     {
-        throw exception_t("QCassandraQuery::onThreadQueryFinished(): Query objects are not the same!");
+        throw exception_t("Query::onThreadQueryFinished(): Query objects are not the same!");
     }
 
     emit queryFinished( shared_from_this() );
@@ -537,14 +505,14 @@ void QCassandraQuery::onThreadQueryFinished( QCassandraQuery* q )
 
 
 #if 0
-void QCassandraQuery::testMetrics()
+void Query::testMetrics()
 {
 // The following loops are a couple of attempts to get things to work when we
 // send loads of data to Cassandra all at once. All failed though. The cluster
 // still crashes if too much data gets there all at once.
 
     CassMetrics metrics;
-    cass_session_get_metrics(f_session->session().get(), &metrics);
+    cass_session_get_metrics(f_session->getSession().get(), &metrics);
 
     double load_avg(0.0);
     {
@@ -575,7 +543,7 @@ std::cerr << "*** pausing, waiting for a connection to be available! ***\n";
             // become available before sending more data
             sleep(1);
 
-            cass_session_get_metrics(f_session->session().get(), &metrics);
+            cass_session_get_metrics(f_session->getSession().get(), &metrics);
             std::ifstream load_avg_file;
             load_avg_file.open("/proc/loadavg", std::ios_base::in);
             if(load_avg_file.is_open())
@@ -618,7 +586,7 @@ std::cerr << "*** ...pause is over... ***\n";
             //
             const char * message = 0;
             size_t length        = 0;
-            cass_future_error_message( f_sessionFuture.get(), &message, &length );
+            cass_future_error_message( f_data->f_sessionFuture.get(), &message, &length );
             QByteArray errmsg( message, length );
             std::stringstream ss;
             ss << "Query could not execute (timed out)! Cassandra error: code=" << static_cast<unsigned int>(CASS_ERROR_LIB_REQUEST_TIMED_OUT)
@@ -628,11 +596,89 @@ std::cerr << "*** ...pause is over... ***\n";
             throw exception_t( ss.str().c_str() );
         }
         --max_repeat;
-        f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
+        f_data->f_sessionFuture.reset( cass_session_execute( f_session->getSession().get(), f_data->f_queryStmt.get() ) , futureDeleter() );
     }
     while(throwIfError( QString("Error in query string [%1]!").arg(f_queryString) ));
 }
 #endif
+
+
+void Query::startLoggedBatch()
+{
+    f_data->f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_LOGGED );
+}
+
+
+void Query::startUnloggedBatch()
+{
+    f_data->f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_UNLOGGED );
+}
+
+
+void Query::startCounterBatch()
+{
+    f_data->f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_UNLOGGED );
+}
+
+
+void Query::addToBatch()
+{
+    // Sanity checks
+    //
+    if( !f_data->f_batch )
+    {
+        throw exception_t( "Query::addToBatch() cannot be called without an active batch!" );
+    }
+    //
+    if( !f_data->f_queryStmt )
+    {
+        throw exception_t( "Query::addToBatch requires an active query statement! Did you call Query::query()?" );
+    }
+
+    f_data->f_batch->set_consistency( CASS_CONSISTENCY_QUORUM );
+    f_data->f_batch->add_statement( *(f_data->f_queryStmt) );
+    f_data->f_queryStmt.reset();
+}
+
+
+void Query::internalStart( const bool block )
+{
+    f_data->f_sessionFuture = std::make_unique<future>();
+    if( f_data->f_batch )
+    {
+        *f_data->f_sessionFuture = f_session->getSession().execute_batch( *(f_data->f_batch) );
+    }
+    else
+    {
+        *f_data->f_sessionFuture = f_session->getSession().execute( *(f_data->f_queryStmt) );
+    }
+
+    if( block )
+    {
+        getQueryResult();
+    }
+    else
+    {
+        // This will call back on a background thread
+        //
+        f_data->f_sessionFuture->set_callback
+            ( reinterpret_cast<void*>(&Query::queryCallbackFunc)
+            , reinterpret_cast<void*>(this)
+            );
+    }
+}
+
+
+void Query::endBatch( const bool block )
+{
+    if( !f_data->f_batch )
+    {
+        throw exception_t( "Query::endBatch() cannot be called without an active batch!" );
+    }
+
+    internalStart( block );
+    f_data->f_batch.reset();
+}
 
 
 /** \brief Start the query
@@ -644,33 +690,18 @@ std::cerr << "*** ...pause is over... ***\n";
  *
  * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
  */
-void QCassandraQuery::start( const bool block )
+void Query::start( const bool block )
 {
     //testMetrics();
     //int64_t const now(QCassandra::timeofday());
     //std::cerr << now << " -- Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
 
-    if(!f_session->session()
-    || !f_queryStmt)
+    if( !f_data->f_queryStmt )
     {
-        throw exception_t( "QCassandraQuery::start() called with an unconnected session or no query statement." );
+        throw exception_t( "Query::start() called with an unconnected session or no query statement." );
     }
 
-    f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
-    if( block )
-    {
-        getQueryResult();
-    }
-    else
-    {
-        // This will call back on a background thread
-        //
-        cass_future_set_callback
-            ( f_sessionFuture.get()
-            , &QCassandraQuery::queryCallbackFunc
-            , reinterpret_cast<void*>(this)
-            );
-    }
+    internalStart( block );
 }
 
 
@@ -686,15 +717,15 @@ void QCassandraQuery::start( const bool block )
  *
  * /return false if not ready, true otherwise
  */
-bool QCassandraQuery::isReady() const
+bool Query::isReady() const
 {
-    return cass_future_ready( f_sessionFuture.get() );
+    return f_data->f_sessionFuture->is_ready();
 }
 
 
-bool QCassandraQuery::queryActive() const
+bool Query::queryActive() const
 {
-    return (f_queryResult && f_rowsIterator);
+    return (f_data->f_queryResult && f_data->f_rowsIterator);
 }
 
 
@@ -704,12 +735,12 @@ bool QCassandraQuery::queryActive() const
  *
  * /sa isReady(), query()
  */
-void QCassandraQuery::getQueryResult()
+void Query::getQueryResult()
 {
     throwIfError( QString("Error in query string:\n%1").arg(f_queryString) );
 
-    f_queryResult.reset ( cass_future_get_result   (f_sessionFuture.get()), resultDeleter() );
-    f_rowsIterator.reset( cass_iterator_from_result(f_queryResult.get()), iteratorDeleter() );
+    f_data->f_queryResult   = std::make_unique<result>   ( f_data->f_sessionFuture->get_result() );
+    f_data->f_rowsIterator  = std::make_unique<iterator> ( f_data->f_queryResult->get_iterator() );
 }
 
 
@@ -719,24 +750,19 @@ void QCassandraQuery::getQueryResult()
  *
  * \sa start()
  */
-void QCassandraQuery::end()
+void Query::end()
 {
     f_queryString.clear();
-    f_rowsIterator.reset();
-    f_queryResult.reset();
-    f_sessionFuture.reset();
-    f_queryStmt.reset();
+    f_data->f_rowsIterator.reset();
+    f_data->f_queryResult.reset();
+    f_data->f_sessionFuture.reset();
+    f_data->f_queryStmt.reset();
 }
 
 
-size_t QCassandraQuery::rowCount() const
+size_t Query::rowCount() const
 {
-    if(!f_queryResult)
-    {
-        throw exception_t( "QCassandraQuery::rowCount() called without a query result." );
-    }
-
-    return cass_result_row_count( f_queryResult.get() );
+    return f_data->f_queryResult->get_row_count();
 }
 
 
@@ -748,14 +774,9 @@ size_t QCassandraQuery::rowCount() const
  *
  * \sa query(), start(), nextPage()
  */
-bool QCassandraQuery::nextRow()
+bool Query::nextRow()
 {
-    if(!f_rowsIterator)
-    {
-        throw exception_t( "QCassandraQuery::nextRow() called without a row iterator." );
-    }
-
-    return cass_iterator_next( f_rowsIterator.get() );
+    return f_data->f_rowsIterator->next();
 }
 
 
@@ -767,21 +788,14 @@ bool QCassandraQuery::nextRow()
  *
  * \sa query(), start(), setPagingSize(), nextRow()
  */
-bool QCassandraQuery::nextPage( const bool block )
+bool Query::nextPage( const bool block )
 {
-    // note: if there is an f_queryResult, then f_queryStmt must be set
-    //
-    if(!f_queryResult)
-    {
-        throw exception_t( "QCassandraQuery::rowCount() called without a query result." );
-    }
-
-    if( !cass_result_has_more_pages( f_queryResult.get() ) )
+    if( !f_data->f_queryResult->has_more_pages() )
     {
         return false;
     }
 
-    cass_statement_set_paging_state( f_queryStmt.get(), f_queryResult.get() );
+    f_data->f_queryStmt->set_paging_state( *f_data->f_queryResult );
 
     // Reset the current query session, and run the next page
     //
@@ -798,9 +812,9 @@ bool QCassandraQuery::nextPage( const bool block )
  *
  * \sa start()
  */
-void QCassandraQuery::throwIfError( const QString& msg )
+void Query::throwIfError( const QString& msg )
 {
-    if( !f_sessionFuture.get() )
+    if( !f_data->f_sessionFuture )
     {
         std::stringstream ss;
         ss << "There is no active session for query [" << f_queryString.toUtf8().data() << "], msg=["
@@ -808,17 +822,17 @@ void QCassandraQuery::throwIfError( const QString& msg )
         throw exception_t( ss.str().c_str() );
     }
 
-    const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
+    const CassError code( f_data->f_sessionFuture->get_error_code() );
     if( code != CASS_OK )
     {
-        throw query_exception_t( f_sessionFuture, msg );
+        throw cassandra_exception_impl( *f_data->f_sessionFuture, msg );
     }
 }
 
 
 #if 0
 {
-    const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
+    const CassError code( cass_future_error_code( f_data->f_sessionFuture.get() ) );
     switch( code )
     {
     case CASS_OK:
@@ -838,7 +852,7 @@ void QCassandraQuery::throwIfError( const QString& msg )
         {
             const char * message = 0;
             size_t length        = 0;
-            cass_future_error_message( f_sessionFuture.get(), &message, &length );
+            cass_future_error_message( f_data->f_sessionFuture.get(), &message, &length );
             QByteArray errmsg( message, length );
             std::stringstream ss;
             ss << msg.toUtf8().data() << "! Cassandra error: code=" << static_cast<unsigned int>(code)
@@ -853,24 +867,13 @@ void QCassandraQuery::throwIfError( const QString& msg )
 #endif
 
 
-/** \brief Internal method to get Boolean value from row
- */
-bool QCassandraQuery::getBoolFromValue( const CassValue* value ) const
-{
-    cass_bool_t return_val = cass_false;
-    cass_value_get_bool( value, &return_val );
-    return return_val == cass_true;
-}
-
-
 /** \brief Get named Boolean column value
  *
  * \param name[in] name of column
  */
-bool QCassandraQuery::getBoolColumn( const QString &name ) const
+bool Query::getBoolColumn( const QString &name ) const
 {
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    return getBoolFromValue( value );
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_bool();
 }
 
 
@@ -878,10 +881,9 @@ bool QCassandraQuery::getBoolColumn( const QString &name ) const
  *
  * \param num[in] position of column in the result set
  */
-bool QCassandraQuery::getBoolColumn( const int num ) const
+bool Query::getBoolColumn( const int num ) const
 {
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    return getBoolFromValue( value );
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_bool();
 }
 
 
@@ -889,12 +891,9 @@ bool QCassandraQuery::getBoolColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-int32_t QCassandraQuery::getInt32Column( const QString& name ) const
+int32_t Query::getInt32Column( const QString& name ) const
 {
-    int32_t return_val = 0;
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    cass_value_get_int32( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_int32();
 }
 
 
@@ -902,12 +901,9 @@ int32_t QCassandraQuery::getInt32Column( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-int32_t QCassandraQuery::getInt32Column( const int num ) const
+int32_t Query::getInt32Column( const int num ) const
 {
-    int32_t return_val = 0;
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    cass_value_get_int32( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_int32();
 }
 
 
@@ -915,12 +911,9 @@ int32_t QCassandraQuery::getInt32Column( const int num ) const
  *
  * \param name[in] name of column
  */
-int64_t QCassandraQuery::getInt64Column( const QString& name ) const
+int64_t Query::getInt64Column( const QString& name ) const
 {
-    int64_t return_val = 0LL;
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    cass_value_get_int64( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_int64();
 }
 
 
@@ -928,12 +921,9 @@ int64_t QCassandraQuery::getInt64Column( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-int64_t QCassandraQuery::getInt64Column( const int num ) const
+int64_t Query::getInt64Column( const int num ) const
 {
-    int64_t return_val = 0LL;
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    cass_value_get_int64( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_int64();
 }
 
 
@@ -941,12 +931,9 @@ int64_t QCassandraQuery::getInt64Column( const int num ) const
  *
  * \param name[in] name of column
  */
-float QCassandraQuery::getFloatColumn( const QString& name ) const
+float Query::getFloatColumn( const QString& name ) const
 {
-    float return_val = 0.0f;
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    cass_value_get_float( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_float();
 }
 
 
@@ -954,12 +941,9 @@ float QCassandraQuery::getFloatColumn( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-float QCassandraQuery::getFloatColumn( const int num ) const
+float Query::getFloatColumn( const int num ) const
 {
-    float return_val = 0.0f;
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    cass_value_get_float( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_float();
 }
 
 
@@ -967,12 +951,9 @@ float QCassandraQuery::getFloatColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-double QCassandraQuery::getDoubleColumn( const QString &name ) const
+double Query::getDoubleColumn( const QString &name ) const
 {
-    double return_val = 0.0;
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    cass_value_get_double( value, &return_val );
-    return return_val;
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_double();
 }
 
 
@@ -980,29 +961,9 @@ double QCassandraQuery::getDoubleColumn( const QString &name ) const
  *
  * \param num[in] position of column in the result set
  */
-double QCassandraQuery::getDoubleColumn( const int num ) const
+double Query::getDoubleColumn( const int num ) const
 {
-    double return_val = 0.0;
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    cass_value_get_double( value, &return_val );
-    return return_val;
-}
-
-
-/** \brief Internal method to extract a byte array from a CassValue
- *
- * \param value[in] pointer to a Cassandra value
- */
-QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) const
-{
-    if(value == nullptr)
-    {
-        throw exception_t("value cannot be nullptr in getByteArrayFromValue()");
-    }
-    const char *    byte_value = nullptr;
-    size_t          value_len  = 0;
-    cass_value_get_string( value, &byte_value, &value_len );
-    return QByteArray( byte_value, value_len );
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_double();
 }
 
 
@@ -1010,10 +971,9 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) con
  *
  * \param name[in] name of column
  */
-QString QCassandraQuery::getStringColumn( const QString& name ) const
+QString Query::getStringColumn( const QString& name ) const
 {
-    auto const ba( getByteArrayColumn(name) );
-    return QString::fromUtf8( ba.constData(), ba.size() );
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_string();
 }
 
 
@@ -1021,10 +981,9 @@ QString QCassandraQuery::getStringColumn( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-QString QCassandraQuery::getStringColumn( const int num ) const
+QString Query::getStringColumn( const int num ) const
 {
-    auto const ba( getByteArrayColumn(num) );
-    return QString::fromUtf8(ba.constData(),ba.size());
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_string();
 }
 
 
@@ -1032,10 +991,9 @@ QString QCassandraQuery::getStringColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-QByteArray QCassandraQuery::getByteArrayColumn( const char * name ) const
+QByteArray Query::getByteArrayColumn( const char * name ) const
 {
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name );
-    return getByteArrayFromValue( value );
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_blob();
 }
 
 
@@ -1043,10 +1001,9 @@ QByteArray QCassandraQuery::getByteArrayColumn( const char * name ) const
  *
  * \param name[in] name of column
  */
-QByteArray QCassandraQuery::getByteArrayColumn( const QString& name ) const
+QByteArray Query::getByteArrayColumn( const QString& name ) const
 {
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    return getByteArrayFromValue( value );
+    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_blob();
 }
 
 
@@ -1054,10 +1011,9 @@ QByteArray QCassandraQuery::getByteArrayColumn( const QString& name ) const
  *
  * \param num[in] position of column in the result set
  */
-QByteArray QCassandraQuery::getByteArrayColumn( const int num ) const
+QByteArray Query::getByteArrayColumn( const int num ) const
 {
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    return getByteArrayFromValue( value );
+    return f_data->f_rowsIterator->get_row().get_column( num ).get_blob();
 }
 
 
@@ -1065,7 +1021,7 @@ QByteArray QCassandraQuery::getByteArrayColumn( const int num ) const
  *
  * \param name[in] name of column
  */
-QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const QString& name ) const
+Query::string_map_t Query::getJsonMapColumn ( const QString& name ) const
 {
     string_map_t json_map;
     getMapFromJsonObject( json_map, getStringColumn( name ) );
@@ -1077,7 +1033,7 @@ QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const QString&
  *
  * \param num[in] position of column in the result set
  */
-QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const int num ) const
+Query::string_map_t Query::getJsonMapColumn ( const int num ) const
 {
     string_map_t json_map;
     getMapFromJsonObject( json_map, getStringColumn( num ) );
@@ -1089,24 +1045,18 @@ QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const int num 
  *
  * \param value[in] pointer to Cassandra value
  */
-QCassandraQuery::string_map_t QCassandraQuery::getMapFromValue( const CassValue* value ) const
+Query::string_map_t getMapFromValue( const casswrapper::value& value )
 {
-    string_map_t ret_map;
-    iterator_pointer_t map_iter( cass_iterator_from_map( value ), iteratorDeleter() );
-    while( cass_iterator_next( map_iter.get() ) )
+    Query::string_map_t ret_map;
+    iterator map_iter( value.get_iterator_from_map() );
+    while( map_iter.next() )
     {
-        const CassValue* key( cass_iterator_get_map_key   ( map_iter.get() ) );
-        const CassValue* val( cass_iterator_get_map_value ( map_iter.get() ) );
-
-        const char *    byte_value = 0;
-        size_t          value_len  = 0;
-        cass_value_get_string( key, &byte_value, &value_len );
-        QByteArray ba_key( byte_value, value_len );
+        casswrapper::value const key( map_iter.get_map_key   () );
+        casswrapper::value const val( map_iter.get_map_value () );
+        std::string const key_str(key.get_string().toUtf8().data());
+        std::string const val_str(val.get_string().toUtf8().data());
         //
-        cass_value_get_string( val, &byte_value, &value_len );
-        QByteArray ba_val( byte_value, value_len );
-
-        ret_map[ba_key.data()] = ba_val.data();
+        ret_map[key_str] = val_str;
     }
 
     return ret_map;
@@ -1117,10 +1067,9 @@ QCassandraQuery::string_map_t QCassandraQuery::getMapFromValue( const CassValue*
  *
  * \param name[in] name of column
  */
-QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& name ) const
+Query::string_map_t Query::getMapColumn ( const QString& name ) const
 {
-    const CassValue * value = cass_row_get_column_by_name( getRowFromIterator(f_rowsIterator), name.toUtf8().data() );
-    return getMapFromValue( value );
+    return getMapFromValue( f_data->f_rowsIterator->get_row().get_column_by_name( name ) );
 }
 
 
@@ -1128,13 +1077,12 @@ QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& nam
  *
  * \param num[in] position of column in the result set
  */
-QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const int num ) const
+Query::string_map_t Query::getMapColumn ( const int num ) const
 {
-    const CassValue * value = cass_row_get_column( getRowFromIterator(f_rowsIterator), num );
-    return getMapFromValue( value );
+    return getMapFromValue( f_data->f_rowsIterator->get_row().get_column( num ) );
 }
 
 
-} // namespace QtCassandra
+} // namespace casswrapper
 
 // vim: ts=4 sw=4 et

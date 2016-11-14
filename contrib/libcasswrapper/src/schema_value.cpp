@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraSchemaValue.cpp
+ *      schema_value.cpp
  *
  * Description:
  *      Handling of the CQL interface.
@@ -34,17 +34,18 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchemaValue.h"
-#include "CassTools.h"
-#include "cassandra.h"
+#include "casswrapper/schema_value.h"
 
-namespace QtCassandra
+#include "casswrapper/encoder.h"
+#include "casswrapper/query.h"
+#include "casswrapper_impl.h"
+#include "exception_impl.h"
+
+namespace casswrapper
 {
 
-using namespace CassTools;
 
-namespace QCassandraSchema
+namespace schema
 {
 
 
@@ -61,32 +62,19 @@ Value::Value( const QVariant& var )
 }
 
 
-#if 0
-Value::pointer_t Value::create()
+void Value::readValue( const iterator& iter )
 {
-    return std::make_shared<Value>();
-}
-#endif
-
-
-void Value::readValue( iterator_pointer_t iter )
-{
-    value_pointer_t value
-        ( cass_iterator_get_meta_field_value(iter.get())
-        , valueDeleter()
-        );
-    readValue( value );
+    readValue( iter.get_meta_field_value() );
 }
 
 
-void Value::readValue( value_pointer_t val )
+void Value::readValue( const value& val )
 {
-    f_value = val;
-    parseValue();
+    parseValue( val );
 }
 
 
-void Value::encodeValue(QCassandraEncoder& encoder) const
+void Value::encodeValue(Encoder& encoder) const
 {
     encoder.appendUnsignedCharValue(static_cast<unsigned char>(f_type));
 
@@ -135,7 +123,7 @@ void Value::encodeValue(QCassandraEncoder& encoder) const
             // (at this time we throw to make sure we capture
             // invalid data; otherwise the whole thing breaks
             // anyway...)
-            throw std::runtime_error("unsupported QVariant type");
+            throw exception_t("unsupported QVariant type");
 
         }
         break;
@@ -165,7 +153,7 @@ void Value::encodeValue(QCassandraEncoder& encoder) const
 }
 
 
-void Value::decodeValue(const QCassandraDecoder& decoder)
+void Value::decodeValue(const Decoder& decoder)
 {
     f_type = static_cast<type_t>(decoder.unsignedCharValue());
 
@@ -215,7 +203,7 @@ void Value::decodeValue(const QCassandraDecoder& decoder)
                 // (at this time we throw to make sure we capture
                 // invalid data; otherwise the whole thing breaks
                 // anyway...)
-                throw std::runtime_error("unsupported QVariant type");
+                throw exception_t("unsupported QVariant type");
 
             }
         }
@@ -254,14 +242,14 @@ void Value::decodeValue(const QCassandraDecoder& decoder)
 }
 
 
-void Value::parseValue()
+void Value::parseValue( const value& val )
 {
     f_map.clear();
     f_list.clear();
     f_variant.clear();
     f_stringOutput.clear();
 
-    switch( cass_value_type(f_value.get()) )
+    switch( val.get_type() )
     {
         case CASS_VALUE_TYPE_UNKNOWN    :
         case CASS_VALUE_TYPE_CUSTOM     :
@@ -274,17 +262,17 @@ void Value::parseValue()
         case CASS_VALUE_TYPE_LIST       :
         case CASS_VALUE_TYPE_SET        :
             f_type = TypeList;
-            parseList();
+            parseList( val );
             break;
 
         case CASS_VALUE_TYPE_TUPLE      :
             f_type = TypeList;
-            parseTuple();
+            parseTuple( val );
             break;
 
         case CASS_VALUE_TYPE_MAP        :
             f_type = TypeMap;
-            parseMap();
+            parseMap( val );
             break;
 
         case CASS_VALUE_TYPE_BLOB       :
@@ -307,153 +295,85 @@ void Value::parseValue()
         case CASS_VALUE_TYPE_TIMEUUID   :
         case CASS_VALUE_TYPE_INET       :
             f_type = TypeVariant;
-            parseVariant();
+            parseVariant( val );
             break;
     }
 }
 
 
-void Value::parseMap()
+void Value::parseMap( const value& val )
 {
-    iterator_pointer_t iter
-        ( cass_iterator_from_map(f_value.get())
-        , iteratorDeleter()
-        );
-
-    while( cass_iterator_next( iter.get() ) )
+    iterator const iter( val.get_iterator_from_map() );
+    while( iter.next() )
     {
-        value_pointer_t key
-            ( cass_iterator_get_map_key(iter.get())
-              , valueDeleter()
-            );
-        const char* str;
-        size_t len = 0;
-        CassError rc = cass_value_get_string( key.get(), &str, &len );
-        if( rc != CASS_OK )
-        {
-            throw std::runtime_error( "Can't extract the map key!" );
-        }
-        const QString key_str( QString::fromUtf8( str, len ) );
-
-        value_pointer_t value
-            ( cass_iterator_get_map_value(iter.get())
-            , valueDeleter()
-            );
-
-        Value val;
-        val.readValue( value );
-        //
-        f_map[key_str] = val;
+        Value the_val;
+        the_val.readValue( iter.get_map_value() );
+        f_map[iter.get_map_key().get_string()] = the_val;
     }
 }
 
 
-void Value::parseList()
+void Value::parseList( const value& val )
 {
-    iterator_pointer_t iter
-        ( cass_iterator_from_collection(f_value.get())
-        , iteratorDeleter()
-        );
-
-    while( cass_iterator_next( iter.get() ) )
+    iterator const iter( val.get_iterator_from_collection() );
+    while( iter.next() )
     {
-        value_pointer_t p_val
-                ( cass_iterator_get_value(iter.get())
-                , valueDeleter()
-                );
-        Value val;
-        val.readValue( p_val );
-        f_list.push_back( val );
+        Value the_val;
+        the_val.readValue( iter.get_value() );
+        f_list.push_back( the_val );
     }
 }
 
 
-void Value::parseTuple()
+void Value::parseTuple( const value& val )
 {
-    iterator_pointer_t iter
-        ( cass_iterator_from_tuple(f_value.get())
-        , iteratorDeleter()
-        );
-
-    while( cass_iterator_next( iter.get() ) )
+    iterator const iter( val.get_iterator_from_tuple() );
+    while( iter.next() )
     {
-        Value val;
-        val.readValue( iter );
-        f_list.push_back( val );
+        Value the_val;
+        the_val.readValue( iter );
+        f_list.push_back( the_val );
     }
 }
 
 
-void Value::parseVariant()
+void Value::parseVariant( const value& val )
 {
-    CassError rc = CASS_OK;
-    switch( cass_value_type(f_value.get()) )
+    CassValueType const type(val.get_type());
+    switch( type )
     {
         case CASS_VALUE_TYPE_BLOB       :
-            {
-                const cass_byte_t* buff;
-                size_t len = 0;
-                rc = cass_value_get_bytes( f_value.get(), &buff, &len );
-                f_variant = QByteArray( reinterpret_cast<const char *>(buff), len );
-            }
+            f_variant = val.get_blob();
             break;
 
         case CASS_VALUE_TYPE_BOOLEAN    :
-            {
-                cass_bool_t b;
-                rc = cass_value_get_bool( f_value.get(), &b );
-                f_variant = (b == cass_true);
-            }
+            f_variant = val.get_bool();
             break;
 
         case CASS_VALUE_TYPE_FLOAT      :
-            {
-                cass_float_t f;
-                rc = cass_value_get_float( f_value.get(), &f );
-                f_variant = static_cast<float>(f);
-            }
+            f_variant = val.get_float();
             break;
 
         case CASS_VALUE_TYPE_DOUBLE     :
-            {
-                cass_double_t d;
-                rc = cass_value_get_double( f_value.get(), &d );
-                f_variant = static_cast<double>(d);
-            }
+            f_variant = val.get_double();
             break;
 
         case CASS_VALUE_TYPE_TINY_INT  :
-            {
-                cass_int8_t i;
-                rc = cass_value_get_int8( f_value.get(), &i );
-                f_variant = static_cast<int8_t>(i);
-            }
+            f_variant = val.get_int8();
             break;
 
         case CASS_VALUE_TYPE_SMALL_INT :
-            {
-                cass_int16_t i;
-                rc = cass_value_get_int16( f_value.get(), &i );
-                f_variant = static_cast<int16_t>(i);
-            }
+            f_variant = val.get_int16();
             break;
 
         case CASS_VALUE_TYPE_INT       :
         case CASS_VALUE_TYPE_VARINT    :
-            {
-                cass_int32_t i;
-                rc = cass_value_get_int32( f_value.get(), &i );
-                f_variant = static_cast<int32_t>(i);
-            }
+            f_variant = val.get_int32();
             break;
 
         case CASS_VALUE_TYPE_BIGINT     :
         case CASS_VALUE_TYPE_COUNTER    :
-            {
-                cass_int64_t i;
-                rc = cass_value_get_int64( f_value.get(), &i );
-                f_variant = static_cast<qlonglong>(i);
-            }
+            f_variant = static_cast<qlonglong>(val.get_int64());
             break;
 
         case CASS_VALUE_TYPE_ASCII     :
@@ -462,58 +382,24 @@ void Value::parseVariant()
         case CASS_VALUE_TYPE_TIME      :
         case CASS_VALUE_TYPE_TIMESTAMP :
         case CASS_VALUE_TYPE_VARCHAR   :
-            {
-                const char* str;
-                size_t len = 0;
-                rc = cass_value_get_string( f_value.get(), &str, &len );
-                f_variant = QString::fromUtf8( str, len );
-            }
+            f_variant = val.get_string();
             break;
 
         case CASS_VALUE_TYPE_UUID      :
-            {
-                CassUuid uuid;
-                rc = cass_value_get_uuid( f_value.get(), &uuid );
-                if( rc == CASS_OK )
-                {
-                    char str[CASS_UUID_STRING_LENGTH+1];
-                    cass_uuid_string( uuid, str );
-                    f_variant = QString(str);
-                }
-            }
+            f_variant = val.get_uuid();
             break;
 
         case CASS_VALUE_TYPE_TIMEUUID  :
-            {
-                CassUuid uuid;
-                rc = cass_value_get_uuid( f_value.get(), &uuid );
-                if( rc == CASS_OK )
-                {
-                    f_variant = static_cast<qulonglong>(cass_uuid_timestamp( uuid ));
-                }
-            }
+            f_variant = val.get_uuid_timestamp();
             break;
 
         case CASS_VALUE_TYPE_INET      :
-            {
-                CassInet inet;
-                rc = cass_value_get_inet( f_value.get(), &inet );
-                if( rc == CASS_OK )
-                {
-                    char str[CASS_UUID_STRING_LENGTH+1];
-                    cass_inet_string( inet, str );
-                    f_variant = QString(str);
-                }
-            }
+            f_variant = val.get_inet();
             break;
 
         default:
-            throw std::runtime_error( "This type is not a bare type!" );
-    }
-
-    if( rc != CASS_OK )
-    {
-        throw std::runtime_error( "You cannot extract this value!" );
+            throw exception_t( QString("This type [%1] is not a bare type!")
+                               .arg(static_cast<uint32_t>(type)) );
     }
 }
 
@@ -579,6 +465,6 @@ const QString& Value::output() const
 
 
 
-} // namespace QCassandraSchema
-} //namespace QtCassandra
+} // namespace schema
+} //namespace casswrapper
 // vim: ts=4 sw=4 et

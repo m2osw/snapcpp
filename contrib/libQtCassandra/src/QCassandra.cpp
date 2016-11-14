@@ -41,11 +41,10 @@
 #pragma GCC pop
 
 #include "QtCassandra/QCassandra.h"
-#include "QtCassandra/QCassandraSchema.h"
+
+#include <casswrapper/schema.h>
 
 #include <QtCore>
-
-#include <cassandra.h>
 
 #include <iostream>
 #include <sstream>
@@ -693,7 +692,6 @@ namespace QtCassandra
  * \sa setDefaultConsistencyLevel()
  */
 QCassandra::QCassandra()
-    // f_session( QCassandraSession::create() ) -- was this really correct? (i.e. the disconnect resets that pointer...)
     // f_proxy( nullptr )
     // f_current_context(nullptr) -- auto-init
     // f_contexts() -- auto-init
@@ -991,7 +989,7 @@ QCassandraContext::pointer_t QCassandra::context( const QString& context_name )
  *
  * \return A shared pointer to a cassandra context.
  */
-QCassandraContext::pointer_t QCassandra::context( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+QCassandraContext::pointer_t QCassandra::context( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
 {
     // get the list of existing contexts
     const QCassandraContexts& cs(contexts());
@@ -1106,7 +1104,7 @@ void QCassandra::retrieveContextMeta( QCassandraContext::pointer_t c, const QStr
         throw std::runtime_error( "QCassandra::retrieveContextMeta(): result does not have one blob as expected" );
     }
 
-    QCassandraSchema::SessionMeta::pointer_t session_meta(new QCassandraSchema::SessionMeta);
+    casswrapper::schema::SessionMeta::pointer_t session_meta(new casswrapper::schema::SessionMeta);
     session_meta->decodeSessionMeta(describe_cluster_result.result(0));
     const auto & keyspaces(session_meta->getKeyspaces());
     auto iter(keyspaces.find(context_name));
@@ -1169,7 +1167,7 @@ const QCassandraContexts& QCassandra::contexts() const
         //
         f_contexts_read = true;
 
-        QCassandraSchema::SessionMeta::pointer_t session_meta(new QCassandraSchema::SessionMeta);
+        casswrapper::schema::SessionMeta::pointer_t session_meta(new casswrapper::schema::SessionMeta);
         session_meta->decodeSessionMeta(describe_cluster_result.result(0));
 
         for( auto keyspace : session_meta->getKeyspaces() )

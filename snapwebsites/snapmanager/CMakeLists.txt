@@ -58,6 +58,7 @@ set( CMAKE_MODULE_PATH
 ## Find required packages
 ##
 find_package( AdvGetOpt        REQUIRED )
+find_package( CassWrapper      REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
@@ -66,7 +67,6 @@ find_package( Qt5Widgets       REQUIRED )
 find_package( Qt5WebKit        REQUIRED )
 find_package( Qt5WebKitWidgets REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
@@ -100,6 +100,7 @@ set( QT_LIBRARIES
 
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${CASSWRAPPER_INCLUDE_DIRS}
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}

@@ -45,6 +45,10 @@
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/qstring_stream.h>
 
+// casswrapper library
+//
+#include <casswrapper/query.h>
+
 // C++ lib
 //
 #include <algorithm>
@@ -58,6 +62,8 @@
 //
 #include <snapwebsites/poison.h>
 
+using namespace casswrapper;
+using namespace casswrapper::schema;
 
 namespace
 {
@@ -231,7 +237,7 @@ namespace
 
 
 snapdb::snapdb(int argc, char * argv[])
-    : f_session( QtCassandra::QCassandraSession::create() )
+    : f_session( casswrapper::Session::create() )
     //, f_host("localhost") --auto-init
     //, f_port(9042) -- auto-init -- default to connect to snapdbproxy
     //, f_count(100) -- auto-init
@@ -335,7 +341,7 @@ void snapdb::info()
         if(f_session->isConnected())
         {
             // read and display the Cassandra information
-            auto q = QtCassandra::QCassandraQuery::create( f_session );
+            auto q = Query::create( f_session );
             q->query( "SELECT cluster_name,native_protocol_version,partitioner FROM system.local" );
             q->start();
             std::cout << "Working on Cassandra Cluster Named \""    << q->getStringColumn("cluster_name")            << "\"." << std::endl;
@@ -393,8 +399,8 @@ void snapdb::drop_table() const
 
     try
     {
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("DROP TABLE %1.%2;")
                     .arg(f_context)
                     .arg(f_table)
@@ -417,8 +423,8 @@ void snapdb::drop_row() const
     {
         snap::dbutils du( f_table, f_row );
         const QByteArray row_key( du.get_row_key() );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("DELETE FROM %1.%2 WHERE key = ?;")
                     .arg(f_context)
                     .arg(f_table)
@@ -445,8 +451,8 @@ void snapdb::drop_cell() const
         const QByteArray row_key( du.get_row_key() );
         QByteArray col_key;
         du.set_column_name( col_key, f_cell );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("DELETE FROM %1.%2 WHERE key = ? and column1 = ?;")
             .arg(f_context)
             .arg(f_table)
@@ -472,8 +478,8 @@ bool snapdb::row_exists() const
     {
         snap::dbutils du( f_table, f_row );
         const QByteArray row_key( du.get_row_key() );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_context)
             .arg(f_table)
@@ -498,7 +504,7 @@ void snapdb::display_tables() const
 {
     try
     {
-        QtCassandra::QCassandraSchema::SessionMeta::pointer_t sm( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
+        SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
         sm->loadSchema();
         const auto& keyspaces( sm->getKeyspaces() );
         auto snap_iter = keyspaces.find(f_context);
@@ -535,8 +541,8 @@ void snapdb::display_rows() const
     try
     {
         snap::dbutils du( f_table, f_row );
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("SELECT DISTINCT key FROM %1.%2;")
                     .arg(f_context)
                     .arg(f_table)
@@ -570,8 +576,8 @@ void snapdb::display_rows_wildcard() const
         QString const row_start(f_row.left(f_row.length() - 1));
         std::stringstream ss;
 
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("SELECT DISTINCT key FROM %1.%2;")
                     .arg(f_context)
                     .arg(f_table)
@@ -617,8 +623,8 @@ void snapdb::display_columns() const
         snap::dbutils du( f_table, f_row );
         du.set_display_len( 24 );   // len for the elipsis for hex entries
 
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("SELECT column1, value FROM %1.%2 WHERE key = ?;")
                     .arg(f_context)
                     .arg(f_table)
@@ -708,8 +714,8 @@ void snapdb::display_cell() const
             const QByteArray row_key( du.get_row_key() );
             QByteArray col_key;
             du.set_column_name( col_key, f_cell );
-            auto q( QtCassandra::QCassandraQuery::create(f_session) );
-            q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+            auto q( Query::create(f_session) );
+            q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
             q->query( QString("SELECT value FROM %1.%2 WHERE key = ? and column1 = ?;")
                     .arg(f_context)
                     .arg(f_table)
@@ -790,8 +796,8 @@ void snapdb::set_cell() const
         QByteArray value;
         du.set_column_value( f_cell.toUtf8(), value, f_value );
 
-        auto q( QtCassandra::QCassandraQuery::create(f_session) );
-        q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto q( Query::create(f_session) );
+        q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
         q->query( QString("UPDATE %1.%2 SET value = ? WHERE key = ? and column1 = ?;")
                 .arg(f_context)
                 .arg(f_table)

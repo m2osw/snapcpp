@@ -39,6 +39,8 @@
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandraVersion.h"
 
+#include <casswrapper/schema.h>
+
 #include <memory>
 
 namespace QtCassandra
@@ -100,7 +102,7 @@ private:
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
 
-    QCassandraContext::pointer_t context( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta );
+    QCassandraContext::pointer_t context( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta );
     void retrieveContextMeta( QCassandraContext::pointer_t c, const QString& context_name ) const;
 
     friend class QCassandraContext;

@@ -16,8 +16,8 @@
 //
 #pragma once
 
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
+#include <casswrapper/query.h>
+#include <casswrapper/session.h>
 
 #include <QAbstractItemModel>
 #include <QModelIndex>
@@ -28,20 +28,20 @@
 #include <vector>
 
 
-namespace QtCassandra
+namespace casswrapper
 {
 
 
-class QueryModel
+class query_model
     : public QAbstractItemModel
 {
     Q_OBJECT
 
 public:
-    QueryModel();
+    query_model();
 
     void init
-        ( QCassandraSession::pointer_t session
+        ( Session::pointer_t session
         , const QString& keyspace_name
         , const QString& table_name
         , const QRegExp& filter = QRegExp()
@@ -50,7 +50,7 @@ public:
 
     const QString&              keyspaceName() const { return f_keyspaceName; }
     const QString&              tableName()    const { return f_tableName;    }
-    QCassandraQuery::pointer_t  query()        const { return f_query;        }
+    Query::pointer_t  			query()        const { return f_query;        }
 
     // Read only access
     //
@@ -64,14 +64,14 @@ public:
     // Local virtual methods
     //
     virtual bool			fetchFilter     ( const QByteArray& key );
-    virtual void			fetchCustomData ( QCassandraQuery::pointer_t q );
+    virtual void			fetchCustomData ( Query::pointer_t q );
 
 signals:
     void exceptionCaught( const QString & what, const QString & message ) const;
     void queryFinished() const;
 
 protected:
-    QCassandraSession::pointer_t f_session;
+    Session::pointer_t           f_session;
     QString                      f_keyspaceName;
     QString                      f_tableName;
     std::vector<QByteArray>      f_rows;
@@ -80,23 +80,23 @@ protected:
     int                          f_columnCount = 1;
     const int                    f_rowPageSize = 10;    // This is for internal pagination--it has nothing to do with the query.
 
-    void doQuery      ( QCassandraQuery::pointer_t query );
+    void doQuery      ( Query::pointer_t query );
     void displayError ( const std::exception & except, const QString & message ) const;
 
 private:
-    QCassandraQuery::pointer_t      f_query;
-    std::queue<QByteArray>          f_pendingRows;
+    Query::pointer_t        f_query;
+    std::queue<QByteArray>  f_pendingRows;
 
     void reset();
     void fetchPageFromServer( std::vector<QByteArray>& fetched_rows );
 
 private slots:
     void onFetchMore();
-    void onQueryFinished( QCassandraQuery::pointer_t q );
+    void onQueryFinished( Query::pointer_t q );
 };
 
 
 }
-// namespace QtCassandra
+// namespace casswrapper
 
 // vim: ts=4 sw=4 et
