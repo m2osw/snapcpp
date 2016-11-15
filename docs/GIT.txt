@@ -90,4 +90,26 @@ git checkout "branch-name"
 git commit "branch-name"
 
 
+# Merging one commit in another branch
+#
+# Say you create a cool commit in master and want to add that to a certain
+# branch, maybe because that other branch is a release branch and you only
+# want to fix one small thing in that branch... That's done with cherry-pick
+# but if you have auto-rebase like me, then you need to abort the rebasing
+# in case you get a conflict.
+#
+# Because you are breaking the nice tree (i.e. not taking each commit in
+# between on either side) you also have to --force the push.
+#
+# If you miss a step and seemingly have a problem, try "git rebase --skip"
+# to restore the files you cherry picked.
+git cherry-pick "commit-id"
+...edit conflicts...
+git add "path/to/file/with/conflicts"
+git commit -i "path/to/file/with/conflicts"
+git rebase --abort
+git commit .
+git push --force origin "branch-name"
+
+
 # vim: syntax=sh
