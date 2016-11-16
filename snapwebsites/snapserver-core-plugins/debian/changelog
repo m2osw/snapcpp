@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.22.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.23.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-150: make the forms non-editable when not marked as such (removed debug).
 
- -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 15 Nov 2016 23:33:47 -0800
 
 snapserver-core-plugins (1.0.22.0~xenial) xenial; urgency=high
 
