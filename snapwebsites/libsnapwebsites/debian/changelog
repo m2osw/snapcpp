@@ -1,8 +1,10 @@
-libsnapwebsites (1.1.51.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.52.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-61: Removed various debug that I added to test why Cassandra was not
+    getting cleaned up after attempting to connect.
+  * Added a test in is_connected() to not crash if f_cassandra is null.
 
- -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
 
 libsnapwebsites (1.1.51.0~xenial) xenial; urgency=high
 
