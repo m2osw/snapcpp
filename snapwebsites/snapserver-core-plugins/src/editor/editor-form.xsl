@@ -24,9 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:variable name="editor-name">editor</xsl:variable>
   <xsl:variable name="editor-modified">2015-11-04 20:45:48</xsl:variable>
 
-<xsl:variable name="action">edit</xsl:variable>
-<xsl:variable name="tabindex_base">1</xsl:variable>
-
   <!-- COMMAND PARTS -->
   <xsl:template name="snap:common-parts">
     <xsl:param name="type" select="@type"/>
