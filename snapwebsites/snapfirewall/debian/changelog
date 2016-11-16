@@ -1,3 +1,9 @@
+snapfirewall (1.1.10.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 15 Nov 2016 15:53:40 -0800
+
 snapfirewall (1.1.10.0~xenial) xenial; urgency=high
 
   * SNAP-465: Actually prevents the save() from changing an entry if the
