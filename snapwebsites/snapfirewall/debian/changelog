@@ -1,8 +1,11 @@
-snapfirewall (1.1.10.1~xenial) xenial; urgency=high
+snapfirewall (1.1.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-181: Schemes of 21+ characters get an error now.
+  * SNAP-517: Send a CASSANDRASTATUS message on an error in block or unblock.
+    (this is a temporary fix because snap_cassandra which better handle
+    reconnections in this case, see SNAP-517 for details.)
 
- -- Build Server <build@m2osw.com>  Tue, 15 Nov 2016 15:53:40 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 15 Nov 2016 23:59:40 -0800
 
 snapfirewall (1.1.10.0~xenial) xenial; urgency=high
 
