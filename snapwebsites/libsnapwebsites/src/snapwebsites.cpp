@@ -387,14 +387,6 @@ namespace
         },
         {
             '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
-            "server-name",
-            nullptr,
-            "The name of the server that is going to run this instance of snapserver (defined in /etc/snapwebsites/snapcommunicator.conf), this parameter is required.",
-            advgetopt::getopt::argument_mode_t::required_argument
-        },
-        {
-            '\0',
             0,
             "version",
             nullptr,
@@ -426,6 +418,7 @@ namespace
         snap_communicator::snap_connection::pointer_t   f_listener;
         snap_communicator::snap_connection::pointer_t   f_child_death_listener;
         snap_communicator::snap_connection::pointer_t   f_messenger;
+        snap_communicator::snap_connection::pointer_t   f_cassandra_check_timer; // timer in case an error occurs that will not generate a CASSANDRAREADY
     };
 
     /** \brief The pointers to communicator elements.
@@ -1425,18 +1418,14 @@ void server::set_translation(QString const xml_data)
 /** \brief Prepare the Cassandra database.
  *
  * This function ensures that the Cassandra database includes the default
- * context and tables (domain, website, contents.)
+ * context and tables (domain, website, contents--although we only test
+ * for one single table.)
  *
- * This is called once each time the server is started. It does npt matter
- * too much as it is quite fast. Only the core tables are checked. We may
- * later provide a way for plugins to create different contexts but at
+ * This is called once each time the server is started. It does not matter
+ * too much as it is quite fast. Only one mandatory table gets checked. We
+ * may later provide a way for plugins to create different contexts but at
  * this point we expect all of them to only make use of the Core provided
- * context.
- *
- * Currently, plugins create new tables on the fly, although in a large
- * cluster that is not a valid strategy because the creation of a table
- * has to be synchronized throughout the entire cluster and that is very
- * slow on large cluster.
+ * context (a.k.a. "snap_websites").
  *
  * \todo
  * If this function does not get called, the f_snapdbproxy_addr and
@@ -1444,13 +1433,15 @@ void server::set_translation(QString const xml_data)
  * be addressed at some point.
  *
  * \param[in] mandatory_table  A table that we expect to exist to go on.
+ *
+ * \return true if Cassandra is considered valid (up/running/initialized).
  */
-bool server::check_cassandra(QString const & mandatory_table)
+bool server::check_cassandra(QString const & mandatory_table, bool & timer_required)
 {
-    snap_cassandra cassandra;
-
     try
     {
+        snap_cassandra cassandra;
+
         // attempt a connection, this may throw if the connection fails
         //
         cassandra.connect();
@@ -1460,113 +1451,54 @@ bool server::check_cassandra(QString const & mandatory_table)
         QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
         if( !context )
         {
-            SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
-            exit(1);
+            // CASSANDRAREADY will be sent to use again once the tables are
+            // created (which implies that the context exists)
+            //
+            SNAP_LOG_WARNING("snap_websites context does not exist! snapserver is going to sleep.");
+            return false;
         }
-
-        // save the snapdbproxy address and port so the child can quickly
-        // get that information
-        //
-        f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
-        f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
 
         // make sure a certain table is ready so this daemon can run as
         // expected; if not present, exit immediately
         //
         if(!cassandra.get_table(mandatory_table))
         {
-            // if the table does not exist yet, then snapwatchdog is not
-            // correctly initialized--at this point this means we are hosed
-            // as a self running daemon
+            // the table does not exist yet...
             //
             // tables are expected to be created from the *-tables.xml files
-            // (see snapdbproxy for details.)
+            // (see snapdbproxy/tools/snapcreatetables for details.)
             //
-            SNAP_LOG_FATAL("\"")(mandatory_table)("\" table does not exist! Exiting.");
-            exit(1);
+            // CASSANDRAREADY will be sent to us again once the tables are
+            // created (which implies that the context exists)
+            //
+            SNAP_LOG_WARNING("\"")
+                            (mandatory_table)
+                            ("\" table does not exist! snapserver is going to sleep.");
+            return false;
         }
+
+        // save the snapdbproxy address and port so the children can quickly
+        // get that information
+        //
+        f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
+        f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
 
         return true;
     }
     catch(std::runtime_error const & e)
     {
-        SNAP_LOG_ERROR("could not connect to the \"snapdbproxy\" daemon or table \"")(mandatory_table)("\" is missing. Error: ")(e.what());
+        SNAP_LOG_WARNING("could not connect to the \"snapdbproxy\" daemon, context was not created, or table \"")
+                        (mandatory_table)
+                        ("\" is missing. Error: ")
+                        (e.what());
+
+        // In this case we are not going to ever receive another message
+        // to wake us up, so we want to use a timer and try again later
+        //
+        timer_required = true;
+        return false;
     }
-
-    return false;
 }
-
-
-///** \brief Create a table in the specified context.
-// *
-// * The function checks whether the named table exists, if not it
-// * creates it with default parameters. The result is a shared pointer
-// * to the table in question.
-// *
-// * By default tables are just created in the Cassandra node you are
-// * connected with. In order to use the table, it has to have been
-// * propagated. This is done with a synchronization call. That call
-// * is performed by this very function the first time a table is
-// * queried if that table was created in an earlier call to this
-// * function, then the synchronization function gets called and blocks
-// * the process until the table was propagated. The current initialization
-// * process expects the create_table() to be called a first time when
-// * your plugin initial_update() is called, then called again once the
-// * table is necessary. Therefore, this create_table() uses a 'call me
-// * twice' scheme where the second call ensures the synchrony.
-// *
-// * \todo
-// * Provide a structure that includes the different table parameters instead of
-// * using hard coded defaults.
-// *
-// * \param[in] context  The context in which the table is to be created.
-// * \param[in] table_name  The name of the new table, if it exists, nothing happens.
-// * \param[in] comment  A comment about the new table.
-// */
-//        QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
-//QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment)
-//{
-//    // does table exist?
-//    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-//    if(!table)
-//    {
-//        // table is not there yet, create it
-//        table = context->table(table_name);
-//
-//        casswrapper::schema::Value compaction;
-//        auto& compaction_map(compaction.map());
-//        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-//        compaction_map["min_threshold"] = QVariant(4);
-//        compaction_map["max_threshold"] = QVariant(22);
-//
-//        auto& table_fields(table->fields());
-//        table_fields["comment"]                     = QVariant(comment);
-//        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
-//        //
-//        // about potential problems in regard to Gargbage Collection see:
-//        //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
-//        //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
-//        //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
-//        //
-//        // Garbage Collection of 1 day (could be a lot shorter for several
-//        // tables such as the "list", "backend" and "antihammering"
-//        // tables... we will have to fix that once we have our proper per
-//        // table definitions)
-//        table_fields["gc_grace_seconds"]            = QVariant(86400);
-//        table_fields["compaction"]                  = compaction;
-//
-//        table->create();
-//
-//        f_created_table[table_name] = true;
-//    }
-//    else if(f_created_table.contains(table_name))
-//    {
-//        // one single synchronization call for all the tables created
-//        // thus far is enough.
-//        f_created_table.clear();
-//    }
-//    return table;
-//}
 
 
 /** \brief Detach the server unless in foreground mode.
@@ -1907,6 +1839,82 @@ void signal_child_death::process_signal()
 
 
 
+/** \brief Timer to poll Cassandra's availability.
+ *
+ * This class is specifically used to pretend that we received a
+ * CASSANDRAREADY even when not sent to us. This is because when
+ * we check for the availability of Cassandra, it may not have the
+ * context and tables available yet. In that case, we would just
+ * fall asleep and do nothing more.
+ *
+ * This timer allows us to re-check for the Cassandra context and
+ * mandatory table as expected on a CASSANDRAREADY message.
+ */
+class cassandra_check_timer
+        : public snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<cassandra_check_timer>  pointer_t;
+
+                            cassandra_check_timer(server * s);
+
+    // snap_communicator::snap_signal implementation
+    virtual void            process_signal();
+
+private:
+    // TBD: should this be a weak pointer?
+    server *                f_server;
+};
+
+
+/** \brief Initialize the timer as required.
+ *
+ * This disables the timer and sets up its ticks to send us a timeout
+ * event once per minute.
+ *
+ * So by default this timer does nothing.
+ *
+ * If the check_cassandra() function somehow fails in a way that means
+ * we would never get awaken again, then this timer gets turned on.
+ * It will be awaken be a timeout and send us a CASSANDRAREADY to
+ * simulate that something happened and we better recheck whether
+ * the Cassandra connection is now truly available.
+ *
+ * \param[in] s  The server pointer.
+ */
+cassandra_check_timer::cassandra_check_timer(server * s)
+    : snap_timer(60LL * 1000000LL)
+    , f_server(s)
+{
+    set_name("cassandra check timer");
+    set_priority(1);
+    set_enable(false);
+}
+
+
+/** \brief Callback called each time the SIGCHLD signal occurs.
+ *
+ * This function gets called each time a child dies.
+ *
+ * The function checks all the children and removes zombies.
+ */
+void cassandra_check_timer::process_signal()
+{
+    // disable ourselves, if the Cassandra cluster is still not ready,
+    // then we will automatically be re-enabled
+    //
+    set_enable(false);
+
+    // simulate a CASSANDRAREADY message
+    //
+    snap_communicator_message cassandra_ready;
+    cassandra_ready.set_command("CASSANDRAREADY");
+    f_server->process_message(cassandra_ready);
+}
+
+
+
+
 /** \brief Listen and send messages with other services.
  *
  * This class is used to listen for incoming messages from
@@ -2099,7 +2107,7 @@ void server::process_message(snap_communicator_message const & message)
         else
         {
             // this is not automatically true, but we will not have a
-            // way to know here
+            // way to know any better
             //
             f_firewall_up = true;
         }
@@ -2120,21 +2128,17 @@ void server::process_message(snap_communicator_message const & message)
 
     if(command == "CASSANDRAREADY")
     {
-        try
+        // connect to Cassandra and verify that a "domains" table
+        // exists; the function returns false if not
+        //
+        bool timer_required(false);
+        if(!check_cassandra(get_name(name_t::SNAP_NAME_DOMAINS), timer_required))
         {
-            // connect to Cassandra and verify that a "domains" table
-            // exists
-            //
-            check_cassandra(get_name(name_t::SNAP_NAME_DOMAINS));
+            if(timer_required && g_connection->f_cassandra_check_timer != nullptr)
+            {
+                g_connection->f_cassandra_check_timer->set_enable(true);
+            }
         }
-        catch(std::runtime_error const & e)
-        {
-            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy: ")(e.what());
-
-            f_snapdbproxy_addr.clear();
-            f_snapdbproxy_port = 0;
-        }
-
         return;
     }
 
@@ -2251,6 +2255,8 @@ void server::stop(bool quitting)
         g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
         g_connection->f_communicator->remove_connection(g_connection->f_interrupt);
         g_connection->f_interrupt.reset();
+        g_connection->f_communicator->remove_connection(g_connection->f_cassandra_check_timer);
+        g_connection->f_cassandra_check_timer.reset();
     }
 }
 
@@ -2575,6 +2581,9 @@ void server::listen()
     g_connection->f_child_death_listener->set_name("child death listener");
     g_connection->f_child_death_listener->set_priority(75);
     g_connection->f_communicator->add_connection(g_connection->f_child_death_listener);
+
+    g_connection->f_cassandra_check_timer.reset(new cassandra_check_timer(this));
+    g_connection->f_communicator->add_connection(g_connection->f_cassandra_check_timer);
 
     create_messenger_instance();
 

@@ -23,6 +23,40 @@
 
 
 
+/** \brief Send a CASSANDRAREADY message to all listeners.
+ *
+ * After we created all the tables, give various daemons another chance
+ * to check for the viability of Cassandra.
+ *
+ * This function broadcasts a CASSANDRAREADY message. The message never
+ * gets cached.
+ *
+ * This is an equivalent to:
+ *
+ * \code
+ *     snapsignal "*&#x2F;CASSANDRAREADY cache=no"
+ * \endcode
+ */
+void send_cassandra_ready()
+{
+    snap::snap_communicator_message cassandra_ready;
+    cassandra_ready.set_command("CASSANDRAREADY");
+    cassandra_ready.set_service("*");
+    cassandra_ready.add_parameter("cache", "no");
+
+    // TBD: we may want to cache that information in case we call
+    //      this function more than once
+    //
+    QString addr("127.0.0.1");
+    int port(4041);
+    snap::snap_config config("snapcommunicator");
+    QString const communicator_addr_port(config["signal"]);
+    tcp_client_server::get_addr_port(communicator_addr_port, addr, port, "udp");
+
+    snap::snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, cassandra_ready);
+}
+
+
 
 
 int main(int argc, char * argv[])
@@ -62,7 +96,14 @@ int main(int argc, char * argv[])
 
         // Create all the missing tables from all the plugins which
         // packages are currently installed
+        //
         cassandra.create_table_list();
+
+        // the tables were created, send a CASSANDRAREADY message to wake
+        // up any daemon that was expecting such and checked for said
+        // table(s) too soon.
+        //
+        send_cassandra_ready();
     }
     catch(std::exception const & e)
     {

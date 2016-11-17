@@ -1,8 +1,11 @@
-libsnapwebsites (1.1.53.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.54.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-513: Return false instead of calling exit(1) in check_cassandra().
+  * Added a cassandra_check_timer in case certain failures occur.
+  * Removed the --server-name command line option, it is not used anymore.
+  * Removed the server::create_table() function, it is not used anymore.
 
- -- Build Server <build@m2osw.com>  Wed, 16 Nov 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 16 Nov 2016 22:59:49 -0800
 
 libsnapwebsites (1.1.53.0~xenial) xenial; urgency=high
 
