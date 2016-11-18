@@ -1,3 +1,10 @@
+iplock (3.0.9.0~xenial) xenial; urgency=high
+
+  * SNAP-515: Added batch ability for blocking IP addresses.
+  * Added flush command.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 18 Nov 2016 10:07:41 -0800
+
 iplock (3.0.8.15~xenial) xenial; urgency=high
 
   * Nightly build.
