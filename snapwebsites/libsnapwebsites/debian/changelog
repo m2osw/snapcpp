@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.54.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 18 Nov 2016 02:00:48 -0800
+
 libsnapwebsites (1.1.54.0~xenial) xenial; urgency=high
 
   * SNAP-513: Return false instead of calling exit(1) in check_cassandra().
