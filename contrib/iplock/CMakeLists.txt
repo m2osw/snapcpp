@@ -32,6 +32,10 @@ enable_language( CXX )
 
 project(iplock_project)
 
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    add_definitions( "-DMO_DEBUG" )
+endif()
+
 find_package( AdvGetOpt        REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen )

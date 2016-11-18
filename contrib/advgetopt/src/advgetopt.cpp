@@ -159,7 +159,7 @@ bool is_arg(char const * a)
 
 /** \brief Initialize the getopt object.
  *
- * The constructor initialize a getopt object and parse the specified
+ * The constructor initializes a getopt object and parse the specified
  * argv array. If defined, it also parses a configuration file and
  * an environment variable.
  *

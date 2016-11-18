@@ -49,6 +49,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
+#include <sstream>
 
 #include <net/if.h>
 #include <stdio.h>
@@ -99,6 +100,14 @@ advgetopt::getopt::option const g_iplock_options[] =
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {
+        'a',
+        0,
+        "batch",
+        nullptr,
+        "Text file containing rules to add to the firewall.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
         'n',
         0,
         "count",
@@ -112,6 +121,14 @@ advgetopt::getopt::option const g_iplock_options[] =
         "help",
         nullptr,
         "Show usage and exit.",
+        advgetopt::getopt::argument_mode_t::no_argument
+    },
+    {
+        'f',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "flush",
+        nullptr,
+        "Flush all rules specified in chain.",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {
@@ -234,6 +251,30 @@ advgetopt::getopt::option const g_iplock_configuration_options[] =
     },
     {
         '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "blockcmd",
+        nullptr,
+        "Command used to add a block rule to the firewall (e.g. iptables -w).",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "unblockcmd",
+        nullptr,
+        "Command used to remove a block rule to the firewall (e.g. iptables -w).",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "batchcmd",
+        nullptr,
+        "Command use to add multiple firewall rules from a file (e.g. iptables-restore).",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
         0,
         nullptr,
         nullptr,
@@ -259,6 +300,14 @@ advgetopt::getopt::option const g_iplock_block_or_unblock_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "batch",
+        nullptr,
+        "Rule to add a specified IP address in a batch-friendly fashion.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "block",
         nullptr,
         "Block the speficied IP address. If already blocked, do nothing.",
@@ -270,6 +319,14 @@ advgetopt::getopt::option const g_iplock_block_or_unblock_options[] =
         "check",
         nullptr,
         "Command to check whether a rule already exists or not.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "flush",
+        nullptr,
+        "Flush the chain.",
         advgetopt::getopt::argument_mode_t::required_argument
     },
     {
@@ -580,62 +637,39 @@ void iplock::command::verify_ip(std::string const & ip)
 }
 
 
-
-
-iplock::block_or_unblock::block_or_unblock(iplock * parent, char const * command_name, advgetopt::getopt::pointer_t opt)
-    : command(parent, command_name, opt)
-    //, f_scheme("http") -- auto-init
+void iplock::scheme::scheme
+    ( const char* command_name
+    , advgetopt::getopt::pointer_t opt
+    )
+        : f_scheme(opt->get_string("scheme"))
 {
-    if(opt->is_defined("reset"))
-    {
-        std::cerr << "error:iplock: --reset is not supported by --block or --unblock." << std::endl;
-        exit(1);
-    }
-    if(opt->is_defined("total"))
-    {
-        std::cerr << "error:iplock: --total is not supported by --block or --unblock." << std::endl;
-        exit(1);
-    }
-
     // the filename to define the ports, block, unblock commands
     //
-    if(opt->is_defined("scheme"))
-    {
-        f_scheme = opt->get_string("scheme");
 
-        // the scheme cannot be an empty string
-        //
-        if(f_scheme.empty())
-        {
-            std::cerr << "error:iplock: the name specified with --scheme cannot be empty." << std::endl;
-            exit(1);
-        }
-
-        // make sure we accept that string as the name of a scheme
-        //
-        std::for_each(
-                  f_scheme.begin()
-                , f_scheme.end()
-                , [&](auto const & c)
-                {
-                    if((c < 'a' || c > 'z')
-                    && (c < 'A' || c > 'Z')
-                    && (c < '0' || c > '9')
-                    && c != '_')
-                    {
-                        std::cerr << "error:iplock: invalid --scheme option \"" << f_scheme << "\", only [a-zA-Z0-9_]+ are supported." << std::endl;
-                        exit(1);
-                    }
-                });
-    }
-
-    // make sure there is at least one IP address
+    // the scheme cannot be an empty string
     //
-    if(opt->size("--") == 0)
+    if(f_scheme.empty())
     {
-        std::cerr << "error:iplock: --block and --unblock require at least one IP address." << std::endl;
+        std::cerr << "error:iplock: the name specified with --scheme cannot be empty." << std::endl;
         exit(1);
     }
+
+    // make sure we accept that string as the name of a scheme
+    //
+    std::for_each(
+                f_scheme.begin()
+                , f_scheme.end()
+                , [&](auto const & c)
+    {
+        if((c < 'a' || c > 'z')
+                && (c < 'A' || c > 'Z')
+                && (c < '0' || c > '9')
+                && c != '_')
+        {
+            std::cerr << "error:iplock: invalid --scheme option \"" << f_scheme << "\", only [a-zA-Z0-9_]+ are supported." << std::endl;
+            exit(1);
+        }
+    });
 
     // read the scheme configuration file
     //
@@ -652,12 +686,10 @@ iplock::block_or_unblock::block_or_unblock(iplock * parent, char const * command
         "/etc/iplock/schemes/" + f_scheme + ".conf"
     };
 
-    // fake a pair of argc/argv which are empty
-    //
     char const * argv[2]
     {
-        "iplock_block_or_unblock",
-        nullptr
+        command_name
+        , nullptr
     };
     f_scheme_opt = std::make_shared<advgetopt::getopt>(
                 1,
@@ -703,14 +735,45 @@ iplock::block_or_unblock::block_or_unblock(iplock * parent, char const * command
             }
             f_ports.push_back(static_cast<uint16_t>(port_number));
         }
+    }
+}
 
-        // TBD: we could look into supporting "all ports" if none are specified?
-        //
-        if(f_ports.empty())
-        {
-            std::cerr << "iplock:error: you must specify at least one port." << std::endl;
-            exit(1);
-        }
+
+std::string iplock::scheme::get_cmdline( char* const name )
+{
+    return f_iplock_opt->get_string(name) + " " + f_scheme_opt->get_string(name) ;
+}
+
+
+iplock::block_or_unblock::block_or_unblock(iplock * parent, char const * command_name, advgetopt::getopt::pointer_t opt)
+    : command(parent, command_name, opt)
+    , scheme(command_name,opt)
+{
+    if(opt->is_defined("reset"))
+    {
+        std::cerr << "error:iplock: --reset is not supported by --block or --unblock." << std::endl;
+        exit(1);
+    }
+    if(opt->is_defined("total"))
+    {
+        std::cerr << "error:iplock: --total is not supported by --block or --unblock." << std::endl;
+        exit(1);
+    }
+
+    // make sure there is at least one IP address
+    //
+    if(opt->size("--") == 0)
+    {
+        std::cerr << "error:iplock: --block and --unblock require at least one IP address." << std::endl;
+        exit(1);
+    }
+
+    // get the list of ports immediately
+    //
+    if(f_ports.empty())
+    {
+        std::cerr << "iplock:error: you must specify at least one port." << std::endl;
+        exit(1);
     }
 }
 
@@ -726,7 +789,7 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
     //
     int num(1);
 
-    std::string const check_cmdline(f_scheme_opt->get_string("check"));
+    std::string const check_cmdline( get_cmdline("check") );
 
     std::vector<std::string> whitelist_ips;
     if(f_scheme_opt->is_defined("whitelist"))
@@ -863,7 +926,6 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
 }
 
 
-
 /** \class iplock::block
  * \brief Block the specified IP addresses.
  *
@@ -887,7 +949,7 @@ iplock::block::~block()
 
 void iplock::block::run()
 {
-    handle_ips(f_scheme_opt->get_string("block"), 1);
+    handle_ips(get_cmdline("block"),1);
 }
 
 
@@ -913,7 +975,7 @@ iplock::unblock::~unblock()
 
 void iplock::unblock::run()
 {
-    handle_ips(f_scheme_opt->get_string("unblock"), 0);
+    handle_ips(get_cmdline("unblock"),1);
 }
 
 
@@ -1274,6 +1336,223 @@ void iplock::count::run()
 
 
 
+/** \class iplock::flush
+ * \brief Block the specified IP addresses.
+ *
+ * This class goes through the list of IP addresses specified on the
+ * command line and add them to the chain as defined in ipconfig.conf.
+ *
+ * By default, the scheme is set to "http". It can be changed with
+ * the --scheme command line option.
+ */
+
+iplock::flush::flush(iplock * parent, advgetopt::getopt::pointer_t opt, char const* command_name)
+    : command(parent, command_name, opt)
+    , scheme(command_name, opt)
+{
+}
+
+
+iplock::flush::~flush()
+{
+}
+
+
+void iplock::flush::run()
+{
+    std::string const cmdline( get_cmdline("flush") );
+    std::string cmd(boost::replace_all_copy(cmdline, "[chain]", f_chain));
+
+    // if user specified --quiet ignore all output
+    //
+    if(f_quiet)
+    {
+        cmd += " 1>/dev/null 2>&1";
+    }
+
+    // if user specified --verbose show the command being run
+    //
+    if(f_verbose)
+    {
+        std::cout << cmd << std::endl;
+    }
+
+    // run the command now
+    //
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        if(!f_verbose)
+        {
+            // if not verbose, make sure to show the command so the
+            // user knows what failed
+            //
+            int const save_errno(errno);
+            std::cerr << cmd << std::endl;
+            errno = save_errno;
+        }
+        perror("iplock: netfilter flush command failed");
+    }
+}
+
+
+
+/** \class iplock::batch
+ * \brief Block the specified IP addresses.
+ *
+ * This class goes through the list of IP addresses specified on the
+ * command line and add them to the chain as defined in ipconfig.conf.
+ *
+ * By default, the scheme is set to "http". It can be changed with
+ * the --scheme command line option.
+ */
+
+iplock::batch::batch(iplock * parent, advgetopt::getopt::pointer_t opt)
+    : flush(parent, opt, "iplock --batch")
+    , f_ip_addr_filename(opt->get_string("batch"))
+{
+}
+
+
+iplock::batch::~batch()
+{
+}
+
+
+void iplock::batch::run()
+{
+    // First, flush the rules for the chain and the adapter.
+    //
+    flush::run();
+
+    std::string const command( f_iplock_opt->get_string("batch") );
+    std::string const options( f_scheme_opt->get_string("batch") );
+
+    struct entry
+    {
+        std::string addr;
+        std::string scheme;
+    };
+
+    {
+        // Next, we read in a list of IP addresses, one per line and output a
+        // firewall--friendly config file to import into our batch command.
+        //
+        // In iptables land, we would call the iptables-restore command
+        //
+        std::stringstream ss;
+        ss << "/tmp/iplock." << getpid();
+        std::ofstream rules( ss.str() );
+        rules << "# Generated by iplock" << std::endl
+              << "*filter"               << std::endl
+              << ":unwanted - [0:0]"     << std::endl
+                 ;
+
+        // Read the input file. The format for each line is:
+        // [ip_address] [scheme]
+        //
+        std::ifstream ip_addrs( f_ip_addr_filename );
+        if( !ip_addrs )
+        {
+            std::cerr << "Cannot open '" << f_ip_addr_filename << "'" << std::endl;
+            exit(1);
+        }
+
+        for( int line_num = 0; !ip_addrs.eof(); ++line_num )
+        {
+            std::string line;
+            std::getline( ip_addrs, line );
+
+            if( str[0] == '#' )
+            {
+                // Ignore comments
+                continue;
+            }
+
+            size_t const space( str.find(' ') );
+            if( std::string::npos == space )
+            {
+                std::cerr << "An IP address followed by a scheme is required [line=" << line_num << "]!" << std::endl;
+                exit(1);
+            }
+
+            entry ent;
+            ent.addr   = str.substr( 0, space );
+            ent.scheme = str.substr( space+1  );
+
+            if( ent.scheme != f_scheme )
+            {
+                // This is only applicable to the current scheme
+                //
+                continue;
+            }
+
+            for(auto const port : f_ports)
+            {
+                //-A unwanted -s 3.1.1.1/32 -i eth0 -p tcp -m tcp --dport 80 -j DROP
+                //-A unwanted -s 3.1.1.1/32 -i eth0 -p tcp -m tcp --dport 443 -j DROP
+                //
+                std::string rule_options(boost::replace_all_copy(options, "[chain]", f_chain));
+                boost::replace_all(rule_options, "[port]", std::to_string(static_cast<unsigned int>(port)));
+                boost::replace_all(rule_options, "[ip]", ip);
+                boost::replace_all(rule_options, "[interface]", f_interface);
+
+                rules << options << std::endl;
+            }
+        }
+
+        rules << f_scheme_opt->get_string("batch_footer") << std::endl;
+        rules.flush();
+        rules.close();
+    }
+
+    {
+        std::stringstream fullcmd;
+        fullcmd << command << " " << f_ip_addr_filename;
+
+        // if user specified --quiet ignore all output
+        //
+        if(f_quiet)
+        {
+            fullcmd << " 1>/dev/null 2>&1";
+        }
+
+        // if user specified --verbose show the command being run
+        //
+        if(f_verbose)
+        {
+            std::cout << fullcmd.str() << std::endl;
+        }
+
+        int const rc(system(full_cmd.str().c_str()));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        if(!WIFEXITED(rc))
+        {
+            if(!f_verbose)
+            {
+                // if not verbose, make sure to show the command so the
+                // user knows what failed
+                //
+                int const save_errno(errno);
+                std::cerr << fullcmd.str() << std::endl;
+                errno = save_errno;
+            }
+            perror("iplock: netfilter command failed");
+        }
+#pragma GCC diagnostic pop
+
+#ifndef MO_DEBUG
+        // Only remove if we are not in debug mode
+        //
+        unlink( f_ip_addr_filename.c_str() );
+#endif
+    }
+}
+
+
+
 /** \brief Initialize the iplock object.
  *
  * This function parses the command line and  determines the command
@@ -1315,6 +1594,10 @@ iplock::iplock(int argc, char * argv[])
     // the set_command() function to make sure that only one
     // gets set...
     //
+    // TODO: Alexis, I'm not sure why you have this. Wouldn't this wind up being confusing
+    // to the user? Why not be exclusive about it and generate an error if the command is
+    // not given? It seems that the commands are mutually exclusive.
+    //
     if(opt->is_defined("block"))
     {
         set_command(std::make_shared<block>(this, opt));
@@ -1326,6 +1609,14 @@ iplock::iplock(int argc, char * argv[])
     if(opt->is_defined("count"))
     {
         set_command(std::make_shared<count>(this, opt));
+    }
+    if(opt->is_defined("flush"))
+    {
+        set_command(std::make_shared<flush>(this, opt));
+    }
+    if(opt->is_defined("batch"))
+    {
+        set_command(std::make_shared<batch>(this, opt));
     }
 
     // no command specified?

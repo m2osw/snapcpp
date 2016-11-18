@@ -57,19 +57,31 @@ public:
         bool const                      f_verbose;  // since it is const, you must specify it in the constructor
     };
 
+
+    class scheme
+    {
+    public:
+        scheme( char const * command_name
+              , advgetopt::getopt::pointer_t opt
+              );
+
+        std::string get_cmdline( char* const name );
+
+    protected:
+        std::string                     f_scheme = "http";
+        advgetopt::getopt::pointer_t    f_scheme_opt;
+        std::vector<uint16_t>           f_ports;
+    };
+
     class block_or_unblock
         : public command
+        , public scheme
     {
     public:
                             block_or_unblock(iplock * parent, char const * command_name, advgetopt::getopt::pointer_t opt);
         virtual             ~block_or_unblock() override;
 
         void                handle_ips(std::string const & cmdline, int run_on_result);
-
-    protected:
-        std::string                     f_scheme = "http";
-        advgetopt::getopt::pointer_t    f_scheme_opt;
-        std::vector<uint16_t>           f_ports;
     };
 
     class block
@@ -109,6 +121,32 @@ public:
         bool const                      f_reset;  // since it is const, you must specify it in the constructor
         advgetopt::getopt::pointer_t    f_count_opt;
         std::vector<std::string>        f_targets;
+    };
+
+    class flush
+        : public command
+        , public scheme
+    {
+    public:
+                            flush(iplock * parent, advgetopt::getopt::pointer_t opt, char const* command_name = "iplock --flush");
+        virtual             ~flush() override;
+
+        virtual void        run() override;
+
+    private:
+    };
+
+    class batch
+        : public flush
+    {
+    public:
+                            batch(iplock * parent, advgetopt::getopt::pointer_t opt);
+        virtual             ~batch() override;
+
+        virtual void        run() override;
+
+    private:
+        std::string         f_ip_addr_filename;
     };
 
                             iplock(int argc, char * argv[]);
