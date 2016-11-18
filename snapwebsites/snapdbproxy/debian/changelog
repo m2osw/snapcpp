@@ -1,3 +1,9 @@
+snapdbproxy (1.1.28.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 18 Nov 2016 02:00:47 -0800
+
 snapdbproxy (1.1.28.0~xenial) xenial; urgency=high
 
   * SNAP-513: Send CASSANDRAREADY after creating all tables.
