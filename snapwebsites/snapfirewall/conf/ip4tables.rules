@@ -82,11 +82,12 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 
-# RST and FIN,ACK happen from legitimate IPs, but they are not always properly
-# established connections; however, logging such is not a good idea because
-# it will block otherwise legitimate connections
+# RST and FIN,ACK and PSH,ACK happen from legitimate IPs, but they are not
+# always properly established connections; however, logging such is not a
+# good idea because it will block otherwise legitimate connections
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL RST -d @PUBLIC_IP@ -j REJECT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL FIN,ACK -d @PUBLIC_IP@ -j REJECT
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL PSH,ACK -d @PUBLIC_IP@ -j REJECT
 
 # Drop anything else!
 -A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid

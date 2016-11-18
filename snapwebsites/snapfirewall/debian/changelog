@@ -1,8 +1,11 @@
-snapfirewall (1.1.11.3~xenial) xenial; urgency=high
+snapfirewall (1.1.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Also allow PSH,ACK which can happen on a connection which
+    gets closed quickly.
+  * Tweaked the snap-apache-timeout jail further, it now has to happen
+    20 times in one hour instead of a whole day.
 
- -- Build Server <build@m2osw.com>  Wed, 16 Nov 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Nov 2016 10:52:50 -0800
 
 snapfirewall (1.1.11.0~xenial) xenial; urgency=high
 
