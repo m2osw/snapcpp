@@ -67,6 +67,7 @@ public:
               , advgetopt::getopt::pointer_t opt
               );
 
+        std::string get_command( std::string const &name );
         std::string get_cmdline( std::string const &name );
 
     protected:
@@ -82,7 +83,7 @@ public:
                             block_or_unblock(iplock * parent, char const * command_name, advgetopt::getopt::pointer_t opt);
         virtual             ~block_or_unblock() override;
 
-        void                handle_ips(std::string const & cmdline, int run_on_result);
+        void                handle_ips(std::string const & name, int run_on_result);
     };
 
     class block

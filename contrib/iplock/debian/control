@@ -7,7 +7,7 @@ Build-Depends: cmake,
     doxygen,
     graphviz,
     libadvgetopt-dev (>= 1.1.3.11~xenial),
-    libboost-dev,
+    libboost-dev, libboost-filesystem-dev, libboost-system-dev,
     snapcmakemodules (>= 1.0.27.11~xenial)
 Standards-Version: 3.9.4
 Homepage: http://www.snapwebsites.org/
