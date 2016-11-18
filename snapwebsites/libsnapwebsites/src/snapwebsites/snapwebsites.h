@@ -256,7 +256,7 @@ public:
     QString             get_parameter(QString const & param_name) const;
     void                set_parameter( QString const & param_name, QString const & value );
     void                prepare_qtapp( int argc, char * argv[] );
-    bool                check_cassandra(QString const & mandatory_table);
+    bool                check_cassandra(QString const & mandatory_table, bool & timer_required);
 
     void                create_messenger_instance( bool const use_thread = false );
 

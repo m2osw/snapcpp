@@ -1,8 +1,26 @@
-libsnapwebsites (1.1.51.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.54.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-513: Return false instead of calling exit(1) in check_cassandra().
+  * Added a cassandra_check_timer in case certain failures occur.
+  * Removed the --server-name command line option, it is not used anymore.
+  * Removed the server::create_table() function, it is not used anymore.
 
- -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 16 Nov 2016 22:59:49 -0800
+
+libsnapwebsites (1.1.53.0~xenial) xenial; urgency=high
+
+  * SNAP-181: Added the what() for an exception that we get in snapfirewall
+    but do not really know why. It should help anyone using that function.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 15 Nov 2016 23:47:47 -0800
+
+libsnapwebsites (1.1.52.0~xenial) xenial; urgency=high
+
+  * SNAP-61: Removed various debug that I added to test why Cassandra was not
+    getting cleaned up after attempting to connect.
+  * Added a test in is_connected() to not crash if f_cassandra is null.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 15 Nov 2016 23:40:47 -0800
 
 libsnapwebsites (1.1.51.0~xenial) xenial; urgency=high
 

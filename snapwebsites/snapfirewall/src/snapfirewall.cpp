@@ -808,7 +808,10 @@ void snap_firewall::block_info_t::set_scheme(QString scheme)
             }
         }
     }
-    if(bad_scheme)
+
+    // further we limit the length of the protocol to 20 characters
+    //
+    if(bad_scheme || scheme.length() > 20)
     {
         // invalid protocol, forget about the wrong one
         //
@@ -818,9 +821,7 @@ void snap_firewall::block_info_t::set_scheme(QString scheme)
         scheme.clear();
     }
 
-    // further we limit the length of the protocol to 20 characters
-    //
-    if(scheme.isEmpty() || scheme.length() > 20)
+    if(scheme.isEmpty())
     {
         scheme = "http";
     }
@@ -2059,6 +2060,22 @@ void snap_firewall::block_ip(snap::snap_communicator_message const & message)
     catch(std::exception const & e)
     {
         SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the block_ip() function: ")(e.what());
+
+        // we probably should not catch all exceptions here (i.e. on a
+        // bad_alloc, we probably want to quit...)
+        //
+        // in any event, this probably means we just lost our connections
+        // and need to try to reconnect
+        //
+        f_cassandra.disconnect();
+        f_firewall_table.reset();
+
+        // check with snapdbproxy whether it is still connected or not
+        //
+        snap::snap_communicator_message isdbready_message;
+        isdbready_message.set_command("CASSANDRASTATUS");
+        isdbready_message.set_service("snapdbproxy");
+        f_messenger->send_message(isdbready_message);
     }
 }
 
@@ -2113,6 +2130,22 @@ void snap_firewall::unblock_ip(snap::snap_communicator_message const & message)
     catch(std::exception const & e)
     {
         SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the unblock_ip() function: ")(e.what());
+
+        // we probably should not catch all exceptions here (i.e. on a
+        // bad_alloc, we probably want to quit...)
+        //
+        // in any event, this probably means we just lost our connections
+        // and need to try to reconnect
+        //
+        f_cassandra.disconnect();
+        f_firewall_table.reset();
+
+        // check with snapdbproxy whether it is still connected or not
+        //
+        snap::snap_communicator_message isdbready_message;
+        isdbready_message.set_command("CASSANDRASTATUS");
+        isdbready_message.set_service("snapdbproxy");
+        f_messenger->send_message(isdbready_message);
     }
 }
 

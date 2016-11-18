@@ -40,10 +40,6 @@ snap_cassandra::snap_cassandra()
 
 snap_cassandra::~snap_cassandra()
 {
-    if(f_cassandra != nullptr)
-    {
-SNAP_LOG_WARNING("f_cassandra.use_count() in destructor: ")(f_cassandra.use_count());
-    }
 }
 
 
@@ -66,6 +62,12 @@ void snap_cassandra::connect()
         throw snap_cassandra_not_available_exception(msg);
     }
 
+    // everything setup to QUORUM or we get really strange errors when under
+    // load (without much load, it works like a charm with ONE).
+    //
+    // Note: the low level library forces everything to QUORUM anyway so
+    //       this call is not really useful as it stands.
+    //
     f_cassandra->setDefaultConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
     if( !f_cassandra->connect(f_snapdbproxy_addr, f_snapdbproxy_port) )
@@ -74,8 +76,6 @@ void snap_cassandra::connect()
         SNAP_LOG_FATAL(msg);
         throw snap_cassandra_not_available_exception(msg);
     }
-
-SNAP_LOG_WARNING("f_cassandra exiting connect() = ")(f_cassandra.use_count());
 }
 
 
@@ -99,10 +99,7 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     //
     f_cassandra->contexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    //return f_cassandra->findContext(context_name);
-QtCassandra::QCassandraContext::pointer_t c(f_cassandra->findContext(context_name));
-SNAP_LOG_WARNING("f_cassandra exiting context() = ")(f_cassandra.use_count());
-return c;
+    return f_cassandra->findContext(context_name);
 
     //QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     //return f_cassandra->context(context_name);
@@ -123,15 +120,17 @@ int32_t snap_cassandra::get_snapdbproxy_port() const
 
 bool snap_cassandra::is_connected() const
 {
+    if(!f_cassandra)
+    {
+        return false;
+    }
     return f_cassandra->isConnected();
 }
 
 
 QtCassandra::QCassandraTable::pointer_t snap_cassandra::get_table(QString const & table_name)
 {
-SNAP_LOG_WARNING("f_cassandra get_table() on entry = ")(f_cassandra.use_count());
     QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
-SNAP_LOG_WARNING("f_cassandra get_table() got context = ")(f_cassandra.use_count());
     if(!context)
     {
         throw snap_cassandra_not_available_exception("The snap_websites context is not available in this Cassandra database.");
@@ -139,7 +138,6 @@ SNAP_LOG_WARNING("f_cassandra get_table() got context = ")(f_cassandra.use_count
 
     // does table exist?
     QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-SNAP_LOG_WARNING("f_cassandra findTable() = ")(f_cassandra.use_count());
     if(!table)
     {
         SNAP_LOG_FATAL("could not find table \"")(table_name)("\" in Cassandra.");

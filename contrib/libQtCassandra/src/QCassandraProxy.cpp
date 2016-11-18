@@ -335,7 +335,7 @@ bool QCassandraProxy::sendResult(QCassandraProxyIO & io, QCassandraOrderResult c
 
 bool QCassandraProxy::isConnected() const
 {
-    return !!f_bio;
+    return f_bio != nullptr;
 }
 
 

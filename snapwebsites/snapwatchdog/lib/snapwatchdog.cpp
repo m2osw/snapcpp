@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap watchdog daemon
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -147,6 +147,88 @@ void watchdog_interrupt::process_signal()
     //
     f_watchdog_server->stop(false);
 }
+
+
+
+/** \brief Timer to poll Cassandra's availability.
+ *
+ * This class is specifically used to pretend that we received a
+ * CASSANDRAREADY even when not sent to us. This is because when
+ * we check for the availability of Cassandra, it may not have the
+ * context and tables available yet. In that case, we would just
+ * fall asleep and do nothing more.
+ *
+ * This timer allows us to re-check for the Cassandra context and
+ * mandatory table as expected on a CASSANDRAREADY message.
+ */
+class cassandra_check_timer
+        : public snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<cassandra_check_timer>  pointer_t;
+
+                            cassandra_check_timer(watchdog_server::pointer_t ws);
+
+    // snap_communicator::snap_signal implementation
+    virtual void            process_signal();
+
+private:
+    // TBD: should this be a weak pointer?
+    watchdog_server::pointer_t  f_watchdog_server;
+};
+
+
+/** \brief The tick timer.
+ *
+ * We create one tick timer. It is saved in this variable if needed.
+ */
+cassandra_check_timer::pointer_t    g_cassandra_check_timer;
+
+
+/** \brief Initialize the timer as required.
+ *
+ * This disables the timer and sets up its ticks to send us a timeout
+ * event once per minute.
+ *
+ * So by default this timer does nothing.
+ *
+ * If the check_cassandra() function somehow fails in a way that means
+ * we would never get awaken again, then this timer gets turned on.
+ * It will be awaken be a timeout and send us a CASSANDRAREADY to
+ * simulate that something happened and we better recheck whether
+ * the Cassandra connection is now truly available.
+ *
+ * \param[in] s  The server pointer.
+ */
+cassandra_check_timer::cassandra_check_timer(watchdog_server::pointer_t ws)
+    : snap_timer(60LL * 1000000LL)
+    , f_watchdog_server(ws)
+{
+    set_name("cassandra check timer");
+    set_enable(false);
+}
+
+
+/** \brief Callback called each time the SIGCHLD signal occurs.
+ *
+ * This function gets called each time a child dies.
+ *
+ * The function checks all the children and removes zombies.
+ */
+void cassandra_check_timer::process_signal()
+{
+    // disable ourselves, if the Cassandra cluster is still not ready,
+    // then we will automatically be re-enabled
+    //
+    set_enable(false);
+
+    // simulate a CASSANDRAREADY message
+    //
+    snap_communicator_message cassandra_ready;
+    cassandra_ready.set_command("CASSANDRAREADY");
+    f_watchdog_server->process_message(cassandra_ready);
+}
+
 
 
 
@@ -516,6 +598,11 @@ void watchdog_server::watchdog()
     g_interrupt.reset(new watchdog_interrupt(instance()));
     g_communicator->add_connection(g_interrupt);
 
+    // in case we cannot properly connect to Cassandra
+    //
+    g_cassandra_check_timer.reset(new cassandra_check_timer(instance()));
+    g_communicator->add_connection(g_cassandra_check_timer);
+
     // get the snapcommunicator IP and port
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
@@ -837,19 +924,16 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
 
     if(command == "CASSANDRAREADY")
     {
-        try
+        // connect to Cassandra and verify that a "serverstats"
+        // table exists
+        //
+        bool timer_required(false);
+        if(!check_cassandra(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS), timer_required))
         {
-            // connect to Cassandra and verify that a "serverstats"
-            // table exists
-            //
-            check_cassandra(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
-        }
-        catch(std::runtime_error const & e)
-        {
-            SNAP_LOG_WARNING("snapwatchdog failed to connect to snapdbproxy: ")(e.what());
-
-            f_snapdbproxy_addr.clear();
-            f_snapdbproxy_port = 0;
+            if(timer_required && g_cassandra_check_timer != nullptr)
+            {
+                g_cassandra_check_timer->set_enable(true);
+            }
         }
 
         return;
@@ -942,6 +1026,7 @@ void watchdog_server::stop(bool quitting)
     }
 
     g_communicator->remove_connection(g_interrupt);
+    g_communicator->remove_connection(g_cassandra_check_timer);
     g_communicator->remove_connection(g_tick_timer);
     if(f_processes.empty())
     {

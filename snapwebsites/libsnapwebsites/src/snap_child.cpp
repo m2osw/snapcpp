@@ -6481,6 +6481,11 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
             output_result(HEADER_MODE_ERROR, html.toUtf8());
         }
     }
+    catch(std::exception const & e)
+    {
+        // ignore all errors because at this point we must die quickly.
+        SNAP_LOG_FATAL("snap_child.cpp:die(): try/catch caught an exception. What: ")(e.what());
+    }
     catch(...)
     {
         // ignore all errors because at this point we must die quickly.
