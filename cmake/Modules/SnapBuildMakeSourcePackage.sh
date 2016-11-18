@@ -13,7 +13,7 @@ set -e
 #
 if [ -z "$1" ]
 then
-	DIST=saucy
+	DIST=xenial
 else
 	DIST=$1
 fi
