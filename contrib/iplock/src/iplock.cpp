@@ -49,6 +49,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 #include <net/if.h>
@@ -637,11 +638,13 @@ void iplock::command::verify_ip(std::string const & ip)
 }
 
 
-void iplock::scheme::scheme
-    ( const char* command_name
+iplock::scheme::scheme
+    ( iplock * parent
+    , const char* command_name
     , advgetopt::getopt::pointer_t opt
     )
-        : f_scheme(opt->get_string("scheme"))
+    : command( parent, command_name, opt )
+    , f_scheme(opt->get_string("scheme"))
 {
     // the filename to define the ports, block, unblock commands
     //
@@ -739,15 +742,14 @@ void iplock::scheme::scheme
 }
 
 
-std::string iplock::scheme::get_cmdline( char* const name )
+std::string iplock::scheme::get_cmdline( std::string const &name )
 {
     return f_iplock_opt->get_string(name) + " " + f_scheme_opt->get_string(name) ;
 }
 
 
 iplock::block_or_unblock::block_or_unblock(iplock * parent, char const * command_name, advgetopt::getopt::pointer_t opt)
-    : command(parent, command_name, opt)
-    , scheme(command_name,opt)
+    : scheme(parent, command_name, opt)
 {
     if(opt->is_defined("reset"))
     {
@@ -1347,8 +1349,7 @@ void iplock::count::run()
  */
 
 iplock::flush::flush(iplock * parent, advgetopt::getopt::pointer_t opt, char const* command_name)
-    : command(parent, command_name, opt)
-    , scheme(command_name, opt)
+    : scheme(parent, command_name, opt)
 {
 }
 
@@ -1425,7 +1426,7 @@ void iplock::batch::run()
     //
     flush::run();
 
-    std::string const command( f_iplock_opt->get_string("batch") );
+    std::string const cmd    ( f_iplock_opt->get_string("batch") );
     std::string const options( f_scheme_opt->get_string("batch") );
 
     struct entry
@@ -1463,13 +1464,13 @@ void iplock::batch::run()
             std::string line;
             std::getline( ip_addrs, line );
 
-            if( str[0] == '#' )
+            if( line[0] == '#' )
             {
                 // Ignore comments
                 continue;
             }
 
-            size_t const space( str.find(' ') );
+            size_t const space( line.find(' ') );
             if( std::string::npos == space )
             {
                 std::cerr << "An IP address followed by a scheme is required [line=" << line_num << "]!" << std::endl;
@@ -1477,8 +1478,8 @@ void iplock::batch::run()
             }
 
             entry ent;
-            ent.addr   = str.substr( 0, space );
-            ent.scheme = str.substr( space+1  );
+            ent.addr   = line.substr( 0, space );
+            ent.scheme = line.substr( space+1  );
 
             if( ent.scheme != f_scheme )
             {
@@ -1494,7 +1495,7 @@ void iplock::batch::run()
                 //
                 std::string rule_options(boost::replace_all_copy(options, "[chain]", f_chain));
                 boost::replace_all(rule_options, "[port]", std::to_string(static_cast<unsigned int>(port)));
-                boost::replace_all(rule_options, "[ip]", ip);
+                boost::replace_all(rule_options, "[ip]", ent.addr);
                 boost::replace_all(rule_options, "[interface]", f_interface);
 
                 rules << options << std::endl;
@@ -1508,7 +1509,7 @@ void iplock::batch::run()
 
     {
         std::stringstream fullcmd;
-        fullcmd << command << " " << f_ip_addr_filename;
+        fullcmd << cmd << " " << f_ip_addr_filename;
 
         // if user specified --quiet ignore all output
         //
@@ -1524,7 +1525,7 @@ void iplock::batch::run()
             std::cout << fullcmd.str() << std::endl;
         }
 
-        int const rc(system(full_cmd.str().c_str()));
+        int const rc(system(fullcmd.str().c_str()));
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"

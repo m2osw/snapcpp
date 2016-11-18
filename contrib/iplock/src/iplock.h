@@ -59,13 +59,15 @@ public:
 
 
     class scheme
+        : public command
     {
     public:
-        scheme( char const * command_name
+        scheme( iplock * parent
+              , char const * command_name
               , advgetopt::getopt::pointer_t opt
               );
 
-        std::string get_cmdline( char* const name );
+        std::string get_cmdline( std::string const &name );
 
     protected:
         std::string                     f_scheme = "http";
@@ -74,8 +76,7 @@ public:
     };
 
     class block_or_unblock
-        : public command
-        , public scheme
+        : public scheme
     {
     public:
                             block_or_unblock(iplock * parent, char const * command_name, advgetopt::getopt::pointer_t opt);
@@ -124,8 +125,7 @@ public:
     };
 
     class flush
-        : public command
-        , public scheme
+        : public scheme
     {
     public:
                             flush(iplock * parent, advgetopt::getopt::pointer_t opt, char const* command_name = "iplock --flush");
