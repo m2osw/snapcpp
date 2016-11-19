@@ -1,8 +1,8 @@
-snapmanagercgi (1.2.44.5~xenial) xenial; urgency=high
+snapmanagercgi (1.2.45.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Removed a newline in case no output was returned from an install.
 
- -- Build Server <build@m2osw.com>  Sun, 13 Nov 2016 02:00:45 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 00:56:45 -0800
 
 snapmanagercgi (1.2.44.0~xenial) xenial; urgency=high
 

@@ -341,7 +341,21 @@ int manager::install_package(std::string const & package_name, std::string const
 
     // the output is saved so we can send it to the user and log it...
     QString const output(p.get_output(true));
-    SNAP_LOG_INFO(command)(" of package named \"")(package_name)("\" output:\n")(output);
+    if(output.isEmpty())
+    {
+        SNAP_LOG_INFO(command)
+                     (" of package named \"")
+                     (package_name)
+                     ("\" output nothing.");
+    }
+    else
+    {
+        SNAP_LOG_INFO(command)
+                     (" of package named \"")
+                     (package_name)
+                     ("\" output:\n")
+                     (output);
+    }
 
     return r;
 }
