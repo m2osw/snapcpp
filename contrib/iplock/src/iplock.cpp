@@ -828,6 +828,12 @@ void iplock::block_or_unblock::handle_ips(std::string const & name, int run_on_r
     std::string const block_command( get_command(name) );
     std::string const block_cmdline( get_cmdline(name) );
 
+#if 0
+std::cout << "name=" << name << std::endl;
+std::cout << "check_command: " << check_command << std::endl << "block_command: " << block_command << std::endl;
+std::cout << "check_cmdline: " << check_cmdline << std::endl << "block_cmdline: " << block_cmdline << std::endl;
+#endif
+
     std::vector<std::string> whitelist_ips;
     if(f_scheme_opt->is_defined("whitelist"))
     {
@@ -1014,7 +1020,7 @@ iplock::unblock::~unblock()
 
 void iplock::unblock::run()
 {
-    handle_ips("unblock",1);
+    handle_ips("unblock",0);
 }
 
 
@@ -1473,7 +1479,7 @@ void iplock::batch::run()
         std::string scheme;
     };
 
-    std::string const private_folder("/etc/iplock/private");
+    std::string const private_folder("/var/cache/iplock/private");
     boost::filesystem::create_directory(private_folder);
     boost::filesystem::permissions( private_folder
                                   , boost::filesystem::owner_read
