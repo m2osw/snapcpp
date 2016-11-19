@@ -46,6 +46,7 @@
 #include "version.h"
 
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
@@ -93,20 +94,20 @@ advgetopt::getopt::option const g_iplock_options[] =
         advgetopt::getopt::argument_mode_t::help_argument
     },
     {
-        'b',
-        0,
-        "block",
-        nullptr,
-        "Block the speficied IP address. If already blocked, do nothing.",
-        advgetopt::getopt::argument_mode_t::no_argument
-    },
-    {
         'a',
         0,
         "batch",
         nullptr,
         "Text file containing rules to add to the firewall.",
         advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        'b',
+        0,
+        "block",
+        nullptr,
+        "Block the speficied IP address. If already blocked, do nothing.",
+        advgetopt::getopt::argument_mode_t::no_argument
     },
     {
         'n',
@@ -237,9 +238,41 @@ advgetopt::getopt::option const g_iplock_configuration_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "batch",
+        nullptr,
+        "Command use to add multiple firewall rules from a file (e.g. iptables-restore).",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "block",
+        nullptr,
+        "Command used to add a block rule to the firewall (e.g. iptables -w).",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "chain",
         nullptr,
         "The name of the chain that iplock is expected to work with.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "check",
+        nullptr,
+        "The command used to perform a check of the current firewall rules.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "flush",
+        nullptr,
+        "The name of the command which will flush rules from a table.",
         advgetopt::getopt::argument_mode_t::required_argument
     },
     {
@@ -253,25 +286,9 @@ advgetopt::getopt::option const g_iplock_configuration_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "blockcmd",
-        nullptr,
-        "Command used to add a block rule to the firewall (e.g. iptables -w).",
-        advgetopt::getopt::argument_mode_t::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "unblockcmd",
+        "unblock",
         nullptr,
         "Command used to remove a block rule to the firewall (e.g. iptables -w).",
-        advgetopt::getopt::argument_mode_t::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "batchcmd",
-        nullptr,
-        "Command use to add multiple firewall rules from a file (e.g. iptables-restore).",
         advgetopt::getopt::argument_mode_t::required_argument
     },
     {
@@ -304,6 +321,14 @@ advgetopt::getopt::option const g_iplock_block_or_unblock_options[] =
         "batch",
         nullptr,
         "Rule to add a specified IP address in a batch-friendly fashion.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "batch_footer",
+        nullptr,
+        "Footer to mark the end of the batch file which the batch tool processes.",
         advgetopt::getopt::argument_mode_t::required_argument
     },
     {
@@ -691,7 +716,7 @@ iplock::scheme::scheme
 
     char const * argv[2]
     {
-        command_name
+        "iplock_block_or_unblock"
         , nullptr
     };
     f_scheme_opt = std::make_shared<advgetopt::getopt>(
@@ -742,9 +767,15 @@ iplock::scheme::scheme
 }
 
 
+std::string iplock::scheme::get_command( std::string const &name )
+{
+    return f_iplock_opt->get_string(name);
+}
+
+
 std::string iplock::scheme::get_cmdline( std::string const &name )
 {
-    return f_iplock_opt->get_string(name) + " " + f_scheme_opt->get_string(name) ;
+    return f_scheme_opt->get_string(name);
 }
 
 
@@ -785,13 +816,17 @@ iplock::block_or_unblock::~block_or_unblock()
 }
 
 
-void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_on_result)
+void iplock::block_or_unblock::handle_ips(std::string const & name, int run_on_result)
 {
     // position where each rule gets insert (if the command is --block)
     //
     int num(1);
 
+    std::string const check_command( get_command("check") );
     std::string const check_cmdline( get_cmdline("check") );
+    //
+    std::string const block_command( get_command(name) );
+    std::string const block_cmdline( get_cmdline(name) );
 
     std::vector<std::string> whitelist_ips;
     if(f_scheme_opt->is_defined("whitelist"))
@@ -835,7 +870,8 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
         {
             // replace the variables in the command line
             //
-            std::string check_cmd(boost::replace_all_copy(check_cmdline, "[chain]", f_chain));
+            std::string check_cmd(boost::replace_all_copy(check_cmdline, "[command]", check_command));
+            boost::replace_all(check_cmd, "[chain]", f_chain);
             boost::replace_all(check_cmd, "[port]", std::to_string(static_cast<unsigned int>(port)));
             boost::replace_all(check_cmd, "[ip]", ip);
             boost::replace_all(check_cmd, "[num]", std::to_string(num));
@@ -879,7 +915,8 @@ void iplock::block_or_unblock::handle_ips(std::string const & cmdline, int run_o
             {
                 // replace the variables in the command line
                 //
-                std::string cmd(boost::replace_all_copy(cmdline, "[chain]", f_chain));
+                std::string cmd(boost::replace_all_copy(block_cmdline, "[command]", block_command));
+                boost::replace_all(cmd, "[chain]", f_chain);
                 boost::replace_all(cmd, "[port]", std::to_string(static_cast<unsigned int>(port)));
                 boost::replace_all(cmd, "[ip]", ip);
                 boost::replace_all(cmd, "[num]", std::to_string(num));
@@ -951,7 +988,7 @@ iplock::block::~block()
 
 void iplock::block::run()
 {
-    handle_ips(get_cmdline("block"),1);
+    handle_ips("block",1);
 }
 
 
@@ -977,7 +1014,7 @@ iplock::unblock::~unblock()
 
 void iplock::unblock::run()
 {
-    handle_ips(get_cmdline("unblock"),1);
+    handle_ips("unblock",1);
 }
 
 
@@ -1362,7 +1399,8 @@ iplock::flush::~flush()
 void iplock::flush::run()
 {
     std::string const cmdline( get_cmdline("flush") );
-    std::string cmd(boost::replace_all_copy(cmdline, "[chain]", f_chain));
+    std::string cmd(boost::replace_all_copy(cmdline, "[command]", get_command("flush") ));
+    boost::replace_all(cmd, "[chain]", f_chain);
 
     // if user specified --quiet ignore all output
     //
@@ -1426,8 +1464,8 @@ void iplock::batch::run()
     //
     flush::run();
 
-    std::string const cmd    ( f_iplock_opt->get_string("batch") );
-    std::string const options( f_scheme_opt->get_string("batch") );
+    std::string const cmd    ( get_command("batch") );
+    std::string const options( get_cmdline("batch") );
 
     struct entry
     {
@@ -1435,15 +1473,25 @@ void iplock::batch::run()
         std::string scheme;
     };
 
+    std::string const private_folder("/etc/iplock/private");
+    boost::filesystem::create_directory(private_folder);
+    boost::filesystem::permissions( private_folder
+                                  , boost::filesystem::owner_read
+                                  | boost::filesystem::owner_write
+                                  | boost::filesystem::owner_exe
+                                  );
+
+    std::stringstream ss;
+    ss << private_folder << "/iplock." << getpid();
+    std::string const outfile(ss.str());
+
     {
         // Next, we read in a list of IP addresses, one per line and output a
         // firewall--friendly config file to import into our batch command.
         //
         // In iptables land, we would call the iptables-restore command
         //
-        std::stringstream ss;
-        ss << "/tmp/iplock." << getpid();
-        std::ofstream rules( ss.str() );
+        std::ofstream rules( outfile );
         rules << "# Generated by iplock" << std::endl
               << "*filter"               << std::endl
               << ":unwanted - [0:0]"     << std::endl
@@ -1464,16 +1512,16 @@ void iplock::batch::run()
             std::string line;
             std::getline( ip_addrs, line );
 
-            if( line[0] == '#' )
+            if( line[0] == '#' || line.empty() )
             {
-                // Ignore comments
+                // Ignore comments and empty lines
                 continue;
             }
 
             size_t const space( line.find(' ') );
             if( std::string::npos == space )
             {
-                std::cerr << "An IP address followed by a scheme is required [line=" << line_num << "]!" << std::endl;
+                std::cerr << "An IP address followed by a scheme is required [line='" << line << "', num=" << line_num << "]!" << std::endl;
                 exit(1);
             }
 
@@ -1493,12 +1541,13 @@ void iplock::batch::run()
                 //-A unwanted -s 3.1.1.1/32 -i eth0 -p tcp -m tcp --dport 80 -j DROP
                 //-A unwanted -s 3.1.1.1/32 -i eth0 -p tcp -m tcp --dport 443 -j DROP
                 //
-                std::string rule_options(boost::replace_all_copy(options, "[chain]", f_chain));
-                boost::replace_all(rule_options, "[port]", std::to_string(static_cast<unsigned int>(port)));
-                boost::replace_all(rule_options, "[ip]", ent.addr);
+                std::string rule_options(boost::replace_all_copy(options, "[command]", ""));
+                boost::replace_all(rule_options, "[chain]",     f_chain);
+                boost::replace_all(rule_options, "[port]",      std::to_string(static_cast<unsigned int>(port)));
+                boost::replace_all(rule_options, "[ip]",        ent.addr);
                 boost::replace_all(rule_options, "[interface]", f_interface);
 
-                rules << options << std::endl;
+                rules << rule_options << std::endl;
             }
         }
 
@@ -1509,7 +1558,7 @@ void iplock::batch::run()
 
     {
         std::stringstream fullcmd;
-        fullcmd << cmd << " " << f_ip_addr_filename;
+        fullcmd << cmd << " " << outfile;
 
         // if user specified --quiet ignore all output
         //
@@ -1595,10 +1644,6 @@ iplock::iplock(int argc, char * argv[])
     // the set_command() function to make sure that only one
     // gets set...
     //
-    // TODO: Alexis, I'm not sure why you have this. Wouldn't this wind up being confusing
-    // to the user? Why not be exclusive about it and generate an error if the command is
-    // not given? It seems that the commands are mutually exclusive.
-    //
     if(opt->is_defined("block"))
     {
         set_command(std::make_shared<block>(this, opt));
@@ -1624,7 +1669,7 @@ iplock::iplock(int argc, char * argv[])
     //
     if(f_command == nullptr)
     {
-        std::cerr << "iplock:error: you must specify one of: --block, --unblock, or --count." << std::endl;
+        std::cerr << "iplock:error: you must specify one of: --block, --unblock, --count, --flush or --batch." << std::endl;
         exit(1);
     }
 }

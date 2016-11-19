@@ -39,6 +39,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${ADVGETOPT_INCLUDE_DIRS}
+    ${BOOST_INCLUDE_DIS}
 )
 
 add_executable(${PROJECT_NAME}
@@ -48,6 +49,8 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
 )
 
 install(
