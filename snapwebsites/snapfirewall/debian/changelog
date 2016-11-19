@@ -1,3 +1,9 @@
+snapfirewall (1.1.14.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 19 Nov 2016 02:00:49 -0800
+
 snapfirewall (1.1.14.0~xenial) xenial; urgency=high
 
   * SNAP-465: Removing the Fake Google jail because it does not work at all.
