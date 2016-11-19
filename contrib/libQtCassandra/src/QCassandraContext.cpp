@@ -76,59 +76,6 @@ namespace QtCassandra
  * Only known otion names should be used or a protocol error may result.
  */
 
-/** \typedef QCassandraContext::host_identifier_t
- * \brief Define host identifiers.
- *
- * This type is used to hold host identifiers. It is used when transforming
- * a host name to a host identifier. The identifier is unique and represents
- * an order in which each client are sorted.
- *
- * See the QCassandraLock object for more information about how this information
- * is used to create an inter-client lock.
- */
-
-/** \var QCassandraContext::NULL_HOST_ID
- * \brief The NULL host identifier.
- *
- * When querying for a host that was not yet defined in the cluster, this
- * value is returned. It tells you that the host identifier wasn't defined
- * yet.
- *
- * This is used by the QCassandraLock to determine whether the host identifier
- * was defined.
- */
-
-/** \var QCassandraContext::LARGEST_HOST_ID
- * \brief The largest acceptable host identifier.
- *
- * This value represents the largest accepted host identifier. If you try to
- * define more identifiers, then you get an error.
- *
- * This limit was <i>randomly</i> chosen. However, it represents the number of
- * computers that could ever connect to your Cassandra cluster. If you really
- * have more than that, update the value!
- */
-
-/** \typedef QCassandraContext::lock_timeout_t
- * \brief The internal type for the lock timeout value.
- *
- * This type is internally used to hold the lock timeout. It is initialized
- * to 5 by default. It is defined in seconds.
- *
- * \sa setLockTimeout()
- * \sa lockTimeout()
- */
-
-/** \typedef QCassandraContext::lock_ttl_t
- * \brief The internal type for the time to live of a lock.
- *
- * This type is internally used to hold the lock time to live value. It is
- * initialized to 60 by default. It is defined in seconds.
- *
- * \sa setLockTtl()
- * \sa lockTtl()
- */
-
 /** \var QCassandraContext::f_schema
  * \brief The pointer to the casswrapper::schema meta object.
  *
@@ -167,66 +114,6 @@ namespace QtCassandra
  * The list is a map using the table binary key as the its own key.
  */
 
-/** \var QCassandraContext::f_host_name
- * \brief The name of the host running this QCassandra instance.
- *
- * This variable holds the name of the host running this instance. This
- * is most often the name of the computer (what the hostname() function
- * returns, which is taken as the default value.) You may use a different
- * name by calling the setHostName() function.
- *
- * \sa setHostName()
- * \sa hostName()
- */
-
-/** \var QCassandraContext::f_lock_table_name
- * \brief The name of the table used to create locks.
- *
- * This variable holds the name of the table used by the QCassandraLock
- * implementation. This name should be set once early on when creating the
- * context. It cannot be changed once a lock was created.
- *
- * By default this name is set to: "lock_table". You should not
- * have to ever change it.
- */
-
-/** \var QCassandraContext::f_lock_accessed
- * \brief Internal flag to know that a lock was accessed.
- *
- * This variable is set to true as soon as a value used by the QCassandraLock
- * is read. This tells the context that some parameters such as the
- * host name and the table name used to create locks cannot be changed
- * anymore.
- */
-
-/** \var QCassandraContext::f_lock_timeout
- * \brief The lock timeout value.
- *
- * This value is used by the QCassandraLock implementation to know how long to
- * wait before timing out when trying to obtain a lock.
- *
- * Note that the minimum is 1 second. Remember that if you are using a cluster
- * with computers in multiple centers throughout the world, 1 second is not very
- * much to ensure QUORUM consistency.
- */
-
-/** \var QCassandraContext::f_lock_ttl
- * \brief The lock time to live value.
- *
- * This variable holds locks time to live (TTL).
- *
- * The QCassandraLock object saves all the lock values using this TTL so as to
- * ensure that the lock data does not live forever (otherwise it would lock things
- * for that long: forever.)
- *
- * In most cases the TTL is not necessary since the lock is released (and thus
- * deleted from the database) way before the TTL enters in action. However, if
- * your application crashes and the intended RAII implementation does not run
- * (i.e. SEGV that aborts the process immediately?) then at least the lock system
- * will recover after a little while.
- */
-
-
 /** \brief Initialize a QCassandraContext object.
  *
  * This function initializes a QCassandraContext object.
@@ -242,12 +129,6 @@ namespace QtCassandra
  * underscore (_). It must start with a letter. The corresponding lexical
  * expression is: /[A-Za-z][A-Za-z0-9_]*\/
  *
- * The name of the lock table is defined at the time a cassandra context
- * object is created in memory. You must change it immediately with the
- * setLockTableName() if you do not want to use the default which is:
- * "lock_table". See the QCassandraLock object for more
- * information about locks in a Cassandra environment.
- *
  * \note
  * A context can be created, updated, and dropped. In all those cases, the
  * functions return once the Cassandra instance with which you are
@@ -257,8 +138,6 @@ namespace QtCassandra
  * \param[in] context_name  The name of the Cassandra context.
  *
  * \sa contextName()
- * \sa setLockTableName()
- * \sa setLockHostName()
  * \sa QCassandra::context()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
@@ -266,24 +145,12 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     : f_cassandra(cassandra)
     , f_context_name(context_name)
       //f_tables() -- auto-init
-      //f_host_name() -- auto-init
-    , f_lock_table_name("lock_table")
-      //f_lock_accessed(false) -- auto-init
-      //f_lock_timeout(5) -- auto-init
-      //f_lock_ttl(60) -- auto-init
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
     if(!re.exactMatch(context_name))
     {
         throw std::runtime_error("invalid context name (does not match [A-Za-z][A-Za-z0-9_]*)");
-    }
-
-    // get the computer name as the host name
-    char hostname[HOST_NAME_MAX + 1];
-    if(gethostname(hostname, sizeof(hostname)) == 0)
-    {
-        f_host_name = hostname;
     }
 
     resetSchema();
@@ -908,207 +775,6 @@ void QCassandraContext::clearCache()
     parentCassandra()->retrieveContextMeta( shared_from_this(), f_context_name );
 }
 
-/** \brief The hosts are listed in the locks table under this name.
- *
- * The lock table uses rows named after the objects that you want to
- * lock. It also includes the list of all the hosts that access your
- * Cassandra system.
- *
- * \return The name used for row holding the list of host names and
- *         their identifiers.
- */
-QString QCassandraContext::lockHostsKey() const
-{
-    return "hosts";
-}
-
-/** \brief Retrieve the table used by the Lock implementation.
- *
- * This function retrieves the "lock_table" table to use
- * with the different functions that handle the Cassandra interprocess
- * locking implementation.
- *
- * If the table doesn't exist yet, then it gets created. The function
- * also synchronize the cluster so as to allow other functions to
- * instantly make use of the table on return.
- *
- * \note
- * Remember that the lock is inter-PROCESS and not inter-threads. This
- * library is not thread safe.
- *
- * \return The function returns a pointer to the Cassandra table.
- */
-QCassandraTable::pointer_t QCassandraContext::lockTable()
-{
-    // check whether the table exists
-    const QString& table_name(lockTableName());
-    if(findTable(table_name)) {
-        return table(table_name);
-    }
-
-    // TODO: determine what the best parameters are for a session table
-    QCassandraTable::pointer_t lock_table(table(table_name));
-
-    casswrapper::schema::Value compaction_value;
-    auto& compaction_value_map(compaction_value.map());
-    compaction_value_map["class"]         = casswrapper::schema::Value("SizeTieredCompactionStrategy");
-    compaction_value_map["max_threshold"] = casswrapper::schema::Value(22);
-    compaction_value_map["min_threshold"] = casswrapper::schema::Value(4);
-
-    casswrapper::schema::Value caching_value;
-    auto& caching_value_map(caching_value.map());
-    caching_value_map["keys"]               = casswrapper::schema::Value("ALL");
-    caching_value_map["rows_per_partition"] = casswrapper::schema::Value("NONE");
-
-    auto& fields_map( lock_table->fields() );
-    fields_map["gc_grace_seconds"]            = casswrapper::schema::Value(3600);
-    fields_map["memtable_flush_period_in_ms"] = casswrapper::schema::Value(3600000); // 1 hour
-    fields_map["compaction"]                  = compaction_value;
-    fields_map["caching"]                     = caching_value;
-
-    lock_table->create();
-
-    return lock_table;
-}
-
-
-/** \brief Add a new host to the existing list of hosts.
- *
- * This function adds the name of a host and assign it an identifier
- * between 1 and LARGEST_HOST_ID. If you have more hosts than
- * LARGEST_HOST_ID then you will have to recompile Snap with a larger
- * number (really? more than 10,000 computers?)
- *
- * The addition of hosts in this way is safe on a running system as
- * long as:
- *
- * \li (1) the host being added is not already running;
- * \li (2) only one instance of the process calling this function
- *         runs at a time.
- *
- * The new identifier is added after looking at all the existing
- * identifiers (i.e. if one is available, it is used, if none are
- * available, a new one is created.)
- *
- * \note
- * If the named host already exists in the list of hosts, then
- * it is not added a second time. Be careful because the remove
- * removes at once (i.e. if you added the same host name 10 times,
- * only 1 remove and it is gone.)
- *
- * \param[in] host_name  The name of the host to be added.
- */
-void QCassandraContext::addLockHost(const QString& host_name)
-{
-    QCassandraTable::pointer_t locks_table(lockTable());
-    QCassandraRow::pointer_t hosts_row(locks_table->row(lockHostsKey()));
-    hosts_row->clearCache(); // make sure we have a clean slate
-    const int hosts_count(hosts_row->cellCount());
-    auto hosts_predicate( std::make_shared<QCassandraCellRangePredicate>() );
-    hosts_predicate->setCount(hosts_count);
-    hosts_row->readCells(hosts_predicate);
-    const QCassandraCells& hosts(hosts_row->cells());
-    // note: there is an interesting way to find one or more missing numbers
-    //       in a list which involves polynomials, however, at this point we
-    //       do not know the largest number and thus how many numbers are
-    //       missing in the list (if any); plus it becomes very expensive
-    //       when many numbers are missing; so instead we use a vector of
-    //       booleans which anyway is a lot simpler to implement and maintain
-    //       See: http://stackoverflow.com/questions/3492302/easy-interview-question-got-harder-given-numbers-1-100-find-the-missing-numbe
-    std::vector<bool> set;
-    std::vector<bool>::size_type size(0);
-    for(QCassandraCells::const_iterator j(hosts.begin()); j != hosts.end(); ++j) {
-        if((*j)->columnName() == host_name) {
-            // we already have it there, don't touch it
-            return;
-        }
-        uint32_t id((*j)->value().uint32Value());
-        if(id > size) {
-            // make sure to resize or we'll crash
-            set.resize(id + 1);
-            size = id;
-        }
-        set[id] = true;
-    }
-    uint32_t new_id(0);
-    if(size == 0) {
-        // first entry is 1
-        new_id = 1;
-    }
-    else {
-        // ignore 0 in the search (which is why we need a special case...)
-        std::vector<bool>::const_iterator it(std::find(set.begin() + 1, set.end(), false));
-        new_id = it - set.begin();
-    }
-    QCassandraValue value(new_id);
-    locks_table->row(lockHostsKey())->cell(host_name)->setValue(value);
-}
-
-
-/** \brief Remove a lock host name from the database.
- *
- * This function removes the specified host name from the database.
- * The identifier of the host is then released, but all existing
- * identifiers are not modified. It will be reused next time a
- * host is added to the database.
- *
- * It is safe to remove a host on a running system as long as the
- * host being removed does not run anymore at the time it is removed.
- *
- * The removal makes use of a consistency level of QUORUM to make sure
- * it happens in the entire cluster.
- *
- * \param[in] host_name  The name of the host to be removed from the database.
- */
-void QCassandraContext::removeLockHost(const QString& host_name)
-{
-    QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
-    QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
-    QCassandraCell::pointer_t c(row->cell(host_name));
-    row->dropCell(host_name);
-}
-
-
-/** \brief Set the name of the host using this instance.
- *
- * Each host must have a unique name which the libQtCassandra system can
- * transform in an identifier (a number from 1 to 10000).
- *
- * For locks to function (see QCassandraLock), it is a requirement to
- * call this function because each host must be given a unique identifier
- * used in the lock implementation to know who gets the lock next.
- *
- * \exception std::logic_error
- * This exception is raised if the lock was already accessed.
- *
- * \param[in] host_name  The name of the host running this instance of QtCassandra.
- *
- * \sa QCassandraLock
- */
-void QCassandraContext::setHostName(const QString& host_name)
-{
-    if(f_lock_accessed) {
-        // TBD: should we accept a set if the table name is anyway the same?
-        throw std::logic_error("setLockHostName() called after a lock was created");
-    }
-    f_host_name = host_name;
-}
-
-
-/** \brief Get the name of the host using this instance.
- *
- * This function returns the name of the host using this QCassandraContext.
- * The name is defined by calling hostname() by default. However, it can be
- * modified by calling the setHostName() function.
- *
- * \return The name of the host as set by setHostName().
- */
-QString QCassandraContext::hostName() const
-{
-    f_lock_accessed = true;
-    return f_host_name;
-}
-
 
 /** \brief Get the pointer to the parent object.
  *
@@ -1123,111 +789,6 @@ QCassandra::pointer_t QCassandraContext::parentCassandra() const
     }
 
     return cassandra;
-}
-
-
-/** \brief Set the name of the lock table in this context.
- *
- * The QCassandraContext uses a default name to lock tables, rows, cells.
- * This name can be changed by calling this function until a lock was
- * used. Once a lock was used, the name cannot be changed anymore. Note
- * that you MUST always have exactly the same name for all your application
- * processes or the lock won't work properly. This function should be called
- * very early on to ensure consistency.
- *
- * \exception std::logic_error
- * This exception is raised if the lock was already accessed.
- *
- * \param[in] lock_table_name  The name to use as the lock table.
- */
-void QCassandraContext::setLockTableName(const QString& lock_table_name)
-{
-    if(f_lock_accessed) {
-        // TBD: should we accept a set if the table name is anyway the same?
-        throw std::logic_error("setLockTableName() called after a lock was created");
-    }
-    f_lock_table_name = lock_table_name;
-}
-
-/** \brief Retrieve the current lock table name.
- *
- * The lock table name is set to "lock_table"
- *
- * \return The name of the table used to create locks.
- */
-const QString& QCassandraContext::lockTableName() const
-{
-    f_lock_accessed = true;
-    return f_lock_table_name;
-}
-
-/** \brief Set the lock timeout.
- *
- * Set the time out of the lock function in seconds. This amount is used to
- * time the function while acquiring a lock. If more than this number of
- * seconds, then the function fails and returns false.
- *
- * The default lock timeout is 5 seconds. It cannot be set to less than 1
- * second. There is no option to set a lock that never times out, although
- * if you use a very large number, it is pretty much the same.
- *
- * \param[in] timeout  The new timeout in seconds.
- */
-void QCassandraContext::setLockTimeout(int timeout)
-{
-    if(timeout < 1) {
-        timeout = 1;
-    }
-    f_lock_timeout = timeout;
-}
-
-/** \brief Retrieve the lock time out.
- *
- * By default retrieving a lock times out in 5 seconds. In other words, if
- * the acquisition of the lock takes more than 5 seconds, the function times
- * out and returns false.
- *
- * \return The current lock time out.
- */
-int QCassandraContext::lockTimeout() const
-{
-    return f_lock_timeout;
-}
-
-/** \brief Set a different TTL for lock variables.
- *
- * Whenever creating lock variables in the database, this TTL is used.
- * This ensures that the lock variables are not permanent in the
- * database. This will automatically unlock everything.
- *
- * The value is defined in seconds although a lock should be returns
- * in milliseconds, it may take a little bit of time if you have
- * several data centers accross the Internet.
- *
- * The default is 1 minute (60 seconds.)
- *
- * \param[in] ttl  The new time to live value in seconds.
- */
-void QCassandraContext::setLockTtl(int ttl)
-{
-    if(ttl < 0) {
-        throw std::runtime_error("the TTL value cannot be negative");
-    }
-    f_lock_ttl = ttl;
-}
-
-/** \brief Retrieve the lock TTL.
- *
- * This function returns the lock TTL as defined by the setLockTtl().
- * By default the TTL value is set to 1 minute.
- *
- * The value is specified in seconds.
- *
- * \return The current TTL value.
- */
-int QCassandraContext::lockTtl() const
-{
-    return f_lock_ttl;
 }
 
 

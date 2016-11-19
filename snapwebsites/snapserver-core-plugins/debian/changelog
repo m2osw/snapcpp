@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.24.3~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.25.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-61: Removed the last lock related remnants.
 
- -- Build Server <build@m2osw.com>  Wed, 16 Nov 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 00:45:50 -0800
 
 snapserver-core-plugins (1.0.24.0~xenial) xenial; urgency=high
 

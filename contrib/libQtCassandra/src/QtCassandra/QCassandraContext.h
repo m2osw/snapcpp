@@ -52,9 +52,6 @@ class QCassandraContext
 {
 public:
     typedef std::shared_ptr<QCassandraContext>  pointer_t;
-    typedef unsigned short                      host_identifier_t;
-    static const host_identifier_t              NULL_HOST_ID = 0;
-    static const host_identifier_t              LARGEST_HOST_ID = 10000;
 
     virtual ~QCassandraContext();
 
@@ -81,27 +78,9 @@ public:
     void clearCache();
     void loadTables();
 
-    // locks
-    QString lockHostsKey() const;
-    QCassandraTable::pointer_t lockTable();
-    void addLockHost(const QString& host_name);
-    void removeLockHost(const QString& host_name);
-    void setLockTableName(const QString& lock_table_name);
-    const QString& lockTableName() const;
-    void setLockTimeout(int timeout);
-    int lockTimeout() const;
-    void setLockTtl(int ttl);
-    int lockTtl() const;
-
-    void setHostName(const QString& host_name);
-    QString hostName() const;
-
     std::shared_ptr<QCassandra> parentCassandra() const;
 
 private:
-    typedef int32_t lock_timeout_t; // default to 5
-    typedef int32_t lock_ttl_t;     // default to 60
-
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
     QCassandraContext(QCassandraContext const &) = delete;
@@ -124,11 +103,6 @@ private:
     std::weak_ptr<QCassandra>                   f_cassandra;
     QString                                     f_context_name;
     QCassandraTables                            f_tables;
-    QString                                     f_host_name;
-    QString                                     f_lock_table_name;
-    mutable bool                                f_lock_accessed = false;
-    lock_timeout_t                              f_lock_timeout = 5;
-    lock_ttl_t                                  f_lock_ttl = 60;
 };
 
 typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;

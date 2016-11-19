@@ -4663,8 +4663,7 @@ void content::on_table_is_accessible(QString const & table_name, server::accessi
     || table_name == get_name(name_t::SNAP_NAME_CONTENT_FILES_TABLE)
     || table_name == snap::get_name(snap::name_t::SNAP_NAME_DOMAINS)
     || table_name == snap::get_name(snap::name_t::SNAP_NAME_WEBSITES)
-    || table_name == snap::get_name(snap::name_t::SNAP_NAME_SITES)
-    || table_name == f_snap->get_context()->lockTableName())
+    || table_name == snap::get_name(snap::name_t::SNAP_NAME_SITES))
     {
         // this is very important for the secret table; this way any
         // other plugin cannot authorize a user to make that table
