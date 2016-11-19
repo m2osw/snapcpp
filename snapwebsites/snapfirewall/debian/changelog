@@ -1,3 +1,9 @@
+snapfirewall (1.1.13.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added the telnet jail because of the Internet of Things.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Nov 2016 16:38:50 -0800
+
 snapfirewall (1.1.12.0~xenial) xenial; urgency=high
 
   * SNAP-465: Also allow PSH,ACK which can happen on a connection which

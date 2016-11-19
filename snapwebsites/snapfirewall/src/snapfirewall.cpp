@@ -859,6 +859,13 @@ void snap_firewall::block_info_t::set_block_limit(QString const & period)
     int64_t const now(snap::snap_communicator::get_current_date());
     if(!period.isEmpty())
     {
+        // IMPORTANT NOTE: We have a "5min" period for test purposes
+        //                 but do NOT document it because we do not
+        //                 want to actually offer to anyone; blocking
+        //                 an IP address for just 5min is a waste of
+        //                 time, block it at least for 1 hour, probably
+        //                 for 1 day or more
+        //
         if(period == "5min")
         {
             f_block_limit = now + 5LL * 60LL * 1000000LL;
