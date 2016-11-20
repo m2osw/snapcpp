@@ -1,3 +1,9 @@
+snapfirewall (1.1.15.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 20 Nov 2016 02:00:47 -0800
+
 snapfirewall (1.1.15.0~xenial) xenial; urgency=high
 
   * SNAP-465: Fixed a test of `it` versus `end()`.
