@@ -62,18 +62,25 @@ public:
         : public command
     {
     public:
+        typedef std::vector<uint16_t> port_list_t;
+
         scheme( iplock * parent
               , char const * command_name
               , advgetopt::getopt::pointer_t opt
+              , char const * scheme_name = nullptr
               );
 
-        std::string get_command( std::string const &name );
-        std::string get_cmdline( std::string const &name );
+        std::string get_command      ( std::string const &name ) const;
+        std::string get_scheme_string( std::string const &name ) const;
+
+        port_list_t const &             get_ports()      const { return f_ports; }
+
+        virtual void run() override {}
 
     protected:
         std::string                     f_scheme = "http";
         advgetopt::getopt::pointer_t    f_scheme_opt;
-        std::vector<uint16_t>           f_ports;
+        port_list_t                     f_ports;
     };
 
     class block_or_unblock
@@ -126,10 +133,13 @@ public:
     };
 
     class flush
-        : public scheme
+        : public command
     {
     public:
-                            flush(iplock * parent, advgetopt::getopt::pointer_t opt, char const* command_name = "iplock --flush");
+                            flush( iplock * parent
+                                 , advgetopt::getopt::pointer_t opt
+                                 , char const * command_name = "iplock --flush"
+                                 );
         virtual             ~flush() override;
 
         virtual void        run() override;
@@ -138,7 +148,7 @@ public:
     };
 
     class batch
-        : public flush
+        : public command
     {
     public:
                             batch(iplock * parent, advgetopt::getopt::pointer_t opt);
