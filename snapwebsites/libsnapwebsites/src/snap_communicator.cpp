@@ -6697,7 +6697,7 @@ bool snap_communicator::run()
                 //SNAP_LOG_TRACE("snap_communicator::run(): connection '")(c->get_name())("' has been disabled, so ignored.");
                 continue;
             }
-SNAP_LOG_TRACE("snap_communicator::run(): handling connection '")(c->get_name())("' has it is enabled...");
+//SNAP_LOG_TRACE("snap_communicator::run(): handling connection '")(c->get_name())("' has it is enabled...");
 
             // check whether a timeout is defined in this connection
             //
@@ -6791,11 +6791,11 @@ SNAP_LOG_TRACE("snap_communicator::run(): handling connection '")(c->get_name())
             return false;
         }
 
-        SNAP_LOG_TRACE("snap_communicator::run(): ")
-                      ("timeout ")(timeout)
-                      (" (next was: ")(next_timeout_timestamp)
-                      (", current ~ ")(get_current_date())
-                      (")");
+//SNAP_LOG_TRACE("snap_communicator::run(): ")
+//              ("timeout ")(timeout)
+//              (" (next was: ")(next_timeout_timestamp)
+//              (", current ~ ")(get_current_date())
+//              (")");
 
         // TODO: add support for ppoll() so we can support signals cleanly
         //       with nearly no additional work from us
@@ -6902,10 +6902,10 @@ SNAP_LOG_TRACE("snap_communicator::run(): handling connection '")(c->get_name())
                     int64_t const now(get_current_date());
                     if(now >= timestamp)
                     {
-SNAP_LOG_TRACE("snap_communicator::run(): connection = '")(c->get_name())
-    ("', timestamp = ")(timestamp)
-    (", now = ")(now)
-    (", now >= timestamp --> ")(now >= timestamp);
+//SNAP_LOG_TRACE("snap_communicator::run(): timer of connection = '")(c->get_name())
+//    ("', timestamp = ")(timestamp)
+//    (", now = ")(now)
+//    (", now >= timestamp --> ")(now >= timestamp ? "TRUE (timed out!)" : "FALSE");
                         // move the timeout as required first
                         // (because the callback may move it again)
                         //
