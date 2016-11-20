@@ -6681,6 +6681,7 @@ bool snap_communicator::run()
         int64_t next_timeout_timestamp(std::numeric_limits<int64_t>::max());
 
         // clear() is not supposed to delete the buffer of vectors
+        //
         enabled.clear();
         fds.clear();
         fds.reserve(max_connections); // avoid more than 1 allocation
@@ -6696,6 +6697,7 @@ bool snap_communicator::run()
                 //SNAP_LOG_TRACE("snap_communicator::run(): connection '")(c->get_name())("' has been disabled, so ignored.");
                 continue;
             }
+SNAP_LOG_TRACE("snap_communicator::run(): handling connection '")(c->get_name())("' has it is enabled...");
 
             // check whether a timeout is defined in this connection
             //
@@ -6731,7 +6733,7 @@ bool snap_communicator::run()
                 continue;
             }
 
-            // do we have a currently valid socket (i.e. the connection
+            // do we have a currently valid socket? (i.e. the connection
             // may have been closed or we may be handling a timer or
             // signal object)
             //
@@ -6788,9 +6790,12 @@ bool snap_communicator::run()
                           (max_connections)(" and exiting the run() loop anyway.)");
             return false;
         }
-//std::cerr << QString("%1: timeout %2 (next was: %3, current ~ %4)\n").arg(getpid()).arg(timeout).arg(next_timeout_timestamp).arg(get_current_date());
-        //SNAP_LOG_TRACE("snap_communicator::run(): ")
-            //(QString("timeout %2 (next was: %3, current ~ %4)").arg(timeout).arg(next_timeout_timestamp).arg(get_current_date()));
+
+        SNAP_LOG_TRACE("snap_communicator::run(): ")
+                      ("timeout ")(timeout)
+                      (" (next was: ")(next_timeout_timestamp)
+                      (", current ~ ")(get_current_date())
+                      (")");
 
         // TODO: add support for ppoll() so we can support signals cleanly
         //       with nearly no additional work from us
@@ -6897,10 +6902,10 @@ bool snap_communicator::run()
                     int64_t const now(get_current_date());
                     if(now >= timestamp)
                     {
-/*SNAP_LOG_TRACE("snap_communicator::run(): connection = '")(c->get_name())
+SNAP_LOG_TRACE("snap_communicator::run(): connection = '")(c->get_name())
     ("', timestamp = ")(timestamp)
     (", now = ")(now)
-    (", now >= timestamp --> ")(now >= timestamp);*/
+    (", now >= timestamp --> ")(now >= timestamp);
                         // move the timeout as required first
                         // (because the callback may move it again)
                         //

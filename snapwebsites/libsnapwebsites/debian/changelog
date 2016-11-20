@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.56.0~xenial) xenial; urgency=high
+
+  * SNAP-513: Added more debug statements to see what is happening.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 22:54:48 -0800
+
 libsnapwebsites (1.1.55.0~xenial) xenial; urgency=high
 
   * SNAP-513: Added debug statements to see what is happening.
