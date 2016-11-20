@@ -9,7 +9,7 @@ snapfirewall (1.1.16.0~xenial) xenial; urgency=high
   * SNAP-515: Added support for the iplock `--batch` command, which allows
     adding a huge batch of IPs via a text file.
 
- -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 19 Nov 20
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 19 Nov 2016 21:00:49 -0800
 
 snapfirewall (1.1.15.0~xenial) xenial; urgency=high
 
