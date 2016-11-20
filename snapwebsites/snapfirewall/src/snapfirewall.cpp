@@ -2136,7 +2136,7 @@ void snap_firewall::unblock_ip(snap::snap_communicator_message const & message)
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_ERROR("an exception occurred while checking the BLOCK message in the unblock_ip() function: ")(e.what());
+        SNAP_LOG_ERROR("an exception occurred while checking the UNBLOCK message in the unblock_ip() function: ")(e.what());
 
         // we probably should not catch all exceptions here (i.e. on a
         // bad_alloc, we probably want to quit...)
