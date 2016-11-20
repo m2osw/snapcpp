@@ -27,6 +27,12 @@
 #include <snapwebsites/snap_cassandra.h>
 #include <snapwebsites/snapwebsites.h>
 
+#include <fstream>
+#include <sstream>
+
+#include <sys/stat.h>
+
+#include <QDir>
 
 namespace
 {
@@ -225,8 +231,8 @@ private:
         int64_t             get_byte_count() const;
 
         QString             canonicalized_uri() const;
-        //QString             get_scheme() const;
-        //QString             get_ip() const;
+        QString             get_scheme() const;
+        QString             get_ip() const;
         int64_t             get_block_limit() const;
 
         bool                operator == (block_info_t const & rhs) const;
@@ -1039,16 +1045,16 @@ QString snap_firewall::block_info_t::canonicalized_uri() const
 }
 
 
-//QString snap_firewall::block_info_t::get_scheme() const
-//{
-//    return f_scheme;
-//}
-//
-//
-//QString snap_firewall::block_info_t::get_ip() const
-//{
-//    return f_ip;
-//}
+QString snap_firewall::block_info_t::get_scheme() const
+{
+    return f_scheme;
+}
+
+
+QString snap_firewall::block_info_t::get_ip() const
+{
+    return f_ip;
+}
 
 
 int64_t snap_firewall::block_info_t::get_block_limit() const
@@ -1444,6 +1450,8 @@ void snap_firewall::setup_firewall()
     //
     bool first(true);
 
+    block_info_t::block_info_vector_t to_block_list;
+
     // run through the entire table
     //
     auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
@@ -1482,7 +1490,7 @@ void snap_firewall::setup_firewall()
                 {
                     // unblock the IP, just in case
                     //
-                    info.iplock_unblock();
+                    //info.iplock_unblock();
 
                     // save with the new status of UNBANNED
                     //
@@ -1516,7 +1524,8 @@ void snap_firewall::setup_firewall()
 
                     // block the IP
                     //
-                    info.iplock_block();
+                    //info.iplock_block();
+                    to_block_list.push_back( info );
 
                     // no save necessary, it is already as it needs to be
                 }
@@ -1537,9 +1546,12 @@ void snap_firewall::setup_firewall()
                 {
                     // passed the limit already so we can unblock now
                     //
-                    info.iplock_unblock();
+                    //info.iplock_unblock();
                 }
-                //else -- it is already blocked, so no need for more here
+                else
+                {
+                    to_block_list.push_back( info );
+                }
 
                 // always save the IP so we know that such and such was
                 // banned before (i.e. recidivists can be counted now)
@@ -1548,6 +1560,64 @@ void snap_firewall::setup_firewall()
             }
         );
     f_blocks.clear();
+
+    std::string const private_folder("/var/cache/snapwebsites/private");
+    QDir pf( private_folder.c_str() );
+    if( !pf.exists() )
+    {
+        pf.mkdir( private_folder.c_str() );
+        ::chmod( private_folder.c_str(), 0700 );
+    }
+
+    std::stringstream ss;
+    ss << private_folder << "/iplock." << getpid();
+    std::string const outfile(ss.str());
+    {
+        std::ofstream ip_list( outfile );
+
+        for( auto const & info : to_block_list )
+        {
+            ip_list << info.get_ip().toUtf8().data()
+                    << " "
+                    << info.get_scheme().toUtf8().data()
+                    << std::endl;
+        }
+    }
+
+    // Run the iplock process, but in batch mode.
+    //
+    {
+        snap::process iplock_process("block bulk IP address");
+        iplock_process.set_command("iplock");
+
+        // whether we block or unblock the specified IP address
+        iplock_process.add_argument("--batch");
+        iplock_process.add_argument(outfile.c_str());
+
+        // keep the stderr output
+        iplock_process.add_argument("2>&1");
+
+        int const r(iplock_process.run());
+        if(r != 0)
+        {
+            // Note: if the IP was not already defined, this command
+            //       generates an error
+            //
+            int const e(errno);
+            QString const output(iplock_process.get_output(true));
+            SNAP_LOG_ERROR("an error occurred (")
+                    (r)
+                    (") trying to run \"")
+                    (iplock_process.get_name())
+                    ("\", errno: ")
+                    (e)
+                    (" -- ")
+                    (strerror(e))
+                    ("\nConsole output:\n")
+                    (output);
+        }
+    }
+
 
     f_firewall_up = true;
 
