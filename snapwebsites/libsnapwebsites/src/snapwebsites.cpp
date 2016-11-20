@@ -1432,6 +1432,15 @@ void server::set_translation(QString const xml_data)
  * f_snapdbproxy_port do not get defined. This is a problem that should
  * be addressed at some point, even if the call is considered mandatory.
  *
+ * \todo
+ * This function only checks for one table. Unfortunately, if all tables
+ * are not created before we accept connections, things will not work
+ * right. This will NOT be fixed here, however. Instead, we will change
+ * the snapdbproxy implementation to start in three steps: (1) connect
+ * to Cassandra, (2) make sure the snap_websites context exists, and
+ * (3) make sure all the known tables exist. Once all of these steps
+ * complete successfully, then snapdbproxy sends the CASSANDRAREADY.
+ *
  * \param[in] mandatory_table  A table that we expect to exist to go on.
  * \param[out] timer_required  Whether the caller should setup a timer to
  *             poll availability (true) or another CASSANDRAREADY message
