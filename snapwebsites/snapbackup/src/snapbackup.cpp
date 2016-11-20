@@ -110,15 +110,15 @@ void snapbackup::storeSchemaEntry( const QString& description, const QString& na
 {
     const QString q_str =
         "INSERT OR REPLACE INTO cql_schema_list "
-        "(description,name,schema_line) "
+        "(name,description,schema_line) "
         "VALUES "
-        "(:description,:name,:schema_line);"
+        "(:name,:description,:schema_line);"
         ;
     QSqlQuery q;
     q.prepare( q_str );
     //
-    q.bindValue( ":description", description );
     q.bindValue( ":name",        name        );
+    q.bindValue( ":description", description );
     q.bindValue( ":schema_line", schema_line );
     //
     exec( q );
@@ -144,9 +144,8 @@ void snapbackup::storeSchema( const QString& context_name )
 
     std::cout << "Creating CQL schema blob table..." << std::endl;
     QString q_str = "CREATE TABLE IF NOT EXISTS cql_schema_list "
-            "( id INTEGER PRIMARY KEY"
+            "( name TEXT PRIMARY KEY"
             ", description TEXT"
-            ", name TEXT"
             ", schema_line LONGBLOB"
             ");"
             ;
@@ -183,15 +182,15 @@ void snapbackup::restoreSchema( const QString& context_name )
     }
 
     std::cout << "Restoring CQL schema blob..." << std::endl;
-    const QString q_str( "SELECT description, name, schema_line FROM cql_schema_list;" );
+    const QString q_str( "SELECT name, description, schema_line FROM cql_schema_list;" );
     QSqlQuery q;
     q.prepare( q_str );
     //
     exec( q );
 
     std::cout << "Creating keyspace '" << context_name << "', and tables." << std::endl;
-    const int desc_idx    = q.record().indexOf("description");
     const int name_idx    = q.record().indexOf("name");
+    const int desc_idx    = q.record().indexOf("description");
     const int schema_idx  = q.record().indexOf("schema_line");
     for( q.first(); q.isValid(); q.next() )
     {
@@ -300,16 +299,17 @@ void snapbackup::restoreContext()
 }
 
 
-void snapbackup::appendRowsToSqliteDb( Query::pointer_t cass_query, const QString& table_name )
+void snapbackup::appendRowsToSqliteDb( int& id, Query::pointer_t cass_query, const QString& table_name )
 {
     const QString q_str = QString( "INSERT OR REPLACE INTO %1 "
-            "(key, column1, value ) "
+            "(id, key, column1, value ) "
             "VALUES "
-            "(:key, :column1, :value );"
+            "(:id, :key, :column1, :value );"
             ).arg(table_name);
     QSqlQuery q;
     q.prepare( q_str );
     //
+    q.bindValue( ":id",      id++                                      );
     q.bindValue( ":key",     cass_query->getByteArrayColumn("key")     );
     q.bindValue( ":column1", cass_query->getByteArrayColumn("column1") );
     q.bindValue( ":value",   cass_query->getByteArrayColumn("value")   );
@@ -345,7 +345,6 @@ void snapbackup::storeTables( const int count, const QString& context_name )
     }
 
     auto kys( snap_iter->second );
-    auto tables_to_ignore( dump_list.tablesToIgnore() );
 
     QStringList tables_to_dump;
     if( f_opt->is_defined("tables") )
@@ -354,7 +353,11 @@ void snapbackup::storeTables( const int count, const QString& context_name )
         {
             tables_to_dump << QString(f_opt->get_string( "tables", idx ).c_str());
         }
+
+        dump_list.overrideTablesToDump( tables_to_dump );
     }
+
+    auto tables_to_ignore( dump_list.tablesToIgnore() );
 
     for( auto table : kys->getTables() )
     {
@@ -394,11 +397,12 @@ void snapbackup::storeTables( const int count, const QString& context_name )
         cass_query->setPagingSize( count );
         cass_query->start();
 
+        int id = 1;
         do
         {
             while( cass_query->nextRow() )
             {
-                appendRowsToSqliteDb( cass_query, table_name );
+                appendRowsToSqliteDb( id, cass_query, table_name );
             }
         }
         while( cass_query->nextPage() );
@@ -436,7 +440,6 @@ void snapbackup::restoreTables( const QString& context_name )
     }
 
     auto kys( snap_iter->second );
-    auto tables_to_ignore( dump_list.tablesToIgnore() );
 
     QStringList tables_to_restore;
     if( f_opt->is_defined("tables") )
@@ -445,7 +448,11 @@ void snapbackup::restoreTables( const QString& context_name )
         {
             tables_to_restore << QString(f_opt->get_string( "tables", idx ).c_str());
         }
+
+        dump_list.overrideTablesToDump( tables_to_restore );
     }
+
+    auto tables_to_ignore( dump_list.tablesToIgnore() );
 
     for( auto table : kys->getTables() )
     {

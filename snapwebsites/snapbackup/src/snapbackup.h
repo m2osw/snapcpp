@@ -70,7 +70,7 @@ private:
     getopt_ptr_t                              f_opt;
 
     void setSqliteDbFile( const QString& sqlDbFile );
-    void appendRowsToSqliteDb( casswrapper::Query::pointer_t cass_query, const QString& table_name );
+    void appendRowsToSqliteDb( int& id, casswrapper::Query::pointer_t cass_query, const QString& table_name );
 
     void exec( QSqlQuery& q );
 
