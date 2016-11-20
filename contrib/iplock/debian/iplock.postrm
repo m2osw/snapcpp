@@ -8,7 +8,7 @@ then
     # Since we place this file in the fail2ban folder, the folder
     # may not get removed properly
     #
-    rm /var/lib/iplock/private/*
+    rm -f /var/lib/iplock/private/*
     rmdir --ignore-fail-on-non-empty /etc/fail2ban/action.d
     rmdir --ignore-fail-on-non-empty /etc/fail2ban /var/lib/iplock/private
 fi

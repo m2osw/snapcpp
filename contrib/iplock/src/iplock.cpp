@@ -1506,6 +1506,12 @@ void iplock::batch::run()
             std::string const addr   (line.substr( 0, space ));
             std::string const scheme (line.substr( space+1  ));
 
+            if( scheme.empty() )
+            {
+                std::cerr << "An IP address is followed by an empty scheme [line='" << line << "', num=" << line_num << "]!" << std::endl;
+                exit(1);
+            }
+
             scheme_map[scheme].push_back( addr );
         }
     }
