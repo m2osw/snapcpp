@@ -1430,14 +1430,19 @@ void server::set_translation(QString const xml_data)
  * \todo
  * If this function does not get called, the f_snapdbproxy_addr and
  * f_snapdbproxy_port do not get defined. This is a problem that should
- * be addressed at some point.
+ * be addressed at some point, even if the call is considered mandatory.
  *
  * \param[in] mandatory_table  A table that we expect to exist to go on.
+ * \param[out] timer_required  Whether the caller should setup a timer to
+ *             poll availability (true) or another CASSANDRAREADY message
+ *             will be sent later (i.e. not context/tables.)
  *
  * \return true if Cassandra is considered valid (up/running/initialized).
  */
 bool server::check_cassandra(QString const & mandatory_table, bool & timer_required)
 {
+    timer_required = false;
+
     try
     {
         snap_cassandra cassandra;
@@ -2131,14 +2136,20 @@ void server::process_message(snap_communicator_message const & message)
         // connect to Cassandra and verify that a "domains" table
         // exists; the function returns false if not
         //
+SNAP_LOG_WARNING("managing CASSANDREADY");
         bool timer_required(false);
         if(!check_cassandra(get_name(name_t::SNAP_NAME_DOMAINS), timer_required))
         {
+SNAP_LOG_WARNING("cassandra may be ready, but not the context/tables...")
+                (timer_required ? " Timer is required!" : " No timer needed.")
+                (g_connection->f_cassandra_check_timer != nullptr ? " (and we have a timer available!)" : " BUT NO TIMER???");
             if(timer_required && g_connection->f_cassandra_check_timer != nullptr)
             {
+SNAP_LOG_WARNING("Enable the 'cassandra check timer' in 1 minute...");
                 g_connection->f_cassandra_check_timer->set_enable(true);
             }
         }
+SNAP_LOG_WARNING("CASSANDRAREADY handled...");
         return;
     }
 

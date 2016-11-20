@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.54.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.55.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-513: Added debug statements to see what is happening.
 
- -- Build Server <build@m2osw.com>  Fri, 18 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 21:18:48 -0800
 
 libsnapwebsites (1.1.54.0~xenial) xenial; urgency=high
 
