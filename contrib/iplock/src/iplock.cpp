@@ -246,6 +246,14 @@ advgetopt::getopt::option const g_iplock_configuration_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "batch_footer",
+        nullptr,
+        "Footer to mark the end of the batch file which the batch tool processes.",
+        advgetopt::getopt::argument_mode_t::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "block",
         nullptr,
         "Command used to add a block rule to the firewall (e.g. iptables -w).",
@@ -321,14 +329,6 @@ advgetopt::getopt::option const g_iplock_block_or_unblock_options[] =
         "batch",
         nullptr,
         "Rule to add a specified IP address in a batch-friendly fashion.",
-        advgetopt::getopt::argument_mode_t::required_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "batch_footer",
-        nullptr,
-        "Footer to mark the end of the batch file which the batch tool processes.",
         advgetopt::getopt::argument_mode_t::required_argument
     },
     {
