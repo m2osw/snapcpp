@@ -1,8 +1,41 @@
-libsnapwebsites (1.1.54.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.59.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Fri, 18 Nov 2016 02:00:48 -0800
+ -- Build Server <build@m2osw.com>  Sun, 20 Nov 2016 02:00:47 -0800
+
+libsnapwebsites (1.1.59.0~xenial) xenial; urgency=high
+
+  * SNAP-513: Removed logs for debug in the snapserver. The timer works.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 23:34:48 -0800
+
+libsnapwebsites (1.1.58.0~xenial) xenial; urgency=high
+
+  * SNAP-513: Fixed the callback name, copy/paste mistake: used process_signal()
+    instead of process_timeout() for the timer.
+  * Added destructors and override to all classes.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 23:34:48 -0800
+
+libsnapwebsites (1.1.57.0~xenial) xenial; urgency=high
+
+  * SNAP-513: Timer seems to be triggered but callback does not get called.
+  * Removed trace from low level snap_communicator::run() function.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 23:12:48 -0800
+
+libsnapwebsites (1.1.56.0~xenial) xenial; urgency=high
+
+  * SNAP-513: Added more debug statements to see what is happening.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 22:54:48 -0800
+
+libsnapwebsites (1.1.55.0~xenial) xenial; urgency=high
+
+  * SNAP-513: Added debug statements to see what is happening.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 19 Nov 2016 21:18:48 -0800
 
 libsnapwebsites (1.1.54.0~xenial) xenial; urgency=high
 

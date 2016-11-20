@@ -1430,14 +1430,28 @@ void server::set_translation(QString const xml_data)
  * \todo
  * If this function does not get called, the f_snapdbproxy_addr and
  * f_snapdbproxy_port do not get defined. This is a problem that should
- * be addressed at some point.
+ * be addressed at some point, even if the call is considered mandatory.
+ *
+ * \todo
+ * This function only checks for one table. Unfortunately, if all tables
+ * are not created before we accept connections, things will not work
+ * right. This will NOT be fixed here, however. Instead, we will change
+ * the snapdbproxy implementation to start in three steps: (1) connect
+ * to Cassandra, (2) make sure the snap_websites context exists, and
+ * (3) make sure all the known tables exist. Once all of these steps
+ * complete successfully, then snapdbproxy sends the CASSANDRAREADY.
  *
  * \param[in] mandatory_table  A table that we expect to exist to go on.
+ * \param[out] timer_required  Whether the caller should setup a timer to
+ *             poll availability (true) or another CASSANDRAREADY message
+ *             will be sent later (i.e. not context/tables.)
  *
  * \return true if Cassandra is considered valid (up/running/initialized).
  */
 bool server::check_cassandra(QString const & mandatory_table, bool & timer_required)
 {
+    timer_required = false;
+
     try
     {
         snap_cassandra cassandra;
@@ -1460,6 +1474,12 @@ bool server::check_cassandra(QString const & mandatory_table, bool & timer_requi
 
         // make sure a certain table is ready so this daemon can run as
         // expected; if not present, exit immediately
+        //
+        // XXX: The get_table() function throws if the table is not available
+        //      and that triggers the cassandra_check_timer instead of just
+        //      waiting for a new CASSANDRAREADY message. At some point we
+        //      may want to look into a way to not throw if the table is
+        //      not there, only throw if an actual error occurs.
         //
         if(!cassandra.get_table(mandatory_table))
         {
@@ -1797,9 +1817,10 @@ public:
     typedef std::shared_ptr<signal_child_death>     pointer_t;
 
                             signal_child_death(server * s);
+    virtual                 ~signal_child_death() override {}
 
     // snap_communicator::snap_signal implementation
-    virtual void            process_signal();
+    virtual void            process_signal() override;
 
 private:
     // TBD: should this be a weak pointer?
@@ -1857,9 +1878,10 @@ public:
     typedef std::shared_ptr<cassandra_check_timer>  pointer_t;
 
                             cassandra_check_timer(server * s);
+    virtual                 ~cassandra_check_timer() override {}
 
-    // snap_communicator::snap_signal implementation
-    virtual void            process_signal();
+    // snap_communicator::snap_connection implementation
+    virtual void            process_timeout() override;
 
 private:
     // TBD: should this be a weak pointer?
@@ -1892,13 +1914,19 @@ cassandra_check_timer::cassandra_check_timer(server * s)
 }
 
 
-/** \brief Callback called each time the SIGCHLD signal occurs.
+/** \brief The timer ticked.
  *
- * This function gets called each time a child dies.
+ * This function gets called each time the timer ticks. This is once
+ * per minute for this timer (see constructor).
  *
- * The function checks all the children and removes zombies.
+ * The timer is turned off (disabled) by default. It is used only if
+ * there is an error while trying to get the snap_websites context or a
+ * mandatory table.
+ *
+ * The function simulate a CASSANDRAREADY message as if the snapdbproxy
+ * service had sent it to us.
  */
-void cassandra_check_timer::process_signal()
+void cassandra_check_timer::process_timeout()
 {
     // disable ourselves, if the Cassandra cluster is still not ready,
     // then we will automatically be re-enabled
@@ -1939,10 +1967,11 @@ public:
     typedef std::shared_ptr<messenger>    pointer_t;
 
                         messenger(server * s, std::string const & addr, int port, bool const use_thread = false );
+    virtual             ~messenger() override {}
 
     // snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void        process_message(snap_communicator_message const & message);
-    virtual void        process_connected();
+    virtual void        process_message(snap_communicator_message const & message) override;
+    virtual void        process_connected() override;
 
 private:
     server *            f_server;
@@ -2332,6 +2361,7 @@ class listener_impl
 {
 public:
                     listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr);
+    virtual         ~listener_impl() override {}
 
     // snap_communicator::snap_tcp_server_connection implementation
     virtual void    process_accept() override;
