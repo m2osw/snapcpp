@@ -1466,6 +1466,12 @@ bool server::check_cassandra(QString const & mandatory_table, bool & timer_requi
         // make sure a certain table is ready so this daemon can run as
         // expected; if not present, exit immediately
         //
+        // XXX: The get_table() function throws if the table is not available
+        //      and that triggers the cassandra_check_timer instead of just
+        //      waiting for a new CASSANDRAREADY message. At some point we
+        //      may want to look into a way to not throw if the table is
+        //      not there, only throw if an actual error occurs.
+        //
         if(!cassandra.get_table(mandatory_table))
         {
             // the table does not exist yet...
@@ -2145,20 +2151,14 @@ void server::process_message(snap_communicator_message const & message)
         // connect to Cassandra and verify that a "domains" table
         // exists; the function returns false if not
         //
-SNAP_LOG_WARNING("managing CASSANDREADY");
         bool timer_required(false);
         if(!check_cassandra(get_name(name_t::SNAP_NAME_DOMAINS), timer_required))
         {
-SNAP_LOG_WARNING("cassandra may be ready, but not the context/tables...")
-                (timer_required ? " Timer is required!" : " No timer needed.")
-                (g_connection->f_cassandra_check_timer != nullptr ? " (and we have a timer available!)" : " BUT NO TIMER???");
             if(timer_required && g_connection->f_cassandra_check_timer != nullptr)
             {
-SNAP_LOG_WARNING("Enable the 'cassandra check timer' in 1 minute...");
                 g_connection->f_cassandra_check_timer->set_enable(true);
             }
         }
-SNAP_LOG_WARNING("CASSANDRAREADY handled...");
         return;
     }
 
