@@ -2120,7 +2120,7 @@ void snap_firewall::unblock_ip(snap::snap_communicator_message const & message)
                       f_blocks.begin()
                     , f_blocks.end()
                     , info));
-            if(it == f_blocks.end())
+            if(it != f_blocks.end())
             {
                 // by erasing the info we lose that data, but that only
                 // happens when we are not connected to the database;
