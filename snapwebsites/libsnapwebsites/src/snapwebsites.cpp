@@ -1802,9 +1802,10 @@ public:
     typedef std::shared_ptr<signal_child_death>     pointer_t;
 
                             signal_child_death(server * s);
+    virtual                 ~signal_child_death() override {}
 
     // snap_communicator::snap_signal implementation
-    virtual void            process_signal();
+    virtual void            process_signal() override;
 
 private:
     // TBD: should this be a weak pointer?
@@ -1862,9 +1863,10 @@ public:
     typedef std::shared_ptr<cassandra_check_timer>  pointer_t;
 
                             cassandra_check_timer(server * s);
+    virtual                 ~cassandra_check_timer() override {}
 
-    // snap_communicator::snap_signal implementation
-    virtual void            process_signal();
+    // snap_communicator::snap_connection implementation
+    virtual void            process_timeout() override;
 
 private:
     // TBD: should this be a weak pointer?
@@ -1897,13 +1899,19 @@ cassandra_check_timer::cassandra_check_timer(server * s)
 }
 
 
-/** \brief Callback called each time the SIGCHLD signal occurs.
+/** \brief The timer ticked.
  *
- * This function gets called each time a child dies.
+ * This function gets called each time the timer ticks. This is once
+ * per minute for this timer (see constructor).
  *
- * The function checks all the children and removes zombies.
+ * The timer is turned off (disabled) by default. It is used only if
+ * there is an error while trying to get the snap_websites context or a
+ * mandatory table.
+ *
+ * The function simulate a CASSANDRAREADY message as if the snapdbproxy
+ * service had sent it to us.
  */
-void cassandra_check_timer::process_signal()
+void cassandra_check_timer::process_timeout()
 {
     // disable ourselves, if the Cassandra cluster is still not ready,
     // then we will automatically be re-enabled
@@ -1944,10 +1952,11 @@ public:
     typedef std::shared_ptr<messenger>    pointer_t;
 
                         messenger(server * s, std::string const & addr, int port, bool const use_thread = false );
+    virtual             ~messenger() override {}
 
     // snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void        process_message(snap_communicator_message const & message);
-    virtual void        process_connected();
+    virtual void        process_message(snap_communicator_message const & message) override;
+    virtual void        process_connected() override;
 
 private:
     server *            f_server;
@@ -2343,6 +2352,7 @@ class listener_impl
 {
 public:
                     listener_impl(server * s, std::string const & addr, int port, std::string const & certificate, std::string const & private_key, int max_connections, bool reuse_addr);
+    virtual         ~listener_impl() override {}
 
     // snap_communicator::snap_tcp_server_connection implementation
     virtual void    process_accept() override;

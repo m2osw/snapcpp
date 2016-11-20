@@ -168,9 +168,10 @@ public:
     typedef std::shared_ptr<cassandra_check_timer>  pointer_t;
 
                             cassandra_check_timer(watchdog_server::pointer_t ws);
+    virtual                 ~cassandra_check_timer() override {}
 
-    // snap_communicator::snap_signal implementation
-    virtual void            process_signal();
+    // snap_communicator::snap_connection implementation
+    virtual void            process_timeout() override;
 
 private:
     // TBD: should this be a weak pointer?
@@ -209,13 +210,19 @@ cassandra_check_timer::cassandra_check_timer(watchdog_server::pointer_t ws)
 }
 
 
-/** \brief Callback called each time the SIGCHLD signal occurs.
+/** \brief The timer ticked.
  *
- * This function gets called each time a child dies.
+ * This function gets called each time the timer ticks. This is once
+ * per minute for this timer (see constructor).
  *
- * The function checks all the children and removes zombies.
+ * The timer is turned off (disabled) by default. It is used only if
+ * there is an error while trying to get the snap_websites context or a
+ * mandatory table.
+ *
+ * The function simulate a CASSANDRAREADY message as if the snapdbproxy
+ * service had sent it to us.
  */
-void cassandra_check_timer::process_signal()
+void cassandra_check_timer::process_timeout()
 {
     // disable ourselves, if the Cassandra cluster is still not ready,
     // then we will automatically be re-enabled
@@ -246,9 +253,10 @@ public:
     typedef std::shared_ptr<tick_timer>        pointer_t;
 
                                 tick_timer( watchdog_server::pointer_t ws, int64_t interval );
+    virtual                     ~tick_timer() override {}
 
     // snap::snap_communicator::snap_timer implementation
-    virtual void                process_timeout();
+    virtual void                process_timeout() override;
 
 private:
     watchdog_server::pointer_t  f_watchdog_server;
@@ -312,11 +320,12 @@ public:
     typedef std::shared_ptr<messenger>    pointer_t;
 
                                 messenger(watchdog_server::pointer_t ws, std::string const & addr, int port);
+    virtual                     ~messenger() override {}
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void                process_message(snap::snap_communicator_message const & message);
-    virtual void                process_connection_failed(std::string const & error_message);
-    virtual void                process_connected();
+    virtual void                process_message(snap::snap_communicator_message const & message) override;
+    virtual void                process_connection_failed(std::string const & error_message) override;
+    virtual void                process_connected() override;
 
 private:
     // this is owned by a server function so no need for a smart pointer
@@ -429,9 +438,10 @@ public:
     typedef std::shared_ptr<sigchld_connection>    pointer_t;
 
                                 sigchld_connection(watchdog_server::pointer_t ws);
+    virtual                     ~sigchld_connection() override {}
 
     // snap::snap_communicator::snap_signal implementation
-    virtual void                process_signal();
+    virtual void                process_signal() override;
 
 private:
     // this is owned by a server function so no need for a smart pointer
