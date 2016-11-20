@@ -1,6 +1,7 @@
 snapfirewall (1.1.17.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added the telnet filter to the installation.
+  * SNAP-515: Added default scheme for all IPs (http).
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun, 20 Nov 2016 12:00:49 -0800
 
