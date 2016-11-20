@@ -245,7 +245,7 @@ private:
         bool                iplock(QString const & cmd);
 
         status_t            f_status = status_t::BLOCK_INFO_BANNED;
-        QString             f_scheme;
+        QString             f_scheme = "http";
         QString             f_ip;
         QString             f_reason;
         int64_t             f_block_limit = 0LL;
@@ -1491,6 +1491,7 @@ void snap_firewall::setup_firewall()
                     // unblock the IP, just in case
                     //
                     //info.iplock_unblock();
+                    SNAP_LOG_TRACE( "No longer blocking ip address '")(info.get_ip())("'");
 
                     // save with the new status of UNBANNED
                     //
@@ -1526,6 +1527,7 @@ void snap_firewall::setup_firewall()
                     //
                     //info.iplock_block();
                     to_block_list.push_back( info );
+                    SNAP_LOG_TRACE( "Add to block list address='")(info.get_ip())("', scheme='")(info.get_scheme())("'.");
 
                     // no save necessary, it is already as it needs to be
                 }
@@ -1551,6 +1553,7 @@ void snap_firewall::setup_firewall()
                 else
                 {
                     to_block_list.push_back( info );
+                    SNAP_LOG_TRACE( "Add pending ip address to block list: '")(info.get_ip())("'");
                 }
 
                 // always save the IP so we know that such and such was
