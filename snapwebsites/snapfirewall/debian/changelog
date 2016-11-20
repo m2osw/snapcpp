@@ -1,15 +1,15 @@
+snapfirewall (1.1.17.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Added the telnet filter to the installation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 20 Nov 2016 12:00:49 -0800
+
 snapfirewall (1.1.16.0~xenial) xenial; urgency=high
 
   * SNAP-515: Added support for the iplock `--batch` command, which allows
     adding a huge batch of IPs via a text file.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 19 Nov 20
-
-snapfirewall (1.1.15.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 20 Nov 2016 02:00:47 -0800
 
 snapfirewall (1.1.15.0~xenial) xenial; urgency=high
 
