@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.49
+ * Version: 0.1.0.54
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.71)
@@ -240,7 +240,7 @@ snapwebsites.DarkenScreen.prototype.close = function()
                 else
                 {
                     // we removed the last darken page on the stack and there is
-                    // still some darken pages... adjust the z-index
+                    // still some darken pages... adjust the z-index and wait flag
                     //
                     --idx;
                     snapwebsites.DarkenScreen.darkenScreenPopup_.css("z-index", snapwebsites.DarkenScreen.darkenScreenStack_[idx].zIndex_);
@@ -633,7 +633,7 @@ snapwebsites.Popup.prototype.show = function(popup)
                     duration: 150,
                     complete: popup.show
                 });
-            if(popup.darken > 0)
+            if(popup.darken > 0 && !popup.darkenScreen_)
             {
                 popup.darkenScreen_ = new snapwebsites.DarkenScreen(/** @type {number} */ (popup.darken), false);
             }
