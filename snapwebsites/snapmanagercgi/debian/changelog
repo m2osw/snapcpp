@@ -1,3 +1,9 @@
+snapmanagercgi (1.2.46.0~xenial) xenial; urgency=high
+
+  * SNAP-521: Add PasswordAuthentication field for ssh server in ssh plugin.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 21 Nov 2016 10:11:44 -0800
+
 snapmanagercgi (1.2.45.5~xenial) xenial; urgency=high
 
   * Nightly build.
