@@ -1,3 +1,9 @@
+snapfirewall (1.1.17.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sun, 20 Nov 2016 14:10:50 -0800
+
 snapfirewall (1.1.17.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added the telnet filter to the installation.
