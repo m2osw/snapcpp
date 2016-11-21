@@ -1,3 +1,10 @@
+snapserver-core-plugins (1.0.26.0~xenial) xenial; urgency=high
+
+  * EX-151: Fixed the stacked darken screen, it could be duplicated and then
+    the stack was wrong (duplicates never got removed).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 20 Nov 2016 16:35:48 -0800
+
 snapserver-core-plugins (1.0.23.0~xenial) xenial; urgency=high
 
   * EX-150: make the forms non-editable when not marked as such (removed debug).
