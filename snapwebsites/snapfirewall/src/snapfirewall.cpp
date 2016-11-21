@@ -1624,6 +1624,12 @@ void snap_firewall::setup_firewall()
 
     f_firewall_up = true;
 
+#ifndef MO_DEBUG
+    // Only remove if we are not in debug mode
+    //
+    unlink( outfile.c_str() );
+#endif
+
     // send a "FIREWALLUP" message to let others know that the firewall
     // is up
     //
