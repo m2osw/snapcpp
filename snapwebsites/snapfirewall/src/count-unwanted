@@ -4,7 +4,7 @@
 
 if test "`whoami`" != "root"
 then
-        echo "error: root access is required, trie 'sudo $0' instead"
+        echo "error: root access is required, tried 'sudo $0' instead"
         exit 1
 fi
 
