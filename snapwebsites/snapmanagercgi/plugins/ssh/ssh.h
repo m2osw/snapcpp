@@ -54,6 +54,21 @@ public:
 };
 
 
+class ssh_config
+{
+public:
+    ssh_config( QString const & filepath );
+
+    bool read();
+    bool write();
+
+    QString get_entry( QString const& name, QString const& default_value = {} ) const;
+    void    set_entry( QString const& name, QString const& value );
+
+private:
+    QString     f_filepath;
+    QStringList f_lines;
+};
 
 
 

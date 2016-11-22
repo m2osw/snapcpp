@@ -39,6 +39,13 @@
 //
 #include <glob.h>
 
+// QtCore
+//
+#include <QFile>
+#include <QString>
+#include <QStringList>
+#include <QTextStream>
+
 // last entry
 //
 #include <snapwebsites/poison.h>
@@ -83,6 +90,90 @@ int glob_error_callback(const char * epath, int eerrno)
 }
 
 } // no name namespace
+
+
+ssh_config::ssh_config( QString const & filepath )
+    : f_filepath(filepath)
+{
+}
+
+
+bool ssh_config::read()
+{
+    QFile file( f_filepath );
+    if( !file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        QString const errmsg = QString("Cannot open '%1' for reading!").arg(f_filepath);
+        SNAP_LOG_ERROR(errmsg);
+        return false;
+    }
+
+    QTextStream in(&file);
+    while( !in.atEnd() )
+    {
+        f_lines << in.readLine();
+    }
+
+    return true;
+}
+
+
+bool ssh_config::write()
+{
+    QFile file( f_filepath );
+
+    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+    {
+        QString const errmsg = QString("Cannot open '%1' for writing!").arg(f_filepath);
+        SNAP_LOG_ERROR(errmsg);
+        return false;
+    }
+    //
+    // ...and stream the file out to disk so we have the node key for
+    // node-to-node SSL connections.
+    //
+    QTextStream out( &file );
+    out << f_lines.join("\n");
+
+    return true;
+}
+
+
+QString ssh_config::get_entry( QString const& name, QString const& default_value ) const
+{
+    QRegExp re( QString("%1 *").arg(name), Qt::CaseSensitive, QRegExp::Wildcard );
+    int const pos( f_lines.indexOf( re ) );
+    if( pos == -1 )
+    {
+        return default_value;
+    }
+
+    QString const line( f_lines[pos].simplified() );
+    QStringList pair( line.split(" ") );
+    if( pair.size() == 2 )
+    {
+        return pair[1].simplified();
+    }
+
+    return default_value;
+}
+
+
+void ssh_config::set_entry( QString const& name, QString const& value )
+{
+    QString const newline( QString("%1 %2").arg(name).arg(value) );
+    QRegExp re( QString("%1 *").arg(name), Qt::CaseSensitive, QRegExp::Wildcard );
+    int const pos( f_lines.indexOf( re ) );
+    if( pos == -1 )
+    {
+        f_lines << newline;
+    }
+    else
+    {
+        f_lines[pos] = newline;
+    }
+}
+
 
 
 
@@ -241,16 +332,9 @@ void ssh::on_retrieve_status(snap_manager::server_status & server_status)
     // we want to post because this is an vulnerability to allow anyone to
     // auth using passwords. We want to enforce key authentication only.
     //
-    snap::snap_config sshd_config(g_sshd_config.toUtf8().data());
-    QString const default_value = [&]
-    {
-        if( sshd_config.has_parameter("PasswordAuthentication") )
-        {
-            return QString(sshd_config["PasswordAuthentication"]);
-        }
-        return QString("yes");
-    }();
-    //
+    ssh_config sc( g_sshd_config );
+    sc.read();
+    QString const default_value = sc.get_entry("PasswordAuthentication","yes");
     snap_manager::status_t::state_t const the_state ( default_value == "yes"
                                                     ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
                                                     : snap_manager::status_t::state_t::STATUS_STATE_INFO
@@ -492,11 +576,10 @@ bool ssh::apply_setting
         //
         if( button_name == "save" || button_name == "save_everywhere" )
         {
-            f_snap->replace_configuration_value
-                ( g_sshd_config
-                , field_name
-                , new_value
-                );
+            ssh_config sc( g_sshd_config );
+            sc.read();
+            sc.set_entry( "PasswordAuthentication", new_value );
+            sc.write();
             affected_services.insert("ssh");
         }
     }
