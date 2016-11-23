@@ -38,10 +38,11 @@
 -A INPUT -i lo -j LOG --log-prefix "reject_lo: " --log-uid
 -A INPUT -i lo -j REJECT
 
-# Accept all existing connections
+# Accept all existing TCP and UDP connections
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PUBLIC_IP@ -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_IP@ -j ACCEPT
 #-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+-A INPUT -i @PUBLIC_INTERFACE@ -p udp -m state --state ESTABLISH,RELATED -m udp -d @PUBLIC_IP@ -j ACCEPT
 
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
@@ -63,11 +64,10 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 25 -d @PUBLIC_IP@ --syn -j ACCEPT
 # DNS (bind)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 53 -d @PUBLIC_IP@ --syn -j ACCEPT
--A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --sport 53 -d @PUBLIC_IP@ -j ACCEPT
 -A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --dport 53 -d @PUBLIC_IP@ -j ACCEPT
 # NTP
 #-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 123 -d @PUBLIC_IP@ --syn -j ACCEPT
--A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --sport 123 -d @PUBLIC_IP@ -j ACCEPT
+#-A INPUT -i @PUBLIC_INTERFACE@ -p udp -m udp --dport 123 -d @PUBLIC_IP@ -j ACCEPT
 # Apache
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 80 -d @PUBLIC_IP@ --syn -j ACCEPT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 443 -d @PUBLIC_IP@ --syn -j ACCEPT
@@ -77,6 +77,9 @@
 # LAN (TCP/UDP)
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m tcp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ --syn -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p udp -m udp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ -j ACCEPT
+
+# Prevent ICMP timestamp requests from the public interface
+-A input -i @PUBLIC_INTERFACE@ -p icmp --icmp-type timestamp-request -j DROP
 
 # Allow pings
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
@@ -147,6 +150,9 @@
 -A OUTPUT -o lo -d @PRIVATE_IP@ -j ACCEPT
 -A OUTPUT -o lo -d @SECURE_IP@ -j ACCEPT
 -A OUTPUT -o lo -j REJECT
+
+# Prevent ICMP timestamp requests replies on the public interface
+-A OUTPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type timestamp-reply -j DROP
 
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p tcp -m tcp -s @PUBLIC_IP@ -j ACCEPT
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p udp -m udp -s @PUBLIC_IP@ -j ACCEPT

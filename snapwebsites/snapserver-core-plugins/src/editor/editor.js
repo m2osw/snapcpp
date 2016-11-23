@@ -6902,7 +6902,7 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.validate = function(widget) // v
         valid = false;
         snapwebsites.OutputInstance.displayOneMessage(
                 "Invalid Field",
-                "Entry too short in " + label + ".",
+                "Entry \"" + (stripped_value.length > 64 ? stripped_value.substr(0, 61) + "..." : stripped_value) + "\" too short in " + label + ".",
                 "error",
                 true);
     }

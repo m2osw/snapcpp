@@ -1,8 +1,8 @@
-snapcgi (1.1.7.12~xenial) xenial; urgency=high
+snapcgi (1.1.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Fixed the SSLCertificateKeyFile, the "Key" was missing.
 
- -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 22 Nov 2016 18:30:48 -0800
 
 snapcgi (1.1.7.0~xenial) xenial; urgency=high
 

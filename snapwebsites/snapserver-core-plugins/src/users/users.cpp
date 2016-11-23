@@ -1354,6 +1354,8 @@ void users::user_logout()
  * \param[in] email  The email of the user.
  *
  * \return The user_key based on the email all or mostly in lowercase or not.
+ *
+ * \sa basic_email_canonicalization()
  */
 QString users::email_to_user_key(QString const & email)
 {
@@ -1419,6 +1421,8 @@ QString users::email_to_user_key(QString const & email)
  * \param[in] email  The email to canonicalize.
  *
  * \return The email with the domain name part canonicalized.
+ *
+ * \sa email_to_user_key()
  */
 QString users::basic_email_canonicalization(QString const & email)
 {
@@ -2305,7 +2309,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
                     {
                         // This looks like an API login someone, we just
                         // return and let the caller handle the rest
-                        return "";
+                        return QString();
                     }
 
                     if(logged_info.is_password_change_required())
@@ -2907,7 +2911,7 @@ QString users::get_user_email(int64_t const identifier)
         }
     }
 
-    return "";
+    return QString();
 }
 
 
@@ -2936,7 +2940,7 @@ QString users::get_user_path(QString const & email)
         }
     }
 
-    return "";
+    return QString();
 }
 
 
@@ -3864,6 +3868,7 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
         if(token.is_token("users::count"))
         {
             token_user_count(token);
+            return;
         }
         break;
 

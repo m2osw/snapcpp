@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.59.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.60.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-114: For adding vendors, added a field to dbutils.
+  * Added a comment about the fact that we accept example.tld as good.
 
- -- Build Server <build@m2osw.com>  Sun, 20 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 22 Nov 2016 18:30:47 -0800
 
 libsnapwebsites (1.1.59.0~xenial) xenial; urgency=high
 

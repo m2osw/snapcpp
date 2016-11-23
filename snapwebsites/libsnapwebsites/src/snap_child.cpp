@@ -4294,6 +4294,14 @@ void snap_child::set_action(QString const& action)
  * local userbox (i.e. webmaster, root, etc. by themselves) because
  * from a website these do not really make sense.
  *
+ * \todo
+ * Determine whether email addresses with the domain name of "example"
+ * are allowed. In some cases they are (i.e. we have a customers that
+ * has to create some pages linked to an email and at times those are
+ * not real email and thus we use `name@example.com` for those...)
+ * Especially, if someone registers an account with such an email it
+ * is totally useless and we should prevent it.
+ *
  * \exception users_exception_invalid_email
  * This function does not return if the email is invalid. Instead it throws.
  * We may later want to have a version that returns true if valid, false
@@ -4325,6 +4333,7 @@ void snap_child::verify_email(QString const & email, size_t const max)
     // make sure there is a limit to the number of emails, if max was set
     // to 1 we expect exactly one email (we previously eliminated the
     // case where there would be none)
+    //
     if(static_cast<size_t>(tld_emails.count()) > max)
     {
         throw snap_child_exception_invalid_email(QString("too many emails, excepted up to %1 got %2").arg(max).arg(tld_emails.count()));
