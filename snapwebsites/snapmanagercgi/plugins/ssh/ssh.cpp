@@ -39,6 +39,13 @@
 //
 #include <glob.h>
 
+// QtCore
+//
+#include <QFile>
+#include <QString>
+#include <QStringList>
+#include <QTextStream>
+
 // last entry
 //
 #include <snapwebsites/poison.h>
@@ -49,6 +56,8 @@ SNAP_PLUGIN_START(ssh, 1, 0)
 
 namespace
 {
+
+const QString g_sshd_config        = "/etc/ssh/sshd_config";
 
 //void file_descriptor_deleter(int * fd)
 //{
@@ -81,6 +90,90 @@ int glob_error_callback(const char * epath, int eerrno)
 }
 
 } // no name namespace
+
+
+ssh_config::ssh_config( QString const & filepath )
+    : f_filepath(filepath)
+{
+}
+
+
+bool ssh_config::read()
+{
+    QFile file( f_filepath );
+    if( !file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        QString const errmsg = QString("Cannot open '%1' for reading!").arg(f_filepath);
+        SNAP_LOG_ERROR(errmsg);
+        return false;
+    }
+
+    QTextStream in(&file);
+    while( !in.atEnd() )
+    {
+        f_lines << in.readLine();
+    }
+
+    return true;
+}
+
+
+bool ssh_config::write()
+{
+    QFile file( f_filepath );
+
+    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+    {
+        QString const errmsg = QString("Cannot open '%1' for writing!").arg(f_filepath);
+        SNAP_LOG_ERROR(errmsg);
+        return false;
+    }
+    //
+    // ...and stream the file out to disk so we have the node key for
+    // node-to-node SSL connections.
+    //
+    QTextStream out( &file );
+    out << f_lines.join("\n");
+
+    return true;
+}
+
+
+QString ssh_config::get_entry( QString const& name, QString const& default_value ) const
+{
+    QRegExp re( QString("%1 *").arg(name), Qt::CaseSensitive, QRegExp::Wildcard );
+    int const pos( f_lines.indexOf( re ) );
+    if( pos == -1 )
+    {
+        return default_value;
+    }
+
+    QString const line( f_lines[pos].simplified() );
+    QStringList pair( line.split(" ") );
+    if( pair.size() == 2 )
+    {
+        return pair[1].simplified();
+    }
+
+    return default_value;
+}
+
+
+void ssh_config::set_entry( QString const& name, QString const& value )
+{
+    QString const newline( QString("%1 %2").arg(name).arg(value) );
+    QRegExp re( QString("%1 *").arg(name), Qt::CaseSensitive, QRegExp::Wildcard );
+    int const pos( f_lines.indexOf( re ) );
+    if( pos == -1 )
+    {
+        f_lines << newline;
+    }
+    else
+    {
+        f_lines[pos] = newline;
+    }
+}
+
 
 
 
@@ -232,6 +325,29 @@ void ssh::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
+    // SNAP-521: Add ability to change PasswordAuthentication
+    //
+    // Create a field for password authentication for the system sshd
+    // service. If this is set to yes (or undefined), this is a warning
+    // we want to post because this is an vulnerability to allow anyone to
+    // auth using passwords. We want to enforce key authentication only.
+    //
+    ssh_config sc( g_sshd_config );
+    sc.read();
+    QString const default_value = sc.get_entry("PasswordAuthentication","yes");
+    snap_manager::status_t::state_t const the_state ( default_value == "yes"
+                                                    ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                                    : snap_manager::status_t::state_t::STATUS_STATE_INFO
+                                                    );
+    snap_manager::status_t const password_auth
+            ( the_state
+            , get_plugin_name()
+            , "sshd_password_auth"
+            , default_value
+            );
+    server_status.set_field(password_auth);
+
+
     // we want one field per user on the system, at this point we
     // assume that the system does not have hundreds of users since
     // only a few admins should be permitted on those computers
@@ -364,7 +480,33 @@ bool ssh::is_installed()
  */
 bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri)
 {
-    QDomDocument doc(parent.ownerDocument());
+    //QDomDocument doc(parent.ownerDocument());
+
+    if(s.get_field_name() == "sshd_password_auth" )
+    {
+        // SNAP-521: Add ability to change PasswordAuthentication
+        //
+        // the list of authorized_keys files
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                ,   snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>
+                       ( "Password authentication for ssh"
+                       , s.get_field_name()
+                       , s.get_value()
+                       , "Enter either 'yes' or 'no' in this field and click Save, or Save Everywhere."
+                         " If this is in yellow, then you need to take action. This feature should be set to"
+                         " 'no' on a production server as this is a vulnerability."
+                       ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
+    }
 
     if(s.get_field_name().startsWith("authorized_keys::"))
     {
@@ -397,9 +539,7 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                           " \"Restore Default\" button to remove the file from this server."
                         ));
         f.add_widget(field);
-
         f.generate(parent, uri);
-
         return true;
     }
 
@@ -420,10 +560,29 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
  *
  * \return true if the new_value was applied successfully.
  */
-bool ssh::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
+bool ssh::apply_setting
+    ( QString const & button_name
+    , QString const & field_name
+    , QString const & new_value
+    , QString const & old_or_installation_value
+    , std::set<QString> & affected_services
+    )
 {
     NOTUSED(old_or_installation_value);
-    NOTUSED(affected_services);
+
+    if( field_name == "sshd_password_auth" )
+    {
+        // SNAP-521: Add ability to change PasswordAuthentication
+        //
+        if( button_name == "save" || button_name == "save_everywhere" )
+        {
+            ssh_config sc( g_sshd_config );
+            sc.read();
+            sc.set_entry( "PasswordAuthentication", new_value );
+            sc.write();
+            affected_services.insert("ssh");
+        }
+    }
 
     // we support Save and Restore Default of the authorized_keys file
     //
