@@ -1,3 +1,18 @@
+snapfirewall (1.1.20.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Fixed the `input` chain name, it had to be `INPUT`.
+  * Fixed an output rule that used `-i` instead of `-o`.
+  * Added a rule to allow ACK by itself as okay, but reject it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Nov 2016 13:19:50 -0800
+
+snapfirewall (1.1.18.0~xenial) xenial; urgency=high
+
+  * EX-141: Fixed the established UDP connections.
+  * Prevent timestamp requests and replies on the public interface.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 22 Nov 2016 18:30:50 -0800
+
 snapfirewall (1.1.14.0~xenial) xenial; urgency=high
 
   * SNAP-465: Removing the Fake Google jail because it does not work at all.
