@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.61.0~xenial) xenial; urgency=high
+
+  * SNAP-254: Added a field for the permissions secure flag.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Nov 2016 01:44:47 -0800
+
 libsnapwebsites (1.1.60.0~xenial) xenial; urgency=high
 
   * EX-114: For adding vendors, added a field to dbutils.

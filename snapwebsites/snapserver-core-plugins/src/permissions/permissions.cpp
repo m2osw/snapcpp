@@ -216,6 +216,12 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
 
+    case name_t::SNAP_NAME_PERMISSIONS_SECURE_PAGE:
+        return "permissions::secure_page";
+
+    case name_t::SNAP_NAME_PERMISSIONS_SECURE_SITE:
+        return "permissions::secure_site";
+
     case name_t::SNAP_NAME_PERMISSIONS_STATUS_PATH:
         return "types/permissions/status";
 
@@ -1360,7 +1366,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 7, 14, 56, 26, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 11, 23, 1, 27, 26, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1396,6 +1402,7 @@ void permissions::bootstrap(snap_child * snap)
     SNAP_LISTEN(permissions, "server", server, add_snap_expr_functions, _1);
     SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
     SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(permissions, "path", path::path, check_for_redirect, _1);
     SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
     SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(permissions, "links", links::links, modified_link, _1, _2);
@@ -2126,6 +2133,94 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                     true);
         }
         return;
+    }
+}
+
+
+/** \brief Check whether the page needs to be accessed securely.
+ *
+ * This callback checks whether we are trying to access the page
+ * using HTTP instead of HTTPS. If so, then we check whether the
+ * site requests that we always or eventually redirect the user
+ * to HTTPS.
+ *
+ * For example, when the user goes to the login or registration
+ * pages, we may want to force HTTPS and only give a secure
+ * cookie after that.
+ *
+ * The function loads the 'permissions::secure_site' parameter
+ * from the 'sites' table. There are three possible values
+ * at this time:
+ *
+ * \li secure_mode_t::SECURE_MODE_NO -- the site does not require HTTPS.
+ * \li secure_mode_t::SECURE_MODE_PAGE -- the site wants to use HTTPS but
+ *     only if the page is linked to the "Permission Secure" tag.
+ * \li secure_mode_t::SECURE_MODE_ALWAYS -- we always redirect the user to
+ *     the HTTPS version (very much how people do in Apache2, only on a
+ *     multi-site installation, it would not be possible to have sites
+ *     using HTTP only, sites using HTTPS only, sites using a mix of
+ *     HTTP and HTTPS without such a feature implemented in Snap!)
+ *
+ * If the function determines that a redirect is required, then it
+ * calls the snap_child::page_redirect() function and never returns.
+ *
+ * \note
+ * Testing this is blocked by SNAP-381 since a website page includes
+ * the protocol and domain name and we do not duplicate them in HTTP
+ * and HTTPS (see SNAP-254 for other details).
+ *
+ * \param[in] ipath  The info path being checked for a redirect.
+ */
+void permissions::on_check_for_redirect(content::path_info_t & ipath)
+{
+    // check whether we already are using a secure connection
+    //
+    snap_uri const & main_uri(f_snap->get_uri());
+    if(main_uri.protocol() != "https")
+    {
+        // is this website marked as a secure site?
+        // if so then we want to check whether we have to switch or not
+        //
+        QtCassandra::QCassandraValue const secure_site(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_SECURE_SITE)));
+        signed char secure_mode(secure_site.signedCharValue());
+        if(secure_mode != secure_mode_t::SECURE_MODE_NO)
+        {
+            // connection is not currently secure,
+            // check whether this page requires HTTPS;
+            // if so, do a redirect
+            //
+            bool force_redirect(true);
+            if(secure_mode == secure_mode_t::SECURE_MODE_PER_PAGE)
+            {
+                links::link_info info(get_name(name_t::SNAP_NAME_PERMISSIONS_SECURE_PAGE), true, ipath.get_key(), ipath.get_branch());
+                QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+                links::link_info secure_info;
+                force_redirect = link_ctxt->next_link(secure_info);
+            }
+            if(force_redirect)
+            {
+                // page has to be accessed securely, impose a redirect
+                // using HTTPS
+                //
+                QString redirect(ipath.get_key());
+                if(redirect.startsWith("http:"))
+                {
+                    redirect.insert(4, "s");
+                    // we have a valid destination, go there
+                    //
+                    f_snap->page_redirect(redirect,
+                                snap_child::http_code_t::HTTP_CODE_TEMPORARY_REDIRECT,
+                                "Redirect to the secure version of this page.",
+                                QString("This page (%1) can only be viewed using an encrypted connection. We are redirecting this user to itself using HTTPS instead (%2).")
+                                        .arg(ipath.get_key()).arg(redirect));
+                    NOTREACHED();
+                }
+                // else -- no good destination...
+                SNAP_LOG_WARNING("somehow ipath key \"")
+                                (redirect)
+                                ("\" does not start with \"http:\" even though the main URI told us it was not secure.");
+            }
+        }
     }
 }
 

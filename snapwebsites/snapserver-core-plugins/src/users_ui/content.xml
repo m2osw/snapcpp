@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <param name="form::source">login-form</param>
@@ -37,6 +39,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <param name="form::source">verify-credentials-form</param>
@@ -50,6 +53,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <param name="form::source">forgot-password-form</param>
   </content>
   <content path="/new-password">
@@ -63,6 +67,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="form::source">new-password-form</param>
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
   </content>
   <content path="/register">
     <param name="content::title" revision="revision">Register</param>
@@ -74,6 +79,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <param name="form::source">register-form</param>
   </content>
   <content path="/verify/resend">
@@ -85,6 +91,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <param name="form::source">resend-email-form</param>
   </content>
   <content path="/verify">
@@ -97,6 +104,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <param name="form::source">verify-form</param>
   </content>
   <content path="/logout">
@@ -116,6 +124,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <param name="form::source">password-form</param>
   </content>
   <content path="/user/password/replace">
@@ -126,6 +135,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
     <param name="form::source">replace-password-form</param>
   </content>
   <content path="/images/users">
@@ -204,6 +214,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::title" revision="revision">[user-name]</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>User profile stuff...</p><p>This will be composed of tags to show the data that the administrator deems useful.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/robotstxt">
+    <param name="content::title" revision="revision">Robots Tags</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Set of tags used to determine how public pages should be presented to robots.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/robotstxt/noindex">
+    <param name="content::title" revision="revision">Robots: No Index</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Request that this page not be indexed by robots. Although there is no guarantee, doing so should prevent search engines from showing this page in their results.</p>]]>
     </param>
   </content>
 </snap-tree>

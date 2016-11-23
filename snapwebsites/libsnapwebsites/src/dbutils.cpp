@@ -571,6 +571,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     || n == "password::check_blacklist"
     || n == "password::exists_in_blacklist"
     || n == "permissions::dynamic"
+    || n == "permissions::secure_site"
     || n == "users::multiuser"
     || n == "users::long_sessions"
     || n == "users::password::blocked"

@@ -322,7 +322,7 @@ bool shorturl::on_path_execute(content::path_info_t & ipath)
  * changing that information later is very problematic (i.e. all
  * the old URIs will stop working.)
  *
- * \param[in] ipath  The path the user is going to now.
+ * \param[in,out] ipath  The path the user is going to now.
  */
 void shorturl::on_check_for_redirect(content::path_info_t & ipath)
 {

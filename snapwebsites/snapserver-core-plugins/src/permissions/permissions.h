@@ -66,6 +66,8 @@ enum class name_t
     SNAP_NAME_PERMISSIONS_PATH,
     SNAP_NAME_PERMISSIONS_PLUGIN,
     SNAP_NAME_PERMISSIONS_RIGHTS_PATH,
+    SNAP_NAME_PERMISSIONS_SECURE_PAGE,
+    SNAP_NAME_PERMISSIONS_SECURE_SITE,
     SNAP_NAME_PERMISSIONS_STATUS_PATH,
     SNAP_NAME_PERMISSIONS_USERS_PATH,
     SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE
@@ -164,6 +166,13 @@ public:
         bool                            f_plugin_cache_reset = false;
     };
 
+    enum secure_mode_t
+    {
+        SECURE_MODE_NO,
+        SECURE_MODE_PER_PAGE,
+        SECURE_MODE_ALWAYS
+    };
+
                             permissions();
                             ~permissions();
 
@@ -184,6 +193,7 @@ public:
     // path signals
     void                    on_access_allowed(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result);
     void                    on_validate_action(content::path_info_t & path, QString const & action, permission_error_callback & err_callback);
+    void                    on_check_for_redirect(content::path_info_t & ipath);
 
     // layout::layout_content implementation
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);

@@ -1,3 +1,12 @@
+snapserver-core-plugins (1.0.28.0~xenial) xenial; urgency=high
+
+  * SNAP-254: Implemented the redirect to HTTPS when on HTTP.
+  * Added a new tag named 'secure-page' to force a redirect on those pages.
+  * Marked the user login, register, etc. as needed a secure redirect.
+  * Various clean ups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Nov 2016 01:46:48 -0800
+
 snapserver-core-plugins (1.0.27.0~xenial) xenial; urgency=high
 
   * EX-114: Fixed an error message to include more information.

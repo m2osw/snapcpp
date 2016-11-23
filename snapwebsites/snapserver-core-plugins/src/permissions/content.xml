@@ -443,6 +443,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Each users gets a permission created under this permission path and that allows the system to give that very user specific rights instead of using the groups that give all users of that group those rights. Note that here we do not create sub-groups.</p>]]>
     </param>
   </content>
+  <content path="/types/taxonomy/system/permissions">
+    <param name="content::title" revision="revision">Permissions Tags</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Set of tags used by the permissions plugin.</p>]]>
+    </param>
+  </content>
+  <content path="/types/taxonomy/system/permissions/secure-page">
+    <param name="content::title" revision="revision">Permissions: Switch to HTTPS if not there yet</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>When one of your pages is linked to this tag, it forces a redirect to the secure version (HTTPS) of the page of not already there.</p>]]>
+    </param>
+  </content>
 
   <!-- Code to exit from an IFRAME when a login is required -->
   <content path="/remove-iframe-for-login" owner="output">
