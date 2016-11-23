@@ -79,15 +79,16 @@
 -A INPUT -i @PRIVATE_INTERFACE@ -p udp -m udp -s @PRIVATE_NETWORK_IPS@ -d @PRIVATE_IP@ -j ACCEPT
 
 # Prevent ICMP timestamp requests from the public interface
--A input -i @PUBLIC_INTERFACE@ -p icmp --icmp-type timestamp-request -j DROP
+-A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type timestamp-request -j DROP
 
 # Allow pings
 -A INPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p icmp --icmp-type any -j ACCEPT
 
-# RST and FIN,ACK and PSH,ACK happen from legitimate IPs, but they are not
-# always properly established connections; however, logging such is not a
-# good idea because it will block otherwise legitimate connections
+# ACK, RST, FIN|ACK and PSH|ACK happen from legitimate IPs, when they are not
+# properly established connections; however, logging such is not a
+# good idea since fail2ban could block otherwise legitimate connections
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL ACK -d @PUBLIC_IP@ -j REJECT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL RST -d @PUBLIC_IP@ -j REJECT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL FIN,ACK -d @PUBLIC_IP@ -j REJECT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL PSH,ACK -d @PUBLIC_IP@ -j REJECT
@@ -152,7 +153,7 @@
 -A OUTPUT -o lo -j REJECT
 
 # Prevent ICMP timestamp requests replies on the public interface
--A OUTPUT -i @PUBLIC_INTERFACE@ -p icmp --icmp-type timestamp-reply -j DROP
+-A OUTPUT -o @PUBLIC_INTERFACE@ -p icmp --icmp-type timestamp-reply -j DROP
 
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p tcp -m tcp -s @PUBLIC_IP@ -j ACCEPT
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p udp -m udp -s @PUBLIC_IP@ -j ACCEPT

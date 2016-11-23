@@ -1,3 +1,11 @@
+snapfirewall (1.1.20.0~xenial) xenial; urgency=high
+
+  * SNAP-465: Fixed the `input` chain name, it had to be `INPUT`.
+  * Fixed an output rule that used `-i` instead of `-o`.
+  * Added a rule to allow ACK by itself as okay, but reject it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Nov 2016 13:19:50 -0800
+
 snapfirewall (1.1.19.0~xenial) xenial; urgency=high
 
   * SNAP-465: the maxretry of the apache timeout is supposed to be 35.
