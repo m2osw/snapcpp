@@ -1,3 +1,9 @@
+snapfirewall (1.1.21.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 24 Nov 2016 02:00:54 -0800
+
 snapfirewall (1.1.21.0~xenial) xenial; urgency=high
 
   * SNAP-465: Added number of hit per IP to `count-unwanted`.
