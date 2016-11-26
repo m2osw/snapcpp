@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.61.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.62.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-381: Fixed the extension check in setup_uri().
 
- -- Build Server <build@m2osw.com>  Wed, 23 Nov 2016 13:33:03 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 25 Nov 2016 16:28:03 -0800
 
 libsnapwebsites (1.1.61.0~xenial) xenial; urgency=high
 

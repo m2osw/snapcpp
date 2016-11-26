@@ -4158,12 +4158,12 @@ void snap_child::setup_uri()
         }
         f_uri.set_path(path);
         int limit(path.lastIndexOf('/'));
-        if(limit == -1)
+        if(limit < 0)
         {
-            limit = 1;
+            limit = 0;
         }
         int const ext(path.lastIndexOf('.'));
-        if(ext >= limit)
+        if(ext > limit)
         {
             extension = path.mid(ext);
             // check for a compression and include that and
@@ -4180,14 +4180,17 @@ void snap_child::setup_uri()
                 // TODO: make use of extension instead of Accept-Encoding
                 f_uri.set_option("compression", extension);
                 int const real_ext(path.lastIndexOf('.', ext - 1));
-                if(real_ext >= limit)
+                if(real_ext > limit)
                 {
                     // retrieve the extension without the compression
                     extension = path.mid(real_ext, real_ext - ext);
                 }
                 else
                 {
-                    extension = "";
+                    // do not view a compression extension by itself
+                    // as an extension
+                    //
+                    extension.clear();
                 }
             }
         }
