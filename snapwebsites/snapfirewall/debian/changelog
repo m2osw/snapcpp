@@ -1,8 +1,9 @@
-snapfirewall (1.1.21.2~xenial) xenial; urgency=high
+snapfirewall (1.1.22.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-465: Commented out the couple of TRACE() that output all IPs.
+  * Added one INFO() to display some statistics.
 
- -- Build Server <build@m2osw.com>  Thu, 24 Nov 2016 02:00:54 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 25 Nov 2016 16:14:54 -0800
 
 snapfirewall (1.1.21.0~xenial) xenial; urgency=high
 
