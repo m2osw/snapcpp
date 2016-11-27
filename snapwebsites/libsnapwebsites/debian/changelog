@@ -1,8 +1,14 @@
-libsnapwebsites (1.1.62.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.63.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-279: Check that domain has an MX record.
 
- -- Build Server <build@m2osw.com>  Sat, 26 Nov 2016 02:00:48 -0800
+  * Added the "mx" table to record what we already checked to avoid the
+    "slowness" of dig.
+  * Updated the snap_child::verify_email() to test that the domain MX field
+    exists.
+  * Removed the lock table entry since we are not using it anymore.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 26 Nov 2016 21:41:48 -0800
 
 libsnapwebsites (1.1.62.0~xenial) xenial; urgency=high
 

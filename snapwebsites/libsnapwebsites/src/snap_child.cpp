@@ -20,6 +20,7 @@
 #include "snapwebsites/compression.h"
 #include "snapwebsites/http_strings.h"
 #include "snapwebsites/log.h"
+#include "snapwebsites/mail_exchanger.h"
 #include "snapwebsites/mkgmtime.h"
 #include "snapwebsites/not_used.h"
 #include "snapwebsites/qdomhelpers.h"
@@ -4297,6 +4298,12 @@ void snap_child::set_action(QString const& action)
  * local userbox (i.e. webmaster, root, etc. by themselves) because
  * from a website these do not really make sense.
  *
+ * If the email address is considered valid, knowing that we also check
+ * the Top Level Domain name (TLD), then we further send a request to
+ * the domain name handling that domain to make sure we can get information
+ * about the MX record. If the domain does not provide an MX record, then
+ * there is no emails to be sent.
+ *
  * \todo
  * Determine whether email addresses with the domain name of "example"
  * are allowed. In some cases they are (i.e. we have a customers that
@@ -4304,6 +4311,12 @@ void snap_child::set_action(QString const& action)
  * not real email and thus we use `name@example.com` for those...)
  * Especially, if someone registers an account with such an email it
  * is totally useless and we should prevent it.
+ *
+ * \todo
+ * We want to count the number of times a certain IP address tries to
+ * verify an email address and fails. That way we can block them after
+ * X attempts. Because really someone should not be able to fail to
+ * enter their email address so many times.
  *
  * \exception users_exception_invalid_email
  * This function does not return if the email is invalid. Instead it throws.
@@ -4339,7 +4352,69 @@ void snap_child::verify_email(QString const & email, size_t const max)
     //
     if(static_cast<size_t>(tld_emails.count()) > max)
     {
-        throw snap_child_exception_invalid_email(QString("too many emails, excepted up to %1 got %2").arg(max).arg(tld_emails.count()));
+        throw snap_child_exception_invalid_email(QString("too many emails, excepted up to %1 got %2 instead.").arg(max).arg(tld_emails.count()));
+    }
+
+    QtCassandra::QCassandraTable::pointer_t mx_table(get_table(get_name(name_t::SNAP_NAME_MX)));
+
+    // finally, check that the MX record exists for that email address, if
+    // not then we can immediately say its wrong; not that if multiple emails
+    // are defined, you get one throw if any one of them is wrong...
+    //
+    tld_email_list::tld_email_t e;
+    while(tld_emails.next(e))
+    {
+        QtCassandra::QCassandraRow::pointer_t row(mx_table->row(QString::fromUtf8(e.f_domain.c_str())));
+        QtCassandra::QCassandraValue last_checked_value(row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->value());
+        if(last_checked_value.size() == sizeof(int64_t))
+        {
+            time_t const last_update(last_checked_value.int64Value());
+            if(f_start_date < last_update + 86400LL * 1000000LL)
+            {
+                QtCassandra::QCassandraValue result_value(row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->value());
+                if(result_value.safeSignedCharValue())
+                {
+                    // considered valid without the need to check again
+                    //
+                    SNAP_LOG_TRACE("domain \"")(e.f_domain)("\" is considered valid (saved in mx table)");
+                    continue;
+                }
+                // this is not valid
+                //
+                throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not provide an MX record (from cache).")
+                        .arg(QString::fromUtf8(e.f_domain.c_str()))
+                        .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
+            }
+        }
+        row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->setValue(f_start_date);
+        mail_exchangers exchangers(e.f_domain);
+        if(!exchangers.domain_found())
+        {
+            signed char failed(0);
+            row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
+            throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not exist.")
+                        .arg(QString::fromUtf8(e.f_domain.c_str()))
+                        .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
+        }
+        if(exchangers.size() == 0)
+        {
+            signed char failed(0);
+            row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
+            throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not provide an MX record.")
+                        .arg(QString::fromUtf8(e.f_domain.c_str()))
+                        .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
+        }
+        signed char succeeded(1);
+        row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(succeeded);
+
+        SNAP_LOG_TRACE("domain \"")(e.f_domain)("\" was just checked and is considered valid (it has an MX record.)");
+
+        // TODO: if we have the timeout, we could save the time when
+        //       the data goes out of date (instead of using exactly
+        //       1 day as we do now) although we probably should use
+        //       a minimum of 1 day anyway
+
+        // TODO: also save the MX info (once we are to make use of any of it...)
     }
 }
 

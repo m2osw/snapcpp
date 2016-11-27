@@ -333,7 +333,7 @@ public:
     bool                        has_post() const { return f_has_post; }
     QString                     get_action() const;
     void                        set_action(QString const & action);
-    static void                 verify_email(QString const & email, size_t const max = 1);
+    void                        verify_email(QString const & email, size_t const max = 1);
 
     virtual void                exit(int code);
     bool                        is_debug() const;

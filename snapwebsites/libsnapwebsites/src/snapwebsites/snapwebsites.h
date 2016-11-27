@@ -50,7 +50,7 @@ enum class name_t
     SNAP_NAME_WEBSITES,         // Cassandra Table used for websites
     SNAP_NAME_SITES,            // Cassandra Table used for sites (one site per row)
     SNAP_NAME_BACKEND,          // Cassandra Table used to know where we are with backends
-    SNAP_NAME_LOCKTABLE,        // Cassandra Table used to serialize database access
+    SNAP_NAME_MX,               // Cassandra Table used to cache which domains have an MX record and which do not
 
     // names used by core (server & snap_child)
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
@@ -61,6 +61,8 @@ enum class name_t
     SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE,
     SNAP_NAME_CORE_LAST_UPDATED,
     SNAP_NAME_CORE_LOCATION_HEADER,
+    SNAP_NAME_CORE_MX_LAST_CHECKED,
+    SNAP_NAME_CORE_MX_RESULT,
     SNAP_NAME_CORE_ORIGINAL_RULES,
     SNAP_NAME_CORE_PARAM_DEFAULT_PLUGINS,
     SNAP_NAME_CORE_PARAM_PLUGINS,

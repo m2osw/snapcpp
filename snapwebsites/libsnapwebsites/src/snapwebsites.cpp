@@ -136,8 +136,8 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_BACKEND: // backend progress
         return "backend";
 
-    case name_t::SNAP_NAME_LOCKTABLE: // backend progress
-        return "lock_table";
+    case name_t::SNAP_NAME_MX: // backend progress
+        return "mx";
 
     // names used by CORE (server and snap_child)
     case name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
@@ -163,6 +163,12 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_CORE_LOCATION_HEADER:
         return "Location";
+
+    case name_t::SNAP_NAME_CORE_MX_LAST_CHECKED:
+        return "core::mx_last_checked";
+
+    case name_t::SNAP_NAME_CORE_MX_RESULT:
+        return "core::mx_result";
 
     case name_t::SNAP_NAME_CORE_ORIGINAL_RULES:
         return "core::original_rules";

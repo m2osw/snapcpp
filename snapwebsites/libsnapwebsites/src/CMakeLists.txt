@@ -76,6 +76,7 @@ set( HEADERS
     snapwebsites/loadavg.h
     snapwebsites/lockfile.h
     snapwebsites/log.h
+    snapwebsites/mail_exchanger.h
     snapwebsites/minmax.h
     snapwebsites/mkdir_p.h
     snapwebsites/mkgmtime.h
@@ -143,6 +144,7 @@ add_library( ${PROJECT_NAME} SHARED
     inet_helpers.cpp                            # helper functions in link with the network
     loadavg.cpp                                 # handle the loadavg file
     log.cpp                                     # log4cplus support
+    mail_exchanger.cpp                          # retrieve the MX record for a given domain
     mkdir_p.cpp                                 # make directories so path is valid
     mkgmtime.c                                  # mktime() with a UTC time
     mounts.cpp                                  # read /proc/mounts or some other mount point file

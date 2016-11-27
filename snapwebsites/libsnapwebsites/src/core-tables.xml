@@ -108,6 +108,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <table name="backend" model="queue">
     <description>List of website URIs to run backends against</description>
   </table>
+  <table name="mx" model="data">
+    <description>List of domain names that have/do not have an MX record</description>
+  </table>
 </keyspace>
 <!--
 vim: ts=2 sw=2 et
