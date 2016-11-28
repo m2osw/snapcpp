@@ -1,8 +1,16 @@
-snapserver-core-plugins (1.0.28.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.29.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Wed, 23 Nov 2016 13:33:03 -0800
+ -- Build Server <build@m2osw.com>  Mon, 28 Nov 2016 02:00:49 -0800
+
+snapserver-core-plugins (1.0.29.0~xenial) xenial; urgency=high
+
+  * SNAP-279: Updated the users and sendmail to support example users.
+  * Prevent sendmail from sending emails to example users.
+  * Added a function to check whether a user is an example user.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 27 Nov 2016 18:25:03 -0800
 
 snapserver-core-plugins (1.0.28.0~xenial) xenial; urgency=high
 

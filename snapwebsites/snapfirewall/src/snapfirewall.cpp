@@ -1527,7 +1527,12 @@ void snap_firewall::setup_firewall()
                     //
                     //info.iplock_block();
                     to_block_list.push_back( info );
-                    SNAP_LOG_TRACE( "Add to block list address='")(info.get_ip())("', scheme='")(info.get_scheme())("'.");
+
+                    // show all the IPs (not useful at all time to reprint
+                    // all the IPs, it should go a lot faster by not doing
+                    // so.)
+                    //
+                    //SNAP_LOG_TRACE( "Add to block list address='")(info.get_ip())("', scheme='")(info.get_scheme())("'.");
 
                     // no save necessary, it is already as it needs to be
                 }
@@ -1553,7 +1558,10 @@ void snap_firewall::setup_firewall()
                 else
                 {
                     to_block_list.push_back( info );
-                    SNAP_LOG_TRACE( "Add pending ip address to block list: '")(info.get_ip())("'");
+
+                    // show all the pending IPs
+                    //
+                    //SNAP_LOG_TRACE( "Add pending IP address to block list: '")(info.get_ip())("'");
                 }
 
                 // always save the IP so we know that such and such was
@@ -1562,6 +1570,9 @@ void snap_firewall::setup_firewall()
                 info.save(f_firewall_table, f_server_name);
             }
         );
+
+    SNAP_LOG_INFO( "Block ")(to_block_list.size())(" IPs (including ")(f_blocks.size())(" from the pending IP address list).");
+
     f_blocks.clear();
 
     std::string const private_folder("/var/cache/snapwebsites/private");
@@ -1620,7 +1631,6 @@ void snap_firewall::setup_firewall()
                     (output);
         }
     }
-
 
     f_firewall_up = true;
 

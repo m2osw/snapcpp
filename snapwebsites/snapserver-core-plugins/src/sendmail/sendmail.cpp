@@ -1696,6 +1696,14 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
 {
     users::users * users_plugin(users::users::instance());
 
+    // prevent attempts of sending an email to an example email address
+    // (even if the example address is a valid email address)
+    //
+    if(users_plugin->user_is_an_example_from_email(user_email))
+    {
+        return false;
+    }
+
     bool bypass_blacklist(false);
     if(e != nullptr)
     {
@@ -1711,13 +1719,21 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
     content::permission_flag secure;
     users::users::user_security_t security;
     security.set_user_key(user_key);
-    security.set_email(user_email);
+    security.set_email(user_email, true);
     //security.set_password("!"); -- leave the default
     //security.set_policy("users"); -- leave the default
     security.set_bypass_blacklist(bypass_blacklist);
     users_plugin->check_user_security(security);
 
-    return security.get_secure().allowed();
+    // here we also test whether the email address is an example email
+    // address or not; it could be that later we find out that certain
+    // other domains are clear examples for various types of domain
+    // names (i.e. "exemple.fr") although at this time it looks like
+    // this is limited to what is defined in RFC 2606.
+    //
+    // See: https://tools.ietf.org/html/rfc2606
+    //
+    return security.get_secure().allowed() && !security.get_example();
 }
 
 
@@ -3161,6 +3177,10 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         {
             // marked as "invalid" from this or all websites
             // so we absolutely never send email to that user...
+            //
+            // note that example domains reach this case too... and those are
+            // really not considered to be errors or invalid emails... but
+            // as far as we are concerned here it looks invalid.
             //
             sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_INVALID));
             row->cell(sending_status)->setValue(sending_value);

@@ -40,6 +40,7 @@ enum class name_t
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_CURRENT_EMAIL,
+    SNAP_NAME_USERS_EXAMPLE,
     SNAP_NAME_USERS_FORCE_LOWERCASE,
     SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
     SNAP_NAME_USERS_FORGOT_PASSWORD_IP,
@@ -205,43 +206,11 @@ public:
         STATUS_PASSWORD         // user has to enter a new password (marked as "PASSWORD")
     };
 
-    class user_info_t
-    {
-    public:
-        typedef uint64_t key_t;
-
-        user_info_t();
-        user_info_t( QtCassandra::QCassandraTable::pointer_t users_table );
-
-        key_t   const & get_user_id() const;
-        QString const & get_user_email() const;
-        QString const & get_user_path() const;
-        status_t		get_status();
-
-        bool exists() const;
-
-        void save_user_parameter( QString const & field_name, QtCassandra::QCassandraValue const &  value );
-        void save_user_parameter( QString const & field_name, QString                      const &  value );
-        void save_user_parameter( QString const & field_name, int64_t                      const &  value );
-        bool load_user_parameter( QString const & field_name, QtCassandra::QCassandraValue &        value );
-        bool load_user_parameter( QString const & field_name, QString                      &        value );
-        bool load_user_parameter( QString const & field_name, int64_t                      &        value );
-
-        friend class users;
-
-    private:
-        key_t   f_user_id;
-        QString	f_user_key;
-        QString	f_user_email;
-        QString f_user_path;
-        QtCassandra::QCassandraTable::pointer_t f_users_table;
-    };
-
     class user_security_t
     {
     public:
-        void                        set_user_key(user_info_t const & user_key);
-        //void                        set_email(QString const & email);
+        void                        set_user_key(QString const & user_key);
+        //void                        set_email(QString const & email, bool allow_example_domain = false);
         void                        set_password(QString const & password);
         void                        set_policy(QString const & policy);
         void                        set_bypass_blacklist(bool const bypass);

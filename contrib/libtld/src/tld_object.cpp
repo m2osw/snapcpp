@@ -214,7 +214,7 @@ std::string tld_object::sub_domains() const
     for(; domain_name > start && domain_name[-1] != '.'; --domain_name);
     if(domain_name == start)
     {
-        return "";
+        return std::string();
     }
     // no not return the period
     return std::string(start, domain_name - start - 1);
@@ -227,8 +227,8 @@ std::string tld_object::sub_domains() const
  * The result includes the domain name but no sub-domains.
  *
  * To get the domain name with the sub-domains, call the domain()
- * function instead. That function returns the URI as passed to
- * this function.
+ * function instead. That function returns the domain as passed to
+ * this object (set_domain() or constructor).
  *
  * \exception invalid_domain
  * This exception is raised when this function is called with an invalid

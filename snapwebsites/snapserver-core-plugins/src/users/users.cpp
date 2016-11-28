@@ -154,6 +154,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_CURRENT_EMAIL:
         return "users::current_email";
 
+    case name_t::SNAP_NAME_USERS_EXAMPLE:
+        return "users::example";
+
     case name_t::SNAP_NAME_USERS_FORCE_LOWERCASE:
         return "users::force_lowercase";
 
@@ -2971,6 +2974,8 @@ QString users::get_user_path(QString const & email)
  * \param[in] password  The password of the user or "!".
  * \param[out] reason  If the function returns something other than STATUS_NEW
  *                     or STATUS_VALID, the reason for the error.
+ * \param[in] allow_example_domain  Whether an email address with the name
+ *                                  example is allowed or not.
  *
  * \return STATUS_NEW if the user was just created and a verification email
  *         is expected to be sent to him or her;
@@ -2982,7 +2987,7 @@ QString users::get_user_path(QString const & email)
  *         STATUS_PASSWORD and !reason.isEmpty() if the password is considered
  *         insecure: too simple or found in the password blacklist;
  */
-users::status_t users::register_user(QString const & email, QString const & password, QString & reason)
+users::status_t users::register_user(QString const & email, QString const & password, QString & reason, bool allow_example_domain)
 {
     reason.clear();
 
@@ -2998,7 +3003,6 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     int64_t identifier(0);
     status_t status(status_t::STATUS_NEW);
-    bool new_user(false);
     QString const id_key(get_name(name_t::SNAP_NAME_USERS_ID_ROW));
     QString const identifier_key(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER));
     QString const email_key(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
@@ -3013,7 +3017,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     //
     user_security_t security;
     security.set_user_key(user_key);
-    security.set_email(email);
+    security.set_email(email, allow_example_domain);
     security.set_password(password);
     security.set_bypass_blacklist(true);
     check_user_security(security);
@@ -3026,6 +3030,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     }
 
     // we got as much as we could ready before locking
+    bool new_user(false);
     {
         // first make sure this email is unique
         snap_lock lock(user_key);
@@ -3164,10 +3169,21 @@ users::status_t users::register_user(QString const & email, QString const & pass
         }
     }
 
+    // If the email was an example email, then mark the account as an
+    // example account (it can still be used to mark pages authored by
+    // this user, etc.)
+    //
+    if(security.get_example())
+    {
+        signed char c(1);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_EXAMPLE))->setValue(c);
+    }
+
     // Add a reference back to the website were the user is being added so
     // that way we can generate a list of such websites in the user's account
     // the reference appears in the cell name and the value is the time when
     // the user registered for that website
+    //
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const website_reference(QString("%1::%2")
             .arg(get_name(name_t::SNAP_NAME_USERS_WEBSITE_REFERENCE))
@@ -3280,7 +3296,11 @@ bool users::check_user_security_impl(user_security_t & security)
         //
         try
         {
-            f_snap->verify_email(security.get_email());
+            snap_child::verified_email_t const ve(f_snap->verify_email(security.get_email(), 1, security.get_allow_example_domain()));
+            if(ve == snap_child::verified_email_t::VERIFIED_EMAIL_EXAMPLE)
+            {
+                security.set_example(true);
+            }
         }
         catch(snap_child_exception_invalid_email const &)
         {
@@ -4046,6 +4066,44 @@ bool users::user_is_a_spammer()
 bool users::user_is_logged_in() const
 {
     return f_user_logged_in;
+}
+
+
+/** \brief Check whether the specified user is marked as being an example.
+ *
+ * You may call this function to determine whether a user is marked as
+ * an example. This happens whenever a user is created with an example
+ * email address such as john@example.com.
+ *
+ * The function expects the email address of the user. It first canonicolize
+ * the email and then checks in the database to see whether the user is
+ * considered an example or not.
+ *
+ * We use the database instead of parsing the email so really any user
+ * can be marked as an example user.
+ *
+ * \note
+ * If the specified email does not represent a registered user, then the
+ * function always returns false.
+ *
+ * \param[in] email  The email address of the user to check.
+ *
+ * \return true if the user is marked as being an example.
+ */
+bool users::user_is_an_example_from_email(QString const & email)
+{
+    QString const user_key(email_to_user_key(email));
+
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    if(!users_table->row(user_key))
+    {
+        return false;
+    }
+
+    return users_table->row(user_key)
+                      ->cell(get_name(name_t::SNAP_NAME_USERS_EXAMPLE))
+                      ->value()
+                       .safeSignedCharValue() != 0;
 }
 
 

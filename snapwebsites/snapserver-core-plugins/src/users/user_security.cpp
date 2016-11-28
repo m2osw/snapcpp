@@ -41,6 +41,7 @@ void users::user_security_t::set_user_key(QString const & user_key)
 void users::user_security_t::set_email(QString const & email)
 {
     f_email = email;
+    f_allow_example_domain = allow_example_domain;
 }
 #endif
 
@@ -86,12 +87,10 @@ QString const & users::user_security_t::get_user_key() const
 }
 
 
-#if 0
 QString const & users::user_security_t::get_email() const
 {
     return f_email;
 }
-#endif
 
 
 QString const & users::user_security_t::get_password() const
