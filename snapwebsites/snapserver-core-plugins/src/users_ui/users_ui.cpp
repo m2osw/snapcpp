@@ -1620,7 +1620,7 @@ void users_ui::process_forgot_password_form()
 {
     users::users * users_plugin(users::users::instance());
 
-    QString email(f_snap->postenv("email"));
+    QString const email(f_snap->postenv("email"));
     QString details;
 
     QString const user_key(users_plugin->email_to_user_key(email));

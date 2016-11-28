@@ -205,11 +205,43 @@ public:
         STATUS_PASSWORD         // user has to enter a new password (marked as "PASSWORD")
     };
 
+    class user_info_t
+    {
+    public:
+        typedef uint64_t key_t;
+
+        user_info_t();
+        user_info_t( QtCassandra::QCassandraTable::pointer_t users_table );
+
+        key_t   const & get_user_id() const;
+        QString const & get_user_email() const;
+        QString const & get_user_path() const;
+        status_t		get_status();
+
+        bool exists() const;
+
+        void save_user_parameter( QString const & field_name, QtCassandra::QCassandraValue const &  value );
+        void save_user_parameter( QString const & field_name, QString                      const &  value );
+        void save_user_parameter( QString const & field_name, int64_t                      const &  value );
+        bool load_user_parameter( QString const & field_name, QtCassandra::QCassandraValue &        value );
+        bool load_user_parameter( QString const & field_name, QString                      &        value );
+        bool load_user_parameter( QString const & field_name, int64_t                      &        value );
+
+        friend class users;
+
+    private:
+        key_t   f_user_id;
+        QString	f_user_key;
+        QString	f_user_email;
+        QString f_user_path;
+        QtCassandra::QCassandraTable::pointer_t f_users_table;
+    };
+
     class user_security_t
     {
     public:
-        void                        set_user_key(QString const & user_key);
-        void                        set_email(QString const & email);
+        void                        set_user_key(user_info_t const & user_key);
+        //void                        set_email(QString const & email);
         void                        set_password(QString const & password);
         void                        set_policy(QString const & policy);
         void                        set_bypass_blacklist(bool const bypass);
@@ -217,8 +249,8 @@ public:
 
         bool                        has_password() const;
 
-        QString const &             get_user_key() const;
-        QString const &             get_email() const;
+        user_info_t const &         get_user_key() const;
+        //QString const &             get_email() const;
         QString const &             get_password() const;
         QString const &             get_policy() const;
         bool                        get_bypass_blacklist() const;
@@ -226,8 +258,7 @@ public:
         status_t                    get_status() const;
 
     private:
-        QString                     f_user_key;
-        QString                     f_email;
+        user_info_t                 f_user_info;
         QString                     f_password = "!";
         QString                     f_policy = "users";
         bool                        f_bypass_blacklist = false;
@@ -248,8 +279,8 @@ public:
         void                    set_identifier(int64_t identifier);
         int64_t                 get_identifier() const;
 
-        void                    set_user_key(QString const & user_key);
-        QString const &         get_user_key() const;
+        void                    set_user_key(user_info_t const & user_key);
+        user_info_t const &     get_user_key() const;
 
         // at the point of login we do not have the email, only the user key
         //void                    set_email(QString const & email) { f_email = email; }
@@ -267,8 +298,7 @@ public:
         snap_child *                    f_snap = nullptr;
         mutable content::path_info_t    f_user_ipath;
         QString                         f_password_policy;
-        QString                         f_user_key;
-        QString                         f_email;
+        user_info_t                     f_user_info;
         int64_t                         f_identifier = 0;
         bool                            f_force_password_change = false;
         mutable QString                 f_uri;
@@ -337,7 +367,7 @@ public:
     int64_t                 get_administrative_session_duration();
     bool                    get_soft_administrative_session();
     QString                 get_user_cookie_name();
-    QString                 get_user_key() const;
+    user_info_t             get_user_key() const;
     QString                 get_user_path() const;
     int64_t                 get_user_identifier() const;
     bool                    user_is_a_spammer();
@@ -349,9 +379,11 @@ public:
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
     status_t                register_user(QString const & email, QString const & password, QString & reason);
     void                    verify_user(content::path_info_t & ipath);
+#if 0
     status_t                user_status_from_email(QString const & email, QString & status_key);
     status_t                user_status_from_identifier(int64_t identifier, QString & status_key);
     status_t                user_status_from_user_path(QString const & user_path, QString & status_key);
+#endif
     sessions::sessions::session_info const & get_session() const;
     void                    attach_to_session(QString const & name, QString const & data);
     QString                 detach_from_session(QString const & name);
@@ -360,8 +392,9 @@ public:
     QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL, QString const & password_policy = "users");
     login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
     bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
-    void                    create_logged_in_user_session(QString const & user_key);
+    void                    create_logged_in_user_session(user_info_t const & user_key);
     void                    user_logout();
+#if 0
     void                    save_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue const & value);
     void                    save_user_parameter(QString const & email, QString const & field_name, QString const & value);
     void                    save_user_parameter(QString const & email, QString const & field_name, int64_t const & value);
@@ -373,8 +406,13 @@ public:
     QString                 get_user_email(QString const & user_path);
     QString                 get_user_email(int64_t const identifier);
     QString                 get_user_path(QString const & email);
-    QString                 email_to_user_key(QString const & email);
+    user_info_t             email_to_user_key(QString const & email);
     QString                 basic_email_canonicalization(QString const & email);
+#else
+    user_info_t				user_info_by_id    ( QString const & id    );
+    user_info_t				user_info_by_email ( QString const & email );
+    user_info_t				user_info_by_path  ( QString const & path  );
+#endif
 
 private:
     void                    content_update(int64_t variables_timestamp);
@@ -382,12 +420,12 @@ private:
 
     snap_child *            f_snap = nullptr;
 
-    QString                 f_user_key;                         // user email address (may not be logged in)
+    user_info_t             f_user_info;                        // user info including email address (may not be logged in)
     bool                    f_user_logged_in = false;           // user is logged in only if this is true
     bool                    f_administrative_logged_in = false; // user is logged in and has administrative rights if this is true
     bool                    f_has_user_messages = false;        // whether there were messages when on_detach_from_session() was called
     QString                 f_user_changing_password_key;       // not quite logged in user
-    std::shared_ptr<sessions::sessions::session_info> f_info;       // user, logged in or anonymous, cookie related information
+    std::shared_ptr<sessions::sessions::session_info> f_info;   // user, logged in or anonymous, cookie related information
 };
 
 } // namespace users
