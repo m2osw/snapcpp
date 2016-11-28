@@ -4304,6 +4304,11 @@ void snap_child::set_action(QString const& action)
  * about the MX record. If the domain does not provide an MX record, then
  * there is no emails to be sent.
  *
+ * \note
+ * If max > 1 you probably want to keep allow_example_domain set to false
+ * otherwise you may get verified_email_t::VERIFIED_EMAIL_MIXED as a result
+ * which means you cannot know which email is an example and which is not.
+ *
  * \todo
  * Determine whether email addresses with the domain name of "example"
  * are allowed. In some cases they are (i.e. we have a customers that
@@ -4325,8 +4330,12 @@ void snap_child::set_action(QString const& action)
  *
  * \param[in] email  The email to verify.
  * \param[in] max  The maximum number of emails supported. May be 0, usually 1.
+ * \param[in] allow_example_domain  Whether the "example" domain is allowed.
+ *
+ * \return Whether the email is considered valid, invalid, is an example
+ *         or a mix of valid and example emails.
  */
-void snap_child::verify_email(QString const & email, size_t const max)
+snap_child::verified_email_t snap_child::verify_email(QString const & email, size_t const max, bool allow_example_domain)
 {
     // is there an actual email?
     // (we may want to remove standalone and duplicated commas too)
@@ -4334,7 +4343,7 @@ void snap_child::verify_email(QString const & email, size_t const max)
     {
         if(max == 0)
         {
-            return;
+            return verified_email_t::VERIFIED_EMAIL_EMPTY;
         }
         throw snap_child_exception_invalid_email("no email defined");
     }
@@ -4355,15 +4364,52 @@ void snap_child::verify_email(QString const & email, size_t const max)
         throw snap_child_exception_invalid_email(QString("too many emails, excepted up to %1 got %2 instead.").arg(max).arg(tld_emails.count()));
     }
 
+    // if the email string is not empty, then there has to be at least one
+    // email otherwise the parse() function should have returned an error
+    //
+    if(tld_emails.count() == 0)
+    {
+        throw snap_child_exception_invalid_email(QString("no emails, even though \"%1\" is not empty.").arg(email));
+    }
+
     QtCassandra::QCassandraTable::pointer_t mx_table(get_table(get_name(name_t::SNAP_NAME_MX)));
 
     // finally, check that the MX record exists for that email address, if
     // not then we can immediately say its wrong; not that if multiple emails
     // are defined, you get one throw if any one of them is wrong...
     //
+    verified_email_t result(verified_email_t::VERIFIED_EMAIL_UNKNOWN);
     tld_email_list::tld_email_t e;
     while(tld_emails.next(e))
     {
+        if(allow_example_domain)
+        {
+            tld_object const d(e.f_domain.c_str());
+            if(d.domain_only() == "example")
+            {
+                // in this case a domain named "example" is considered valid
+                // (TODO the libtld should tell us whether this is true
+                // or not because this does not apply to all TLDs...)
+                //
+                // Note: we do not save such in our database, no need.
+                //
+                switch(result)
+                {
+                case verified_email_t::VERIFIED_EMAIL_UNKNOWN:
+                    SNAP_LOG_TRACE("domain \"")(e.f_domain)("\" is considered to represent an example email.");
+                    result = verified_email_t::VERIFIED_EMAIL_EXAMPLE;
+                case verified_email_t::VERIFIED_EMAIL_EXAMPLE:
+                    break;
+
+                default:
+                    result = verified_email_t::VERIFIED_EMAIL_MIXED;
+                    break;
+
+                }
+                continue;
+            }
+        }
+
         QtCassandra::QCassandraRow::pointer_t row(mx_table->row(QString::fromUtf8(e.f_domain.c_str())));
         QtCassandra::QCassandraValue last_checked_value(row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->value());
         if(last_checked_value.size() == sizeof(int64_t))
@@ -4415,7 +4461,22 @@ void snap_child::verify_email(QString const & email, size_t const max)
         //       a minimum of 1 day anyway
 
         // TODO: also save the MX info (once we are to make use of any of it...)
+
+        switch(result)
+        {
+        case verified_email_t::VERIFIED_EMAIL_UNKNOWN:
+            result = verified_email_t::VERIFIED_EMAIL_STANDARD;
+        case verified_email_t::VERIFIED_EMAIL_STANDARD:
+            break;
+
+        default:
+            result = verified_email_t::VERIFIED_EMAIL_MIXED;
+            break;
+
+        }
     }
+
+    return result;
 }
 
 

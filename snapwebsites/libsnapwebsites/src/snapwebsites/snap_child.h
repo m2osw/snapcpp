@@ -320,6 +320,15 @@ public:
     };
     typedef QVector<compression_t> compression_vector_t;
 
+    enum class verified_email_t
+    {
+        VERIFIED_EMAIL_UNKNOWN,
+        VERIFIED_EMAIL_EMPTY,
+        VERIFIED_EMAIL_STANDARD,
+        VERIFIED_EMAIL_EXAMPLE,
+        VERIFIED_EMAIL_MIXED
+    };
+
                                 snap_child(server_pointer_t s);
     virtual                     ~snap_child();
 
@@ -333,7 +342,7 @@ public:
     bool                        has_post() const { return f_has_post; }
     QString                     get_action() const;
     void                        set_action(QString const & action);
-    void                        verify_email(QString const & email, size_t const max = 1);
+    snap_child::verified_email_t verify_email(QString const & email, size_t const max = 1, bool allow_example_domain = false);
 
     virtual void                exit(int code);
     bool                        is_debug() const;

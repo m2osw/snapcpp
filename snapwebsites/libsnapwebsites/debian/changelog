@@ -1,13 +1,13 @@
-libsnapwebsites (1.1.63.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.64.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-279: Mark users with an @example.com email as example users.
+  * Added a flag to allow registration of example users explicitly.
 
- -- Build Server <build@m2osw.com>  Sun, 27 Nov 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 27 Nov 2016 02:00:49 -0800
 
 libsnapwebsites (1.1.63.0~xenial) xenial; urgency=high
 
   * SNAP-279: Check that domain has an MX record.
-
   * Added the "mx" table to record what we already checked to avoid the
     "slowness" of dig.
   * Updated the snap_child::verify_email() to test that the domain MX field

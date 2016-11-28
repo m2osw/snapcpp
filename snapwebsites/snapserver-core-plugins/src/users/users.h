@@ -40,6 +40,7 @@ enum class name_t
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_CURRENT_EMAIL,
+    SNAP_NAME_USERS_EXAMPLE,
     SNAP_NAME_USERS_FORCE_LOWERCASE,
     SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
     SNAP_NAME_USERS_FORGOT_PASSWORD_IP,
@@ -209,10 +210,11 @@ public:
     {
     public:
         void                        set_user_key(QString const & user_key);
-        void                        set_email(QString const & email);
+        void                        set_email(QString const & email, bool allow_example_domain = false);
         void                        set_password(QString const & password);
         void                        set_policy(QString const & policy);
         void                        set_bypass_blacklist(bool const bypass);
+        void                        set_example(bool example);
         void                        set_status(status_t status);
 
         bool                        has_password() const;
@@ -222,6 +224,8 @@ public:
         QString const &             get_password() const;
         QString const &             get_policy() const;
         bool                        get_bypass_blacklist() const;
+        bool                        get_allow_example_domain() const;
+        bool                        get_example() const;
         content::permission_flag &  get_secure();
         status_t                    get_status() const;
 
@@ -231,6 +235,8 @@ public:
         QString                     f_password = "!";
         QString                     f_policy = "users";
         bool                        f_bypass_blacklist = false;
+        bool                        f_allow_example_domain = false;
+        bool                        f_example = false;
         content::permission_flag    f_secure;
         status_t                    f_status = status_t::STATUS_VALID;
     };
@@ -347,8 +353,9 @@ public:
     static QString          create_password();
     void                    create_password_salt(QByteArray & salt);
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
-    status_t                register_user(QString const & email, QString const & password, QString & reason);
+    status_t                register_user(QString const & email, QString const & password, QString & reason, bool allow_example_domain = false);
     void                    verify_user(content::path_info_t & ipath);
+    bool                    user_is_an_example_from_email(QString const & email);
     status_t                user_status_from_email(QString const & email, QString & status_key);
     status_t                user_status_from_identifier(int64_t identifier, QString & status_key);
     status_t                user_status_from_user_path(QString const & user_path, QString & status_key);

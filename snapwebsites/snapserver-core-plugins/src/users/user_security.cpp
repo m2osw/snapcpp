@@ -37,9 +37,10 @@ void users::user_security_t::set_user_key(QString const & user_key)
 }
 
 
-void users::user_security_t::set_email(QString const & email)
+void users::user_security_t::set_email(QString const & email, bool allow_example_domain)
 {
     f_email = email;
+    f_allow_example_domain = allow_example_domain;
 }
 
 
@@ -58,6 +59,12 @@ void users::user_security_t::set_policy(QString const & policy)
 void users::user_security_t::set_bypass_blacklist(bool const bypass)
 {
     f_bypass_blacklist = bypass;
+}
+
+
+void users::user_security_t::set_example(bool const example)
+{
+    f_example = example;
 }
 
 
@@ -105,6 +112,18 @@ QString const & users::user_security_t::get_policy() const
 bool users::user_security_t::get_bypass_blacklist() const
 {
     return f_bypass_blacklist;
+}
+
+
+bool users::user_security_t::get_allow_example_domain() const
+{
+    return f_allow_example_domain;
+}
+
+
+bool users::user_security_t::get_example() const
+{
+    return f_example;
 }
 
 
