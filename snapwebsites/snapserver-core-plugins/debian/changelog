@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.30.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 29 Nov 2016 02:00:47 -0800
+
 snapserver-core-plugins (1.0.30.0~xenial) xenial; urgency=high
 
   * SNAP-200: Removed the 'priority' and 'frequency' which Google ignores now.
