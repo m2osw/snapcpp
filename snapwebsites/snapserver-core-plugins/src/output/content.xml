@@ -28,7 +28,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision" lang="fr">
       <![CDATA[<p>Bienvenue sur le nouveau site web de Snap! C++.</p><p><a href="/login">Connectez-vous</a></p>]]>
     </param>
-    <param name="sitemapxml::frequency">always</param>
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
@@ -44,8 +43,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Our terms: do not spam or attempt to hack us. Otherwise, feel right at home and enjoy our Snap! Websites.</p>]]>
     </param>
-    <param name="sitemapxml::priority" type="float">0.15</param>
-    <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
@@ -60,8 +57,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <p>Also we do not generally use that information, it is checked by our robots to see whether you are spamming or hacking our systems.</p>
       ]]>
     </param>
-    <param name="sitemapxml::priority" type="float">0.2</param>
-    <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
