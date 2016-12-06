@@ -210,7 +210,7 @@ public:
     void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
-    QString             check_password_against_policy(QString const & user_key, QString const & user_password, QString const & policy);
+    QString             check_password_against_policy(users::users::user_info_t const & user_info, QString const & user_password, QString const & policy);
     QString             create_password(QString const & policy = "users");
 
 private:

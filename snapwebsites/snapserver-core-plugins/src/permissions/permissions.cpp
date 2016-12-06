@@ -1932,7 +1932,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
         bool const redirect_method(method == "GET" || method == "POST");
 
         users::users * users_plugin(users::users::instance());
-        if(users_plugin->get_user_key().isEmpty())
+        if(!users_plugin->get_user_info().is_valid())
         {
             // special case of spammers
             if(users_plugin->user_is_a_spammer())
@@ -2320,7 +2320,7 @@ QString const & permissions::get_user_path()
     {
         f_has_user_path = true;
         users::users * users_plugin(users::users::instance());
-        f_user_path = users_plugin->get_user_path();
+        f_user_path = users_plugin->get_user_info().get_user_path();
         if(f_user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
         {
             f_user_path.clear();
@@ -2723,15 +2723,18 @@ void permissions::on_backend_action(QString const & action)
     {
         // make specified user an administrator or root user
         users::users * users_plugin(users::users::instance());
-        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
         QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
-        QString const user_key(users_plugin->email_to_user_key(email));
-        if(!users_table->exists(user_key))
+        //QString const user_key(users_plugin->email_to_user_key(email));
+        users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(email));
+        //if(!users_table->exists(user_key))
+        if(!user_info.exists())
         {
             SNAP_LOG_FATAL("User \"")(email)("\" not found. Cannot make user the root or administrator user.");
             exit(1);
         }
-        QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(user_key));
+        //QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(user_key));
+        QtCassandra::QCassandraRow::pointer_t user_row(user_info.get_user_row());
         if(!user_row->exists(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER)))
         {
             SNAP_LOG_FATAL("error: user \"")(email)("\" was not given an identifier.");
@@ -2828,7 +2831,8 @@ void permissions::check_permissions(QString const & email, QString const & page,
     }
 
     // define the path to the user data from his email
-    QString user_path(users::users::instance()->get_user_path(email));
+    users::users::user_info_t user_info(users::users::instance()->get_user_info_by_email(email));
+    QString user_path(user_info.get_user_path());
     if(user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
     {
         user_path.clear();
@@ -3201,7 +3205,7 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
     // check whether the user has edit rights
     content::permission_flag can_edit;
     path::path::instance()->access_allowed(
-            users::users::instance()->get_user_path(),
+            users::users::instance()->get_user_info().get_user_path(),
             ipath,
             "edit",
             get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),

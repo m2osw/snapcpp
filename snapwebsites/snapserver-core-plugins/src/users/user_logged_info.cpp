@@ -98,65 +98,34 @@ QString const & users::user_logged_info_t::get_password_policy() const
 }
 
 
-/** \brief Save the user identifier.
+/** \brief Defines the user info object.
  *
- * This function is used to save the user identifier in this object.
- * The identifier is a number which was assigned to the user when
- * he created his account.
- *
- * \param[in] identifier  The identifier of the user.
- *
- * \sa get_identifier()
- */
-void users::user_logged_info_t::set_identifier(int64_t identifier)
-{
-    f_identifier = identifier;
-}
-
-
-/** \brief Retrieve the user identifier.
- *
- * This function returns the user identifier as defined by the
- * set_identifier() function.
- *
- * \return The logged in user identifier.
- *
- * \sa set_identifier()
- */
-int64_t users::user_logged_info_t::get_identifier() const
-{
-    return f_identifier;
-}
-
-
-/** \brief Defines the user key.
- *
- * This function sets the user key to the specified parameter. The user
- * key is not immediately available. We set it right before calling the
+ * This function sets the user_info_t member to the specified parameter.
+ * The user info is not immediately available. We set it right before calling the
  * user_logged_in() signal, but it is not set earlier because we do not
  * have it available right away.
  *
- * \param[in] user_key  The key to the user account.
+ * \param[in] user_info  The info of the user account.
  *
- * \sa get_user_key()
+ * \sa get_user_info()
  */
-void users::user_logged_info_t::set_user_key(QString const & user_key)
+void users::user_logged_info_t::set_user_info(user_info_t const & user_info)
 {
-    f_user_key = user_key;
+    f_user_info = user_info;
 }
 
 
-/** \brief Retrieve the user key.
+/** \brief Retrieve the user info object.
  *
- * This function returns the key to the user that was just logged in.
+ * This function returns the info of the user that was just logged in.
  *
- * \return The key to the user.
+ * \return The user info object
  *
- * \sa set_user_key()
+ * \sa set_user_info()
  */
-QString const & users::user_logged_info_t::get_user_key() const
+users::user_info_t const & users::user_logged_info_t::get_user_info() const
 {
-    return f_user_key;
+    return f_user_info;
 }
 
 

@@ -1711,15 +1711,15 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
         bypass_blacklist = bypass == "true";
     }
 
-    QString const user_key(users_plugin->email_to_user_key(user_email));
+    //QString const user_key(users_plugin->email_to_user_key(user_email));
+    users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(user_email));
 
     // we use "!" for the password because we do not want to have
     // any password checked.
     //
-    content::permission_flag secure;
+    //content::permission_flag secure; // TODO: not used?!
     users::users::user_security_t security;
-    security.set_user_key(user_key);
-    security.set_email(user_email, true);
+    security.set_user_info(user_info,true);
     //security.set_password("!"); -- leave the default
     //security.set_policy("users"); -- leave the default
     security.set_bypass_blacklist(bypass_blacklist);
@@ -1774,13 +1774,14 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
  */
 void sendmail::on_check_user_security(users::users::user_security_t & security)
 {
+    users::users::user_info_t const & user_info( security.get_user_info() );
     if(!security.get_secure().allowed()
-    || security.get_email().isEmpty())
+    || user_info.get_user_email().isEmpty())
     {
         return;
     }
 
-    users::users * users_plugin(users::users::instance());
+    //users::users * users_plugin(users::users::instance());
 
     // should we allow 2 or 3 attempts? it seems to me that with just
     // one attempt, if it returns a 5XX the email is plainly not valid.
@@ -1788,7 +1789,8 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
     {
         QString diagnostic;
         QString const bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(0));
-        if(users_plugin->load_user_parameter(security.get_email(), bounce_diagnostic_name, diagnostic))
+        //users::users::user_info_t const & user_info(security.get_user_info());
+        if(user_info.load_user_parameter(bounce_diagnostic_name, diagnostic))
         {
             if(diagnostic.startsWith("5."))
             {
@@ -1807,7 +1809,7 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
                 //
                 int64_t arrival_date_us(0);
                 QString const bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(0));
-                if(users_plugin->load_user_parameter(security.get_email(), bounce_arrival_date_name, arrival_date_us))
+                if(user_info.load_user_parameter(bounce_arrival_date_name, arrival_date_us))
                 {
                     // if we tried more than 4 months ago, we can try again
                     // (i.e. the user may have been created in the meantime)
@@ -1819,7 +1821,7 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
                 }
                 if(arrival_date_us != 0)
                 {
-                    security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
+                    security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_info.get_user_email()));
                     security.set_status(users::users::status_t::STATUS_BLOCKED);
                     return;
                 }
@@ -1828,8 +1830,8 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
     }
 
     QString level;
-    if(users_plugin->load_user_parameter(security.get_email(), get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
-    || users_plugin->load_user_parameter(security.get_email(), QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
+    if(user_info.load_user_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
+    || user_info.load_user_parameter(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
     {
         // If the user was put in the Angry List then we have no way
         // to send any emails... so the user cannot register or change
@@ -1848,7 +1850,7 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
         if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
         || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
         {
-            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
+            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_info.get_user_email()));
             security.set_status(users::users::status_t::STATUS_BLOCKED);
             return;
         }
@@ -2349,6 +2351,7 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
     users::users * users_plugin(users::users::instance());
     QString const user_email(page_path.mid(7));
     QString status_key;
+    users::users::user_info_t user_info(users_plugin->get_user_info_by_email(user_email));
     users::users::status_t const user_status(users_plugin->user_status_from_email(user_email, status_key));
     if(user_status != users::users::status_t::STATUS_VALID
     && user_status != users::users::status_t::STATUS_NEW
@@ -2466,40 +2469,40 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
         // notification
         {
             QString const previous_bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(i));
-            if(users_plugin->load_user_parameter(user_email, previous_bounce_notification_name, value))
+            if(user_info.load_user_parameter(previous_bounce_notification_name, value))
             {
                 QString const next_bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(i + 1));
-                users_plugin->save_user_parameter(user_email, next_bounce_notification_name, value);
+                user_info.save_user_parameter(next_bounce_notification_name, value);
             }
         }
 
         // diagnostic code
         {
             QString const previous_bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(i));
-            if(users_plugin->load_user_parameter(user_email, previous_bounce_diagnostic_name, value))
+            if(user_info.load_user_parameter(previous_bounce_diagnostic_name, value))
             {
                 QString const next_bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(i + 1));
-                users_plugin->save_user_parameter(user_email, next_bounce_diagnostic_name, value);
+                user_info.save_user_parameter(next_bounce_diagnostic_name, value);
             }
         }
 
         // arrival date
         {
             QString const previous_bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(i));
-            if(users_plugin->load_user_parameter(user_email, previous_bounce_arrival_date_name, value))
+            if(user_info.load_user_parameter(previous_bounce_arrival_date_name, value))
             {
                 QString const next_bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(i + 1));
-                users_plugin->save_user_parameter(user_email, next_bounce_arrival_date_name, value);
+                user_info.save_user_parameter(next_bounce_arrival_date_name, value);
             }
         }
 
         // email
         {
             QString const previous_bounce_email_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL)).arg(i));
-            if(users_plugin->load_user_parameter(user_email, previous_bounce_email_name, value))
+            if(user_info.load_user_parameter(previous_bounce_email_name, value))
             {
                 QString const next_bounce_email_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL)).arg(i + 1));
-                users_plugin->save_user_parameter(user_email, next_bounce_email_name, value);
+                user_info.save_user_parameter(next_bounce_email_name, value);
             }
         }
     }
@@ -2526,17 +2529,17 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
     // save the new status
     {
         QString const bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(0));
-        users_plugin->save_user_parameter(user_email, bounce_notification_name, notification);
+        user_info.save_user_parameter(bounce_notification_name, notification);
     }
 
     {
         QString const bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(0));
-        users_plugin->save_user_parameter(user_email, bounce_diagnostic_name, diagnostic_code);
+        user_info.save_user_parameter(bounce_diagnostic_name, diagnostic_code);
     }
 
     {
         QString const bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(0));
-        users_plugin->save_user_parameter(user_email, bounce_arrival_date_name, arrival_date_us);
+        user_info.save_user_parameter(bounce_arrival_date_name, arrival_date_us);
     }
 
     {
@@ -2545,7 +2548,7 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
         //
         QString const bounce_email_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL)).arg(0));
         // mid(7) to skip the "/email/" introducer, no need here
-        users_plugin->save_user_parameter(user_email, bounce_email_name, object_path.mid(7));
+        user_info.save_user_parameter(bounce_email_name, object_path.mid(7));
     }
 }
 
@@ -2745,7 +2748,7 @@ void sendmail::attach_user_email(email const & e)
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     users::users * users_plugin(users::users::instance());
     char const * email_key(users::get_name(users::name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
-    QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
 
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we are not about to add it ourselves, I
@@ -2764,8 +2767,10 @@ void sendmail::attach_user_email(email const & e)
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
     // Note: here the list of emails is always 1 item
-    QString const user_key(users_plugin->email_to_user_key(m.f_email_only.c_str()));
-    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key));
+    //QString const user_key(users_plugin->email_to_user_key(m.f_email_only.c_str()));
+    users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(m.f_email_only.c_str()));
+    //QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key));
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_info.get_user_key())); // TODO: should this come from user_info_t?
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
@@ -2831,7 +2836,8 @@ void sendmail::attach_user_email(email const & e)
     QtCassandra::QCassandraValue freq_value(row->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value());
     if(freq_value.nullValue())
     {
-        freq_value = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+        //freq_value = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+        freq_value = user_info.get_user_row()->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
         if(freq_value.nullValue())
         {
             // programmer defined a frequency parameter in the email?
@@ -2921,7 +2927,7 @@ void sendmail::attach_user_email(email const & e)
         else
         {
             // TODO: warn about invalid value
-            SNAP_LOG_WARNING("Unknown email frequency \"")(frequency)("\" for user \"")(user_key)("\", using daily.");
+            SNAP_LOG_WARNING("Unknown email frequency \"")(frequency)("\" for user \"")(user_info.get_user_key())("\", using daily.");
             ++t.tm_mday; // as DAILY
         }
         t.tm_isdst = 0; // mkgmtime() ignores DST... (i.e. UTC is not affected)
@@ -2960,7 +2966,7 @@ void sendmail::attach_user_email(email const & e)
         unix_date = time_limit;
     }
 
-    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(user_key));
+    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(user_info.get_user_key()));
 
     QtCassandra::QCassandraValue index_value;
     char const * index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));

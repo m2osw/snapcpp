@@ -1654,7 +1654,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
     QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
     bool const auto_save(on_save.isNull() ? true : on_save.attribute("auto-save", "yes") == "yes");
 
-    QString const draft_key(ipath.get_draft_key(users::users::instance()->get_user_identifier()));
+    QString const draft_key(ipath.get_draft_key(users::users::instance()->get_user_info().get_identifier()));
 
     // these pointers are used to load existing data
     // and save new data
@@ -4971,7 +4971,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         session_identification = QString("%1/%2").arg(session).arg(random);
     }
 
-    QString const draft_key(ipath.get_draft_key(users::users::instance()->get_user_identifier()));
+    QString const draft_key(ipath.get_draft_key(users::users::instance()->get_user_info().get_identifier()));
 
     // now go through all the widgets checking out their path, if the
     // path exists in doc then copy the data somewhere in the doc
@@ -5153,7 +5153,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     // check whether the user has edit rights
     content::permission_flag can_edit;
     path::path::instance()->access_allowed(
-            users::users::instance()->get_user_path(),
+            users::users::instance()->get_user_info().get_user_path(),
             ipath,
             "edit",
             permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),

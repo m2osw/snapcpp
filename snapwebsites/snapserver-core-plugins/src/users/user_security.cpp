@@ -31,19 +31,11 @@
 SNAP_PLUGIN_EXTENSION_START(users)
 
 
-void users::user_security_t::set_user_key(QString const & user_key)
+void users::user_security_t::set_user_info(user_info_t const & user_info, bool const allow_example_domain )
 {
-    f_user_key = user_key;
-}
-
-
-#if 0
-void users::user_security_t::set_email(QString const & email)
-{
-    f_email = email;
+    f_user_info            = user_info;
     f_allow_example_domain = allow_example_domain;
 }
-#endif
 
 
 void users::user_security_t::set_password(QString const & password)
@@ -64,6 +56,12 @@ void users::user_security_t::set_bypass_blacklist(bool const bypass)
 }
 
 
+void users::user_security_t::set_example(bool const example)
+{
+    f_example = example;
+}
+
+
 void users::user_security_t::set_status(status_t status)
 {
     // we can only change the status once from valid to something else
@@ -81,15 +79,9 @@ bool users::user_security_t::has_password() const
 }
 
 
-QString const & users::user_security_t::get_user_key() const
+users::user_info_t const & users::user_security_t::get_user_info() const
 {
-    return f_user_key;
-}
-
-
-QString const & users::user_security_t::get_email() const
-{
-    return f_email;
+    return f_user_info;
 }
 
 
@@ -108,6 +100,18 @@ QString const & users::user_security_t::get_policy() const
 bool users::user_security_t::get_bypass_blacklist() const
 {
     return f_bypass_blacklist;
+}
+
+
+bool users::user_security_t::get_allow_example_domain() const
+{
+    return f_allow_example_domain;
+}
+
+
+bool users::user_security_t::get_example() const
+{
+    return f_example;
 }
 
 

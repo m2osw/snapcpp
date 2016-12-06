@@ -237,7 +237,7 @@ void listener::on_process_post(QString const & uri_path)
         NOTREACHED();
     }
 
-    QString const & user_path(users_plugin->get_user_path());
+    QString const & user_path(users_plugin->get_user_info().get_user_path());
     QString const & login_status(permissions_plugin->get_login_status());
     for(int i(0); i < max_uri; ++i)
     {

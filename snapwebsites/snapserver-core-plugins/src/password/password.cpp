@@ -674,7 +674,7 @@ void password::on_check_user_security(users::users::user_security_t & security)
         return;
     }
 
-    QString const reason(check_password_against_policy(security.get_user_key(), security.get_password(), security.get_policy()));
+    QString const reason(check_password_against_policy(security.get_user_info(), security.get_password(), security.get_policy()));
     if(!reason.isEmpty())
     {
         SNAP_LOG_TRACE("password::on_check_user_security(): password was not accepted: ")(reason);
@@ -701,7 +701,7 @@ void password::on_check_user_security(users::users::user_security_t & security)
  * \return A string with some form of error message about the password
  *         weakness(es) or an empty string if the password is okay.
  */
-QString password::check_password_against_policy(QString const & user_key, QString const & user_password, QString const & policy)
+QString password::check_password_against_policy(users::users::user_info_t const & user_info, QString const & user_password, QString const & policy)
 {
     policy_t const pp(policy);
 
@@ -762,11 +762,11 @@ QString password::check_password_against_policy(QString const & user_key, QStrin
     // reusing an old password
     //
     if(pp.get_prevent_old_passwords()
-    && !user_key.isEmpty())
+    && user_info.is_valid())
     {
         users::users * users_plugin(users::users::instance());
-        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
+        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+        QtCassandra::QCassandraRow::pointer_t row(user_info.get_user_row());
 
         int64_t const minimum_count(pp.get_minimum_old_passwords());
         int64_t const maximum_age(pp.get_old_passwords_maximum_age());
@@ -1052,7 +1052,7 @@ QString password::create_password(QString const & policy)
 
     // make sure that it worked as expected
     //
-    QString const reason(check_password_against_policy(QString(), result, policy));
+    QString const reason(check_password_against_policy(users::users::user_info_t(), result, policy));
     if(!reason.isEmpty())
     {
         throw snap_logic_exception("somehow we generated a password that did not match the policy we were working against...");
@@ -1084,9 +1084,10 @@ void password::on_user_logged_in(users::users::user_logged_info_t & logged_info)
         int64_t const duration(pp.get_maximum_duration() * 86400LL * 1000000LL);
 
         // retrieve the last modification time of this user's password
-        users::users * users_plugin(users::users::instance());
-        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(logged_info.get_user_key()));
+        //users::users * users_plugin(users::users::instance());
+        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+        //QtCassandra::QCassandraRow::pointer_t row(users_table->row(logged_info.get_user_key()));
+        auto row(logged_info.get_user_info().get_user_row());
         int64_t const last_modified(row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED))->value().safeInt64Value(0, 0));
 
         // compare against current date

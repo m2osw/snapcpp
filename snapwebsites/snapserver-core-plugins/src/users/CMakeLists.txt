@@ -48,8 +48,9 @@ snap_validate_js( users.js )
 
 add_library(users SHARED
     users.cpp
-    user_security.cpp
+    user_info.cpp
     user_logged_info.cpp
+    user_security.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml

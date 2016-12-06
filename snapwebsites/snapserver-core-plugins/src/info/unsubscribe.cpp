@@ -19,6 +19,7 @@
 
 #include "../sendmail/sendmail.h"
 #include "../sessions/sessions.h"
+#include "../users/users.h"
 
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
@@ -110,13 +111,16 @@ void info::unsubscribe_on_finish_editor_form_processing(content::path_info_t & i
     int64_t const start_date(f_snap->get_start_date());
 
     // always save blacklist in the user parameter
+    //
     QString const user_email(f_snap->postenv(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_FIELD_EMAIL)));
+    users::users::user_info_t user_info(users_plugin->get_user_info_by_email(user_email));
     QString level(f_snap->postenv(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_FIELD_LEVEL)));
+    //
     if(level == sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
     || level == sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
     {
-        users_plugin->save_user_parameter(user_email, sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level);
-        users_plugin->save_user_parameter(user_email, sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
+        user_info.save_user_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level);
+        user_info.save_user_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
     }
     else if(level == sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST)
          || level == sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_LEVEL_PURPLELIST))
@@ -133,8 +137,8 @@ void info::unsubscribe_on_finish_editor_form_processing(content::path_info_t & i
         {
             level = sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST);
         }
-        users_plugin->save_user_parameter(user_email, QString("%1::%2").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level);
-        users_plugin->save_user_parameter(user_email, sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
+        user_info.save_user_parameter(QString("%1::%2").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level);
+        user_info.save_user_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
     }
 
     if(has_session)

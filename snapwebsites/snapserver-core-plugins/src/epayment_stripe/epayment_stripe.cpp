@@ -1270,7 +1270,7 @@ QString epayment_stripe::get_stripe_key(bool const debug)
             //
             content::permission_flag settings_permissions;
             path::path::instance()->access_allowed(
-                            users_plugin->get_user_path(),
+                            users_plugin->get_user_info().get_user_path(),
                             settings_ipath,
                             "administer",
                             permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
@@ -2730,9 +2730,10 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
     // TODO: add a flag in the form so users may opt out of being registered
     //       on Stripe (in case your website does not offer subscriptions.)
     //
-    QString const user_email(users_plugin->get_user_key());
+    auto const & user_info(users_plugin->get_user_info());
+    QString const user_email(user_info.get_user_email());
     content::path_info_t user_ipath;
-    user_ipath.set_path(users_plugin->get_user_path(user_email));
+    user_ipath.set_path(user_info.get_user_path());
     QString const customer_key(user_ipath.get_key());
 
     bool create_customer_account(false);

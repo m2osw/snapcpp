@@ -268,22 +268,21 @@ bool timetracker::on_path_execute(content::path_info_t & ipath)
         if(f_snap->postenv_exists("operation"))
         {
             server_access::server_access * server_access_plugin(server_access::server_access::instance());
+            users::users * users_plugin(users::users::instance());
+            users::users::user_info_t user_info(users_plugin->get_user_info());
+
 
             QString const operation(f_snap->postenv("operation"));
             if(operation == "add-self")
             {
-                users::users * users_plugin(users::users::instance());
-
-                int64_t const identifier(users_plugin->get_user_identifier());
+                int64_t const identifier(user_info.get_identifier());
                 add_calendar(identifier);
                 server_access_plugin->create_ajax_result(ipath, true);
                 server_access_plugin->ajax_redirect(QString("/%1").arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)));
             }
             else if(operation == "calendar")
             {
-                users::users * users_plugin(users::users::instance());
-
-                int64_t const identifier(users_plugin->get_user_identifier());
+                int64_t const identifier(user_info.get_identifier());
                 content::path_info_t calendar_ipath;
                 ipath.get_child(calendar_ipath, QString("%1").arg(identifier));
                 if(f_snap->postenv_exists("year")
@@ -665,6 +664,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
     list::list * list_plugin(list::list::instance());
 
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    users::users::user_info_t user_info(users_plugin->get_user_info());
 
     QString result;
 
@@ -685,7 +685,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
         // create his own timetracker page but that is not mandatory
         //
         content::path_info_t calendar_ipath;
-        ipath.get_child(calendar_ipath, QString("%1").arg(users_plugin->get_user_identifier()));
+        ipath.get_child(calendar_ipath, QString("%1").arg(user_info.get_identifier()));
         calendar_ipath.set_parameter("date", ipath.get_parameter("date"));
         if(content_table->exists(calendar_ipath.get_key())
         && content_table->row(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
@@ -733,7 +733,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
         // users can do.)
         //
         content::path_info_t calendar_ipath;
-        ipath.get_child(calendar_ipath, QString("%1").arg(users_plugin->get_user_identifier()));
+        ipath.get_child(calendar_ipath, QString("%1").arg(user_info.get_identifier()));
         calendar_ipath.set_parameter("date", ipath.get_parameter("date"));
         if(content_table->exists(calendar_ipath.get_key())
         && content_table->row(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))

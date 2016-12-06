@@ -217,7 +217,8 @@ void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
     NOTUSED(xml);
 
     users::users * users_plugin(users::users::instance());
-    QString const user_path(users_plugin->get_user_path());
+    users::users::user_info_t user_info( users_plugin->get_user_info() );
+    QString const user_path(user_info.get_user_path());
     if(token.is_token("versions::versions")
     && !user_path.isEmpty())
     {

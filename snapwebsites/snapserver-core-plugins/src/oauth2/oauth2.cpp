@@ -401,6 +401,9 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     if(identifier != identifier_secret[0]
     || secret     != identifier_secret[1])
     {
+        users::users::user_info_t oauth2_user_info( users_plugin->get_user_info_by_name(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS)) );
+
+#if 0
         // check whether it could be a user instead of the global OAuth2
         QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
 
@@ -409,19 +412,25 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
         //      important when we call the invalid_password() signal below)
         //
         QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS)));
+#else
+        auto user_row( oauth2_user_info.get_user_row() );
+#endif
         bool invalid(true);
         int8_t const user_enable(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_USER_ENABLE))->value().safeSignedCharValue());
         if(user_enable)
         {
             // in this case we need to determine the secret from the user
             // account which is identifier by "identifier"
-            if(users_table->exists(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))
+            //if(users_table->exists(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))
+            if(oauth2_user_info.exists()
             && user_row->exists(identifier_secret[0]))
             {
                 // change the email to that user's email
                 email = user_row->cell(identifier_secret[0])->value().stringValue();
-                QString const user_key(users_plugin->email_to_user_key(email));
-                if(users_table->exists(user_key))
+                //QString const user_key(users_plugin->email_to_user_key(email));
+                //if(users_table->exists(user_key))
+                users::users::user_info_t user_info( users_plugin->get_user_info_by_email(email) );
+                if(user_info.exists())
                 {
                     // make sure user is currently valid otherwise it would
                     // be a way for a user to bypass being blocked!

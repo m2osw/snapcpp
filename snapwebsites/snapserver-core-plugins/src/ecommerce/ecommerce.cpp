@@ -1599,7 +1599,7 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t &
     // verify that the user can access the product
     users::users *users_plugin(users::users::instance());
     QString const& login_status(permissions::permissions::instance()->get_login_status());
-    QString const& user_path(users_plugin->get_user_path());
+    QString const& user_path(users_plugin->get_user_info().get_user_path());
     content::permission_flag allowed;
     path::path::instance()->access_allowed(user_path, product_ipath, "view", login_status, allowed);
     if(!allowed.allowed())

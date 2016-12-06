@@ -130,6 +130,6 @@ private:
     bool                    f_user_changing_password_key_clear = true;
 };
 
-} // namespace users
+} // namespace users_ui
 } // namespace snap
 // vim: ts=4 sw=4 et
