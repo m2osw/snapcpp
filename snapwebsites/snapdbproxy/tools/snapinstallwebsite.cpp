@@ -118,7 +118,7 @@ int main(int argc, char * argv[])
     {
         advgetopt::getopt opt(argc, argv, g_snapinstallwebsite_options, g_configuration_files, "SNAPINSTALLWEBSITE_OPTIONS");
 
-        snap::logging::set_progname(argv[0]);
+        snap::logging::set_progname(opt.get_program_name());
         snap::logging::configure_console();
 
         if(opt.is_defined("help"))
