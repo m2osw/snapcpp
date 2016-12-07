@@ -1,4 +1,8 @@
+<<<<<<< 83995fa4b76565932be30b696b85b0af4abb3315
 snapserver-core-plugins (1.0.31.1~xenial) xenial; urgency=high
+=======
+snapserver-core-plugins (1.0.30.9~xenial) xenial; urgency=high
+>>>>>>> Nightly Build.
 
   * Nightly build.
 
