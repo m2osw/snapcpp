@@ -1,8 +1,9 @@
 snapfirewall (1.1.22.10~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-158: Added our local IPs in our OUTPUT rules. This means if someone
+    sends us a command from an invalid IP, the reply will not be sent.
 
- -- Build Server <build@m2osw.com>  Sat, 26 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 06 Dec 2016 12:07:47 -0800
 
 snapfirewall (1.1.22.0~xenial) xenial; urgency=high
 
