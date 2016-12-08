@@ -2723,24 +2723,19 @@ void permissions::on_backend_action(QString const & action)
     {
         // make specified user an administrator or root user
         users::users * users_plugin(users::users::instance());
-        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
         QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
-        //QString const user_key(users_plugin->email_to_user_key(email));
         users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(email));
-        //if(!users_table->exists(user_key))
         if(!user_info.exists())
         {
             SNAP_LOG_FATAL("User \"")(email)("\" not found. Cannot make user the root or administrator user.");
             exit(1);
         }
-        //QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(user_key));
-        QtCassandra::QCassandraRow::pointer_t user_row(user_info.get_user_row());
-        if(!user_row->exists(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER)))
+        if(!user_info.value_exists(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER)))
         {
             SNAP_LOG_FATAL("error: user \"")(email)("\" was not given an identifier.");
             exit(1);
         }
-        QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue identifier_value(user_info.get_value(users::name_t::SNAP_NAME_USERS_IDENTIFIER));
         if(identifier_value.nullValue() || identifier_value.size() != sizeof(int64_t))
         {
             SNAP_LOG_FATAL("error: user \"")(email)("\" identifier could not be read.");

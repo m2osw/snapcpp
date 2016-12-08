@@ -43,12 +43,109 @@
 SNAP_PLUGIN_EXTENSION_START(users)
 
 
-users::user_info_t::user_info_t( snap_child * sc )
-    : f_snap(sc)
+users::user_info_t::user_info_t()
 {
 }
 
-#if 0
+
+users::user_info_t::user_info_t( snap_child * sc, QString const & val )
+    : f_snap(sc)
+{
+    identifier_t const id( get_user_id_by_path( get_snap(), val ) );
+    if( id == -1 )
+    {
+        f_user_email = val;
+        email_to_user_key();
+    }
+    else
+    {
+        set_user_key_by_id( id );
+    }
+}
+
+
+users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
+    : f_snap(sc)
+{
+    f_user_email = f_user_key = get_name(name);
+}
+
+
+users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
+    : f_snap(sc)
+{
+    set_user_key_by_id( id );
+}
+
+
+users::identifier_t users::user_info_t::get_user_id_by_path( snap_child* snap, QString const& user_path )
+{
+    QString const site_key(snap->get_site_key_with_slash());
+    int pos(0);
+    if(user_path.startsWith(site_key))
+    {
+        // "remove" the site key, including the slash
+        pos = site_key.length();
+    }
+    if(user_path.mid(pos, 5) == "user/")
+    {
+        QString const identifier_string(user_path.mid(pos + 5));
+        bool ok(false);
+        int64_t identifier(identifier_string.toLongLong(&ok, 10));
+        if(ok)
+        {
+            return identifier;
+        }
+    }
+
+    return -1;
+}
+
+
+void users::user_info_t::set_user_key_by_id( identifier_t id )
+{
+    auto users_table( get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)) );
+    auto row        ( users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))  );
+
+    QByteArray key;
+    QtCassandra::appendInt64Value(key, id);
+    if(row->exists(key))
+    {
+        // found the user, retrieve the current email
+        f_user_key   = row->cell(key)->value().stringValue();
+        f_user_email = users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->value().stringValue();
+        if( f_user_email.isEmpty() )
+        {
+            f_user_email = f_user_key;
+        }
+    }
+}
+
+
+/** \brief Get the current user identifer.
+ *
+ * This function gets the user identifier. If we do not have the user key
+ * (his email address) then the function returns 0 (i.e. anonymous user).
+ *
+ * \warning
+ * The identifier returned may NOT be from a logged in user. We may know the
+ * user key (his email address) and yet not have a logged in user. Whether
+ * the user is logged in needs to be checked with one of the
+ * user_is_logged_in() or user_has_administrative_rights() functions.
+ *
+ * \return The identifer of the current user.
+ */
+users::identifier_t users::user_info_t::get_identifier() const
+{
+    QtCassandra::QCassandraValue const value(get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
+    if(!value.nullValue())
+    {
+        return value.int64Value();
+    }
+    return 0;
+}
+
+
 /** \brief Save the user identifier.
  *
  * This function is used to save the user identifier in this object.
@@ -61,36 +158,70 @@ users::user_info_t::user_info_t( snap_child * sc )
  */
 void users::user_info_t::set_identifier( identifier_t const & v )
 {
-    f_user_id = v;
+    set_value( name_t::SNAP_NAME_USERS_IDENTIFIER, v );
+
+    // TODO: when we make this the new key, we need to set the row column key as well.
 }
-#endif
 
 
-void users::user_info_t::set_user_email( QString  const & v )
+bool users::user_info_t::value_exists( QString const & v ) const
 {
-    f_user_email = v;
-    email_to_user_key();
+    return get_user_row()->exists(v);
 }
 
 
-void users::user_info_t::set_user_name( name_t v )
+bool users::user_info_t::value_exists( name_t  const & v ) const
 {
-    f_user_email = f_user_key = get_name(v);
+    return value_exists(get_name(v));
 }
 
 
-void users::user_info_t::set_user_name( QString const & v )
+users::user_info_t::cell_t users::user_info_t::get_cell( QString const & name ) const
 {
-    f_user_email = f_user_key = v;
+    return get_user_row()->cell(name);
 }
 
 
-#if 0
-void users::user_info_t::set_user_path( QString  const & v )
+users::user_info_t::cell_t users::user_info_t::get_cell( name_t const & name ) const
 {
-    f_user_path = v;
+    return get_cell(get_name(name));
 }
-#endif
+
+
+users::user_info_t::value_t users::user_info_t::get_value( QString const & name ) const
+{
+    return get_cell(name)->value();
+}
+
+
+users::user_info_t::value_t users::user_info_t::get_value( name_t const & name ) const
+{
+    return get_value(get_name(name));
+}
+
+
+void users::user_info_t::set_value( QString const & name, value_t const & value )
+{
+    get_cell(name)->setValue(value);
+}
+
+
+void users::user_info_t::set_value( name_t const & name, value_t const & value )
+{
+    set_value( get_name(name), value );
+}
+
+
+void users::user_info_t::delete_value( QString const & name )
+{
+    get_user_row()->dropCell(name);
+}
+
+
+void users::user_info_t::delete_value( name_t const & name )
+{
+    delete_value( get_name(name) );
+}
 
 
 void users::user_info_t::set_status( status_t const & v )
@@ -105,39 +236,6 @@ void users::user_info_t::set_is_valid( bool v )
 }
 
 
-#if 0
-/** \brief Get the current user identifer.
- *
- * This function gets the user identifier. If we do not have the user key
- * (his email address) then the function returns 0 (i.e. anonymous user).
- *
- * \warning
- * The identifier returned may NOT be from a logged in user. We may know the
- * user key (his email address) and yet not have a logged in user. Whether
- * the user is logged in needs to be checked with one of the
- * user_is_logged_in() or user_has_administrative_rights() functions.
- *
- * \return The identifer of the current user.
- */
-users::identifier_t   const & users::user_info_t::get_identifier() const
-{
-    if(!f_user_key.isEmpty())
-    {
-        QtCassandra::QCassandraTable::pointer_t users_table(const_cast<users *>(this)->get_users_table());
-        if(users_table->exists(f_user_key))
-        {
-            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
-            if(!value.nullValue())
-            {
-                return value.int64Value();
-            }
-        }
-    }
-    return 0;
-}
-#endif
-
-
 QString const & users::user_info_t::get_user_key() const
 {
     return f_user_key;
@@ -150,27 +248,20 @@ QString const & users::user_info_t::get_user_email() const
 }
 
 
-#if 0
 /** \brief Get the path to a user from an email.
  *
  * This function returns the path of the user corresponding to the specified
- * email. The function returns an empty string if the user is not found.
+ * email. The function returns an the ANONYMOUS path if the user is not found.
  *
  * \param[in] email  The email of the user to search the path for.
  *
  * \return The path to the user.
  */
-QString const & users::user_info_t::get_user_path() const
+QString users::user_info_t::get_user_path() const
 {
-    if( f_user_key.isEmpty() )
-    {
-        throw users_exception("You must set the user email first before calling users::user_info_t::get_user_path()!");
-    }
-
     if( exists() )
     {
-        QtCassandra::QCassandraRow::pointer_t row(get_user_row());
-        QtCassandra::QCassandraValue const value(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
+        auto const value( get_value( name_t::SNAP_NAME_USERS_IDENTIFIER ) );
         if(!value.nullValue())
         {
             int64_t const identifier(value.int64Value());
@@ -178,9 +269,10 @@ QString const & users::user_info_t::get_user_path() const
         }
     }
 
+    // TODO: should this be an empty string?
+    //
     return get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH);
 }
-#endif
 
 
 users::status_t users::user_info_t::get_status() const
@@ -191,20 +283,19 @@ users::status_t users::user_info_t::get_status() const
 
 bool users::user_info_t::is_valid() const
 {
-    return f_valid;
+    return f_snap && f_valid;
 }
 
 
 bool users::user_info_t::exists() const
 {
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    return users_table->exists(f_user_key);
+    return users_table->exists(get_user_key());
 }
 
 
 void users::user_info_t::reset()
 {
-    f_valid      = false;
     f_user_key   = QString();
     f_user_email = QString();
     //f_user_path  = QString();
@@ -319,37 +410,32 @@ void users::user_info_t::email_to_user_key()
  *
  * \sa load_user_parameter()
  */
-void users::user_info_t::save_user_parameter(QString const & field_name, QtCassandra::QCassandraValue const & value) const
+void users::user_info_t::save_user_parameter(QString const & field_name, QtCassandra::QCassandraValue const & value)
 {
     int64_t const start_date(get_snap()->get_start_date());
 
-    //QString const user_key(email_to_user_key(email));
-
-    //auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    QtCassandra::QCassandraRow::pointer_t row(get_user_row()); //users_table->row(user_key));
-
     // mark when we created the user if that is not yet defined
-    if(!row->exists(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME)))
+    if( !value_exists(name_t::SNAP_NAME_USERS_CREATED_TIME) )
     {
-        row->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->setValue(start_date);
+        set_value( name_t::SNAP_NAME_USERS_CREATED_TIME, start_date );
     }
 
     // save the external plugin parameter
-    row->cell(field_name)->setValue(value);
+    set_value( field_name, value );
 
     // mark the user as modified
-    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_date);
+    set_value( name_t::SNAP_NAME_USERS_MODIFIED, start_date );
 }
 
 
-void users::user_info_t::save_user_parameter(QString const & field_name, QString const & value) const
+void users::user_info_t::save_user_parameter(QString const & field_name, QString const & value)
 {
     QtCassandra::QCassandraValue v(value);
     save_user_parameter(field_name, v);
 }
 
 
-void users::user_info_t::save_user_parameter(QString const & field_name, int64_t const & value) const
+void users::user_info_t::save_user_parameter(QString const & field_name, int64_t const & value)
 {
     QtCassandra::QCassandraValue v(value);
     save_user_parameter(field_name, v);
@@ -379,32 +465,20 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, QtCassa
     // reset the input value by default
     value.setNullValue();
 
-    //QString const user_key(email_to_user_key(email));
-
     // make sure that row (a.k.a. user) exists before accessing it
     if( !exists() )
     {
         return false;
     }
 
-#if 0
-    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(!users_table->exists(user_key))
-    {
-        return false;
-    }
-#endif
-    //QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(user_key));
-    QtCassandra::QCassandraRow::pointer_t user_row(get_user_row());
-
     // row exists, make sure the user field exists
-    if(!user_row->exists(field_name))
+    if( !value_exists(field_name) )
     {
         return false;
     }
 
     // retrieve that parameter
-    value = user_row->cell(field_name)->value();
+    value = get_value(field_name);
 
     return true;
 }
@@ -436,8 +510,14 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 
 QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
 {
+    if( !exists() )
+    {
+        // TODO: change to id!
+        throw users_exception(QString("User key [%1] non-existent!").arg(get_user_key()));
+    }
+
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    return users_table->row(f_user_key);    // TODO: change to uint64_t id
+    return users_table->row(get_user_key());    // TODO: change to uint64_t id
 }
 
 

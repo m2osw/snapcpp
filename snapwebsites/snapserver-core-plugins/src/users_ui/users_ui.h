@@ -123,7 +123,7 @@ private:
     void                    prepare_replace_password_form(QDomElement & body);
     void                    verify_email(QString const & email);
     void                    verify_password(content::path_info_t & cpath);
-    void                    forgot_password_email(QString const & email, QString const & user_key);
+    void                    forgot_password_email(users::users::user_info_t const & user_info);
 
     snap_child *            f_snap = nullptr;
     QString                 f_user_changing_password_key;   // not quite logged in user

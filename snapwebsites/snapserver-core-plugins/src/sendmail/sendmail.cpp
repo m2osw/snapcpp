@@ -2837,7 +2837,7 @@ void sendmail::attach_user_email(email const & e)
     if(freq_value.nullValue())
     {
         //freq_value = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
-        freq_value = user_info.get_user_row()->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+        freq_value = user_info.get_value(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY));
         if(freq_value.nullValue())
         {
             // programmer defined a frequency parameter in the email?
@@ -3736,7 +3736,9 @@ void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
     {
         QString identifier;
         QDomXPath dom_xpath;
-        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL) + "\"]/@value");
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value")
+                           .arg(users::get_name(users::name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL)
+                           ));
         QDomXPath::node_vector_t result(dom_xpath.apply(xml));
         if(result.size() > 0 && result[0].isAttr())
         {
@@ -3760,7 +3762,8 @@ void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
         //
         QString user_email;
         QDomXPath dom_xpath;
-        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION)));
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value")
+                           .arg(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION)));
         QDomXPath::node_vector_t result(dom_xpath.apply(xml));
         if(result.size() > 0 && result[0].isAttr())
         {
@@ -3793,7 +3796,8 @@ void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
     {
         QString identifier;
         QDomXPath dom_xpath;
-        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(users::get_name(users::name_t::SNAP_NAME_USERS_VERIFY_EMAIL)));
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value")
+                           .arg(users::get_name(users::name_t::SNAP_NAME_USERS_VERIFY_EMAIL)));
         QDomXPath::node_vector_t result(dom_xpath.apply(xml));
         if(result.size() > 0 && result[0].isAttr())
         {

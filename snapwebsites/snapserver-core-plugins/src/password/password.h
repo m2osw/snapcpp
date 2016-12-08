@@ -190,11 +190,11 @@ public:
     virtual void        bootstrap(snap_child * snap);
 
     // users signals
-    void                on_check_user_security(users::users::user_security_t & security);
-    void                on_user_logged_in(users::users::user_logged_info_t & logged_info);
-    void                on_save_password(QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & password_policy);
-    void                on_invalid_password(QtCassandra::QCassandraRow::pointer_t row, QString const & policy);
-    void                on_blocked_user(QtCassandra::QCassandraRow::pointer_t row, QString const & policy);
+    void on_check_user_security ( users::users::user_security_t    & security    );
+    void on_user_logged_in      ( users::users::user_logged_info_t & logged_info );
+    void on_save_password       ( users::users::user_info_t        user_info, QString const & user_password, QString const & password_policy );
+    void on_invalid_password    ( users::users::user_info_t        user_info, QString const & policy );
+    void on_blocked_user        ( users::users::user_info_t        user_info, QString const & policy );
 
     // path::path_execute implementation
     bool                on_path_execute(content::path_info_t & ipath);
@@ -210,7 +210,7 @@ public:
     void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
-    QString             check_password_against_policy(users::users::user_info_t const & user_info, QString const & user_password, QString const & policy);
+    QString             check_password_against_policy(users::users::user_info_t user_info, QString const & user_password, QString const & policy);
     QString             create_password(QString const & policy = "users");
 
 private:

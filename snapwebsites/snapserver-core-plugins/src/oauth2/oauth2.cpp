@@ -402,19 +402,11 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     || secret     != identifier_secret[1])
     {
         users::users::user_info_t oauth2_user_info( users_plugin->get_user_info_by_name(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS)) );
-
-#if 0
-        // check whether it could be a user instead of the global OAuth2
-        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-
-        // XXX: should the user_row be the '*identifier*' row or the one
+        //
+        // XXX: should the oauth2_user_info be the '*identifier*' row or the one
         //      linked by the specified 'email'? (it is particularly
         //      important when we call the invalid_password() signal below)
         //
-        QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS)));
-#else
-        auto user_row( oauth2_user_info.get_user_row() );
-#endif
         bool invalid(true);
         int8_t const user_enable(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_USER_ENABLE))->value().safeSignedCharValue());
         if(user_enable)
@@ -423,10 +415,10 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
             // account which is identifier by "identifier"
             //if(users_table->exists(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))
             if(oauth2_user_info.exists()
-            && user_row->exists(identifier_secret[0]))
+            && oauth2_user_info.value_exists(identifier_secret[0]))
             {
                 // change the email to that user's email
-                email = user_row->cell(identifier_secret[0])->value().stringValue();
+                email = oauth2_user_info.get_value(identifier_secret[0]).stringValue(); //user_row->cell(identifier_secret[0])->value().stringValue();
                 //QString const user_key(users_plugin->email_to_user_key(email));
                 //if(users_table->exists(user_key))
                 users::users::user_info_t user_info( users_plugin->get_user_info_by_email(email) );
@@ -439,8 +431,10 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
                     if(status == users::users::status_t::STATUS_VALID
                     || status == users::users::status_t::STATUS_PASSWORD)
                     {
-                        identifier = user_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
-                        secret = user_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
+                        //identifier = user_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
+                        //secret = user_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
+                        identifier = oauth2_user_info.get_value( get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER)).stringValue();
+                        secret     = oauth2_user_info.get_value( get_name(name_t::SNAP_NAME_OAUTH2_SECRET    )).stringValue();
                         invalid = identifier != identifier_secret[0]
                                || secret     != identifier_secret[1];
                     }
@@ -457,7 +451,7 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
             //       for the API... which I think is better than not blocking anyone
             //       ever when a hacker is attempting to break our systems.)
             //
-            users_plugin->invalid_password(user_row, "oauth2");
+            users_plugin->invalid_password(oauth2_user_info, "oauth2");
             require_oauth2_login();
             die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                         oauth2_error_t::OAUTH2_INVALID_REQUEST,

@@ -23,6 +23,13 @@
 #include "../path/path.h"
 
 
+#include <QByteArray>
+#include <QString>
+
+#include <QtCassandra/QCassandraRow.h>
+#include <QtCassandra/QCassandraTable.h>
+#include <QtCassandra/QCassandraValue.h>
+
 namespace snap
 {
 namespace users
@@ -169,7 +176,7 @@ public:
 
     // the login status, returned by load_login_session(), is a set of flags
     typedef int         login_status_t;
-    typedef uint64_t    identifier_t;
+    typedef int64_t     identifier_t;
 
     static login_status_t const     LOGIN_STATUS_OK                     = 0x0000;
     static login_status_t const     LOGIN_STATUS_INVALID_RANDOM_NUMBER  = 0x0001;
@@ -210,51 +217,65 @@ public:
     class user_info_t
     {
     public:
-        user_info_t( snap_child * sc = nullptr );
+        typedef QtCassandra::QCassandraCell::pointer_t  cell_t;
+        typedef QtCassandra::QCassandraValue            value_t;
 
-        //void                set_identifier (identifier_t const & identifier);
+        user_info_t();
+        user_info_t( snap_child * sc, QString      const & email );
+        user_info_t( snap_child * sc, name_t       const & name  );
+        user_info_t( snap_child * sc, identifier_t const & id    );
+
+        void                set_identifier (identifier_t const & identifier);
         identifier_t        get_identifier () const;
 
-        void                set_user_email ( QString const & );
-        void                set_user_email ( identifier_t identifier );
-        void                set_user_name  ( name_t          );
-        void                set_user_name  ( QString const & );
         QString const &     get_user_email () const;
         QString const &     get_user_key   () const;
 
         //void                set_user_path  ( QString  const & );
-        QString const &     get_user_path  () const;
+        QString             get_user_path  () const;
 
-        void                set_status     ( status_t const & );
-        status_t		    get_status     () const;
+        bool                value_exists ( QString const & v ) const;
+        bool                value_exists ( name_t  const & v ) const;
+        cell_t              get_cell     ( QString const & name ) const;
+        cell_t              get_cell     ( name_t  const & name ) const;
+        value_t             get_value    ( QString const & name ) const;
+        value_t             get_value    ( name_t  const & name ) const;
+        void                set_value    ( QString const & name, value_t const & value );
+        void                set_value    ( name_t  const & name, value_t const & value );
+        void                delete_value ( QString const & name );
+        void                delete_value ( name_t  const & name );
 
-        void                set_is_valid   ( bool );
-        bool                is_valid       () const;
+        void                set_status   ( status_t const & v );
+        status_t		    get_status   () const;
+
+        void                set_is_valid ( bool v );
+        bool                is_valid     () const;
 
         bool                exists() const;
         void                reset();
 
-        void save_user_parameter( QString const & field_name, QtCassandra::QCassandraValue const &  value ) const;
-        void save_user_parameter( QString const & field_name, QString                      const &  value ) const;
-        void save_user_parameter( QString const & field_name, int64_t                      const &  value ) const;
+        void save_user_parameter( QString const & field_name, QtCassandra::QCassandraValue const &  value );
+        void save_user_parameter( QString const & field_name, QString                      const &  value );
+        void save_user_parameter( QString const & field_name, int64_t                      const &  value );
         //
         bool load_user_parameter( QString const & field_name, QtCassandra::QCassandraValue &        value ) const;
         bool load_user_parameter( QString const & field_name, QString                      &        value ) const;
         bool load_user_parameter( QString const & field_name, int64_t                      &        value ) const;
 
-        QtCassandra::QCassandraRow::pointer_t get_user_row() const;
+        static identifier_t    get_user_id_by_path( snap_child* snap, QString const& user_path );
 
     private:
-        snap_child * f_snap        = nullptr;
-        //identifier_t        f_user_id;
-        QString      f_user_key;
-        QString	     f_user_email;
-        //QString      f_user_path;
-        status_t     f_status      = status_t::STATUS_UNDEFINED;
-        bool         f_valid       = false;
+        snap_child *    f_snap        = nullptr;
+        QString         f_user_key;     // TODO: change to id
+        QString	        f_user_email;
+        status_t        f_status      = status_t::STATUS_UNDEFINED;
+        bool            f_valid       = false;
 
-        void         email_to_user_key();
-        snap_child*  get_snap() const;
+        void            email_to_user_key();
+        snap_child*     get_snap() const;
+
+        QtCassandra::QCassandraRow::pointer_t get_user_row() const;
+        void            set_user_key_by_id( identifier_t id );
     };
 
     class user_security_t
@@ -379,14 +400,15 @@ public:
     // links::links_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
-    SNAP_SIGNAL_WITH_MODE(check_user_security, (user_security_t & security), (security), START_AND_DONE);
-    SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(user_verified, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t & logged_info), (logged_info), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(logged_in_user_ready, (), (), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(save_password, (QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & policy), (row, user_password, policy), DONE);
-    SNAP_SIGNAL_WITH_MODE(invalid_password, (QtCassandra::QCassandraRow::pointer_t row, QString const & policy), (row, policy), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(blocked_user, (QtCassandra::QCassandraRow::pointer_t row, QString const & policy), (row, policy), NEITHER);
+    SNAP_SIGNAL_WITH_MODE( check_user_security,  (user_security_t & security),                       (security),          START_AND_DONE );
+    SNAP_SIGNAL_WITH_MODE( user_registered,      (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER        );
+    SNAP_SIGNAL_WITH_MODE( user_verified,        (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER        );
+    SNAP_SIGNAL_WITH_MODE( user_logged_in,       (user_logged_info_t & logged_info),                 (logged_info),       NEITHER        );
+    SNAP_SIGNAL_WITH_MODE( logged_in_user_ready, (),                                                 (),                  NEITHER        );
+    //SNAP_SIGNAL_WITH_MODE(save_password, (QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & policy), (row, user_password, policy), DONE);
+    SNAP_SIGNAL_WITH_MODE( save_password,        (user_info_t user_info, QString const & user_password, QString const & policy), (user_info, user_password, policy), DONE    );
+    SNAP_SIGNAL_WITH_MODE( invalid_password,     (user_info_t user_info, QString const & policy),                                (user_info, policy),                NEITHER );
+    SNAP_SIGNAL_WITH_MODE( blocked_user,         (user_info_t user_info, QString const & policy),                                (user_info, policy),                NEITHER );
 
     int64_t                 get_total_session_duration();
     int64_t                 get_user_session_duration();
@@ -421,15 +443,15 @@ public:
 
     QString                 get_user_email(QString const & user_path) const;
     QString                 get_user_email(identifier_t const identifier) const;
-    identifier_t            get_user_identifier(QString const & user_path) const;
+    //identifier_t            get_user_identifier(QString const & user_path) const;
     QString                 get_user_path(QString const & email) const;
 
     user_info_t const&      get_user_info() const;
-    //user_info_t				get_user_info_by_id    ( QString const & id    );
-    user_info_t				get_user_info_by_email ( QString const & email );
+    user_info_t				get_user_info_by_id    ( identifier_t const & id );
+    user_info_t				get_user_info_by_email ( QString const & email   );
     //user_info_t				get_user_info_by_path  ( QString const & path  );
-    user_info_t             get_user_info_by_name  ( name_t  const & name  );
-    user_info_t             get_user_info_by_name  ( QString const & name  );
+    user_info_t             get_user_info_by_name  ( name_t  const & name    );
+    user_info_t             get_user_info_by_name  ( QString const & name    );
 
 private:
     void                    content_update(int64_t variables_timestamp);
