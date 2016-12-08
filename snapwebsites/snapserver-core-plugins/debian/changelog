@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.30.8~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.31.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-254: Make sure that if the boolean value is not defined, ignore it.
 
- -- Build Server <build@m2osw.com>  Tue, 29 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  7 Dec 2016 22:32:47 -0800
 
 snapserver-core-plugins (1.0.30.0~xenial) xenial; urgency=high
 
