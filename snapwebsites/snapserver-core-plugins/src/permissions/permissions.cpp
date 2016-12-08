@@ -2182,7 +2182,7 @@ void permissions::on_check_for_redirect(content::path_info_t & ipath)
         // if so then we want to check whether we have to switch or not
         //
         QtCassandra::QCassandraValue const secure_site(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_SECURE_SITE)));
-        signed char secure_mode(secure_site.signedCharValue());
+        signed char const secure_mode(secure_site.safeSignedCharValue());
         if(secure_mode != secure_mode_t::SECURE_MODE_NO)
         {
             // connection is not currently secure,

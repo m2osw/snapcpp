@@ -70,7 +70,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <!--param name="permissions::dynamic" type="int8" revision="global">1</param-->
     <!-- although the feeds themselves are always changing this page not so much -->
-    <param name="sitemapxml::frequency">0.1</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>

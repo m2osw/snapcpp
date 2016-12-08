@@ -159,8 +159,8 @@
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p udp -m udp -s @PUBLIC_IP@ -j ACCEPT
 -A OUTPUT -o @PUBLIC_INTERFACE@ -p icmp -m icmp --icmp-type any -s @PUBLIC_IP@ -j ACCEPT
 
--A OUTPUT -o @PRIVATE_INTERFACE@ -p tcp -m tcp -j ACCEPT
--A OUTPUT -o @PRIVATE_INTERFACE@ -p udp -m udp -j ACCEPT
+-A OUTPUT -o @PRIVATE_INTERFACE@ -p tcp -m tcp -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
+-A OUTPUT -o @PRIVATE_INTERFACE@ -p udp -m udp -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
 -A OUTPUT -o @PRIVATE_INTERFACE@ -p icmp -m icmp --icmp-type any -j ACCEPT
 
 # If the public and private interfaces are the same, then we accept

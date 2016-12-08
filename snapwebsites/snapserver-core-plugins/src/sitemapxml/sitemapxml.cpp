@@ -88,17 +88,11 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_SITEMAPXML_FILENAME_NUMBER_XML:
         return "sitemap%1.xml";
 
-    case name_t::SNAP_NAME_SITEMAPXML_FREQUENCY:
-        return "sitemapxml::frequency";
-
     case name_t::SNAP_NAME_SITEMAPXML_INCLUDE:
         return "sitemapxml::include";
 
     case name_t::SNAP_NAME_SITEMAPXML_NAMESPACE:
         return "sitemapxml";
-
-    case name_t::SNAP_NAME_SITEMAPXML_PRIORITY: // float
-        return "sitemapxml::priority";
 
     case name_t::SNAP_NAME_SITEMAPXML_SITEMAP_NUMBER_XML: // in site table, string
         return "sitemapxml::sitemap%1.xml";
@@ -255,13 +249,11 @@ QString const & sitemapxml::url_image::get_license_uri() const
 /** \brief Initialize the URL information to default values.
  *
  * This function initializes the URL info class to default
- * values. Especially, the priority is set to 0.5.
+ * values.
  */
 sitemapxml::url_info::url_info()
     //: f_uri("") -- auto-init
-    //: f_priority(0.5f) -- auto-inif
     //, f_last_modification() -- auto-init
-    //, f_frequency() -- auto-init
 {
 }
 
@@ -276,38 +268,6 @@ sitemapxml::url_info::url_info()
 void sitemapxml::url_info::set_uri(QString const & uri)
 {
     f_uri = uri;
-}
-
-
-/** \brief Set the priority of the resource.
- *
- * This function let you defines the priority of the resource.
- * Resources with a higher priority will be checked out by search
- * engines first. It is also customary to present those first in
- * the XML sitemap which Snap! does.
- *
- * By default the priority is set to 0.5 which is the usual value
- * for most pages (blogs, information pages, documentation.)
- *
- * The most prominent pages should be given a priority of 1.0.
- * This is done automatically for the home page. Pages that get
- * a lot of traffic should be given a value larger than 0.5. Pages
- * with poor traffic or not much value (intermediate pages) should
- * be given a priority of less than 0.5.
- *
- * \param[in] priority  The priority of this resource.
- */
-void sitemapxml::url_info::set_priority(float priority)
-{
-    if(priority < 0.001f)
-    {
-        priority = 0.001f;
-    }
-    if(priority > 1.0f)
-    {
-        priority = 1.0f;
-    }
-    f_priority = priority;
 }
 
 
@@ -328,38 +288,6 @@ void sitemapxml::url_info::set_last_modification(time_t last_modification)
         last_modification = 0;
     }
     f_last_modification = last_modification;
-}
-
-
-/** \brief Change the frequency.
- *
- * This function allows you to change the frequency with which
- * the page changes.
- *
- * You may use the special value FREQUENCY_NONE (0) to prevent the
- * system from saving a frequency parameter in the XML sitemap.
- *
- * You may use the special value FREQUENCY_NEVER (-1) to represent
- * the special frequency "never".
- *
- * The frequency is clamped between 60 (1 min.) and 3,153,600
- * (1 year.)
- *
- * \param[in] frequency  The new frequency.
- */
-void sitemapxml::url_info::set_frequency(int frequency)
-{
-    if(frequency < FREQUENCY_MIN && frequency != FREQUENCY_NONE && frequency != FREQUENCY_NEVER)
-    {
-        // 1 min.
-        frequency = FREQUENCY_MIN;
-    }
-    else if(frequency > FREQUENCY_MAX)
-    {
-        // yearly
-        frequency = FREQUENCY_MAX;
-    }
-    f_frequency = frequency;
 }
 
 
@@ -415,19 +343,6 @@ QString sitemapxml::url_info::get_uri() const
 }
 
 
-/** \brief Get the priority of this page.
- *
- * Get the priority of the page. This value represents the importance of the
- * page and the willingness of the author to have this page in search indexes.
- * Obviously search engines still do whatever they want about each page.
- *
- * \return The priority as a number between 0.001 and 1.0.
- */
-float sitemapxml::url_info::get_priority() const
-{
-    return f_priority;
-}
-
 /** \brief Get the date when it was last modified.
  *
  * This function returns the date when that page was last modified.
@@ -438,21 +353,6 @@ float sitemapxml::url_info::get_priority() const
 time_t sitemapxml::url_info::get_last_modification() const
 {
     return f_last_modification;
-}
-
-
-/** \brief Get frequency with which this page is modified.
- *
- * By default the frequency is set to 1 week. You may set
- * it to 0 to avoid including frequency information in the
- * output. Otherwise enter a valid that defines how often
- * the page changes.
- *
- * \return Frequency of change in seconds.
- */
-int sitemapxml::url_info::get_frequency() const
-{
-    return f_frequency;
 }
 
 
@@ -470,28 +370,24 @@ sitemapxml::url_image::vector_t const & sitemapxml::url_info::get_images() const
 
 /** \brief Compare two sitemap entries to sort them.
  *
- * The < operator is used to sort sitemap entries so we can put
- * the most important once first (higher priority, lastest modified,
- * more frequence first.)
+ * The < operator is used to sort sitemap entries so we can put the
+ * most important once first, which means showing the pages that
+ * were last modified first.
  *
- * The function returns true when the priority of this is larger
- * than the priority of \p rhs (i.e. it is inverted!) This is
- * because we need the largest first, not last.
+ * The function returns true when 'this' last modification date is larger
+ * than 'rhs' last modificat date. So it is inverted compared to what one
+ * migh expect (i.e. the largest modification date will appears first in
+ * a sort).
  *
  * \param[in] rhs  The other URL to compare with this one
  *
  * \return true if this is considered smaller than rhs.
  */
-bool sitemapxml::url_info::operator < (const url_info& rhs) const
+bool sitemapxml::url_info::operator < (url_info const & rhs) const
 {
-    if(f_priority > rhs.f_priority)
-    {
-        return true;
-    }
-    if(f_priority < rhs.f_priority)
-    {
-        return false;
-    }
+    // notice that the < and > are inverted ebcause we want the latest
+    // first, so the largest 'last modification' first
+    //
     if(f_last_modification > rhs.f_last_modification)
     {
         return true;
@@ -500,14 +396,10 @@ bool sitemapxml::url_info::operator < (const url_info& rhs) const
     {
         return false;
     }
-    if(f_frequency > rhs.f_frequency)
-    {
-        return true;
-    }
-    if(f_frequency < rhs.f_frequency)
-    {
-        return false;
-    }
+
+    // here the order is "random", it just needs to be a valid order
+    // also pages are not likely to have the same modification date
+    //
     return f_uri >= rhs.f_uri;
 }
 
@@ -922,47 +814,11 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml * r)
         // set the URI of the page
         url.set_uri(page_key);
 
-        // author of the page defined a priority for the sitemap.xml file?
-        QtCassandra::QCassandraValue priority(branch_table->row(page_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_SITEMAPXML_PRIORITY))->value());
-        if(priority.nullValue())
-        {
-            // set the site priority to 1.0 for the home page
-            // if not defined by the user
-            if(page_key == site_key)
-            {
-                // home page special case
-                url.set_priority(1.0f);
-            }
-        }
-        else
-        {
-            url.set_priority(priority.floatValue());
-        }
-
         // use the last modification date from that page
         QtCassandra::QCassandraValue modified(branch_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED)))->value());
         if(!modified.nullValue())
         {
             url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
-        }
-
-        // XXX ameliorate as we grow this feature
-        QtCassandra::QCassandraValue frequency(branch_table->row(page_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
-        if(!frequency.nullValue())
-        {
-            QString f(frequency.stringValue());
-            if(f == "never")
-            {
-                url.set_frequency(url_info::FREQUENCY_NEVER);
-            }
-            else if(f == "always")
-            {
-                url.set_frequency(url_info::FREQUENCY_MIN);
-            }
-            else if(f == "yearly")
-            {
-                url.set_frequency(url_info::FREQUENCY_MAX);
-            }
         }
 
         // TODO: add support for images, this can work by looking at
@@ -1037,6 +893,18 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml * r)
  * the number decreases, the additional sitemap###.xml files do not
  * get deleted. This means someone can attempt to access a page
  * such as sitemap3.xml and not get a clean 404 as it should.
+ *
+ * \todo
+ * Various search engines offer a way to ping them whenever your sitemap
+ * changed so they can crawl the new data. We could implement such with
+ * an "external" (user defined) list of URLs that include a way to include
+ * the URI to the XML sitemap file. For example, the Google sitemap robot
+ * can be pinged using:
+ *
+ * http://www.google.com/webmasters/sitemaps/ping?sitemap=http%3A%2F%2Fexample.com%2Fsitemap.xml
+ *
+ * See also:
+ * https://support.google.com/webmasters/answer/183669?hl=en
  */
 void sitemapxml::on_backend_process()
 {
@@ -1047,7 +915,7 @@ void sitemapxml::on_backend_process()
     // add_url() function instead
     generate_sitemapxml(this);
 
-    // sort the result by priority, see operator < () for details
+    // sort the result by f_last_modification date, see operator < () for details
     sort(f_url_info.begin(), f_url_info.end());
 
     // loop through all the URLs
@@ -1112,6 +980,19 @@ SNAP_LOG_TRACE() << "Updated [" << sitemap_xml << "]";
  * Note that the administrator can change the parameters and decide
  * whether to allow such large files or use (much) smaller footprints
  * per XML sitemap file.
+ *
+ * \note
+ * Frequency and priority are not used by Google anymore since these
+ * parameters most often give wrong signals. The last modification date
+ * is much more important and useful since they can use that information
+ * to see when a page was last modified and not re-crawl the page until
+ * it is marked as modified since their last crawled it.
+ *
+ * https://www.seroundtable.com/google-priority-change-frequency-xml-sitemap-20273.html
+ *
+ * \par
+ * This also means we need to make sure to look into whether a page includes
+ * another and use the largest 'last modification date' of both of these.
  *
  * \todo
  * The data saved should be compressed so we do not have to
@@ -1180,41 +1061,6 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
             url.appendChild(lastmod);
             snap_dom::append_plain_text_to_node(lastmod, f_snap->date_to_string(t * 1000000, snap_child::date_format_t::DATE_FORMAT_LONG));
         }
-
-        // create /url/changefreq (optional)
-        int const f(u.get_frequency());
-        if(f != url_info::FREQUENCY_NONE)
-        {
-            QString frequency("never");
-            if(f > 0)
-            {
-                // we could add "always" and "hourly" too...
-                if(f < 86400 + 86400 / 2)
-                {
-                    frequency = "daily";
-                }
-                else if(f < 86400 * 7 + 86400 * 7 / 2)
-                {
-                    frequency = "weekly";
-                }
-                else if(f < 86400 * 7 * 5 + 86400 * 7 * 5 / 2)
-                {
-                    frequency = "monthly";
-                }
-                else
-                {
-                    frequency = "yearly";
-                }
-            }
-            QDomElement changefreq(doc.createElement("changefreq"));
-            url.appendChild(changefreq);
-            snap_dom::append_plain_text_to_node(changefreq, frequency);
-        }
-
-        // create /url/priority
-        QDomElement priority(doc.createElement("priority"));
-        url.appendChild(priority);
-        snap_dom::append_plain_text_to_node(priority, QString("%1").arg(u.get_priority()));
 
         // create the /url/xhtml:link (rel="alternate")
         // see http://googlewebmastercentral.blogspot.com/2012/05/multilingual-and-multinational-site.html

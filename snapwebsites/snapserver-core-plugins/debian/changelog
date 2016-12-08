@@ -1,8 +1,20 @@
-snapserver-core-plugins (1.0.29.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.31.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 28 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Thu, 08 Dec 2016 02:00:42 -0800
+
+snapserver-core-plugins (1.0.31.0~xenial) xenial; urgency=high
+
+  * SNAP-254: Make sure that if the boolean value is not defined, ignore it.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  7 Dec 2016 22:32:47 -0800
+
+snapserver-core-plugins (1.0.30.0~xenial) xenial; urgency=high
+
+  * SNAP-200: Removed the 'priority' and 'frequency' which Google ignores now.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 28 Nov 2016 13:51:49 -0800
 
 snapserver-core-plugins (1.0.29.0~xenial) xenial; urgency=high
 
