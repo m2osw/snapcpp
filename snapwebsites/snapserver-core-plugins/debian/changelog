@@ -1,3 +1,4 @@
+<<<<<<< 70044be8f6644e7ddfb6c6a6cbcf1ad8888d2bef
 <<<<<<< 5e9c0d9b3096b76b31dd8b807f0d760f21f5daff
 <<<<<<< 83995fa4b76565932be30b696b85b0af4abb3315
 snapserver-core-plugins (1.0.31.1~xenial) xenial; urgency=high
@@ -5,6 +6,14 @@ snapserver-core-plugins (1.0.31.1~xenial) xenial; urgency=high
 snapserver-core-plugins (1.0.30.9~xenial) xenial; urgency=high
 >>>>>>> Nightly Build.
 =======
+=======
+snapserver-core-plugins (1.0.31.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 08 Dec 2016 02:00:42 -0800
+
+>>>>>>> Nightly Build.
 snapserver-core-plugins (1.0.31.0~xenial) xenial; urgency=high
 >>>>>>> SNAP-254: Make sure that if the boolean value is not defined, ignore it.
 
