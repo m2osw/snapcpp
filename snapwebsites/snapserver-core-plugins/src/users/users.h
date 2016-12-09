@@ -221,6 +221,7 @@ public:
         typedef QtCassandra::QCassandraValue            value_t;
 
         user_info_t();
+        user_info_t( snap_child * sc );
         user_info_t( snap_child * sc, QString      const & email );
         user_info_t( snap_child * sc, name_t       const & name  );
         user_info_t( snap_child * sc, identifier_t const & id    );

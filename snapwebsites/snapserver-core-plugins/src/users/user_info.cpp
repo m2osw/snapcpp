@@ -48,6 +48,12 @@ users::user_info_t::user_info_t()
 }
 
 
+users::user_info_t::user_info_t( snap_child * sc )
+    : f_snap(sc)
+{
+}
+
+
 users::user_info_t::user_info_t( snap_child * sc, QString const & val )
     : f_snap(sc)
 {

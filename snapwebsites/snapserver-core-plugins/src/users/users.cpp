@@ -489,21 +489,22 @@ void users::content_update(int64_t variables_timestamp)
  */
 void users::bootstrap(snap_child * snap)
 {
-    f_snap = snap;
+    f_snap      = snap;
+    f_user_info = user_info_t( f_snap );
 
-    SNAP_LISTEN0(users, "server", server, process_cookies);
-    SNAP_LISTEN0(users, "server", server, attach_to_session);
-    SNAP_LISTEN0(users, "server", server, detach_from_session);
-    SNAP_LISTEN(users, "server", server, define_locales, _1);
-    SNAP_LISTEN(users, "server", server, improve_signature, _1, _2, _3);
-    SNAP_LISTEN(users, "server", server, table_is_accessible, _1, _2);
-    SNAP_LISTEN0(users, "locale", locale::locale, set_locale);
-    SNAP_LISTEN0(users, "locale", locale::locale, set_timezone);
-    SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3);
-    SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(users, "filter", filter::filter, token_help, _1);
+    SNAP_LISTEN0 ( users, "server",  server,           process_cookies                     );
+    SNAP_LISTEN0 ( users, "server",  server,           attach_to_session                   );
+    SNAP_LISTEN0 ( users, "server",  server,           detach_from_session                 );
+    SNAP_LISTEN  ( users, "server",  server,           define_locales,          _1         );
+    SNAP_LISTEN  ( users, "server",  server,           improve_signature,       _1, _2, _3 );
+    SNAP_LISTEN  ( users, "server",  server,           table_is_accessible,     _1, _2     );
+    SNAP_LISTEN0 ( users, "locale",  locale::locale,   set_locale                          );
+    SNAP_LISTEN0 ( users, "locale",  locale::locale,   set_timezone                        );
+    SNAP_LISTEN  ( users, "content", content::content, create_content,          _1, _2, _3 );
+    SNAP_LISTEN  ( users, "layout",  layout::layout,   generate_header_content, _1, _2, _3 );
+    SNAP_LISTEN  ( users, "layout",  layout::layout,   generate_page_content,   _1, _2, _3 );
+    SNAP_LISTEN  ( users, "filter",  filter::filter,   replace_token,           _1, _2, _3 );
+    SNAP_LISTEN  ( users, "filter",  filter::filter,   token_help,              _1         );
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -1224,7 +1225,6 @@ bool users::authenticated_user(QString const & email, sessions::sessions::sessio
     // opposed to just a returning visitor)
     //
     QtCassandra::QCassandraValue const long_sessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_LONG_SESSIONS)));
-SNAP_LOG_TRACE("About to call long_sessions.signedCharValue()");
     if(f_user_logged_in
     || (long_sessions.nullValue() || long_sessions.signedCharValue()))
     {
@@ -1644,7 +1644,6 @@ void users::verify_user(content::path_info_t & ipath)
         //       page instead (unless we want to force a "save to sites table"?)
         //
         QtCassandra::QCassandraValue const multiuser(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTIUSER)));
-SNAP_LOG_TRACE("About to call multiuser.signedCharValue()");
         if(multiuser.nullValue() || !multiuser.signedCharValue())
         {
             // user is logged in already, just send him to his profile
@@ -2202,7 +2201,6 @@ void users::create_logged_in_user_session( user_info_t const& user_info )
     {
         // Administrator can turn off that feature
         QtCassandra::QCassandraValue const multisessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTISESSIONS)));
-SNAP_LOG_TRACE("About to call multisessions.signedCharValue()");
         if(multisessions.nullValue() || !multisessions.signedCharValue())
         {
             // close session
