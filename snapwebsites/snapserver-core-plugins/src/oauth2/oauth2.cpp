@@ -419,8 +419,6 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
             {
                 // change the email to that user's email
                 email = oauth2_user_info.get_value(identifier_secret[0]).stringValue(); //user_row->cell(identifier_secret[0])->value().stringValue();
-                //QString const user_key(users_plugin->email_to_user_key(email));
-                //if(users_table->exists(user_key))
                 users::users::user_info_t user_info( users_plugin->get_user_info_by_email(email) );
                 if(user_info.exists())
                 {
@@ -431,8 +429,6 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
                     if(status == users::users::status_t::STATUS_VALID
                     || status == users::users::status_t::STATUS_PASSWORD)
                     {
-                        //identifier = user_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
-                        //secret = user_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
                         identifier = oauth2_user_info.get_value( get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER)).stringValue();
                         secret     = oauth2_user_info.get_value( get_name(name_t::SNAP_NAME_OAUTH2_SECRET    )).stringValue();
                         invalid = identifier != identifier_secret[0]

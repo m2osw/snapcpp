@@ -546,8 +546,6 @@ void users_ui::on_check_for_redirect(content::path_info_t & ipath)
     if(cpath == "user/password")
     {
         users::users * users_plugin(users::users::instance());
-        //QString const user_key(users_plugin->get_user_key());
-        //if(!user_key.isEmpty()
         auto user_info(users_plugin->get_user_info());
         if( user_info.exists()
         && users_plugin->user_is_logged_in()) // only logged in users can change their password
@@ -834,8 +832,6 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
             f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
         }
-        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-        //if(!users_table->exists(users_plugin->get_user_key()))
         auto const user_info(users_plugin->get_user_info());
         if(!user_info.exists())
         {
@@ -896,6 +892,8 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
 
         // verify that the identifier indeed represents a user
         const QString site_key(f_snap->get_site_key_with_slash());
+
+        // TODO: should be user identifier...?
         const QString user_key(site_key + users::get_name(users::name_t::SNAP_NAME_USERS_PATH) + "/" + user_id);
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(user_key))
@@ -1137,7 +1135,6 @@ void users_ui::prepare_new_password_form()
 void users_ui::verify_password(content::path_info_t & ipath)
 {
     users::users * users_plugin(users::users::instance());
-    //if(!users_plugin->get_user_key().isEmpty())
     if(users_plugin->get_user_info().is_valid())
     {
         // TBD: delete the "password" tag if present?
@@ -1192,8 +1189,6 @@ void users_ui::verify_password(content::path_info_t & ipath)
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
     QString const user_email(path.mid(6)); // this is the user_key from the session, it is a canonicalized email TODO! This should be an id!
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //if(!users_table->exists(user_key))
     auto const user_info(users_plugin->get_user_info_by_email(user_email));
     if(!user_info.exists())
     {
@@ -1209,7 +1204,6 @@ void users_ui::verify_password(content::path_info_t & ipath)
         NOTREACHED();
     }
 
-    //QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
     QtCassandra::QCassandraValue const user_identifier(user_info.get_value(users::name_t::SNAP_NAME_USERS_IDENTIFIER));
     if(user_identifier.nullValue())
     {
@@ -1305,11 +1299,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
 void users_ui::send_to_replace_password_page(QString const & email, bool const set_status)
 {
     users::users * users_plugin(users::users::instance());
-    //QString const user_key(users_plugin->email_to_user_key(email));
     users::users::user_info_t user_info(users_plugin->get_user_info_by_email(email));
-
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
     if(set_status)
     {
@@ -1434,9 +1424,9 @@ void users_ui::process_login_form(users::users::login_mode_t login_mode)
 
     // retrieve the row for that user
     QString const email(f_snap->postenv("email"));
-    //QString const user_key(users_plugin->email_to_user_key(email));
     users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(email));
-    if(login_mode == users::users::login_mode_t::LOGIN_MODE_VERIFICATION && users_plugin->get_user_info().get_user_key() != user_info.get_user_key())
+    if(login_mode == users::users::login_mode_t::LOGIN_MODE_VERIFICATION
+            && users_plugin->get_user_info().get_user_key() != user_info.get_user_key())    // TODO: compare IDs instead?
     {
         // XXX we could also automatically log the user out and send him
         //     to the log in screen... (we certainly should do so on the
@@ -1638,8 +1628,6 @@ void users_ui::process_forgot_password_form()
     auto const & user_info( users_plugin->get_user_info_by_email(email) );
 
     // check to make sure that a user with that email address exists
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //if(users_table->exists(user_key))
     if(!user_info.exists())
     {
         // existing users have a unique identifier
@@ -1902,7 +1890,6 @@ void users_ui::process_password_form()
     auto user_info(users_plugin->get_user_info());
 
     // make sure the user is properly setup
-    //if(users_plugin->get_user_key().isEmpty())
     if(!user_info.is_valid())
     {
         // user is not even logged in!?
@@ -1914,16 +1901,11 @@ void users_ui::process_password_form()
     QString details;
 
     // replace the password assuming we can find that user information
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //if(users_table->exists(users_plugin->get_user_key()))
-    //auto user_info(users_plugin->get_user_info());
     if(!user_info.exists())
     {
-        // We're good, save the new password and remove that link
-        //QtCassandra::QCassandraRow::pointer_t row(users_table->row(users_plugin->get_user_key()));
-
-        // existing users have a unique identifier
-        // necessary to create the user key below
+        // We're good, save the new password and remove that link.
+        // Existing users have a unique identifier, necessary to create the user key below.
+        //
         QtCassandra::QCassandraValue const user_identifier(user_info.get_value(users::name_t::SNAP_NAME_USERS_IDENTIFIER));
         if(!user_identifier.nullValue())
         {
@@ -2113,16 +2095,10 @@ void users_ui::process_verify_resend_form()
     QString const email(f_snap->postenv("email"));
     QString details;
 
-    //QString const user_key(users_plugin->email_to_user_key(email));
-
     // check to make sure that a user with that email address exists
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //if(users_table->exists(user_key))
     auto user_info(users_plugin->get_user_info_by_email(email));
     if(!user_info.exists())
     {
-        //QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
-
         // existing users have a unique identifier
         // necessary to create the user key below
         QtCassandra::QCassandraValue const user_identifier(user_info.get_value(users::name_t::SNAP_NAME_USERS_IDENTIFIER));
@@ -2228,12 +2204,8 @@ void users_ui::process_verify_form()
 void users_ui::verify_email(QString const & email)
 {
     users::users * users_plugin(users::users::instance());
-
     auto user_info(users_plugin->get_user_info_by_email(email));
-    QString const user_key(user_info.get_user_key());
 
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //QString current_email(users_table->row(user_key)->cell(users::get_name(users::name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->value().stringValue());
     QString current_email( user_info.get_value(users::name_t::SNAP_NAME_USERS_CURRENT_EMAIL).stringValue() );
     if(current_email.isEmpty())
     {
@@ -2263,7 +2235,7 @@ void users_ui::verify_email(QString const & email)
     info.set_session_id(users::users::USERS_SESSION_ID_VERIFY_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path("/user/" + user_key);
+    info.set_object_path("/user/" + user_info.get_user_key());  // TODO: use identifier instead?
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
     QString const session(sessions::sessions::instance()->create_session(info));
@@ -2272,7 +2244,6 @@ void users_ui::verify_email(QString const & email)
     // to allow a "resend" without regenerating a new session, we save
     // the session identifier--since those are short lived, it will anyway
     // not be extremely useful, but some plugins may use that once in a while
-    //if(!users_table->exists(user_key)) ... ?
     QtCassandra::QCassandraValue session_value(session);
     int64_t const ttl(86400 * 3 - 86400 / 2); // keep in the database for a little less than the session itself
     session_value.setTtl(ttl);
@@ -2311,14 +2282,11 @@ bool users_ui::resend_verification_email(QString const & email)
 {
     users::users * users_plugin(users::users::instance());
 
-    //QString const user_key(users_plugin->email_to_user_key(email));
     auto user_info(users_plugin->get_user_info_by_email(email));
 
     // to allow a "resend" without regenerating a new session, we save
     // the session identifier--since those are short lived, it will anyway
     // not be extremely useful, but some systems may use that once in a while
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    //if(!users_table->exists(user_key))
     if(!user_info.exists())
     {
         return false;

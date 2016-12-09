@@ -689,14 +689,13 @@ void password::on_check_user_security(users::users::user_security_t & security)
  * This function is used to calculate the strength of a password depending
  * on a policy.
  *
- * When the \p user_key parameter is specified (not the empty string) then
+ * When the \p user_info parameter is specified (not the empty string) then
  * the new \p user_password is eventually checked against the old passwords
  * the user used.
  *
- * \param[in] user_key  The user key (email reference in users table)
- *                      or an empty string.
+ * \param[in] user_info      The user info (email reference in users table).
  * \param[in] user_password  The password being checked.
- * \param[in] policy  The policy used to verify the password strength.
+ * \param[in] policy         The policy used to verify the password strength.
  *
  * \return A string with some form of error message about the password
  *         weakness(es) or an empty string if the password is okay.
@@ -1089,11 +1088,6 @@ void password::on_user_logged_in(users::users::user_logged_info_t & logged_info)
         int64_t const duration(pp.get_maximum_duration() * 86400LL * 1000000LL);
 
         // retrieve the last modification time of this user's password
-        //users::users * users_plugin(users::users::instance());
-        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-        //QtCassandra::QCassandraRow::pointer_t row(users_table->row(logged_info.get_user_key()));
-        //auto row(logged_info.get_user_info().get_user_row());
-        //int64_t const last_modified(row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED))->value().safeInt64Value(0, 0));
         auto const & user_info(logged_info.get_user_info());
         int64_t const last_modified(user_info.get_value(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED).safeInt64Value(0, 0));
 
@@ -1264,12 +1258,10 @@ void password::on_invalid_password(users::users::user_info_t user_info, QString 
     {
         snap_lock lock(user_info.get_user_key()); // TODO: change to id
 
-        //QtCassandra::QCassandraValue count_failures(row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES))->value());
         QtCassandra::QCassandraValue count_failures(user_info.get_value(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES)));
         count = count_failures.safeInt64Value(0, 0) + 1LL;
         count_failures.setInt64Value(count);
         count_failures.setTtl(pp.get_invalid_passwords_counter_lifetime() * 60LL * 60LL);
-        //row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES))->setValue(count_failures);
         user_info.set_value(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES),count_failures);
     }
 
@@ -1280,7 +1272,6 @@ void password::on_invalid_password(users::users::user_info_t user_info, QString 
         QtCassandra::QCassandraValue value;
         value.setSignedCharValue(1);
         value.setTtl(pp.get_invalid_passwords_block_duration() * 60LL * 60LL);
-        //row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED))->setValue(value);
         user_info.set_value(users::name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED,value);
     }
 
@@ -1325,12 +1316,10 @@ void password::on_blocked_user(users::users::user_info_t user_info, QString cons
     {
         snap_lock lock(user_info.get_user_key());  // TODO: change to id
 
-        //QtCassandra::QCassandraValue count_503s(row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S))->value());
         QtCassandra::QCassandraValue count_503s(user_info.get_value(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S)));
         count = count_503s.safeInt64Value(0, 0) + 1LL;
         count_503s.setInt64Value(count);
         count_503s.setTtl(pp.get_blocked_user_counter_lifetime() * 24LL * 60LL * 60LL);
-        //row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S))->setValue(count_503s);
         user_info.set_value(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_BAD_PASSWORD_503S),count_503s);
     }
 

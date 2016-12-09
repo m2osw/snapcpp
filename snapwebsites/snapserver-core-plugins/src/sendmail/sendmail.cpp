@@ -1711,7 +1711,6 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
         bypass_blacklist = bypass == "true";
     }
 
-    //QString const user_key(users_plugin->email_to_user_key(user_email));
     users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(user_email));
 
     // we use "!" for the password because we do not want to have
@@ -2767,10 +2766,8 @@ void sendmail::attach_user_email(email const & e)
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
     // Note: here the list of emails is always 1 item
-    //QString const user_key(users_plugin->email_to_user_key(m.f_email_only.c_str()));
     users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(m.f_email_only.c_str()));
-    //QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key));
-    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_info.get_user_key())); // TODO: should this come from user_info_t?
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_info.get_user_key())); // TODO: convert to using user identifier
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
@@ -2836,7 +2833,6 @@ void sendmail::attach_user_email(email const & e)
     QtCassandra::QCassandraValue freq_value(row->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value());
     if(freq_value.nullValue())
     {
-        //freq_value = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
         freq_value = user_info.get_value(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY));
         if(freq_value.nullValue())
         {
