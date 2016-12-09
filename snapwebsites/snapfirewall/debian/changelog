@@ -1,3 +1,10 @@
+snapfirewall (1.1.23.0~xenial) xenial; urgency=high
+
+  * SNAP-493: Found out why it would lose the connection: added necessary
+    code to handle setup_firewall() potential failures.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 08 Dec 2016 18:39:49 -0800
+
 snapfirewall (1.1.22.11~xenial) xenial; urgency=high
 
   * EX-158: Added our local IPs in our OUTPUT rules. This means if someone
