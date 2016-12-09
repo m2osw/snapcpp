@@ -87,6 +87,39 @@ private:
 };
 
 
+/** \brief The timer used when a connection fails.
+ *
+ * When we receive the CASSANDRAREADY event, the connection is likely to
+ * work. However, while reading the data in the following loop, we may
+ * end up with an exception and that stops the connection right there.
+ * In other words, on return the f_cassandra pointer will be reset back
+ * to a null pointer.
+ *
+ * To allow for a little bit of time before reconnecting, we use this
+ * timer. Because in most cases this happens when Cassandra is rather
+ * overloaded so trying to reconnect immediately at this stage is not
+ * a good plan.
+ *
+ * At this time we setup the timer to 30 seconds. The firewall continues
+ * to be fully functional, so a longer pause should not be much of a
+ * problem.
+ */
+class reconnect_timer
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<reconnect_timer>        pointer_t;
+
+                                reconnect_timer(snap_firewall * sfw);
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void                process_timeout();
+
+private:
+    snap_firewall *             f_snap_firewall;
+};
+
+
 /** \brief The timer to produce wake up calls once in a while.
  *
  * This timer is used to wake us once in a while as determined by when
@@ -191,8 +224,10 @@ public:
 
     void                        run();
     void                        process_timeout();
+    void                        process_reconnect();
     void                        process_message(snap::snap_communicator_message const & message);
     void                        stop(bool quitting);
+    void                        is_db_ready();
 
     static void                 sighandler( int sig );
 
@@ -277,6 +312,7 @@ private:
     bool                                        f_debug = false;
     bool                                        f_firewall_up = false;
     messenger::pointer_t                        f_messenger;
+    reconnect_timer::pointer_t                  f_reconnect_timer;
     wakeup_timer::pointer_t                     f_wakeup_timer;
     block_info_t::block_info_vector_t           f_blocks;       // save here until connected to Cassandra
 };
@@ -285,6 +321,44 @@ private:
 
 
 
+
+
+
+
+
+/** \brief Initializes the reconnect timer with a pointer to the snap firewall.
+ *
+ * The constructor saves the pointer of the snap_firewall object so
+ * it can later be used when the reconnect timer events occurs.
+ *
+ * By default the timer is "off" meaning that it will not trigger
+ * a process_reconnect() call until you turn it on.
+ *
+ * \param[in] sfw  A pointer to the snap_firewall object.
+ */
+reconnect_timer::reconnect_timer(snap_firewall * sfw)
+    : snap_timer(-1)
+    , f_snap_firewall(sfw)
+{
+    set_name("snap_firewall reconnect_timer");
+}
+
+
+/** \brief The reconnect timer timed out.
+ *
+ * The reconnect timer is used to force a CASSANDRAREADY some time after
+ * a failure in the setup_firewall() function happens.
+ *
+ * In most cases, this gets used when a timeout happens in the Cassandra
+ * cluster. If the timeout happens while running the setup function, then
+ * we do not want to try again immediately. Instead, we wait a little
+ * while and send a CASSANDRAREADY message to snapdbproxy whenever this
+ * function gets called.
+ */
+void reconnect_timer::process_timeout()
+{
+    f_snap_firewall->process_reconnect();
+}
 
 
 
@@ -1403,6 +1477,9 @@ void snap_firewall::run()
     f_interrupt.reset(new snap_firewall_interrupt(this));
     f_communicator->add_connection(f_interrupt);
 
+    f_reconnect_timer.reset(new reconnect_timer(this));
+    f_communicator->add_connection(f_reconnect_timer);
+
     f_wakeup_timer.reset(new wakeup_timer(this));
     f_communicator->add_connection(f_wakeup_timer);
 
@@ -1644,8 +1721,11 @@ void snap_firewall::setup_firewall()
     // is up
     //
     // TODO
-    // some daemons, such as the snapserver, should wait on that
-    // signal before starting... (but snapfirewall is optional, so TBD)
+    // some daemons, like snapserver does, should wait on that
+    // signal before starting... (but snapfirewall is optional,
+    // so be careful on how you handle that one! in snapserver
+    // we first check whehter snapfirewall is active on the
+    // computer and if so request the message.)
     //
     snap::snap_communicator_message firewallup_message;
     firewallup_message.set_command("FIREWALLUP");
@@ -1783,6 +1863,39 @@ void snap_firewall::process_timeout()
 }
 
 
+/** \brief Restart process to reconnect.
+ *
+ * The setup_firewall() function failed and set the reconnect_timer to
+ * get this function called a little later.
+ *
+ * Here we simply send a CASSANDRASTATUS message to snapdbproxy to
+ * get things restarted.
+ */
+void snap_firewall::process_reconnect()
+{
+    is_db_ready();
+}
+
+
+/** \brief Send the CASSANDRASTATUS to snapdbproxy.
+ *
+ * This function builds a message and sends it to snapdbproxy. It is
+ * used whenever we need to know whether the database is accessible.
+ *
+ * Note that the function itself does not return true or false. If
+ * you need to know whether we are currently connected to the
+ * snapdbproxy daemon, check the f_cassandra pointer; if not nullptr
+ * then we are connected and you can send a CQL order.
+ */
+void snap_firewall::is_db_ready()
+{
+    snap::snap_communicator_message isdbready_message;
+    isdbready_message.set_command("CASSANDRASTATUS");
+    isdbready_message.set_service("snapdbproxy");
+    f_messenger->send_message(isdbready_message);
+}
+
+
 /** \brief Called whenever the firewall table changes.
  *
  * Whenever the firewall table changes, the next wake up date may change.
@@ -1913,10 +2026,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         // Cassandra, after that one call, we will receive the
         // statuses just because we understand them.
         //
-        snap::snap_communicator_message isdbready_message;
-        isdbready_message.set_command("CASSANDRASTATUS");
-        isdbready_message.set_service("snapdbproxy");
-        f_messenger->send_message(isdbready_message);
+        is_db_ready();
 
         return;
     }
@@ -1953,6 +2063,16 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
             //
             f_cassandra.disconnect();
             f_firewall_table.reset();
+
+            // in this particular case, we do not automatically get
+            // another CASSANDRAREADY message so we have to send another
+            // CASSANDRASTATUS at some point, but we want to give Cassandra
+            // a break for a little while and thus ask to be awaken in
+            // 30 seconds before we try again
+            //
+            int64_t const now(snap::snap_communicator::get_current_date());
+            int64_t const reconnect_date(now + 30LL * 1000000LL);
+            f_reconnect_timer->set_timeout_date(reconnect_date);
         }
 
         return;
@@ -2035,17 +2155,22 @@ void snap_firewall::stop(bool quitting)
 {
     f_stop_received = true;
 
-    // stop the timer immediately, although that will not prevent
+    // stop the timers immediately, although that will not prevent
     // one more call to their callbacks which thus still have to
     // check the f_stop_received flag
     //
-    if(f_wakeup_timer)
+    if(f_reconnect_timer != nullptr)
+    {
+        f_reconnect_timer->set_enable(false);
+        f_reconnect_timer->set_timeout_date(-1);
+    }
+    if(f_wakeup_timer != nullptr)
     {
         f_wakeup_timer->set_enable(false);
         f_wakeup_timer->set_timeout_date(-1);
     }
 
-    if(f_messenger)
+    if(f_messenger != nullptr)
     {
         if(quitting || !f_messenger->is_connected())
         {
@@ -2069,9 +2194,10 @@ void snap_firewall::stop(bool quitting)
         }
     }
 
-    if(f_communicator)
+    if(f_communicator != nullptr)
     {
         //f_communicator->remove_connection(f_messenger); -- this one will get an expected HUP shortly
+        f_communicator->remove_connection(f_reconnect_timer);
         f_communicator->remove_connection(f_wakeup_timer);
         f_communicator->remove_connection(f_interrupt);
     }
@@ -2096,7 +2222,7 @@ void snap_firewall::block_ip(snap::snap_communicator_message const & message)
 
         // save in our list of blocked IP addresses
         //
-        if(f_firewall_table)
+        if(f_firewall_table != nullptr)
         {
             // actually add to the firewall
             //
@@ -2168,10 +2294,7 @@ void snap_firewall::block_ip(snap::snap_communicator_message const & message)
 
         // check with snapdbproxy whether it is still connected or not
         //
-        snap::snap_communicator_message isdbready_message;
-        isdbready_message.set_command("CASSANDRASTATUS");
-        isdbready_message.set_service("snapdbproxy");
-        f_messenger->send_message(isdbready_message);
+        is_db_ready();
     }
 }
 
@@ -2196,7 +2319,7 @@ void snap_firewall::unblock_ip(snap::snap_communicator_message const & message)
 
         // save in our list of blocked IP addresses
         //
-        if(f_firewall_table)
+        if(f_firewall_table != nullptr)
         {
             info.save(f_firewall_table, f_server_name);
         }
@@ -2238,10 +2361,7 @@ void snap_firewall::unblock_ip(snap::snap_communicator_message const & message)
 
         // check with snapdbproxy whether it is still connected or not
         //
-        snap::snap_communicator_message isdbready_message;
-        isdbready_message.set_command("CASSANDRASTATUS");
-        isdbready_message.set_service("snapdbproxy");
-        f_messenger->send_message(isdbready_message);
+        is_db_ready();
     }
 }
 
