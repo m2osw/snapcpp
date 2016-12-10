@@ -516,11 +516,13 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 
 QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
 {
+#if 0
     if( !exists() )
     {
         // TODO: change to id!
         throw users_exception(QString("User key [%1] non-existent!").arg(get_user_key()));
     }
+#endif
 
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
     return users_table->row(get_user_key());    // TODO: change to uint64_t id
