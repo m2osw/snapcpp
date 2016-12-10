@@ -2320,6 +2320,46 @@ void snap_communicator_server::verify_command(base_connection::pointer_t connect
  */
 void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp)
 {
+    // messages being broadcast to us have a unique ID, if that ID is
+    // one we already received we must ignore the message altogether;
+    // also, a broadcast message has a timeout, we must ignore the
+    // message if it already timed out
+    //
+    if(message.has_parameter("broadcast_msgid"))
+    {
+        // check whether the message already timed out
+        //
+        // this is a safety feature of our broadcasting capability
+        // which should rarely be activated unless you have multiple
+        // data center locations
+        //
+        time_t const timeout(message.get_integer_parameter("broadcast_timeout"));
+        time_t const now(time(nullptr));
+        if(timeout < now)
+        {
+            return;
+        }
+
+        // check whether we already received that message, if so ignore
+        // the second instance (it should not happen with the list of
+        // neighbors included in the message, but just in case...)
+        //
+        QString const broadcast_msgid(message.get_parameter("broadcast_msgid"));
+        auto const received_it(f_received_broadcast_messages.find(broadcast_msgid));
+        if(received_it != f_received_broadcast_messages.cend())     // message arrived again?
+        {
+            // note that although we include neighbors it is normal that
+            // this happens in a cluster where some computers are not
+            // aware of certain nodes; for example, if A sends a
+            // message to B and C, both B and C know of a node D
+            // which is unknown to A, then both B and C will end
+            // up forward that same message to D, so D will discard
+            // the second instance it receives.
+            //
+            return;
+        }
+    }
+
     // if the destination server was specified, we have to forward
     // the message to that specific server
     //
@@ -3349,7 +3389,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                 if(udp)
                 {
                     SNAP_LOG_ERROR("REGISTERFORLOADAVG is only accepted over a TCP connection.");
-                    break;
+                    return;
                 }
 
                 if(base)
@@ -3816,6 +3856,12 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
     int hops(0);
     time_t timeout(0);
 
+    // note: the "broacast_msgid" is required when we end up sending that
+    //       message forward to some other computers; so we have to go
+    //       through that if() block; however, the timeout was already
+    //       already checked, so we probably would not need it to do
+    //       it again?
+    //
     if(message.has_parameter("broadcast_msgid"))
     {
         // check whether the message already timed out
@@ -3853,6 +3899,9 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
         // delete "received messages" that have now timed out (because
         // such are not going to be forwarded since we check the timeout
         // of a message early and prevent the broadcasting in that case)
+        //
+        // XXX: I am thinking that this loop should probably be run before
+        //      the "broadcast_timeout" test above...
         //
         for(auto it(f_received_broadcast_messages.cbegin()); it != f_received_broadcast_messages.cend(); )
         {
@@ -4084,10 +4133,16 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
         // message is 'const', so we need to create a copy
         snap::snap_communicator_message broadcast_msg(message);
 
-        // generate a new unique broadcast message identifier
+        // generate a unique broadcast message identifier if we did not
+        // yet have one, it is very important to NOT generate a new message
+        // in a many to many broadcasting system because you must block
+        // duplicates here
         //
         ++g_broadcast_sequence;
-        broadcast_msgid = QString("%1-%2").arg(f_server_name).arg(g_broadcast_sequence);
+        if(broadcast_msgid.isEmpty())
+        {
+            broadcast_msgid = QString("%1-%2").arg(f_server_name).arg(g_broadcast_sequence);
+        }
         broadcast_msg.add_parameter("broadcast_msgid", broadcast_msgid);
 
         // increase the number of hops; if we reach the limit, we still
