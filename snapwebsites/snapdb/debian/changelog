@@ -1,3 +1,11 @@
+snapdb (1.0.9.0~xenial) xenial; urgency=high
+
+  * Added configuration file.
+  * Removed `--no-ssl` switch and replaced with `--use-ssl` switch. This is
+    also in the new configuration file.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 10 Dec 2016 12:30:57 -0800
+
 snapdb (1.0.8.35~xenial) xenial; urgency=high
 
   * Nightly build.
