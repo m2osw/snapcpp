@@ -1,3 +1,9 @@
+snapfirewall (1.1.23.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sat, 10 Dec 2016 10:51:34 -0800
+
 snapfirewall (1.1.23.0~xenial) xenial; urgency=high
 
   * SNAP-493: Found out why it would lose the connection: added necessary
