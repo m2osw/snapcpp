@@ -82,15 +82,17 @@ private:
     void set_cell()              const;
 
     casswrapper::Session::pointer_t   f_session;
-    QString                                     f_host = "localhost";
-    int32_t                                     f_port = 9042;
-    int32_t                                     f_count = 100;
-    QString                                     f_context = "snap_websites";
+    QString                                     f_host      = "localhost";
+    int32_t                                     f_port      = 9042;
+    bool                                        f_use_ssl   = false;
+    int32_t                                     f_count     = 100;
+    QString                                     f_context   = "snap_websites";
     QString                                     f_table;
     QString                                     f_row;
     QString                                     f_cell;
     QString                                     f_value;
     getopt_ptr_t                                f_opt;
+    snap::snap_config                           f_config;
 };
 
 // vim: ts=4 sw=4 et

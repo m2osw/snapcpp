@@ -97,6 +97,14 @@ namespace
         },
         {
             '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "config",
+            nullptr,
+            "Configuration file to initialize snapdb.",
+            advgetopt::getopt::argument_mode_t::optional_argument
+        },
+        {
+            '\0',
             0,
             "context",
             nullptr,
@@ -194,9 +202,9 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "no-ssl",
+            "use-ssl",
             nullptr,
-            "Supress the use of SSL even if the keys are present.",
+            "Force the use of SSL, only if the keys are present.",
             advgetopt::getopt::argument_mode_t::no_argument
         },
         {
@@ -245,6 +253,7 @@ snapdb::snapdb(int argc, char * argv[])
     //, f_table("") -- auto-init
     //, f_row("") -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, nullptr ) )
+    , f_config( "snapdb" )
 {
     if(f_opt->is_defined("version"))
     {
@@ -252,22 +261,64 @@ snapdb::snapdb(int argc, char * argv[])
         exit(0);
     }
 
+    // Set up configuration file
+    //
+    if( f_opt->is_defined("config") )
+    {
+        f_config.set_configuration_path( f_opt->get_string("config") );
+    }
+
     // first check options
     if( f_opt->is_defined( "count" ) )
     {
         f_count = f_opt->get_long( "count" );
     }
+
     if( f_opt->is_defined( "host" ) )
     {
         f_host = f_opt->get_string( "host" ).c_str();
     }
+    else if( f_config.has_parameter("host") )
+    {
+        f_host = f_config["host"];
+    }
+
     if( f_opt->is_defined( "port" ) )
     {
         f_port = f_opt->get_long( "port" );
     }
+    else if( f_config.has_parameter("port") )
+    {
+        std::size_t pos(0);
+        std::string const port(f_config["port"]);
+        f_port = std::stoi(port, &pos, 10);
+        if(pos != port.length())
+        {
+            throw snap::snapwebsites_exception_invalid_parameters("port to connect to Cassandra must be defined between 0 and 65535.");
+        }
+    }
+    //
+    if(f_port < 0 || f_port > 65535)
+    {
+        throw snap::snapwebsites_exception_invalid_parameters("port to connect to Cassandra must be defined between 0 and 65535.");
+    }
+
     if( f_opt->is_defined( "context" ) )
     {
         f_context = f_opt->get_string( "context" ).c_str();
+    }
+    else if( f_config.has_parameter("context") )
+    {
+        f_context = f_config["context"];
+    }
+
+    if( f_opt->is_defined( "use-ssl" ) )
+    {
+        f_use_ssl = true;
+    }
+    else if( f_config.has_parameter("use_ssl") )
+    {
+        f_use_ssl = (f_config["use_ssl"] == "true");
     }
 
     // then check commands
@@ -337,7 +388,7 @@ void snapdb::info()
 {
     try
     {
-        f_session->connect( f_host, f_port, !f_opt->is_defined("no-ssl") );
+        f_session->connect( f_host, f_port, f_use_ssl );
         if(f_session->isConnected())
         {
             // read and display the Cassandra information
@@ -832,7 +883,7 @@ void snapdb::exec()
         f_session->setTimeout(5 * 60 * 60 * 1000);
     }
 
-    f_session->connect( f_host, f_port, !f_opt->is_defined("no-ssl") );
+    f_session->connect( f_host, f_port, f_use_ssl );
 
     // TODO: the following is not very good in terms of checking whether
     //       the specified command line arguments are all proper; for
