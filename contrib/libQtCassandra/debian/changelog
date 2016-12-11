@@ -1,3 +1,9 @@
+libqtcassandra (0.6.11.0~xenial) xenial; urgency=high
+
+  * SNAP-258: Added stacktracing ability to exception base.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 11 Dec 2016 10:52:58 -0800
+
 libqtcassandra (0.6.10.24~xenial) xenial; urgency=high
 
   * Nightly build.
