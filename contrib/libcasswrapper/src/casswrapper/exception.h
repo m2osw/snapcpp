@@ -9,6 +9,8 @@
 namespace casswrapper
 {
 
+#if 0
+// See notes in exception_impl.cpp
 class exception_base_t
 {
 public:
@@ -35,9 +37,18 @@ public:
 
     virtual const char* what() const throw() override;
 };
+#else
+class exception_t : public std::runtime_error
+{
+public:
+    exception_t( const QString&     what ) : std::runtime_error(qPrintable(what)) {}
+    exception_t( const std::string& what ) : std::runtime_error(what.c_str())     {}
+    exception_t( const char*        what ) : std::runtime_error(what)             {}
+};
+#endif
 
 
-class cassandra_exception_t : public std::exception, public exception_base_t
+class cassandra_exception_t : public std::exception //, public exception_base_t
 {
 public:
     virtual uint32_t        getCode()    const = 0;

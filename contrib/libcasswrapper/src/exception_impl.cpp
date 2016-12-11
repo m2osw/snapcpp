@@ -11,6 +11,15 @@ namespace casswrapper
 {
 
 
+#if 0
+//
+// Remarked out for now. I don't think we need stack tracing here.
+// Plus, having the exception code appear hear means that every project
+// that links against libQtCassandra will be forced to also link against
+// libcasswrapper. My hope one day soon is to have the tie completely
+// severed--which will happen when libQtCassandra no longer needs to enumerate
+// the schema meta data.
+//
 /** \brief Initialize this Snap! exception.
  *
  * Initialize the base exception class. Output a stack trace to the error log.
@@ -60,6 +69,7 @@ exception_t::exception_t( const std::string& what ) : std::runtime_error(what.c_
 exception_t::exception_t( const char*        what ) : std::runtime_error(what)             {}
 
 const char* exception_t::what() const throw() { return std::runtime_error::what(); }
+#endif
 
 cassandra_exception_impl::cassandra_exception_impl( const casswrapper::future& future, QString const& msg )
     : f_code(future.get_error_code())
