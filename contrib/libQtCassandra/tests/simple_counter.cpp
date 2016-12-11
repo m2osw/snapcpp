@@ -41,6 +41,8 @@
 #include <iostream>
 
 #include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraException.h>
+#include <QtCassandra/QStringStream.h>
 #include <QtCore/QDebug>
 
 int main(int argc, char *argv[])
@@ -170,6 +172,17 @@ int main(int argc, char *argv[])
 #pragma GCC pop
 
         context->drop();
+    }
+    catch( QtCassandra::QCassandraOverflowException const & e )
+    {
+        std::cerr << "QtCassandra::QCassandraOverflowException caught -- " << e.what();
+        std::cerr << "Stack trace: " << e.what();
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            std::cerr << stack_line;
+        }
+        std::cerr << "End stack trace!" << e.what();
+        ++err;
     }
     catch(std::overflow_error const & e)
     {

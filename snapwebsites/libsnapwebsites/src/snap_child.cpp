@@ -31,6 +31,7 @@
 #include "snapwebsites/snap_lock.h"
 #include "snapwebsites/snap_magic.h"
 
+#include <QtCassandra/QCassandraException.h>
 #include <QtSerialization/QSerialization.h>
 #include <libtld/tld.h>
 
@@ -3053,6 +3054,14 @@ bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
     catch( snap_exception const & except )
     {
         SNAP_LOG_FATAL("snap_child::process(): snap_exception caught: ")(except.what());
+    }
+    catch( QtCassandra::QCassandraException const & e )
+    {
+        SNAP_LOG_FATAL("snap_child::process(): QtCassandra::QCassandraException caught: ")(e.what());
+        for( auto const & stack_string : e.get_stack_trace() )
+        {
+            SNAP_LOG_ERROR("QCassandraException(): backtrace=")( stack_string );
+        }
     }
     catch( std::exception const & std_except )
     {

@@ -289,6 +289,17 @@ int main(int argc, char *argv[])
         // we're done with this test, drop the context
         //context->drop();
     }
+    catch( QtCassandra::QCassandraOverflowException const & e )
+    {
+        qDebug() << "QtCassandra::QCassandraOverflowException caught -- " << e.what();
+        qDebug() << "Stack trace: " << e.what();
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            qDebug() << stack_line;
+        }
+        qDebug() << "End stack trace!" << e.what();
+        exit(1);
+    }
     catch(std::overflow_error const & e)
     {
         qDebug() << "std::overflow_error caught -- " << e.what();

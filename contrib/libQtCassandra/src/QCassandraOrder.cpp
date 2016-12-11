@@ -41,6 +41,7 @@
 
 #include "QtCassandra/QCassandraOrder.h"
 
+#include "QtCassandra/QCassandraException.h"
 #include "QtCassandra/QCassandraValue.h"
 
 #include <QtCore>
@@ -229,7 +230,7 @@ QByteArray const & QCassandraOrder::parameter(int index) const
 {
     if(static_cast<size_t>(index) >= f_parameter.size())
     {
-        throw std::overflow_error("QCassandraOrderOrder::parameter() called with an index too large.");
+        throw QCassandraOverflowException("QCassandraOrderOrder::parameter() called with an index too large.");
     }
     return f_parameter[index];
 }

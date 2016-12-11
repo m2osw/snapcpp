@@ -40,6 +40,7 @@
  */
 
 #include <QtCassandra/QCassandra.h>
+#include "QtCassandra/QCassandraException.h"
 #include <QtCore/QDebug>
 
 union float_switch_t {
@@ -100,6 +101,18 @@ QString cleanString(const QString& str)
 }
 
 
+void outputStackTrace( const QtCassandra::QCassandraException& e )
+{
+    qDebug() << "QtCassandra::QtCassandra::QCassandraException caught -- " << e.what();
+    qDebug() << "Stack trace: " << e.what();
+    for( auto const & stack_line : e.get_stack_trace() )
+    {
+        qDebug() << stack_line;
+    }
+    qDebug() << "End stack trace!" << e.what();
+}
+
+
 int main(int argc, char *argv[])
 {
     // number of errors
@@ -147,8 +160,9 @@ int main(int argc, char *argv[])
             try {
                 QtCassandra::checkBufferSize(i);
             }
-            catch(const std::runtime_error&) {
+            catch(const QtCassandra::QCassandraException& e) {
                 qDebug() << "error: checkBufferSize() generated an error with a valid size";
+                outputStackTrace( e );
                 ++err;
             }
         }
@@ -159,7 +173,7 @@ int main(int argc, char *argv[])
                 qDebug() << "error: checkBufferSize() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
         }
 
@@ -169,7 +183,7 @@ int main(int argc, char *argv[])
                 qDebug() << "error: checkBufferSize() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
         }
 
@@ -188,84 +202,84 @@ int main(int argc, char *argv[])
             qDebug() << "error: boolValue() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::charValue(array);
             qDebug() << "error: charValue() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::signedCharValue(array);
             qDebug() << "error: signedCharValue() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::unsignedCharValue(array);
             qDebug() << "error: unsignedCharValue() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::int16Value(array);
             qDebug() << "error: int16Value() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::uint16Value(array);
             qDebug() << "error: uint16Value() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::int32Value(array);
             qDebug() << "error: int32Value() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::uint32Value(array);
             qDebug() << "error: uint32Value() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::int64Value(array);
             qDebug() << "error: int64Value() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::uint64Value(array);
             qDebug() << "error: uint64Value() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::floatValue(array);
             qDebug() << "error: floatValue() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         try {
             QtCassandra::doubleValue(array);
             qDebug() << "error: doubleValue() did not generate an error with an invalid size";
             ++err;
         }
-        catch(const std::runtime_error&) {
+        catch(const std::exception&) {
         }
         // test once more with the index
         for(int i(-100); i <= 100; ++i) {
@@ -274,84 +288,84 @@ int main(int argc, char *argv[])
                 qDebug() << "error: boolValue() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::charValue(array, i);
                 qDebug() << "error: charValue() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::signedCharValue(array, i);
                 qDebug() << "error: signedCharValue() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::unsignedCharValue(array, i);
                 qDebug() << "error: unsignedCharValue() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::int16Value(array, i);
                 qDebug() << "error: int16Value() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::uint16Value(array, i);
                 qDebug() << "error: uint16Value() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::int32Value(array, i);
                 qDebug() << "error: int32Value() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::uint32Value(array, i);
                 qDebug() << "error: uint32Value() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::int64Value(array, i);
                 qDebug() << "error: int64Value() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::uint64Value(array, i);
                 qDebug() << "error: uint64Value() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::floatValue(array, i);
                 qDebug() << "error: floatValue() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
             try {
                 QtCassandra::doubleValue(array, i);
                 qDebug() << "error: doubleValue() did not generate an error with an invalid size";
                 ++err;
             }
-            catch(const std::runtime_error&) {
+            catch(const std::exception&) {
             }
         }
         QtCassandra::QCassandraValue null_value;
@@ -440,7 +454,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: boolValue() did not generate an error with an invalid size";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -497,7 +511,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: charValue() did not generate an error with an invalid size";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -582,7 +596,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: signedCharValue() did not generate an error with an invalid size";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -663,7 +677,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: unsignedCharValue() did not generate an error with an invalid size";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -762,7 +776,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: int16Value() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -870,7 +884,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: uint16Value() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -995,7 +1009,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: int32Value() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -1130,7 +1144,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: uint32Value() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -1297,7 +1311,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: int64Value() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -1484,7 +1498,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: uint64Value() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -1669,7 +1683,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: floatValue() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -1828,7 +1842,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: doubleValue() did not generate an error with an invalid size (" << i << ")";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
         }
@@ -1885,7 +1899,7 @@ int main(int argc, char *argv[])
                             qDebug() << "error: the stringValue() did not generate an error with an invalid index " << j << " and/or size" << k << " (max. size is" << size << ")";
                             ++err;
                         }
-                        catch(const std::runtime_error&) {
+                        catch(const std::exception&) {
                         }
                     }
                     else {
@@ -2022,7 +2036,7 @@ int main(int argc, char *argv[])
                             qDebug() << "error: the value.stringValue() did not generate an error with an invalid index " << j << " and/or size" << k << " (max. size is" << size << ")";
                             ++err;
                         }
-                        catch(const std::runtime_error&) {
+                        catch(const std::exception&) {
                         }
                     }
                     else {
@@ -2087,7 +2101,7 @@ int main(int argc, char *argv[])
                             qDebug() << "error: the binaryValue() did not generate an error with an invalid index " << j << " and/or size" << k << " (max. size is" << size << ")";
                             ++err;
                         }
-                        catch(const std::runtime_error&) {
+                        catch(const std::exception&) {
                         }
                     }
                     else {
@@ -2126,7 +2140,7 @@ int main(int argc, char *argv[])
                             qDebug() << "error: the value.binaryValue() did not generate an error with an invalid index " << j << " and/or size" << k << " (max. size is" << size << ")";
                             ++err;
                         }
-                        catch(const std::runtime_error&) {
+                        catch(const std::exception&) {
                         }
                     }
                     else {
@@ -2372,7 +2386,7 @@ int main(int argc, char *argv[])
                     qDebug() << "error: setConsistencyLevel() accepted" << i << "which is an invalid value";
                     ++err;
                 }
-                catch(const std::runtime_error&) {
+                catch(const std::exception&) {
                 }
             }
             else {
@@ -2393,6 +2407,17 @@ int main(int argc, char *argv[])
         cassandra->connect(host);
         QString name = cassandra->clusterName();
         qDebug() << "+ Cassandra Cluster Name is" << name;
+    }
+    catch( QtCassandra::QCassandraOverflowException const & e )
+    {
+        qDebug() << "QtCassandra::QCassandraOverflowException caught -- " << e.what();
+        qDebug() << "Stack trace: " << e.what();
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            qDebug() << stack_line;
+        }
+        qDebug() << "End stack trace!" << e.what();
+        ++err;
     }
     catch( std::overflow_error const & e )
     {

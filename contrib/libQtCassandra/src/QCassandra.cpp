@@ -769,7 +769,7 @@ QCassandra::~QCassandra()
  * way than the old connection: if we lose the connection, the proxy tries
  * to reconnect, automatically.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the function cannot gather the cluster information, then it raises
  * this exception.
  *
@@ -800,14 +800,14 @@ bool QCassandra::connect( const QString& host, const int port )
     //
     if( !local_table_result.succeeded() )
     {
-        throw std::runtime_error( "Error reading database table system.local!" );
+        throw QCassandraException( "Error reading database table system.local!" );
     }
 
     // got success but not data?!
     //
     if( local_table_result.resultCount() != 3 )
     {
-        throw std::runtime_error( "Somehow system.local could not return the Cassandra cluster name, native protocol and partitioner information" );
+        throw QCassandraException( "Somehow system.local could not return the Cassandra cluster name, native protocol and partitioner information" );
     }
 
     // save data here
@@ -1085,7 +1085,7 @@ void QCassandra::retrieveContextMeta( QCassandraContext::pointer_t c, const QStr
 {
     if(!f_proxy)
     {
-        throw std::runtime_error( "QCassandra::retrieveContextMeta(): called when not connected" );
+        throw QCassandraException( "QCassandra::retrieveContextMeta(): called when not connected" );
     }
 
     // note: the "DESCRIBE CLUSTER" is ignored
@@ -1096,12 +1096,12 @@ void QCassandra::retrieveContextMeta( QCassandraContext::pointer_t c, const QStr
 
     if(!describe_cluster_result.succeeded())
     {
-        throw std::runtime_error( "QCassandra::retrieveContextMeta(): DESCRIBE CLUSTER failed" );
+        throw QCassandraException( "QCassandra::retrieveContextMeta(): DESCRIBE CLUSTER failed" );
     }
 
     if(describe_cluster_result.resultCount() != 1)
     {
-        throw std::runtime_error( "QCassandra::retrieveContextMeta(): result does not have one blob as expected" );
+        throw QCassandraException( "QCassandra::retrieveContextMeta(): result does not have one blob as expected" );
     }
 
     casswrapper::schema::SessionMeta::pointer_t session_meta(new casswrapper::schema::SessionMeta);
@@ -1136,7 +1136,7 @@ const QCassandraContexts& QCassandra::contexts() const
 {
     if(!f_proxy)
     {
-        throw std::runtime_error( "QCassandra::contexts(): called when not connected" );
+        throw QCassandraException( "QCassandra::contexts(): called when not connected" );
     }
 
     if( !f_contexts_read )
@@ -1150,12 +1150,12 @@ const QCassandraContexts& QCassandra::contexts() const
 
         if(!describe_cluster_result.succeeded())
         {
-            throw std::runtime_error( "QCassandra::contexts(): DESCRIBE CLUSTER failed" );
+            throw QCassandraException( "QCassandra::contexts(): DESCRIBE CLUSTER failed" );
         }
 
         if(describe_cluster_result.resultCount() != 1)
         {
-            throw std::runtime_error( "QCassandra::contexts(): result does not have one blob as expected" );
+            throw QCassandraException( "QCassandra::contexts(): result does not have one blob as expected" );
         }
 
         // WARNING: the location where this flag is set to true is very
@@ -1222,7 +1222,7 @@ QCassandraContext::pointer_t QCassandra::findContext( const QString& context_nam
  * cluster[context_name][table_name][column_name] = value;
  * \endcode
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the context doesn't exist, this function raises an exception
  * since otherwise the reference would be a NULL pointer.
  *
@@ -1235,7 +1235,7 @@ QCassandraContext& QCassandra::operator[]( const QString &context_name )
     QCassandraContext::pointer_t context_obj( findContext( context_name ) );
     if ( !context_obj )
     {
-        throw std::runtime_error(
+        throw QCassandraException(
             "named context was not found, cannot return a reference" );
     }
 
@@ -1252,7 +1252,7 @@ QCassandraContext& QCassandra::operator[]( const QString &context_name )
  * value = cluster[context_name][table_name][column_name];
  * \endcode
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the context doesn't exist, this function raises an exception
  * since otherwise the reference would be a NULL pointer.
  *
@@ -1267,7 +1267,7 @@ operator[]( const QString& context_name ) const
         findContext( context_name ) );
     if ( !context_obj )
     {
-        throw std::runtime_error(
+        throw QCassandraException(
             "named context was not found, cannot return a reference" );
     }
 
@@ -1337,7 +1337,7 @@ consistency_level_t QCassandra::defaultConsistencyLevel() const
  * This function does not accept the CONSISTENCY_LEVEL_DEFAULT since
  * that is not a valid Cassandra consistency level.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This exception is raised if the value passed to this function is not
  * a valid consistency level.
  *
@@ -1356,7 +1356,7 @@ void QCassandra::setDefaultConsistencyLevel(
          default_consistency_level != CONSISTENCY_LEVEL_TWO &&
          default_consistency_level != CONSISTENCY_LEVEL_THREE )
     {
-        throw std::runtime_error( "invalid default server consistency level" );
+        throw QCassandraException( "invalid default server consistency level" );
     }
 
     f_default_consistency_level = default_consistency_level;
@@ -1423,7 +1423,7 @@ int64_t QCassandra::timeofday()
     // we ignore timezone as it can also generate an error
     if(gettimeofday( &tv, NULL ) != 0)
     {
-        throw std::runtime_error("gettimeofday() failed.");
+        throw QCassandraException("gettimeofday() failed.");
     }
 
     return static_cast<int64_t>( tv.tv_sec ) * 1000000 +

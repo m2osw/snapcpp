@@ -120,7 +120,7 @@ namespace QtCassandra
  *
  * A row is composed of multiple cells (called columns in Cassandra.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * The key of the row cannot be empty or more than 64Kb. If that happens,
  * this exception is raised.
  *
@@ -133,10 +133,10 @@ QCassandraRow::QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByte
     //f_cells() -- auto-init
 {
     if(f_key.size() == 0) {
-        throw std::runtime_error("row key cannot be empty");
+        throw QCassandraException("row key cannot be empty");
     }
     if(f_key.size() > 65535) {
-        throw std::runtime_error("row key is more than 64Kb");
+        throw QCassandraException("row key is more than 64Kb");
     }
 }
 
@@ -288,7 +288,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         selected_cells_result.swap(select_more_cells_result);
         if(!selected_cells_result.succeeded())
         {
-            throw std::runtime_error("select cells failed");
+            throw QCassandraException("select cells failed");
         }
 
         if(selected_cells_result.resultCount() == 0)
@@ -348,17 +348,17 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         selected_cells_result.swap(select_cells_result);
         if(!selected_cells_result.succeeded())
         {
-            throw std::runtime_error("select cells failed");
+            throw QCassandraException("select cells failed");
         }
 
         if(selected_cells_result.resultCount() < 1)
         {
-            throw std::runtime_error("select cells did not return a cursor index");
+            throw QCassandraException("select cells did not return a cursor index");
         }
         f_cursor_index = int32Value(selected_cells_result.result(0));
         if(f_cursor_index < 0)
         {
-            throw std::logic_error("received a negative number as cursor index");
+            throw QCassandraLogicException("received a negative number as cursor index");
         }
 
         // ignore parameter one, it is not a row of data
@@ -372,7 +372,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         // the number of results must be a multiple of 3, although on
         // the SELECT (first time in) we expect one additional result
         // which represents the cursor index
-        throw std::logic_error("the number of results must be an exact multipled of 2!");
+        throw QCassandraLogicException("the number of results must be an exact multipled of 2!");
     }
 #endif
     size_t result_size = 0;
@@ -719,7 +719,7 @@ QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key)
  * This function accepts a column name. The UTF-8 version of it is used to
  * retrieve the data from Cassandra.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This function requires that the cell being accessed already exist
  * in memory. If not, this exception is raised.
  *
@@ -743,7 +743,7 @@ const QCassandraCell& QCassandraRow::operator [] (const char* column_name) const
  * This function accepts a column name. The UTF-8 version of it is used to
  * retrieve the data from Cassandra.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This function requires that the cell being accessed already exist
  * in memory. If not, this exception is raised.
  *
@@ -774,7 +774,7 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
     QCassandraCell::pointer_t p_cell( findCell(column_key) );
     if( !p_cell )
     {
-        throw std::runtime_error("named column while retrieving a cell was not found, cannot return a reference");
+        throw QCassandraException("named column while retrieving a cell was not found, cannot return a reference");
     }
 
     return *p_cell;
@@ -812,7 +812,7 @@ void QCassandraRow::closeCursor()
         QCassandraOrderResult close_cursor_result(parentTable()->proxy()->sendOrder(close_cursor));
         if(!close_cursor_result.succeeded())
         {
-            throw std::runtime_error("QCassandraRow::closeCursor(): closing cursor failed.");
+            throw QCassandraException("QCassandraRow::closeCursor(): closing cursor failed.");
         }
         f_cursor_index = -1;
     }
@@ -927,7 +927,7 @@ QCassandraTable::pointer_t QCassandraRow::parentTable() const
     QCassandraTable::pointer_t table(f_table.lock());
     if(table == nullptr)
     {
-        throw std::runtime_error("this row was dropped and is not attached to a table anymore");
+        throw QCassandraException("this row was dropped and is not attached to a table anymore");
     }
 
     return table;

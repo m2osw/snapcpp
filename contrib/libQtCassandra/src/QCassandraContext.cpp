@@ -150,7 +150,7 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
     if(!re.exactMatch(context_name))
     {
-        throw std::runtime_error("invalid context name (does not match [A-Za-z][A-Za-z0-9_]*)");
+        throw QCassandraException("invalid context name (does not match [A-Za-z][A-Za-z0-9_]*)");
     }
 
     resetSchema();
@@ -308,7 +308,7 @@ QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_nam
  * context[table_name][column_name] = value;
  * \endcode
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the table doesn't exist, this function raises an exception
  * since otherwise the reference would be a NULL pointer.
  *
@@ -320,7 +320,7 @@ QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
 {
     QCassandraTable::pointer_t ptable( findTable(table_name) );
     if( !ptable ) {
-        throw std::runtime_error("named table was not found, cannot return a reference");
+        throw QCassandraException("named table was not found, cannot return a reference");
     }
 
     return *ptable;
@@ -521,7 +521,7 @@ QString QCassandraContext::generateReplicationStanza() const
     {
         std::stringstream ss;
         ss << "This strategy class, '" << f_private->strategy_class << "', is not currently supported!";
-        throw std::runtime_error( ss.str().c_str() );
+        throw QCassandraException( ss.str().c_str() );
     }
 
     return replication_stanza;
@@ -645,7 +645,7 @@ void QCassandraContext::create()
     QCassandraOrderResult const create_keyspace_result(parentCassandra()->proxy()->sendOrder(create_keyspace));
     if(!create_keyspace_result.succeeded())
     {
-        throw std::runtime_error("keyspace creation failed");
+        throw QCassandraException("keyspace creation failed");
     }
 
     for( auto t : f_tables )
@@ -671,7 +671,7 @@ void QCassandraContext::update()
     QCassandraOrderResult const alter_keyspace_result(parentCassandra()->proxy()->sendOrder(alter_keyspace));
     if(alter_keyspace_result.succeeded())
     {
-        throw std::runtime_error("keyspace creation failed");
+        throw QCassandraException("keyspace creation failed");
     }
 }
 
@@ -710,7 +710,7 @@ void QCassandraContext::drop()
     QCassandraOrderResult const drop_keyspace_result(parentCassandra()->proxy()->sendOrder(drop_keyspace));
     if(drop_keyspace_result.succeeded())
     {
-        throw std::runtime_error("drop keyspace failed");
+        throw QCassandraException("drop keyspace failed");
     }
 
     resetSchema();
@@ -754,7 +754,7 @@ void QCassandraContext::dropTable(const QString& table_name)
     QCassandraOrderResult const drop_table_result(parentCassandra()->proxy()->sendOrder(drop_table));
     if(drop_table_result.succeeded())
     {
-        throw std::runtime_error("drop table failed");
+        throw QCassandraException("drop table failed");
     }
 
     // disconnect all the cached data from this table
@@ -785,7 +785,7 @@ QCassandra::pointer_t QCassandraContext::parentCassandra() const
     QCassandra::pointer_t cassandra(f_cassandra.lock());
     if(cassandra == nullptr)
     {
-        throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
+        throw QCassandraException("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
     return cassandra;

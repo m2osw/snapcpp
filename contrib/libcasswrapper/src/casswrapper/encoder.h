@@ -35,6 +35,8 @@
  */
 #pragma once
 
+#include "casswrapper/exception.h"
+
 #include <QString>
 #include <QByteArray>
 
@@ -68,7 +70,7 @@ inline uint64_t getBufferMaxSize()
 inline void checkBufferSize(const uint64_t new_size)
 {
     if(new_size > BUFFER_MAX_SIZE) {
-        throw std::runtime_error(QString("resulting value is more than %1 bytes").arg(BUFFER_MAX_SIZE).toUtf8().data());
+        throw exception_t(QString("resulting value is more than %1 bytes").arg(BUFFER_MAX_SIZE).toUtf8().data());
     }
 }
 
@@ -97,7 +99,7 @@ inline void setBoolValue(QByteArray& array, const bool value)
 inline bool boolValue(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this boolValue");
+        throw exception_t("buffer too small for this boolValue");
     }
     return array.at(index) != 0;
 }
@@ -127,7 +129,7 @@ inline void setCharValue(QByteArray& array, const char value)
 inline char charValue(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this charValue");
+        throw exception_t("buffer too small for this charValue");
     }
     return array.at(index);
 }
@@ -161,7 +163,7 @@ inline void setSignedCharValue(QByteArray& array, const signed char value)
 inline signed char signedCharValue(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this signedCharValue");
+        throw exception_t("buffer too small for this signedCharValue");
     }
     return static_cast<signed char>(array.at(index));
 }
@@ -195,7 +197,7 @@ inline void setUnsignedCharValue(QByteArray& array, const unsigned char value)
 inline unsigned char unsignedCharValue(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this unsignedCharValue");
+        throw exception_t("buffer too small for this unsignedCharValue");
     }
     return static_cast<unsigned char>(array.at(index));
 }
@@ -237,7 +239,7 @@ inline int16_t int16Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // avoid potential overflow with the +2
     || static_cast<unsigned int>(index + sizeof(int16_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this int16Value");
+        throw exception_t("buffer too small for this int16Value");
     }
     return static_cast<int16_t>((static_cast<unsigned char>(array.at(index + 0)) << 8)
                                | static_cast<unsigned char>(array.at(index + 1)));
@@ -252,7 +254,7 @@ inline int16_t int16ValueOrNull(const QByteArray& array, const int index = 0, co
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this int16ValueOrNull");
+    throw exception_t("buffer too small for this int16ValueOrNull");
 }
 
 inline int16_t safeInt16Value(const QByteArray& array, const int index = 0, const int16_t default_value = 0)
@@ -278,7 +280,7 @@ inline uint16_t uint16Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(uint16_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this uint16Value");
+        throw exception_t("buffer too small for this uint16Value");
     }
     return static_cast<uint16_t>((static_cast<unsigned char>(array.at(index + 0)) << 8)
                                 | static_cast<unsigned char>(array.at(index + 1)));
@@ -293,7 +295,7 @@ inline uint16_t uint16ValueOrNull(const QByteArray& array, const int index = 0, 
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this uint16ValueOrNull");
+    throw exception_t("buffer too small for this uint16ValueOrNull");
 }
 
 inline uint16_t safeUInt16Value(const QByteArray& array, const int index = 0, const uint16_t default_value = 0)
@@ -328,7 +330,7 @@ inline void replaceInt32Value(QByteArray& array, const int32_t value, const int 
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(int32_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this int32Value");
+        throw exception_t("buffer too small for this int32Value");
     }
     char buf[4];
     buf[0] = static_cast<char>(value >> 24);
@@ -342,7 +344,7 @@ inline int32_t int32Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(int32_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this int32Value");
+        throw exception_t("buffer too small for this int32Value");
     }
     return (static_cast<int32_t>(static_cast<unsigned char>(array.at(index + 0))) << 24)
          | (static_cast<int32_t>(static_cast<unsigned char>(array.at(index + 1))) << 16)
@@ -361,7 +363,7 @@ inline int32_t int32ValueOrNull(const QByteArray& array, const int index = 0, co
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this int32ValueOrNull");
+    throw exception_t("buffer too small for this int32ValueOrNull");
 }
 
 inline int32_t safeInt32Value(const QByteArray& array, const int index = 0, const int32_t default_value = 0)
@@ -394,7 +396,7 @@ inline uint32_t uint32Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(uint32_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this uint32Value");
+        throw exception_t("buffer too small for this uint32Value");
     }
     return (static_cast<uint32_t>(static_cast<unsigned char>(array.at(index + 0))) << 24)
          | (static_cast<uint32_t>(static_cast<unsigned char>(array.at(index + 1))) << 16)
@@ -413,7 +415,7 @@ inline uint32_t uint32ValueOrNull(const QByteArray& array, const int index = 0, 
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this uint32ValueOrNull");
+    throw exception_t("buffer too small for this uint32ValueOrNull");
 }
 
 inline uint32_t safeUInt32Value(const QByteArray& array, const int index = 0, const uint32_t default_value = 0)
@@ -454,7 +456,7 @@ inline int64_t int64Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(int64_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error(QString("buffer too small (%1) for this int64Value").arg(array.size()).toStdString());
+        throw exception_t(QString("buffer too small (%1) for this int64Value").arg(array.size()).toStdString());
     }
     return (static_cast<int64_t>(static_cast<unsigned char>(array.at(index + 0))) << 56)
          | (static_cast<int64_t>(static_cast<unsigned char>(array.at(index + 1))) << 48)
@@ -481,7 +483,7 @@ inline int64_t int64ValueOrNull(const QByteArray& array, const int index = 0, co
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this int64ValueOrNull");
+    throw exception_t("buffer too small for this int64ValueOrNull");
 }
 
 inline int64_t safeInt64Value(const QByteArray& array, const int index = 0, const int64_t default_value = 0)
@@ -513,7 +515,7 @@ inline uint64_t uint64Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(uint64_t)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this uint64Value");
+        throw exception_t("buffer too small for this uint64Value");
     }
     return (static_cast<uint64_t>(static_cast<unsigned char>(array.at(index + 0))) << 56)
          | (static_cast<uint64_t>(static_cast<unsigned char>(array.at(index + 1))) << 48)
@@ -540,7 +542,7 @@ inline uint64_t uint64ValueOrNull(const QByteArray& array, const int index = 0, 
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this uint64ValueOrNull");
+    throw exception_t("buffer too small for this uint64ValueOrNull");
 }
 
 inline uint64_t safeUInt64Value(const QByteArray& array, const int index = 0, const uint64_t default_value = 0)
@@ -585,7 +587,7 @@ inline float floatValue(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(float)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this floatValue");
+        throw exception_t("buffer too small for this floatValue");
     }
     union switch_t {
         uint32_t    v;
@@ -616,7 +618,7 @@ inline float floatValueOrNull(const QByteArray& array, const int index = 0, cons
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this floatValueOrNull");
+    throw exception_t("buffer too small for this floatValueOrNull");
 }
 
 inline float safeFloatValue(const QByteArray& array, const int index = 0, const float default_value = 0)
@@ -663,7 +665,7 @@ inline double doubleValue(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
     || static_cast<unsigned int>(index + sizeof(double)) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this doubleValue");
+        throw exception_t("buffer too small for this doubleValue");
     }
     union switch_t {
         uint64_t    v;
@@ -702,7 +704,7 @@ inline double doubleValueOrNull(const QByteArray& array, const int index = 0, co
     if(static_cast<unsigned int>(index) <= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    throw std::runtime_error("buffer too small for this doubleValueOrNull");
+    throw exception_t("buffer too small for this doubleValueOrNull");
 }
 
 inline double safeDoubleValue(const QByteArray& array, const int index = 0, const double default_value = 0.0)
@@ -751,7 +753,7 @@ inline QString stringValue(const QByteArray& array, const int index = 0, int siz
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size())
     || static_cast<unsigned int>(size) > static_cast<unsigned int>(array.size())
     || static_cast<unsigned int>(index + size) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this stringValue");
+        throw exception_t("buffer too small for this stringValue");
     }
     return QString::fromUtf8(array.data() + index, size);
 }
@@ -779,7 +781,7 @@ inline QByteArray binaryValue(const QByteArray& array, const int index = 0, int 
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size())
     || static_cast<unsigned int>(size) > static_cast<unsigned int>(array.size())
     || static_cast<unsigned int>(index + size) > static_cast<unsigned int>(array.size())) {
-        throw std::runtime_error("buffer too small for this binaryValue() call");
+        throw exception_t("buffer too small for this binaryValue() call");
     }
     return QByteArray(array.data() + index, size);
 }
@@ -849,7 +851,7 @@ public:
             // although we only send very small CQL commands at this point
             // anyway...
             //
-            throw std::runtime_error("strings are limited to 64Kb");
+            throw exception_t("strings are limited to 64Kb");
         }
 
         casswrapper::appendUInt16Value(f_array, utf8.length());

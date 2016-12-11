@@ -37,6 +37,7 @@
 #pragma once
 
 #include "QtCassandra/QCassandraContext.h"
+#include "QtCassandra/QCassandraException.h"
 #include "QtCassandra/QCassandraVersion.h"
 
 #include <casswrapper/schema.h>

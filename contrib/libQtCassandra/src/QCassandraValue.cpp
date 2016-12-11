@@ -35,6 +35,7 @@
  */
 
 #include "QtCassandra/QCassandraValue.h"
+#include "QtCassandra/QCassandraException.h"
 #include <stdexcept>
 
 namespace QtCassandra
@@ -984,7 +985,7 @@ void QCassandraValue::setDoubleValue(double value)
  * This function copies the specified string data in the value buffer.
  * The string is converted to UTF-8 first.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This exception is raised whenever the input binary buffer is
  * larger than 64Mb. Later we may allow you to change the limit,
  * however, we probably will give you a way to save large data
@@ -1003,7 +1004,7 @@ void QCassandraValue::setStringValue(const QString& value)
  * the specified binary buffer. This is the only case where
  * the input data is saved untouched in the value buffer.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This exception is raised whenever the input binary buffer is
  * larger than 64Mb. Later we may allow you to change the limit,
  * however, we probably will give you a way to save large data
@@ -1022,7 +1023,7 @@ void QCassandraValue::setBinaryValue(const QByteArray& value)
  * the specified binary buffer. This is the only case where
  * the input data is saved untouched in the value buffer.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This exception is raised whenever the input binary buffer is
  * larger than 64Mb. Later we may allow you to change the limit,
  * however, we probably will give you a way to save large data
@@ -1073,7 +1074,7 @@ bool QCassandraValue::nullValue() const
  * It is assumed that you know what you are doing (i.e. that you created
  * this cell with one byte value at the specified index.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is empty, this function raises an exception.
  *
  * \param[in] index  The index where the Boolean byte is read.
@@ -1140,7 +1141,7 @@ bool QCassandraValue::safeBoolValue(int index, const bool default_value) const
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a one byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is empty, this function raises an exception.
  *
  * \param[in] index  The index where the char is read.
@@ -1206,7 +1207,7 @@ char QCassandraValue::safeCharValue(int index, const char default_value) const
  * It is assumed that you know what you are doing (i.e. that you created
  * this cell with a one byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is empty, this function raises an exception.
  *
  * \param[in] index  The index where the signed char is read.
@@ -1273,7 +1274,7 @@ signed char QCassandraValue::safeSignedCharValue(int index, const signed char de
  * It is assumed that you know what you are doing (i.e. that you created
  * this cell with a one byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is empty, this function raises an exception.
  *
  * \param[in] index  The index where the unsigned char is read.
@@ -1340,7 +1341,7 @@ unsigned char QCassandraValue::safeUnsignedCharValue(int index, const unsigned c
  * It is assumed that you know what you are doing (i.e. that you created
  * this cell with a two byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 2 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the signed short is read.
@@ -1364,7 +1365,7 @@ int16_t QCassandraValue::int16Value(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1 byte of data since 2 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1 byte, this function raises this exception.
  *
  * \param[in] index  The index where the byte is read.
@@ -1408,7 +1409,7 @@ int16_t QCassandraValue::safeInt16Value(int index, const int16_t default_value) 
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a two byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 2 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the unsigned short is read.
@@ -1432,7 +1433,7 @@ uint16_t QCassandraValue::uint16Value(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1 byte of data since 2 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1 byte, this function raises this exception.
  *
  * \param[in] index  The index where the byte is read.
@@ -1476,7 +1477,7 @@ uint16_t QCassandraValue::safeUInt16Value(int index, const uint16_t default_valu
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a four byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 4 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the 32 bit signed int is read.
@@ -1500,7 +1501,7 @@ int32_t QCassandraValue::int32Value(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1, 2, or 3 bytes of data since 4 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1, 2, or 3 bytes, this function raises this
  * exception.
  *
@@ -1545,7 +1546,7 @@ int32_t QCassandraValue::safeInt32Value(int index, const int32_t default_value) 
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a four byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 4 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the 32 bit unsigned int is read.
@@ -1569,7 +1570,7 @@ uint32_t QCassandraValue::uint32Value(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1, 2, or 3 bytes of data since 4 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1, 2, or 3 bytes, this function raises this
  * exception.
  *
@@ -1614,7 +1615,7 @@ uint32_t QCassandraValue::safeUInt32Value(int index, const uint32_t default_valu
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a eight byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 8 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the 64 bit signed int is read.
@@ -1638,7 +1639,7 @@ int64_t QCassandraValue::int64Value(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1 to 7 bytes of data since 8 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1 to 7 bytes, this function raises this
  * exception.
  *
@@ -1683,7 +1684,7 @@ int64_t QCassandraValue::safeInt64Value(int index, const int64_t default_value) 
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a eight byte value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 8 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the 64 bit unsigned int is read.
@@ -1707,7 +1708,7 @@ uint64_t QCassandraValue::uint64Value(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1 to 7 bytes of data since 8 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1 to 7 bytes, this function raises this
  * exception.
  *
@@ -1752,7 +1753,7 @@ uint64_t QCassandraValue::safeUInt64Value(int index, const uint64_t default_valu
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a four byte floating point value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 4 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the float is read.
@@ -1776,7 +1777,7 @@ float QCassandraValue::floatValue(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1 to 3 bytes of data since 4 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1 to 3 bytes, this function raises this
  * exception.
  *
@@ -1821,7 +1822,7 @@ float QCassandraValue::safeFloatValue(int index, const float default_value) cons
  * It is assumed that you know what you're doing (i.e. that you created
  * this cell with a eight byte floating point value.)
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is less than 8 bytes, this function raises an exception.
  *
  * \param[in] index  The index where the double is read.
@@ -1845,7 +1846,7 @@ double QCassandraValue::doubleValue(int index) const
  * throw if no data is available. However, it still throws if there
  * is only 1 to 7 bytes of data since 8 bytes are required.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is only 1 to 7 bytes, this function raises this
  * exception.
  *
@@ -2136,7 +2137,7 @@ QCassandraValue& QCassandraValue::operator = (double value)
  * This function copies the specified string data in the value buffer.
  * The string is converted to UTF-8 first.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * A runtime error is raised if the size of the string is more than
  * 64Mb.
  *
@@ -2364,7 +2365,7 @@ int32_t QCassandraValue::ttl() const
 void QCassandraValue::setTtl(int32_t ttl_val)
 {
     if(ttl_val < 0) {
-        throw std::runtime_error("the TTL value cannot be negative");
+        throw QCassandraException("the TTL value cannot be negative");
     }
 
     f_ttl = ttl_val;
@@ -2433,7 +2434,7 @@ void QCassandraValue::setConsistencyLevel(consistency_level_t level)
     && level != CONSISTENCY_LEVEL_ANY
     && level != CONSISTENCY_LEVEL_TWO
     && level != CONSISTENCY_LEVEL_THREE) {
-        throw std::runtime_error("invalid consistency level");
+        throw QCassandraException("invalid consistency level");
     }
 
     f_consistency_level = level;

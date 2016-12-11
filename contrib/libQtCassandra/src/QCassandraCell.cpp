@@ -37,6 +37,7 @@
  */
 
 #include "QtCassandra/QCassandraCell.h"
+#include "QtCassandra/QCassandraException.h"
 #include "QtCassandra/QCassandraRow.h"
 
 #include <stdexcept>
@@ -118,7 +119,7 @@ namespace QtCassandra
  *
  * A cell is set to the NULL value by default.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * The key of the column cannot be empty or more than 64Kb. If that happens,
  * this exception is raised.
  *
@@ -131,10 +132,10 @@ QCassandraCell::QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& c
     //, f_value() -- auto-init to "NULL" (nullValue() == true)
 {
     if(f_key.size() == 0) {
-        throw std::runtime_error("the cell binary column key cannot be empty");
+        throw QCassandraException("the cell binary column key cannot be empty");
     }
     if(f_key.size() > 65535) {
-        throw std::runtime_error("the cell binary column key is more than 64Kb");
+        throw QCassandraException("the cell binary column key is more than 64Kb");
     }
 }
 
@@ -158,7 +159,7 @@ QCassandraCell::~QCassandraCell()
  * QByteArray parameter) then you CANNOT retrieve the column name.
  * Instead, use the columnKey() function.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * This function raises an exception if the cell was created with
  * a binary key.
  *
@@ -380,7 +381,7 @@ void QCassandraCell::add(int64_t val)
             break;
 
         default:
-            throw std::runtime_error("a counter cell is expected to be an 8, 16, 32, or 64 bit value");
+            throw QCassandraException("a counter cell is expected to be an 8, 16, 32, or 64 bit value");
 
         }
         f_value.setInt64Value(r);
@@ -636,7 +637,7 @@ QCassandraRow::pointer_t QCassandraCell::parentRow() const
     QCassandraRow::pointer_t row(f_row.lock());
     if(row == nullptr)
     {
-        throw std::runtime_error("this cell was dropped and is not attached to a row anymore");
+        throw QCassandraException("this cell was dropped and is not attached to a row anymore");
     }
 
     return row;

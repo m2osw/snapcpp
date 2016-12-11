@@ -39,6 +39,7 @@
 //#include <sys/time.h>
 //#pragma GCC pop
 
+#include "QtCassandra/QCassandraException.h"
 #include "QtCassandra/QCassandraProxy.h"
 #include "QtCassandra/QCassandraValue.h"
 
@@ -102,7 +103,7 @@ size_t QCassandraOrderResult::resultCount() const
  *
  * This function is used to read back a resulting blob.
  *
- * \exception std::overflow_error
+ * \exception QCassandraOverflowException
  * The index must be between 0 and resultCount() - 1 or the
  * function raises this exception.
  *
@@ -114,7 +115,7 @@ QByteArray const & QCassandraOrderResult::result(int index) const
 {
     if(static_cast<size_t>(index) >= f_result.size())
     {
-        throw std::overflow_error("QCassandraOrderResult::result() called with an index too large.");
+        throw QCassandraOverflowException("QCassandraOrderResult::result() called with an index too large.");
     }
     return f_result[index];
 }
@@ -143,7 +144,7 @@ QByteArray QCassandraOrderResult::encodeResult() const
 {
     if(f_result.size() > 65535)
     {
-        throw std::runtime_error("result has too make values, limit is 64Kb - 1 value (a maximum of about 20,000 rows in one go)");
+        throw QCassandraException("result has too make values, limit is 64Kb - 1 value (a maximum of about 20,000 rows in one go)");
     }
 
     // the expected size of the final buffer, to avoid realloc() calls,
@@ -194,7 +195,7 @@ QByteArray QCassandraOrderResult::encodeResult() const
 #ifdef _DEBUG
     if(encoder.size() != expected_size)
     {
-        throw std::logic_error( "QCassandraOrderResult::encodeResult(): the expected and encoded sizes do not match..." );
+        throw QCassandraLogicException( "QCassandraOrderResult::encodeResult(): the expected and encoded sizes do not match..." );
     }
 #endif
 
@@ -208,7 +209,7 @@ QByteArray QCassandraOrderResult::encodeResult() const
  * used by the client to decode results sent to it by the snapdbproxy
  * daemon.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * If the buffer is of the wrong size, the reading of the data will
  * fail raising this exception. We may later add a try/catch within
  * this function to return false instead. Yet, if the order is wrong

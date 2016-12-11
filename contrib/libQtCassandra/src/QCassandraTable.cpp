@@ -190,14 +190,14 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
             {
                 if(!has_quotes)
                 {
-                    throw std::runtime_error(QString("'%1' is not a valid table name (it cannot end with a double quote (\") if it does not start with a double quote.)")
+                    throw QCassandraException(QString("'%1' is not a valid table name (it cannot end with a double quote (\") if it does not start with a double quote.)")
                             .arg(table_name).toUtf8().data());
                 }
                 quotes_are_valid = true;
             }
             else
             {
-                throw std::runtime_error(QString("'%1' is not a valid table name (a table name can be surrounded by double quotes, but it cannot itself include a double quote.)")
+                throw QCassandraException(QString("'%1' is not a valid table name (a table name can be surrounded by double quotes, but it cannot itself include a double quote.)")
                             .arg(table_name).toUtf8().data());
             }
             break;
@@ -216,7 +216,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
             if(idx == 0
             || (idx == 1 && has_quotes))
             {
-                throw std::runtime_error(QString("'%1' is not a valid table name (a table name cannot start with a digit or an underscore (_), even when quoted.)")
+                throw QCassandraException(QString("'%1' is not a valid table name (a table name cannot start with a digit or an underscore (_), even when quoted.)")
                             .arg(table_name).toUtf8().data());
             }
             break;
@@ -236,13 +236,13 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
             // quotes must not appear at all or be defined at the start AND
             // the end
             //
-            throw std::runtime_error(QString("'%1' is an invalid table name (does not match \"?[a-zA-Z][a-zA-Z0-9_]*\"?)").arg(table_name).toUtf8().data());
+            throw QCassandraException(QString("'%1' is an invalid table name (does not match \"?[a-zA-Z][a-zA-Z0-9_]*\"?)").arg(table_name).toUtf8().data());
 
         }
     }
     if(has_quotes && !quotes_are_valid)
     {
-        throw std::runtime_error(QString("'%1' is not a valid table name (it cannot start with a double quote (\") if it does not end with a double quote.)")
+        throw QCassandraException(QString("'%1' is not a valid table name (it cannot start with a double quote (\") if it does not end with a double quote.)")
                 .arg(table_name).toUtf8().data());
     }
 
@@ -495,7 +495,7 @@ void QCassandraTable::create()
     QCassandraOrderResult const create_table_result(f_proxy->sendOrder(create_table));
     if(!create_table_result.succeeded())
     {
-        throw std::runtime_error("table creation failed");
+        throw QCassandraException("table creation failed");
     }
 
     f_from_cassandra = true;
@@ -535,7 +535,7 @@ void QCassandraTable::truncate()
     QCassandraOrderResult const truncate_table_result(f_proxy->sendOrder(truncate_table));
     if(!truncate_table_result.succeeded())
     {
-        throw std::runtime_error("table truncation failed");
+        throw QCassandraException("table truncation failed");
     }
 
     clearCache();
@@ -580,7 +580,7 @@ void QCassandraTable::closeCursor()
         QCassandraOrderResult close_cursor_result(f_proxy->sendOrder(close_cursor));
         if(!close_cursor_result.succeeded())
         {
-            throw std::runtime_error("QCassandraTable::closeCursor(): closing cursor failed.");
+            throw QCassandraException("QCassandraTable::closeCursor(): closing cursor failed.");
         }
     }
 }
@@ -655,7 +655,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         selected_rows_result.swap(select_more_rows_result);
         if(!selected_rows_result.succeeded())
         {
-            throw std::runtime_error("select rows failed");
+            throw QCassandraException("select rows failed");
         }
 
         if(selected_rows_result.resultCount() == 0)
@@ -715,17 +715,17 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         selected_rows_result.swap(select_rows_result);
         if(!selected_rows_result.succeeded())
         {
-            throw std::runtime_error("select rows failed");
+            throw QCassandraException("select rows failed");
         }
 
         if(selected_rows_result.resultCount() < 1)
         {
-            throw std::runtime_error("select rows did not return a cursor index");
+            throw QCassandraException("select rows did not return a cursor index");
         }
         f_cursor_index = int32Value(selected_rows_result.result(0));
         if(f_cursor_index < 0)
         {
-            throw std::logic_error("received a negative number as cursor index");
+            throw QCassandraLogicException("received a negative number as cursor index");
         }
 //std::cerr << "got a cursor = " << f_cursor_index << "\n";
 
@@ -742,7 +742,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         // the number of results must be a multiple of 3, although on
         // the SELECT (first time in) we expect one additional result
         // which represents the cursor index
-        throw std::logic_error("the number of results must be an exact multipled of 3!");
+        throw QCassandraLogicException("the number of results must be an exact multipled of 3!");
     }
 #endif
     size_t result_size = 0;
@@ -1115,7 +1115,7 @@ QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
  * This function accepts a name as the row reference. The name is viewed as
  * a UTF-8 string.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * The function checks whether the named row exists. If not, then this error
  * is raised because the function is constant and cannot create a new row.
  *
@@ -1127,7 +1127,7 @@ const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
 {
     const QCassandraRow::pointer_t p_row(findRow(row_name));
     if(!p_row) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
+        throw QCassandraException("row does not exist so it cannot be read from");
     }
     return *p_row;
 }
@@ -1142,7 +1142,7 @@ const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
  *
  * This function accepts a name as the row reference.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * The function checks whether the named row exists. If not, then this error
  * is raised because the function is constant and cannot create a new row.
  *
@@ -1154,7 +1154,7 @@ const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
 {
     const QCassandraRow::pointer_t p_row(findRow(row_name));
     if( !p_row ) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
+        throw QCassandraException("row does not exist so it cannot be read from");
     }
     return *p_row;
 }
@@ -1169,7 +1169,7 @@ const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
  *
  * This function accepts a binary key as the row reference.
  *
- * \exception std::runtime_error
+ * \exception QCassandraException
  * The function checks whether the named row exists. If not, then this error
  * is raised because the function is constant and cannot create a new row.
  *
@@ -1181,7 +1181,7 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
 {
     const QCassandraRow::pointer_t p_row(findRow(row_key));
     if(!p_row) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
+        throw QCassandraException("row does not exist so it cannot be read from");
     }
     return *p_row;
 }
@@ -1285,7 +1285,7 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
     QCassandraContext::pointer_t context(f_context.lock());
     if(context == nullptr)
     {
-        throw std::runtime_error("this table was dropped and is not attached to a context anymore");
+        throw QCassandraException("this table was dropped and is not attached to a context anymore");
     }
 
     return context;
@@ -1348,7 +1348,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     QCassandraOrderResult const insert_value_result(f_proxy->sendOrder(insert_value));
     if(!insert_value_result.succeeded())
     {
-        throw std::runtime_error("inserting a value failed");
+        throw QCassandraException("inserting a value failed");
     }
 }
 
@@ -1393,7 +1393,7 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
     QCassandraOrderResult const get_value_result(f_proxy->sendOrder(get_value));
     if(!get_value_result.succeeded())
     {
-        throw std::runtime_error("retrieving a value failed");
+        throw QCassandraException("retrieving a value failed");
     }
 
     if(get_value_result.resultCount() == 0)
@@ -1450,7 +1450,7 @@ int32_t QCassandraTable::getCellCount
         if(!cell_count_result.succeeded()
         || cell_count_result.resultCount() != 1)
         {
-            throw std::runtime_error("cell count failed");
+            throw QCassandraException("cell count failed");
         }
 
         return int32Value(cell_count_result.result(0));
@@ -1495,7 +1495,7 @@ void QCassandraTable::remove
     QCassandraOrderResult const drop_cell_result(f_proxy->sendOrder(drop_cell));
     if(!drop_cell_result.succeeded())
     {
-        throw std::runtime_error("drop cell failed");
+        throw QCassandraException("drop cell failed");
     }
 }
 
@@ -1527,7 +1527,7 @@ void QCassandraTable::remove( const QByteArray& row_key )
     QCassandraOrderResult const drop_cell_result(f_proxy->sendOrder(drop_cell));
     if(!drop_cell_result.succeeded())
     {
-        throw std::runtime_error("drop cell failed");
+        throw QCassandraException("drop cell failed");
     }
 }
 

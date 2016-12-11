@@ -247,7 +247,7 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
 {
     if(!f_host.isEmpty())
     {
-        throw std::runtime_error("QCassandraProxy::receiveOrder() called from the client...");
+        throw QCassandraException("QCassandraProxy::receiveOrder() called from the client...");
     }
 
     // create an invalid order by default
@@ -315,7 +315,7 @@ bool QCassandraProxy::sendResult(QCassandraProxyIO & io, QCassandraOrderResult c
 {
     if(!f_host.isEmpty())
     {
-        throw std::runtime_error("QCassandraProxy::sendResult() called from the client...");
+        throw QCassandraException("QCassandraProxy::sendResult() called from the client...");
     }
 
     QByteArray const encoded(result.encodeResult());
@@ -345,7 +345,7 @@ void QCassandraProxy::bio_get()
     {
         if(f_host.isEmpty())
         {
-            throw std::runtime_error("QCassandraProxy::bio_get(): server cannot call bio_get()...");
+            throw QCassandraException("QCassandraProxy::bio_get(): server cannot call bio_get()...");
         }
 
         bio_initialize();
@@ -355,7 +355,7 @@ void QCassandraProxy::bio_get()
         if(!bio)
         {
             ERR_print_errors_fp(stderr);
-            throw std::runtime_error("QCassandraProxy::bio_get(): failed initializing a BIO object");
+            throw QCassandraException("QCassandraProxy::bio_get(): failed initializing a BIO object");
         }
 
         // it is supposed to be non-blocking by default, but just in case,
@@ -374,7 +374,7 @@ void QCassandraProxy::bio_get()
         if(BIO_do_connect(bio.get()) <= 0)
         {
             ERR_print_errors_fp(stderr);
-            throw std::runtime_error("QCassandraProxy::bio_get(): failed connecting BIO object to server");
+            throw QCassandraException("QCassandraProxy::bio_get(): failed connecting BIO object to server");
         }
 
         // it worked, save the results
