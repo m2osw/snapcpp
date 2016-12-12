@@ -1,14 +1,16 @@
-libsnapwebsites (1.1.65.0~xenial) xenial; urgency=high
-
-  * SNAP-258: Added stacktracing ability to exception base if from QtCassandra.
-
- -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 11 Dec 2016 10:55:21 -0800
-
-libsnapwebsites (1.1.64.13~xenial) xenial; urgency=high
+libsnapwebsites (1.1.64.11~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 28 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Sun, 11 Dec 2016 02:00:43 -0800
+
+libsnapwebsites (1.1.65.0~xenial) xenial; urgency=high
+
+  * SNAP-258: Added stacktracing ability to exception base if from QtCassandra. (Doug Barbieri)
+  * SNAP-529: backend would crash because it could receive a PING before being
+    ready.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 10 Dec 2016 15:48:49 -0800
 
 libsnapwebsites (1.1.64.0~xenial) xenial; urgency=high
 

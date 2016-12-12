@@ -137,7 +137,7 @@ snapwebsites.Users.prototype.startAutoLogout = function()
     // Note: I checked the Firefox implementation of window.setTimeout()
     //       and it takes the interval at he time of the call to calculate
     //       the date when it will be triggered, so even if 24.8 days later
-    //       it will still be correct and execute with 50ms or so
+    //       it will still be correct and execute within 50ms or so
     //
     if(delay > 0x7FFFFFFF)
     {

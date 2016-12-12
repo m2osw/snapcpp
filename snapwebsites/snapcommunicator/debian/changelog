@@ -1,8 +1,16 @@
-snapcommunicator (1.0.47.31~xenial) xenial; urgency=high
+snapcommunicator (1.0.48.4~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Sat, 10 Dec 2016 02:00:49 -0800
+
+snapcommunicator (1.0.48.0~xenial) xenial; urgency=high
+
+  * SNAP-168: Fixed the check of the timeout and msgid of broadcast messages:
+    it needs to happen in the process_message(), very early on.
+  * Fixed the broadcast_msgid, if defined, reuse the exact same identifier.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
 
 snapcommunicator (1.0.47.0~xenial) xenial; urgency=high
 

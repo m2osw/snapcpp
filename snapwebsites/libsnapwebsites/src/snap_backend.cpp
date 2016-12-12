@@ -1231,7 +1231,8 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
             return;
         }
 
-        if(f_website.isEmpty())
+        if(f_website.isEmpty()
+        && is_ready(""))
         {
             add_uri_for_processing(f_action, get_current_date(), uri);
 
@@ -1773,6 +1774,16 @@ bool snap_backend::is_ready(QString const & uri)
         // get the "backend" table
         //
         f_backend_table = get_table(get_name(name_t::SNAP_NAME_BACKEND));
+        if(!f_backend_table)
+        {
+            // backend table does exist...
+            //
+            // reset the sites pointer otherwise we would never be able
+            // to come back here
+            //
+            f_sites_table.reset();
+            return false;
+        }
     }
 
     if(uri.isEmpty())

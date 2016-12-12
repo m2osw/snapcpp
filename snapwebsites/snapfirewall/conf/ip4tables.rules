@@ -93,6 +93,30 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL FIN,ACK -d @PUBLIC_IP@ -j REJECT
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --tcp-flags ALL PSH,ACK -d @PUBLIC_IP@ -j REJECT
 
+# The following happen all the time and we can just ignore them all
+# otherwise we really swamp fail2ban, snapfirewall, and Cassandra
+#
+#     21      ftp/fsp
+#     22      ssh (also 222, 2222)
+#     23      telnet (also 123, 2323)
+#     81      http-alt (also 8000, 8001, 8080, 8081, 8088, 8089, 8888)
+#    137      netbios
+#    138      netbios
+#    139      netbios
+#    666      hell (also 6666)
+#    947      apply-rpc
+#   1900      ssdp (plug and play)
+#   4343      https-alt
+#   5060      sip
+#   5555      ucm (Oracle universion content manager)
+#   7547      cwmp (various routers offering remote connections)
+#   7777      ichat
+#
+# WARNING: You cannot put more than 15 ports per line
+#
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m multiport -d @PUBLIC_IP@ --dports 21,22,222,2222,23,123,2323,81,8000,8001,8080,8081,8088,8089,8888 -j DROP
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m multiport -d @PUBLIC_IP@ --dports 137,138,139,666,6666,947,1900,4343,5060,5555,7547,7777 -j DROP
+
 # Drop anything else!
 -A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
 -A INPUT -i @PRIVATE_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
@@ -109,7 +133,7 @@
 # Let the administrator connect to this computer
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s @ADMIN_IPS@ -j RETURN
 
-# Let our local network computers communicate via our VPN
+# Let our local network computers communicate
 -A bad_tcp_packets -i @PRIVATE_INTERFACE@ -s @PRIVATE_NETWORK_IPS@ -j RETURN
 
 -A bad_tcp_packets -i @PUBLIC_INTERFACE@ -s 192.168.0.0/16 -j LOG --log-prefix "[iptables] (192): " --log-uid
