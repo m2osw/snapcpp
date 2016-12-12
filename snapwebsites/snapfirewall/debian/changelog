@@ -1,8 +1,20 @@
-snapfirewall (1.1.23.2~xenial) xenial; urgency=high
+snapfirewall (1.1.25.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Sat, 10 Dec 2016 10:51:34 -0800
+ -- Build Server <build@m2osw.com>  Mon, 12 Dec 2016 02:00:51 -0800
+
+snapfirewall (1.1.25.0~xenial) xenial; urgency=high
+
+  * EX-158: Broke the rules up on two lines as there is a limit of 15 ports.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Dec 2016 19:52:49 -0800
+
+snapfirewall (1.1.24.0~xenial) xenial; urgency=high
+
+  * EX-158: Slow response, removing many ports from reaching iptables.log.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Dec 2016 16:55:49 -0800
 
 snapfirewall (1.1.23.0~xenial) xenial; urgency=high
 
