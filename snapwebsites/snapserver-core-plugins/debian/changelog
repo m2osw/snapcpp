@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.31.5~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.32.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-530: Added a debug log to see that transparent hit make it as expected.
 
- -- Build Server <build@m2osw.com>  Thu, 08 Dec 2016 02:00:42 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 12 Dec 2016 11:58:42 -0800
 
 snapserver-core-plugins (1.0.31.0~xenial) xenial; urgency=high
 

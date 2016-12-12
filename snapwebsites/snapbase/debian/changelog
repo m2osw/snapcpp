@@ -1,8 +1,8 @@
-snapbase (1.0.30.32~xenial) xenial; urgency=high
+snapbase (1.0.31.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-530: Added the qs_hit definition to the .conf file.
 
- -- Build Server <build@m2osw.com>  Sat, 12 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 12 Dec 2016 11:58:42 -0800
 
 snapbase (1.0.30.0~xenial) xenial; urgency=high
 

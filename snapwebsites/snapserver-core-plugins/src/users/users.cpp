@@ -769,9 +769,11 @@ void users::on_process_cookies()
     QString const user_cookie_name(get_user_cookie_name());
 
     // any snap session?
+    //
     if(f_snap->cookie_is_defined(user_cookie_name))
     {
         // is that session a valid user session?
+        //
         QString const session_cookie(f_snap->cookie(user_cookie_name));
         if(load_login_session(session_cookie, *f_info, false) == LOGIN_STATUS_OK)
         {
@@ -782,7 +784,8 @@ void users::on_process_cookies()
             {
                 // we are logged out because the session timed out
                 //
-                // TODO: this is actually wrong, we do not want to lose the user path, but it will do better for now...
+                // TODO: this is actually wrong, we do not want to lose the
+                //       user path, but it will do for now...
                 //
                 f_info->set_object_path("/user/"); // no user id for the anonymous user
             }
@@ -817,8 +820,7 @@ void users::on_process_cookies()
     int64_t const total_session_duration(get_total_session_duration());
     f_info->set_time_to_live(total_session_duration);
 
-    // check the type of hit, if not "user" then do NOT extend the
-    // session at all
+    // check the type of hit unless we are anyway creating a new session
     //
     QString hit(get_name(name_t::SNAP_NAME_USERS_HIT_USER));
     {
@@ -840,7 +842,7 @@ void users::on_process_cookies()
     // if the hit is marked as "transparent", then do not extend the
     // session; this is used by scripts that access the server once
     // in a while and do not want to extend the session (because
-    // otherwise it could end up extending the session forever)
+    // otherwise they could end up extending the session forever)
     //
     if(hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
     {
@@ -856,19 +858,25 @@ void users::on_process_cookies()
 
             if(get_soft_administrative_session())
             {
-                // website administrator asked that the administrative session be
-                // extended each time the administrator accesses the site
+                // website administrator asked that the administrative session
+                // be extended each time the administrator accesses the site
                 //
                 int64_t const administrative_session_duration(get_administrative_session_duration());
                 f_info->set_administrative_login_limit(start_time + administrative_session_duration);
             }
         }
     }
+    else
+    {
+        SNAP_LOG_DEBUG("transparent hit does not update the session time limits.");
+    }
 
     // create or refresh the session
+    //
     if(create_new_session)
     {
         // create a new session
+        //
         f_info->set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USER);
         f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
         f_info->set_plugin_owner(get_plugin_name()); // ourselves
@@ -2265,6 +2273,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
             if(valid_password)
             {
                 // User credentials are correct, create a session & cookie
+                //
                 create_logged_in_user_session(user_key);
 
                 // Copy the previous login date and IP to the previous fields
