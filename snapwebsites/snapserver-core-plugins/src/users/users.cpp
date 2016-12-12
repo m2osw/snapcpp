@@ -1770,8 +1770,8 @@ void users::verify_user(content::path_info_t & ipath)
     }
 
     // TODO: change to identifier
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
-    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
+    user_info_t user_info( get_user_info_by_name(user_key) );
+    QtCassandra::QCassandraValue const user_identifier(user_info.get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::verify_user() could not load the user identifier, the row exists but the cell did not make it (")
@@ -1832,11 +1832,11 @@ void users::verify_user(content::path_info_t & ipath)
     // Save the date when the user verified
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
-    f_user_info.set_value(name_t::SNAP_NAME_USERS_VERIFIED_ON, value);
+    user_info.set_value(name_t::SNAP_NAME_USERS_VERIFIED_ON, value);
 
     // Save the user IP address when verified
     value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
-    f_user_info.set_value(name_t::SNAP_NAME_USERS_VERIFIED_IP, value);
+    user_info.set_value(name_t::SNAP_NAME_USERS_VERIFIED_IP, value);
 
     // tell other plugins that a new user was created and let them add
     // bells and whisles to the new account
