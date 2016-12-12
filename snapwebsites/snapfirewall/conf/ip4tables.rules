@@ -112,7 +112,10 @@
 #   7547      cwmp (various routers offering remote connections)
 #   7777      ichat
 #
--A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m multiport -d @PUBLIC_IP@ --dports 21,22,222,2222,23,123,2323,81,8000,8001,8080,8081,8088,8089,8888,137,138,139,666,6666,947,1900,4343,5060,5555,7547,7777 -j DROP
+# WARNING: You cannot put more than 15 ports per line
+#
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m multiport -d @PUBLIC_IP@ --dports 21,22,222,2222,23,123,2323,81,8000,8001,8080,8081,8088,8089,8888 -j DROP
+-A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m multiport -d @PUBLIC_IP@ --dports 137,138,139,666,6666,947,1900,4343,5060,5555,7547,7777 -j DROP
 
 # Drop anything else!
 -A INPUT -i @PUBLIC_INTERFACE@ -j LOG --log-prefix "[iptables] unknown: " --log-uid
