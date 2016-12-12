@@ -103,6 +103,7 @@ git commit "branch-name"
 #
 # If you miss a step and seemingly have a problem, try "git rebase --skip"
 # to restore the files you cherry picked.
+git pull origin "branch-name"
 git cherry-pick "commit-id"
 ...edit conflicts...
 git add "path/to/file/with/conflicts"
@@ -110,6 +111,26 @@ git commit -i "path/to/file/with/conflicts"
 git rebase --abort
 git commit .
 git push --force origin "branch-name"
+
+# Note that if you have multiple files, some that need to be merged but
+# without changes, then the rebase needs to use --continue. If you only
+# have files that are to be merged without changes, you can do the add
+# and then use:
+git rebase --skip
+# However, if you have at least one merged file with changes and one or
+# more merge files without changes, the skip will fail and the abort
+# will reset all the changes. In that case you must use the continue.
+# To get the continue to work, edit files that needed a merge but had
+# no changes. Change something, save, and then:
+git add "path/to/file/with/no/prior/changes/but/which/had/conflicts"
+git rebase --continue
+# The continue process may repeat itself a few times with the same or
+# different files while git goes through your change history. Repeat
+# the same thing until continue brings you back to your branch.
+vim "...fix merge, apply a change if no merge..."
+git add "path/to/file"
+git rebase --continue
+# repeat
 
 
 # vim: syntax=sh
