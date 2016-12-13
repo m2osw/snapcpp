@@ -783,7 +783,8 @@ void users::on_process_cookies()
             {
                 // we are logged out because the session timed out
                 //
-                // TODO: this is actually wrong, we do not want to lose the user path, but it will do better for now...
+                // TODO: this is actually wrong, we do not want to lose the
+                //       user path, but it will do for now...
                 //
                 f_info->set_object_path("/user/"); // no user id for the anonymous user
             }
@@ -818,8 +819,8 @@ void users::on_process_cookies()
     int64_t const total_session_duration(get_total_session_duration());
     f_info->set_time_to_live(total_session_duration);
 
-    // check the type of hit, if not "user" then do NOT extend the
-    // session at all
+    // check the type of hit unless we are anyway
+    // creating a new session
     //
     QString hit(get_name(name_t::SNAP_NAME_USERS_HIT_USER));
     {
@@ -841,7 +842,7 @@ void users::on_process_cookies()
     // if the hit is marked as "transparent", then do not extend the
     // session; this is used by scripts that access the server once
     // in a while and do not want to extend the session (because
-    // otherwise it could end up extending the session forever)
+    // otherwise they could end up extending the session forever)
     //
     if(hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
     {
@@ -857,19 +858,25 @@ void users::on_process_cookies()
 
             if(get_soft_administrative_session())
             {
-                // website administrator asked that the administrative session be
-                // extended each time the administrator accesses the site
+                // website administrator asked that the administrative session
+                // be extended each time the administrator accesses the site
                 //
                 int64_t const administrative_session_duration(get_administrative_session_duration());
                 f_info->set_administrative_login_limit(start_time + administrative_session_duration);
             }
         }
     }
+    else
+    {
+        SNAP_LOG_DEBUG("transparent hit does not update the session time limits.");
+    }
 
     // create or refresh the session
+    //
     if(create_new_session)
     {
         // create a new session
+        //
         f_info->set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USER);
         f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
         f_info->set_plugin_owner(get_plugin_name()); // ourselves
@@ -902,6 +909,7 @@ void users::on_process_cookies()
     cookie.set_expire_in(f_info->get_time_to_live());
     cookie.set_http_only(); // make it a tad bit safer
     f_snap->set_cookie(cookie);
+//std::cerr << "user session id [" << f_info->get_session_key() << "] [" << f_user_key << "]\n";
 
     if(f_user_info.is_valid())
     {
@@ -2489,51 +2497,6 @@ users::status_t users::user_status_from_user_path(QString const & user_path, QSt
 }
 
 
-#if 0
-/** \brief Retrieve the user identifier from its user path.
- *
- * This function parses the path to a user's account and return its
- * identifier (i.e. the number after the slash in "user/123".)
- *
- * The path may include the site key as well. It will be ignored as expected.
- *
- * WARNING: This function does NOT return the current user identifier.
- * It returns the identifier of the user path passed as a parameter.
- *
- * \note
- * The current user identifier can be retrieved using the get_user_identifier()
- * function with no parameters.
- *
- * \param[in] user_path  The path to the user.
- *
- * \return The user identifier if it worked, -1 if the path is invalid
- *         and does not represent a user identifier.
- */
-users::identifier_t users::get_user_identifier(QString const & user_path) const
-{
-    QString const site_key(f_snap->get_site_key_with_slash());
-    int pos(0);
-    if(user_path.startsWith(site_key))
-    {
-        // "remove" the site key, including the slash
-        pos = site_key.length();
-    }
-    if(user_path.mid(pos, 5) == "user/")
-    {
-        QString const identifier_string(user_path.mid(pos + 5));
-        bool ok(false);
-        int64_t identifier(identifier_string.toLongLong(&ok, 10));
-        if(ok)
-        {
-            return identifier;
-        }
-    }
-
-    return -1;
-}
-#endif
-
-
 /** \brief Given a user path, return his email address.
  *
  * This function transforms the specified user path and transforms it
@@ -2599,6 +2562,7 @@ QString users::get_user_email(identifier_t const identifier) const
 
     return QString();
 }
+
 
 /** \brief Get the path to a user from an email.
  *
