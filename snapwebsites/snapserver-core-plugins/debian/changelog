@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.32.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 13 Dec 2016 02:00:48 -0800
+
 snapserver-core-plugins (1.0.32.0~xenial) xenial; urgency=high
 
   * SNAP-530: Added a debug log to see that transparent hit make it as expected.
