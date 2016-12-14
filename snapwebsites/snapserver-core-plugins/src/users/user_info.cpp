@@ -56,6 +56,7 @@ users::user_info_t::user_info_t( snap_child * sc )
 
 users::user_info_t::user_info_t( snap_child * sc, QString const & val )
     : f_snap(sc)
+    , f_valid(true)
 {
     identifier_t const id( get_user_id_by_path( get_snap(), val ) );
     if( id == -1 )
@@ -72,6 +73,7 @@ users::user_info_t::user_info_t( snap_child * sc, QString const & val )
 
 users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
     : f_snap(sc)
+    , f_valid(true)
 {
     f_user_email = f_user_key = get_name(name);
 }
@@ -79,6 +81,7 @@ users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
 
 users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
     : f_snap(sc)
+    , f_valid(true)
 {
     set_user_key_by_id( id );
 }
@@ -124,6 +127,7 @@ void users::user_info_t::set_user_key_by_id( identifier_t id )
         {
             f_user_email = f_user_key;
         }
+        f_valid = true;
     }
 }
 
@@ -516,14 +520,6 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 
 QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
 {
-#if 0
-    if( !exists() )
-    {
-        // TODO: change to id!
-        throw users_exception(QString("User key [%1] non-existent!").arg(get_user_key()));
-    }
-#endif
-
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
     return users_table->row(get_user_key());    // TODO: change to uint64_t id
 }

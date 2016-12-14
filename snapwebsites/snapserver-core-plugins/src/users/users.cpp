@@ -1169,7 +1169,7 @@ bool users::authenticated_user(QString const & email, sessions::sessions::sessio
     user_info_t user_info(get_user_info_by_email(email));
 
     // called with the email address of a user who registered before?
-    if( !f_user_info.exists() )
+    if( !user_info.exists() )
     {
         SNAP_LOG_INFO("user key \"")(user_info.get_user_key())("\" was not found in the users table");
         return false;
@@ -1909,13 +1909,11 @@ void users::verify_user(content::path_info_t & ipath)
  */
 QString users::login_user(QString const& email, QString const & password, bool & validation_required, login_mode_t login_mode, QString const & password_policy)
 {
-    SNAP_LOG_TRACE("users::login_user()");
     validation_required = false;
     user_info_t user_info(get_user_info_by_email(email));
 
     if(user_info.exists())
     {
-        SNAP_LOG_TRACE(email)(" user exists!");
         QtCassandra::QCassandraValue value;
 
         // existing users have a unique identifier
@@ -1958,7 +1956,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(logged_info.user_ipath().get_key()))
         {
-            SNAP_LOG_TRACE("user_ipath exists, but wrong website");
             return "it looks like you have an account on this Snap! system but not this specific website. Please register on this website and try again";
         }
 
@@ -1971,7 +1968,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
         if(link_ctxt->next_link(status_info))
         {
             QString const site_key(f_snap->get_site_key_with_slash());
-            SNAP_LOG_TRACE("next_link(), site_key=")(site_key);
 
 //std::cerr << "***\n*** Current user status on log in is [" << status_info.key() << "] / [" << (site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH)) << "]\n***\n";
             // the status link exists...
@@ -1981,24 +1977,20 @@ QString users::login_user(QString const& email, QString const & password, bool &
             if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_NEW_PATH))
             {
                 validation_required = true;
-                SNAP_LOG_TRACE("user account not yet active");
                 return "user's account is not yet active (not yet verified)";
             }
             else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_BLOCKED_PATH))
             {
-                SNAP_LOG_TRACE("user account is blocked");
                 return "user's account is blocked";
             }
             else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_AUTO_PATH))
             {
-                SNAP_LOG_TRACE("auto-account only");
                 return "user did not register, this is an auto-account only";
             }
             else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
             {
                 if(password.isEmpty())
                 {
-                    SNAP_LOG_TRACE("user needs to update password");
                     return "user has to update his password, this application cannot currently log this user in";
                 }
                 // user requested a new password but it looks like he
@@ -2011,7 +2003,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
                 // note that the status will not change until the user saves
                 // his new password so this redirection will happen again and
                 // again until the password gets changed
-                SNAP_LOG_TRACE("force password change");
                 logged_info.force_password_change();
             }
             // ignore other statuses at this point
@@ -2046,20 +2037,17 @@ QString users::login_user(QString const& email, QString const & password, bool &
                 // object; will it work with '\0' bytes???)
                 valid_password = hash.size() == saved_hash.size()
                               && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0;
-                SNAP_LOG_TRACE( valid_password? "hash succeeded!": "hash failed!" );
 
                 // make sure the user password was not blocked
                 //
                 //QtCassandra::QCassandraValue password_blocked;
                 if(user_info.value_exists(name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED))
                 {
-                    SNAP_LOG_TRACE("checking if we should block IP");
                     // increase the 503s counter and block the IP if
                     // we received too many attempts
                     //
                     if(!valid_password)
                     {
-                        SNAP_LOG_TRACE("Blocking IP for user=")(user_info.get_user_key());
                         blocked_user(user_info, "users");
                     }
 
@@ -2079,7 +2067,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
 
             if(valid_password)
             {
-                SNAP_LOG_TRACE("valid_password");
 
                 // User credentials are correct, create a session & cookie
                 create_logged_in_user_session(user_info);
@@ -2087,14 +2074,10 @@ QString users::login_user(QString const& email, QString const & password, bool &
                 // Copy the previous login date and IP to the previous fields
                 if(user_info.value_exists(get_name(name_t::SNAP_NAME_USERS_LOGIN_ON)))
                 {
-                    SNAP_LOG_TRACE("Copy previous LOGIN_ON");
-                    //row->cell(get_name(name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_ON))->setValue(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_ON))->value());
                     user_info.set_value( name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_ON, user_info.get_value(name_t::SNAP_NAME_USERS_LOGIN_ON) );
                 }
                 if(user_info.value_exists(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP)))
                 {
-                    SNAP_LOG_TRACE("Copy previous LOGIN_IP");
-                    //row->cell(get_name(name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_IP))->setValue(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP))->value());
                     user_info.set_value( name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_IP, user_info.get_value(name_t::SNAP_NAME_USERS_LOGIN_IP) );
                 }
 
@@ -2115,9 +2098,7 @@ QString users::login_user(QString const& email, QString const & password, bool &
                 // log in, used in the redirect below, although we will go
                 // to user/password whatever the path is specified here
                 logged_info.set_user_info(user_info);
-                SNAP_LOG_TRACE("calling user_logged_in()");
                 user_logged_in(logged_info);
-                SNAP_LOG_TRACE("done calling user_logged_in()");
 
                 // user got logged out by a plugin and not redirected?!
                 if(f_user_info.is_valid())
@@ -2167,7 +2148,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
                             }
                         }
                     }
-                    SNAP_LOG_TRACE("redirect to HTTP_CODE_SEE_OTHER");
                     f_snap->page_redirect(logged_info.get_uri(), snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                     NOTREACHED();
                 }
@@ -2176,14 +2156,12 @@ QString users::login_user(QString const& email, QString const & password, bool &
                 // (i.e. a pay for website where the account has no more
                 //       credit and this very user is not responsible for
                 //       the payment)
-                SNAP_LOG_TRACE("good credential, invalid status");
                 return "good credential, invalid status according to another plugin that logged the user out immediately";
             }
             else
             {
                 // user mistyped his password
                 //
-                SNAP_LOG_TRACE("invalid credentials");
                 invalid_password(user_info, "users");
                 return "invalid credentials (password does not match)";
             }
@@ -2191,7 +2169,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
     }
 
     // user mistyped his email or is not registered?
-    SNAP_LOG_TRACE("invalid credentials, user does not exist!");
     return "invalid credentials (user with specified email does not exist)";
 }
 
@@ -2210,12 +2187,10 @@ QString users::login_user(QString const& email, QString const & password, bool &
  */
 void users::create_logged_in_user_session( user_info_t const& user_info )
 {
-    SNAP_LOG_TRACE("users::create_logged_in_user_session(): email=")(user_info.get_user_key());
-
     // log the user in by adding the correct object path
     // the other parameters were already defined in the
     // on_process_cookies() function
-    f_info->set_object_path("/user/" + f_user_info.get_user_key()); // TODO: use id here?
+    f_info->set_object_path("/user/" + user_info.get_user_key()); // TODO: use id here?
     int64_t const total_session_duration(get_total_session_duration());
     f_info->set_time_to_live(total_session_duration);
     int64_t const user_session_duration(get_user_session_duration());
@@ -2230,7 +2205,6 @@ void users::create_logged_in_user_session( user_info_t const& user_info )
     QString const previous_session(user_info.get_value(name_t::SNAP_NAME_USERS_LOGIN_SESSION).stringValue());
     if(!previous_session.isEmpty() && previous_session != f_info->get_session_key())
     {
-        SNAP_LOG_TRACE("there was a previous session");
         // Administrator can turn off that feature
         QtCassandra::QCassandraValue const multisessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTISESSIONS)));
         if(multisessions.nullValue() || !multisessions.signedCharValue())
@@ -2261,7 +2235,7 @@ void users::create_logged_in_user_session( user_info_t const& user_info )
                     "We detected that you had another session opened. The other session was closed.",
                     QString("users::login_user() deleted old session \"%1\" for user \"%2\".")
                                  .arg(old_session.get_session_key())
-                                 .arg(f_user_info.get_user_key())
+                                 .arg(user_info.get_user_key())
                 );
 
                 // go on, this is not a fatal error
@@ -2281,7 +2255,6 @@ void users::create_logged_in_user_session( user_info_t const& user_info )
 
     // this is now the current user
     f_user_info = user_info;
-    SNAP_LOG_TRACE("setting user_info to f_user_info for user_key=")(f_user_info.get_user_key());
     // we just logged in so we are logged in
     // (although the user_logged_in() signal could log the
     // user out if something is awry)

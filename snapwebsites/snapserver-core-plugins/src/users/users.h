@@ -346,7 +346,7 @@ public:
         mutable content::path_info_t    f_user_ipath;
         QString                         f_password_policy;
         user_info_t                     f_user_info;
-        identifier_t                           f_identifier = 0;
+        identifier_t                    f_identifier = 0;
         bool                            f_force_password_change = false;
         mutable QString                 f_uri;
     };

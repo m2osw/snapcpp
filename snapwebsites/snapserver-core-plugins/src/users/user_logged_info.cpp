@@ -58,6 +58,37 @@ content::path_info_t & users::user_logged_info_t::user_ipath()
 }
 
 
+/** \brief Save the user identifier.
+ *
+ * This function is used to save the user identifier in this object.
+ * The identifier is a number which was assigned to the user when
+ * he created his account.
+ *
+ * \param[in] identifier  The identifier of the user.
+ *
+ * \sa get_identifier()
+ */
+void users::user_logged_info_t::set_identifier(int64_t identifier)
+{
+    f_identifier = identifier;
+}
+
+
+/** \brief Retrieve the user identifier.
+ *
+ * This function returns the user identifier as defined by the
+ * set_identifier() function.
+ *
+ * \return The logged in user identifier.
+ *
+ * \sa set_identifier()
+ */
+int64_t users::user_logged_info_t::get_identifier() const
+{
+    return f_identifier;
+}
+
+
 /** \brief Change the password policy.
  *
  * This function sets up the password policy in use for this login
