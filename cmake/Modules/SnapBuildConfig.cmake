@@ -166,12 +166,20 @@ function( ConfigureMakeProjectInternal )
 		if( NOT BUILD_TYPE )
 			set( BUILD_TYPE Release )
 		endif()
+		unset( SANITIZE_ADDRESS_OPT )
+		if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+			option( SANITIZE_ADDRESS "Sanitize addresses for ${PROJECT_NAME}. Debug mode only." OFF )
+			if( ${SANITIZE_ADDRESS} )
+				set( SANITIZE_ADDRESS_OPT "-DSANTIZE_ADDRESS:BOOL=TRUE" )
+			endif()
+		endif()
 		set( COMMAND_LIST
 			${THE_CMAKE_COMMAND}
 				-G "${SNAP_CMAKE_GENERATOR}"
 				-DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 				-DCMAKE_INSTALL_PREFIX:PATH="${SNAP_DIST_DIR}"
 				-DCMAKE_PREFIX_PATH:PATH=${SNAP_DIST_DIR}
+				${SANITIZE_ADDRESS_OPT}
 				${ARG_CONFIG_ARGS}
 				${SRC_DIR}
 	    )
