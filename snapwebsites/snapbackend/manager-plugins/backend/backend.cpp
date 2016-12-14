@@ -456,7 +456,12 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
                           QString("CRON Delay between runs of %1").arg(service_name)
                         , s.get_field_name()
                         , s.get_value()
-                        , QString("The delay, in seconds, between each run of the %1 backend process. Note that this defines an exact tick, if the process outruns this delay,  waits for the next tick, no matter what.").arg(service_name)
+                        , QString("The delay, in seconds, between each run of the %1 backend process."
+                                 " At this time, this is the amount of time between runs."
+                                 " If a run takes 10min and this delay is 5min, then the snapbackend will run once every 15min. or so."
+                                 " The value can be followed by 'ms' for milliseconds,"
+                                 " 's' for seconds, 'min' for minutes,"
+                                 " combos work too: 5min 30s. For more, see <a href=\"https://www.freedesktop.org/software/systemd/man/systemd.time.html\">sytemd.time</a>").arg(service_name)
                         ));
         f.add_widget(field);
 

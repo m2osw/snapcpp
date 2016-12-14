@@ -258,6 +258,143 @@ void signal_child_death::process_signal()
 
 
 
+/** \brief Time the CASSANDRASTATUS message.
+ *
+ * When the snapbackend process is started and it never receives a replies
+ * to its CASSANDRASTATUS, it has to time out. This timer is used for that
+ * purpose.
+ */
+class cassandra_timer
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<cassandra_timer>        pointer_t;
+
+    static int64_t const        MAX_START_INTERVAL = 60LL * 1000000LL; // 1 minute in microseconds
+
+                                cassandra_timer(snap_backend * sb);
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void                process_timeout();
+
+private:
+    snap_backend *              f_snap_backend = nullptr;
+};
+
+
+/** \brief The reconnect timer.
+ *
+ * We create one cassandra timer. It is saved in this variable if needed.
+ */
+cassandra_timer::pointer_t             g_cassandra_timer;
+
+
+/** \brief Initializes the timer with a pointer to the snap backend.
+ *
+ * The constructor saves the pointer of the snap_backend object so
+ * it can later be used when the process times out.
+ *
+ * The timer is setup to trigger after 30 seconds when enabled.
+ *
+ * \param[in] sb  A pointer to the snap_backend object.
+ */
+cassandra_timer::cassandra_timer(snap_backend * sb)
+    : snap_timer(-1)
+    , f_snap_backend(sb)
+{
+    set_name("snap_backend cassandra_timer");
+}
+
+
+/** \brief The timeout happened.
+ *
+ * This function gets called after a few seconds whenever it is enabled,
+ * it will allow us to exit the snapbackend tool if it never connects
+ * to Cassandra.
+ *
+ * The function calls the stop() function of the snap_backend class.
+ */
+void cassandra_timer::process_timeout()
+{
+    f_snap_backend->stop(false);
+}
+
+
+
+
+/** \brief The timer used when a connection to Cassandra fails.
+ *
+ * When we receive the CASSANDRAREADY event, the connection is likely to
+ * work. However, over time, while reading data in various loops, we may
+ * end up with an exception and that stops the connection right there.
+ * In other words, on return the f_cassandra pointer will be reset back
+ * to a null pointer.
+ *
+ * To allow for a little bit of time before reconnecting, we use this
+ * timer. Because in most cases this happens when Cassandra is rather
+ * overloaded so trying to reconnect immediately at this stage is not
+ * a good plan.
+ *
+ * At this time we setup the timer to 30 seconds. A snapbackend child
+ * continues to be fully functional if its connection did not die, so
+ * a longer pause should not be much of a problem.
+ *
+ * This will be much faster than the 5min to 1h auto-restart delay in
+ * the various snapbackend service files.
+ */
+class reconnect_timer
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<reconnect_timer>        pointer_t;
+
+                                reconnect_timer(snap_backend * sb);
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void                process_timeout();
+
+private:
+    snap_backend *              f_snap_backend = nullptr;
+};
+
+
+/** \brief The reconnect timer.
+ *
+ * We create one reconnect timer. It is saved in this variable if needed.
+ */
+reconnect_timer::pointer_t             g_reconnect_timer;
+
+
+/** \brief Initializes the timer with a pointer to the snap backend.
+ *
+ * The constructor saves the pointer of the snap_backend object so
+ * it can later be used when the process times out.
+ *
+ * The timer is setup to trigger after 30 seconds when enabled.
+ *
+ * \param[in] sb  A pointer to the snap_backend object.
+ */
+reconnect_timer::reconnect_timer(snap_backend * sb)
+    : snap_timer(-1)
+    , f_snap_backend(sb)
+{
+    set_name("snap_backend reconnect_timer");
+}
+
+
+/** \brief The timeout happened.
+ *
+ * This function gets called after a few seconds whenever it is enabled,
+ * it will allow us to reconnect to the Cassandra database.
+ */
+void reconnect_timer::process_timeout()
+{
+    f_snap_backend->process_reconnect();
+}
+
+
+
+
 /** \brief The timer to produce ticks once every five minutes.
  *
  * This timer makes sure that every website is re-added to the
@@ -550,7 +687,7 @@ class child_connection
 public:
     typedef std::shared_ptr<child_connection>   pointer_t;
 
-                                child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t context);
+                                child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t & context);
     virtual                     ~child_connection() override {}
 
     bool                        lock(QString const & uri);
@@ -586,7 +723,7 @@ child_connection::pointer_t g_child_connection;
  * \param[in] sb  The snap backend pointer.
  * \param[in] uri  The URI the child process is going to work on.
  */
-child_connection::child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t context)
+child_connection::child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t & context)
     : f_snap_backend(sb)
     , f_context(context)
     //, f_lock(nullptr)
@@ -735,45 +872,60 @@ bool snap_backend::stop_received() const
  * \param[in] website_uri  The URI of the website on which the \p action should
  *                         be applied on \p date.
  */
-void snap_backend::add_uri_for_processing(QString const & action, int64_t date, QString const & website_uri)
+bool snap_backend::add_uri_for_processing(QString const & action, int64_t date, QString const & website_uri)
 {
-    QString const action_reference(QString("*%1*").arg(action));
-    int64_t const previous_entry(f_backend_table->row(action_reference)->cell(website_uri)->value().safeInt64Value(0, -1));
-    if(previous_entry != -1)
+    try
     {
-        QByteArray column_key;
-        QtCassandra::appendInt64Value(column_key, previous_entry);
-
-        // is entry already outdated and thus still effective?
-        //
-        if(previous_entry <= date)
+        QString const action_reference(QString("*%1*").arg(action));
+        int64_t const previous_entry(f_backend_table->row(action_reference)->cell(website_uri)->value().safeInt64Value(0, -1));
+        if(previous_entry != -1)
         {
-            // make sure there is indeed an entry though because bugs
-            // creep in and the other cell may not be in place anymore
-            // and a "return" here would prevent further work on any
-            // backend processing
+            QByteArray column_key;
+            QtCassandra::appendInt64Value(column_key, previous_entry);
+
+            // is entry already outdated and thus still effective?
             //
-            if(f_backend_table->row(action)->exists(column_key))
+            if(previous_entry <= date)
             {
-                // we already have that entry at the same date or earlier
+                // make sure there is indeed an entry though because bugs
+                // creep in and the other cell may not be in place anymore
+                // and a "return" here would prevent further work on any
+                // backend processing
                 //
-                return;
+                if(f_backend_table->row(action)->exists(column_key))
+                {
+                    // we already have that entry at the same date or earlier
+                    //
+                    return true;
+                }
             }
+
+            // make sure we drop the other reference to avoid
+            // (generally useless) duplicates
+            //
+            f_backend_table->row(action)->dropCell(column_key);
         }
 
-        // make sure we drop the other reference to avoid
-        // (generally useless) duplicates
+        QByteArray date_key;
+        QtCassandra::appendInt64Value(date_key, date);
+        f_backend_table->row(action)->cell(date_key)->setValue(website_uri);
+
+        // save a reference so we can drop the entry as required
         //
-        f_backend_table->row(action)->dropCell(column_key);
+        f_backend_table->row(action_reference)->cell(website_uri)->setValue(date);
+
+        return true;
     }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_WARNING("Got an exception while adding a URI for processing: ")(e.what());
 
-    QByteArray date_key;
-    QtCassandra::appendInt64Value(date_key, date);
-    f_backend_table->row(action)->cell(date_key)->setValue(website_uri);
+        // pause for 30 seconds, then we will try again
+        //
+        request_cassandra_status();
 
-    // save a reference so we can drop the entry as required
-    //
-    f_backend_table->row(action_reference)->cell(website_uri)->setValue(date);
+        return false;
+    }
 }
 
 
@@ -788,29 +940,48 @@ void snap_backend::add_uri_for_processing(QString const & action, int64_t date, 
  * when we get a PING or within five minutes.
  *
  * \param[in] action  The action where a website URI is to be removed.
+ * \param[in] key  The key to drop.
  * \param[in] website_uri  The URI to be removed.
+ *
+ * \return true if the removal worked as expected; false if we lose the
+ *         connection to the database in the process.
  */
-void snap_backend::remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri)
+bool snap_backend::remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri)
 {
-    QString const action_reference(QString("*%1*").arg(action));
-    int64_t const previous_entry(f_backend_table->row(action_reference)->cell(website_uri)->value().safeInt64Value(0, -1));
-    if(previous_entry != -1)
+    try
     {
-        // drop the actual entry and the reference
-        QByteArray column_key;
-        QtCassandra::appendInt64Value(column_key, previous_entry);
-        f_backend_table->row(action)->dropCell(column_key);
+        QString const action_reference(QString("*%1*").arg(action));
+        int64_t const previous_entry(f_backend_table->row(action_reference)->cell(website_uri)->value().safeInt64Value(0, -1));
+        if(previous_entry != -1)
+        {
+            // drop the actual entry and the reference
+            QByteArray column_key;
+            QtCassandra::appendInt64Value(column_key, previous_entry);
+            f_backend_table->row(action)->dropCell(column_key);
+        }
+
+        // just in case, alway sforce a drop on this cell (it should not
+        // exist if previous_entry was -1)
+        //
+        f_backend_table->row(action_reference)->dropCell(website_uri);
+
+        // also remove the processed entry (which is the one we really use
+        // to find what has to be worked on)
+        //
+        f_backend_table->row(action)->dropCell(key);
+
+        return true;
     }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_WARNING("Got an exception while adding a URI for processing: ")(e.what());
 
-    // just in case, alway sforce a drop on this cell (it should not
-    // exist if previous_entry was -1)
-    //
-    f_backend_table->row(action_reference)->dropCell(website_uri);
+        // pause for 30 seconds, then we will try again
+        //
+        request_cassandra_status();
 
-    // also remove the processed entry (which is the one we really use
-    // to find what has to be worked on)
-    //
-    f_backend_table->row(action)->dropCell(key);
+        return false;
+    }
 }
 
 
@@ -923,12 +1094,25 @@ void snap_backend::process_action()
         f_server.lock()->configure_messenger_logging( g_messenger );
     }
 
-    // create a wake up timer; whenever we have work to do, this timer
-    // is used to run the next entry at its specified date and time
+    // create a Cassandra timer; we use it in the "READY" and snapbackend
+    // is not called with a specific action (i.e. a CRON backend); if the
+    // timer times out, then we force an exit with a failure status
     //
     {
-        g_wakeup_timer.reset(new wakeup_timer(this));
-        g_communicator->add_connection(g_wakeup_timer);
+        g_cassandra_timer.reset(new cassandra_timer(this));
+        g_communicator->add_connection(g_cassandra_timer);
+    }
+
+    // create a reconnect timer; if we lose the connection to the Cassandra
+    // cluster (more precisely, the snapdbproxy local daemon which cuts us
+    // off on a throw by the libQtCassandra library), then we want to
+    // reconnect after a little while which is handled by this timer;
+    // note that the reconnect is actually sending a new CASSANDRASTATUS
+    // message and the rest is done as before
+    //
+    {
+        g_reconnect_timer.reset(new reconnect_timer(this));
+        g_communicator->add_connection(g_reconnect_timer);
     }
 
     // create a tick timer; every five minutes we add work to our
@@ -938,6 +1122,14 @@ void snap_backend::process_action()
     {
         g_tick_timer.reset(new tick_timer(this));
         g_communicator->add_connection(g_tick_timer);
+    }
+
+    // create a wake up timer; whenever we have work to do, this timer
+    // is used to run the next entry at its specified date and time
+    //
+    {
+        g_wakeup_timer.reset(new wakeup_timer(this));
+        g_communicator->add_connection(g_wakeup_timer);
     }
 
     // we want to immediately be signaled whenever a child process dies
@@ -1057,31 +1249,48 @@ void snap_backend::process_tick()
         //
         f_not_ready_counter = 0;
 
-        // if a site exists then it has a "core::last_updated" entry
-        //
-        f_sites_table->clearCache(); // just in case, make sure we do not have a query still laying around
-        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
-        column_predicate->setCellKey(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
-        auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
-        row_predicate->setCellPredicate(column_predicate);
-        for(;;)
+        try
         {
-            if(f_sites_table->readRows(row_predicate) == 0)
-            {
-                // no more websites to process
-                break;
-            }
-
-            // got some websites
+            // if a site exists then it has a "core::last_updated" entry
             //
-            QtCassandra::QCassandraRows const rows(f_sites_table->rows());
-            for(QtCassandra::QCassandraRows::const_iterator it(rows.begin());
-                                                            it != rows.end();
-                                                            ++it)
+            f_sites_table->clearCache(); // just in case, make sure we do not have a query still laying around
+            auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
+            column_predicate->setCellKey(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
+            auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+            row_predicate->setCellPredicate(column_predicate);
+            for(;;)
             {
-                QString const key(QString::fromUtf8(it.key().data()));
-                add_uri_for_processing(f_action, get_current_date(), key);
+                if(f_sites_table->readRows(row_predicate) == 0)
+                {
+                    // no more websites to process
+                    break;
+                }
+
+                // got some websites
+                //
+                QtCassandra::QCassandraRows const rows(f_sites_table->rows());
+                for(QtCassandra::QCassandraRows::const_iterator it(rows.begin());
+                                                                it != rows.end();
+                                                                ++it)
+                {
+                    QString const key(QString::fromUtf8(it.key().data()));
+                    if(!add_uri_for_processing(f_action, get_current_date(), key))
+                    {
+                        // this happens if an error occurs while working with
+                        // the database; in that case we cannot go any further
+                        //
+                        break;
+                    }
+                }
             }
+        }
+        catch(std::exception const & e)
+        {
+            SNAP_LOG_WARNING("Got an exception while adding a URI for processing: ")(e.what());
+
+            // pause for 30 seconds, then we will try again
+            //
+            request_cassandra_status();
         }
     }
 
@@ -1112,7 +1321,7 @@ bool snap_backend::process_timeout()
     // a child running, but it is way safer this way)
     //
     if(f_stop_received
-    || g_child_connection)
+    || g_child_connection != nullptr)
     {
         return false;
     }
@@ -1123,60 +1332,77 @@ bool snap_backend::process_timeout()
         // both be defined, but just in case since we have rather lose
         // event agreggations...
         //
-        if(!f_sites_table
-        || !f_backend_table)
+        if(f_sites_table == nullptr
+        || f_backend_table == nullptr)
         {
             return false;
         }
 
-        // if the user did not give us a specific website to work on
-        // we want to check for the next entry in our backend table
+        // the connection to snapdbproxy may be severed while attempting
+        // to read more data; here we do a try catch so we can have a
+        // pause and attempt to reconnect later (30 seconds later)
         //
-        QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
-        row->clearCache(); // just in case, make sure we do not have a query laying around
-        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
-        column_predicate->setCount(1); // read only the first row -- WARNING: if you increase that number you MUST add a sub-loop
-        column_predicate->setIndex(); // behave like an index
-        for(;;)
+        // See SNAP-529 for details
+        //
+        try
         {
-            row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
-            if(cells.isEmpty())
-            {
-                // it looks like we are done
-                break;
-            }
-
-            // check whether the time is past, if it is in more than 10ms
-            // then we want to go to sleep again, otherwise we start
-            // processing that website now
+            // if the user did not give us a specific website to work on
+            // we want to check for the next entry in our backend table
             //
-            QByteArray const key(cells.begin().key());
-            int64_t const time_limit(QtCassandra::safeInt64Value(key, 0, 0));
-            if(time_limit <= get_current_date() + 10000LL)
+            QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
+            row->clearCache(); // just in case, make sure we do not have a query laying around
+            auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+            column_predicate->setCount(1); // read only the first row -- WARNING: if you increase that number you MUST add a sub-loop
+            column_predicate->setIndex(); // behave like an index
+            for(;;)
             {
-                // note how we remove the URI from the backend table before
-                // we processed it: this is much safer, if that website
-                // (currently) has a problem, then we just end up skipping
-                // it and we will just try again later.
-                //
-                QtCassandra::QCassandraCell::pointer_t cell(*cells.begin());
-                QString const website_uri(cell->value().stringValue());
-                remove_processed_uri(f_action, key, website_uri);
-                if(process_backend_uri(website_uri))
+                row->readCells(column_predicate);
+                QtCassandra::QCassandraCells const cells(row->cells());
+                if(cells.isEmpty())
                 {
-                    return true;
+                    // it looks like we are done
+                    break;
+                }
+
+                // check whether the time is past, if it is in more than 10ms
+                // then we want to go to sleep again, otherwise we start
+                // processing that website now
+                //
+                QByteArray const key(cells.begin().key());
+                int64_t const time_limit(QtCassandra::safeInt64Value(key, 0, 0));
+                if(time_limit <= get_current_date() + 10000LL)
+                {
+                    // note how we remove the URI from the backend table before
+                    // we processed it: this is much safer, if that website
+                    // (currently) has a problem, then we just end up skipping
+                    // it and we will just try again later.
+                    //
+                    QtCassandra::QCassandraCell::pointer_t cell(*cells.begin());
+                    QString const website_uri(cell->value().stringValue());
+                    remove_processed_uri(f_action, key, website_uri);
+                    if(process_backend_uri(website_uri))
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    // we found one that needs to be started in the future
+                    // we can exit the loop now after we stamped the timer
+                    // for when we want to wake up next
+                    //
+                    g_wakeup_timer->set_timeout_date(time_limit);
+                    break;
                 }
             }
-            else
-            {
-                // we found one that needs to be started in the future
-                // we can exit the loop now after we stamped the timer
-                // for when we want to wake up next
-                //
-                g_wakeup_timer->set_timeout_date(time_limit);
-                break;
-            }
+        }
+        catch(std::exception const & e)
+        {
+            SNAP_LOG_WARNING("Got an exception while searching for the next website to work on: ")(e.what());
+
+            // pause for 30 seconds, then we will try again
+            //
+            request_cassandra_status();
         }
     }
     else
@@ -1234,16 +1460,17 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         if(f_website.isEmpty()
         && is_ready(""))
         {
-            add_uri_for_processing(f_action, get_current_date(), uri);
-
-            // if no child is currently running, wake up the messenger ASAP
-            //
-            if(!g_child_connection)
+            if(add_uri_for_processing(f_action, get_current_date(), uri))
             {
+                // if no child is currently running, wake up the messenger ASAP
+                //
+                if(g_child_connection == nullptr)
+                {
 #ifdef DEBUG
-                SNAP_LOG_TRACE("Run the child now since it was not running.");
+                    SNAP_LOG_TRACE("Run the child now since it was not running.");
 #endif
-                g_wakeup_timer->set_timeout_date(snap_communicator::get_current_date());
+                    g_wakeup_timer->set_timeout_date(snap_communicator::get_current_date());
+                }
             }
         }
         else
@@ -1285,14 +1512,21 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         // Snap! Communicator received our REGISTER command
         //
 
+        // if the user called snapbackend as the CRON action (i.e. no --action
+        // specified on the command line) then we want to be able to time out
+        // if snapdbproxy never sends us a CASSANDRAREADY message
+        //
+        if(!f_cron_action)
+        {
+            g_cassandra_timer->set_enable(true);
+            g_cassandra_timer->set_timeout_date(snap_communicator::get_current_date() + cassandra_timer::MAX_START_INTERVAL);
+        }
+
         // request snapdbproxy to send us a status signal about
         // Cassandra, after that one call, we will receive the
         // statuses just because we understand them.
         //
-        snap::snap_communicator_message isdbready_message;
-        isdbready_message.set_command("CASSANDRASTATUS");
-        isdbready_message.set_service("snapdbproxy");
-        g_messenger->send_message(isdbready_message);
+        process_reconnect(); // simulate a process_reconnect() timeout
 
         // request snapcommunicator to send us a STATUS message
         // about the current status of the snaplock service
@@ -1318,6 +1552,13 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
     if(command == "CASSANDRAREADY")
     {
+        // cancel the timeout
+        //
+        if(!f_cron_action)
+        {
+            g_cassandra_timer->set_enable(false);
+        }
+
         // connect to Cassandra
         //
         // IMPORTANT NOTE: We are likely to receive two of these events
@@ -1337,6 +1578,7 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
             // we are now ready to try running a child process
             //
             g_tick_timer->set_enable(true);
+            g_tick_timer->set_timeout_date(snap_communicator::get_current_date());
         }
 
         return;
@@ -1397,9 +1639,69 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
 void snap_backend::disconnect_cassandra()
 {
-    f_sites_table.reset();
-    f_backend_table.reset();
+    // we are in control of the backend table
+    //
+    if(f_backend_table != nullptr)
+    {
+        f_backend_table->clearCache();
+        f_backend_table.reset();
+    }
+
+    // we have our own f_sites_table variable
+    // (TBD: maybe we could share the snap_child one? right now it is private.)
+    //
+    if(f_sites_table != nullptr)
+    {
+        f_sites_table->clearCache();
+        f_sites_table.reset();
+    }
+
+    // the disconnect_cassandra() in snap_child already takes care of
+    //
+    //    f_sites_table
+    //    f_context
+    //    f_cassandra
+    //
     snap_child::disconnect_cassandra();
+}
+
+
+void snap_backend::request_cassandra_status()
+{
+    SNAP_LOG_TRACE("requesting a CASSANDRASTATUS message because we got an error from our connection with snapdbproxy");
+
+    // since we are going to disconnect, there is no need for this timer
+    // so we can as well disable it; it will be re-enabled when we
+    // receive the CASSANDRAREADY message
+    //
+    g_tick_timer->set_enable(false);
+
+    // make sure the rest of the class knows that the current state
+    // is viewed as "not good"--okay, just kidding, it is viewed as
+    // not connected to Cassandra so we need to reset the pointers
+    //
+    // also we do not want an auto-retry in case the snapdbproxy is
+    // really not available
+    //
+    f_auto_retry_cassandra = false;
+    disconnect_cassandra();
+
+    // whether the user wants to request a new CASSANDRASTATUS to be sent
+    //
+    int64_t const now(snap::snap_communicator::get_current_date());
+    int64_t const reconnect_date(now + 30LL * 1000000LL);
+    g_reconnect_timer->set_timeout_date(reconnect_date);
+}
+
+
+void snap_backend::process_reconnect()
+{
+    SNAP_LOG_TRACE("sending the CASSANDRASTATUS message");
+
+    snap::snap_communicator_message isdbready_message;
+    isdbready_message.set_command("CASSANDRASTATUS");
+    isdbready_message.set_service("snapdbproxy");
+    g_messenger->send_message(isdbready_message);
 }
 
 
@@ -1431,15 +1733,25 @@ void snap_backend::stop(bool quitting)
     // one more call to their callbacks which thus still have to
     // check the f_stop_received flag
     //
-    if(g_wakeup_timer != nullptr)
+    if(g_cassandra_timer != nullptr)
     {
-        g_wakeup_timer->set_enable(false);
-        g_wakeup_timer->set_timeout_date(-1);
+        g_cassandra_timer->set_enable(false);
+        g_cassandra_timer->set_timeout_date(-1);
+    }
+    if(g_reconnect_timer != nullptr)
+    {
+        g_reconnect_timer->set_enable(false);
+        g_reconnect_timer->set_timeout_date(-1);
     }
     if(g_tick_timer != nullptr)
     {
         g_tick_timer->set_enable(false);
         g_tick_timer->set_timeout_delay(-1);
+    }
+    if(g_wakeup_timer != nullptr)
+    {
+        g_wakeup_timer->set_enable(false);
+        g_wakeup_timer->set_timeout_date(-1);
     }
 
     if(g_messenger != nullptr)
@@ -1486,8 +1798,10 @@ void snap_backend::stop(bool quitting)
     else
     {
         //g_communicator->remove_connection(g_messenger); -- this one will get an expected HUP shortly or when the child dies
-        g_communicator->remove_connection(g_wakeup_timer);
+        g_communicator->remove_connection(g_cassandra_timer);
+        g_communicator->remove_connection(g_reconnect_timer);
         g_communicator->remove_connection(g_tick_timer);
+        g_communicator->remove_connection(g_wakeup_timer);
         g_communicator->remove_connection(g_signal_child_death);
     }
 
@@ -1670,8 +1984,10 @@ void snap_backend::capture_zombies(pid_t pid)
     //
     if(f_stop_received)
     {
-        g_communicator->remove_connection(g_wakeup_timer);
+        g_communicator->remove_connection(g_cassandra_timer);
+        g_communicator->remove_connection(g_reconnect_timer);
         g_communicator->remove_connection(g_tick_timer);
+        g_communicator->remove_connection(g_wakeup_timer);
         g_communicator->remove_connection(g_signal_child_death);
 
         // this was the last straw, now we are quitting...
@@ -1755,33 +2071,41 @@ bool snap_backend::is_ready(QString const & uri)
         return false;
     }
 
-    if(!f_sites_table)
+    if(f_sites_table == nullptr)
     {
         f_context->clearCache();
 
         // get the "sites" table
         //
-        // we do the findTable() here otherwise we'd have to try/catch
-        // which is slow, not really clean, etc.
+        // we do the findTable() here otherwise we would have to try/catch
+        // which is slow, not really clean or useful here...
         //
         f_sites_table = f_context->findTable(get_name(name_t::SNAP_NAME_SITES));
-        if(!f_sites_table)
+        if(f_sites_table == nullptr)
         {
             // sites table does not even exist...
+            //
+            // we have to reset the connection otherwise we would not get the
+            // new context
+            //
+            request_cassandra_status();
             return false;
         }
 
         // get the "backend" table
         //
-        f_backend_table = get_table(get_name(name_t::SNAP_NAME_BACKEND));
-        if(!f_backend_table)
+        // we do the findTable() here otherwise we would have to try/catch
+        // which is slow, not really clean or useful here...
+        //
+        f_backend_table = f_context->findTable(get_name(name_t::SNAP_NAME_BACKEND));
+        if(f_backend_table == nullptr)
         {
-            // backend table does exist...
+            // backend table does not exist...
             //
-            // reset the sites pointer otherwise we would never be able
-            // to come back here
+            // we have to reset the connection otherwise we would not get the
+            // new context
             //
-            f_sites_table.reset();
+            request_cassandra_status();
             return false;
         }
     }
@@ -1800,12 +2124,16 @@ bool snap_backend::is_ready(QString const & uri)
     if(f_sites_table->exists(uri))
     {
         // TODO: to fix SNAP-125 we also want a form of lock, i.e. a parameter
-        //       (or just a lock? but our locks are exclusive...) that tell
-        //       us that the website is being updated now...
+        //       (or just a lock? but our locks are exclusive... see SNAP-470)
+        //       that tells us that the website is being updated now...
         //
         //       and conversely we need to know that a backend is running
         //       against a given website so we do not start an update while
         //       that is going on!
+        //
+        //       with SNAP-470 we can create support for a read-only or
+        //       read/write type of semaphore which will resolve that
+        //       problem once and for all
         //
         return f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED))
             && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
@@ -1813,6 +2141,8 @@ bool snap_backend::is_ready(QString const & uri)
 
     if(!f_cron_action)
     {
+        // the regular CRON action did not make it, just quit
+        //
         SNAP_LOG_ERROR("website URI \"")(uri)("\" does not reference an existing website.");
         disconnect();
     }
@@ -1863,9 +2193,11 @@ void snap_backend::disconnect()
 
     // now disconnect so we can quit
     //
-    g_communicator->remove_connection(g_wakeup_timer);
     g_communicator->remove_connection(g_interrupt);
+    g_communicator->remove_connection(g_cassandra_timer);
+    g_communicator->remove_connection(g_reconnect_timer);
     g_communicator->remove_connection(g_tick_timer);
+    g_communicator->remove_connection(g_wakeup_timer);
     g_communicator->remove_connection(g_signal_child_death);
 }
 
@@ -1992,12 +2324,16 @@ bool snap_backend::process_backend_uri(QString const & uri)
         //
         g_communicator->remove_connection(g_messenger);
         g_messenger.reset();
-        g_communicator->remove_connection(g_wakeup_timer);
-        g_wakeup_timer.reset();
         g_communicator->remove_connection(g_interrupt);
         g_interrupt.reset();
+        g_communicator->remove_connection(g_cassandra_timer);
+        g_cassandra_timer.reset();
+        g_communicator->remove_connection(g_reconnect_timer);
+        g_reconnect_timer.reset();
         g_communicator->remove_connection(g_tick_timer);
         g_tick_timer.reset();
+        g_communicator->remove_connection(g_wakeup_timer);
+        g_wakeup_timer.reset();
         g_communicator->remove_connection(g_signal_child_death);
         g_signal_child_death.reset();
 
@@ -2068,7 +2404,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
             if( actions.has_action("content::snapbackend") )
             {
                 // the plugin HAS to be content
-                throw snap_logic_exception(QString("snap_backend::process_backend_uri(): plugin \"%1\" makes use of a CRON action named \"content::snapbackend\" which is reserved as a standard action by the system.")
+                throw snap_logic_exception(QString("snap_backend::process_backend_uri(): plugin \"%1\" makes use of a CRON action named \"content::snapbackend\" which is reserved as a special action by the system.")
                                                     .arg(actions.get_plugin_name("content::snapbackend")));
             }
             // XXX: we may want to test that none of the CRON actions are

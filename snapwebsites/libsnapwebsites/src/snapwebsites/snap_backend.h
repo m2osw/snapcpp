@@ -35,8 +35,8 @@ public:
     void                        create_signal( std::string const & name );
 
     bool                        stop_received() const;
-    void                        add_uri_for_processing(QString const & cron_action, int64_t date, QString const & website_uri);
-    void                        remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri);
+    bool                        add_uri_for_processing(QString const & cron_action, int64_t date, QString const & website_uri);
+    bool                        remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri);
 
     void                        run_backend();
     void                        stop(bool quitting);
@@ -49,6 +49,7 @@ public:
     bool                        process_timeout();
     void                        process_message(snap::snap_communicator_message const & message);
     void                        process_child_message(snap::snap_communicator_message const & message);
+    void                        process_reconnect();
     void                        capture_zombies(pid_t pid);
 
 private:
@@ -56,6 +57,7 @@ private:
     bool                        process_backend_uri(QString const & uri);
     void                        disconnect();
     virtual void                disconnect_cassandra() override;
+    void                        request_cassandra_status();
     std::string                 get_signal_name_from_action();
     bool                        is_cron_action(QString const & action);
     bool                        is_ready(QString const & uri);

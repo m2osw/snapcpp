@@ -1,8 +1,8 @@
-snapbackend (1.0.16.36~xenial) xenial; urgency=high
+snapbackend (1.0.17.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-158: Reduced the restart timeout for pagelist to 5min instead of 1h.
 
- -- Build Server <build@m2osw.com>  Thu, 10 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 14 Dec 2016 13:39:48 -0800
 
 snapbackend (1.0.16.0~xenial) xenial; urgency=high
 

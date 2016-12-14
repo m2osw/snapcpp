@@ -1,8 +1,16 @@
-libsnapwebsites (1.1.65.5~xenial) xenial; urgency=high
+libsnapwebsites (1.1.66.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-529: Properly clear the cache of the context when disconnecting.
+  * Added a reconnect timer so if we lose our connection to Cassandra we
+    can reconnect at some point instead of crashing.
+  * Added a cassandra timer so the snapbackend without an action will
+    exit automatically if it never receives the CASSANDRAREADY message.
+  * Added a few try/catch so if a Cassandra error occurs, we can reset the
+    connection and go on instead of crashing.
+  * EX-158: Added a couple new functions to the thread FIFO.
+  * Various clean ups.
 
- -- Build Server <build@m2osw.com>  Sun, 11 Dec 2016 02:00:43 -0800
+ -- Alexis Wilke <alexis@m2osw.com>>  Wed, 14 Dec 2016 13:39:43 -0800
 
 libsnapwebsites (1.1.65.0~xenial) xenial; urgency=high
 
