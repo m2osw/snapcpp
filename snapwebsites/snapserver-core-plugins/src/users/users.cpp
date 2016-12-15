@@ -465,6 +465,23 @@ int64_t users::do_update(int64_t last_updated)
 }
 
 
+/** \brief Update the database as needed
+ *
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *                          updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t users::do_dynamic_update(int64_t last_updated)
+{
+    SNAP_PLUGIN_UPDATE_INIT();
+
+    SNAP_PLUGIN_UPDATE(2016, 12, 14, 18, 06, 32, user_identifier_update);
+
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
 /** \brief Update the users plugin content.
  *
  * This function updates the contents in the database using the
@@ -478,6 +495,24 @@ void users::content_update(int64_t variables_timestamp)
 {
     NOTUSED(variables_timestamp);
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Update the users table to use identifiers
+ *
+ * This function converts the users table to use identifiers as keys
+ * as opposed to using an email address (user_key).
+ *
+ * See SNAP-258.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                                 to the database by this update
+ *                                 (in micro-seconds).
+ */
+void users::user_identifier_update(int64_t variables_timestamp)
+{
+    NOTUSED(variables_timestamp);
+    // TODO
 }
 
 

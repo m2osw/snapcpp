@@ -360,6 +360,7 @@ public:
     virtual QString         description() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual int64_t         do_dynamic_update(int64_t last_updated);
     virtual void            bootstrap(::snap::snap_child * snap);
 
 
@@ -454,7 +455,9 @@ public:
     user_info_t             get_user_info_by_name  ( QString const & name    );
 
 private:
-    void                    content_update(int64_t variables_timestamp);
+    void                    content_update         (int64_t variables_timestamp);
+    void				    user_identifier_update (int64_t variables_timestamp);
+
     void                    token_user_count(filter::filter::token_info_t & token);
 
     QtCassandra::QCassandraTable::pointer_t get_users_table() const;
