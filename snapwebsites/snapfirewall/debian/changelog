@@ -1,8 +1,9 @@
-snapfirewall (1.1.25.3~xenial) xenial; urgency=high
+snapfirewall (1.1.26.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-158: Also removing the telnet (commented) fail2ban jail since we now
+    block port 23 (and 123, 2323) before it can appear in iptables.conf.
 
- -- Build Server <build@m2osw.com>  Mon, 12 Dec 2016 02:00:51 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 14 Dec 2016 20:27:51 -0800
 
 snapfirewall (1.1.25.0~xenial) xenial; urgency=high
 
