@@ -290,7 +290,6 @@ void tracker::on_detach_from_session()
     else
     {
         users::users::user_info_t const & user_info(users_plugin->get_user_info());
-        //email = users_plugin->get_user_email(users_plugin->get_user_path());
         email = user_info.get_user_email();
         if(email.isEmpty())
         {

@@ -58,15 +58,15 @@ users::user_info_t::user_info_t( snap_child * sc, QString const & val )
     : f_snap(sc)
     , f_valid(true)
 {
-    identifier_t const id( get_user_id_by_path( get_snap(), val ) );
-    if( id == -1 )
+    f_identifier = get_user_id_by_path( get_snap(), val );
+    if( f_identifier == -1 )
     {
         f_user_email = val;
         email_to_user_key();
     }
     else
     {
-        set_user_key_by_id( id );
+        set_user_key_by_id( f_identifier );
     }
 }
 
@@ -81,9 +81,10 @@ users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
 
 users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
     : f_snap(sc)
+    , f_identifier(id)
     , f_valid(true)
 {
-    set_user_key_by_id( id );
+    set_user_key_by_id( f_identifier );
 }
 
 
@@ -111,13 +112,13 @@ users::identifier_t users::user_info_t::get_user_id_by_path( snap_child* snap, Q
 }
 
 
-void users::user_info_t::set_user_key_by_id( identifier_t id )
+void users::user_info_t::set_user_key_by_id()
 {
     auto users_table( get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)) );
     auto row        ( users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))  );
 
     QByteArray key;
-    QtCassandra::appendInt64Value(key, id);
+    QtCassandra::appendInt64Value(key, f_identifier);
     if(row->exists(key))
     {
         // found the user, retrieve the current email
@@ -147,15 +148,19 @@ void users::user_info_t::set_user_key_by_id( identifier_t id )
  */
 users::identifier_t users::user_info_t::get_identifier() const
 {
+#if 0
     QtCassandra::QCassandraValue const value(get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
     if(!value.nullValue())
     {
         return value.int64Value();
     }
     return 0;
+#else
+    return f_identifier;
+#endif
 }
 
-
+#if 0
 /** \brief Save the user identifier.
  *
  * This function is used to save the user identifier in this object.
@@ -172,6 +177,7 @@ void users::user_info_t::set_identifier( identifier_t const & v )
 
     // TODO: when we make this the new key, we need to set the row column key as well.
 }
+#endif
 
 
 bool users::user_info_t::value_exists( QString const & v ) const
@@ -521,7 +527,7 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
 {
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    return users_table->row(get_user_key());    // TODO: change to uint64_t id
+    return users_table->row(get_user_key());    // TODO: change to int64_t id
 }
 
 

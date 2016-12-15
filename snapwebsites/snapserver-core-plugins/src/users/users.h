@@ -226,9 +226,7 @@ public:
         user_info_t( snap_child * sc, name_t       const & name  );
         user_info_t( snap_child * sc, identifier_t const & id    );
 
-        void                set_identifier (identifier_t const & identifier);
         identifier_t        get_identifier () const;
-
         QString const &     get_user_email () const;
         QString const &     get_user_key   () const;
 
@@ -267,6 +265,7 @@ public:
 
     private:
         snap_child *    f_snap        = nullptr;
+        identifier_t    f_identifier  = -1;
         QString         f_user_key;     // TODO: change to id
         QString	        f_user_email;
         status_t        f_status      = status_t::STATUS_UNDEFINED;
@@ -276,7 +275,7 @@ public:
         snap_child*     get_snap() const;
 
         QtCassandra::QCassandraRow::pointer_t get_user_row() const;
-        void            set_user_key_by_id( identifier_t id );
+        void            set_user_key_by_id();
     };
 
     class user_security_t
