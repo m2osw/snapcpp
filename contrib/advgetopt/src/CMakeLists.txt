@@ -60,5 +60,17 @@ install(
     DESTINATION include/advgetopt
 )
 
-# vim: ts=4 sw=4 et nocindent
+##
+## TLD parser
+##
+project(hide-warnings)
+add_executable(${PROJECT_NAME}
+    hide-warnings.c
+)
+install(
+    TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION bin
+    COMPONENT runtime
+)
 
+# vim: ts=4 sw=4 et nocindent

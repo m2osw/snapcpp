@@ -1,8 +1,8 @@
-advgetopt (1.1.6.40~xenial) xenial; urgency=high
+advgetopt (1.1.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Added a tool to avoid warnings in your console.
 
- -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 02:23:48 -0800
 
 advgetopt (1.1.6.0~xenial) xenial; urgency=high
 
