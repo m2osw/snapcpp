@@ -14,8 +14,8 @@
  * \endcode
  *
  * If you want to parse out other things, you may change the default regex
- * ('gtk-wanring|^$') with whatever you want. Use the --regex command line
- * option for that purpose:
+ * ('gtk-wanring|glib-gobject-warning|^$') with whatever you want. Use the
+ * --regex command line option for that purpose:
  *
  * \code
  * alias gimp="hide-warnings --regex 'cannot change name of operation class|glib-gobject-warning|gtk-warning|^$' gimp"
@@ -41,7 +41,7 @@
 #include <poll.h>
 
 char const * const  g_version = "1.0";
-char const * const  g_default_regex = "gtk-warning|^$";
+char const * const  g_default_regex = "gtk-warning|glib-gobject-warning|^$";
 
 char const *        g_progname = NULL;
 char const *        g_regex = NULL;
@@ -155,11 +155,11 @@ void read_pipe(int pipe, FILE * out, regex_t const * regex, struct io_buf * io)
 
 int main(int argc, char * argv[], char * envp[])
 {
-    int i, pipe_out[2], pipe_err[2], child_pid;
-    int saved_errno;
+    int i, pipe_out[2], pipe_err[2], child_pid, saved_errno;
     size_t j, len, cmd_len;
     char * path, * p, * e, * n;
     struct pollfd fds[2];
+    nfds_t count;
     regex_t regex;
 
     /* get the basename from argv[0] */
@@ -307,7 +307,7 @@ int main(int argc, char * argv[], char * envp[])
              * except for lines that match the regex
              */
             regcomp(&regex, g_regex, REG_EXTENDED | (g_case_sensitive == 0 ? REG_ICASE : 0) | REG_NOSUB);
-            for(;;)
+            while(pipe_out[0] != -1 || pipe_err[0] != -1)
             {
                 memset(&fds, 0, sizeof(fds));
                 fds[0].fd = pipe_out[0];
@@ -316,7 +316,8 @@ int main(int argc, char * argv[], char * envp[])
                 fds[1].fd = pipe_err[0];
                 fds[1].events = POLLIN | POLLPRI | POLLRDHUP;
                 fds[1].revents = 0;
-                if(poll(fds, sizeof(fds), 0) < 0)
+                count = pipe_out[0] == -1 || pipe_out[0] == -1 ? 1 : 2;
+                if(poll(fds + (pipe_out[0] == -1 ? 1 : 0), count, -1) < 0)
                 {
                     fprintf(stderr, "%s:error: select() returned with -1.\n", g_progname);
                     exit(1);
@@ -329,10 +330,15 @@ int main(int argc, char * argv[], char * envp[])
                 {
                     read_pipe(pipe_err[0], stderr, &regex, &g_buf_err);
                 }
-                if((fds[0].revents & (POLLHUP | POLLRDHUP)) != 0
-                && (fds[1].revents & (POLLHUP | POLLRDHUP)) != 0)
+                if((fds[0].revents & (POLLHUP | POLLRDHUP)) != 0)
                 {
-                    break;
+                    close(pipe_out[0]);
+                    pipe_out[0] = -1;
+                }
+                if((fds[1].revents & (POLLHUP | POLLRDHUP)) != 0)
+                {
+                    close(pipe_err[0]);
+                    pipe_err[0] = -1;
                 }
             }
             exit(0);
