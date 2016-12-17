@@ -256,7 +256,14 @@ bool bundle_loader::wget(std::string const & uri, std::string const & filename)
         groupname = "snapwebsites";
     }
     snap::chownnm("/var/log/snapwebsites/snapmanager-bundle.log", username, groupname);
-    chmod("/var/log/snapwebsites/snapmanager-bundle.log", 0640);
+    if(chmod("/var/log/snapwebsites/snapmanager-bundle.log", 0640) != 0)
+    {
+        // we continue, this is just a log file, as long as we can write to it
+        // we should be good, it's just a tad bit less secure
+        //
+        int const e(errno);
+        SNAP_LOG_WARNING("Could not set mode of \"/var/log/snapwebsites/snapmanager-bundle.log\" to 0640. (errno: ")(e)(", ")(strerror(e));
+    }
 
     if(r != 0)
     {

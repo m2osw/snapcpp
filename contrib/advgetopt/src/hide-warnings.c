@@ -14,8 +14,8 @@
  * \endcode
  *
  * If you want to parse out other things, you may change the default regex
- * ('gtk-wanring|glib-gobject-warning|^$') with whatever you want. Use the
- * --regex command line option for that purpose:
+ * ('gtk-wanring|gtk-critical|glib-gobject-warning|^$') with whatever you
+ * want. Use the --regex command line option for that purpose:
  *
  * \code
  * alias gimp="hide-warnings --regex 'cannot change name of operation class|glib-gobject-warning|gtk-warning|^$' gimp"
@@ -41,7 +41,7 @@
 #include <poll.h>
 
 char const * const  g_version = "1.0";
-char const * const  g_default_regex = "gtk-warning|glib-gobject-warning|^$";
+char const * const  g_default_regex = "gtk-warning|gtk-critical|glib-gobject-warning|^$";
 
 char const *        g_progname = NULL;
 char const *        g_regex = NULL;

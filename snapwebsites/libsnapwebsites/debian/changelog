@@ -1,8 +1,10 @@
-libsnapwebsites (1.1.66.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.67.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-119: Added memo definitions to dbutils.
+  * SNAP-289: Check ievent structure size so make sure it won't overflow.
+  * Added an exception for the purpose.
 
- -- Build Server <build@m2osw.com>  Wed, 14 Dec 2016 13:45:55 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 20:12:49 -0700
 
 libsnapwebsites (1.1.66.0~xenial) xenial; urgency=high
 

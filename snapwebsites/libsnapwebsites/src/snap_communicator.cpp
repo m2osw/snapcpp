@@ -3503,6 +3503,13 @@ void snap_communicator::snap_file_changed::process_read()
             // get the pointer to the current inotify event
             //
             struct inotify_event const & ievent(*reinterpret_cast<struct inotify_event const *>(start));
+            if(start + sizeof(struct inotify_event) + ievent.len > end)
+            {
+                // unless there is a huge bug in the inotify implementation
+                // this exception should never happen
+                //
+                throw snap_communicator_unexpected_data("somehow the size of this ievent does not match what we just read.");
+            }
 
             // convert the inotify even in one of our events
             //

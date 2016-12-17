@@ -1,8 +1,9 @@
-snapfirewall (1.1.26.1~xenial) xenial; urgency=high
+snapfirewall (1.1.27.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Added a test of the chmod() return value and log a warning
+    if the function fails.
 
- -- Build Server <build@m2osw.com>  Thu, 15 Dec 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 20:12:49 -0700
 
 snapfirewall (1.1.26.0~xenial) xenial; urgency=high
 

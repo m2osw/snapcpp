@@ -1,8 +1,8 @@
-cassview (0.1.5.93~xenial) xenial; urgency=high
+cassview (0.1.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Added a  try/catch in main to catch exceptions from casswrapper.
 
- -- Build Server <build@m2osw.com>  Fri, 30 Sep 2016 02:00:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 20:12:49 -0700
 
 cassview (0.1.5.0~xenial) xenial; urgency=high
 
@@ -11,23 +11,11 @@ cassview (0.1.5.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 29 Sep 2016 12:47:27 -0700
 
-cassview (0.1.4.12~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Thu, 22 Sep 2016 13:48:56 -0700
-
 cassview (0.1.4.1~xenial) xenial; urgency=high
 
   * SNAP-440: Added SSL support for Cassandra.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 21 Sep 2016 16:58:50 -0700
-
-cassview (0.1.2.14~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:11 -0700
 
 cassview (0.1.2.0~xenial) xenial; urgency=high
 

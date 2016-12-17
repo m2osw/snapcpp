@@ -67,10 +67,18 @@ int main( int argc, char * argv[] )
     }
     while( show_settings );
 
-    MainWindow win;
-    win.show();
+    try
+    {
+        MainWindow win;
+        win.show();
 
-    return app.exec();
+        return app.exec();
+    }
+    catch(casswrapper::exception_t const & e)
+    {
+        std::cerr << "cassview: A casswrapper exception occurred: " << e.what() << std::endl;
+        exit(1);
+    }
 }
 
 // vim: ts=4 sw=4 et

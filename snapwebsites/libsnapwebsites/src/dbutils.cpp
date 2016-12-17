@@ -620,6 +620,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     }
     else if(n == "list::number_of_items"
          || (f_tableName == "domains" && f_rowName == "*test_snap_lock*" && n == "counter")
+         || n == "finball::memo_count" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
         return column_type_t::CT_int32_value;
@@ -796,6 +797,10 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "finball::invoice_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_paid_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::memo_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::memo_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::memo_paid_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::memo_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::payment_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::refused_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::report_created" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
