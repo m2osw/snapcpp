@@ -1,3 +1,9 @@
+advgetopt (1.1.8.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:49 -0800
+
 advgetopt (1.1.8.0~xenial) xenial; urgency=high
 
   * Fixed poll() call, timeout has to be -1 to block.
