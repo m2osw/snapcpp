@@ -226,12 +226,15 @@ public:
         user_info_t( snap_child * sc, name_t       const & name  );
         user_info_t( snap_child * sc, identifier_t const & id    );
 
+        bool                user_is_an_example_from_email() const;
+
         identifier_t        get_identifier () const;
         QString const &     get_user_email () const;
         QString const &     get_user_key   () const;
 
         //void                set_user_path  ( QString  const & );
-        QString             get_user_path  () const;
+        QString             get_user_path    () const;
+        QString             get_user_basepath() const;  // "/user/<ID>" only
 
         bool                value_exists ( QString const & v ) const;
         bool                value_exists ( name_t  const & v ) const;
@@ -245,7 +248,7 @@ public:
         void                delete_value ( name_t  const & name );
 
         void                set_status   ( status_t const & v );
-        status_t		    get_status   () const;
+        status_t            get_status   () const;
 
         void                set_is_valid ( bool v );
         bool                is_valid     () const;
@@ -262,12 +265,13 @@ public:
         bool load_user_parameter( QString const & field_name, int64_t                      &        value ) const;
 
         static identifier_t    get_user_id_by_path( snap_child* snap, QString const& user_path );
+        static QString         get_full_anonymous_path();
 
     private:
         snap_child *    f_snap        = nullptr;
         identifier_t    f_identifier  = -1;
         QString         f_user_key;     // TODO: change to id
-        QString	        f_user_email;
+        QString         f_user_email;
         status_t        f_status      = status_t::STATUS_UNDEFINED;
         bool            f_valid       = false;
 
@@ -427,7 +431,7 @@ public:
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
     status_t                register_user(QString const & email, QString const & password, QString & reason, bool allow_example_domain = false);
     void                    verify_user(content::path_info_t & ipath);
-    bool                    user_is_an_example_from_email(QString const & email);
+    //bool                    user_is_an_example_from_email(QString const & email);
     status_t                user_status_from_email(QString const & email, QString & status_key);
     status_t                user_status_from_identifier(int64_t identifier, QString & status_key);
     status_t                user_status_from_user_path(QString const & user_path, QString & status_key);
@@ -448,15 +452,15 @@ public:
     QString                 get_user_path(QString const & email) const;
 
     user_info_t const&      get_user_info() const;
-    user_info_t				get_user_info_by_id    ( identifier_t const & id );
-    user_info_t				get_user_info_by_email ( QString const & email   );
-    //user_info_t				get_user_info_by_path  ( QString const & path  );
+    user_info_t             get_user_info_by_id    ( identifier_t const & id );
+    user_info_t             get_user_info_by_email ( QString const & email   );
+    //user_info_t               get_user_info_by_path  ( QString const & path  );
     user_info_t             get_user_info_by_name  ( name_t  const & name    );
     user_info_t             get_user_info_by_name  ( QString const & name    );
 
 private:
     void                    content_update         (int64_t variables_timestamp);
-    void				    user_identifier_update (int64_t variables_timestamp);
+    void                    user_identifier_update (int64_t variables_timestamp);
 
     void                    token_user_count(filter::filter::token_info_t & token);
 

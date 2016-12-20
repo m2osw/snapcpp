@@ -1159,9 +1159,9 @@ void users_ui::verify_password(content::path_info_t & ipath)
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
     QString const path(info.get_object_path());
-    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-    || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
-    || path.mid(0, 6) != "/user/")
+    if( info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
+     || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
+     || path.mid(0, 6) != users::users::user_info_t::get_full_anonymous_path() )
     {
         // it failed, the session could not be loaded properly
         SNAP_LOG_WARNING("users::verify_password() could not load the user session ")
@@ -1186,17 +1186,20 @@ void users_ui::verify_password(content::path_info_t & ipath)
         NOTREACHED();
     }
 
-    // it looks like the session is valid, get the user email and verify
+    // it looks like the session is valid, get the user identifier and verify
     // that the account exists in the database
-    QString const user_email(path.mid(6)); // this is the user_key from the session, it is a canonicalized email TODO! This should be an id!
-    auto const user_info(users_plugin->get_user_info_by_email(user_email));
+    //QString const user_email(path.mid(6)); // this is the user_key from the session, it is a canonicalized email TODO! This should be an id!
+    //QString const (path.mid(6)); // this is the user_key from the session, it is a canonicalized email TODO! This should be an id!
+    //auto const user_info(users_plugin->get_user_info_by_email(user_email));
+    users::users::identifier_t const identifier(QtCassandra::QCassandraValue(path.mid(6)).int64Value()); // this is the identifier from the session (SNAP-258)
+    auto const user_info(users_plugin->get_user_info_by_id(identifier));
     if(!user_info.exists())
     {
         // This should never happen...
         messages::messages::instance()->set_error(
             "Could Not Find Your Account",
             "Somehow we could not find your account on this system.",
-            QString("user account for \"%1\" does not exist at this point").arg(user_email),
+            QString("user account for \"%1\" does not exist at this point").arg(user_info.get_user_email()),
             true
         );
         // redirect the user to the log in page
@@ -1204,6 +1207,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
         NOTREACHED();
     }
 
+#if 0
     QtCassandra::QCassandraValue const user_identifier(user_info.get_value(users::name_t::SNAP_NAME_USERS_IDENTIFIER));
     if(user_identifier.nullValue())
     {
@@ -1216,6 +1220,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
         NOTREACHED();
     }
     int64_t const identifier(user_identifier.int64Value());
+#endif
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
@@ -1233,7 +1238,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
         messages::messages::instance()->set_error(
             "Forgotten Password?",
             "It does not look like you requested a new password for your account. The form is being canceled.",
-            QString("user account for \"%1\", which requested a mew password, is not marked as expected a new password").arg(user_email),
+            QString("user account for \"%1\", which requested a mew password, is not marked as expected a new password").arg(user_info.get_user_email()),
             true
         );
         // redirect the user to the log in page
@@ -1252,7 +1257,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
             "Forgotten Password?",
             "It does not look like you requested a new password for your account. If you did so multiple times, know that you can only follow one of the links once. Doing so voids the other links.",
             QString("user account for \"%1\", which requested a new password, is not marked as expecting a new password: %2.")
-                    .arg(user_email)
+                    .arg(user_info.get_user_email())
                     .arg(status_info.key()),
             true
         );
@@ -1265,7 +1270,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
     //links::links::instance()->delete_link(user_status_info);
 
     // redirect the user to the "semi-public replace password page"
-    send_to_replace_password_page(user_email, false);
+    send_to_replace_password_page(user_info.get_user_email(), false);
     NOTREACHED();
 }
 
@@ -2235,7 +2240,7 @@ void users_ui::verify_email(QString const & email)
     info.set_session_id(users::users::USERS_SESSION_ID_VERIFY_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path("/user/" + user_info.get_user_key());  // TODO: use identifier instead?
+    info.set_object_path( user_info.get_user_basepath() ); // sessions are always using the user id and not the email directly
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
     QString const session(sessions::sessions::instance()->create_session(info));
@@ -2374,7 +2379,7 @@ void users_ui::forgot_password_email(users::users::user_info_t const & user_info
     info.set_session_id(users::users::USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path("/user/" + user_info.get_user_key()); // TODO: user identifier instead
+    info.set_object_path( user_info.get_user_basepath() ); // sessions are always using the user id and not the email directly
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(3600 * 8);  // 8 hours
     QString const session(sessions::sessions::instance()->create_session(info));

@@ -66,7 +66,7 @@ users::user_info_t::user_info_t( snap_child * sc, QString const & val )
     }
     else
     {
-        set_user_key_by_id( f_identifier );
+        set_user_key_by_id();
     }
 }
 
@@ -84,7 +84,7 @@ users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
     , f_identifier(id)
     , f_valid(true)
 {
-    set_user_key_by_id( f_identifier );
+    set_user_key_by_id();
 }
 
 
@@ -112,6 +112,12 @@ users::identifier_t users::user_info_t::get_user_id_by_path( snap_child* snap, Q
 }
 
 
+QString users::user_info_t::get_full_anonymous_path()
+{
+    return QString("/%1/").arg(get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH));
+}
+
+
 void users::user_info_t::set_user_key_by_id()
 {
     auto users_table( get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)) );
@@ -130,6 +136,37 @@ void users::user_info_t::set_user_key_by_id()
         }
         f_valid = true;
     }
+}
+
+
+/** \brief Check whether the specified user is marked as being an example.
+ *
+ * You may call this function to determine whether a user is marked as
+ * an example. This happens whenever a user is created with an example
+ * email address such as john@example.com.
+ *
+ * The function expects the email address of the user. It first canonicolize
+ * the email and then checks in the database to see whether the user is
+ * considered an example or not.
+ *
+ * We use the database instead of parsing the email so really any user
+ * can be marked as an example user.
+ *
+ * \note
+ * If the specified email does not represent a registered user, then the
+ * function always returns false.
+ *
+ * \param[in] email  The email address of the user to check.
+ *
+ * \return true if the user is marked as being an example.
+ */
+bool users::user_info_t::user_is_an_example_from_email() const
+{
+    if( !exists() )
+    {
+        return false;
+    }
+    return get_value(name_t::SNAP_NAME_USERS_EXAMPLE).safeSignedCharValue() != 0;
 }
 
 
@@ -288,6 +325,15 @@ QString users::user_info_t::get_user_path() const
     // TODO: should this be an empty string?
     //
     return get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH);
+}
+
+
+QString users::user_info_t::get_user_basepath() const
+{
+    return QString("/%1/%2")
+            .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
+            .arg(get_identifier())
+            ;
 }
 
 

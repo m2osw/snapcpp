@@ -1699,7 +1699,8 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
     // prevent attempts of sending an email to an example email address
     // (even if the example address is a valid email address)
     //
-    if(users_plugin->user_is_an_example_from_email(user_email))
+    users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(user_email));
+    if(user_info.user_is_an_example_from_email())
     {
         return false;
     }
@@ -1710,8 +1711,6 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
         QString const bypass(e->get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST)));
         bypass_blacklist = bypass == "true";
     }
-
-    users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(user_email));
 
     // we use "!" for the password because we do not want to have
     // any password checked.

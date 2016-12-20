@@ -1482,11 +1482,11 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             // unfortunately, whatever the login status, if we were not given
             // a valid user path, we just cannot test anything else than
             // some kind of visitor
-            QString const & user_key(sets.get_user_path());
+            QString const & user_path(sets.get_user_path());
 //#ifdef DEBUG
-//SNAP_LOG_DEBUG("  +-> user key = [")(user_key)("]");
+//SNAP_LOG_DEBUG("  +-> user key = [")(user_path)("]");
 //#endif
-            if(user_key.isEmpty()
+            if(user_path.isEmpty()
             || login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR))
             {
                 // in this case the user is an anonymous user and thus we want to
@@ -1496,7 +1496,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             else
             {
                 content::path_info_t user_ipath;
-                user_ipath.set_path(user_key);
+                user_ipath.set_path(user_path);
 
                 // add all the groups the user is a member of
                 QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
@@ -2730,7 +2730,7 @@ void permissions::on_backend_action(QString const & action)
             SNAP_LOG_FATAL("User \"")(email)("\" not found. Cannot make user the root or administrator user.");
             exit(1);
         }
-        if(!user_info.value_exists(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER)))
+        if(!user_info.value_exists(users::name_t::SNAP_NAME_USERS_IDENTIFIER))
         {
             SNAP_LOG_FATAL("error: user \"")(email)("\" was not given an identifier.");
             exit(1);
