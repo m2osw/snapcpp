@@ -1,8 +1,14 @@
-cassview (0.1.5.91~xenial) xenial; urgency=high
+cassview (0.1.6.5~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Fri, 30 Sep 2016 02:00:49 -0700
+ -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:49 -0800
+
+cassview (0.1.6.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Added a  try/catch in main to catch exceptions from casswrapper.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 20:12:49 -0700
 
 cassview (0.1.5.0~xenial) xenial; urgency=high
 

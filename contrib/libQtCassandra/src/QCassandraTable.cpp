@@ -1285,7 +1285,7 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
     QCassandraContext::pointer_t context(f_context.lock());
     if(context == nullptr)
     {
-        throw QCassandraException("this table was dropped and is not attached to a context anymore");
+        throw std::runtime_error("this table was dropped and is not attached to a context anymore");
     }
 
     return context;

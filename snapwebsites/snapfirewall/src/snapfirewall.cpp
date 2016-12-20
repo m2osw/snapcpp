@@ -87,7 +87,7 @@ private:
 };
 
 
-/** \brief The timer used when a connection fails.
+/** \brief The timer used when a connection to Cassandra fails.
  *
  * When we receive the CASSANDRAREADY event, the connection is likely to
  * work. However, while reading the data in the following loop, we may
@@ -1657,7 +1657,13 @@ void snap_firewall::setup_firewall()
     if( !pf.exists() )
     {
         pf.mkdir( private_folder.c_str() );
-        ::chmod( private_folder.c_str(), 0700 );
+        if( ::chmod( private_folder.c_str(), 0700 ) != 0 )
+        {
+            // this should not happen, but at least let admins know
+            //
+            int const e(errno);
+            SNAP_LOG_WARNING("chmod(\"")(private_folder)(", 0700\") failed. (errno: ")(e)(", ")(strerror(e));
+        }
     }
 
     std::stringstream ss;

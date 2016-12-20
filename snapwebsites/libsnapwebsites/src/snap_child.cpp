@@ -4612,7 +4612,14 @@ void snap_child::disconnect_cassandra()
     //
     reset_sites_table();
 
-    f_context.reset();
+    // make sure the context cache is cleared too
+    //
+    if(f_context != nullptr)
+    {
+        f_context->clearCache();
+        f_context.reset();
+    }
+
     f_cassandra.reset();
 }
 
@@ -5667,11 +5674,11 @@ void snap_child::site_redirect()
  */
 void snap_child::reset_sites_table()
 {
-    if(f_sites_table)
+    if(f_sites_table != nullptr)
     {
         f_sites_table->clearCache();
+        f_sites_table.reset();
     }
-    f_sites_table.reset();
 }
 
 

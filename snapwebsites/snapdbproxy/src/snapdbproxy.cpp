@@ -576,7 +576,7 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
                 {
                     SNAP_LOG_INFO("User has requested that the key for [")
                             (message.get_parameter("listen_address"))
-                            ("] be overridded, even though we have it already.");
+                            ("] be overridden, even though we have it already.");
                 }
                 else
                 {

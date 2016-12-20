@@ -1,8 +1,22 @@
-snapfirewall (1.1.25.3~xenial) xenial; urgency=high
+snapfirewall (1.1.27.5~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 12 Dec 2016 02:00:51 -0800
+ -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:48 -0800
+
+snapfirewall (1.1.27.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Added a test of the chmod() return value and log a warning
+    if the function fails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 20:12:49 -0700
+
+snapfirewall (1.1.26.0~xenial) xenial; urgency=high
+
+  * EX-158: Also removing the telnet (commented) fail2ban jail since we now
+    block port 23 (and 123, 2323) before it can appear in iptables.conf.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 14 Dec 2016 20:27:51 -0800
 
 snapfirewall (1.1.25.0~xenial) xenial; urgency=high
 

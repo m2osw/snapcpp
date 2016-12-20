@@ -1,8 +1,14 @@
-snapmanagercgi (1.2.46.23~xenial) xenial; urgency=high
+snapmanagercgi (1.2.47.5~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Tue, 22 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:48 -0800
+
+snapmanagercgi (1.2.47.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Added tests around chmod() calls to log a warning on failure.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 20:12:49 -0700
 
 snapmanagercgi (1.2.46.0~xenial) xenial; urgency=high
 

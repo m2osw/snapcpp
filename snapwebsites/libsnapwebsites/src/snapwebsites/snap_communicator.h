@@ -62,6 +62,14 @@ public:
     snap_communicator_runtime_error(QString const &     what_msg) : snap_communicator_exception(what_msg) {}
 };
 
+class snap_communicator_unexpected_data : public snap_communicator_exception
+{
+public:
+    snap_communicator_unexpected_data(char const *        what_msg) : snap_communicator_exception(what_msg) {}
+    snap_communicator_unexpected_data(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
+    snap_communicator_unexpected_data(QString const &     what_msg) : snap_communicator_exception(what_msg) {}
+};
+
 class snap_communicator_invalid_message : public snap_communicator_exception
 {
 public:

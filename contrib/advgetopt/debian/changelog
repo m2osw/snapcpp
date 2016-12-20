@@ -1,8 +1,23 @@
-advgetopt (1.1.6.38~xenial) xenial; urgency=high
+advgetopt (1.1.8.5~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Tue, 08 Nov 2016 02:00:48 -0800
+ -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:49 -0800
+
+advgetopt (1.1.8.0~xenial) xenial; urgency=high
+
+  * Fixed poll() call, timeout has to be -1 to block.
+  * Change the loop so we can listen to just one pipe if one got closed.
+  * Added "glib-gobject-warning" to the default regex.
+  * Fixed the poll size, it is the number of fds, not buffer size.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 13:28:48 -0800
+
+advgetopt (1.1.7.0~xenial) xenial; urgency=high
+
+  * Added a tool to avoid warnings in your console.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 16 Dec 2016 02:23:48 -0800
 
 advgetopt (1.1.6.0~xenial) xenial; urgency=high
 

@@ -1231,14 +1231,28 @@ void cassandra::generate_keys()
     //
     ssl_dir.mkdir( g_ssl_keys_dir );
     snap::chownnm( g_ssl_keys_dir, "root", "cassandra" );
-    ::chmod( g_ssl_keys_dir.toUtf8().data(), 0750 );
-    //
+    if(::chmod( g_ssl_keys_dir.toUtf8().data(), 0750 ) != 0)
+    {
+        // we continue, this is just a log file, as long as we can write to it
+        // we should be good, it's just a tad bit less secure
+        //
+        int const e(errno);
+        SNAP_LOG_WARNING("Could not set mode of \"")(g_ssl_keys_dir)("\" to 0750. (errno: ")(e)(", ")(strerror(e));
+    }
+
     char const * pd = "/etc/cassandra/public";
     QDir public_dir(pd);
     if( !public_dir.exists() )
     {
         public_dir.mkdir( pd );
-        ::chmod( pd, 0755 );
+        if(::chmod( pd, 0755 ) != 0)
+        {
+            // we continue, this is just a log file, as long as we can write to it
+            // we should be good, it's just a tad bit less secure
+            //
+            int const e(errno);
+            SNAP_LOG_WARNING("Could not set mode of \"")(pd)("\" to 0640. (errno: ")(e)(", ")(strerror(e));
+        }
     }
 
     // Replace the periods with underscores, so that way it's a

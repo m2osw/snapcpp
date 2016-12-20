@@ -286,6 +286,46 @@ public:
         }
 
 
+        /** \brief Return the number of items in the stack.
+         *
+         * This function returns the number of items currently added to
+         * the stack. This can be used by the caller to avoid flooding
+         * the stack, if at all possible.
+         *
+         * \return the number of items.
+         */
+        size_t size() const
+        {
+            snap_lock lock_mutex(const_cast<snap_fifo &>(*this));
+            return f_stack.size();
+        }
+
+
+        /** \brief Return the total size of the stack.
+         *
+         * This function returns the sum of each element size() function.
+         *
+         * \note
+         * Note that this does not include the amount of bytes used by
+         * the stack itself. It only includes the size of the elements,
+         * which in most cases is what you want anyway.
+         *
+         * \return the byte size of the stack.
+         */
+        size_t byte_size() const
+        {
+            snap_lock lock_mutex(const_cast<snap_fifo &>(*this));
+            return std::accumulate(
+                        f_stack.begin(),
+                        f_stack.end(),
+                        0,
+                        [](size_t accum, T const & obj)
+                        {
+                            return accum + obj.size();
+                        });
+        }
+
+
     private:
         /** \brief The type of the FIFO.
          *
@@ -293,6 +333,7 @@ public:
          * FIFO object.
          */
         typedef std::queue<T>   items_t;
+
 
         /** \brief The actual FIFO.
          *
@@ -305,6 +346,21 @@ public:
     class snap_thread_life
     {
     public:
+        /** \brief Initialize a "thread life" object.
+         *
+         * This type of objects are used to record a thread and make sure
+         * that it gets destroyed once done with it.
+         *
+         * The constructor makes sure that the specified thread is not
+         * a null pointer and it starts the thread. If the thread is
+         * already running, then the constructor will throw.
+         *
+         * Once such an object was created, it is not possible to prevent
+         * the thread life desrtuctor from call the stop() function and
+         * waiting for the thread to be done.
+         *
+         * \param[in] thread  The thread which life is to be controlled.
+         */
         snap_thread_life( snap_thread * const thread )
             : f_thread(thread)
         {
@@ -321,6 +377,13 @@ public:
             }
         }
 
+        /** \brief Make sure the thread stops.
+         *
+         * This function requests that the attach thread stop. It will block
+         * until such happens. You are responsible to make sure that the
+         * stop happens early on if your own object needs to access the
+         * thread while stopping.
+         */
         ~snap_thread_life()
         {
             //SNAP_LOG_TRACE() << "stopping snap_thread_life...";
@@ -329,6 +392,16 @@ public:
         }
 
     private:
+        /** \brief The pointer to the thread being managed.
+         *
+         * This pointer is a pointer to the thread. Once a thread life
+         * object is initialized, the pointer is never nullptr (we
+         * throw before in the constructor if that is the case.)
+         *
+         * The user of the snap_thread_life class must view the
+         * thread pointer as owned by the snap_thread_life object
+         * (similar to a smart pointer.)
+         */
         snap_thread *           f_thread = nullptr;
     };
 
