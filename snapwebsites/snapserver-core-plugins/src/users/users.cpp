@@ -512,6 +512,7 @@ void users::content_update(int64_t variables_timestamp)
  */
 void users::user_identifier_update(int64_t variables_timestamp)
 {
+    SNAP_LOG_TRACE( "users::user_identifier_update()" );
     NOTUSED(variables_timestamp);
 
     auto users_table     ( get_users_table() );
@@ -542,8 +543,10 @@ void users::user_identifier_update(int64_t variables_timestamp)
             // This entails dropping the old value.
             //
             QCassandraValue email( list[entry]->value() );
+SNAP_LOG_TRACE("found index email [")(email.stringValue())("]");
             if( email.size() != 8 ) // Must be a string!
             {
+SNAP_LOG_TRACE("setting email index to id: [")(entry.toLong())("]");
                 index_row->cell(email.stringValue())->setValue( entry.toLong() );
                 index_row->dropCell( email.stringValue() );
             }
@@ -574,6 +577,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
                 //
                 auto const & row( list[entry] );
                 auto const & id ( row->cell(identifier_name) );
+SNAP_LOG_TRACE("found email [")(email_name)("], converting to id=[")(id->value().stringValue());
                 users_table->row(id->value().binaryValue()) = row;
                 users_table->dropRow(email_name);
             }
