@@ -79,7 +79,7 @@ public:
     void clearCache();
 
     // row handling
-    uint32_t readRows(QCassandraRowPredicate::pointer_t row_predicate = QCassandraRowPredicate::pointer_t() );
+    uint32_t readRows(QCassandraRowPredicate::pointer_t row_predicate );
 
     QCassandraRow::pointer_t    row(const char*       row_name);
     QCassandraRow::pointer_t    row(const QString&    row_name);

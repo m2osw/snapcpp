@@ -629,7 +629,7 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  * Cassandra tarball.
  * See also: http://ria101.wordpress.com/2010/02/22/cassandra-randompartitioner-vs-orderpreservingpartitioner/
  *
- * \param[in,out] row_predicate  The row predicate.
+ * \param[in,out] row_predicate  The row predicate, which has to be allocated on the heap using shared_ptr.
  *
  * \return The number of rows read.
  *
@@ -639,6 +639,11 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  */
 uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predicate )
 {
+    if( !row_predicate )
+    {
+        throw QCassandraException("row_predicate is nullptr!");
+    }
+
     size_t idx(0);
     QCassandraOrderResult selected_rows_result;
 
@@ -674,7 +679,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         //       but the appendQuery() function does the same thing
         //
         int bind_count = 0;
-        if( row_predicate )
+        //if( row_predicate )
         {
             row_predicate->appendQuery( query_string, bind_count );
         }
@@ -684,7 +689,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
 
         // setup the consistency level
         consistency_level_t consistency_level( parentContext()->parentCassandra()->defaultConsistencyLevel() );
-        if( row_predicate )
+        //if( row_predicate )
         {
             consistency_level_t const default_consistency_level(consistency_level);
             consistency_level = row_predicate->consistencyLevel();
@@ -705,7 +710,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         select_rows.setConsistencyLevel(consistency_level);
 
         //
-        if( row_predicate )
+        //if( row_predicate )
         {
             row_predicate->bindOrder( select_rows );
             select_rows.setPagingSize( row_predicate->count() );
