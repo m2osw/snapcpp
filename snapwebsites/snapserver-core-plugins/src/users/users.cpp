@@ -522,13 +522,10 @@ void users::user_identifier_update(int64_t variables_timestamp)
 
     // Drop the index table, and rebuild it below.
     //
-    users_table->dropRow( index_row_name );
     users_table->clearCache();
 
     QCassandraRowPredicate::pointer_t row_predicate( std::make_shared<QCassandraRowPredicate>() );
     row_predicate->setCount(100);
-
-    std::map<QByteArray,QCassandraValue> index_map;
 
     // Now go through and find all user rows and change them to ids. Add index entries.
     //
@@ -537,7 +534,6 @@ void users::user_identifier_update(int64_t variables_timestamp)
         uint32_t const count(users_table->readRows(row_predicate));
         if( count == 0 )
         {
-            SNAP_LOG_TRACE("Last page processed in users table");
             // last page was processed, done.
             break;
         }
@@ -581,10 +577,6 @@ void users::user_identifier_update(int64_t variables_timestamp)
                 new_cell->setValue( value );
             }
 
-            // Save the email to id map
-            //
-            index_map[email.binaryValue()] = id;
-
             // Drop the old row
             //
             users_table->dropRow(email_name);
@@ -593,14 +585,44 @@ void users::user_identifier_update(int64_t variables_timestamp)
 
     // Now create the index row
     //
+    users_table->dropRow( index_row_name );
+    users_table->clearCache();
+
+    // Now go through and find all user rows and change them to ids. Add index entries.
+    //
+    SNAP_LOG_TRACE("Creating *index_row*");
     {
-        SNAP_LOG_TRACE("Creating *index_row*");
-        users_table->clearCache();
+        auto current_email_name( get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL) );
         QCassandraRow::pointer_t const & index_row( users_table->row(index_row_name) );
-        for( auto const & pair : index_map )
+        for( ;; )
         {
-            SNAP_LOG_TRACE("Creating email->id entry: first=")(pair.first.data())(", second=")(pair.second.int64Value());
-            index_row->cell(pair.first)->setValue(pair.second);
+            uint32_t const count(users_table->readRows(row_predicate));
+            if( count == 0 )
+            {
+                // last page was processed, done.
+                break;
+            }
+
+            auto row_list(users_table->rows());
+            for( QByteArray const & row_key : row_list.keys() )
+            {
+                QCassandraValue const id( row_key );
+                QString row_text(id.stringValue());
+                if( row_text == id_row_name || row_text == index_row_name )
+                {
+                    SNAP_LOG_TRACE("not adding to index row_text=")(row_text);
+                    // Ignore special rows
+                    continue;
+                }
+
+                QCassandraRow::pointer_t  const & row           ( row_list[row_key] );
+                QCassandraValue           const & current_email ( row->cell(current_email_name)->value() );
+                QCassandraValue           const & identifier    ( row_key );
+
+                SNAP_LOG_TRACE("Creating current_email entry: first=")(current_email.stringValue())
+                        (", second=")(identifier.int64Value());
+                index_row->cell( current_email.binaryValue() )->setValue( identifier.binaryValue() );
+            }
         }
     }
 }
