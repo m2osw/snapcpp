@@ -520,67 +520,87 @@ void users::user_identifier_update(int64_t variables_timestamp)
     auto id_row_name     ( get_name(name_t::SNAP_NAME_USERS_ID_ROW)     );
     auto identifier_name ( get_name(name_t::SNAP_NAME_USERS_IDENTIFIER) );
 
-    // Iterate through the index rows and change email key to id
+    // Drop the index table, and rebuild it below.
     //
+    users_table->dropRow( index_row_name );
+    users_table->clearCache();
+
+    QCassandraRowPredicate::pointer_t row_predicate( std::make_shared<QCassandraRowPredicate>() );
+    row_predicate->setCount(100);
+
+    std::map<QByteArray,QCassandraValue> index_map;
+
+    // Now go through and find all user rows and change them to ids. Add index entries.
+    //
+    for( ;; )
     {
-        auto const & index_row( users_table->row(index_row_name) );
-        // TODO: will I get all cells in this row without a predicate? I'm not
-        // sure how snapdbproxy handles this...does it automatically do paging
-        // until the end is reached?
-        QCassandraCellPredicate::pointer_t crp( std::make_shared<QCassandraCellPredicate>() );
-        crp->setCount( 10000 );
-        index_row->readCells( crp );
-        auto list(index_row->cells());
-        for( auto const & entry : list.keys() )
+        uint32_t const count(users_table->readRows(row_predicate));
+        if( count == 0 )
         {
-            // Reverse the entries. The original format was:
-            // id --> email address
-            //
-            // We want to revese the index so that email addresses point
-            // to user identifiers:
-            // email address --> id
-            //
-            // This entails dropping the old value.
-            //
-            QCassandraValue email( list[entry]->value() );
-SNAP_LOG_TRACE("found index email [")(email.stringValue())("]");
-            if( email.size() != 8 ) // Must be a string!
+            SNAP_LOG_TRACE("Last page processed in users table");
+            // last page was processed, done.
+            break;
+        }
+
+        auto row_list(users_table->rows());
+        for( QByteArray const & row_key : row_list.keys() )
+        {
+            QCassandraValue const email( row_key );
+            QString email_name(email.stringValue());
+            SNAP_LOG_TRACE("checking email_name=")(email_name);
+            if( email_name == id_row_name || email_name == index_row_name )
             {
-SNAP_LOG_TRACE("setting email index to id: [")(entry.toLong())("]");
-                index_row->cell(email.stringValue())->setValue( entry.toLong() );
-                index_row->dropCell( email.stringValue() );
+                SNAP_LOG_TRACE("ignoring special row");
+                // Ignore the id and index rows
+                continue;
             }
+            if( !email_name.contains(QRegExp(".*@.*")) )
+            {
+                // Not an email address
+                //
+                SNAP_LOG_TRACE("not an email address");
+                continue;
+            }
+
+            QCassandraRow::pointer_t  const & row     ( row_list[row_key] );
+            QCassandraCell::pointer_t const & id_cell ( row->cell(identifier_name) );
+            QCassandraValue const             id      ( id_cell->value() );
+            QCassandraRow::pointer_t  const & new_row ( users_table->row(id.binaryValue()) );
+            SNAP_LOG_TRACE("found email [")(email_name)("], converting to id=[")(id.int64Value());
+
+            // Now create the new row
+            //
+            QCassandraCellPredicate::pointer_t crp( std::make_shared<QCassandraCellPredicate>() );
+            crp->setCount( 10000 );
+            row->readCells( crp );
+            auto cell_list(row->cells());
+            for( QByteArray const & cell_key : cell_list.keys() )
+            {
+                QCassandraValue value( cell_list[cell_key]->value() );
+                QCassandraCell::pointer_t new_cell( new_row->cell(cell_key) );
+                new_cell->setValue( value );
+            }
+
+            // Save the email to id map
+            //
+            index_map[email.binaryValue()] = id;
+
+            // Drop the old row
+            //
+            users_table->dropRow(email_name);
         }
     }
 
-    // Now go through and find all user rows and change them to ids
+    // Now create the index row
     //
     {
-        users_table->readRows();
-        auto list(users_table->rows());
-        for( auto const & entry : list.keys() )
+        SNAP_LOG_TRACE("Creating *index_row*");
+        users_table->clearCache();
+        QCassandraRow::pointer_t const & index_row( users_table->row(index_row_name) );
+        for( auto const & pair : index_map )
         {
-            QCassandraValue email( entry );
-            if( email.size() != 8 )
-            {
-                QString email_name(email.stringValue());
-                if( email_name == id_row_name || email_name == index_row_name )
-                {
-                    continue;
-                }
-                if( !email_name.contains(QRegExp(".*@.*")) )
-                {
-                    // Not an email address
-                    //
-                    continue;
-                }
-                //
-                auto const & row( list[entry] );
-                auto const & id ( row->cell(identifier_name) );
-SNAP_LOG_TRACE("found email [")(email_name)("], converting to id=[")(id->value().stringValue());
-                users_table->row(id->value().binaryValue()) = row;
-                users_table->dropRow(email_name);
-            }
+            SNAP_LOG_TRACE("Creating email->id entry: first=")(pair.first.data())(", second=")(pair.second.int64Value());
+            index_row->cell(pair.first)->setValue(pair.second);
         }
     }
 }
