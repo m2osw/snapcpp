@@ -7,6 +7,7 @@ snapserver-core-plugins (1.0.33.2~xenial) xenial; urgency=high
 snapserver-core-plugins (1.0.33.0~xenial) xenial; urgency=high
 
   * SNAP-258: Added trace statements in user login code for debugging.
+  * SNAP-258: Converts to id --> user info. The user_key is no longer the key into the users table.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 13 Dec 2016 11:34:18 -0800
 
