@@ -149,6 +149,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY:
         return "users::changing_password_key";
 
+    case name_t::SNAP_NAME_USERS_CHECK:
+        return "check";
+
     case name_t::SNAP_NAME_USERS_CREATED_TIME:
         return "users::created_time";
 
@@ -460,7 +463,7 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 6, 28, 21, 28, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 12, 21, 19, 50, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -969,53 +972,111 @@ void users::on_process_cookies()
     // check the type of hit unless we are anyway
     // creating a new session
     //
-    QString hit(get_name(name_t::SNAP_NAME_USERS_HIT_USER));
     {
+        f_hit = get_name(name_t::SNAP_NAME_USERS_HIT_USER);
         QString const qs_hit(f_snap->get_server_parameter("qs_hit"));
         snap_uri const & uri(f_snap->get_uri());
         if(uri.has_query_option(qs_hit))
         {
             // the user specified an action
-            hit = uri.query_option(qs_hit);
-            if(hit != get_name(name_t::SNAP_NAME_USERS_HIT_USER)
-            && hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
+            f_hit = uri.query_option(qs_hit);
+            if(f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_USER)
+            && f_hit != get_name(name_t::SNAP_NAME_USERS_CHECK)
+            && f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
             {
-                SNAP_LOG_WARNING("received an unknown type of hit \"")(hit)("\", forcing to \"user\"");
-                hit = get_name(name_t::SNAP_NAME_USERS_HIT_USER);
+                SNAP_LOG_WARNING("received an unknown type of hit \"")(f_hit)("\", forcing to \"user\"");
+                f_hit = get_name(name_t::SNAP_NAME_USERS_HIT_USER);
             }
         }
     }
 
-    // if the hit is marked as "transparent", then do not extend the
-    // session; this is used by scripts that access the server once
-    // in a while and do not want to extend the session (because
-    // otherwise they could end up extending the session forever)
+    // if we are just checking the session, do that and exit right away
     //
-    if(hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
+    if(f_hit == get_name(name_t::SNAP_NAME_USERS_CHECK))
     {
-        // is the session over?  if so, do not extend it
-        //
-        time_t const start_time(f_snap->get_start_time());
-        if(start_time <= f_info->get_time_limit())
-        {
-            // extend the user session, it is always a soft session
-            //
-            int64_t const user_session_duration(get_user_session_duration());
-            f_info->set_time_limit(start_time + user_session_duration);
+        snap_string_list result;
 
-            if(get_soft_administrative_session())
+        if(f_info->get_object_path() != "/user/") // if anonymous, ignore the time limits, they do not matter
+        {
+            // is the standard user session over?
+            //
+            time_t const start_time(f_snap->get_start_time());
+            if(start_time < f_info->get_time_limit())
             {
-                // website administrator asked that the administrative session
-                // be extended each time the administrator accesses the site
+                result << "standard";
+
+                // the standard session must be active to have a chance to
+                // also have an administrative session still active
                 //
-                int64_t const administrative_session_duration(get_administrative_session_duration());
-                f_info->set_administrative_login_limit(start_time + administrative_session_duration);
+                if(start_time < f_info->get_administrative_login_limit())
+                {
+                    result << "admin";
+                }
             }
         }
-    }
-    else
-    {
-        SNAP_LOG_DEBUG("transparent hit does not update the session time limits.");
+
+        if(result.isEmpty())
+        {
+            // no session is active
+            //
+            result << "none";
+        }
+
+        server_access::server_access * server_access_plugin(server_access::server_access::instance());
+        if(server_access_plugin->is_ajax_request())
+        {
+            // BUG: here main_ipath will NOT include all the correct info
+            //      since 'path::execute()' did not run yet...
+            //
+            content::path_info_t main_ipath;
+            main_ipath.set_path(f_snap->get_uri().path());
+            server_access_plugin->create_ajax_result(main_ipath, true);
+            server_access_plugin->ajax_append_data("users__session_status", result.join(",").toUtf8());
+
+            time_t const start_time(f_snap->get_start_time());
+            if(start_time < f_info->get_time_limit())
+            {
+                server_access_plugin->ajax_append_data("users__session_time_limit", QString("%1").arg(f_info->get_time_limit()).toUtf8());
+
+                // if we have a user session, we may also have an
+                // administrative session...
+                //
+                if(start_time < f_info->get_administrative_login_limit())
+                {
+                    server_access_plugin->ajax_append_data("users__administrative_login_time_limit", QString("%1").arg(f_info->get_administrative_login_limit()).toUtf8());
+                }
+            }
+            server_access_plugin->ajax_output();
+        }
+        else
+        {
+            // in this case the user is checking without AJAX so we have to
+            // reply with plain text, so here it goes
+            //
+            f_snap->set_header("Content-Type", "text/plain; charset=utf-8");
+            QString text(result.join(","));
+            time_t const start_time(f_snap->get_start_time());
+            if(start_time < f_info->get_time_limit())
+            {
+                text += "\nusers__session_time_limit=";
+                text += QString("%1").arg(f_info->get_time_limit());
+
+                // if we have a user session, we may also have an
+                // administrative session...
+                //
+                if(start_time < f_info->get_administrative_login_limit())
+                {
+                    text += "\nusers__administrative_login_time_limit=";
+                    text += QString("%1").arg(f_info->get_administrative_login_limit());
+                }
+            }
+            f_snap->output(text);
+        }
+
+        // TBD: since we return very quickly, we are probably missing a
+        //      set of headers?
+        //
+        return;
     }
 
     // create or refresh the session
@@ -1041,7 +1102,7 @@ void users::on_process_cookies()
         //       many things at the same time)
         //
         // TBD: random is not working right if the user attempts to open
-        //      multiple pages quickly at the same time
+        //      multiple pages in a row "very" quickly
         //
         bool const new_random(f_info->get_date() + NEW_RANDOM_INTERVAL < f_snap->get_start_date());
         sessions::sessions::instance()->save_session(*f_info, new_random);
@@ -1068,6 +1129,40 @@ void users::on_process_cookies()
         // sent when we have a valid cookie)
         logged_in_user_ready();
     }
+}
+
+
+/** \brief Mark this hit as transparent.
+ *
+ * This function should be called to make sure that a hit becomes
+ * transparent which means that the time limit will not be updated
+ * and thus not extended.
+ *
+ * \note
+ * This is generally done for all content other than the main page.
+ * Although the current default is the other way around so you have
+ * to be pro-active and call this function. At some point, we may
+ * want to reverse that.
+ */
+void users::transparent_hit()
+{
+    f_hit = get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT);
+}
+
+
+/** \brief Check whether this is a transparent hit.
+ *
+ * This function can be called to know whether the hit was marked as being
+ * transparent.
+ *
+ * \note
+ * When you call this function, the hit may not yet have been marked as
+ * transparent. Since it is rather rare that this function gets call in
+ * those cases, we currently let it be.
+ */
+bool users::is_transparent_hit()
+{
+    return f_hit == get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT);
 }
 
 
@@ -3394,6 +3489,38 @@ void users::set_referrer( QString path )
  */
 void users::on_attach_to_session()
 {
+    // if this access was not marked as a tranparent hit, then we want to
+    // update the session time limit
+    //
+    if(f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
+    {
+        // is the session over?  if so, do not extend it
+        //
+        // (we should not have to do that, but in case someone else
+        // "tempered" with the time limit, we want to re-check here)
+        //
+        time_t const start_time(f_snap->get_start_time());
+        if(start_time <= f_info->get_time_limit())
+        {
+            // extend the user session, it is always a soft session
+            //
+            int64_t const user_session_duration(get_user_session_duration());
+            f_info->set_time_limit(start_time + user_session_duration);
+            if(get_soft_administrative_session())
+            {
+                // website administrator asked that the administrative session
+                // be extended each time the administrator accesses the site
+                //
+                int64_t const administrative_session_duration(get_administrative_session_duration());
+                f_info->set_administrative_login_limit(start_time + administrative_session_duration);
+            }
+
+            // save the new date(s)
+            //
+            sessions::sessions::instance()->save_session(*f_info, false);
+        }
+    }
+
     // the messages handling is here because the messages plugin cannot have
     // a dependency on the users plugin
     messages::messages * messages_plugin(messages::messages::instance());

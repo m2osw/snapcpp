@@ -45,6 +45,7 @@ enum class name_t
     SNAP_NAME_USERS_BLACK_LIST,
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
+    SNAP_NAME_USERS_CHECK,
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_CURRENT_EMAIL,
     SNAP_NAME_USERS_EXAMPLE,
@@ -420,8 +421,6 @@ public:
     int64_t                 get_administrative_session_duration();
     bool                    get_soft_administrative_session();
     QString                 get_user_cookie_name();
-    //QString                 get_user_path() const;
-    //int64_t                 get_user_identifier() const;
     bool                    user_is_a_spammer();
     bool                    user_is_logged_in() const;
     bool                    user_has_administrative_rights() const;
@@ -431,7 +430,6 @@ public:
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
     status_t                register_user(QString const & email, QString const & password, QString & reason, bool allow_example_domain = false);
     void                    verify_user(content::path_info_t & ipath);
-    //bool                    user_is_an_example_from_email(QString const & email);
     status_t                user_status_from_email(QString const & email, QString & status_key);
     status_t                user_status_from_identifier(int64_t identifier, QString & status_key);
     status_t                user_status_from_user_path(QString const & user_path, QString & status_key);
@@ -442,6 +440,8 @@ public:
     void                    set_referrer( QString path );
     QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL, QString const & password_policy = "users");
     login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
+    void                    transparent_hit();
+    bool                    is_transparent_hit();
     bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
     void                    create_logged_in_user_session(user_info_t const & user_info);
     void                    user_logout();
