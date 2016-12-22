@@ -1,3 +1,9 @@
+snapfirewall (1.1.28.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 22 Dec 2016 02:00:48 -0800
+
 snapfirewall (1.1.28.0~xenial) xenial; urgency=high
 
   * SNAP-181: Adding the remove-dups script mainly for reference because it

@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.33.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 22 Dec 2016 02:00:48 -0800
+
 snapserver-core-plugins (1.0.33.0~xenial) xenial; urgency=high
 
   * SNAP-530: Added AJAX support for checking the users session status.
