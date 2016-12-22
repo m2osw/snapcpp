@@ -469,6 +469,7 @@ private:
     snap_child *            f_snap = nullptr;
 
     user_info_t             f_user_info;                        // user info including email address (may not be logged in)
+    QString                 f_hit = "undefined";                // type of hit, if not "transparent", we will update the time limit
     bool                    f_user_logged_in = false;           // user is logged in only if this is true
     bool                    f_administrative_logged_in = false; // user is logged in and has administrative rights if this is true
     bool                    f_has_user_messages = false;        // whether there were messages when on_detach_from_session() was called
