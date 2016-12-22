@@ -135,6 +135,20 @@ QByteArray dbutils::get_row_key() const
             }
         }
     }
+    else if( f_tableName == "users" )
+    {
+        QtCassandra::QCassandraValue const identifier(f_rowName);
+        if( identifier.stringValue() == "*index_row*" || identifier.stringValue() == "*id_row*" )
+        {
+            return identifier.binaryValue();
+        }
+        else
+        {
+            QByteArray new_key;
+            QtCassandra::appendInt64Value( new_key, static_cast<int64_t>(f_rowName.toLong()) );
+            return new_key;
+        }
+    }
     else
     {
         row_key = f_rowName.toLatin1();
@@ -311,6 +325,19 @@ QString dbutils::get_row_name( const QByteArray& key ) const
         // TODO: add tests to make sure only known keys do not get
         //       defined as MD5 sums
     }
+    else if( f_tableName == "users" )
+    {
+        QtCassandra::QCassandraValue const identifier(key);
+        if( identifier.stringValue() == "*index_row*" || identifier.stringValue() == "*id_row*" )
+        {
+            return identifier.stringValue();
+        }
+        else
+        {
+            return QString("%1").arg(identifier.safeInt64Value());
+        }
+    }
+
     return QString::fromUtf8( key.data() );
 }
 
@@ -394,8 +421,12 @@ QString dbutils::get_column_name( const QByteArray& key ) const
             name += QString("%1").arg(QtCassandra::safeUInt32Value(key, i));
         }
     }
-    else if((f_tableName == "users"    && f_rowName == "*index_row*")
-         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
+    else if( f_tableName == "users" )
+    {
+        QtCassandra::QCassandraValue const identifier(key);
+        name = identifier.stringValue();
+    }
+    else if( (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
          || f_tableName == "serverstats")
     {
         // special case where the column key is a 64 bit integer
@@ -497,9 +528,12 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
             QtCassandra::appendUInt32Value( key, static_cast<uint32_t>(rev.toUInt()) );
         }
     }
-    else if((f_tableName == "users"    && f_rowName == "*index_row*")
-         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
-         || f_tableName == "serverstats")
+    else if( f_tableName == "users" )
+    {
+        QtCassandra::appendStringValue( key, name );
+    }
+    else if( (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
+             || f_tableName == "serverstats")
     {
         QtCassandra::appendInt64Value( key, static_cast<int64_t>(name.toLong()) );
     }
