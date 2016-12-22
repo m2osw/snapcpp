@@ -897,6 +897,10 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     {
         return column_type_t::CT_rights_value;
     }
+    else if( (f_tableName == "users") && (f_rowName == "*index_row*") )
+    {
+        return column_type_t::CT_int64_value;
+    }
 
     // all others viewed as strings
     return column_type_t::CT_string_value;
