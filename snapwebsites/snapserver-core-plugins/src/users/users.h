@@ -38,6 +38,7 @@ enum class name_t
     SNAP_NAME_USERS_BLACK_LIST,
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
+    SNAP_NAME_USERS_CHECK,
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_CURRENT_EMAIL,
     SNAP_NAME_USERS_EXAMPLE,
@@ -366,6 +367,8 @@ public:
     void                    set_referrer( QString path );
     QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL, QString const & password_policy = "users");
     login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
+    void                    transparent_hit();
+    bool                    is_transparent_hit();
     bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
     void                    create_logged_in_user_session(QString const & user_key);
     void                    user_logout();
@@ -390,6 +393,7 @@ private:
     snap_child *            f_snap = nullptr;
 
     QString                 f_user_key;                         // user email address (may not be logged in)
+    QString                 f_hit = "undefined";                // type of hit, if not "transparent", we will update the time limit
     bool                    f_user_logged_in = false;           // user is logged in only if this is true
     bool                    f_administrative_logged_in = false; // user is logged in and has administrative rights if this is true
     bool                    f_has_user_messages = false;        // whether there were messages when on_detach_from_session() was called

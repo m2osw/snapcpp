@@ -167,7 +167,7 @@ snapwebsites.TestPluginManagerBase = function()
 };
 
 
-/** \brief The ServerAccessCallbakcs inherits ServerAccessCallbacks.
+/** \brief The ServerAccessCallbacks inherits ServerAccessCallbacks.
  *
  * This class inherits from the ServerAccessCallbacks so it can send
  * signals to the server so it starts running tests.

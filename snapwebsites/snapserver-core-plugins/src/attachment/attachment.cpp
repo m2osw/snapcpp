@@ -20,6 +20,7 @@
 #include "../content/content.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
+#include "../users/users.h"
 
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/http_strings.h>
@@ -653,6 +654,11 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
 
+    // make sure that the session time limit does not get updated on
+    // an attachment
+    //
+    users::users::instance()->transparent_hit();
+
     // attachments should never be saved with a compression extension
     //
     // HOWEVER, we would like to offer a way for the system to allow extensions
@@ -1195,6 +1201,7 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
     // this is a signal, we get called whatever the ipath (i.e. it is not
     // specific to a plugin derived from a certain class so not specific
     // to the attachment.)
+    //
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
     && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))

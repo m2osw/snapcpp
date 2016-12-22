@@ -19,6 +19,7 @@
 
 #include "../listener/listener.h"
 #include "../messages/messages.h"
+#include "../users/users.h"
 
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/log.h>
@@ -653,6 +654,11 @@ bool images::on_path_execute(content::path_info_t & ipath)
 {
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
+
+    // make sure that the session time limit does not get updated on
+    // an attachment
+    //
+    users::users::instance()->transparent_hit();
 
     // attachments should never be saved with a compression extension
     //

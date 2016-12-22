@@ -2002,15 +2002,18 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             {
                 if(main_uri.query_option("iframe") == "true")
                 {
-                    err_callback.on_redirect(
-                        // message
-                        "Unauthorized",
-                        QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
-                        QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
-                        false,
-                        // redirect
-                        "remove-iframe-for-login",
-                        snap_child::http_code_t::HTTP_CODE_FOUND);
+                    if(!users_plugin->is_transparent_hit())
+                    {
+                        err_callback.on_redirect(
+                            // message
+                            "Unauthorized",
+                            QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
+                            QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
+                            false,
+                            // redirect
+                            "remove-iframe-for-login",
+                            snap_child::http_code_t::HTTP_CODE_FOUND);
+                    }
                     // not reached if path checking
                     return;
                 }
@@ -2077,15 +2080,18 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
 
             // redirect to the login page
             //
-            err_callback.on_redirect(
-                // message
-                "Unauthorized",
-                QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(page_title),
-                QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
-                false,
-                // redirect
-                "login",
-                snap_child::http_code_t::HTTP_CODE_FOUND);
+            if(!users_plugin->is_transparent_hit())
+            {
+                err_callback.on_redirect(
+                    // message
+                    "Unauthorized",
+                    QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(page_title),
+                    QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
+                    false,
+                    // redirect
+                    "login",
+                    snap_child::http_code_t::HTTP_CODE_FOUND);
+            }
             // not reached if path checking
         }
         else
@@ -2109,15 +2115,18 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                     {
                         users_plugin->set_referrer( ipath.get_cpath() );
                     }
-                    err_callback.on_redirect(
-                        // message
-                        "Unauthorized",
-                        QString("The page you were trying to access (%1) requires you to verify your credentials. Please log in again and the system will send you back there.").arg(ipath.get_cpath()),
-                        QString("User trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
-                        false,
-                        // redirect
-                        "verify-credentials",
-                        snap_child::http_code_t::HTTP_CODE_FOUND);
+                    if(!users_plugin->is_transparent_hit())
+                    {
+                        err_callback.on_redirect(
+                            // message
+                            "Unauthorized",
+                            QString("The page you were trying to access (%1) requires you to verify your credentials. Please log in again and the system will send you back there.").arg(ipath.get_cpath()),
+                            QString("User trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
+                            false,
+                            // redirect
+                            "verify-credentials",
+                            snap_child::http_code_t::HTTP_CODE_FOUND);
+                    }
                     // not reached if path checking
                     return;
                 }

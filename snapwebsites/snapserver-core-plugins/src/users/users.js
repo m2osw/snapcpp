@@ -1,6 +1,6 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.11
+ * Version: 0.0.1.14
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -63,11 +63,13 @@ snapwebsites.Users = function()
 };
 
 
-/** \brief Mark Users as a base class.
+/** \brief The ServerAccessCallbacks inherits ServerAccessCallbacks.
  *
- * This class does not inherit from any other classes.
+ * This class inherits from the ServerAccessCallbacks so it can send
+ * an AJAX command to the server to know where the user session is
+ * at.
  */
-snapwebsites.base(snapwebsites.Users);
+snapwebsites.inherits(snapwebsites.Users, snapwebsites.ServerAccessCallbacks);
 
 
 /** \brief The Users instance.
@@ -92,16 +94,32 @@ snapwebsites.UsersInstance = null; // static
 snapwebsites.Users.prototype.auto_logout_id_ = NaN;
 
 
+/** \brief The server access object.
+ *
+ * The Users object creates a Server Access object so it can check the
+ * session status with the server using AJAX.
+ *
+ * The Server Access object is held in this variable member so it can be
+ * created just once.
+ *
+ * @type {snapwebsites.ServerAccess}
+ * @private
+ */
+snapwebsites.Users.prototype.serverAccess_ = null;
+
+
 /** \brief Start the timer of the auto-logout feature.
  *
- * This function starts or restarts the auto-logout timer.
+ * This function starts or restarts the auto-logout timer. Although
+ * there is no need to do so, it can be called multiple times in a
+ * row. It will reset the timer each time it gets called, though.
  *
  * The function may call itself in case the timeout is too far in the
  * future (more than 24.8 days!) so as to make sure we time out on the
  * day we have to time out.
  *
  * In most cases, you call this function after you called the
- * preventAutoLogout()
+ * preventAutoLogout().
  *
  * \note
  * Yes. We expect the user to close his browsers way before this timer
@@ -165,10 +183,10 @@ snapwebsites.Users.prototype.startAutoLogout = function()
  * redirect that happens on the timeout while we do some other
  * work.
  *
- * To restart the auto-logout timer, use the restartTimer()
+ * To restart the auto-logout timer, use the startAutoLogout()
  * function.
  *
- * \sa restartTimer()
+ * \sa startAutoLogout()
  */
 snapwebsites.Users.prototype.preventAutoLogout = function()
 {
@@ -197,16 +215,47 @@ snapwebsites.Users.prototype.preventAutoLogout = function()
 snapwebsites.Users.prototype.autoLogout_ = function()
 {
     var doc = document,
-        redirect_uri = doc.location.toString();
+        uri = doc.location.toString();
+
+    // remove all query strings on that URI
+    // (should we only remove the 'hit' and 'action' parameters?)
+    //
+    uri = uri.replace(/\?.*$/, "");
 
     // note: since the timer was triggered, the ID is not valid anymore
+    //
     this.auto_logout_id_ = NaN;
 
-    // reload the page without the 'edit' action (we probably should
-    // remove any type of action, not just the edit action!)
-    // since the user is now logged out, then the reload will send
-    // him to another page if this page requires the user to be logged
-    // in to view this page
+    if(!this.serverAccess_)
+    {
+        this.serverAccess_ = new snapwebsites.ServerAccess(this);
+    }
+    this.serverAccess_.setURI(uri, { 'hit': 'check' });
+    this.serverAccess_.send();
+};
+
+
+/** \brief Function called to reload the current page.
+ *
+ * Depending on how the AJAX code reacts, we will call this function.
+ * This function is used to reloads the current page. Although we
+ * are removing the 'action=edit' if present.
+ *
+ * @private
+ */
+snapwebsites.Users.prototype.reloadPage_ = function()
+{
+    var doc = document,
+        redirect_uri;
+
+    redirect_uri = doc.location.toString();
+
+    // reload the page without the 'edit' action (XXX we probably should
+    // remove any type of action, not just the edit action?)
+    //
+    // since the user is likely logged out, the reload will send actually
+    // him to another page (in most cases the login page) if this current
+    // page requires the user to be logged in to view this page
     //
     redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
                                .replace(/\?a=edit&/, "?")
@@ -214,6 +263,103 @@ snapwebsites.Users.prototype.autoLogout_ = function()
     redirect_uri = snapwebsites.ServerAccess.appendQueryString(redirect_uri, { hit: "transparent" });
     doc.location = redirect_uri;
 };
+
+
+/** \brief Function called on AJAX success.
+ *
+ * This function is called when the client receives the answer from the server.
+ *
+ * The answer will include the current status of the session and if the
+ * session is still considered valid, when it will end (i.e. the value to
+ * replace the users__session_time_limit global variable).
+ *
+ * If the session has died, then this function generates a redirect.
+ *
+ * If the session has not died, we call the startAutoLogout() function
+ * to restart the timer.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.Users.prototype.serverAccessSuccess = function(result) // virtual
+{
+    var xml_data = jQuery(result.jqxhr.responseXML),
+        session_status = xml_data.find("data[name='users__session_status']").text(),
+        limit;
+
+    // get the current user session time limit
+    //
+    limit = xml_data.find("data[name='users__session_time_limit']").text();
+    if(limit && limit.length > 0)
+    {
+        users__session_time_limit = parseInt(limit, 10);
+    }
+
+    // get the current administrator session time limit
+    //
+    limit = xml_data.find("data[name='users__administrative_login_time_limit']").text();
+    if(limit && limit.length > 0)
+    {
+        users__administrative_login_time_limit = parseInt(limit, 10);
+    }
+
+    // if session timed out, then we want to redirect the user
+    // the system should automatically save this page in the user's
+    // session, send the user to the login page, and reload it once
+    // the user logs back in
+    //
+    if(session_status == "none")
+    {
+        this.reloadPage_();
+        return;
+    }
+
+    // on a success with a session that did not yet time out, we want to
+    // repeat the test so we restart the AJAX timer
+    //
+    this.startAutoLogout();
+
+    // manage messages if any
+    //
+    snapwebsites.Users.superClass_.serverAccessComplete.call(this, result);
+};
+
+
+/** \brief Function called on AJAX error.
+ *
+ * This function is called when the client receives the answer from the server.
+ *
+ * The answer will include the current status of the session and if the
+ * session is still considered valid, when it will end (i.e. the value to
+ * replace the users__session_time_limit global variable).
+ *
+ * If the session has died, then this function generates a redirect.
+ *
+ * If the session has not died, we call the startAutoLogout() function
+ * to restart the timer.
+ *
+ * \note
+ * Unfortunately, if the reload fails the end user sees a "totally broken"
+ * page. This is not great, but more secure than keeping a logged in user
+ * page accessible to anyone who gains access to the client's computer.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.Users.prototype.serverAccessError = function(result) // virtual
+{
+    // on an error we cannot be sure whether the session is still alive
+    // or not so instead we have to force a redirect; since in most cases
+    // the AJAX check is expected to get a timed out session, this makes
+    // quite a lot of sense
+    //
+    // note that someone who opens multiple tabs to a Snap! website may
+    // get "interesting behaviors" that his case does not handle well,
+    // but we certainly hope that it won't happen to often...
+    //
+    this.reloadPage_();
+};
+
 
 
 

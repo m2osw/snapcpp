@@ -1,8 +1,10 @@
-libsnapwebsites (1.1.67.6~xenial) xenial; urgency=high
+libsnapwebsites (1.1.68.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-530: Added support for an AJAX check of the user session.
+  * Allow the process_cookies() to generate output.
+  * Fixed libsnapwebsites docs SOURCE, the headers were missing.
 
- -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Dec 2016 20:26:48 -0800
 
 libsnapwebsites (1.1.67.0~xenial) xenial; urgency=high
 

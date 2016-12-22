@@ -1,8 +1,17 @@
-snapserver-core-plugins (1.0.32.10~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.33.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-530: Added AJAX support for checking the users session status.
+  * Fixed the hit=transparent feature with attachments, favicon, images.
+  * Avoid displaying the "Unauthorized" error message on a transparent access.
+  * Made the users hit variable part of the plugin so we can check it at any
+    time even after the cookies were checked.
+  * Added a hit=check which just returns the session current status.
+  * Changed the users.js timeout handling to use an AJAX request instead of
+    a reload (1) because if still valid we should not reload and (2) the
+    reload meant loading many files (i.e. favicon.ico) instead of just checking
+    the session which takes no time.
 
- -- Build Server <build@m2osw.com>  Tue, 13 Dec 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 21 Dec 2016 20:26:48 -0800
 
 snapserver-core-plugins (1.0.32.0~xenial) xenial; urgency=high
 
