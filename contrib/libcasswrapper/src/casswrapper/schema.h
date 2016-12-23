@@ -39,13 +39,13 @@
 #include "casswrapper/query.h"
 #include "casswrapper/schema_value.h"
 
+#include <cassvalue/encoder.h>
+
 #include <QString>
 
 
 namespace casswrapper
 {
-
-class Encoder;
 
 namespace schema
 {
@@ -133,8 +133,8 @@ public:
 
                 Value&                          operator [] ( const QString& name );
 
-                void                            encodeColumnMeta(Encoder& encoded) const;
-                void                            decodeColumnMeta(const Decoder& decoder);
+                void                            encodeColumnMeta(cassvalue::Encoder& encoded) const;
+                void                            decodeColumnMeta(const cassvalue::Decoder& decoder);
 
                 QString     					getCqlString() const;
 
@@ -158,8 +158,8 @@ public:
 
             const ColumnMeta::map_t&        getColumns() const;
 
-            void                            encodeTableMeta(Encoder& encoded) const;
-            void                            decodeTableMeta(const Decoder& decoder);
+            void                            encodeTableMeta(cassvalue::Encoder& encoded) const;
+            void                            decodeTableMeta(const cassvalue::Decoder& decoder);
 
             QString      					getCqlString() const;
 
@@ -184,8 +184,8 @@ public:
 
         const TableMeta::map_t&         getTables() const;
 
-        void                            encodeKeyspaceMeta(Encoder& encoded) const;
-        void                            decodeKeyspaceMeta(const Decoder& decoder);
+        void                            encodeKeyspaceMeta(cassvalue::Encoder& encoded) const;
+        void                            decodeKeyspaceMeta(const cassvalue::Decoder& decoder);
 
         QString							getKeyspaceCql() const;
         string_map_t					getTablesCql() const;

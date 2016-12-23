@@ -46,10 +46,11 @@ set( CMAKE_AUTOMOC             TRUE )
 ## Include support modules
 ##
 find_package( SnapCMakeModules   REQUIRED )
+find_package( LibExcept          REQUIRED )
 find_package( Qt5Core            REQUIRED )
 find_package( SnapDoxygen )
 
-SnapGetVersion( LIBVALUE ${CMAKE_SOURCE_DIR} )
+SnapGetVersion( CASSVALUE ${CMAKE_SOURCE_DIR} )
 
 ## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 ##
@@ -57,6 +58,7 @@ link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
 include_directories(
     SYSTEM
+        ${LIBEXCEPT_INCLUDE_DIRS}
         ${Qt5Core_INCLUDE_DIRS}
 )
 

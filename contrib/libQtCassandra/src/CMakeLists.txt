@@ -85,6 +85,8 @@ target_link_libraries(QtCassandra
     ${AS2JS_LIBRARIES}
     #${CASSANDRACPPDRIVER_LIBRARIES}
     ${CASSWRAPPER_LIBRARIES}
+    ${CASSVALUE_LIBRARIES}
+    ${LIBEXCEPT_LIBRARIES}
     Qt5::Core
     Qt5::Xml
 )

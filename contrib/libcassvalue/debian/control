@@ -5,6 +5,7 @@ Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
+    libexcept,
     qtbase5-dev,
     snapcmakemodules (>= 1.0.27.11~xenial)
 Standards-Version: 3.9.4

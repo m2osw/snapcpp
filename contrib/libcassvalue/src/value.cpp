@@ -435,39 +435,6 @@ namespace cassvalue
  * \param[in] value  The new value of the array.
  */
 
-/** \var Value::TTL_PERMANENT
- * \brief Mark the column as permanent.
- *
- * By default, all the cells are saved with a TLL set to TTL_PERMANENT
- * which means that the cells will persist as long as they are not
- * deleted with a remove, truncate, or drop.
- *
- * This value represents a permanent cell, whereas other values saved
- * in the TTL parameter represent seconds.
- *
- * \sa setTtl()
- * \sa ttl()
- */
-
-/** \typedef Value::cassandra_ttl_t
- * \brief A safe TTL variable type.
- *
- * This definition is used to handle the TTL of a cell and is defined
- * in the value of each cell.
- *
- * The type forces the TTL value to TTL_PERMANENT by default. It also
- * bounds the value to positive numbers (plus 0 as TTL_PERMANENT is zero.)
- */
-
-/** \enum Value::def_timestamp_mode_t
- * \brief Intermediate definition to support a safe timestamp mode.
- *
- * The intermediate definition of the timestamp is used to declare a
- * limited controlled variable that has bounds checked automatically
- * and initializes variables of type timestamp_mode_t to
- * TIMESTAMP_MODE_AUTO.
- */
-
 /** \var Value::f_value
  * \brief The actual data of this value object.
  *
@@ -487,9 +454,6 @@ namespace cassvalue
  */
 Value::Value()
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     // an empty f_value() already represents a NULL
 }
@@ -503,9 +467,6 @@ Value::Value()
  */
 Value::Value(bool value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setBoolValue(f_value, value);
 }
@@ -520,9 +481,6 @@ Value::Value(bool value)
  */
 Value::Value(char value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setCharValue(f_value, value);
 }
@@ -536,9 +494,6 @@ Value::Value(char value)
  */
 Value::Value(signed char value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setSignedCharValue(f_value, value);
 }
@@ -552,9 +507,6 @@ Value::Value(signed char value)
  */
 Value::Value(unsigned char value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setUnsignedCharValue(f_value, value);
 }
@@ -568,9 +520,6 @@ Value::Value(unsigned char value)
  */
 Value::Value(int16_t value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setInt16Value(f_value, value);
 }
@@ -584,9 +533,6 @@ Value::Value(int16_t value)
  */
 Value::Value(uint16_t value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setUInt16Value(f_value, value);
 }
@@ -600,9 +546,6 @@ Value::Value(uint16_t value)
  */
 Value::Value(int32_t value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setInt32Value(f_value, value);
 }
@@ -616,9 +559,6 @@ Value::Value(int32_t value)
  */
 Value::Value(uint32_t value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setUInt32Value(f_value, value);
 }
@@ -632,9 +572,6 @@ Value::Value(uint32_t value)
  */
 Value::Value(int64_t value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setInt64Value(f_value, value);
 }
@@ -648,9 +585,6 @@ Value::Value(int64_t value)
  */
 Value::Value(uint64_t value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setUInt64Value(f_value, value);
 }
@@ -664,9 +598,6 @@ Value::Value(uint64_t value)
  */
 Value::Value(float value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setFloatValue(f_value, value);
 }
@@ -680,9 +611,6 @@ Value::Value(float value)
  */
 Value::Value(double value)
     //: f_value() -- auto-init
-    //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-    //  f_timestamp(0) -- auto-init
 {
     cassvalue::setDoubleValue(f_value, value);
 }
@@ -696,9 +624,6 @@ Value::Value(double value)
  */
 Value::Value(const QString& value)
     : f_value(value.toUtf8())
-      //f_ttl(TTL_PERMANENT) -- auto-init
-      //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-      //f_timestamp(0) -- auto-init
 {
     // f_value properly initialized already
 }
@@ -711,9 +636,6 @@ Value::Value(const QString& value)
  */
 Value::Value(const QByteArray& value)
     : f_value(value)
-      //f_ttl(TTL_PERMANENT) -- auto-init
-      //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-      //f_timestamp(0) -- auto-init
 {
     // f_value properly initialized already
 }
@@ -727,9 +649,6 @@ Value::Value(const QByteArray& value)
  */
 Value::Value(const char *data, int data_size)
     : f_value(data, data_size)
-      //f_ttl(TTL_PERMANENT) -- auto-init
-      //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
-      //f_timestamp(0) -- auto-init
 {
     // f_value properly initialized already
 }
@@ -2102,9 +2021,6 @@ bool Value::operator == (const Value& rhs)
     if(f_value.size() != rhs.size()) {
         return false;
     }
-    if(f_ttl != rhs.f_ttl) {
-        return false;
-    }
     return memcmp(f_value.data(), rhs.f_value.data(), f_value.size()) == 0;
 }
 
@@ -2124,9 +2040,6 @@ bool Value::operator == (const Value& rhs)
 bool Value::operator != (const Value& rhs)
 {
     if(f_value.size() != rhs.size()) {
-        return true;
-    }
-    if(f_ttl != rhs.f_ttl) {
         return true;
     }
     return memcmp(f_value.data(), rhs.f_value.data(), f_value.size()) != 0;

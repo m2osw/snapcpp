@@ -47,7 +47,6 @@ configure_file(
 		)
 
 set( HEADER_FILES
-    casswrapper/encoder.h
     casswrapper/exception.h
     casswrapper/query.h
     casswrapper/schema.h
@@ -76,6 +75,8 @@ add_library(${PROJECT_NAME} SHARED
 target_link_libraries(${PROJECT_NAME}
     ${AS2JS_LIBRARIES}
     ${CASSANDRACPPDRIVER_LIBRARIES}
+    ${CASSVALUE_LIBRARIES}
+    ${LIBEXCEPT_LIBRARIES}
     Qt5::Core
     Qt5::Xml
 )

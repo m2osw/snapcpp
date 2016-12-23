@@ -36,10 +36,14 @@
 
 #include "casswrapper/schema_value.h"
 
-#include "casswrapper/encoder.h"
 #include "casswrapper/query.h"
 #include "casswrapper_impl.h"
 #include "exception_impl.h"
+
+#include <cassvalue/encoder.h>
+#include <libexcept/exception.h>
+
+using namespace cassvalue;
 
 namespace casswrapper
 {
@@ -123,7 +127,7 @@ void Value::encodeValue(Encoder& encoder) const
             // (at this time we throw to make sure we capture
             // invalid data; otherwise the whole thing breaks
             // anyway...)
-            throw exception_t("unsupported QVariant type");
+            throw libexcept::exception_t("unsupported QVariant type");
 
         }
         break;
@@ -203,7 +207,7 @@ void Value::decodeValue(const Decoder& decoder)
                 // (at this time we throw to make sure we capture
                 // invalid data; otherwise the whole thing breaks
                 // anyway...)
-                throw exception_t("unsupported QVariant type");
+                throw libexcept::exception_t("unsupported QVariant type");
 
             }
         }
@@ -398,7 +402,7 @@ void Value::parseVariant( const value& val )
             break;
 
         default:
-            throw exception_t( QString("This type [%1] is not a bare type!")
+            throw libexcept::exception_t( QString("This type [%1] is not a bare type!")
                                .arg(static_cast<uint32_t>(type)) );
     }
 }

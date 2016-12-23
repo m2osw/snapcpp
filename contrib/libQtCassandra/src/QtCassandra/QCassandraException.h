@@ -1,5 +1,7 @@
 #pragma once
 
+#include <libexcept/exception.h>
+
 #include <stdexcept>
 #include <string>
 #include <QString>
@@ -9,6 +11,7 @@
 namespace QtCassandra
 {
 
+#if 0
 class QCassandraExceptionBase
 {
 public:
@@ -24,9 +27,10 @@ private:
 
     void                        collect_stack_trace(int stack_track_depth = STACK_TRACE_DEPTH);
 };
+#endif
 
 
-class QCassandraException : public std::runtime_error, public QCassandraExceptionBase
+class QCassandraException : public std::runtime_error, public libexcept::exception_base_t
 {
 public:
     QCassandraException( const QString&     what );

@@ -35,9 +35,10 @@
  */
 
 #include "casswrapper/session.h"
-#include "casswrapper/exception.h"
 #include "casswrapper_impl.h"
 #include "exception_impl.h"
+
+#include <libexcept/exception.h>
 
 #include "cassandra.h"
 
@@ -219,7 +220,7 @@ void Session::connect( const QStringList& host_list, const int port, const bool 
         f_data->f_connection.reset();
         f_data->f_session.reset();
         f_data->f_cluster.reset();
-        throw exception_t( msg.str() );
+        throw libexcept::exception_t( msg.str() );
     }
 }
 
@@ -383,7 +384,7 @@ cluster Session::getCluster() const
 {
     if( !f_data->f_cluster )
     {
-        throw exception_t( "The cluster is not connected!" );
+        throw libexcept::exception_t( "The cluster is not connected!" );
     }
 
     return *(f_data->f_cluster);
@@ -395,7 +396,7 @@ session Session::getSession() const
 {
     if( !f_data->f_session )
     {
-        throw exception_t( "The session is not connected!" );
+        throw libexcept::exception_t( "The session is not connected!" );
     }
 
     return *(f_data->f_session);
@@ -407,7 +408,7 @@ future Session::getConnection() const
 {
     if( !isConnected() )
     {
-        throw exception_t( "The cluster/session is not connected!" );
+        throw libexcept::exception_t( "The cluster/session is not connected!" );
     }
 
     return *(f_data->f_connection);

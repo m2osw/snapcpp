@@ -38,6 +38,8 @@
 
 #include "casswrapper/query.h"
 
+#include <cassvalue/encoder.h>
+
 #include <map>
 #include <memory>
 #include <vector>
@@ -49,8 +51,6 @@
 namespace casswrapper
 {
 
-class Encoder;
-class Decoder;
 class value;
 class iterator;
 
@@ -86,8 +86,8 @@ public:
 
     const QString&      output() const;
 
-    void                encodeValue(Encoder& encoder) const;
-    void                decodeValue(const Decoder& decoder);
+    void                encodeValue(cassvalue::Encoder& encoder) const;
+    void                decodeValue(const cassvalue::Decoder& decoder);
 
 private:
     void                parseValue   ( const value& val );

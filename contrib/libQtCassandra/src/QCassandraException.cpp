@@ -9,6 +9,7 @@ namespace QtCassandra
 {
 
 
+#if 0
 /** \brief Initialize this Snap! exception.
  *
  * Initialize the base exception class. Output a stack trace to the error log.
@@ -51,6 +52,7 @@ void QCassandraExceptionBase::collect_stack_trace( int stack_trace_depth )
     }
     free( stack_string_list );
 }
+#endif
 
 
 QCassandraException::QCassandraException( const QString&     what ) : std::runtime_error(qPrintable(what)) {}

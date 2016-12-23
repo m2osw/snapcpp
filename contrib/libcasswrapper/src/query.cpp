@@ -254,11 +254,11 @@ void Query::setStatementConsistency()
     //else if( CONSISTENCY_LEVEL_ANY          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ANY;          
     //else if( CONSISTENCY_LEVEL_TWO          == f_consistencyLevel ) consist = CASS_CONSISTENCY_TWO;          
     //else if( CONSISTENCY_LEVEL_THREE        == f_consistencyLevel ) consist = CASS_CONSISTENCY_THREE;        
-    //else throw exception_t( "Unsupported consistency level!" );
+    //else throw libexcept::exception_t( "Unsupported consistency level!" );
 
     //if( consist == CASS_CONSISTENCY_UNKNOWN )
     //{
-    //    throw exception_t( "This should never happen! Consistency has not been set!" );
+    //    throw libexcept::exception_t( "This should never happen! Consistency has not been set!" );
     //}
 
     f_data->f_queryStmt->set_consistency( consist );
@@ -473,7 +473,7 @@ void Query::queryCallbackFunc( void* f, void *data )
     //
     if( this_query->f_data->f_sessionFuture->get() != this_future )
     {
-        //throw exception_t( "Unexpected future!" );
+        //throw libexcept::exception_t( "Unexpected future!" );
         // Do nothing with this future, because this belongs to a different query
         return;
     }
@@ -497,7 +497,7 @@ void Query::onThreadQueryFinished( Query* q )
 {
     if( q != this )
     {
-        throw exception_t("Query::onThreadQueryFinished(): Query objects are not the same!");
+        throw libexcept::exception_t("Query::onThreadQueryFinished(): Query objects are not the same!");
     }
 
     emit queryFinished( shared_from_this() );
@@ -593,7 +593,7 @@ std::cerr << "*** ...pause is over... ***\n";
                << ", error={" << cass_error_desc(CASS_ERROR_LIB_REQUEST_TIMED_OUT )
                << "}, message={" << errmsg.data()
                << "} aborting operation!";
-            throw exception_t( ss.str().c_str() );
+            throw libexcept::exception_t( ss.str().c_str() );
         }
         --max_repeat;
         f_data->f_sessionFuture.reset( cass_session_execute( f_session->getSession().get(), f_data->f_queryStmt.get() ) , futureDeleter() );
@@ -627,12 +627,12 @@ void Query::addToBatch()
     //
     if( !f_data->f_batch )
     {
-        throw exception_t( "Query::addToBatch() cannot be called without an active batch!" );
+        throw libexcept::exception_t( "Query::addToBatch() cannot be called without an active batch!" );
     }
     //
     if( !f_data->f_queryStmt )
     {
-        throw exception_t( "Query::addToBatch requires an active query statement! Did you call Query::query()?" );
+        throw libexcept::exception_t( "Query::addToBatch requires an active query statement! Did you call Query::query()?" );
     }
 
     f_data->f_batch->set_consistency( CASS_CONSISTENCY_QUORUM );
@@ -673,7 +673,7 @@ void Query::endBatch( const bool block )
 {
     if( !f_data->f_batch )
     {
-        throw exception_t( "Query::endBatch() cannot be called without an active batch!" );
+        throw libexcept::exception_t( "Query::endBatch() cannot be called without an active batch!" );
     }
 
     internalStart( block );
@@ -698,7 +698,7 @@ void Query::start( const bool block )
 
     if( !f_data->f_queryStmt )
     {
-        throw exception_t( "Query::start() called with an unconnected session or no query statement." );
+        throw libexcept::exception_t( "Query::start() called with an unconnected session or no query statement." );
     }
 
     internalStart( block );
@@ -731,7 +731,7 @@ bool Query::queryActive() const
 
 /** \brief Get the query result. This method blocks if the result is not ready yet.
  *
- * \note Throws exception_t if query failed.
+ * \note Throws libexcept::exception_t if query failed.
  *
  * /sa isReady(), query()
  */
@@ -819,7 +819,7 @@ void Query::throwIfError( const QString& msg )
         std::stringstream ss;
         ss << "There is no active session for query [" << f_queryString.toUtf8().data() << "], msg=["
            << msg.toUtf8().data() << "]";
-        throw exception_t( ss.str().c_str() );
+        throw libexcept::exception_t( ss.str().c_str() );
     }
 
     const CassError code( f_data->f_sessionFuture->get_error_code() );
@@ -859,7 +859,7 @@ void Query::throwIfError( const QString& msg )
                << ", error={" << cass_error_desc(code)
                << "}, message={" << errmsg.data()
                << "} aborting operation!";
-            throw exception_t( ss.str().c_str() );
+            throw libexcept::exception_t( ss.str().c_str() );
         }
 
     }

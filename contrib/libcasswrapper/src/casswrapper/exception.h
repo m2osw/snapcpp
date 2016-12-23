@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdexcept>
+#include <libexcept/exception.h>
+
 #include <string>
 #include <QString>
 #include <QStringList>
@@ -9,46 +10,8 @@
 namespace casswrapper
 {
 
-#if 0
-// See notes in exception_impl.cpp
-class exception_base_t
-{
-public:
-    static int const            STACK_TRACE_DEPTH = 20;
 
-                                exception_base_t();
-    virtual                     ~exception_base_t() {}
-
-    QStringList const &         get_stack_trace() const { return f_stack_trace; }
-
-private:
-    QStringList                 f_stack_trace;
-
-    void                        collect_stack_trace(int stack_track_depth = STACK_TRACE_DEPTH);
-};
-
-
-class exception_t : public std::runtime_error, public exception_base_t
-{
-public:
-    exception_t( const QString&     what );
-    exception_t( const std::string& what );
-    exception_t( const char*        what );
-
-    virtual const char* what() const throw() override;
-};
-#else
-class exception_t : public std::runtime_error
-{
-public:
-    exception_t( const QString&     what ) : std::runtime_error(qPrintable(what)) {}
-    exception_t( const std::string& what ) : std::runtime_error(what.c_str())     {}
-    exception_t( const char*        what ) : std::runtime_error(what)             {}
-};
-#endif
-
-
-class cassandra_exception_t : public std::exception //, public exception_base_t
+class cassandra_exception_t : public libexcept::exception_base_t
 {
 public:
     virtual uint32_t        getCode()    const = 0;

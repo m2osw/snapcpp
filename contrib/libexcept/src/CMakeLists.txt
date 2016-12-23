@@ -43,7 +43,7 @@ configure_file(
 
 set( HEADER_FILES
     exception.h
-    version.h
+    ${PROJECT_BINARY_DIR}/libexcept/version.h
 )
 
 add_library(${PROJECT_NAME} SHARED

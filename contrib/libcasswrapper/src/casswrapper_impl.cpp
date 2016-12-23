@@ -519,7 +519,7 @@ retry_policy::retry_policy( type_t const t )
     case type_t::Default                : f_ptr.reset( cass_retry_policy_default_new()                 , deleter_t() ); break;
     case type_t::DowngradingConsistency : f_ptr.reset( cass_retry_policy_downgrading_consistency_new() , deleter_t() ); break;
     case type_t::FallThrough            : f_ptr.reset( cass_retry_policy_fallthrough_new()             , deleter_t() ); break;
-    case type_t::Logging                : throw exception_t("You must use the other constructor for retry_policy. We need a child policy."); break;
+    case type_t::Logging                : throw libexcept::exception_t("You must use the other constructor for retry_policy. We need a child policy."); break;
     }
 }
 

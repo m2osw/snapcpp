@@ -36,7 +36,8 @@
 
 #include "casswrapper/schema.h"
 #include "casswrapper/query.h"
-#include "casswrapper/encoder.h"
+
+#include <cassvalue/encoder.h>
 
 #include "cassandra.h"
 
@@ -46,6 +47,7 @@
 #include <map>
 #include <QtCore>
 
+using namespace cassvalue;
 
 namespace casswrapper
 {

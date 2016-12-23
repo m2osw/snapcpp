@@ -37,7 +37,7 @@
 project( cassvalue )
 
 configure_file(
-		version.h.in
+		cassvalue/version.h.in
 		${PROJECT_BINARY_DIR}/cassvalue/version.h
 		)
 
@@ -49,8 +49,8 @@ set( HEADER_FILES
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    version.h.in
-    cassvalue.cpp
+    cassvalue/version.h.in
+    value.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
