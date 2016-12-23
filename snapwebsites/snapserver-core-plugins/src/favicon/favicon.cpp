@@ -22,6 +22,7 @@
 #include "../permissions/permissions.h"
 #include "../output/output.h"
 #include "../server_access/server_access.h"
+#include "../users/users.h"
 
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
@@ -509,6 +510,11 @@ void favicon::output(content::path_info_t & ipath)
     f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     f_snap->output(image);
+
+    // make sure that the session time limit does not get updated on
+    // an attachment
+    //
+    users::users::instance()->transparent_hit();
 }
 
 

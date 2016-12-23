@@ -455,9 +455,11 @@ void server_access::ajax_failure()
     if(f_success)
     {
         // it is currently a success, change it to a failure
+        //
         f_success = false;
 
         // make sure no redirect is in place
+        //
         QDomElement snap_tag(f_ajax.documentElement());
         QDomElement redirect_tag(snap_dom::get_child_element(snap_tag, "redirect"));
         if(!redirect_tag.isNull())
@@ -466,7 +468,8 @@ void server_access::ajax_failure()
         }
 
         // in case the result was already defined, make sure to mark it as false
-        QDomText text(f_ajax.createTextNode(f_success ? "success" : "failure"));
+        //
+        QDomText text(f_ajax.createTextNode("failure"));
         QDomElement result(snap_dom::get_child_element(snap_tag, "result"));
         if(result.isNull())
         {

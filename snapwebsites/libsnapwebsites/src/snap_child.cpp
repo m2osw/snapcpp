@@ -7913,6 +7913,7 @@ void snap_child::execute()
 
     // give a chance to the system to use cookies such as the
     // cookie used to mark a user as logged in to kick in early
+    //
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
@@ -7920,40 +7921,47 @@ void snap_child::execute()
     }
     server->process_cookies();
 
-    // let plugins detach whatever data they attached to the user session
-    // (note: nothing to do with the fork() which was called a while back)
-    server->detach_from_session();
-
-    f_ready = true;
-
-    // generate the output
+    // the cookie handling may generate an immediate response in which case
+    // we want to exit ASAP and not execute anything
     //
-    // on_execute() is defined in the path plugin which retrieves the
-    // path::primary_owner of the content that match f_uri.path() and
-    // then calls the corresponding on_path_execute() function of that
-    // primary owner
-    server->execute(f_uri.path());
-
-    // TODO: look into moving this call to the exit() function since
-    //       it should be called no matter what (or maybe have some
-    //       form of RAII, but if exit() gets called, RAII will not
-    //       do us any good...)
-    //
-    // now that execution is over, we want to re-attach whatever did
-    // not make it in this session (i.e. a message that was posted
-    // after messages were added to the current page, or this page
-    // did not make use of the messages that were detached earlier)
-    server->attach_to_session();
-
     if(f_output.buffer().size() == 0)
     {
-        // somehow nothing was output...
-        // (that should not happen because the path::on_execute() function
-        // checks and generates a Page Not Found on empty content)
-        die(http_code_t::HTTP_CODE_NOT_FOUND, "Page Empty",
-            "Somehow this page could not be generated.",
-            "the execute() command ran but the output is empty (this is never correct with HTML data, it could be with text/plain responses though)");
-        NOTREACHED();
+        // let plugins detach whatever data they attached to the user session
+        // (note: nothing to do with the fork() which was called a while back)
+        //
+        server->detach_from_session();
+
+        f_ready = true;
+
+        // generate the output
+        //
+        // on_execute() is defined in the path plugin which retrieves the
+        // path::primary_owner of the content that match f_uri.path() and
+        // then calls the corresponding on_path_execute() function of that
+        // primary owner
+        server->execute(f_uri.path());
+
+        // TODO: look into moving this call to the exit() function since
+        //       it should be called no matter what (or maybe have some
+        //       form of RAII, but if exit() gets called, RAII will not
+        //       do us any good...)
+        //
+        // now that execution is over, we want to re-attach whatever did
+        // not make it in this session (i.e. a message that was posted
+        // after messages were added to the current page, or this page
+        // did not make use of the messages that were detached earlier)
+        server->attach_to_session();
+
+        if(f_output.buffer().size() == 0)
+        {
+            // somehow nothing was output...
+            // (that should not happen because the path::on_execute() function
+            // checks and generates a Page Not Found on empty content)
+            die(http_code_t::HTTP_CODE_NOT_FOUND, "Page Empty",
+                "Somehow this page could not be generated.",
+                "the execute() command ran but the output is empty (this is never correct with HTML data, it could be with text/plain responses though)");
+            NOTREACHED();
+        }
     }
 
     if(f_is_being_initialized)
@@ -7969,6 +7977,7 @@ void snap_child::execute()
     else
     {
         // created a page, output it now
+        //
         output_result(HEADER_MODE_NO_ERROR, f_output.buffer());
     }
 }
