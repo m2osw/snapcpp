@@ -44,7 +44,7 @@ configure_file(
 set( HEADER_FILES
     cassvalue/encoder.h
     cassvalue/value.h
-    cassvalue/version.h
+    ${PROJECT_BINARY_DIR}/cassvalue/version.h
 )
 
 add_library(${PROJECT_NAME} SHARED

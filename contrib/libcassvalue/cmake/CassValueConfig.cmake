@@ -7,11 +7,11 @@
 # CASSVALUE_LIBRARY      - The libraries needed to use CassValue (none)
 # CASSVALUE_DEFINITIONS  - Compiler switches required for using CassValue (none)
 
-find_path( CASSVALUE_INCLUDE_DIR libexcept/exception.h
+find_path( CASSVALUE_INCLUDE_DIR cassvalue/value.h
 		   PATHS $ENV{CASSVALUE_INCLUDE_DIR}
-		   PATH_SUFFIXES libexcept
+		   PATH_SUFFIXES cassvalue
 		 )
-	 find_library( CASSVALUE_LIBRARY libexcept
+	 find_library( CASSVALUE_LIBRARY cassvalue
 			PATHS $ENV{CASSVALUE_LIBRARY}
 		 )
 mark_as_advanced( CASSVALUE_INCLUDE_DIR CASSVALUE_LIBRARY )
