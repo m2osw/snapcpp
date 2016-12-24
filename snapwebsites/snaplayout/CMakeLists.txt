@@ -40,6 +40,7 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package( AdvGetOpt        REQUIRED )
+find_package( CassValue        REQUIRED )
 find_package( CassWrapper      REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )

@@ -38,7 +38,9 @@ set( CMAKE_INCLUDE_CURRENT_DIR ON )
 
 # Find required packaging
 find_package( AdvGetOpt          REQUIRED )
+find_package( CassValue          REQUIRED )
 find_package( CassWrapper        REQUIRED )
+find_package( LibExcept          REQUIRED )
 find_package( log4cplus          REQUIRED )
 find_package( LibTLD             REQUIRED )
 find_package( Qt5Core            REQUIRED )

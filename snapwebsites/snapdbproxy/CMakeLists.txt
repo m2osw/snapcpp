@@ -44,6 +44,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( CassWrapper	   REQUIRED )
+find_package( LibExcept        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )

@@ -37,11 +37,14 @@ if(CATCH_FOUND)
     ## Test the snap_lock from one or multiple computers
     ##
     project(test_snap_lock)
+    include_directories( ${CASSVALUE_INCLUDE_DIRS} )
     add_executable( ${PROJECT_NAME}
         test_snap_lock.cpp
     )
     target_link_libraries(${PROJECT_NAME}
+        ${CASSVALUE_LIBRARIES}
         ${CASSWRAPPER_LIBRARIES}
+        ${LIBEXCEPT_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
         ${QT_LIBRARIES}

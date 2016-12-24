@@ -88,9 +88,12 @@
 #include <snapwebsites/snap_lock.h>
 #include <snapwebsites/snapwebsites.h>
 
+// CassValue lib
+//
+#include <cassvalue/encoder.h>
+
 // CassWrapper lib
 //
-#include <casswrapper/encoder.h>
 #include <casswrapper/session.h>
 
 // C++ lib
@@ -102,6 +105,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+using namespace cassvalue;
 using namespace casswrapper;
 
 int main(int argc, char *argv[])

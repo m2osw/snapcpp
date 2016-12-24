@@ -59,10 +59,12 @@ set( CMAKE_MODULE_PATH
 find_package( SnapCMakeModules REQUIRED )
 find_package( AdvGetOpt        REQUIRED )
 find_package( CassWrapper      REQUIRED )
+find_package( LibExcept        REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( Qt5Core   	   REQUIRED )
 find_package( Qt5Network 	   REQUIRED )
+find_package( Qt5Xml		   REQUIRED )
 find_package( Qt5Widgets 	   REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapWebsites     REQUIRED )
@@ -77,12 +79,14 @@ add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSI
 set( QT_LIBRARIES
     Qt5::Core
     Qt5::Network
+    Qt5::Xml
     Qt5::Widgets
 )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
     ${Qt5Widgets_INCLUDE_DIRS}
 )
 
