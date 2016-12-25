@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.68.3~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 22 Dec 2016 02:00:48 -0800
+
 libsnapwebsites (1.1.68.0~xenial) xenial; urgency=high
 
   * SNAP-530: Added support for an AJAX check of the user session.
