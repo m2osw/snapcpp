@@ -1648,7 +1648,7 @@ void snap_firewall::setup_firewall()
             }
         );
 
-    SNAP_LOG_INFO( "Block ")(to_block_list.size())(" IPs (including ")(f_blocks.size())(" from the pending IP address list).");
+    SNAP_LOG_INFO("Block ")(to_block_list.size())(" IPs (including ")(f_blocks.size())(" from the pending IP address list).");
 
     f_blocks.clear();
 
