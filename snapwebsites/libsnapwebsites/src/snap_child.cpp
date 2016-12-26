@@ -3055,6 +3055,14 @@ bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
     {
         SNAP_LOG_FATAL("snap_child::process(): snap_exception caught: ")(except.what());
     }
+    catch( libexcept::exception_t const & e )
+    {
+        SNAP_LOG_FATAL("snap_child::process(): libexcept::exception_t caught: ")(e.what());
+        for( auto const & stack_string : e.get_stack_trace() )
+        {
+            SNAP_LOG_ERROR("libexcept(): backtrace=")( stack_string );
+        }
+    }
     catch( QtCassandra::QCassandraException const & e )
     {
         SNAP_LOG_FATAL("snap_child::process(): QtCassandra::QCassandraException caught: ")(e.what());
