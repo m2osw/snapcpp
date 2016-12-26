@@ -1,3 +1,9 @@
+libsnapwebsites (1.1.70.0~xenial) xenial; urgency=high
+
+  * SNAP-258: Now catches libexcept messages in the snap_child.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Dec 2016 13:16:16 -0800
+
 libsnapwebsites (1.1.69.0~xenial) xenial; urgency=high
 
   * SNAP-258: dbutils now handles the new "users" table.
