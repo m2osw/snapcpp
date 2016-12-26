@@ -51,6 +51,7 @@ include_directories(
 )
 
 include_directories(
+    ${CASSVALUE_INCLUDE_DIRS}
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIRS}
 )
@@ -186,6 +187,7 @@ add_library( ${PROJECT_NAME} SHARED
 
 target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
+    ${CASSVALUE_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
