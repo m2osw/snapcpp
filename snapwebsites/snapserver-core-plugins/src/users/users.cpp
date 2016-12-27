@@ -1965,6 +1965,7 @@ void users::verify_user(content::path_info_t & ipath)
     // remove "verify/" to retrieve the session ID
     //
     QString const session_id(ipath.get_cpath().mid(7));
+SNAP_LOG_TRACE("ipath.cpath=")(ipath.get_cpath());
     sessions::sessions::session_info info;
     sessions::sessions * session(sessions::sessions::instance());
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
@@ -1972,6 +1973,7 @@ void users::verify_user(content::path_info_t & ipath)
     session->load_session(session_id, info);
     QtCassandra::QCassandraValue verify_ignore_user_agent(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT)));
     QString const path(info.get_object_path());
+SNAP_LOG_TRACE("path=")(info.get_object_path());
     if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
     || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0
             && verify_ignore_user_agent.safeSignedCharValue(0, 0) == 0
@@ -2982,9 +2984,6 @@ users::status_t users::register_user(QString const & email, QString const & pass
             // we are the first to lock this row, the user is therefore unique
             // so go on and register him
 
-            // Save the first email the user had when registering
-            user_info.set_value(email_key, value);
-
             // In order to register the user in the contents we want a
             // unique identifier for each user, for that purpose we use
             // a special row in the users table and since we have a lock
@@ -3015,7 +3014,11 @@ users::status_t users::register_user(QString const & email, QString const & pass
                 }
                 identifier = current_identifier.int64Value();
             }
-            ++identifier;
+
+            // Save the first email the user had when registering
+            user_info.set_identifier( ++identifier );
+            user_info.set_user_email( email        );
+
             new_user = true;
             new_identifier.setInt64Value(identifier);
             users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
@@ -3030,8 +3033,8 @@ users::status_t users::register_user(QString const & email, QString const & pass
     {
         // TODO: change to identifier
         users_table ->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))
-                    ->cell(new_identifier.binaryValue())
-                    ->setValue(user_info.get_identifier());
+                    ->cell(user_key)
+                    ->setValue(new_identifier.binaryValue());
 
         save_password( user_info, password, "users" );
 
@@ -3042,7 +3045,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
         // Save the email address as the current email
         // This is the original untouch email address
         value.setStringValue(email);
-        user_info.set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL, value );
+        //user_info.set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL, value );
 
         // Save the user IP address when registering
         value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));

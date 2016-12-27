@@ -230,7 +230,9 @@ public:
         bool                user_is_an_example_from_email() const;
 
         identifier_t        get_identifier () const;
+        void                set_identifier ( identifier_t const & v );
         QString const &     get_user_email () const;
+        void                set_user_email ( QString const & email );
         QString const &     get_user_key   () const;
 
         //void                set_user_path  ( QString  const & );

@@ -185,19 +185,9 @@ bool users::user_info_t::user_is_an_example_from_email() const
  */
 users::identifier_t users::user_info_t::get_identifier() const
 {
-#if 0
-    QtCassandra::QCassandraValue const value(get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
-    if(!value.nullValue())
-    {
-        return value.int64Value();
-    }
-    return 0;
-#else
     return f_identifier;
-#endif
 }
 
-#if 0
 /** \brief Save the user identifier.
  *
  * This function is used to save the user identifier in this object.
@@ -210,11 +200,9 @@ users::identifier_t users::user_info_t::get_identifier() const
  */
 void users::user_info_t::set_identifier( identifier_t const & v )
 {
+    f_identifier = v;
     set_value( name_t::SNAP_NAME_USERS_IDENTIFIER, v );
-
-    // TODO: when we make this the new key, we need to set the row column key as well.
 }
-#endif
 
 
 bool users::user_info_t::value_exists( QString const & v ) const
@@ -298,6 +286,15 @@ QString const & users::user_info_t::get_user_key() const
 QString const & users::user_info_t::get_user_email() const
 {
     return f_user_email;
+}
+
+
+void users::user_info_t::set_user_email ( QString const & val )
+{
+    f_user_email = val;
+    email_to_user_key();
+    set_value( name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL, f_user_email );
+    set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL , f_user_key   );
 }
 
 
@@ -573,7 +570,8 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
 {
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    return users_table->row(get_user_key());    // TODO: change to int64_t id
+    //return users_table->row(get_user_key());    // TODO: change to int64_t id
+    return users_table->row(QtCassandra::QCassandraValue(f_identifier).binaryValue());
 }
 
 
