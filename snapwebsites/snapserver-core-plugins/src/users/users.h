@@ -282,7 +282,7 @@ public:
         snap_child*     get_snap() const;
 
         QtCassandra::QCassandraRow::pointer_t get_user_row() const;
-        void            set_user_key_by_id();
+        void 			set_user_id_by_email();
     };
 
     class user_security_t

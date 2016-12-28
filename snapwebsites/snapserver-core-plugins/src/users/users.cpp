@@ -1837,10 +1837,12 @@ void users::on_create_content(content::path_info_t & ipath, QString const & owne
             QtCassandra::QCassandraValue const value(f_user_info.get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
             if(!value.nullValue())
             {
-                int64_t const identifier(value.int64Value());
                 QString const site_key(f_snap->get_site_key_with_slash());
-                QString const user_path(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
-                // TODO: SNAP-258: should this be id instead?
+                QString const user_path(QString("%1%2/%3")
+                                        .arg(site_key)
+                                        .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
+                                        .arg(value.int64Value())
+                                        );
 
                 content::path_info_t user_ipath;
                 user_ipath.set_path(user_path);
@@ -2313,7 +2315,6 @@ QString users::login_user(QString const& email, QString const & password, bool &
 
             if(valid_password)
             {
-
                 // User credentials are correct, create a session & cookie
                 create_logged_in_user_session(user_info);
 
@@ -3021,7 +3022,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
             new_user = true;
             new_identifier.setInt64Value(identifier);
-            users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
+            //users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
         }
         // the lock automatically goes away here
     }
@@ -3040,11 +3041,11 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
         // Save the user identifier in his user account so we can easily find
         // the content user for that user account/email
-        user_info.set_value( identifier_key, new_identifier );
+        //user_info.set_value( identifier_key, new_identifier );
 
         // Save the email address as the current email
         // This is the original untouch email address
-        value.setStringValue(email);
+        //value.setStringValue(email);
         //user_info.set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL, value );
 
         // Save the user IP address when registering

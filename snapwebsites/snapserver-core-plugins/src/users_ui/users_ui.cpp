@@ -894,7 +894,11 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
         const QString site_key(f_snap->get_site_key_with_slash());
 
         // TODO: should be user identifier...?
-        const QString user_key(site_key + users::get_name(users::name_t::SNAP_NAME_USERS_PATH) + "/" + user_id);
+        const QString user_key(QString("%1%2/%3")
+                               .arg(site_key)
+                               .arg(users::get_name(users::name_t::SNAP_NAME_USERS_PATH))
+                               .arg(user_id)
+                               );
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(user_key))
         {

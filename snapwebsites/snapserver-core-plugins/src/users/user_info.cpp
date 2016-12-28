@@ -63,19 +63,27 @@ users::user_info_t::user_info_t( snap_child * sc, QString const & val )
     {
         f_user_email = val;
         email_to_user_key();
+        set_user_id_by_email();
+        if( f_identifier != -1 )
+        {
+            set_value(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL, f_user_email);
+            set_value(name_t::SNAP_NAME_USERS_CURRENT_EMAIL,  f_user_key);
+        }
     }
     else
     {
-        set_user_key_by_id();
+        f_user_email = get_value(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL).stringValue();
+        f_user_key	 = get_value(name_t::SNAP_NAME_USERS_CURRENT_EMAIL) .stringValue();
     }
 }
 
 
 users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
     : f_snap(sc)
-    , f_valid(true)
+    , f_valid(false)
 {
     f_user_email = f_user_key = get_name(name);
+    set_user_id_by_email();
 }
 
 
@@ -84,7 +92,8 @@ users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
     , f_identifier(id)
     , f_valid(true)
 {
-    set_user_key_by_id();
+    f_user_email = get_value( name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL ).stringValue();
+    f_user_key	 = get_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL  ).stringValue();
 }
 
 
@@ -118,22 +127,26 @@ QString users::user_info_t::get_full_anonymous_path()
 }
 
 
-void users::user_info_t::set_user_key_by_id()
+void users::user_info_t::set_user_id_by_email()
 {
     auto users_table( get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)) );
     auto row        ( users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))  );
 
     QByteArray key;
-    QtCassandra::appendInt64Value(key, f_identifier);
+    QtCassandra::appendStringValue(key, f_user_key);
     if(row->exists(key))
     {
-        // found the user, retrieve the current email
-        f_user_key   = row->cell(key)->value().stringValue();
-        f_user_email = users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->value().stringValue();
+        // found the user, retrieve the current id
+        f_identifier = row->cell(key)->value().int64Value();
+#if 0
+        auto const & original_email_name(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
+        f_user_email = users_table->row(f_identifier)->cell(original_email_name)->value().stringValue();
         if( f_user_email.isEmpty() )
         {
             f_user_email = f_user_key;
+            users_table->row(f_identifier)->cell(original_email_name)->setValue(f_user_email);	// Write if it does not exist...
         }
+#endif
         f_valid = true;
     }
 }
