@@ -1976,11 +1976,16 @@ SNAP_LOG_TRACE("ipath.cpath=")(ipath.get_cpath());
     QtCassandra::QCassandraValue verify_ignore_user_agent(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT)));
     QString const path(info.get_object_path());
 SNAP_LOG_TRACE("path=")(info.get_object_path());
-    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-    || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0
-            && verify_ignore_user_agent.safeSignedCharValue(0, 0) == 0
-            && info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
-    || path.mid(0, 6) != user_info_t::get_full_anonymous_path())
+    bool ok(false);
+    QCassandraValue const id_val(static_cast<identifier_t>(path.mid(6).toLongLong(&ok))); // this is the identifier from the session (SNAP-258)
+    //
+    if( (info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
+        || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0
+                && verify_ignore_user_agent.safeSignedCharValue(0, 0) == 0
+                && info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
+        || (path.mid(0, 6) != user_info_t::get_full_anonymous_path())
+        || !ok
+      )
     {
         // it failed, the session could not be loaded properly
         SNAP_LOG_WARNING("users::verify_user() could not load the user session ")
@@ -2006,8 +2011,6 @@ SNAP_LOG_TRACE("path=")(info.get_object_path());
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
     //
-    QCassandraValue const id_val(path.mid(6)); // this is the identifier from the session (SNAP-258)
-    identifier_t const identifier(id_val.int64Value()); // this is the identifier from the session (SNAP-258)
     if(!users_table->exists(id_val.binaryValue()))
     {
         // This should never happen...
@@ -2018,27 +2021,25 @@ SNAP_LOG_TRACE("path=")(info.get_object_path());
             true
         );
         // redirect the user to the log in page
+
         f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
-    // SNAP-258: use identifier instead of user key (canonicialize email address).
+    // SNAP-258: use identifier instead of user key (canonicialized email address).
     //
+    identifier_t const identifier(id_val.int64Value());
     user_info_t user_info( get_user_info_by_id(identifier) );
-#if 0
-    QtCassandra::QCassandraValue const user_identifier(user_info.get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
-    if(user_identifier.nullValue())
+    if( !user_info.is_valid() )
     {
-        SNAP_LOG_FATAL("users::verify_user() could not load the user identifier, the row exists but the cell did not make it (")
-                        (user_key)("/")
-                        (get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))(").");
+        SNAP_LOG_FATAL("users::verify_user() could not load the user information! (user_key=")
+                        (user_info.get_user_key());
         // redirect the user to the verification form although it won't work
         // next time either...
         f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
-    int64_t const identifier(user_identifier.int64Value());
-#endif
+
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
@@ -2159,14 +2160,16 @@ QString users::login_user(QString const& email, QString const & password, bool &
 {
     validation_required = false;
     user_info_t user_info(get_user_info_by_email(email));
+//SNAP_LOG_TRACE("email=")(email);
 
     if(user_info.exists())
     {
+//SNAP_LOG_TRACE("user exists");
         QtCassandra::QCassandraValue value;
 
         // existing users have a unique identifier
-        QtCassandra::QCassandraValue const user_identifier(user_info.get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
-        if(user_identifier.size() != sizeof(int64_t))   // TODO: shouldn't this be unsigned?
+        identifier_t const user_identifier(user_info.get_identifier());
+        if( user_identifier == -1 )
         {
             messages::messages::instance()->set_error(
                 "Could Not Log You In",
@@ -2190,13 +2193,13 @@ QString users::login_user(QString const& email, QString const & password, bool &
             }
             NOTREACHED();
         }
+
         user_logged_info_t logged_info(f_snap);
         logged_info.set_password_policy(password_policy);
-        logged_info.set_identifier(user_identifier.int64Value());
-        //user_info.set_identifier(user_identifier.uint64Value());
+        logged_info.set_identifier(user_identifier);
         logged_info.user_ipath().set_path(QString("%1/%2")
                 .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
-                .arg(user_identifier.int64Value()));
+                .arg(user_identifier));
 
         // although the user exists, as in, has an account on this Snap!
         // website, that account may not be attached to this website so
@@ -2257,6 +2260,7 @@ QString users::login_user(QString const& email, QString const & password, bool &
         }
         if(valid)
         {
+//SNAP_LOG_TRACE("is valid");
             bool valid_password(password.isEmpty());
             if(!valid_password)
             {
@@ -2315,6 +2319,7 @@ QString users::login_user(QString const& email, QString const & password, bool &
 
             if(valid_password)
             {
+//SNAP_LOG_TRACE("valid password");
                 // User credentials are correct, create a session & cookie
                 create_logged_in_user_session(user_info);
 
@@ -2403,10 +2408,12 @@ QString users::login_user(QString const& email, QString const & password, bool &
                 // (i.e. a pay for website where the account has no more
                 //       credit and this very user is not responsible for
                 //       the payment)
-                return "good credential, invalid status according to another plugin that logged the user out immediately";
+//SNAP_LOG_TRACE("good credentials, invalid status");
+                return "good credentials, invalid status according to another plugin that logged the user out immediately";
             }
             else
             {
+//SNAP_LOG_TRACE("invalid credentials: password mismatch");
                 // user mistyped his password
                 //
                 invalid_password(user_info, "users");
@@ -2416,6 +2423,7 @@ QString users::login_user(QString const& email, QString const & password, bool &
     }
 
     // user mistyped his email or is not registered?
+//SNAP_LOG_TRACE("invalid credentials: email does not exist");
     return "invalid credentials (user with specified email does not exist)";
 }
 

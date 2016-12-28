@@ -362,7 +362,7 @@ bool users::user_info_t::is_valid() const
 bool users::user_info_t::exists() const
 {
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    return users_table->exists(get_user_key());
+    return users_table->exists(QtCassandra::QCassandraValue(f_identifier).binaryValue());
 }
 
 
@@ -583,7 +583,6 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
 {
     auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
-    //return users_table->row(get_user_key());    // TODO: change to int64_t id
     return users_table->row(QtCassandra::QCassandraValue(f_identifier).binaryValue());
 }
 
