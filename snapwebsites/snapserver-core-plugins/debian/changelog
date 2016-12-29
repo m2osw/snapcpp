@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.35.0~xenial) xenial; urgency=high
+
+  * SNAP-258: Now user logs in correctly.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Dec 2016 16:27:33 -0800
+
 snapserver-core-plugins (1.0.34.1~xenial) xenial; urgency=high
 
   * SNAP-258: Added trace statements in user login code for debugging.
