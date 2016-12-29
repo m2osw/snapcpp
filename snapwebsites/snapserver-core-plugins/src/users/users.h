@@ -444,7 +444,7 @@ public:
     login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
     void                    transparent_hit();
     bool                    is_transparent_hit();
-    bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
+    bool                    authenticated_user(identifier_t const id, sessions::sessions::session_info * info);
     void                    create_logged_in_user_session(user_info_t const & user_info);
     void                    user_logout();
 

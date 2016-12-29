@@ -3209,7 +3209,9 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         info.set_user_agent(get_name(name_t::SNAP_NAME_SENDMAIL_USER_AGENT));
         info.set_time_limit(f_snap->get_start_time() + 86400);  // now + 1 day
         users::users * users_plugin(users::users::instance());
-        if(!users_plugin->authenticated_user(to, &info))
+        bool ok(false);
+        users::users::identifier_t const id( to.toLongLong(&ok) );
+        if( !ok || !users_plugin->authenticated_user(id, &info))
         {
             SNAP_LOG_WARNING("User \"")(to)("\" could not be authenticated. The locale information will be set to the website locale.");
         }

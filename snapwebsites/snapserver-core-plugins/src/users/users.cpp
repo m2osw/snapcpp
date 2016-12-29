@@ -929,7 +929,9 @@ void users::on_process_cookies()
             // this session qualifies as a log in session
             // so now verify the user
             QString const path(f_info->get_object_path());
-            if(!authenticated_user(path.mid(6), nullptr))
+            bool ok(false);
+            users::users::identifier_t const id( path.mid(6).toLongLong(&ok) );
+            if( !ok || !authenticated_user(id, nullptr))
             {
                 // we are logged out because the session timed out
                 //
@@ -1399,20 +1401,26 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  *
  * \return true if the user gets authenticated, false in all other cases.
  */
-bool users::authenticated_user(QString const & email, sessions::sessions::session_info * info)
+bool users::authenticated_user(identifier_t const id, sessions::sessions::session_info * info)
 {
     // called with a seemingly valid key?
-    if(email.isEmpty())
+    //if(email.isEmpty())
+    if( id == -1 )
     {
         SNAP_LOG_INFO("cannot authenticate user without a key (anonymous users get this message).");
         return false;
     }
 
-    user_info_t user_info(get_user_info_by_email(email));
+    user_info_t user_info(get_user_info_by_id(id));
 
     // called with the email address of a user who registered before?
     if( !user_info.exists() )
     {
+libexcept::exception_base_t ex;
+for( auto line : ex.get_stack_trace() )
+{
+SNAP_LOG_TRACE("users::authenticated_user(): stack trace:")(line);
+}
         SNAP_LOG_INFO("user key \"")(user_info.get_user_key())("\" was not found in the users table");
         return false;
     }

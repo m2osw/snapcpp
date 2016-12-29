@@ -588,7 +588,9 @@ void oauth2::application_login()
         QString const path(info.get_object_path());
         // Note: this call returns false if the path matches "|/logout(/.*)?|"
         //
-        if(users_plugin->authenticated_user(path.mid(6), &info))
+        bool ok(false);
+        users::users::identifier_t const id( path.mid(6).toLongLong(&ok) );
+        if(ok && users_plugin->authenticated_user(id, &info))
         {
             // this session qualifies as a log in session
             // accept this session and go on by executing this path
