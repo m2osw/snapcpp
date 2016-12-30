@@ -237,7 +237,7 @@ public:
 
         //void                set_user_path  ( QString  const & );
         QString             get_user_path    () const;
-        QString             get_user_basepath() const;  // "/user/<ID>" only
+        QString             get_user_basepath( bool const front_slash = true ) const;  // "/user/<ID>" only
 
         bool                value_exists ( QString const & v ) const;
         bool                value_exists ( name_t  const & v ) const;
@@ -253,7 +253,6 @@ public:
         void                set_status   ( status_t const & v );
         status_t            get_status   () const;
 
-        void                set_is_valid ( bool v );
         bool                is_valid     () const;
 
         bool                exists() const;
@@ -273,10 +272,9 @@ public:
     private:
         snap_child *    f_snap        = nullptr;
         identifier_t    f_identifier  = -1;
-        QString         f_user_key;     // TODO: change to id
+        QString         f_user_key;
         QString         f_user_email;
         status_t        f_status      = status_t::STATUS_UNDEFINED;
-        bool            f_valid       = false;
 
         void            email_to_user_key();
         snap_child*     get_snap() const;

@@ -56,7 +56,6 @@ users::user_info_t::user_info_t( snap_child * sc )
 
 users::user_info_t::user_info_t( snap_child * sc, QString const & val )
     : f_snap(sc)
-    , f_valid(true)
 {
     f_identifier = get_user_id_by_path( get_snap(), val );
     if( f_identifier == -1 )
@@ -80,7 +79,6 @@ users::user_info_t::user_info_t( snap_child * sc, QString const & val )
 
 users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
     : f_snap(sc)
-    , f_valid(false)
 {
     f_user_email = f_user_key = get_name(name);
     set_user_id_by_email();
@@ -90,7 +88,6 @@ users::user_info_t::user_info_t( snap_child * sc, name_t const & name )
 users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
     : f_snap(sc)
     , f_identifier(id)
-    , f_valid(true)
 {
     f_user_email = get_value( name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL ).stringValue();
     f_user_key	 = get_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL  ).stringValue();
@@ -138,16 +135,6 @@ void users::user_info_t::set_user_id_by_email()
     {
         // found the user, retrieve the current id
         f_identifier = row->cell(key)->value().int64Value();
-#if 0
-        auto const & original_email_name(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
-        f_user_email = users_table->row(f_identifier)->cell(original_email_name)->value().stringValue();
-        if( f_user_email.isEmpty() )
-        {
-            f_user_email = f_user_key;
-            users_table->row(f_identifier)->cell(original_email_name)->setValue(f_user_email);	// Write if it does not exist...
-        }
-#endif
-        f_valid = true;
     }
 }
 
@@ -284,12 +271,6 @@ void users::user_info_t::set_status( status_t const & v )
 }
 
 
-void users::user_info_t::set_is_valid( bool v )
-{
-    f_valid = v;
-}
-
-
 QString const & users::user_info_t::get_user_key() const
 {
     return f_user_key;
@@ -324,12 +305,7 @@ QString users::user_info_t::get_user_path() const
 {
     if( exists() )
     {
-        auto const value( get_value( name_t::SNAP_NAME_USERS_IDENTIFIER ) );
-        if(!value.nullValue())
-        {
-            int64_t const identifier(value.int64Value());
-            return QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier);
-        }
+        return get_user_basepath( false /*front_slash*/ );
     }
 
     // TODO: should this be an empty string?
@@ -338,9 +314,10 @@ QString users::user_info_t::get_user_path() const
 }
 
 
-QString users::user_info_t::get_user_basepath() const
+QString users::user_info_t::get_user_basepath( bool const front_slash ) const
 {
-    return QString("/%1/%2")
+    return QString("%1%2/%3")
+            .arg(front_slash? "/": "")
             .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
             .arg(get_identifier())
             ;
@@ -355,7 +332,7 @@ users::status_t users::user_info_t::get_status() const
 
 bool users::user_info_t::is_valid() const
 {
-    return f_snap && f_valid;
+    return f_snap && (f_identifier != -1);
 }
 
 
@@ -368,11 +345,10 @@ bool users::user_info_t::exists() const
 
 void users::user_info_t::reset()
 {
-    f_user_key   = QString();
-    f_user_email = QString();
-    //f_user_path  = QString();
-    f_status     = status_t::STATUS_UNDEFINED;
-    f_valid      = false;
+    f_user_key     = QString();
+    f_user_email   = QString();
+    f_status       = status_t::STATUS_UNDEFINED;
+    f_identifier   = -1;
 }
 
 

@@ -463,7 +463,7 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 12, 21, 19, 50, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 12, 29, 16, 34, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -896,7 +896,7 @@ QString users::get_user_cookie_name()
  * plugins as the current user session.
  *
  * Only this very function also checks whether the user is currently
- * logged in and defines the user key (email address) if so. Otherwise the
+ * logged in and defines the user identifier if so. Otherwise the
  * session can be used for things such as saving messages between redirects.
  *
  * \important
@@ -982,6 +982,7 @@ void users::on_process_cookies()
         {
             // the user specified an action
             f_hit = uri.query_option(qs_hit);
+SNAP_LOG_TRACE("f_hit=")(f_hit);
             if(f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_USER)
             && f_hit != get_name(name_t::SNAP_NAME_USERS_CHECK)
             && f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
@@ -996,6 +997,7 @@ void users::on_process_cookies()
     //
     if(f_hit == get_name(name_t::SNAP_NAME_USERS_CHECK))
     {
+SNAP_LOG_TRACE("got hit check");
         snap_string_list result;
 
         if(f_info->get_object_path() != "/user/") // if anonymous, ignore the time limits, they do not matter
@@ -1416,11 +1418,6 @@ bool users::authenticated_user(identifier_t const id, sessions::sessions::sessio
     // called with the email address of a user who registered before?
     if( !user_info.exists() )
     {
-libexcept::exception_base_t ex;
-for( auto line : ex.get_stack_trace() )
-{
-SNAP_LOG_TRACE("users::authenticated_user(): stack trace:")(line);
-}
         SNAP_LOG_INFO("user key \"")(user_info.get_user_key())("\" was not found in the users table");
         return false;
     }
@@ -1571,7 +1568,7 @@ void users::user_logout()
         f_user_info.delete_value(name_t::SNAP_NAME_USERS_LOGIN_SESSION);
     }
 
-    f_user_info.set_is_valid(false);
+    f_user_info.reset();
     f_user_logged_in = false;
 }
 
@@ -1969,13 +1966,12 @@ void users::verify_user(content::path_info_t & ipath)
             f_user_info.delete_value(name_t::SNAP_NAME_USERS_LOGIN_SESSION);
         }
 
-        f_user_info.set_is_valid(false);
+        f_user_info.reset();
     }
 
     // remove "verify/" to retrieve the session ID
     //
     QString const session_id(ipath.get_cpath().mid(7));
-SNAP_LOG_TRACE("ipath.cpath=")(ipath.get_cpath());
     sessions::sessions::session_info info;
     sessions::sessions * session(sessions::sessions::instance());
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
@@ -1983,7 +1979,6 @@ SNAP_LOG_TRACE("ipath.cpath=")(ipath.get_cpath());
     session->load_session(session_id, info);
     QtCassandra::QCassandraValue verify_ignore_user_agent(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT)));
     QString const path(info.get_object_path());
-SNAP_LOG_TRACE("path=")(info.get_object_path());
     bool ok(false);
     QCassandraValue const id_val(static_cast<identifier_t>(path.mid(6).toLongLong(&ok))); // this is the identifier from the session (SNAP-258)
     //
