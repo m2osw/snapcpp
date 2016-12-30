@@ -21,11 +21,13 @@ namespace libexcept
  *
  * Initialize the base exception class. Output a stack trace to the error log.
  *
+ * \param[in] depth  The number of lines to grab in our stack track.
+ *
  * \sa output_stack_trace()
  */
-exception_base_t::exception_base_t()
+exception_base_t::exception_base_t( int const depth )
 {
-    collect_stack_trace();
+    collect_stack_trace( depth );
 }
 
 
@@ -41,7 +43,7 @@ exception_base_t::exception_base_t()
  * a number larger than the number of function pointers on the stack
  * will return the entire stack.
  *
- * \param[in] stack_trace_depth  The number of lines to output in our stack track.
+ * \param[in] stack_trace_depth  The number of lines to capture in our stack track.
  */
 void exception_base_t::collect_stack_trace( int stack_trace_depth )
 {

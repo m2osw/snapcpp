@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_EXCEPTION_H
-#define SNAP_EXCEPTION_H
+#pragma once
 
 #include <stdexcept>
 #include <QString>
@@ -31,8 +30,7 @@ public:
                                 snap_exception_base();
     virtual                     ~snap_exception_base() {}
 
-
-    static void                 output_stack_trace(int stack_track_depth = STACK_TRACE_DEPTH);
+    static void                 output_stack_trace( int const stack_trace_depth = STACK_TRACE_DEPTH );
 };
 
 
@@ -78,6 +76,5 @@ public:
 
 
 } // namespace snap
-#endif
-// SNAP_EXCEPTION_H
+
 // vim: ts=4 sw=4 et

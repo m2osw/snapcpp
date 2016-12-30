@@ -12,9 +12,7 @@ namespace libexcept
 class exception_base_t
 {
 public:
-    static int const            STACK_TRACE_DEPTH = 20;
-
-                                exception_base_t();
+                                exception_base_t( int const depth = 20 );
     virtual                     ~exception_base_t() {}
 
     QStringList const &         get_stack_trace() const { return f_stack_trace; }
@@ -22,7 +20,7 @@ public:
 private:
     QStringList                 f_stack_trace;
 
-    void                        collect_stack_trace(int stack_track_depth = STACK_TRACE_DEPTH);
+    void                        collect_stack_trace( int const stack_trace_depth );
 };
 
 

@@ -51,6 +51,7 @@ add_executable( ${PROJECT_NAME}
     test_ssl_server.cpp
 )
 target_link_libraries(${PROJECT_NAME}
+    ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -65,6 +66,7 @@ add_executable( ${PROJECT_NAME}
     test_ssl_client.cpp
 )
 target_link_libraries(${PROJECT_NAME}
+    ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -89,6 +91,7 @@ add_executable( ${PROJECT_NAME}
     test_shutdown_server.cpp
 )
 target_link_libraries(${PROJECT_NAME}
+    ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -103,6 +106,7 @@ add_executable( ${PROJECT_NAME}
     test_shutdown_client.cpp
 )
 target_link_libraries(${PROJECT_NAME}
+    ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}

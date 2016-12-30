@@ -18,6 +18,8 @@
 #include "snapwebsites/snap_exception.h"
 #include "snapwebsites/log.h"
 
+#include <libexcept/exception.h>
+
 #include <iostream>
 
 #include <execinfo.h>
@@ -57,21 +59,14 @@ snap_exception_base::snap_exception_base()
  *
  * \param[in] stack_trace_depth  The number of lines to output in our stack track.
  */
-void snap_exception_base::output_stack_trace( int stack_trace_depth )
+void snap_exception_base::output_stack_trace( int const stack_trace_depth )
 {
-    std::vector<void *> array;
-    array.resize( stack_trace_depth );
-    int const size(backtrace( &array[0], stack_trace_depth ));
+    libexcept::exception_base_t eb( stack_trace_depth );
 
-    // Output to log
-    //
-    char ** stack_string_list(backtrace_symbols( &array[0], size ));
-    for( int idx = 0; idx < size; ++idx )
+    for( auto const & stack_line : eb.get_stack_trace() )
     {
-        char const * stack_string( stack_string_list[idx] );
-        SNAP_LOG_ERROR("snap_exception_base(): backtrace=")( stack_string );
+        SNAP_LOG_ERROR("snap_exception_base(): backtrace=")( stack_line );
     }
-    free( stack_string_list );
 }
 
 
