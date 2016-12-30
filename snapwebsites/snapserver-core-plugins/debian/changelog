@@ -1,3 +1,12 @@
+snapserver-core-plugins (1.0.36.0~xenial) xenial; urgency=high
+
+  * SNAP-530: Actually, the timeout delay can go really negative when someone
+    has bad clocks (which happens on VMs, for example). Now the script forces
+    a minimum of 60 for the delay (1min.) and checks if it goes under 1h, if
+    so it prints a warning in the JavaScript console.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Dec, 30 Dec 2016 15:21:48 -0800
+
 snapserver-core-plugins (1.0.35.3~xenial) xenial; urgency=high
 
   * SNAP-258: Now user logs in correctly.
