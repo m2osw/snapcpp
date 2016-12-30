@@ -67,11 +67,13 @@ namespace libexcept
  * exceptions only in very exceptional cases and not on every single error
  * so the event should be rare in a normal run of our daemons.
  *
+ * \param[in] stack_trace_depth  The number of lines to grab in our stack track.
+ *
  * \sa collect_stack_trace()
  */
-exception_base_t::exception_base_t()
+exception_base_t::exception_base_t( int const stack_trace_depth )
 {
-    collect_stack_trace( f_stack_trace );
+    collect_stack_trace( stack_trace_depth );
 }
 
 
@@ -86,10 +88,9 @@ exception_base_t::exception_base_t()
  * a number larger than the number of function pointers on the stack
  * will return the entire stack.
  *
- * \param[in,out] stack_trace  The list of strings were the stack is added.
- * \param[in] stack_trace_depth  The number of lines to collect.
+ * \param[in] stack_trace_depth  The number of lines to capture in our stack track.
  */
-void exception_base_t::collect_stack_trace( QStringList & stack_trace, int stack_trace_depth )
+void exception_base_t::collect_stack_trace( int stack_trace_depth )
 {
     std::vector<void *> array;
     array.resize( stack_trace_depth );
@@ -101,7 +102,7 @@ void exception_base_t::collect_stack_trace( QStringList & stack_trace, int stack
     for( int idx = 0; idx < size; ++idx )
     {
         char const * stack_string( stack_string_list[idx] );
-        stack_trace << stack_string;
+        f_stack_trace << stack_string;
     }
     free( stack_string_list );
 }

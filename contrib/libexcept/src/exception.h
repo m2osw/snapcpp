@@ -55,16 +55,16 @@ class exception_base_t
 public:
     static int const            STACK_TRACE_DEPTH = 20;
 
-                                explicit exception_base_t();
+                                explicit exception_base_t( int const stack_track_depth = STACK_TRACE_DEPTH );
 
     virtual                     ~exception_base_t() {}
 
     QStringList const &         get_stack_trace() const { return f_stack_trace; }
 
-    static void                 collect_stack_trace( QStringList & stack_strace, int stack_track_depth = STACK_TRACE_DEPTH);
-
 private:
     QStringList                 f_stack_trace;
+
+    void                        collect_stack_trace( int const stack_trace_depth );
 };
 
 
