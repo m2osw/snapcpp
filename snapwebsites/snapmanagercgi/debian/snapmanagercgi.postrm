@@ -29,10 +29,17 @@ then
     # delete sessions
     #
     rm -rf /var/lib/snapwebsites/sessions/snapmanager
-    rmdir --ignore-fail-on-non-empty /var/lib/snapwebsites/sessions
+    if test -e /var/lib/snapwebsites/sessions
+    then
+        rmdir --ignore-fail-on-non-empty /var/lib/snapwebsites/sessions
+    fi
 fi
 
-/usr/lib/snapwebsites/scripts/snapapacheinit remove
+APACHEINIT=/usr/lib/snapwebsites/scripts/snapapacheinit
+if test -e ${APACHEINIT}
+then
+    ${APACHEINIT} remove
+fi
 
 
 #DEBHELPER#
