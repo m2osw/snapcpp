@@ -816,6 +816,8 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "sessions::creation_date"
          || (f_tableName == "test_results" && n == "test_plugin::end_date")
          || (f_tableName == "test_results" && n == "test_plugin::start_date")
+         || n == "finball::applied_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::apply_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::billing_last_updated" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::category_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::correct_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)

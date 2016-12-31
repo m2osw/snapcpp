@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.71.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.72.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-119: Added a couple of date fields.
 
- -- Build Server <build@m2osw.com>  Sat, 31 Dec 2016 02:00:51 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 31 Dec 2016 10:43:51 -0800
 
 libsnapwebsites (1.1.71.0~xenial) xenial; urgency=high
 
