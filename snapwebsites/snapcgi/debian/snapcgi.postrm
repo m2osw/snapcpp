@@ -35,7 +35,11 @@ then
     fi
 fi
 
-/usr/lib/snapwebsites/scripts/snapapacheinit remove
+APACHEINIT=/usr/lib/snapwebsites/scripts/snapapacheinit
+if test -e ${APACHEINIT}
+then
+    ${APACHEINIT} remove
+fi
 
 
 #DEBHELPER#
