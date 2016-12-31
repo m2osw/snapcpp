@@ -110,6 +110,8 @@ public:
     std::string const & get_configuration_filename() const;
     std::string const & get_override_filename() const;
 
+    bool                exists();
+
     //void                clear();
     void                read_config_file();
 
@@ -120,11 +122,12 @@ public:
     void                set_parameters(snap_configurations::parameter_map_t const & params);
 
 private:
-    void                actual_read_config_file(std::string const & filename, bool quiet);
-
     std::string const                       f_configuration_filename;
     std::string const                       f_override_filename;
     snap_configurations::parameter_map_t    f_parameters;
+    bool                                    f_exists = false;
+
+    void                actual_read_config_file(std::string const & filename, bool quiet);
 };
 
 
@@ -185,6 +188,18 @@ std::string const & snap_config_file::get_override_filename() const
 //}
 
 
+/** \brief Return the value of the f_exists flag
+ *
+ * \return true if configuration file exists, false otherwise
+ *
+ * \sa read_config_file()
+ */
+bool snap_config_file::exists()
+{
+    return f_exists;
+}
+
+
 /** \brief Read the configuration file into memory.
  *
  * This function reads the configuration file from disk to memory.
@@ -202,6 +217,8 @@ std::string const & snap_config_file::get_override_filename() const
  * This allows you to NOT modify the original .conf files, and instead
  * edit a version where you define just the few fields you want to
  * modify within the "snapwebsites.d" sub-directory.
+ *
+ * \note Sets the f_exists flag.
  *
  * \param[in] filename  The name of the file to read the parameters from.
  */
@@ -229,7 +246,7 @@ void snap_config_file::read_config_file()
         // TODO: later we want to support any number with an "'*' + sort"
         //       (like apache2 and other daemons do)
         //
-        if(!f_override_filename.empty())
+        if(f_exists && !f_override_filename.empty())
         {
             actual_read_config_file(f_override_filename, true);
         }
@@ -243,7 +260,10 @@ void snap_config_file::read_config_file()
         // parameters (i.e. we keep the very last instance of each parameter
         // read from files.)
         //
-        actual_read_config_file(g_configurations_path + "/snapwebsites.d/" + f_configuration_filename + ".conf", true);
+        if( f_exists )
+        {
+            actual_read_config_file(g_configurations_path + "/snapwebsites.d/" + f_configuration_filename + ".conf", true);
+        }
     }
 }
 
@@ -254,21 +274,27 @@ void snap_config_file::read_config_file()
  * we want to read files in a sub-directory such as: snapwebsites.d
  * (the name depends on the last element in your configuration path.)
  *
+ * \note if there is an error reading the file or a parsing error, exit(1) is called.
+ *
  * \param[in] filename  The name of the file to read from.
- * \param[in] quiet  Whether to keep quiet about missing files.
+ * \param[in] quiet     Whether to keep quiet about missing files (don't call exit(1), just return false).
+ *
+ * \return true if read, false on failure to read file.
  */
 void snap_config_file::actual_read_config_file(std::string const & filename, bool quiet)
 {
     // read the configuration file now
     QFile c;
     c.setFileName(QString::fromUtf8(filename.c_str()));
+    //
+    f_exists = c.exists();
+    if( !f_exists && quiet )
+    {
+        return;
+    }
+    //
     if(!c.open(QIODevice::ReadOnly))
     {
-        if(quiet)
-        {
-            return;
-        }
-
         // if for nothing else we need to have the list of plugins so we always
         // expect to have a configuration file... if we're here we could not
         // read it, unfortunately
@@ -276,7 +302,8 @@ void snap_config_file::actual_read_config_file(std::string const & filename, boo
         ss << "cannot read configuration file \"" << filename << "\"";
         SNAP_LOG_FATAL(ss.str())(".");
         syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-        exit(1);
+        //exit(1);
+        return;
     }
 
     // read the configuration file variables as parameters
@@ -503,10 +530,15 @@ void snap_config_file::set_parameters( snap_configurations::parameter_map_t cons
  * not yet loaded, the function loads the file at this point.
  *
  * \param[in] configuration_filename  The name of the configuration file to retrieve.
+ * \param[in] quiet                   Silently fail if one cannot read the config file.
  *
  * \return The shared pointer to a snap_config_file object.
  */
-snap_config_file::pointer_t get_configuration(std::string const & configuration_filename, std::string const & override_filename)
+snap_config_file::pointer_t get_configuration
+    ( std::string const & configuration_filename
+    , std::string const & override_filename
+    , const bool quiet = false
+    )
 {
     auto const & it(std::find_if(
                       g_config_files.begin()
@@ -523,6 +555,14 @@ snap_config_file::pointer_t get_configuration(std::string const & configuration_
         snap_config_file::pointer_t conf(std::make_shared<snap_config_file>(configuration_filename, override_filename));
         g_config_files[configuration_filename] = conf;
         conf->read_config_file();
+        if( !quiet && !conf->exists() )
+        {
+            // Exit the process as we have a critical error.
+            //
+            // TODO: should this throw instead?
+            //
+            exit(1);
+        }
         return conf;
     }
 
@@ -723,6 +763,14 @@ std::string snap_configurations::get_parameter(std::string const & configuration
     snap_thread::snap_lock lock(*g_mutex);
     auto const config(get_configuration(configuration_filename, override_filename));
     return config->get_parameter(parameter_name);
+}
+
+
+bool snap_configurations::configuration_file_exists( std::string const & configuration_filename, std::string const &override_filename )
+{
+    snap_thread::snap_lock lock(*g_mutex);
+    auto const config(get_configuration(configuration_filename, override_filename, true/*quiet*/));
+    return config->exists();
 }
 
 

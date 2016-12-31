@@ -59,6 +59,8 @@ public:
     std::string const &     get_configuration_path() const;
     void                    set_configuration_path(std::string const & path);
 
+    bool                    configuration_file_exists( std::string const & configuration_filename, std::string const &override_filename );
+
     parameter_map_t const & get_parameters(std::string const & configuration_filename, std::string const & override_filename) const;
     void                    set_parameters(std::string const & configuration_filename, std::string const & override_filename, parameter_map_t const & params);
 
@@ -202,6 +204,11 @@ public:
     void                    set_configuration_filename(std::string const & configuration_filename)
                             {
                                 f_configuration_filename = configuration_filename;
+                            }
+
+    bool                    configuration_file_exists() const
+                            {
+                                return f_config->configuration_file_exists(f_configuration_filename, f_override_filename);
                             }
 
     // get/set_override_filename()

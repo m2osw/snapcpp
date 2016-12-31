@@ -265,7 +265,7 @@ snapdb::snapdb(int argc, char * argv[])
     //
     if( f_opt->is_defined("config") )
     {
-        f_config.set_configuration_path( f_opt->get_string("config") );
+        f_config.set_configuration_filename( f_opt->get_string("config") );
     }
 
     // first check options
@@ -278,7 +278,8 @@ snapdb::snapdb(int argc, char * argv[])
     {
         f_host = f_opt->get_string( "host" ).c_str();
     }
-    else if( f_config.has_parameter("host") )
+    else if( f_config.configuration_file_exists()
+             && f_config.has_parameter("host") )
     {
         f_host = f_config["host"];
     }
@@ -287,7 +288,7 @@ snapdb::snapdb(int argc, char * argv[])
     {
         f_port = f_opt->get_long( "port" );
     }
-    else if( f_config.has_parameter("port") )
+    else if( f_config.configuration_file_exists() && f_config.has_parameter("port") )
     {
         std::size_t pos(0);
         std::string const port(f_config["port"]);
@@ -307,7 +308,7 @@ snapdb::snapdb(int argc, char * argv[])
     {
         f_context = f_opt->get_string( "context" ).c_str();
     }
-    else if( f_config.has_parameter("context") )
+    else if( f_config.configuration_file_exists() && f_config.has_parameter("context") )
     {
         f_context = f_config["context"];
     }
@@ -316,7 +317,7 @@ snapdb::snapdb(int argc, char * argv[])
     {
         f_use_ssl = true;
     }
-    else if( f_config.has_parameter("use_ssl") )
+    else if( f_config.configuration_file_exists() && f_config.has_parameter("use_ssl") )
     {
         f_use_ssl = (f_config["use_ssl"] == "true");
     }

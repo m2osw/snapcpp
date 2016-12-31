@@ -1,3 +1,11 @@
+libsnapwebsites (1.1.71.0~xenial) xenial; urgency=high
+
+  * SNAP-541: Added an "exists()" method for configuration files. This way you
+    can check for the existence of a configuration file before, and if it
+    doesn't exist, it won't call exit().
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 30 Dec 2016 15:37:40 -0800
+
 libsnapwebsites (1.1.70.3~xenial) xenial; urgency=high
 
   * SNAP-258: Now catches libexcept messages in the snap_child.

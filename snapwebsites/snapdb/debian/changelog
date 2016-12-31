@@ -1,3 +1,12 @@
+snapdb (1.0.10.0~xenial) xenial; urgency=xenial
+
+  * SNAP-541: Added an "exists()" method for configuration files. This way you
+    can check for the existence of a configuration file before, and if it
+    doesn't exist, it won't call exit(). Now snapdb does not crash if no
+    config file exists.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 30 Dec 2016 15:39:34 -0800
+
 snapdb (1.0.9.6~xenial) xenial; urgency=high
 
   * Nightly build.
