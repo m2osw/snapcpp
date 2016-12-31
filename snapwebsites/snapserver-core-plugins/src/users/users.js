@@ -1,6 +1,6 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.16
+ * Version: 0.0.1.17
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -108,6 +108,20 @@ snapwebsites.Users.prototype.auto_logout_id_ = NaN;
 snapwebsites.Users.prototype.serverAccess_ = null;
 
 
+/** \brief Whether we (already) detected that the time is out of whack.
+ *
+ * Whenever we setup the timeout timer interval, we calculate a number
+ * which can end up being negative. When that happens and that negative
+ * number is less than or equal to -3,600, the we emit a warning about
+ * it. To avoid emitting many warnings, we use this flag. Once true, we
+ * know we already emitted the warning and avoid doing it agian.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.Users.prototype.warnedAboutTimeOutOfWhat_ = false;
+
+
 /** \brief Start the timer of the auto-logout feature.
  *
  * This function starts or restarts the auto-logout timer. Although
@@ -138,6 +152,25 @@ snapwebsites.Users.prototype.startAutoLogout = function()
     //
     var delay = (users__session_time_limit + 20) * 1000 - Date.now(),
         that = this;
+
+    // force a delay of at least 60 seconds, otherwise we could have
+    // a very intensive loop sending hit=check to the server over
+    // and over for close to nothing...
+    //
+    if(delay < 60)
+    {
+        // if we have a console, also show a warning if the delay is
+        // more than 1h off
+        //
+        if(window.console
+        && delay <= -3600
+        && !this.warnedAboutTimeOutOfWhat_)
+        {
+            this.warnedAboutTimeOutOfWhat_ = true;
+            console.log("WARNING: the auto-logout delay is more than 1h off. A computer clock is probably out of whack.");
+        }
+        delay = 60;
+    }
 
     // we may get called again before the existing timeout was triggered
     // so if the ID is not NaN, we call the clearTimeout() on it
