@@ -1,3 +1,9 @@
+libcassvalue (1.0.0.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 31 Dec 2016 02:00:51 -0800
+
 libcassvalue (1.0.0.0~xenial) xenial; urgency=high
 
   * SNAP-258: moved value parsing to its own library.
