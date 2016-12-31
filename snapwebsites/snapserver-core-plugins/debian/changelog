@@ -5,7 +5,7 @@ snapserver-core-plugins (1.0.36.0~xenial) xenial; urgency=high
     a minimum of 60 for the delay (1min.) and checks if it goes under 1h, if
     so it prints a warning in the JavaScript console.
 
- -- Alexis Wilke <alexis@m2osw.com>  Dec, 30 Dec 2016 15:21:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 30 Dec 2016 15:21:48 -0800
 
 snapserver-core-plugins (1.0.35.3~xenial) xenial; urgency=high
 
