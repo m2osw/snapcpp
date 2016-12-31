@@ -127,7 +127,7 @@ private:
     snap_configurations::parameter_map_t    f_parameters;
     bool                                    f_exists = false;
 
-    void                actual_read_config_file(std::string const & filename, bool quiet);
+    bool                actual_read_config_file(std::string const & filename, bool quiet);
 };
 
 
@@ -238,7 +238,7 @@ void snap_config_file::read_config_file()
         // we use 'true' (i.e. "keep quiet") here because in some cases
         // it is normal that the file does not exist
         //
-        actual_read_config_file(f_configuration_filename, true);
+        f_exists = actual_read_config_file(f_configuration_filename, true);
 
         // give a chance to other configuration files to have one
         // override
@@ -253,7 +253,7 @@ void snap_config_file::read_config_file()
     }
     else
     {
-        actual_read_config_file(g_configurations_path + "/" + f_configuration_filename + ".conf", false);
+        f_exists = actual_read_config_file(g_configurations_path + "/" + f_configuration_filename + ".conf", false);
 
         // second try reading a file of the same name in a sub-directory named
         // "snapwebsites.d"; we have to do it last because we do overwrite
@@ -281,16 +281,15 @@ void snap_config_file::read_config_file()
  *
  * \return true if read, false on failure to read file.
  */
-void snap_config_file::actual_read_config_file(std::string const & filename, bool quiet)
+bool snap_config_file::actual_read_config_file(std::string const & filename, bool quiet)
 {
     // read the configuration file now
     QFile c;
     c.setFileName(QString::fromUtf8(filename.c_str()));
     //
-    f_exists = c.exists();
-    if( !f_exists && quiet )
+    if( !c.exists() && quiet )
     {
-        return;
+        return false;
     }
     //
     if(!c.open(QIODevice::ReadOnly))
@@ -303,7 +302,7 @@ void snap_config_file::actual_read_config_file(std::string const & filename, boo
         SNAP_LOG_FATAL(ss.str())(".");
         syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
         //exit(1);
-        return;
+        return false;
     }
 
     // read the configuration file variables as parameters
@@ -425,6 +424,8 @@ void snap_config_file::actual_read_config_file(std::string const & filename, boo
             f_parameters[prefix + n] = v;
         }
     }
+
+    return true;
 }
 
 
