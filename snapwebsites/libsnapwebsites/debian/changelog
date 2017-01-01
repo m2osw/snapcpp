@@ -2,7 +2,7 @@ libsnapwebsites (1.1.73.0~xenial) xenial; urgency=high
 
   * EX-119: Added a couple of fields to dbutils.
 
- -- Build Server <build@m2osw.com>  Sat, 31 Dec 2016 12:44:42 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 31 Dec 2016 10:43:51 -0800
 
 libsnapwebsites (1.1.72.0~xenial) xenial; urgency=high
 
