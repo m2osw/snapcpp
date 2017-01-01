@@ -742,16 +742,17 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     }
     else if(n == "epayment::price"
          || n == "epayment::grand_total"
-         || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::promotion_amount" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::minimum_total" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::atm_fee" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::lotto_fee" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::memo_invoice_total_amount" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::minimum_total" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::promotion_amount" // TODO -- remove at some point since that is a cutomer's field
          )
     {
         // 64 bit float
