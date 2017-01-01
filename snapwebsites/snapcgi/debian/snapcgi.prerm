@@ -9,8 +9,8 @@ then
     # "disable" our default site configuration files
     # (those are soft links that were probably not removed)
     #
-    a2dissite -q 000-snap-apache2-default
-    a2dissite -q snap-apache2
+    a2dissite -q 000-snap-apache2-default-80
+    #a2dissite -q snap-apache2  #TODO: this file nolonger exists, so remarked out
 fi
 
 
