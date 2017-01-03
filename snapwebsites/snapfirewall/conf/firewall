@@ -18,7 +18,7 @@ if test "${PUBLIC_IP#*BUNDLE_PUBLIC_IP}" != "${PUBLIC_IP}" \
      || test "${PRIVATE_NETWORK_IPS#*BUNDLE_PRIVATE_NETWORK_IPS}" != "${PRIVATE_NETWORK_IPS}" \
      || test "${SECURE_IP#*BUNDLE_SECURE_IP}" != "${SECURE_IP}"
 then
-	echo "One or more of the firewall variables was not properly updated yet. Firewal NOT setup!"
+	echo "One or more of the firewall variables was not properly updated yet. Firewall NOT set up!"
 	exit 1;
 fi
 

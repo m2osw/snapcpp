@@ -8,9 +8,15 @@ then
     # Since we place this file in the fail2ban folder, the folder
     # may not get removed properly
     #
-    rm -f /var/lib/iplock/private/*
-    rmdir --ignore-fail-on-non-empty /etc/fail2ban/action.d
-    rmdir --ignore-fail-on-non-empty /etc/fail2ban /var/lib/iplock/private
+    if test -e /var/lib/iplock && test -e /var/lib/iplock/private
+    then
+        rm -f /var/lib/iplock/private/*
+    fi
+    if test -e /etc/fail2ban
+    then
+        rmdir --ignore-fail-on-non-empty /etc/fail2ban/action.d
+        rmdir --ignore-fail-on-non-empty /etc/fail2ban /var/lib/iplock/private
+    fi
 fi
 
 #DEBHELPER#
