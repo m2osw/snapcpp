@@ -2940,7 +2940,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
         QtCassandra::QCassandraValue const email_data(cell->value());
         if(!email_data.nullValue())
         {
-            // TODO: move this case under the locked block since
+            // TODO: move this case from under the locked block since
             //       the lock is not necessary to do this work
             //
             // "someone else" already registered with that email
