@@ -1,9 +1,9 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.42
+ * Version: 0.0.1.44
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
- * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
@@ -811,6 +811,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
             query_string = {};
         }
         // TODO: should we avoid setting this parameter if already set?
+        //       (i.e. it could be set to something else than transparent)
         //
         query_string["hit"] = "transparent";
     }
@@ -959,10 +960,27 @@ snapwebsites.ServerAccess.prototype.closeWaitScreen = function()
  */
 snapwebsites.ServerAccess.prototype.onError_ = function(result)
 {
+    // Somehow certain "Modern Browsers" return a status of 0 and a
+    // readyState of 4 when they timeout, see:
+    //
+    // http://stackoverflow.com/questions/5005960/xmlhttprequest-status-0-responsetext-is-empty#38097577
+    //
+    if(result.jqxhr.status == 0
+    && result.jqxhr.readyState
+    && result.jqxhr.readyState == 4)
+    {
+        // use same error message as on Firefox: 504 Gateway Timeout
+        result.jqxhr.status = 504;
+        if(!result.ajax_error_message)
+        {
+            result.ajax_error_message = "Gateway Timeout";
+        }
+    }
+
     result.error_message =
                       "Error "
                     + result.jqxhr.status
-                    + " occured while posting AJAX (status: "
+                    + " occurred while posting AJAX (status: "
                     + result.result_status
                     + (result.result_status == "error" ? ": " : " / error: ")
                     + result.ajax_error_message
