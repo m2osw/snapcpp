@@ -2903,7 +2903,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     int64_t identifier(0);
     status_t status(status_t::STATUS_NEW);
-    QString const id_key(get_name(name_t::SNAP_NAME_USERS_ID_ROW));
+    QString const id_row_name(get_name(name_t::SNAP_NAME_USERS_ID_ROW));
     QString const identifier_key(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER));
     QString const email_key(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
     QString const user_path(get_name(name_t::SNAP_NAME_USERS_PATH));
@@ -3000,9 +3000,9 @@ users::status_t users::register_user(QString const & email, QString const & pass
             // unique identifier for each user, for that purpose we use
             // a special row in the users table and since we have a lock
             // we can safely do a read-increment-write cycle.
-            if(users_table->exists(id_key))
+            if(users_table->exists(id_row_name))
             {
-                QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_key));
+                QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_row_name));
                 QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
                 id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
                 QtCassandra::QCassandraValue const current_identifier(id_cell->value());
@@ -3014,7 +3014,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
                         "Failed Creating User Account",
                         "Somehow we could not generate a user identifier for your account. Please try again later.",
                         QString("users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it (%1/%2)")
-                                .arg(id_key)
+                                .arg(id_row_name)
                                 .arg(identifier_key),
                         false
                     );
@@ -3033,7 +3033,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
             new_user = true;
             new_identifier.setInt64Value(identifier);
-            //users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
+            users_table->row(id_row_name)->cell(identifier_key)->setValue(new_identifier);
         }
         // the lock automatically goes away here
     }
