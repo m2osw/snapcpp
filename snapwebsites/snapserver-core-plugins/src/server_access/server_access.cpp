@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle AJAX responses
-// Copyright (C) 2014-2016  Made to Order Software Corp.
+// Copyright (C) 2014-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -157,7 +157,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 6, 3, 23, 44, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 1, 3, 0, 11, 32, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
