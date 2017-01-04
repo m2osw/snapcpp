@@ -1,9 +1,9 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.17
+ * Version: 0.0.1.19
  * Browsers: all
  * Depends: output (>= 0.1.5)
- * Copyright: Copyright 2012-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2012-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
@@ -157,19 +157,19 @@ snapwebsites.Users.prototype.startAutoLogout = function()
     // a very intensive loop sending hit=check to the server over
     // and over for close to nothing...
     //
-    if(delay < 60)
+    if(delay < 60000)
     {
         // if we have a console, also show a warning if the delay is
         // more than 1h off
         //
         if(window.console
-        && delay <= -3600
+        && delay <= -3600000
         && !this.warnedAboutTimeOutOfWhat_)
         {
             this.warnedAboutTimeOutOfWhat_ = true;
             console.log("WARNING: the auto-logout delay is more than 1h off. A computer clock is probably out of whack.");
         }
-        delay = 60;
+        delay = 60000;
     }
 
     // we may get called again before the existing timeout was triggered
