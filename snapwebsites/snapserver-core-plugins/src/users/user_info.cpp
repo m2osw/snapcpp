@@ -124,6 +124,22 @@ QString users::user_info_t::get_full_anonymous_path()
 }
 
 
+void users::user_info_t::change_user_email( QString const & new_user_email )
+{
+    // Rotate the backups to the new
+    QString const email_backup_base( get_name(name_t::SNAP_NAME_USERS_BACKUP_EMAIL_BASE) );
+    for( int i = MAX_EMAIL_BACKUPS-1; i > 1; --i )
+    {
+        QString const prev_name( QString("%1_%2").arg(email_backup_base).arg(i-1) );
+        QString const new_name ( QString("%1_%2").arg(email_backup_base).arg(i)   );
+        auto prev_value( get_value(prev_name) );
+        set_value( new_name, prev_value.binaryValue() );
+    }
+
+    set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL, new_user_email );
+}
+
+
 void users::user_info_t::set_user_id_by_email()
 {
     auto users_table( get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)) );

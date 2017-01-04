@@ -42,6 +42,7 @@ enum class name_t
     SNAP_NAME_USERS_AUTHOR,
     SNAP_NAME_USERS_AUTHORED_PAGES,
     SNAP_NAME_USERS_AUTO_PATH,
+    SNAP_NAME_USERS_BACKUP_EMAIL_BASE,
     SNAP_NAME_USERS_BLACK_LIST,
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
@@ -269,7 +270,11 @@ public:
         static identifier_t    get_user_id_by_path( snap_child* snap, QString const& user_path );
         static QString         get_full_anonymous_path();
 
+        void                change_user_email( QString const & new_user_email );
+
     private:
+        static int const MAX_EMAIL_BACKUPS = 5;
+
         snap_child *    f_snap        = nullptr;
         identifier_t    f_identifier  = -1;
         QString         f_user_key;

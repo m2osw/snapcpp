@@ -140,6 +140,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_AUTO_PATH:
         return "types/users/auto";
 
+    case name_t::SNAP_NAME_USERS_BACKUP_EMAIL_BASE:
+        return "users::email_backup";
+
     case name_t::SNAP_NAME_USERS_BLACK_LIST:
         return "*black_list*";
 
