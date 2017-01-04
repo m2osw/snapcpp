@@ -1,6 +1,6 @@
-snapserver-core-plugins (1.0.39.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.39.0~xenial) xenial; urgency=high
 
-  * EX-258: The date out of whack is in milliseconds, not seconds.
+  * SNAP-258: The date out of whack is in milliseconds, not seconds.
 
  -- Alexis Wilke <alexis@m2osw.com>  Tue,  3 Jan 2017 23:32:48 -0800
 
