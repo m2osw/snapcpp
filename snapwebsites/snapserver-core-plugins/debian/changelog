@@ -1,8 +1,8 @@
 snapserver-core-plugins (1.0.37.1~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-258: The date out of whack is in milliseconds, not seconds.
 
- -- Build Server <build@m2osw.com>  Tue, 03 Jan 2017 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  3 Jan 2017 23:32:48 -0800
 
 snapserver-core-plugins (1.0.37.0~xenial) xenial; urgency=high
 
