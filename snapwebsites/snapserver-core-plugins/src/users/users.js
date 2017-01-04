@@ -1,9 +1,9 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.18
+ * Version: 0.0.1.19
  * Browsers: all
  * Depends: output (>= 0.1.5)
- * Copyright: Copyright 2012-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2012-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 

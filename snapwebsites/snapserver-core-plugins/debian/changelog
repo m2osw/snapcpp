@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.40.0~xenial) xenial; urgency=high
+
+  * SNAP-258: Bump date and time in do_update() to get the new script.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  4 Jan 2017 00:34:48 -0800
+
 snapserver-core-plugins (1.0.39.0~xenial) xenial; urgency=high
 
   * SNAP-258: The date out of whack is in milliseconds, not seconds.
