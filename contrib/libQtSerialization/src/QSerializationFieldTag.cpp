@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QSerializationFieldTag.cpp
+ *      src/QSerializationFieldTag.cpp
  *
  * Description:
  *      Handling of the user specialized field class. This class allows
@@ -11,7 +11,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com

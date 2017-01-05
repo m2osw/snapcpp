@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QSerializationComposite.cpp
+ *      src/QSerializationComposite.cpp
  *
  * Description:
  *      Handling of the composite field class.
@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com

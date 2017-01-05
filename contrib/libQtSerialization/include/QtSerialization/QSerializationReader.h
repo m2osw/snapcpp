@@ -1,6 +1,6 @@
 /*
  * Header:
- *      QSerializationReader.h
+ *      include/QtSerialization/QSerializationReader.h
  *
  * Description:
  *      Handling the reading of a serialized buffer in a forward and backward
@@ -10,7 +10,7 @@
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

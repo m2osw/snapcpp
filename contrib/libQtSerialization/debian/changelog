@@ -1,8 +1,9 @@
 libqtserialization (0.1.18.84~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright dates.
+  * Fixed the debian/copyright file.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 25 Oct 2016 18:20:34 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  5 Jan 2017 09:32:09 -0700
 
 libqtserialization (0.1.18.0~xenial) xenial; urgency=high
 
