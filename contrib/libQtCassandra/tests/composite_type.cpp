@@ -1,6 +1,6 @@
 /*
  * Text:
- *      composite_type.cpp
+ *      tests/composite_type.cpp
  *
  * Description:
  *      Create a context with a table having columns with a composite type,
@@ -13,7 +13,7 @@
  *      read or write the data in the composite columns.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

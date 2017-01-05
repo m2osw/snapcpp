@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraContext.cpp
+ *      src/QCassandraContext.cpp
  *
  * Description:
  *      Handling of Cassandra Keyspace which is a context.
@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com

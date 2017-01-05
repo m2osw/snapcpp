@@ -1,15 +1,16 @@
 /*
  * Header:
- *      QCassandraCell.h
+ *      src/QtCassandra/QCassandraCell.h
  *
  * Description:
- *      Handling of a cell to access data within the Cassandra database.
+ *      Handling of a cell to access data in columns within the
+ *      Cassandra database.
  *
  * Documentation:
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

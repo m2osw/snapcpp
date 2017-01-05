@@ -1,6 +1,6 @@
 /*
  * Header:
- *      QCassandraValue.h
+ *      src/QtCassandra/QCassandraValue.h
  *
  * Description:
  *      Handling of a cell value to access data within the Cassandra database.
@@ -9,7 +9,7 @@
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

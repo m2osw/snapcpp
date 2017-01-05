@@ -1,6 +1,6 @@
 /*
  * Text:
- *      cassandra_value.cpp
+ *      tests/cassandra_value.cpp
  *
  * Description:
  *      Test the QCassandraValue object for validity to ensure that the
@@ -14,7 +14,7 @@
  *      or if any value cannot be read back the way it was written.
  *
  * License:
- *      Copyright (c) 2013-2016 Made to Order Software Corp.
+ *      Copyright (c) 2013-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

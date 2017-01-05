@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraLock.cpp
+ *      src/QCassandraLock.cpp
  *
  * Description:
  *      Implementation of the Lamport's bakery algorithm.

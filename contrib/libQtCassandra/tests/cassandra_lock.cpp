@@ -1,6 +1,6 @@
 /*
  * Text:
- *      cassandra_lock.cpp
+ *      tests/cassandra_lock.cpp
  *
  * Description:
  *      Test the QCassandraLock object to make sure that the lock works
@@ -25,7 +25,7 @@
  *      * cassandra_lock -h 127.0.0.1 -r 1
  *
  * License:
- *      Copyright (c) 2013-2016 Made to Order Software Corp.
+ *      Copyright (c) 2013-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

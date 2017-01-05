@@ -1,6 +1,6 @@
 /*
  * Text:
- *      qcassandra_lock.cpp
+ *      tools/qcassandra_lock.cpp
  *
  * Description:
  *      Tool used to setup the lock functionality coming with the

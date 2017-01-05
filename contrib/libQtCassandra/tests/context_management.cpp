@@ -1,6 +1,6 @@
 /*
  * Text:
- *      context_management.cpp
+ *      tests/context_management.cpp
  *
  * Description:
  *      Create contexts, check that they exist, drop contexts, check that
@@ -13,7 +13,7 @@
  *      the non-expected contexts.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

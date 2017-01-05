@@ -1,6 +1,6 @@
 /*
  * Text:
- *      QCassandraCell.cpp
+ *      src/QCassandraCell.cpp
  *
  * Description:
  *      Handling of cell. There is no class representing a row in Cassandra.
@@ -11,7 +11,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

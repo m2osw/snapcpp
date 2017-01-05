@@ -1,6 +1,6 @@
 #
 # Text:
-#      CMakeLists.txt
+#      tools/CMakeLists.txt
 #
 # Description:
 #      Compile libQtCassandra tools.

@@ -1,6 +1,6 @@
 /*
  * Header:
- *      QCassandraLock.h
+ *      src/QCassandraLock.h
  *
  * Description:
  *      The Cassandra Lock is an implementation of the Lamport's bakery algorith.
