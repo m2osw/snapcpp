@@ -5446,13 +5446,30 @@ QVariant editor::js_property_get(int index) const
 }
 
 
-bool editor::has_value( QString const & name )
+bool editor::has_post_value( QString const & name ) const
+{
+    return f_post_values.contains(name);
+}
+
+
+QString editor::get_post_value( QString const & name ) const
+{
+    if( !f_post_values.contains(name) )
+    {
+        throw editor_exception_invalid_argument( QString("name '%1' not found in editor post values list!").arg(name) );
+    }
+
+    return f_post_values[name];
+}
+
+
+bool editor::has_value( QString const & name ) const
 {
     return f_converted_values.contains(name);
 }
 
 
-QtCassandra::QCassandraValue editor::get_value( QString const & name )
+QtCassandra::QCassandraValue editor::get_value( QString const & name ) const
 {
     if( !f_converted_values.contains(name) )
     {
