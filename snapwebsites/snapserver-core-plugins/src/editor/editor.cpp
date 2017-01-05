@@ -3211,7 +3211,6 @@ bool editor::validate_editor_post_for_widget_impl(
                             }
                             else if(regex_name == "email")
                             {
-//SNAP_LOG_TRACE("***** regex_name=='email'");
                                 // one email address
                                 email = 1;
                             }
@@ -3289,11 +3288,9 @@ bool editor::validate_editor_post_for_widget_impl(
 
                     if(email != 0)
                     {
-//SNAP_LOG_TRACE("***** email != 0");
                         tld_email_list emails;
                         if(emails.parse(snap_dom::unescape(value).toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
                         {
-//SNAP_LOG_TRACE("****** failed!");
                             messages->set_error(
                                 "Invalid Value",
                                 QString("\"%1\" is not a valid email address for field \"%2\".")
