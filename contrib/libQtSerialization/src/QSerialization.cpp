@@ -309,7 +309,7 @@ namespace QtSerialization
  *
  * \section copyright libQtSerialization copyright and license
  *
- * Copyright (c) 2012 Made to Order Software Corp.
+ * Copyright (c) 2012-2017 Made to Order Software Corp.
  *
  * http://snapwebsites.org/<br/>
  * contact@m2osw.com
