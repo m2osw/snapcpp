@@ -5446,6 +5446,21 @@ QVariant editor::js_property_get(int index) const
 }
 
 
+bool editor::has_value( QString const & name )
+{
+    return f_converted_values.contains(name);
+}
+
+
+QtCassandra::QCassandraValue editor::get_value( QString const & name )
+{
+    if( !f_converted_values.contains(name) )
+    {
+        throw editor_exception_invalid_argument( QString("name '%1' not found in editor converted values list!").arg(name) );
+    }
+
+    return f_converted_values[name];
+}
 
 
 SNAP_PLUGIN_END()

@@ -331,6 +331,9 @@ public:
     virtual QString     js_property_name(int index) const;
     virtual QVariant    js_property_get(int index) const;
 
+    bool 							has_value( QString const & name );
+    QtCassandra::QCassandraValue	get_value( QString const & name );
+
 private:
     typedef QMap<QString, QString>      value_map_t;
     typedef QMap<QString, QtCassandra::QCassandraValue>     cassandra_value_map_t;
