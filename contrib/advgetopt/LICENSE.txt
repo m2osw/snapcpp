@@ -1,4 +1,4 @@
-Copyright (c) 2011-2013 Made to Order Software Corp.
+Copyright (c) 2006-2017 Made to Order Software Corp.
 
 http://snapwebsites.org/
 contact@m2osw.com

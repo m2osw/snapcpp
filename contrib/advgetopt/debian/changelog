@@ -1,8 +1,8 @@
-advgetopt (1.1.8.27~xenial) xenial; urgency=high
+advgetopt (1.1.9.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Updated date of copyright notices and fixed some of them too.
 
- -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  4 Jan 2017 22:39:48 -0800
 
 advgetopt (1.1.8.0~xenial) xenial; urgency=high
 
