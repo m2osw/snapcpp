@@ -1,6 +1,6 @@
 #
 # File:
-#      CMakeLists.txt
+#      package/CMakeLists.txt
 #
 # Description:
 #      Definitions to create the build environment with cmake
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2013-2015 Made to Order Software Corp.
+#      Copyright (c) 2013-2017 Made to Order Software Corp.
 #
 #      https://sourceforge.net/projects/unigw/
 #      contact@m2osw.com

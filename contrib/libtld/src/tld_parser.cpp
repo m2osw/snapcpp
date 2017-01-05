@@ -1,5 +1,5 @@
 /* TLD library -- XML to C++ parser
- * Copyright (C) 2011-2015  Made to Order Software Corp.
+ * Copyright (C) 2011-2017  Made to Order Software Corp.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -802,7 +802,7 @@ void output_header()
     out << " * This list of TLDs was auto-generated using snap_path_parser.cpp.\n";
     out << " * Fix the parser or XML file used as input instead of this file.\n";
     out << " *\n";
-    out << " * Copyright (C) 2011-2015  Made to Order Software Corp.\n";
+    out << " * Copyright (C) 2011-2017  Made to Order Software Corp.\n";
     out << " *\n";
     out << " * Permission is hereby granted, free of charge, to any person obtaining a\n";
     out << " * copy of this software and associated documentation files (the\n";

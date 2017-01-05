@@ -1,8 +1,8 @@
-libtld (1.5.2.143~xenial) xenial; urgency=high
+libtld (1.5.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright dates.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:08 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  5 Jan 2017 13:50:22 -0700
 
 libtld (1.5.2.0~xenial) xenial; urgency=high
 
