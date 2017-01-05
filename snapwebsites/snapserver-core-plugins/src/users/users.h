@@ -42,13 +42,13 @@ enum class name_t
     SNAP_NAME_USERS_AUTHOR,
     SNAP_NAME_USERS_AUTHORED_PAGES,
     SNAP_NAME_USERS_AUTO_PATH,
-    SNAP_NAME_USERS_BACKUP_EMAIL_BASE,
     SNAP_NAME_USERS_BLACK_LIST,
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
     SNAP_NAME_USERS_CHECK,
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_CURRENT_EMAIL,
+    SNAP_NAME_USERS_EMAIL_HISTORY_LIST_BASE,
     SNAP_NAME_USERS_EXAMPLE,
     SNAP_NAME_USERS_FORCE_LOWERCASE,
     SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
@@ -456,6 +456,7 @@ public:
     //identifier_t            get_user_identifier(QString const & user_path) const;
     QString                 get_user_path(QString const & email) const;
 
+    user_info_t &           get_user_info();
     user_info_t const&      get_user_info() const;
     user_info_t             get_user_info_by_id    ( identifier_t const & id );
     user_info_t             get_user_info_by_email ( QString const & email   );
