@@ -1,8 +1,8 @@
-libexcept (1.0.0.8~xenial) xenial; urgency=high
+libexcept (1.0.1.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright dates.
 
- -- Build Server <build@m2osw.com>  Sat, 31 Dec 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  5 Jan 2017 00:32:50 -0800
 
 libexcept (1.0.0.0~xenial) xenial; urgency=high
 
