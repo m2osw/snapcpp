@@ -1,8 +1,8 @@
-as2js (0.1.15.141~xenial) xenial; urgency=high
+as2js (0.1.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:09 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  4 Jan 2017 22:50:22 -0700
 
 as2js (0.1.15.0~xenial) xenial; urgency=high
 

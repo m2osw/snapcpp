@@ -2,7 +2,7 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to generate the documentation of the as2js library
 #
-# Copyright:    Copyright (c) 2005-2016 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2005-2017 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/project/as2js
