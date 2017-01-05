@@ -1,5 +1,5 @@
 /*    unittest_advgetopt.cpp
- *    Copyright (C) 2013-2016  Made to Order Software Corporation
+ *    Copyright (C) 2006-2017  Made to Order Software Corporation
  *
  *    This program is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by

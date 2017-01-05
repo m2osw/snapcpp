@@ -1,8 +1,8 @@
-/* db.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
+/* db.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2017 */
 
 /*
 
-Copyright (c) 2005-2015 Made to Order Software Corp.
+Copyright (c) 2005-2017 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -331,7 +331,7 @@ void Database::save() const
                             "// If you have a problem because of the database, just delete the file\n"
                             "// and the compiler will re-generate it.\n"
                             "//\n"
-                            "// Copyright (c) 2005-2015 by Made to Order Software Corp.\n"
+                            "// Copyright (c) 2005-2017 by Made to Order Software Corp.\n"
                             "// This file is written in UTF-8\n"
                             "// You can safely modify it with an editor supporting UTF-8\n"
                             "// The format is JSON:\n"

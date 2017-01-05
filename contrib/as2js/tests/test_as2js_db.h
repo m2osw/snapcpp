@@ -1,10 +1,10 @@
 #ifndef TEST_AS2JS_DB_H
 #define TEST_AS2JS_DB_H
-/* test_as2js_db.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
+/* test_as2js_db.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2017 */
 
 /*
 
-Copyright (c) 2005-2015 Made to Order Software Corp.
+Copyright (c) 2005-2017 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 

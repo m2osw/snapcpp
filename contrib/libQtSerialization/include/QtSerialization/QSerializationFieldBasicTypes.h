@@ -1,6 +1,6 @@
 /*
  * Header:
- *      QSerializationFieldBasicTypes.h
+ *      include/QtSerialization/QSerializationFieldBasicTypes.h
  *
  * Description:
  *      Implementation of the basic types (integers, floats, etc.) for
@@ -10,7 +10,7 @@
  *      See below.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

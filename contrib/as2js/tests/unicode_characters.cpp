@@ -1,8 +1,8 @@
-/* unicode_characters.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
+/* unicode_characters.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2017 */
 
 /*
 
-Copyright (c) 2005-2015 Made to Order Software Corp.
+Copyright (c) 2005-2017 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 

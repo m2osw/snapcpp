@@ -1,8 +1,14 @@
-csspp (1.0.11.143~xenial) xenial; urgency=high
+csspp (1.0.12.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:10 -0700
+ -- Build Server <build@m2osw.com>  Thu, 05 Jan 2017 02:00:52 -0800
+
+csspp (1.0.12.0~xenial) xenial; urgency=high
+
+  * Bumped copyright notices to 2017..
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  4 Jan 2017 23:22:22 -0700
 
 csspp (1.0.11.0~xenial) xenial; urgency=high
 

@@ -1,6 +1,6 @@
 /*
  * Text:
- *      million_rows.cpp
+ *      tests/million_rows.cpp
  *
  * Description:
  *      Create a context with a table, then create over one million
@@ -19,7 +19,7 @@
  *      read or write the data.
  *
  * License:
- *      Copyright (c) 2012-2016 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

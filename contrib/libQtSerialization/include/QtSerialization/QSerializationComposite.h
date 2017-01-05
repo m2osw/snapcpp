@@ -1,6 +1,6 @@
 /*
  * Header:
- *      QSerializationComposite.h
+ *      include/QtSerialization/QSerializationComposite.h
  *
  * Description:
  *      Implementation of the composite class. The composite class is a
@@ -11,7 +11,7 @@
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

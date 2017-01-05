@@ -1,6 +1,6 @@
 #
 # Text:
-#      CMakeLists.txt
+#      src/CMakeLists.txt
 #
 # Description:
 #      Defines the source files in the libQtSerialization library.
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2012 Made to Order Software Corp.
+#      Copyright (c) 2012-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com

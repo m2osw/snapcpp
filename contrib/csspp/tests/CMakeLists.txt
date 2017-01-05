@@ -10,7 +10,7 @@
 #
 # License:
 #      CSS Preprocessor -- Test Suite
-#      Copyright (C) 2015-2016  Made to Order Software Corporation
+#      Copyright (C) 2015-2017  Made to Order Software Corporation
 #
 #      This library is free software; you can redistribute it and/or
 #      modify it under the terms of the GNU Lesser General Public

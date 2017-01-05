@@ -2,7 +2,7 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to create the build environment with cmake
 #
-# Copyright:    Copyright (c) 2005-2015 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2005-2017 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/

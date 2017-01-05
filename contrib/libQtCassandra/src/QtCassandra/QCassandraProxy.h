@@ -1,6 +1,6 @@
 /*
  * Header:
- *      QCassandraProxy.h
+ *      src/QtCassandra/QCassandraProxy.h
  *
  * Description:
  *      Handling of a data between libQtCassandra and our snapdbproxy
@@ -11,7 +11,7 @@
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

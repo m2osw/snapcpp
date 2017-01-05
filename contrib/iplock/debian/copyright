@@ -3,7 +3,7 @@ Upstream-Name: iplock
 Source: https://sourceforge.net/p/snapcpp/code/ci/master/tree/iplock/
 
 Files: *
-Copyright: 2007-2015 Made to Order Software Corporation
+Copyright: 2007-2017 Made to Order Software Corporation
 License: BSD License
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

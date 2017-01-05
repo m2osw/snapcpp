@@ -1,3 +1,10 @@
+snapserver-core-plugins (1.0.41.0~xenial) xenial; urgency=high
+
+  * SNAP-258: Added support to the editor plugin to provide read-only access to
+    the underlying post and converted values.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 05 Jan 2017 09:51:14 -0800
+
 snapserver-core-plugins (1.0.40.4~xenial) xenial; urgency=high
 
   * Nightly build.

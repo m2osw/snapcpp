@@ -3,7 +3,7 @@
 // Object:      Allow users to easily add and remove IPs in an iptable
 //              firewall; this is useful if you have a blacklist of IPs
 //
-// Copyright:   Copyright (c) 2007-2016 Made to Order Software Corp.
+// Copyright:   Copyright (c) 2007-2017 Made to Order Software Corp.
 //              All Rights Reserved.
 //
 // http://snapwebsites.org/

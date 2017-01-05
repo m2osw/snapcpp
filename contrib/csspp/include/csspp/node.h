@@ -1,7 +1,7 @@
 #ifndef CSSPP_NODE_H
 #define CSSPP_NODE_H
 // CSS Preprocessor
-// Copyright (C) 2015-2016  Made to Order Software Corp.
+// Copyright (C) 2015-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

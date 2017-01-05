@@ -1,8 +1,14 @@
-iplock (3.0.9.59~xenial) xenial; urgency=high
+iplock (3.0.10.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sat, 19 Nov 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Thu, 05 Jan 2017 02:00:52 -0800
+
+iplock (3.0.10.0~xenial) xenial; urgency=high
+
+  * Bumped copyright date to 2017.
+
+ -- Alexis Wilke <alexis@m2osw.com>  wed,  4 Jan 2017 23:34:37 -0700
 
 iplock (3.0.9.0~xenial) xenial; urgency=high
 

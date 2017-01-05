@@ -1,6 +1,6 @@
 /*
  * Text:
- *      read_uuid.cpp
+ *      tests/read_uuid.cpp
  *
  * Description:
  *      Create a context with a table, then try to read and write data to
@@ -13,7 +13,7 @@
  *      read or write the data.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com

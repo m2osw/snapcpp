@@ -1,6 +1,6 @@
 #
 # Text:
-#      CMakeLists.txt
+#      tests/CMakeLists.txt
 #
 # Description:
 #      Compile and run libQtCassandra tests.
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2011-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
