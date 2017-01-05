@@ -10,7 +10,7 @@
 #
 # License:
 #      csspp -- a CSS Preprocessor
-#      Copyright (c) 2015-2016 Made to Order Software Corp.
+#      Copyright (c) 2015-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com

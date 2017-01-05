@@ -3,7 +3,7 @@ Upstream-Name: csspp
 Source: http://snapwebsites.org/
 
 Files: *
-Copyright: 2015-2016 Alexis Wilke <alexis@m2osw.com>
+Copyright: 2015-2017 Alexis Wilke <alexis@m2osw.com>
 License: GPL-2+
  This package is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
