@@ -1,15 +1,16 @@
 /*
  * Text:
- *      session.h
+ *      src/casswrapper/session.h
  *
  * Description:
- *      Handling of the connection to the Cassandra database via the cassandra-cpp-driver API.
+ *      Handling of the connection to the Cassandra database via the
+ *      cassandra-cpp-driver API.
  *
  * Documentation:
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2016 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
