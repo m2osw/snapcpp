@@ -216,7 +216,7 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
     }
     n = n.firstChild();
 
-    int    country_counter = 0;
+    int country_counter(0);
 
     // go through the <area> tags
     while(!n.isNull())
@@ -247,7 +247,7 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
             }
 
             // Actual TLDs (may be empty)
-            QDomNode t = e.firstChild();
+            QDomNode t(e.firstChild());
             while(!t.isNull())
             {
                 if(!t.isComment() && t.isCharacterData())
@@ -256,10 +256,10 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                     names.replace("\n", " ");
                     names.replace("\r", " ");
                     names.replace("\t", " ");
-                    QStringList name_list(names.split(" ", QString::SkipEmptyParts));
-                    for(QStringList::iterator nm = name_list.begin();
-                                              nm != name_list.end();
-                                              ++nm)
+                    QStringList const name_list(names.split(" ", QString::SkipEmptyParts));
+                    for(auto nm(name_list.begin());
+                             nm != name_list.end();
+                             ++nm)
                     {
                         if(nm->isEmpty())
                         {
@@ -269,7 +269,7 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                             continue; // LCOV_EXCL_LINE
                         }
                         int level(0);
-                        QString value_name(tld_encode(*nm, level));
+                        QString const value_name(tld_encode(*nm, level));
                         if(map.contains(value_name))
                         {
                             std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once.\n"; // LCOV_EXCL_LINE
@@ -309,13 +309,13 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                                 names.replace("\n", " ");
                                 names.replace("\r", " ");
                                 names.replace("\t", " ");
-                                QStringList name_list(names.split(" ", QString::SkipEmptyParts));
-                                for(QStringList::iterator nm = name_list.begin();
-                                                          nm != name_list.end();
-                                                          ++nm)
+                                QStringList const name_list(names.split(" ", QString::SkipEmptyParts));
+                                for(auto nm(name_list.begin());
+                                         nm != name_list.end();
+                                         ++nm)
                                 {
                                     int level(0);
-                                    QString value_name(tld_encode(*nm, level));
+                                    QString const value_name(tld_encode(*nm, level));
                                     if(map.contains(value_name))
                                     {
                                         std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (exceptions section).\n"; // LCOV_EXCL_LINE
@@ -342,7 +342,7 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                     }
                     else if(g.tagName() == "forbid")
                     {
-                        QString reason(g.attribute("reason", "unused"));
+                        QString const reason(g.attribute("reason", "unused"));
 
                         QDomNode st = g.firstChild();
                         while(!st.isNull())
@@ -359,11 +359,27 @@ void read_tlds(const QString& path, tld_info_map_t& map, country_map_t& countrie
                                                           ++nm)
                                 {
                                     int level(0);
-                                    QString value_name(tld_encode(*nm, level));
+                                    QString const value_name(tld_encode(*nm, level));
                                     if(map.contains(value_name))
                                     {
-                                        std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (forbidden section).\n"; // LCOV_EXCL_LINE
-                                        exit(1); // LCOV_EXCL_LINE
+                                        // in this case there could be a forbidden
+                                        // entry that is in the same category and
+                                        // that means the TLD needs another unspecified
+                                        // level (i.e. any another sub-domain.)
+                                        //
+                                        if(map[value_name].f_category_name != category
+                                        || map[value_name].f_country != country
+                                        || map[value_name].f_level != level)
+                                        {
+                                            std::cerr << "error: found TLD \"" << nm->toUtf8().data() << "\" more than once (forbidden section).\n"; // LCOV_EXCL_LINE
+                                            exit(1); // LCOV_EXCL_LINE
+                                        }
+
+                                        QString const sub_name(value_name + "*!");
+                                        map[sub_name] = map[value_name];
+                                        ++map[sub_name].f_level;
+                                        map[sub_name].f_inverted = sub_name;
+                                        map[sub_name].f_reason_name = "unused"; // for *.example.com, .blah.example.com is a valid TLD, but not a valid URL (actual name missing)
                                     }
 
                                     tld_info tld;
@@ -665,7 +681,7 @@ void save_offset(tld_info_map_t& map, const QString& tld, int offset)
 
 /// Prints out all the TLDs in our tld_data.c file for very fast access.
 void output_tlds(tld_info_map_t& map,
-                const country_map_t& countries)
+                 const country_map_t& countries)
 {
     // to create the table below we want one entry with an
     // empty TLD and that will appear last with the info we

@@ -317,6 +317,8 @@
  * may be longer or shorter than \p b. In other words, the function
  * is capable of returning the correct result with a single call.
  *
+ * If parameter \p a is "*", then it always matches \p b.
+ *
  * \param[in] a  The pointer in an f_tld field of the tld_descriptions.
  * \param[in] b  Pointer directly in referencing the user domain string.
  * \param[in] n  The number of characters that can be checked in \p b.
@@ -325,6 +327,13 @@
  */
 static int cmp(const char *a, const char *b, int n)
 {
+    /* if `a == "*"` then it always a match! */
+    if(a[0] == '*'
+    && a[1] == '\0')
+    {
+        return 0;
+    }
+
     /* n represents the maximum number of characters to check in b */
     while(n > 0 && *a != '\0')
     {

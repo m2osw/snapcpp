@@ -29,7 +29,7 @@
 
 set(LIBTLD_VERSION_MAJOR 1)
 set(LIBTLD_VERSION_MINOR 5)
-set(LIBTLD_VERSION_PATCH 1)
+set(LIBTLD_VERSION_PATCH 4)
 
 cmake_minimum_required(VERSION 2.8.4)
 project(tld)
@@ -125,4 +125,4 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/tld-library-l
 #set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
 include(CPack)
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 et syntax=cmake

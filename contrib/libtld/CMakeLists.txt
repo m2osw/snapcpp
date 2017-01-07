@@ -27,10 +27,6 @@
 # THE SOFTWARE.
 #
 
-set(LIBTLD_VERSION_MAJOR 1)
-set(LIBTLD_VERSION_MINOR 5)
-set(LIBTLD_VERSION_PATCH 1)
-
 cmake_minimum_required(VERSION 2.8.4)
 
 project(tld_library)
@@ -45,6 +41,8 @@ find_package( SnapDoxygen      )
 find_package( Boost            REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
+
+SnapGetVersion( LIBTLD ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}

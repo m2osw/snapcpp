@@ -656,7 +656,7 @@ struct invalid_email
 
 const invalid_email list_of_invalid_emails[] =
 {
-    { TLD_RESULT_INVALID, "alexism2osw.com (missing @)" },
+    { TLD_RESULT_NULL, "alexism2osw.com (missing @)" },
     { TLD_RESULT_INVALID, " \v alexis@m2osw.com\n \t (bad control)" },
     { TLD_RESULT_INVALID, " (* Pascal Comments *) \t alexis@m2osw.com\n (missing closing parenthesis\\)" },
     { TLD_RESULT_INVALID, "(Start-Comment)alexis@ \t [ \t m2osw.com \t ] \n (extra after domain done) \"more\tdata\" \r\n\t" },

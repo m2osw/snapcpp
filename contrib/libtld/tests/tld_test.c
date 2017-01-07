@@ -126,14 +126,16 @@ void test_all()
 			memset(&info, 0xFE, sizeof(info));
 			r = tld(uri, &info);
 			/*
-			for(int l = 0; l < sizeof(info); ++l)
+			for(size_t l = 0; l < sizeof(info); ++l)
 			{
 				fprintf(stderr, "0x%02X ", ((unsigned char*)&info)[l]);
 			}
-			fprintf(stderr, "\nresult for [%s]: category[%d], status[%d], country[%s],"
+			fprintf(stderr, "\nresult for [%s]: category[%d], status[%d/%d], country[%s],"
 								" tld[%s], offset[%d]\n",
 					uri,
-					(int)info.f_category, (int)info.f_status, info.f_country,
+					(int)info.f_category,
+					(int)info.f_status, (int)tld_descriptions[i].f_status,
+					info.f_country,
 						info.f_tld, (int)info.f_offset);
 			*/
 			p = i;
@@ -200,9 +202,29 @@ void test_all()
 			}
 			else
 			{
-				if(r != TLD_RESULT_INVALID)
+				if(tld_descriptions[i].f_status == TLD_STATUS_UNUSED
+				&& tld_descriptions[i].f_start_offset != USHRT_MAX
+				&& strcmp(tld_descriptions[tld_descriptions[i].f_start_offset].f_tld, "*") == 0)
 				{
-					fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted as expected (returned: %d)\n",
+					/* this is somewhat of a special case, at this point
+					 * we have entries such as:
+					 *
+					 *     *.blah.com
+					 *
+					 * and that means the result is going to be SUCCESS
+					 * instead of INVALID...
+					 */
+					if(r != TLD_RESULT_INVALID
+					|| info.f_status != TLD_STATUS_UNUSED)
+					{
+						fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted as expected (returned: %d) [1]\n",
+								uri, i, r);
+						++err_count;
+					}
+				}
+				else if(r != TLD_RESULT_INVALID)
+				{
+					fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted as expected (returned: %d) [2]\n",
 							uri, i, r);
 					++err_count;
 				}
@@ -212,7 +234,7 @@ void test_all()
 					cat_ext(p, extension_uri);
 					if(strcmp(info.f_tld, extension_uri) != 0)
 					{
-						fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted successfully (returned: %d/%s)\n",
+						fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted successfully (returned: %d/%s) [1]\n",
 								uri, i, r, info.f_tld);
 						++err_count;
 					}
@@ -225,7 +247,7 @@ void test_all()
 				{
 					if(strncmp(uri + info.f_offset - 11, "domain-name", 11) != 0)
 					{
-						fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted successfully (returned: %d/%s)\n",
+						fprintf(stderr, "error: domain name for \"%s\" (%d) could not be extracted successfully (returned: %d/%s) [2]\n",
 								uri, i, r, info.f_tld);
 						++err_count;
 					}

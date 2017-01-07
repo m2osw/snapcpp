@@ -89,7 +89,7 @@ void test_compare()
 	{
 		r = cmp(d[i].a, d[i].b, d[i].n);
 		if(r != d[i].r) {
-			fprintf(stderr, "error: cmp() failed with \"%s\" / \"%s\", expected %d and got %d\n",
+			fprintf(stderr, "error: cmp() failed with \"%s\" / \"%s\", expected %d and got %d [1]\n",
 					d[i].a, d[i].b, d[i].r, r);
 			++err_count;
 		}
@@ -106,7 +106,7 @@ void test_compare()
 		vd = tld_domain_to_lowercase(s);
 		r = cmp(d[i].a, d[i].b, d[i].n);
 		if(r != d[i].r) {
-			fprintf(stderr, "error: cmp() failed with \"%s\" / \"%s\", expected %d and got %d (with domain to lowercase)\n",
+			fprintf(stderr, "error: cmp() failed with \"%s\" / \"%s\", expected %d and got %d (with domain to lowercase) [2]\n",
 					d[i].a, d[i].b, d[i].r, r);
 			++err_count;
 		}
@@ -133,60 +133,62 @@ void test_search()
 		 */
 
 		/* get the .uk offset */
-		{ 7159, 8536, "uk", 2, 8430 },
+		{ 7566, 9165, "uk", 2, 9047 },
 
 		/* get each offset of the .uk 2nd level domain */
-		{ 6960, 6985, "ac", 2,							6960 },
-		{ 6960, 6985, "bl", 2,							6961 },
-		{ 6960, 6985, "british-library", 15,			6962 },
-		{ 6960, 6985, "co", 2,							6963 },
-		{ 6960, 6985, "gov", 3,							6964 },
-		{ 6960, 6985, "govt", 4,						6965 },
-		{ 6960, 6985, "icnet", 5,						6966 },
-		{ 6960, 6985, "jet", 3,							6967 },
-		{ 6960, 6985, "lea", 3,							6968 },
-		{ 6960, 6985, "ltd", 3,							6969 },
-		{ 6960, 6985, "me", 2,							6970 },
-		{ 6960, 6985, "mil", 3,							6971 },
-		{ 6960, 6985, "mod", 3,							6972 },
-		{ 6960, 6985, "national-library-scotland", 25,	6973 },
-		{ 6960, 6985, "nel", 3,							6974 },
-		{ 6960, 6985, "net", 3,							6975 },
-		{ 6960, 6985, "nhs", 3,							6976 },
-		{ 6960, 6985, "nic", 3,							6977 },
-		{ 6960, 6985, "nls", 3,							6978 },
-		{ 6960, 6985, "org", 3,							6979 },
-		{ 6960, 6985, "orgn", 4,						6980 },
-		{ 6960, 6985, "parliament", 10,					6981 },
-		{ 6960, 6985, "plc", 3,							6982 },
-		{ 6960, 6985, "police", 6,						6983 },
-		{ 6960, 6985, "sch", 3,							6984 },
+		{ 7357, 7382, "ac", 2,							7357 },
+		{ 7357, 7382, "bl", 2,							7358 },
+		{ 7357, 7382, "british-library", 15,			7359 },
+		{ 7357, 7382, "co", 2,							7360 },
+		{ 7357, 7382, "gov", 3,							7361 },
+		{ 7357, 7382, "govt", 4,						7362 },
+		{ 7357, 7382, "icnet", 5,						7363 },
+		{ 7357, 7382, "jet", 3,							7364 },
+		{ 7357, 7382, "lea", 3,							7365 },
+		{ 7357, 7382, "ltd", 3,							7366 },
+		{ 7357, 7382, "me", 2,							7367 },
+		{ 7357, 7382, "mil", 3,							7368 },
+		{ 7357, 7382, "mod", 3,							7369 },
+		{ 7357, 7382, "national-library-scotland", 25,	7370 },
+		{ 7357, 7382, "nel", 3,							7371 },
+		{ 7357, 7382, "net", 3,							7372 },
+		{ 7357, 7382, "nhs", 3,							7373 },
+		{ 7357, 7382, "nic", 3,							7374 },
+		{ 7357, 7382, "nls", 3,							7375 },
+		{ 7357, 7382, "org", 3,							7376 },
+		{ 7357, 7382, "orgn", 4,						7377 },
+		{ 7357, 7382, "parliament", 10,					7378 },
+		{ 7357, 7382, "plc", 3,							7379 },
+		{ 7357, 7382, "police", 6,						7380 },
+		{ 7357, 7382, "sch", 3,							7381 },
 
 		/* test with a few invalid TLDs for .uk */
-		{ 6960, 6985, "com", 3, -1 },
-		{ 6960, 6985, "aca", 3, -1 },
-		{ 6960, 6985, "aac", 3, -1 },
-		{ 6960, 6985, "ca", 2, -1 },
-		{ 6960, 6985, "cn", 2, -1 },
-		{ 6960, 6985, "cp", 2, -1 },
-		{ 6960, 6985, "cz", 2, -1 },
+		{ 7357, 7382, "com", 3, -1 },
+		{ 7357, 7382, "aca", 3, -1 },
+		{ 7357, 7382, "aac", 3, -1 },
+		{ 7357, 7382, "ca", 2, -1 },
+		{ 7357, 7382, "cn", 2, -1 },
+		{ 7357, 7382, "cp", 2, -1 },
+		{ 7357, 7382, "cz", 2, -1 },
 
 		/* get the .vu offset */
-		{ 7159, 8536, "vu", 2, 8471 },
+		{ 7566, 9165, "vu", 2, 9094 },
 
 		/* get the 2nd level .vu offsets */
-		{ 7099, 7104, "edu", 3, 7100 },
-		{ 7099, 7104, "gov", 3, 7101 },
-		{ 7099, 7104, "net", 3, 7102 },
+		{ 7501, 7506, "com", 3, 7501 },
+		{ 7501, 7506, "edu", 3, 7502 },
+		{ 7501, 7506, "gov", 3, 7503 },
+		{ 7501, 7506, "net", 3, 7504 },
+		{ 7501, 7506, "org", 3, 7505 },
 
 		/* test with a few .vu 2nd level domains that do not exist */
-		{ 7099, 7104, "nom", 3, -1 },
-		{ 7099, 7104, "sch", 3, -1 },
+		{ 7501, 7506, "nom", 3, -1 },
+		{ 7501, 7506, "sch", 3, -1 },
 
 		/* verify ordering of mari, mari-el, and marine (from .ru) */
-		{ 6419, 6556, "mari",    4, 6482 },
-		{ 6419, 6556, "mari-el", 7, 6483 },
-		{ 6419, 6556, "marine",  6, 6484 },
+		{ 6806, 6943, "mari",    4, 6869 },
+		{ 6806, 6943, "mari-el", 7, 6870 },
+		{ 6806, 6943, "marine",  6, 6871 },
 	};
 
 	size_t i;
@@ -197,7 +199,7 @@ void test_search()
 		int const r = search(d[i].f_start, d[i].f_end, d[i].f_tld, d[i].f_length);
 		if(r != d[i].f_result)
 		{
-			fprintf(stderr, "error: test_search() failed with \"%s\", expected %d and got %d\n",
+			fprintf(stderr, "error: test_search() failed with \"%s\", expected %d and got %d [3]\n",
 					d[i].f_tld, d[i].f_result, r);
 			++err_count;
 		}
@@ -219,7 +221,7 @@ void test_search_array(int start, int end)
 		r = search(start, end, tld_descriptions[i].f_tld, strlen(tld_descriptions[i].f_tld));
 		if(r != i)
 		{
-			fprintf(stderr, "error: test_search_array() failed with \"%s\", expected %d and got %d\n",
+			fprintf(stderr, "error: test_search_array() failed with \"%s\", expected %d and got %d [4]\n",
 					tld_descriptions[i].f_tld, i, r);
 			++err_count;
 		}

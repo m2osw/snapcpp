@@ -135,7 +135,7 @@ void test_load()
     while(fgets(buf, sizeof(buf) - 1, f) != NULL)
     {
         ++line;
-        int l = strlen(buf);
+        int const l = strlen(buf);
         if(l == sizeof(buf) - 1)
         {
             // the fgets() failed in this case so forget it
@@ -177,15 +177,52 @@ void test_tlds()
     for(string_vector_t::const_iterator it(tlds.begin()); it != tlds.end(); ++it)
     {
         tld_info info;
-        if(it->at(0) == '*')
+
+        // note: it is possible for the input to have an asterisk (*) anywhere
+        //       in the name, although at this time it only appears at the
+        //       start and we just handle it as a special case here
+        //
+        if(it->at(0) == '*'
+        && it->at(1) == '.')
         {
+            // as is (well, without the '*'), a '*.tld' must return INVALID
+            // and status UNUSED
+            //
+            std::string base_tld(it->substr(2));
+            if(base_tld.find('.') == std::string::npos)
+            {
+                // at least one '.', however for one such as '*.example.com'
+                // we just want the 'example.com' part, no extra '.',
+                // otherwise the test itself would fail.
+                //
+                base_tld = "." + base_tld;
+            }
+            tld_result r = tld(base_tld.c_str(), &info);
+            if(r != TLD_RESULT_INVALID)
+            {
+                // we're good if invalid since that's what we expect in this case
+                // any other result is an error
+                fprintf(stderr, "error: tld(\"%s\", &info) for \"%s\" expected %d, got %d instead.\n",
+                            base_tld.c_str(),
+                            it->c_str(),
+                            TLD_RESULT_INVALID,
+                            r);
+                ++err_count;
+            }
+
+            // then try with a sub-name, in most cases it is invalid
+            // although it can be success (it depends on whether the
+            // '*' has a few specific cases or none at all)
+            //
             std::string url("we-want-to-test-just-one-domain-name");
             url += it->substr(1);
-            tld_result r = tld(url.c_str(), &info);
+            r = tld(url.c_str(), &info);
             if(r == TLD_RESULT_SUCCESS)
             {
                 // if it worked then we have a problem
-                fprintf(stderr, "error: tld(\"%s\", &info) accepted when 2nd level names are not accepted by effective_tld_names.dat.\n",
+                //
+                fprintf(stderr,
+                        "error: tld(\"%s\", &info) accepted when 2nd or 3rd level names are not accepted by effective_tld_names.dat.\n",
                         url.c_str());
                 ++err_count;
             }
@@ -193,24 +230,22 @@ void test_tlds()
             {
                 // we're good if invalid since that's what we expect in this case
                 // any other result is an error
-                fprintf(stderr, "error: tld(\"%s\", &info) failed.\n", it->c_str());
+                fprintf(stderr, "error: tld(\"%s\", &info) for \"%s\" failed with %d.\n",
+                            url.c_str(), it->c_str(), r);
                 ++err_count;
             }
         }
         else if(it->at(0) == '!')
         {
-            if(*it != "!nel.uk")
+            std::string url;//("we-want-to-test-just-one-domain-name.");
+            url += it->substr(1);
+            tld_result r = tld(url.c_str(), &info);
+            if(r != TLD_RESULT_SUCCESS)
             {
-                std::string url;//("we-want-to-test-just-one-domain-name.");
-                url += it->substr(1);
-                tld_result r = tld(url.c_str(), &info);
-                if(r != TLD_RESULT_SUCCESS)
-                {
-                    // if it worked then we have a problem
-                    fprintf(stderr, "error: tld(\"%s\", &info) = %d failed with an exception that should have been accepted.\n",
-                            it->c_str(), r);
-                    ++err_count;
-                }
+                // if it worked then we have a problem
+                fprintf(stderr, "error: tld(\"%s\", &info) = %d failed with an exception that should have been accepted.\n",
+                        it->c_str(), r);
+                ++err_count;
             }
         }
         else if(it->at(0) != '!')
@@ -230,9 +265,12 @@ void test_tlds()
                 if(strlen(info.f_tld) != static_cast<size_t>(u.size() + 1))
                 {
                     fprintf(stderr, "error: tld(\"%s\", &info) length mismatch (\"%s\", %d/%d).\n",
-                            uri.data(), info.f_tld, static_cast<int>(strlen(info.f_tld)), static_cast<int>((u.size() + 1)));
+                            uri.data(), info.f_tld,
+                            static_cast<int>(strlen(info.f_tld)),
+                            static_cast<int>((u.size() + 1)));
+// s3-website.ap-northeast-2.amazonaws.com
 QString s(QString::fromUtf8(it->c_str()));
-fprintf(stderr, "%d> %s [%s] -> %d ", r, it->c_str(), u.toUtf8().data(), s.length());
+fprintf(stderr, "%d> %s [%s] {%s} -> %d ", r, it->c_str(), u.toUtf8().data(), info.f_tld, s.length());
 for(int i(0); i < s.length(); ++i) {
 fprintf(stderr, "&#x%04X;", s.at(i).unicode());
 }
