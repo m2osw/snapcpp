@@ -1,7 +1,7 @@
 # File:         FindSnapCMakeModules.cmake
 # Object:       Common definitions for all M2OSW Snap! C++ projects
 #
-# Copyright:    Copyright (c) 2011-2014 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2017 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/
