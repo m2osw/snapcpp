@@ -1,4 +1,4 @@
-/* TLD library -- test the TLD interface against the Mozilla effective TLD names
+/* TLD library -- test the TLD interface against the Public Suffix List
  * Copyright (C) 2011-2017  Made to Order Software Corp.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -117,16 +117,16 @@ QString tld_encode(const QString& tld, int& level)
 
 
 /*
- * The function reads the effective_tld_names.dat file in memory.
+ * The function reads the public_suffix_list.dat file in memory.
  *
  * We call exit(1) if we find an error while reading the data.
  */
 void test_load()
 {
-    FILE *f = fopen("effective_tld_names.dat", "r");
+    FILE *f = fopen("public_suffix_list.dat", "r");
     if(f == NULL)
     {
-        fprintf(stderr, "error: could not open the \"effective_tld_names.dat\" file; did you start the test in the source directory?\n");
+        fprintf(stderr, "error: could not open the \"public_suffix_list.dat\" file; did you start the test in the source directory?\n");
         exit(1);
     }
     char buf[256];
@@ -139,7 +139,7 @@ void test_load()
         if(l == sizeof(buf) - 1)
         {
             // the fgets() failed in this case so forget it
-            fprintf(stderr, "effective_tld_names.data:%d:error: line too long.\n", line);
+            fprintf(stderr, "public_suffix_list.dat:%d:error: line too long.\n", line);
             ++err_count;
         }
         else
@@ -149,7 +149,7 @@ void test_load()
             if(s.length() == 1)
             {
                 // all TLDs are at least 2 characters
-                fprintf(stderr, "effective_tld_names.data:%d:error: a TLD must be at least two characters.\n", line);
+                fprintf(stderr, "public_suffix_list.dat:%d:error: a TLD must be at least two characters.\n", line);
                 ++err_count;
             }
             else if(s.length() > 1 && s[0] != '/' && s[1] != '/')
@@ -222,7 +222,7 @@ void test_tlds()
                 // if it worked then we have a problem
                 //
                 fprintf(stderr,
-                        "error: tld(\"%s\", &info) accepted when 2nd or 3rd level names are not accepted by effective_tld_names.dat.\n",
+                        "error: tld(\"%s\", &info) accepted when 2nd or 3rd level names are not accepted by public_suffix_list.dat.\n",
                         url.c_str());
                 ++err_count;
             }
