@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.20
+ * Version: 0.0.1.38
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -310,6 +310,25 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.initializeWidget = function(widg
 
             return true;
         });
+
+    // make sure the top window includes the necessary CSS too
+    //
+    // we do that early even if the calendar ends up never being used
+    // because otherwise the size of the calendar ends up being incorrect
+    // on the first time the widget gets opened
+    //
+    // another solution would be to have an on-load and open the calendar
+    // after the CSS was loaded, but it makes things more complicated than
+    // necessary (I think, at this time...)
+    // See: http://stackoverflow.com/questions/3498647/jquery-loading-css-on-demand-callback-if-done/17858428#17858428
+    // (i.e. to know once the CSS file is loaded, you need to program that
+    // as there is no "onload" event on links.)
+    //
+    if(!jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']", window.top.document).exists())
+    {
+        // it does not exist yet, make a copy of our iframe version
+        jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']").clone().appendTo(jQuery("head", window.top.document));
+    }
 };
 
 
@@ -401,6 +420,9 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
     var that = this,
         w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
+        screen_height = parseFloat($(window.top).innerHeight()),
+        scroll_top = parseFloat($(window.top).scrollTop()),
+        scroll_left = parseFloat($(window.top).scrollLeft()),
         calendar = editor_widget.getData("calendar"),
         now,                // today's JavaScript Date object
         today,              // day of the month for today
@@ -614,20 +636,18 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
     if(window.self != window.top)
     {
         iframe = jQuery(window.frameElement);
+
+        iframe_pos = iframe.offset();
+        pos.top += iframe_pos.top - scroll_top;
+        pos.left += iframe_pos.left - scroll_left;
+
         if(iframe.parents("div.snap-popup").css("position") == "fixed")
         {
             popup_position = "fixed";
-        }
 
-        iframe_pos = iframe.offset();
-        pos.left += iframe_pos.left;
-        pos.top += iframe_pos.top;
-
-        // make sure the top window includes the necessary CSS too
-        if(!jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']", window.top.document).exists())
-        {
-            // it does not exist yet, make a copy of our iframe version
-            jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']").clone().appendTo(jQuery("head", window.top.document));
+            // in the editor I have those outside the if() block?!
+            scroll_top = 0;
+            scroll_left = 0;
         }
     }
 
@@ -643,8 +663,6 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
         editor_widget.setData("calendar", calendar);
     }
 
-    calendar.offset(pos);
-
     // force the width of all the cells to the maximum width from any
     // of the columns
     //
@@ -657,6 +675,27 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
         }
     });
     $('td').css('width', max_width);
+
+    // verify that the calendar can fit below the widget, if not check
+    // above, if neither works use the top of the screen instead
+    //
+    if(pos.top + calendar.height() - scroll_top > screen_height + 2) // ignore 2 lines (i.e. the +2)
+    {
+        // use an offset that way whether we have a fixed position or
+        // an absolute position, it works
+        //
+        pos.top -= w.height() + calendar.height();
+        if(pos.top < scroll_top)
+        {
+            // well... it just does not fit up either, so place it at
+            // the top of the screen to increase the chance the entire
+            // calendar is visible
+            //
+            pos.top = scroll_top;
+        }
+    }
+
+    calendar.offset(pos);
 
     calendar
         .click(function(e)
