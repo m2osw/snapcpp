@@ -38,6 +38,27 @@ find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl           PATHS ${CMAKE_MOD
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
+
+# RDB: Sun Jan  8 12:42:10 PST 2017
+# Moved this to the top so it's done only once
+#
+set( THE_CMAKE_BUILD_TOOL ${CMAKE_BUILD_TOOL} )
+if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
+	execute_process( 
+		COMMAND nproc
+		#OUTPUT_VARIABLE NUM_PROCS
+		OUTPUT_VARIABLE NUM_JOBS
+		)
+	# http://stackoverflow.com/questions/2499070/gnu-make-should-the-number-of-jobs-equal-the-number-of-cpu-cores-in-a-system#2499574
+	# The question is if we want to try num procs + 1.
+	#
+	#math( EXPR NUM_JOBS "${NUM_PROCS} + 1" )
+	set( MAKEFLAGS "-j${NUM_JOBS}" CACHE STRING "Number of jobs make should run. CMake vers 3+ only!" )
+	if( NOT "${MAKEFLAGS}" STREQUAL "-j1" OR "${MAKEFLAGS}" STREQUAL "" )
+		set( THE_CMAKE_BUILD_TOOL ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL} )
+	endif()
+endif()
+
 # RDB: Tue Jan 26 10:13:24 PST 2016
 # Adding ability to take the DEBUILD_EMAIL var from the environment as a default
 #
@@ -201,14 +222,6 @@ function( ConfigureMakeProjectInternal )
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_TARGET_NAME} CMake configuration..."
 			)
-	endif()
-
-	set( THE_CMAKE_BUILD_TOOL ${CMAKE_BUILD_TOOL} )
-	if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
-		set( MAKEFLAGS "-j1" CACHE STRING "Number of jobs make should run. CMake vers 3+ only!" )
-		if( NOT "${MAKEFLAGS}" STREQUAL "-j1" OR "${MAKEFLAGS}" STREQUAL "" )
-			set( THE_CMAKE_BUILD_TOOL ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL} )
-		endif()
 	endif()
 
 	set( MAKE_OUTPUT ${BUILD_DIR}/make.completed )
