@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.44
+ * Version: 0.0.1.45
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -965,15 +965,21 @@ snapwebsites.ServerAccess.prototype.onError_ = function(result)
     //
     // http://stackoverflow.com/questions/5005960/xmlhttprequest-status-0-responsetext-is-empty#38097577
     //
-    if(result.jqxhr.status == 0
-    && result.jqxhr.readyState
-    && result.jqxhr.readyState == 4)
+    if(result.jqxhr.status == 0)
     {
-        // use same error message as on Firefox: 504 Gateway Timeout
-        result.jqxhr.status = 504;
-        if(!result.ajax_error_message)
+        if(result.jqxhr.readyState
+        && result.jqxhr.readyState == 4)
         {
-            result.ajax_error_message = "Gateway Timeout";
+            // use same error message as on Firefox: 504 Gateway Timeout
+            result.jqxhr.status = 504;
+            if(!result.ajax_error_message)
+            {
+                result.ajax_error_message = "Gateway Timeout";
+            }
+        }
+        else
+        {
+            result.jqxhr.status = "0/" + result.jqxhr.readyState;
         }
     }
 
