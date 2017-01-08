@@ -2,6 +2,8 @@ libtld (1.5.5.0~xenial) xenial; urgency=high
 
   * renamed the effective_tld_names.dat with its new name: 
 
+ -- Alexis Wilke <alexis@m2osw.com>  Sat,  7 Jan 2017 13:50:22 -0700
+
 libtld (1.5.4.0~xenial) xenial; urgency=high
 
   * Updated the TLDs with the newest available information.
