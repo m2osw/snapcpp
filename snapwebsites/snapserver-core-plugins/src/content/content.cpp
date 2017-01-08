@@ -1831,6 +1831,21 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
         // this is probably somewhat wrong... (remember that for JS/CSS files
         // we do not generate a revision number, we use the file version
         // instead.)
+        //
+
+        // if the branch number is new, we want to copy the old one to
+        // the new one to start somewhere
+        //
+        snap_version::version_number_t const old_branch_number(get_current_branch(attachment_ipath.get_key(), true));
+        if(old_branch_number != snap_version::SPECIAL_VERSION_INVALID
+        && old_branch_number != snap_version::SPECIAL_VERSION_UNDEFINED
+        && old_branch_number != branch_number)
+        {
+            // the page exists, but not that branch so create it now
+            //
+            copy_branch(attachment_ipath.get_key(), old_branch_number, branch_number);
+        }
+
         set_branch(attachment_ipath.get_key(), branch_number, true);
         set_branch(attachment_ipath.get_key(), branch_number, false);
         set_branch_key(attachment_ipath.get_key(), branch_number, true);
