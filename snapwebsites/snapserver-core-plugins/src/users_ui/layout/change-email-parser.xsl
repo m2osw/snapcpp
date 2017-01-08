@@ -42,6 +42,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 						<!-- soft administration session widget -->
 						<div class="editor-block">
+							<label for="administrative_session_duration" class="editor-title">Administration Session Duration (in minutes):</label>
 							<xsl:copy-of select="page/body/users/email_address/node()"/>
 						</div>
 
