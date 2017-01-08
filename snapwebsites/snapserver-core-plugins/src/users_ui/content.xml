@@ -205,14 +205,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/email</link>
   </content>
   <content path="/user/change-email">
-    <param name="content::title" revision="revision">Change Email Address</param>
+    <param name="content::title" revision="revision">Change Your Email Address</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Allow the user to change the email address.</p>]]>
+      <![CDATA[<p>Please enter your new email address twice for verification.</p>[form::source]]]>
     </param>
     <param name="editor::layout" revision="global" overwrite="yes">"change-email-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"change-email-parser";</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/email</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::secure_page" to="permissions::secure_page" mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
   </content>
   <content path="/admin/page/users">
     <param name="content::title" revision="revision">Users Templates</param>
