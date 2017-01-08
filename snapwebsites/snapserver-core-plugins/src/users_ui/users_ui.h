@@ -22,6 +22,7 @@
 #include "../layout/layout.h"
 #include "../path/path.h"
 #include "../users/users.h"
+#include "../editor/editor.h"
 
 namespace snap
 {
@@ -93,7 +94,9 @@ public:
     void                    on_token_help(filter::filter::token_help_t & help);
 
     // editor signals
+    void                    on_init_editor_widget(content::path_info_t & ipath, QString const & field_name, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row);
     void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
+    void					on_save_editor_fields(editor::save_info_t & save_info);
 
     // form stuff
     virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
@@ -124,6 +127,8 @@ private:
     void                    verify_email(QString const & email);
     void                    verify_password(content::path_info_t & cpath);
     void                    forgot_password_email(users::users::user_info_t const & user_info);
+
+    void                    editor_widget_load_email_address(QDomElement & widget, QString const & id);
 
     snap_child *            f_snap = nullptr;
     QString                 f_user_changing_password_key;   // not quite logged in user

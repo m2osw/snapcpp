@@ -303,7 +303,9 @@ void users_ui::bootstrap(::snap::snap_child * snap)
     SNAP_LISTEN(users_ui, "path", path::path, check_for_redirect, _1);
     SNAP_LISTEN(users_ui, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(users_ui, "filter", filter::filter, token_help, _1);
+    SNAP_LISTEN(users_ui, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
     SNAP_LISTEN(users_ui, "editor", editor::editor, finish_editor_form_processing, _1, _2);
+    SNAP_LISTEN(users_ui, "editor", editor::editor, save_editor_fields, _1);
 }
 
 
@@ -2397,6 +2399,75 @@ void users_ui::forgot_password_email(users::users::user_info_t const & user_info
 }
 
 
+void users_ui::editor_widget_load_email_address(QDomElement & widget, QString const & id)
+{
+    // Get logged in user info
+    //
+    users::users::user_info_t const & user_info( users::users::instance()->get_user_info() );
+
+    QDomDocument doc(widget.ownerDocument());
+    QDomNodeList w(doc.elementsByTagName("widget"));
+    int const max_widgets(w.size());
+    for(int i(0); i < max_widgets; ++i)
+    {
+        QDomElement email_address_elm(w.at(i).toElement());
+        if(email_address_elm.isNull())
+        {
+            // this should never happen!
+            continue;
+        }
+
+        if( email_address_elm.attribute("id") == id )
+        {
+            // found it!
+            QDomElement email_value_elm(doc.createElement("value"));
+            QDomText email_text(doc.createTextNode(user_info.get_user_email()));
+            email_value_elm.appendChild(email_text);
+            email_address_elm.appendChild(email_value_elm);
+            break;
+        }
+    }
+}
+
+
+void users_ui::on_init_editor_widget
+    ( content::path_info_t & ipath
+    , QString const & field_id
+    , QString const & field_type
+    , QDomElement & widget
+    , QtCassandra::QCassandraRow::pointer_t row
+    )
+{
+    NOTUSED(field_type);
+    NOTUSED(row);
+
+    // If some handling is done without the user logged in, then we can
+    // add that here
+
+    // what follows only interests logged in users
+    users::users * users_plugin(users::users::instance());
+    QString const user_path(users_plugin->user_is_logged_in() ? users_plugin->get_user_info().get_user_path() : "");
+    if(user_path.isEmpty())
+    {
+        return;
+    }
+
+    QString const cpath(ipath.get_cpath());
+    switch(cpath[0].unicode())
+    {
+    case 'u':
+        if(cpath.startsWith("user/"))
+        {
+            if(field_id == "email_address" || field_id == "repeat_email_address")
+            {
+                editor_widget_load_email_address(widget, field_id);
+            }
+        }
+        break;
+    }
+}
+
+
 void users_ui::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
 {
     if(!succeeded)
@@ -2437,6 +2508,37 @@ void users_ui::on_finish_editor_form_processing(content::path_info_t & ipath, bo
     if(value.size() == sizeof(int64_t))
     {
         f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION), value);
+    }
+}
+
+
+void users_ui::on_save_editor_fields(editor::save_info_t & save_info)
+{
+    if( !save_info.has_errors() )
+    {
+        QString const new_email( editor::editor::instance()->get_post_value("email_address") );
+        auto users_plugin(users::users::instance());
+        users::users::user_info_t test_ui( users_plugin->get_user_info_by_email(new_email) );
+        if( test_ui.exists() )
+        {
+            messages::messages::instance()->set_error(
+                        "Email Address Already In Use!",
+                        "The new email address you are trying to use is already in use on our system. Please use a different email address.",
+                        QString("email address \"%1\" already in use!").arg(new_email),
+                        false
+                        );
+        }
+        else
+        {
+            // Save the new email address into the database
+            //
+            users::users::user_info_t & user_info(users_plugin->get_user_info());
+            user_info.change_user_email( new_email );
+
+            // TODO: implement the ability to send a confirmation email to the user first.
+            // Also, it would be nice to send a follow up email to the old email indicating
+            // the change.
+        }
     }
 }
 

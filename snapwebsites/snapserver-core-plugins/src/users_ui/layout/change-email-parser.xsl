@@ -33,35 +33,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
-				<h3>Change Email Address</h3>
+				<h3>Change User Email Address</h3>
 				<div>
-					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
-
 					<fieldset class="site-name">
-						<legend>Session Information</legend>
+						<legend>Change User Email Address</legend>
 
-						<!-- soft administration session widget -->
 						<div class="editor-block">
-							<label for="administrative_session_duration" class="editor-title">Administration Session Duration (in minutes):</label>
+							<label for="current_email_address" class="editor-title">Current Email Address:</label>
+							<xsl:copy-of select="page/body/users/current_email_address/node()"/>
+						</div>
+
+						<div class="editor-block">
+							<label for="email_address" class="editor-title">New Email Address</label>
 							<xsl:copy-of select="page/body/users/email_address/node()"/>
 						</div>
 
-						<!-- administration session duration widget -->
 						<div class="editor-block">
-							<label for="administrative_session_duration" class="editor-title">Administration Session Duration (in minutes):</label>
-							<xsl:copy-of select="page/body/users/administrative_session_duration/node()"/>
-						</div>
-
-						<!-- user session duration widget -->
-						<div class="editor-block">
-							<label for="user_session_duration" class="editor-title">User Session Duration (in minutes):</label>
-							<xsl:copy-of select="page/body/users/user_session_duration/node()"/>
-						</div>
-
-						<!-- total session duration widget -->
-						<div class="editor-block">
-							<label for="total_session_duration" class="editor-title">Total Session Duration (in minutes):</label>
-							<xsl:copy-of select="page/body/users/total_session_duration/node()"/>
+							<label for="repeat_email_address" class="editor-title">Repeat Email Address</label>
+							<xsl:copy-of select="page/body/users/repeat_email_address/node()"/>
 						</div>
 
 					</fieldset>
