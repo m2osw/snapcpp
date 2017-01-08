@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle an array of electronic payment facilities...
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1515,7 +1515,7 @@ int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 13, 16, 43, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 1, 8, 14, 40, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

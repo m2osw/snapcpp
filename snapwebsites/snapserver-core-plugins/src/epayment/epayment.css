@@ -1,8 +1,8 @@
 /*
  * Name: epayment
- * Version: 0.0.1.18
+ * Version: 0.0.1.19
  * Browsers: all
- * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
@@ -55,7 +55,7 @@
 
 .epayment-buttons
 {
-	padding: 20px;
+	padding: 20px 20px 0 20px;
 }
 
 .epayment-buttons .epayment-back,
