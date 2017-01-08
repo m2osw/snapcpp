@@ -204,6 +204,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/email</link>
   </content>
+  <content path="/admin/admin/email/users/change-email">
+    <param name="content::title" revision="revision">Change Email Address</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Allow the user to change the email address.</p>]]>
+    </param>
+    <param name="editor::layout" revision="global" overwrite="yes">"change-email-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"change-email-parser";</param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/email</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
+  </content>
   <content path="/admin/page/users">
     <param name="content::title" revision="revision">Users Templates</param>
     <param name="content::body" revision="revision">

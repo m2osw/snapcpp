@@ -35,10 +35,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <file>users_ui/verify-credentials-form.xml</file>
         <file>users_ui/verify-form.xml</file>
         <!-- editor forms -->
+        <file>layout/change-email-page.xml</file>
         <file>layout/users-settings-page.xml</file>
     </qresource>
     <qresource prefix="/xsl">
         <!-- editor forms -->
+        <file>layout/change-email-parser.xsl</file>
         <file>layout/users-settings-parser.xsl</file>
     </qresource>
     <qresource prefix="/images">
