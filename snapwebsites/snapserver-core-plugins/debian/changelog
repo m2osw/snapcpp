@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.43.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 08 Jan 2017 02:00:45 -0800
+
 snapserver-core-plugins (1.0.43.0~xenial) xenial; urgency=high
 
   * SNAP-331: Open calendar popup toward the top of the date widget if
