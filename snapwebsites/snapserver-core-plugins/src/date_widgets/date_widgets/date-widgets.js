@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.38
+ * Version: 0.0.1.39
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -132,6 +132,25 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.initializeWidget = function(widg
     var that = this,
         editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
         c = editor_widget.getWidgetContent();
+
+    // make sure the top window includes the necessary CSS too
+    //
+    // we do that early even if the calendar ends up never being used
+    // because otherwise the size of the calendar ends up being incorrect
+    // on the first time the widget gets opened
+    //
+    // another solution would be to have an on-load and open the calendar
+    // after the CSS was loaded, but it makes things more complicated than
+    // necessary (I think, at this time...)
+    // See: http://stackoverflow.com/questions/3498647/jquery-loading-css-on-demand-callback-if-done/17858428#17858428
+    // (i.e. to know once the CSS file is loaded, you need to program that
+    // as there is no "onload" event on links.)
+    //
+    if(!jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']", window.top.document).exists())
+    {
+        // it does not exist yet, make a copy of our iframe version
+        jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']").clone().appendTo(jQuery("head", window.top.document));
+    }
 
     editor_widget.setData("calendarTimeoutID", NaN);
 
@@ -310,25 +329,6 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.initializeWidget = function(widg
 
             return true;
         });
-
-    // make sure the top window includes the necessary CSS too
-    //
-    // we do that early even if the calendar ends up never being used
-    // because otherwise the size of the calendar ends up being incorrect
-    // on the first time the widget gets opened
-    //
-    // another solution would be to have an on-load and open the calendar
-    // after the CSS was loaded, but it makes things more complicated than
-    // necessary (I think, at this time...)
-    // See: http://stackoverflow.com/questions/3498647/jquery-loading-css-on-demand-callback-if-done/17858428#17858428
-    // (i.e. to know once the CSS file is loaded, you need to program that
-    // as there is no "onload" event on links.)
-    //
-    if(!jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']", window.top.document).exists())
-    {
-        // it does not exist yet, make a copy of our iframe version
-        jQuery("head link[rel='stylesheet'][href^='/css/editor/date-widgets_']").clone().appendTo(jQuery("head", window.top.document));
-    }
 };
 
 
@@ -641,13 +641,15 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
         pos.top += iframe_pos.top - scroll_top;
         pos.left += iframe_pos.left - scroll_left;
 
+        // in the editor I have those outside the next if() block, which
+        // seems strange, but I replicated so it should work the same
+        //
+        scroll_top = 0;
+        scroll_left = 0;
+
         if(iframe.parents("div.snap-popup").css("position") == "fixed")
         {
             popup_position = "fixed";
-
-            // in the editor I have those outside the if() block?!
-            scroll_top = 0;
-            scroll_left = 0;
         }
     }
 
