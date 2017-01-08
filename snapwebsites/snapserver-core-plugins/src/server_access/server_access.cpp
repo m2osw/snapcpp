@@ -157,7 +157,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2017, 1, 3, 0, 11, 32, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 1, 7, 20, 0, 32, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

@@ -1,5 +1,5 @@
 /* TLD library -- test the TLD version in all files
- * Copyright (C) 2011-2015  Made to Order Software Corp.
+ * Copyright (C) 2011-2017  Made to Order Software Corp.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -60,66 +60,67 @@ void check_version_compiled_with(const char *version)
 
 
 
-void check_main_cmakefiles_txt(const char *path, const char *version)
-{
-    const int cmakelists_txt_len = 15;
-    const int len = strlen(path);
-    char *filename = malloc(len + cmakelists_txt_len + 1);
-    FILE *f;
-    char buf[1024];
-    char *str;
-    int major = 0;
-    int minor = 0;
-    int patch = 0;
-
-    memcpy(filename, path, len);
-    memcpy(filename + len, "/CMakeLists.txt", cmakelists_txt_len + 1); // copy string and '\0'
-
-    f = fopen(filename, "r");
-    if(f == NULL)
-    {
-        ++err_count;
-        perror("error: fopen()");
-        fprintf(stderr, "error: could not open main CMakeLists.txt file (full path: \"%s\")\n:", filename);
-        free(filename);
-        return;
-    }
-
-    while(fgets(buf, sizeof(buf), f) != (char *) 0)
-    {
-        str = strstr(buf, "LIBTLD_VERSION_MAJOR");
-        if(str != (char *) 0 && str > buf && str[-1] != '{')
-        {
-            major = atol(str + 20);
-        }
-        str = strstr(buf, "LIBTLD_VERSION_MINOR");
-        if(str != (char *) 0 && str > buf && str[-1] != '{')
-        {
-            minor = atol(str + 20);
-        }
-        str = strstr(buf, "LIBTLD_VERSION_PATCH");
-        if(str != (char *) 0 && str > buf && str[-1] != '{')
-        {
-            patch = atol(str + 20);
-        }
-    }
-    fclose(f);
-
-    snprintf(buf, sizeof(buf), "%d.%d.%d", major, minor, patch);
-
-    if(verbose)
-    {
-        printf("main CMakeLists.txt version: %s\n", buf);
-    }
-
-    if(strcmp(buf, version) != 0)
-    {
-        ++err_count;
-        fprintf(stderr, "error: main CMakeLists.txt version (%s) is %s, expected %s instead.\n", filename, buf, version);
-    }
-
-    free(filename);
-}
+// Newer versions retrieve the version directly from the changelog file
+//void check_main_cmakefiles_txt(const char *path, const char *version)
+//{
+//    const int cmakelists_txt_len = 15;
+//    const int len = strlen(path);
+//    char *filename = malloc(len + cmakelists_txt_len + 1);
+//    FILE *f;
+//    char buf[1024];
+//    char *str;
+//    int major = 0;
+//    int minor = 0;
+//    int patch = 0;
+//
+//    memcpy(filename, path, len);
+//    memcpy(filename + len, "/CMakeLists.txt", cmakelists_txt_len + 1); // copy string and '\0'
+//
+//    f = fopen(filename, "r");
+//    if(f == NULL)
+//    {
+//        ++err_count;
+//        perror("error: fopen()");
+//        fprintf(stderr, "error: could not open main CMakeLists.txt file (full path: \"%s\")\n:", filename);
+//        free(filename);
+//        return;
+//    }
+//
+//    while(fgets(buf, sizeof(buf), f) != (char *) 0)
+//    {
+//        str = strstr(buf, "LIBTLD_VERSION_MAJOR");
+//        if(str != (char *) 0 && str > buf && str[-1] != '{')
+//        {
+//            major = atol(str + 20);
+//        }
+//        str = strstr(buf, "LIBTLD_VERSION_MINOR");
+//        if(str != (char *) 0 && str > buf && str[-1] != '{')
+//        {
+//            minor = atol(str + 20);
+//        }
+//        str = strstr(buf, "LIBTLD_VERSION_PATCH");
+//        if(str != (char *) 0 && str > buf && str[-1] != '{')
+//        {
+//            patch = atol(str + 20);
+//        }
+//    }
+//    fclose(f);
+//
+//    snprintf(buf, sizeof(buf), "%d.%d.%d", major, minor, patch);
+//
+//    if(verbose)
+//    {
+//        printf("main CMakeLists.txt version: %s\n", buf);
+//    }
+//
+//    if(strcmp(buf, version) != 0)
+//    {
+//        ++err_count;
+//        fprintf(stderr, "error: main CMakeLists.txt version (%s) is %s, expected %s instead.\n", filename, buf, version);
+//    }
+//
+//    free(filename);
+//}
 
 
 void check_libtld_only_cmakefiles_txt(const char *path, const char *version)
@@ -320,7 +321,7 @@ int main(int argc, char *argv[])
         }
 
         check_version_compiled_with(version);
-        check_main_cmakefiles_txt(path, version);
+        //check_main_cmakefiles_txt(path, version);
         check_libtld_only_cmakefiles_txt(path, version);
         check_changelog(path, version);
     }

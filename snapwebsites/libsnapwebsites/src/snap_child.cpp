@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites serving children
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -4576,23 +4576,46 @@ bool snap_child::connect_cassandra(bool child)
 //          is normally created by snapmanager[.cgi] now.
 SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contexts() anymore...");
 
-    // select the Snap! context
-    f_cassandra->contexts();
-    QString const context_name(get_name(name_t::SNAP_NAME_CONTEXT));
-    f_context = f_cassandra->findContext(context_name);
-    if(!f_context)
+    try
     {
+        // select the Snap! context
+        f_cassandra->contexts();
+        QString const context_name(get_name(name_t::SNAP_NAME_CONTEXT));
+        f_context = f_cassandra->findContext(context_name);
+        if(!f_context)
+        {
+            // we connected to the database, but it is not properly initialized!?
+            //
+            f_cassandra.reset();
+            if(!child)
+            {
+                SNAP_LOG_WARNING("snap_child::connect_cassandra() could not read the context.");
+                return false;
+            }
+            die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
+                    "",
+                    "Our database system does not seem to be properly installed.",
+                    QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
+            NOTREACHED();
+        }
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_FATAL("Connected to snapdbproxy server, but could not gather the Cassandra metadata (")(snapdbproxy_addr)(":")(snapdbproxy_port)("). Reason: ")(e.what());
+
         // we connected to the database, but it is not properly initialized!?
         //
+        f_context.reset();  // just in case, also reset the context (it should already be null here)
         f_cassandra.reset();
         if(!child)
         {
-            SNAP_LOG_WARNING("snap_child::connect_cassandra() could not read the context.");
+            SNAP_LOG_WARNING("snap_child::connect_cassandra() could not read the context metadata.");
             return false;
         }
-        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
-                "Our database system does not seem to be properly installed.",
-                QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
+                "",
+                "Our database system is not currently available.",
+                "The child process connected to Cassandra through snapdbproxy, but it could not find retrieve the context metadata.");
         NOTREACHED();
     }
 

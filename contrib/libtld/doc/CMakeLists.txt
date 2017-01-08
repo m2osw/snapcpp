@@ -1,6 +1,6 @@
 #
 # File:
-#      CMakeLists.txt
+#      src/CMakeLists.txt
 #
 # Description:
 #      Create the documentation of the libtld library.
@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/project/libtld
 #      contact@m2osw.com

@@ -1,8 +1,22 @@
-libtld (1.5.2.145~xenial) xenial; urgency=high
+libtld (1.5.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * renamed the effective_tld_names.dat with its new name: 
 
- -- Doug Barbieri <doug@dooglio.net>  Tue, 13 Sep 2016 17:34:08 -0700
+libtld (1.5.4.0~xenial) xenial; urgency=high
+
+  * Updated the TLDs with the newest available information.
+  * Enhanced the test so we can support entries like "*.jp" at any level.
+  * Now top the CMakeLists.txt reads the version from changelog.
+  * Updated the tests accordingly.
+  * Various cleanups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  5 Jan 2017 13:50:22 -0700
+
+libtld (1.5.3.0~xenial) xenial; urgency=high
+
+  * Bumped copyright dates.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  5 Jan 2017 13:50:22 -0700
 
 libtld (1.5.2.0~xenial) xenial; urgency=high
 

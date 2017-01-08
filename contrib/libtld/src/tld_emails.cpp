@@ -1,5 +1,5 @@
 /* TLD library -- TLD, emails extractions
- * Copyright (C) 2013-2015  Made to Order Software Corp.
+ * Copyright (C) 2013-2017  Made to Order Software Corp.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -21,9 +21,17 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "libtld/tld.h"
-#include <memory>
+
+// C lib
+//
 #include <stdio.h>
 #include <string.h>
+
+// C++ lib
+//
+#include <memory>
+#include <iostream>
+
 
 /** \file
  * \brief Implementation of an email parser.
