@@ -123,11 +123,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Please enter your new email address twice for verification.</p>[form::source]]]>
     </param>
     <!--TODO needed?! <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/email</link>-->
+    <param name="editor::layout" revision="global" overwrite="yes">"change-email-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"change-email-parser";</param>
     <link name="permissions::direct::action::view"       to="permissions::link_back::view"       mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <link name="permissions::secure_page"                to="permissions::secure_page"           mode="1:*">/types/taxonomy/system/permissions/secure-page</link>
-    <param name="editor::layout" revision="global" overwrite="yes">"change-email-page";</param>
-    <param name="layout::layout" revision="global" overwrite="yes">"change-email-parser";</param>
   </content>
   <content path="/user/password">
     <param name="content::title" revision="revision">Change Your Password</param>
