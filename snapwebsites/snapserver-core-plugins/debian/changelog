@@ -1,7 +1,8 @@
-snapserver-core-plugins (1.0.41.3~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.41.4~xenial) xenial; urgency=high
 
   * SNAP-258: Added support to the editor plugin to provide read-only access to
     the underlying post and converted values.
+  * SNAP-258: Added email change form.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 05 Jan 2017 09:51:14 -0800
 
