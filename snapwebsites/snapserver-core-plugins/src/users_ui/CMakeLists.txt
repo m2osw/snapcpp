@@ -59,9 +59,9 @@ snap_validate_xml( users_ui/verify-credentials-form.xml  form/snap-form.dtd )
 snap_validate_xml( users_ui/verify-form.xml              form/snap-form.dtd )
 
 # editor-form
-snap_validate_xml( layout/change-email-page.xml          editor/editor-form.dtd )
+snap_validate_xml( editor/change-email-page.xml          editor/editor-form.dtd )
 snap_validate_xml( layout/change-email-parser.xsl        simplified-xslt20.dtd )
-snap_validate_xml( layout/users-settings-page.xml        editor/editor-form.dtd )
+snap_validate_xml( editor/users-settings-page.xml        editor/editor-form.dtd )
 snap_validate_xml( layout/users-settings-parser.xsl      simplified-xslt20.dtd )
 
 add_library(users_ui SHARED
@@ -80,9 +80,9 @@ add_library(users_ui SHARED
     users_ui/resend-email-form.xml
     users_ui/verify-credentials-form.xml
     users_ui/verify-form.xml
-    layout/change-email-page.xml
+    editor/change-email-page.xml
     layout/change-email-parser.xsl
-    layout/users-settings-page.xml
+    editor/users-settings-page.xml
     layout/users-settings-parser.xsl
 )
 
