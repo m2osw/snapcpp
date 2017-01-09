@@ -50,20 +50,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
                     <div class="editor-block">
                         <div class="settings-title">
-                            <label for="email_address" class="editor-title">New Email Address</label>
+                            <label for="email_address" class="editor-title">New Email Address:</label>
                         </div>
                         <div class="settings-value">
                             <xsl:copy-of select="page/body/users/email_address/node()"/>
                         </div>
+                        <div class="clear-both"></div>
                     </div>
 
                     <div class="editor-block">
                         <div class="settings-title">
-                            <label for="repeat_email_address" class="editor-title">Repeat Email Address</label>
+                            <label for="repeat_email_address" class="editor-title">Repeat Email Address:</label>
                         </div>
                         <div class="settings-value">
                             <xsl:copy-of select="page/body/users/repeat_email_address/node()"/>
                         </div>
+                        <div class="clear-both"></div>
                     </div>
 
                     <!--</fieldset>-->

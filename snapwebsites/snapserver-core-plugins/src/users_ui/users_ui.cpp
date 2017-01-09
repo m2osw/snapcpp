@@ -208,7 +208,7 @@ int64_t users_ui::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2015, 11, 4, 15, 46, 37, fix_owner_update);
-    SNAP_PLUGIN_UPDATE(2017,  1, 9, 10, 38, 32, content_update);
+    SNAP_PLUGIN_UPDATE(2017,  1, 9, 12, 30, 08, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2424,7 +2424,6 @@ void users_ui::editor_widget_load_email_address(QDomElement & widget, QString co
             QDomText email_text(doc.createTextNode(user_info.get_user_email()));
             email_value_elm.appendChild(email_text);
             email_address_elm.appendChild(email_value_elm);
-SNAP_LOG_TRACE("*** Append email_address ")(user_info.get_user_email())(" to value element.");
             break;
         }
     }
@@ -2442,8 +2441,6 @@ void users_ui::on_init_editor_widget
     NOTUSED(field_type);
     NOTUSED(row);
 
-SNAP_LOG_TRACE("users_ui::on_init_editor_widget(): field_id=")(field_id)(", cpath=")(ipath.get_cpath());
-
     // If some handling is done without the user logged in, then we can
     // add that here
 
@@ -2459,11 +2456,10 @@ SNAP_LOG_TRACE("users_ui::on_init_editor_widget(): field_id=")(field_id)(", cpat
     switch(cpath[0].unicode())
     {
     case 'u':
-        if(cpath.startsWith("user/"))
+        if(cpath.startsWith("user/change-email"))
         {
-            if(field_id == "email_address" || field_id == "repeat_email_address")
+            if(field_id == "current_email_address" )
             {
-SNAP_LOG_TRACE("*** found field_id=")(field_id);
                 editor_widget_load_email_address(widget, field_id);
             }
         }
