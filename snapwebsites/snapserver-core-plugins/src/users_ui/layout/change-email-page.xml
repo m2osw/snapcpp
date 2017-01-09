@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </widget>
 
   <!-- Display the email address, and allow the user to change it -->
-  <widget id="current_email_address" type="line-edit" field="users::current_email_address" path="users/email_address" auto-save="no">
+  <widget id="current_email_address" type="line-edit" field="users::current_email_address" path="users/current_email_address" auto-save="no">
     <label>Current email address</label>
     <help>Displays the current email address.</help>
     <state>read-only</state>

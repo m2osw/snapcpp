@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<!-- some special variables to define the theme -->
     <xsl:variable name="layout-area">change-email-parser</xsl:variable>
-    <xsl:variable name="layout-modified">2017-01-08 17:24:33</xsl:variable>
+    <xsl:variable name="layout-modified">2017-01-08 20:00:10</xsl:variable>
     <xsl:variable name="layout-editor">change-email-page</xsl:variable>
 
 	<xsl:template match="snap">
@@ -33,27 +33,40 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
-				<h3>Change User Email Address</h3>
-				<div>
-					<fieldset class="site-name">
-						<legend>Change User Email Address</legend>
+                <!--<h3>Change User Email Address</h3>-->
+                <div class="settings editing">
+                    <!--<fieldset class="site-name">-->
+                    <legend>Change User Email Address</legend>
 
-						<div class="editor-block">
-							<label for="current_email_address" class="editor-title">Current Email Address:</label>
-							<xsl:copy-of select="page/body/users/current_email_address/node()"/>
-						</div>
+                    <div class="editor-block">
+                        <div class="settings-title">
+                            <label for="current_email_address" class="editor-title">Current Email Address:</label>
+                        </div>
+                        <div class="settings-value">
+                            <xsl:copy-of select="page/body/users/current_email_address/node()"/>
+                        </div>
+                        <div class="clear-both"></div>
+                    </div>
 
-						<div class="editor-block">
-							<label for="email_address" class="editor-title">New Email Address</label>
-							<xsl:copy-of select="page/body/users/email_address/node()"/>
-						</div>
+                    <div class="editor-block">
+                        <div class="settings-title">
+                            <label for="email_address" class="editor-title">New Email Address</label>
+                        </div>
+                        <div class="settings-value">
+                            <xsl:copy-of select="page/body/users/email_address/node()"/>
+                        </div>
+                    </div>
 
-						<div class="editor-block">
-							<label for="repeat_email_address" class="editor-title">Repeat Email Address</label>
-							<xsl:copy-of select="page/body/users/repeat_email_address/node()"/>
-						</div>
+                    <div class="editor-block">
+                        <div class="settings-title">
+                            <label for="repeat_email_address" class="editor-title">Repeat Email Address</label>
+                        </div>
+                        <div class="settings-value">
+                            <xsl:copy-of select="page/body/users/repeat_email_address/node()"/>
+                        </div>
+                    </div>
 
-					</fieldset>
+                    <!--</fieldset>-->
 
 				</div>
 			</div>

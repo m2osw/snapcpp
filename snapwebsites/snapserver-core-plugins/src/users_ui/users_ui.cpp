@@ -208,7 +208,7 @@ int64_t users_ui::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2015, 11, 4, 15, 46, 37, fix_owner_update);
-    SNAP_PLUGIN_UPDATE(2017,  1, 8, 17, 27, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2017,  1, 8, 20, 00, 10, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
