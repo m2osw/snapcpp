@@ -1,8 +1,8 @@
-advgetopt (1.1.9.4~xenial) xenial; urgency=high
+advgetopt (1.1.10.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Fixed the pipe test in the hidden-warning.c tool.
 
- -- Build Server <build@m2osw.com>  Thu, 05 Jan 2017 02:00:52 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  8 Jan 2017 17:16:48 -0800
 
 advgetopt (1.1.9.0~xenial) xenial; urgency=high
 

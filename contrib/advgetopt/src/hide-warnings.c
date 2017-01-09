@@ -337,7 +337,7 @@ int main(int argc, char * argv[], char * envp[])
                 fds[1].fd = pipe_err[0];
                 fds[1].events = POLLIN | POLLPRI | POLLRDHUP;
                 fds[1].revents = 0;
-                count = pipe_out[0] == -1 || pipe_out[0] == -1 ? 1 : 2;
+                count = pipe_out[0] == -1 || pipe_err[0] == -1 ? 1 : 2;
                 if(poll(fds + (pipe_out[0] == -1 ? 1 : 0), count, -1) < 0)
                 {
                     fprintf(stderr, "%s:error: select() returned with -1.\n", g_progname);

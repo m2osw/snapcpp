@@ -1598,17 +1598,17 @@ int main(int argc, char *argv[])
                 qDebug() << "error: the setFloatValue() is not setting exactly one value.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(QtCassandra::floatValue(array) != float_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the setFloatValue() did not set" << float_int.f << "or the floatValue() did not read it back properly.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(QtCassandra::floatValue(array, 0) != float_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the setFloatValue() did not set" << float_int.f << "or the floatValue() did not read it back properly.";
                 ++err;
             }
@@ -1634,17 +1634,17 @@ int main(int argc, char *argv[])
                 qDebug() << "error: the value.setFloatValue() is not setting exactly one value.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(value.floatValue() != float_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the value.setFloatValue() did not set" << float_int.f << "or the value.floatValue() did not read it back properly.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(value.floatValue(0) != float_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the value.setFloatValue() did not set" << float_int.f << "or the value.floatValue() did not read it back properly.";
                 ++err;
             }
@@ -1725,17 +1725,17 @@ int main(int argc, char *argv[])
                 qDebug() << "error: the setDoubleValue() is not setting exactly one value.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(QtCassandra::doubleValue(array) != double_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the setDoubleValue() did not set" << double_int.f << "or the doubleValue() did not read it back properly.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(QtCassandra::doubleValue(array, 0) != double_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the setDoubleValue() did not set" << double_int.f << "or the doubleValue() did not read it back properly.";
                 ++err;
             }
@@ -1777,17 +1777,17 @@ int main(int argc, char *argv[])
                 qDebug() << "error: the value.setDoubleValue() is not setting exactly one value.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(value.doubleValue() != double_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the value.setDoubleValue() did not set" << double_int.f << "or the value.doubleValue() did not read it back properly.";
                 ++err;
             }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if(value.doubleValue(0) != double_int.f) {
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
                 qDebug() << "error: the value.setDoubleValue() did not set" << double_int.f << "or the value.doubleValue(0) did not read it back properly.";
                 ++err;
             }
@@ -2411,12 +2411,34 @@ int main(int argc, char *argv[])
     catch( QtCassandra::QCassandraOverflowException const & e )
     {
         qDebug() << "QtCassandra::QCassandraOverflowException caught -- " << e.what();
-        qDebug() << "Stack trace: " << e.what();
+        qDebug() << "Stack trace: ";
         for( auto const & stack_line : e.get_stack_trace() )
         {
             qDebug() << stack_line;
         }
-        qDebug() << "End stack trace!" << e.what();
+        qDebug() << "End stack trace!";
+        ++err;
+    }
+    catch( QtCassandra::QCassandraException const & e )
+    {
+        qDebug() << "QtCassandra::QCassandraException caught -- " << e.what();
+        qDebug() << "Stack trace: ";
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            qDebug() << stack_line;
+        }
+        qDebug() << "End stack trace!";
+        ++err;
+    }
+    catch( libexcept::exception_t const & e )
+    {
+        qDebug() << "libexcept::exception_t caught -- " << e.what();
+        qDebug() << "Stack trace: ";
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            qDebug() << stack_line;
+        }
+        qDebug() << "End stack trace!";
         ++err;
     }
     catch( std::overflow_error const & e )
