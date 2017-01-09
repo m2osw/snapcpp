@@ -23,13 +23,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">users-settings-parser</xsl:variable>
-	<xsl:variable name="layout-modified">2015-12-13 18:19:53</xsl:variable>
-	<xsl:variable name="layout-editor">users-settings-page</xsl:variable>
+    <xsl:variable name="layout-area">change-email-parser</xsl:variable>
+    <xsl:variable name="layout-modified">2017-01-08 17:24:33</xsl:variable>
+    <xsl:variable name="layout-editor">change-email-page</xsl:variable>
 
 	<xsl:template match="snap">
 		<output><!-- lang="{$lang}"-->
-			<div id="content" class="editor-form" form_name="info">
+            <div id="content" class="editor-form" form_name="change-email">
 				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
