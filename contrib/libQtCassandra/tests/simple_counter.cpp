@@ -175,14 +175,25 @@ int main(int argc, char *argv[])
     }
     catch( QtCassandra::QCassandraOverflowException const & e )
     {
-        std::cerr << "QtCassandra::QCassandraOverflowException caught -- " << e.what();
-        std::cerr << "Stack trace: " << e.what();
+        std::cerr << "QtCassandra::QCassandraOverflowException caught -- " << e.what() << std::endl;
+        std::cerr << "Stack trace: " << std::endl;
         for( auto const & stack_line : e.get_stack_trace() )
         {
-            std::cerr << stack_line;
+            std::cerr << stack_line << std::endl;
         }
-        std::cerr << "End stack trace!" << e.what();
+        std::cerr << "End stack trace!" << std::endl;
         ++err;
+    }
+    catch( QtCassandra::QCassandraException const & e )
+    {
+        std::cerr << "QtCassandra::QCassandraException caught -- " << e.what() << std::endl;
+        std::cerr << "Stack trace: " << e.what() << std::endl;
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            std::cerr << stack_line << std::endl;
+        }
+        std::cerr << "End stack trace!" << e.what() << std::endl;
+        exit(1);
     }
     catch(std::overflow_error const & e)
     {

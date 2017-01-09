@@ -1,5 +1,5 @@
 // Snap Websites Server -- robots.txt
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -224,7 +224,7 @@ void robotstxt::bootstrap(snap_child * snap)
  *
  * \return true if the robots.txt file is properly generated, false otherwise.
  */
-bool robotstxt::on_path_execute(content::path_info_t& ipath)
+bool robotstxt::on_path_execute(content::path_info_t & ipath)
 {
     if(ipath.get_cpath() == "robots.txt")
     {

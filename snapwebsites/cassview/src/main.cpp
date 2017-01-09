@@ -7,7 +7,7 @@
  * Documentation:
  *
  * License:
- *      Copyright (c) 2011-2012 Made to Order Software Corp.
+ *      Copyright (c) 2011-2017 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -34,6 +34,10 @@
 
 #include "MainWindow.h"
 #include "SettingsDialog.h"
+
+// libQtCassandra lib
+//
+#include <QtCassandra/QStringStream.h>
 
 using namespace casswrapper;
 
@@ -74,11 +78,30 @@ int main( int argc, char * argv[] )
 
         return app.exec();
     }
-    catch(libexcept::exception_t const & e)
+    catch(casswrapper::cassandra_exception_t const & e)
     {
         std::cerr << "cassview: A casswrapper exception occurred: " << e.what() << std::endl;
+        std::cerr << "cassview: Stack trace: " << std::endl;
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            std::cerr << "cassview: " << stack_line << std::endl;
+        }
+        std::cerr << "cassview: End stack trace!" << std::endl;
         exit(1);
     }
+    catch(libexcept::exception_t const & e)
+    {
+        std::cerr << "cassview: A library exception occurred: " << e.what() << std::endl;
+        std::cerr << "cassview: Stack trace: " << std::endl;
+        for( auto const & stack_line : e.get_stack_trace() )
+        {
+            std::cerr << "cassview: " << stack_line << std::endl;
+        }
+        std::cerr << "cassview: End stack trace!" << std::endl;
+        exit(1);
+    }
+
+    return 0;
 }
 
 // vim: ts=4 sw=4 et

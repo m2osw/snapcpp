@@ -1,8 +1,15 @@
-cassview (0.1.6.33~xenial) xenial; urgency=high
+cassview (0.1.7.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:49 -0800
+ -- Build Server <build@m2osw.com>  Mon, 09 Jan 2017 02:00:49 -0800
+
+cassview (0.1.7.0~xenial) xenial; urgency=high
+
+  * SNAP-289: Added a missing catch() as found by Coverity.
+  * Added code to print out stack at point of exception.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  8 Jan 2016 17:19:49 -0700
 
 cassview (0.1.6.0~xenial) xenial; urgency=high
 
