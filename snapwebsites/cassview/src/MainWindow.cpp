@@ -16,6 +16,8 @@ using namespace casswrapper;
 
 MainWindow::MainWindow(QWidget *p)
     : QMainWindow(p)
+    , f_row_context_menu(this)
+    , f_col_context_menu(this)
 {
     setupUi(this);
 
@@ -47,6 +49,12 @@ MainWindow::MainWindow(QWidget *p)
     action_DeleteRows->setEnabled( false );
     action_InsertColumn->setEnabled( false );
     action_DeleteColumns->setEnabled( false );
+
+    f_row_context_menu.addAction( action_InsertRow  );
+    f_row_context_menu.addAction( action_DeleteRows );
+
+    f_col_context_menu.addAction( action_InsertColumn  );
+    f_col_context_menu.addAction( action_DeleteColumns );
 
     connect( f_tables
            , static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged)  // See docs. This is overloaded.
@@ -153,11 +161,7 @@ void MainWindow::fillTableList()
 void MainWindow::onShowRowsContextMenu( const QPoint& mouse_pos )
 {
     QPoint global_pos( f_rowsView->mapToGlobal(mouse_pos) );
-
-    QMenu menu( this );
-    menu.addAction( action_InsertRow  );
-    menu.addAction( action_DeleteRows );
-    menu.exec(global_pos);
+    f_row_context_menu.popup(global_pos);
 }
 
 
@@ -170,11 +174,7 @@ void MainWindow::onShowCellsContextMenu( const QPoint& mouse_pos )
     }
 
     QPoint global_pos( f_cellsView->mapToGlobal(mouse_pos) );
-
-    QMenu menu( this );
-    menu.addAction( action_InsertColumn  );
-    menu.addAction( action_DeleteColumns );
-    menu.exec(global_pos);
+    f_col_context_menu.popup(global_pos);
 }
 
 
@@ -372,12 +372,14 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
     {
         saveValue();
 
-        if( current.isValid() )
-        {
-            auto doc( f_valueEdit->document() );
-            doc->clear();
-            f_valueGroup->setTitle( tr("Value") );
+        auto doc( f_valueEdit->document() );
+        doc->clear();
+        f_valueGroup->setTitle( tr("Value") );
+        f_rowModel->clear();
 
+        if( current.isValid()
+                && (f_rowsView->selectionModel()->selectedRows().size() == 1) )
+        {
             const QByteArray row_key( f_tableModel->data(current,Qt::UserRole).toByteArray() );
 
             f_rowModel->init
@@ -412,6 +414,9 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
             saveValue( previous );
         }
 
+        auto doc( f_valueEdit->document() );
+        doc->clear();
+
         if( current.isValid() )
         {
             const QByteArray column_key(f_rowModel->data(current, Qt::UserRole).toByteArray());
@@ -430,7 +435,6 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
             snap::dbutils du( f_rowModel->tableName(), QString::fromUtf8(f_rowModel->rowKey().data()) );
             const QString value = du.get_column_value( column_key, query->getByteArrayColumn(0) );
 
-            auto doc( f_valueEdit->document() );
             doc->setPlainText( value );
             doc->setModified( false );
 

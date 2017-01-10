@@ -54,6 +54,8 @@ private:
     table_model_t    f_tableModel;
     row_model_t		 f_rowModel;
     QString          f_context;
+    QMenu            f_row_context_menu;
+    QMenu            f_col_context_menu;
 
     void connectCassandra ();
     void fillTableList    ();
