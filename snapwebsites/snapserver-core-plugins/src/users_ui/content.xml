@@ -247,7 +247,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>JavaScript code to handle users_ui specialized features.</p>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
-    <attachment name="users_ui" type="attachment/public">
+    <attachment name="change-email" type="attachment/public">
       <path>:/js/users_ui/change-email.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>users_ui (&gt;= 0.0.3.181)</dependency>

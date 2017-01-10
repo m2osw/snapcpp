@@ -80,6 +80,7 @@ add_library(users_ui SHARED
     users_ui/resend-email-form.xml
     users_ui/verify-credentials-form.xml
     users_ui/verify-form.xml
+    users_ui/change-email.js
     editor/change-email-page.xml
     layout/change-email-parser.xsl
     editor/users-settings-page.xml
