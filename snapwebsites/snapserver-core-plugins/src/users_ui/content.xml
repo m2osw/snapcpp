@@ -117,7 +117,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <!--link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link-->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
-  <content path="/user/change-email">
+  <content path="/admin/change-email">
     <param name="content::title" revision="revision">Change Your Email Address</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Please enter your new email address twice for verification.</p>[form::source]]]>

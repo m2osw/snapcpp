@@ -208,7 +208,7 @@ int64_t users_ui::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2015, 11, 4, 15, 46, 37, fix_owner_update);
-    SNAP_PLUGIN_UPDATE(2017,  1, 9, 17, 51, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2017,  1, 9, 19, 28, 10, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2453,17 +2453,12 @@ void users_ui::on_init_editor_widget
     }
 
     QString const cpath(ipath.get_cpath());
-    switch(cpath[0].unicode())
+    if(cpath.startsWith("admin/change-email"))
     {
-    case 'u':
-        if(cpath.startsWith("user/change-email"))
+        if(field_id == "current_email_address" )
         {
-            if(field_id == "current_email_address" )
-            {
-                editor_widget_load_email_address(widget, field_id);
-            }
+            editor_widget_load_email_address(widget, field_id);
         }
-        break;
     }
 }
 
@@ -2516,7 +2511,7 @@ void users_ui::on_save_editor_fields(editor::save_info_t & save_info)
 {
     QString const cpath( save_info.ipath().get_cpath() );
 
-    if( cpath.startsWith("user/change-email") && !save_info.has_errors() )
+    if( cpath.startsWith("admin/change-email") && !save_info.has_errors() )
     {
         QString const new_email( editor::editor::instance()->get_post_value("email_address") );
         auto users_plugin(users::users::instance());

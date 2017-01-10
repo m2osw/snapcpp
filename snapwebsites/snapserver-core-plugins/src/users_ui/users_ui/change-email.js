@@ -1,6 +1,6 @@
 /** @preserve
  * Name: change-email
- * Version: 0.0.0.2
+ * Version: 0.0.0.5
  * Browsers: all
  * Depends: users_ui (>= 0.0.3.104), editor (>=0.0.3.922)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -24,7 +24,7 @@
 // @js /home/snapwebsites/BUILD/dist/share/javascript/snapwebsites/server_access/server-access.js
 // @js /home/snapwebsites/BUILD/dist/share/javascript/snapwebsites/listener/listener.js
 // @js /home/snapwebsites/BUILD/dist/share/javascript/snapwebsites/editor/editor.js
-// @js plugins/users_ui/users_ui.js
+// @js plugins/users_ui/change-email.js
 // ==/ClosureCompiler==
 //
 // This is not required and it may not exist at the time you run the
@@ -34,22 +34,29 @@
 
 
 
+/** \brief Define the change_email namespace.
+ *
+ * This namespace is used for the entire set of change_email JavaScripts.
+ */
+var change_email = {};
+
+
 /** \brief Handle the user settings.
  *
  * This function initializes a User object to handle the
  * user settings.
  *
- * @return {users_ui.User}  A reference to this object.
+ * @return {change_email.User}  A reference to this object.
  *
  * @constructor
  * @struct
  */
-users_ui.User = function()
+change_email.User = function()
 {
     var save_button,
         editor = snapwebsites.EditorInstance,
-        user_form = editor.getFormByName("change-email"),
-        save_dialog = user_form.getSaveDialog();
+        change_email_form = editor.getFormByName("change-email"),
+        save_dialog = change_email_form.getSaveDialog();
 
     // replacement to the Save functionality
     save_button = jQuery("a.settings-save-button");
@@ -64,7 +71,7 @@ users_ui.User = function()
 
                 // TODO: this should actually be "publish" and not "save"
                 //       once we have the publish capability in place...
-                user_form.saveData("save");
+                change_email_form.saveData("save");
             });
 
     return this;
@@ -75,14 +82,14 @@ users_ui.User = function()
  *
  * This class does not inherit from any other classes.
  */
-snapwebsites.base(users_ui.User);
+snapwebsites.base(change_email.User);
 
 
 
 // auto-initialize
 jQuery(document).ready(function()
     {
-        users_ui.UserInstance = new users_ui.User();
+        change_email.UserInstance = new change_email.User();
     });
 
 // vim: ts=4 sw=4 et

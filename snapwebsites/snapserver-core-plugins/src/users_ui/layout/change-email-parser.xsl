@@ -69,7 +69,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     </div>
 
                     <a class="settings-save-button" href="#">Save Changes</a>
-                    <a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
+                    <!--<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>-->
+                    <a class="settings-cancel-button right-aligned" href="/user/me">Cancel</a>
                     <javascript name="change-email"/>
 
                     <!--</fieldset>-->
