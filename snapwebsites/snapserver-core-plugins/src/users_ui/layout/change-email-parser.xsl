@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                             <label for="current_email_address" class="editor-title">Current Email Address:</label>
                         </div>
                         <div class="settings-value">
-                            <xsl:copy-of select="page/body/users/current_email_address/node()"/>
+                            <xsl:copy-of select="page/body/user/current_email_address/node()"/>
                         </div>
                         <div class="clear-both"></div>
                     </div>
@@ -53,7 +53,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                             <label for="email_address" class="editor-title">New Email Address:</label>
                         </div>
                         <div class="settings-value">
-                            <xsl:copy-of select="page/body/users/email_address/node()"/>
+                            <xsl:copy-of select="page/body/user/email_address/node()"/>
                         </div>
                         <div class="clear-both"></div>
                     </div>
@@ -63,7 +63,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                             <label for="repeat_email_address" class="editor-title">Repeat Email Address:</label>
                         </div>
                         <div class="settings-value">
-                            <xsl:copy-of select="page/body/users/repeat_email_address/node()"/>
+                            <xsl:copy-of select="page/body/user/repeat_email_address/node()"/>
                         </div>
                         <div class="clear-both"></div>
                     </div>

@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </widget>
 
   <!-- Display the email address, and allow the user to change it -->
-  <widget id="current_email_address" type="line-edit" field="users::current_email_address" path="users/current_email_address" auto-save="no">
+  <widget id="current_email_address" type="line-edit" field="user::current_email_address" path="user/current_email_address" auto-save="no">
     <label>Current email address</label>
     <help>Displays the current email address.</help>
     <state>read-only</state>
@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </widget>
 
   <!-- Display the email address, and allow the user to change it -->
-  <widget id="email_address" type="line-edit" field="users::email_address" path="users/email_address" auto-save="no">
+  <widget id="email_address" type="line-edit" field="user::email_address" path="user/email_address" auto-save="no">
     <label>New email address</label>
     <tooltip>Enter the new email address that you are going to change to.</tooltip>
     <help>Help</help>
@@ -62,7 +62,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </widget>
 
   <!-- total session duration (returning registered user who is not logged in) -->
-  <widget id="repeat_email_address" type="line-edit" field="users::repeat_email_address" path="users/repeat_email_address" auto-save="no" duplicate-of="email_address">
+  <widget id="repeat_email_address" type="line-edit" field="user::repeat_email_address" path="user/repeat_email_address" auto-save="no" duplicate-of="email_address">
     <label>Repeat the email address</label>
     <tooltip>Repeat the new email address once for security.</tooltip>
     <help>Help</help>
