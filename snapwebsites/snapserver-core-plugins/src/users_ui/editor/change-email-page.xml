@@ -58,7 +58,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <regex name="email"/>
     </filters>
     <required>required</required>
-    <background-value>new address<background-value>
+    <background-value>new address</background-value>
   </widget>
 
   <!-- total session duration (returning registered user who is not logged in) -->
