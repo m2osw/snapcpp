@@ -11,7 +11,7 @@
  *      easy practical way which this tool offers.
  *
  * License:
- *      Copyright (c) 2012-2016 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -92,7 +92,7 @@ void snapbackup::connectToCassandra()
     f_session->connect
             ( f_opt->get_string("host").c_str()
             , f_opt->get_long("port")
-            , !f_opt->is_defined("no-ssl")
+            , f_opt->is_defined("use-ssl")
             );
 }
 
