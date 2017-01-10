@@ -21,8 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <timeout minutes="60"/> <!-- 1 hour -->
   <mode action="edit"/>
   <immediate/>
+  <no-toolbar/> <!-- none of the fields should have the toolbar -->
   <focus refid="email_address"/>
-  <on-save allow-edit="yes"/>
+  <on-save redirect="/user/me" target="_top" allow-edit="no"/>
   <taborder>
     <tabindex refid="email_address"/>
     <tabindex refid="repeat_email_address"/>
@@ -38,6 +39,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <label>Current email address</label>
     <help>Displays the current email address.</help>
     <state>read-only</state>
+    <!--<sizes>
+      <min>1</min>
+      <max>256</max>
+    </sizes>-->
   </widget>
 
   <!-- Display the email address, and allow the user to change it -->
@@ -45,15 +50,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <label>New email address</label>
     <tooltip>Enter the new email address that you are going to change to.</tooltip>
     <help>Help</help>
-    <sizes>
+    <!--<sizes>
       <min>1</min>
       <max>256</max>
-    </sizes>
+    </sizes>-->
     <filters>
       <regex name="email"/>
     </filters>
     <required>required</required>
-    <background-value>**** New Email Address ****</background-value>
+    <background-value>new address<background-value>
   </widget>
 
   <!-- total session duration (returning registered user who is not logged in) -->
@@ -61,15 +66,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <label>Repeat the email address</label>
     <tooltip>Repeat the new email address once for security.</tooltip>
     <help>Help</help>
-    <sizes>
+    <!--<sizes>
       <min>1</min>
       <max>256</max>
-    </sizes>
+    </sizes>-->
     <filters>
       <regex name="email"/>
     </filters>
     <required>required</required>
-    <background-value>**** Repeat Email Address ***</background-value>
+    <background-value>repeat address</background-value>
   </widget>
 
 </editor-form>

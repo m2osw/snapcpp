@@ -208,7 +208,7 @@ int64_t users_ui::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2015, 11, 4, 15, 46, 37, fix_owner_update);
-    SNAP_PLUGIN_UPDATE(2017,  1, 9, 12, 30,  8, content_update);
+    SNAP_PLUGIN_UPDATE(2017,  1, 9, 16, 41, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2514,7 +2514,9 @@ void users_ui::on_finish_editor_form_processing(content::path_info_t & ipath, bo
 
 void users_ui::on_save_editor_fields(editor::save_info_t & save_info)
 {
-    if( !save_info.has_errors() )
+    QString const cpath( save_info.ipath().get_cpath() );
+
+    if( cpath.startsWith("user/change-email") && !save_info.has_errors() )
     {
         QString const new_email( editor::editor::instance()->get_post_value("email_address") );
         auto users_plugin(users::users::instance());

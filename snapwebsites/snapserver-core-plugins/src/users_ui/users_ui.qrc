@@ -43,6 +43,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <file>layout/change-email-parser.xsl</file>
         <file>layout/users-settings-parser.xsl</file>
     </qresource>
+    <qresource prefix="/js">
+	      <file>users_ui/change-email.js</file>
+	</qresource>
     <qresource prefix="/images">
         <file>users_ui/default-user-image.png</file>
     </qresource>
