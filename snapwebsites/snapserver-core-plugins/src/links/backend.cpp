@@ -1,5 +1,5 @@
 // Snap Websites Server -- links backends
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -309,7 +309,7 @@ void links::cleanup_links()
     //      the following algorithm to avoid reading all the branches
     //      of all the websites...
     //
-    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
     row_predicate->setCount(100);
     for(;;)
     {
@@ -317,6 +317,7 @@ void links::cleanup_links()
         if(count == 0)
         {
             // no more branches to process
+            //
             break;
         }
         QtCassandra::QCassandraRows const rows(branch_table->rows());
@@ -327,10 +328,12 @@ void links::cleanup_links()
             if(!key.startsWith(site_key))
             {
                 // not this website, try another key
+                //
                 continue;
             }
 
             // within each row, check all the columns
+            //
             QtCassandra::QCassandraRow::pointer_t row(*o);
             row->clearCache();
 
@@ -341,6 +344,7 @@ void links::cleanup_links()
             column_predicate->setEndCellKey(links_namespace_end);
 
             // loop until all cells are handled
+            //
             for(;;)
             {
                 row->readCells(column_predicate);
@@ -348,10 +352,12 @@ void links::cleanup_links()
                 if(cells.isEmpty())
                 {
                     // no more rows here
+                    //
                     break;
                 }
 
                 // handle one batch
+                //
                 for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
                         c != cells.end();
                         ++c)
@@ -359,28 +365,36 @@ void links::cleanup_links()
                     QtCassandra::QCassandraCell::pointer_t cell(*c);
 
                     QString const cell_name(cell->columnName());
-                    int pos(cell_name.indexOf('-'));
-                    if(pos != -1)
+                    int const pos(cell_name.indexOf('-'));
+                    int const branch_pos(cell_name.indexOf('#', pos + 1));
+                    if(pos != -1
+                    || branch_pos != -1)
                     {
                         // okay, this looks like a multi-link
                         // now check for the corresponding entry in the
                         // links table
+                        //
                         QString const link_name(cell_name.mid(links_namespace_start.length(), pos - links_namespace_start.length()));
+                        // here 'key' already includes the '#<id>'
                         QString const link_key(QString("%1/%2").arg(key).arg(link_name));
 
                         bool exists(false);
                         if(links_table->exists(link_key))
                         {
                             // the row exists, is there an entry for this link?
+                            //
                             QtCassandra::QCassandraRow::pointer_t link_row(links_table->row(link_key));
 
                             // the column name in that row is the value of 'k'
                             // in the current cell value
+                            //
                             link_info info;
                             info.from_data(cell->value().stringValue());
-                            if(link_row->exists(info.key()))
+                            // build the key with branch here (we do not have a source so we need to do it this way)
+                            QString const key_with_branch(QString("%1%2").arg(info.key()).arg(cell_name.mid(branch_pos)));
+                            if(link_row->exists(key_with_branch))
                             {
-                                QString const expected_name(link_row->cell(info.key())->value().stringValue());
+                                QString const expected_name(link_row->cell(key_with_branch)->value().stringValue());
                                 exists = cell_name == expected_name;
                             }
                         }

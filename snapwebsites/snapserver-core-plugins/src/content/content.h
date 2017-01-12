@@ -1,5 +1,5 @@
 // Snap Websites Server -- content management (pages, tags, everything!)
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -323,6 +323,15 @@ public:
     //    status_t const              f_end;
     //};
 
+    enum class branch_selection_t
+    {
+        BRANCH_SELECTION_CURRENT,
+        BRANCH_SELECTION_WORKING,
+        BRANCH_SELECTION_USER_SELECT,
+
+        BRANCH_SELECTION_DEFAULT = BRANCH_SELECTION_USER_SELECT
+    };
+
     typedef std::shared_ptr<path_info_t>            pointer_t;
     typedef std::vector<path_info_t *>              vector_path_info_t;
     typedef std::map<std::string, path_info_t *>    map_path_info_t;
@@ -354,7 +363,7 @@ public:
     void                            set_status(status_t const & status);
 
     bool                            get_working_branch() const;
-    snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const & locale = "") const;
+    snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const & locale = "", branch_selection_t branch_selection = branch_selection_t::BRANCH_SELECTION_DEFAULT) const;
     bool                            has_branch() const;
     snap_version::version_number_t  get_revision() const;
     bool                            has_revision() const;

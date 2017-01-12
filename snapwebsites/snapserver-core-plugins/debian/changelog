@@ -1,3 +1,12 @@
+snapserver-core-plugins (1.0.45.0~xenial) xenial; urgency=high
+
+  * SNAP-547: Corrected links to work as expected with any number of branches.
+  * Added a branch selection on the path_info_t::get_branch().
+  * Moved some of the more complex link_info implementation to the .cpp file.
+  * Various clean ups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 11 Jan 2017 22:28:45 -0800
+
 snapserver-core-plugins (1.0.44.0~xenial) xenial; urgency=high
 
   * SNAP-163: Removed some padding under the buttons to avoid slider bar.

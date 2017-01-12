@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -371,6 +371,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
 {
     // we handle the links here because the links cannot include the
     // content.h header file...
+    //
     links::links * link_plugin(links::links::instance());
     QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
     QByteArray const links_bytearray(links_namespace.toLatin1());
@@ -378,6 +379,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
     QtCassandra::QCassandraCells left_cells;
 
     // handle one batch
+    //
     for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
@@ -394,12 +396,14 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
             // (TBD: we may want to limit those to content::... and
             //       links::... cells and leave the decision to each plugin
             //       for the others?)
+            //
             continue;
         }
 
         if(cell_key == get_name(name_t::SNAP_NAME_CONTENT_CREATED))
         {
             // handle the content::created field
+            //
             int64_t const now(f_snap->get_start_date());
             destination_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(now);
         }
@@ -407,6 +411,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
         {
             // handle the links as a special case because the links plugin
             // cannot include content.h (circular includes...)
+            //
             link_plugin->fix_branch_copy_link(source_cell, destination_row, destination_branch);
         }
         else
@@ -416,20 +421,38 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
             //
             // note that the map is a map a shared pointers so it is fast
             // to make a copy like this
+            //
             left_cells[cell_key] = source_cell;
         }
     }
 
     // overwrite the source with the cells we allow to copy "further"
+    //
     source_cells = left_cells;
 
     // continue process if there are still cells to handle
     // (often false since content::... and links::... were already worked on)
+    //
     return !source_cells.isEmpty();
 }
 
 
-void content::copy_branch_cells_as_is(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const& plugin_namespace)
+/** \brief Copy a set of branch cells as is.
+ *
+ * If your plugin, on a "copy branch", is required to copy some of its
+ * own fields and all can be copied as is, then call this function.
+ *
+ * If you need specialization, then you will want to duplicate this loop
+ * and tweak it as required.
+ *
+ * The function removes all the cells that get copied from the \p source_cells
+ * parameter.
+ *
+ * \param[in,out] source_cells  The array of cells in the source.
+ * \param[in] destination_row  The destination for those cells.
+ * \param[in] plugin_namespace  The name of your plugin copying those cells.
+ */
+void content::copy_branch_cells_as_is(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const & plugin_namespace)
 {
     QString const cell_namespace(QString("%1::").arg(plugin_namespace));
     QByteArray const cell_bytearray(cell_namespace.toLatin1());

@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -601,7 +601,7 @@ bool path_info_t::get_working_branch() const
 }
 
 
-snap_version::version_number_t path_info_t::get_branch(bool create_new_if_required, QString const & locale) const
+snap_version::version_number_t path_info_t::get_branch(bool create_new_if_required, QString const & locale, branch_selection_t branch_selection) const
 {
     if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
     {
@@ -612,7 +612,10 @@ snap_version::version_number_t path_info_t::get_branch(bool create_new_if_requir
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
         {
             QString const & key(f_real_key.isEmpty() ? f_key : f_real_key);
-            f_branch = f_content_plugin->get_current_branch(key, get_working_branch());
+            bool working_branch(branch_selection == branch_selection_t::BRANCH_SELECTION_USER_SELECT
+                            ? get_working_branch()
+                            : branch_selection == branch_selection_t::BRANCH_SELECTION_WORKING);
+            f_branch = f_content_plugin->get_current_branch(key, working_branch);
             if(create_new_if_required
             && snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
             {
