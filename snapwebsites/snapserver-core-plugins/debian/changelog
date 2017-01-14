@@ -37,9 +37,19 @@ snapserver-core-plugins (1.0.42.0~xenial) xenial; urgency=high
 
 snapserver-core-plugins (1.0.41.0~xenial) xenial; urgency=high
 
-  * EX-159: on errors, show the statusReady parameter to see what it is.
+  * SNAP-258: Added support to the editor plugin to provide read-only access to
+    the underlying post and converted values.
+  * SNAP-258: Added email change form.
+  * EX-159: on errors, show the statusReady parameter to see what it is
+    [Alexis Wilke].
 
- -- Alexis Wilke <alexis@m2osw.com>  Sat,  7 Jan 2017 20:47:48 -0800
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 05 Jan 2017 09:51:14 -0800
+
+snapserver-core-plugins (1.0.40.4~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 04 Jan 2017 02:00:50 -0800
 
 snapserver-core-plugins (1.0.40.0~xenial) xenial; urgency=high
 

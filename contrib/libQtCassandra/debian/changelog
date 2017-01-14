@@ -1,3 +1,9 @@
+libqtcassandra (0.6.13.7~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 09 Jan 2017 02:00:49 -0800
+
 libqtcassandra (0.6.13.0~xenial) xenial; urgency=high
 
   * SNAP-289: Fixed the list of exceptions caught in tests to satify Coverity.
@@ -16,6 +22,12 @@ libqtcassandra (0.6.11.0~xenial) xenial; urgency=high
   * SNAP-258: Added stacktracing ability to exception base.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 11 Dec 2016 10:52:58 -0800
+
+libqtcassandra (0.6.10.24~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 19 Nov 2016 02:00:48 -0800
 
 libqtcassandra (0.6.10.0~xenial) xenial; urgency=high
 

@@ -1,4 +1,4 @@
-iplock (3.0.10.4~xenial) xenial; urgency=high
+iplock (3.0.10.11~xenial) xenial; urgency=high
 
   * Nightly build.
 
@@ -16,6 +16,12 @@ iplock (3.0.9.0~xenial) xenial; urgency=high
   * Added flush command.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 18 Nov 2016 10:07:41 -0800
+
+iplock (3.0.8.15~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 02 Nov 2016 02:00:47 -0700
 
 iplock (3.0.8.0~xenial) xenial; urgency=high
 

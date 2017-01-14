@@ -66,13 +66,13 @@ users::user_info_t::user_info_t( snap_child * sc, QString const & val )
         if( f_identifier != -1 )
         {
             set_value(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL, f_user_email);
-            set_value(name_t::SNAP_NAME_USERS_CURRENT_EMAIL,  f_user_key);
+            set_value(name_t::SNAP_NAME_USERS_CURRENT_EMAIL,  f_user_email);
         }
     }
     else
     {
-        f_user_email = get_value(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL).stringValue();
-        f_user_key	 = get_value(name_t::SNAP_NAME_USERS_CURRENT_EMAIL) .stringValue();
+        f_user_email = get_value(name_t::SNAP_NAME_USERS_CURRENT_EMAIL).stringValue();
+        email_to_user_key();
     }
 }
 
@@ -89,8 +89,8 @@ users::user_info_t::user_info_t( snap_child * sc, identifier_t const & id )
     : f_snap(sc)
     , f_identifier(id)
 {
-    f_user_email = get_value( name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL ).stringValue();
-    f_user_key	 = get_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL  ).stringValue();
+    f_user_email = get_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL ).stringValue();
+    email_to_user_key();
 }
 
 
@@ -124,17 +124,58 @@ QString users::user_info_t::get_full_anonymous_path()
 }
 
 
+void users::user_info_t::change_user_email( QString const & new_user_email )
+{
+    QtCassandra::QCassandraValue id_value( f_identifier );
+    auto users_table(get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)));
+    auto user_row( users_table->row(id_value.binaryValue()) );
+
+    // Rotate the history, adding the current email to the top.
+    //
+    QString const email_history_list_base( get_name(name_t::SNAP_NAME_USERS_EMAIL_HISTORY_LIST_BASE) );
+    QStringList new_history_list;
+    new_history_list << f_user_key;
+    for( int i = 0; i < MAX_EMAIL_BACKUPS; ++i )
+    {
+        QString const history_entry_name( QString("%1_%2").arg(email_history_list_base).arg(i) );
+        if( user_row->exists(history_entry_name) )
+        {
+            new_history_list << user_row->cell(history_entry_name)->value().stringValue();
+        }
+    }
+
+    for( int i = 0; i < new_history_list.size(); ++i )
+    {
+        QString const history_entry_name( QString("%1_%2").arg(email_history_list_base).arg(i) );
+        user_row->cell(history_entry_name)->setValue( new_history_list[i] );
+    }
+
+    // Set the new email address into this object.
+    //
+    auto const old_user_key( f_user_key );
+    f_user_email = new_user_email;
+    email_to_user_key();
+    user_row->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->setValue(f_user_email);
+
+    // Now change the index to match
+    //
+    auto index_row( users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)) );
+    index_row->dropCell( old_user_key );
+    index_row->cell(f_user_key)->setValue( id_value.binaryValue() );
+
+    SNAP_LOG_TRACE("user_info_t::change_user_email(): old_user_key=")(old_user_key)(", f_user_email=")(f_user_email)(", f_user_key=")(f_user_key);
+}
+
+
 void users::user_info_t::set_user_id_by_email()
 {
     auto users_table( get_snap()->get_table(get_name(name_t::SNAP_NAME_USERS_TABLE)) );
     auto row        ( users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))  );
 
-    QByteArray key;
-    QtCassandra::appendStringValue(key, f_user_key);
-    if(row->exists(key))
+    if(row->exists(f_user_key))
     {
         // found the user, retrieve the current id
-        f_identifier = row->cell(key)->value().int64Value();
+        f_identifier = row->cell(f_user_key)->value().int64Value();
     }
 }
 
@@ -288,7 +329,7 @@ void users::user_info_t::set_user_email ( QString const & val )
     f_user_email = val;
     email_to_user_key();
     set_value( name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL, f_user_email );
-    set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL , f_user_key   );
+    set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL , f_user_email );
 }
 
 

@@ -140,6 +140,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_AUTO_PATH:
         return "types/users/auto";
 
+    case name_t::SNAP_NAME_USERS_EMAIL_HISTORY_LIST_BASE:
+        return "users::email_history";
+
     case name_t::SNAP_NAME_USERS_BLACK_LIST:
         return "*black_list*";
 
@@ -982,7 +985,6 @@ void users::on_process_cookies()
         {
             // the user specified an action
             f_hit = uri.query_option(qs_hit);
-SNAP_LOG_TRACE("f_hit=")(f_hit);
             if(f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_USER)
             && f_hit != get_name(name_t::SNAP_NAME_USERS_CHECK)
             && f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
@@ -997,7 +999,6 @@ SNAP_LOG_TRACE("f_hit=")(f_hit);
     //
     if(f_hit == get_name(name_t::SNAP_NAME_USERS_CHECK))
     {
-SNAP_LOG_TRACE("got hit check");
         snap_string_list result;
 
         if(f_info->get_object_path() != "/user/") // if anonymous, ignore the time limits, they do not matter
@@ -1570,6 +1571,12 @@ void users::user_logout()
 
     f_user_info.reset();
     f_user_logged_in = false;
+}
+
+
+users::user_info_t & users::get_user_info()
+{
+    return f_user_info;
 }
 
 

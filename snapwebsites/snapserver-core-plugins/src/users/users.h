@@ -48,6 +48,7 @@ enum class name_t
     SNAP_NAME_USERS_CHECK,
     SNAP_NAME_USERS_CREATED_TIME,
     SNAP_NAME_USERS_CURRENT_EMAIL,
+    SNAP_NAME_USERS_EMAIL_HISTORY_LIST_BASE,
     SNAP_NAME_USERS_EXAMPLE,
     SNAP_NAME_USERS_FORCE_LOWERCASE,
     SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
@@ -269,7 +270,11 @@ public:
         static identifier_t    get_user_id_by_path( snap_child* snap, QString const& user_path );
         static QString         get_full_anonymous_path();
 
+        void                change_user_email( QString const & new_user_email );
+
     private:
+        static int const MAX_EMAIL_BACKUPS = 5;
+
         snap_child *    f_snap        = nullptr;
         identifier_t    f_identifier  = -1;
         QString         f_user_key;
@@ -451,6 +456,7 @@ public:
     //identifier_t            get_user_identifier(QString const & user_path) const;
     QString                 get_user_path(QString const & email) const;
 
+    user_info_t &           get_user_info();
     user_info_t const&      get_user_info() const;
     user_info_t             get_user_info_by_id    ( identifier_t const & id );
     user_info_t             get_user_info_by_email ( QString const & email   );

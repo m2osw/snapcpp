@@ -13,7 +13,7 @@
  *      This contains the main() function.
  *
  * License:
- *      Copyright (c) 2012-2016 Made to Order Software Corp.
+ *      Copyright (c) 2012-2017 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -177,9 +177,9 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     {
         's',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "no-ssl",
+        "use-ssl",
         nullptr,
-        "communicate with the Cassandra server in clear text, no SSL encryption (defaults to false).",
+        "communicate with the Cassandra server using SSL encryption (defaults to false).",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {

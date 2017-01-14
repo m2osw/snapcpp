@@ -1,4 +1,4 @@
-libcasswrapper (1.0.4.4~xenial) xenial; urgency=high
+libcasswrapper (1.0.4.11~xenial) xenial; urgency=high
 
   * Nightly build.
 
@@ -16,6 +16,12 @@ libcasswrapper (1.0.3.0~xenial) xenial; urgency=high
   * SNAP-258: Added stacktracing ability to exception base.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 11 Dec 2016 10:52:15 -0800
+
+libcasswrapper (1.0.2.25~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 18 Nov 2016 02:00:48 -0800
 
 libcasswrapper (1.0.2.0~xenial) xenial; urgency=high
 

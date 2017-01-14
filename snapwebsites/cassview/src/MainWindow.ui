@@ -163,7 +163,14 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QListView" name="f_rowsView"/>
+         <widget class="QListView" name="f_rowsView">
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectItems</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -204,7 +211,7 @@
      <x>0</x>
      <y>0</y>
      <width>983</width>
-     <height>25</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
