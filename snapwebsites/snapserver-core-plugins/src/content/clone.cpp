@@ -61,20 +61,7 @@ void content::repair_link_of_cloned_page(QString const & clone, snap_version::ve
     else if(source.name() == get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE)
     && destination.name() == get_name(name_t::SNAP_NAME_CONTENT_PAGE))
     {
-        //QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
-        //path_info_t destination_ipath;
-        //destination_ipath.set_path(destination_key);
-        //QString const link_name(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE));
-        //QString const link_to(get_name(name_t::SNAP_NAME_CONTENT_PAGE));
-        //bool const source_unique(true);
-        //bool const destination_unique(false);
-        //links::link_info source(link_name, source_unique, key, branch_number);
-        //links::link_info destination(link_to, destination_unique, destination_key, destination_ipath.get_branch());
-        //links_plugin->create_link(source, destination);
-
         links::link_info src(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, clone, branch_number);
-SNAP_LOG_WARNING("source for PAGE TYPE (source) is ")(src.data());
-SNAP_LOG_WARNING("source for PAGE (destination) is ")(destination.data());
         links::links::instance()->create_link(src, destination);
     }
     else if(!cloning

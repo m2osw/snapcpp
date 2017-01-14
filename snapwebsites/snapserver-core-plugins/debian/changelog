@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.46.0~xenial) xenial; urgency=high
+
+  * SNAP-547: Added function to convert old site to new link implementation.
+  * Fixed the links::cleanup_links() function with an && instead of ||.
+  * Various clean ups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 11 Jan 2017 22:28:45 -0800
+
 snapserver-core-plugins (1.0.45.0~xenial) xenial; urgency=high
 
   * SNAP-547: Corrected links to work as expected with any number of branches.

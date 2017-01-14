@@ -36,6 +36,7 @@ enum class name_t
     SNAP_NAME_LINKS_CREATELINK,
     SNAP_NAME_LINKS_DELETELINK,
     SNAP_NAME_LINKS_NAMESPACE,
+    SNAP_NAME_LINKS_SNAP547_FIX_LINK_BRANCHES,
     SNAP_NAME_LINKS_TABLE          // Cassandra Table used for links
 };
 char const * get_name(name_t name) __attribute__ ((const));
@@ -304,6 +305,7 @@ private:
     void                            init_tables();
     void                            on_backend_action_create_link();
     void                            on_backend_action_delete_link();
+    void                            on_backend_action_snap547_fix_link_branches();
     void                            cleanup_links();
 
     // tests

@@ -112,6 +112,16 @@ void links::on_register_backend_action(server::backend_action_set & actions)
     actions.add_action(get_name(name_t::SNAP_NAME_LINKS_CLEANUPLINKS), this);
     actions.add_action(get_name(name_t::SNAP_NAME_LINKS_CREATELINK),   this);
     actions.add_action(get_name(name_t::SNAP_NAME_LINKS_DELETELINK),   this);
+
+    // the SNAP-547 issue is about the fact that some links information
+    // would get overwritten because some branches were not specified in
+    // a couple of places, this action is here only to fix that problem
+    // If you created your database with a newer version (which is most
+    // certainly the case) then you most certainly do not need to
+    // ever worry about this specific action. We'll try to remove it
+    // at some point anyway (once ew have things updated on our end.)
+    //
+    actions.add_action(get_name(name_t::SNAP_NAME_LINKS_SNAP547_FIX_LINK_BRANCHES), this);
 }
 
 
@@ -141,6 +151,10 @@ void links::on_backend_action(QString const & action)
     else if(action == get_name(name_t::SNAP_NAME_LINKS_CLEANUPLINKS))
     {
         cleanup_links();
+    }
+    else if(action == get_name(name_t::SNAP_NAME_LINKS_SNAP547_FIX_LINK_BRANCHES))
+    {
+        on_backend_action_snap547_fix_link_branches();
     }
     else
     {
@@ -368,7 +382,7 @@ void links::cleanup_links()
                     int const pos(cell_name.indexOf('-'));
                     int const branch_pos(cell_name.indexOf('#', pos + 1));
                     if(pos != -1
-                    || branch_pos != -1)
+                    && branch_pos != -1)
                     {
                         // okay, this looks like a multi-link
                         // now check for the corresponding entry in the
@@ -411,6 +425,416 @@ void links::cleanup_links()
         }
     }
 }
+
+
+/** \brief Fix old links that did not yet make use of the branch number.
+ *
+ * This function goes through the list rows and columns to fix them as
+ * follow:
+ *
+ * \li "links" table
+ *
+ * The links table makes use of columns that need to have the branch
+ * number specified. The branch number is found in the value. So we
+ * can just read all of those and copy the branch number.
+ *
+ * \li "branch" table
+ *
+ * The branch table has been using the source branch number on
+ * the field names. We needed to use the destination branch number.
+ * When using the source branch number, there can really only be
+ * one single such entry.
+ */
+void links::on_backend_action_snap547_fix_link_branches()
+{
+    // TBD: we may later want to prevent the process from running twice
+    //      but at this point I am thinking that the process can run
+    //      any number of times and it will still be safe... (i.e. we
+    //      can actually test many of the problems as we are working
+    //      on the data.)
+    //
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
+    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+
+    // Take care of the "links" table (i.e. column names are missing the
+    // branch number reference)
+    //
+    // we do all the work manually so whatever the current interface is
+    // the following loop should continue to work.
+    //
+    {
+        links_table->clearCache();
+
+        int updated_column(0);
+        int invalid_field_name(0);
+        int already_done(0);
+
+        auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+        row_predicate->setCount(100);
+        for(;;)
+        {
+            uint32_t const count(links_table->readRows(row_predicate));
+            if(count == 0)
+            {
+                // no more branches to process
+                //
+                break;
+            }
+
+            QtCassandra::QCassandraRows const rows(links_table->rows());
+            for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                    o != rows.end(); ++o)
+            {
+                QString const key(QString::fromUtf8(o.key().data()));
+
+                // within each row, check all the columns
+                //
+                QtCassandra::QCassandraRow::pointer_t row(*o);
+                row->clearCache();
+
+                auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+                column_predicate->setCount(100);
+                column_predicate->setIndex(); // behave like an index
+
+                // loop until all cells are handled
+                //
+                for(;;)
+                {
+                    row->readCells(column_predicate);
+                    QtCassandra::QCassandraCells const cells(row->cells());
+                    if(cells.isEmpty())
+                    {
+                        // no more rows here
+                        //
+                        break;
+                    }
+
+                    // handle one batch
+                    //
+                    for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                            c != cells.end();
+                            ++c)
+                    {
+                        QtCassandra::QCassandraCell::pointer_t cell(*c);
+
+                        // check whether the column was already fixed
+                        //
+                        QString const cell_name(cell->columnName());
+                        int pos(cell_name.indexOf('#'));
+                        if(pos == -1)
+                        {
+                            // okay, this looks like an old link, fix it
+                            //
+                            QtCassandra::QCassandraValue const value(cell->value());
+                            QString const field_name(value.stringValue());
+                            pos = field_name.indexOf('#');
+                            if(pos != -1)
+                            {
+                                QString const new_cell_name(cell_name + field_name.mid(pos));
+
+                                // keep the same value with the new cell name
+                                //
+                                row->cell(new_cell_name)->setValue(value);
+
+                                // drop the old cell where the branch is missing
+                                //
+                                row->dropCell(cell_name);
+
+                                ++updated_column;
+                            }
+                            else
+                            {
+                                SNAP_LOG_ERROR("cell value in links table is missing a branch number: row \"")
+                                              (key)
+                                              ("\", column \"")
+                                              (cell_name)
+                                              ("\" and value \"")
+                                              (value.stringValue())
+                                              ("\"");
+                                ++invalid_field_name;
+                            }
+                        }
+                        else
+                        {
+                            // -- this would be too much
+                            //SNAP_LOG_DEBUG("skipping cell \"")
+                            //              (cell_name)
+                            //              ("\" from row \"")
+                            //              (key)
+                            //              ("\" since it already includes a '#<id>'");
+                            ++already_done;
+                        }
+                    }
+                }
+            }
+        }
+
+        SNAP_LOG_INFO("fixed ")
+                     (updated_column)
+                     (" columns, found ")
+                     (invalid_field_name)
+                     (" invalid columns (see warnings), and skipped ")
+                     (already_done)
+                     (" that looked like they were already processed.");
+    }
+
+    // Take care of the "branch" table (i.e. column names would make use
+    // of this branch number instead of the destination branch number)
+    //
+    {
+        branch_table->clearCache();
+
+        int updated_column(0);
+        int updates_to_any_column(0);
+        int created_missing_column(0);
+        int created_missing_row_and_column(0);
+        int skip_equal(0);
+        int invalid_branch_number(0);
+        int missing_branch_number(0);
+
+        // to check all the branches, we actually read from the branch table
+        // directly instead of the page + branch; here we prepare the
+        // predicate start and end strings once
+        //
+        QString const links_namespace_start(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+        QString const links_namespace_end(QString("%1:;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+
+        // TBD: now that we have an '*index*' row with all the pages of
+        //      a website sorted "as expected", we may be able revise
+        //      the following algorithm to avoid reading all the branches
+        //      of all the websites...
+        //
+        auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+        row_predicate->setCount(100);
+        for(;;)
+        {
+            uint32_t const count(branch_table->readRows(row_predicate));
+            if(count == 0)
+            {
+                // no more branches to process
+                //
+                break;
+            }
+
+            QtCassandra::QCassandraRows const rows(branch_table->rows());
+            for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                    o != rows.end(); ++o)
+            {
+                QString const key(QString::fromUtf8(o.key().data()));
+                //int const key_pos(key.indexOf('#'));
+                //QString const row_path(key.mid(0, key_pos));
+
+                // within each row, check all the columns
+                //
+                QtCassandra::QCassandraRow::pointer_t row(*o);
+                row->clearCache();
+
+                auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+                column_predicate->setCount(100);
+                column_predicate->setIndex(); // behave like an index
+                column_predicate->setStartCellKey(links_namespace_start); // limit the loading to links at least
+                column_predicate->setEndCellKey(links_namespace_end);
+
+                // loop until all cells are handled
+                //
+                for(;;)
+                {
+                    row->readCells(column_predicate);
+                    QtCassandra::QCassandraCells const cells(row->cells());
+                    if(cells.isEmpty())
+                    {
+                        // no more rows here
+                        //
+                        break;
+                    }
+
+                    // handle one batch
+                    //
+                    for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                            c != cells.end();
+                            ++c)
+                    {
+                        QtCassandra::QCassandraCell::pointer_t cell(*c);
+
+                        QString const cell_name(cell->columnName());
+                        QtCassandra::QCassandraValue value(cell->value());
+
+                        // parse the value as a link info
+                        //
+                        link_info info;
+                        info.from_data(value.stringValue());
+
+                        // check whether the branch numbers are correct or not
+                        //
+                        int const pos(cell_name.indexOf('#'));
+                        if(pos != -1)
+                        {
+                            bool ok(false);
+                            snap_version::version_number_t const branch(cell_name.mid(pos + 1).toLong(&ok));
+                            if(ok)
+                            {
+                                if(branch != info.branch())
+                                {
+                                    // save with the correct branch number
+                                    //
+                                    QString const new_cell_name(QString("%1#%2").arg(cell_name.mid(0, pos)).arg(info.branch()));
+                                    row->cell(new_cell_name)->setValue(value);
+
+                                    ++updated_column;
+
+                                    // changing the name of a field when it uses
+                                    // a unique number (*,1) or (*,*) requires
+                                    // us to also change the corresponding
+                                    // branch data
+                                    //
+                                    int const name_end_pos(cell_name.indexOf('-'));
+                                    if(name_end_pos != -1)
+                                    {
+                                        // remove the "links::" and anything after the "-"
+                                        //
+                                        QString const link_name(cell_name.mid(links_namespace_start.length(), name_end_pos - links_namespace_start.length()));
+                                        QString const link_key(QString("%1/%2").arg(key).arg(link_name));
+
+                                        // since we "fixed" the name of the column in the
+                                        // previous loop, here we should have the cell name
+                                        // set to the info.key() + wrong (old) branch
+                                        //
+                                        QString const link_cell_name(QString("%1#%2").arg(info.key()).arg(branch));
+                                        QString const new_link_cell_name(QString("%1#%2").arg(info.key()).arg(info.branch()));
+                                        if(links_table->exists(link_key))
+                                        {
+                                            if(links_table->row(link_key)->exists(link_cell_name))
+                                            {
+                                                // the wrong info exists, fix it now
+                                                //
+                                                // create the new valid cell/value pair
+                                                //
+                                                links_table->row(link_key)->cell(new_link_cell_name)->setValue(new_cell_name);
+
+                                                // the existing #<number> may be required
+                                                // for a "lost" link, so we want to check
+                                                // whether a corresponding branch exists
+                                                // and if so fix the old cell instead of
+                                                // deleting it
+                                                //
+                                                content::path_info_t ipath;
+                                                ipath.set_path(info.key());
+
+                                                QString const revision_control(QString("%1::%2::%3")
+                                                                .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                                                                .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
+                                                                .arg(branch));
+                                                QString const revision_control_language(revision_control + "::en");
+
+                                                bool const direct_key(content_table->row(ipath.get_key())->exists(revision_control));
+                                                bool const language_key(content_table->row(ipath.get_key())->exists(revision_control_language));
+                                                if(direct_key
+                                                || language_key)
+                                                {
+                                                    // it exists, fix the branch of that link data
+                                                    // instead of dropping that "not so wrong one"
+                                                    //
+                                                    // WARNING: this won't fix intermediate (missing) branches
+                                                    //          however, in our current installs we really only
+                                                    //          have 2 branches so we do not need to do anything
+                                                    //          more that one fix like this
+                                                    //
+                                                    links_table->row(link_key)->cell(link_cell_name)->setValue(cell_name);
+
+                                                    link_info fix_info(info);
+                                                    fix_info.set_branch(branch);
+                                                    cell->setValue(fix_info.data()); // not sure this would work correctly...
+                                                }
+                                                else
+                                                {
+                                                    // remove the wrong entry
+                                                    //
+                                                    branch_table->row(key)
+                                                                ->dropCell(cell_name);
+                                                    branch_table->row(QString("%1#%2").arg(ipath.get_key()).arg(branch))
+                                                                ->dropCell(QString("%1#%2").arg(info.name()).arg(branch));
+                                                    links_table->row(link_key)->dropCell(link_cell_name);
+                                                }
+
+                                                ++updates_to_any_column;
+                                            }
+                                            else if(!links_table->row(link_key)->exists(new_link_cell_name))
+                                            {
+                                                links_table->row(link_key)->cell(new_link_cell_name)->setValue(new_cell_name);
+
+                                                ++created_missing_column;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // if we cannot even find that row,
+                                            // just create that new entry
+                                            //
+                                            links_table->row(link_key)->cell(new_link_cell_name)->setValue(new_cell_name);
+
+                                            ++created_missing_row_and_column;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // get rid of the other key (i.e. the one with
+                                        // the wrong branch number)
+                                        //
+                                        branch_table->row(key)->dropCell(cell_name);
+                                    }
+                                }
+                                else
+                                {
+                                    ++skip_equal;
+                                }
+                            }
+                            else
+                            {
+                                SNAP_LOG_ERROR("invalid branch number in \"")
+                                              (cell_name)
+                                              ("\"");
+
+                                ++invalid_branch_number;
+                            }
+                        }
+                        else
+                        {
+                            SNAP_LOG_ERROR("in row \"")
+                                          (key)
+                                          ("\" found link field name \"")
+                                          (cell_name)
+                                          ("\" without a branch number.");
+
+                            ++missing_branch_number;
+                        }
+                    }
+                }
+            }
+        }
+
+        // give some stats to the admin.
+        //
+        SNAP_LOG_INFO("link refactor: updated columns: ")
+                     (updated_column)
+                     (" (")
+                     (updates_to_any_column)
+                     ("), created missing columns: ")
+                     (created_missing_column)
+                     (", create missing row and column: ")
+                     (created_missing_row_and_column)
+                     (", skip equal ")
+                     (skip_equal)
+                     (", invalid branch number: ")
+                     (invalid_branch_number)
+                     (", missing branch number: ")
+                     (missing_branch_number);
+    }
+}
+
 
 
 

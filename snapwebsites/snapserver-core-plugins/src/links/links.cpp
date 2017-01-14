@@ -59,6 +59,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LINKS_NAMESPACE:
         return "links";
 
+    case name_t::SNAP_NAME_LINKS_SNAP547_FIX_LINK_BRANCHES:
+        return "snap547_fix_link_branches";
+
     case name_t::SNAP_NAME_LINKS_TABLE: // sorted index of links
         return "links";
 
@@ -1723,7 +1726,7 @@ void links::create_link(link_info const & src, link_info const & dst)
  *
  * \return A shared pointer to a link context, it will always exist.
  */
-QSharedPointer<link_context> links::new_link_context(const link_info & info
+QSharedPointer<link_context> links::new_link_context(link_info const & info
                                                    , link_context::mode_t const mode
                                                    , const int count)
 
@@ -1957,7 +1960,8 @@ void links::delete_link(link_info const & info, int const delete_record_count)
                     continue;
                 }
                 QtCassandra::QCassandraRow::pointer_t dst_multi_row(f_links_table->row(destination.link_key()));
-                if(!dst_multi_row->exists(info.key_with_branch()))
+                QString const key_with_branch(info.key_with_branch());
+                if(!dst_multi_row->exists(key_with_branch))
                 {
                     // still tell the system that the source page changed
                     //
@@ -1970,7 +1974,7 @@ void links::delete_link(link_info const & info, int const delete_record_count)
                     SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
                                     (destination.row_key())
                                     (" / ")
-                                    (info.key_with_branch())
+                                    (key_with_branch)
                                     ("\" (cell missing in \"links\" table).");
                     return;
                 }
@@ -1978,12 +1982,12 @@ void links::delete_link(link_info const & info, int const delete_record_count)
                 // one destination that correspond to the (1:...) and thus only
                 // one link that we need to load here
                 //
-                QtCassandra::QCassandraValue destination_link(dst_multi_row->cell(info.key_with_branch())->value());
+                QtCassandra::QCassandraValue destination_link(dst_multi_row->cell(key_with_branch)->value());
 
                 // we can drop that link immediately, since we got the information we needed
                 // (this is a drop in the "links" table)
                 //
-                dst_multi_row->dropCell(info.key_with_branch());
+                dst_multi_row->dropCell(key_with_branch);
 
                 // TODO: should we drop the row if empty?
                 //       I think it automatically happens when a row is empty
@@ -2094,10 +2098,11 @@ void links::delete_link(link_info const & info, int const delete_record_count)
                     else
                     {
                         QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(destination_info.link_key()));
-                        if(dst_row->exists(info.key_with_branch())) // should always be true
+                        QString const key_with_branch(info.key_with_branch());
+                        if(dst_row->exists(key_with_branch)) // should always be true
                         {
-                            QString const dst_key(dst_row->cell(info.key_with_branch())->value().stringValue());
-                            dst_row->dropCell(info.key_with_branch());
+                            QString const dst_key(dst_row->cell(key_with_branch)->value().stringValue());
+                            dst_row->dropCell(key_with_branch);
                             f_branch_table->row(destination_info.row_key())->dropCell(dst_key);
 
                             // let others know that a link changed on a page
@@ -2168,10 +2173,11 @@ void links::delete_this_link(link_info const & source, link_info const & destina
 
     // drop the source info
     QtCassandra::QCassandraRow::pointer_t src_row(f_links_table->row(source.link_key()));
-    if(src_row->exists(destination.key_with_branch())) // should always be true
+    QString const destination_key_with_branch(destination.key_with_branch());
+    if(src_row->exists(destination_key_with_branch)) // should always be true
     {
-        QString const src_key(src_row->cell(destination.key_with_branch())->value().stringValue());
-        src_row->dropCell(destination.key_with_branch());
+        QString const src_key(src_row->cell(destination_key_with_branch)->value().stringValue());
+        src_row->dropCell(destination_key_with_branch);
         f_branch_table->row(source.row_key())->dropCell(src_key);
 
         modified_link(source, false);
@@ -2179,10 +2185,11 @@ void links::delete_this_link(link_info const & source, link_info const & destina
 
     // drop the destination info
     QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(destination.link_key()));
-    if(dst_row->exists(source.key_with_branch())) // should always be true
+    QString const source_key_with_branch(source.key_with_branch());
+    if(dst_row->exists(source_key_with_branch)) // should always be true
     {
-        QString const dst_key(dst_row->cell(source.key_with_branch())->value().stringValue());
-        dst_row->dropCell(source.key_with_branch());
+        QString const dst_key(dst_row->cell(source_key_with_branch)->value().stringValue());
+        dst_row->dropCell(source_key_with_branch);
         f_branch_table->row(destination.row_key())->dropCell(dst_key);
 
         modified_link(destination, false);
