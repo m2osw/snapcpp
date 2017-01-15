@@ -1,5 +1,5 @@
 // Snap Websites Server -- users handling
-// Copyright (C) 2012-2016  Made to Order Software Corp.
+// Copyright (C) 2012-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -2001,18 +2001,36 @@ void users::verify_user(content::path_info_t & ipath)
         SNAP_LOG_WARNING("users::verify_user() could not load the user session ")
                             (session_id)(" properly. Session error: ")
                             (sessions::sessions::session_info::session_type_to_string(info.get_session_type()))(".");
+
         // TODO change message support to use strings from the database so they can get translated
-        messages::messages::instance()->set_error(
-            "Invalid User Verification Code",
-            QString("The specified verification code (%1) is not correct."
-                    " Please verify that you used the correct link or try to use the form below to enter your verification code."
-                    " If you already followed the link once, then you already were verified and all you need to do is click the log in link below.")
-                    .arg(session_id),
-            QString("user trying his verification with code \"%1\" got error: %2.")
-                    .arg(session_id)
-                    .arg(sessions::sessions::session_info::session_type_to_string(info.get_session_type())),
-            true
-        );
+        if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE)
+        {
+            messages::messages::instance()->set_warning(
+                "Expired User Verification Code",
+                QString("The specified email verification code (%1) expired."
+                        " Please <a href=\"/verify/resend\">get a new code</a> and try verifying it again."
+                        " The system gives you 3 days to take care of your email verification.")
+                        .arg(session_id),
+                QString("user trying his verification with code \"%1\" got error: %2.")
+                        .arg(session_id)
+                        .arg(sessions::sessions::session_info::session_type_to_string(info.get_session_type()))
+            );
+        }
+        else
+        {
+            messages::messages::instance()->set_error(
+                "Invalid User Verification Code",
+                QString("The specified email verification code (%1) is not correct."
+                        " Please verify that you used the correct link or try to use the form below to enter your verification code."
+                        " If you already followed the link once, then you already were verified and all you need to do is click the log in link below.")
+                        .arg(session_id),
+                QString("user trying his verification with code \"%1\" got error: %2.")
+                        .arg(session_id)
+                        .arg(sessions::sessions::session_info::session_type_to_string(info.get_session_type())),
+                true
+            );
+        }
+
         // redirect the user to the verification form
         f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
