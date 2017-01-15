@@ -1,5 +1,5 @@
 // Snap Websites Server -- links
-// Copyright (C) 2012-2016  Made to Order Software Corp.
+// Copyright (C) 2012-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ enum class name_t
     SNAP_NAME_LINKS_CREATELINK,
     SNAP_NAME_LINKS_DELETELINK,
     SNAP_NAME_LINKS_NAMESPACE,
+    SNAP_NAME_LINKS_SNAP547_FIX_LINK_BRANCHES,
     SNAP_NAME_LINKS_TABLE          // Cassandra Table used for links
 };
 char const * get_name(name_t name) __attribute__ ((const));
@@ -123,6 +124,10 @@ public:
         f_unique = unique;
         f_name = new_name;
     }
+    void set_destination_cell_name(QString const & new_name)
+    {
+        f_destination_cell_name = new_name;
+    }
     void set_key(QString const & new_key)
     {
         f_key = new_key;
@@ -140,66 +145,20 @@ public:
     {
         return f_name;
     }
-    QString cell_name() const
+    QString cell_name(link_info const & dst) const;
+    QString cell_name(link_info const & dst, QString const & unique_number) const;
+    QString destination_cell_name() const
     {
-        if(f_name.isEmpty())
-        {
-            // no name, return an empty string
-            return f_name;
-        }
-        // prepend "links" as a namespace for all links
-        return QString("%1::%2#%3").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)).arg(f_name).arg(f_branch);
+        return f_destination_cell_name;
     }
-    QString cell_name(QString const & unique_number) const
-    {
-        if(f_name.isEmpty())
-        {
-            // no name, return an empty string
-            return f_name;
-        }
-        // prepend "links" as a namespace for all links
-        return QString("%1::%2-%3#%4")
-                .arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE))
-                .arg(f_name)
-                .arg(unique_number)
-                .arg(f_branch);
-    }
+    void cell_predicate(QtCassandra::QCassandraCellRangePredicate::pointer_t column_predicate, int const count);
     QString const & key() const
     {
         return f_key;
     }
-    QString row_key() const
-    {
-        if(f_key.isEmpty())
-        {
-            throw snap_logic_exception(QString("row_key() was requested with the key still undefined (name: \"%1\", branch is \"%2\")").arg(f_name).arg(f_branch));
-        }
-        if(f_branch == snap_version::SPECIAL_VERSION_INVALID
-        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
-        || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
-        {
-            throw snap_logic_exception(QString("row_key() was requested with the branch still undefined (name: \"%1\", key is \"%2\")").arg(f_name).arg(f_key));
-        }
-        return QString("%1#%2").arg(f_key).arg(f_branch);
-    }
-    QString link_key() const
-    {
-        if(f_name.isEmpty())
-        {
-            throw snap_logic_exception(QString("link_key() was requested with the name still undefined (key: \"%1\", branch: \"%2\"").arg(f_key).arg(f_branch));
-        }
-        if(f_key.isEmpty())
-        {
-            throw snap_logic_exception(QString("link_key() was requested with the key still undefined (name: \"%1\", branch: \"%2\"").arg(f_name).arg(f_branch));
-        }
-        if(f_branch == snap_version::SPECIAL_VERSION_INVALID
-        || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
-        || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
-        {
-            throw snap_logic_exception(QString("link_key() was requested with the branch still undefined (name: \"%1\", key: \"%2\")").arg(f_name).arg(f_key));
-        }
-        return QString("%1#%2/%3").arg(f_key).arg(f_branch).arg(f_name);
-    }
+    QString key_with_branch() const;
+    QString row_key() const;
+    QString link_key() const;
     snap_version::version_number_t branch() const
     {
         return f_branch;
@@ -210,12 +169,26 @@ public:
 
     void verify_name(QString const & vname);
 
+    bool is_defined() const
+    {
+        return !f_name.isEmpty()
+            && !f_key.isEmpty()
+            && f_branch != snap_version::SPECIAL_VERSION_INVALID
+            && f_branch != snap_version::SPECIAL_VERSION_UNDEFINED
+            && f_branch != snap_version::SPECIAL_VERSION_EXTENDED;
+    }
+
 private:
     bool                            f_unique = false;
     QString                         f_name;
     QString                         f_key;
     snap_version::version_number_t  f_branch;
+    QString                         f_destination_cell_name;
 };
+
+
+
+
 
 class link_info_pair
 {
@@ -232,15 +205,32 @@ private:
     link_info                   f_destination;
 };
 
+
+
+
+
 class link_context
 {
 public:
+    enum class mode_t
+    {
+        LINK_CONTENT_MODE_CURRENT,
+        LINK_CONTENT_MODE_CURRENT_OR_NEWEST,
+        LINK_CONTENT_MODE_WORKING,
+        LINK_CONTENT_MODE_WORKING_OR_NEWEST,
+        LINK_CONTENT_MODE_NEWEST,
+        LINK_CONTENT_MODE_OLDEST,
+        LINK_CONTENT_MODE_ALL,
+
+        LINK_CONTENT_MODE_DEFAULT = LINK_CONTENT_MODE_CURRENT_OR_NEWEST
+    };
+
     bool next_link(link_info & info);
 
 private:
     friend class links;
 
-    link_context(::snap::snap_child *snap, link_info const & info, const int count);
+    link_context(::snap::snap_child * snap, link_info const & info, mode_t const mode, const int count);
 
     snap_child *                                    		f_snap = nullptr;
     link_info                                       		f_info;
@@ -248,8 +238,12 @@ private:
     QtCassandra::QCassandraCellRangePredicate::pointer_t    f_column_predicate;
     QtCassandra::QCassandraCells                    		f_cells;
     QtCassandra::QCassandraCells::const_iterator    		f_cell_iterator;
-    QString                                         		f_link;
+    link_info                                       		f_link;
 };
+
+
+
+
 
 class links_cloned
 {
@@ -257,52 +251,62 @@ public:
     virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, link_info const & source, link_info const & destination, bool const cloning) = 0;
 };
 
+
+
+
+
 class links : public plugins::plugin
             , public server::backend_action
 {
 public:
-    static int const    DELETE_RECORD_COUNT = 1000;
+    static int const                READ_RECORD_COUNT = 1000;
+    static int const                DELETE_RECORD_COUNT = 1000;
 
-                        links();
-                        ~links();
+                                    links();
+                                    ~links();
 
     // plugins::plugin implementation
-    static links *              instance();
-    virtual QString             icon() const;
-    virtual QString             description() const;
-    virtual QString             dependencies() const;
-    virtual int64_t             do_update(int64_t last_updated);
-    virtual void                bootstrap(snap_child * snap);
+    static links *                  instance();
+    virtual QString                 icon() const;
+    virtual QString                 description() const;
+    virtual QString                 dependencies() const;
+    virtual int64_t                 do_update(int64_t last_updated);
+    virtual void                    bootstrap(snap_child * snap);
 
     QtCassandra::QCassandraTable::pointer_t get_links_table();
 
     // server signals
-    void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
-    void                on_register_backend_action(server::backend_action_set & actions);
+    void                            on_add_snap_expr_functions(snap_expr::functions_t & functions);
+    void                            on_register_backend_action(server::backend_action_set & actions);
 
     // server::backend_action implementation
-    virtual void        on_backend_action(QString const & action);
+    virtual void                    on_backend_action(QString const & action);
 
     SNAP_SIGNAL(modified_link, (link_info const & link, bool const created), (link, created));
 
     // TBD should those be events? (they do trigger the modified_link() event already...)
-    void                create_link(link_info const & src, link_info const & dst);
-    void                delete_link(link_info const & info, int const delete_record_count = DELETE_RECORD_COUNT);
-    void                delete_this_link(link_info const & source, link_info const & destination);
+    void                            create_link(link_info const & src, link_info const & dst);
+    void                            delete_link(link_info const & info, int const delete_record_count = DELETE_RECORD_COUNT);
+    void                            delete_this_link(link_info const & source, link_info const & destination);
 
-    QSharedPointer<link_context>    new_link_context(link_info const & info, int const count = DELETE_RECORD_COUNT);
+    QSharedPointer<link_context>    new_link_context(link_info const & info
+                                                   , link_context::mode_t const mode = link_context::mode_t::LINK_CONTENT_MODE_DEFAULT
+                                                   , int const count = READ_RECORD_COUNT);
     link_info_pair::vector_t        list_of_links(QString const & path);
     void                            adjust_links_after_cloning(QString const & source_key, QString const & destination_key);
-    void                            fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
+    void                            fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell
+                                                       , QtCassandra::QCassandraRow::pointer_t destination_row
+                                                       , snap_version::version_number_t const destination_branch_number);
 
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
-    void                init_tables();
-    void                on_backend_action_create_link();
-    void                on_backend_action_delete_link();
-    void                cleanup_links();
+    void                            init_tables();
+    void                            on_backend_action_create_link();
+    void                            on_backend_action_delete_link();
+    void                            on_backend_action_snap547_fix_link_branches();
+    void                            cleanup_links();
 
     // tests
     SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_delete)

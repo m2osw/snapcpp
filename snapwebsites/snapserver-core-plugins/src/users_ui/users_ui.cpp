@@ -1,5 +1,5 @@
 // Snap Websites Server -- users_ui handling
-// Copyright (C) 2012-2016  Made to Order Software Corp.
+// Copyright (C) 2012-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -2108,7 +2108,7 @@ void users_ui::process_verify_resend_form()
 
     // check to make sure that a user with that email address exists
     auto user_info(users_plugin->get_user_info_by_email(email));
-    if(!user_info.exists())
+    if(user_info.exists())
     {
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2323,23 +2323,30 @@ bool users_ui::resend_verification_email(QString const & email)
     sendmail::sendmail::email e;
 
     // mark priority as High
+    //
     e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
 
+    // people would not be able to ever get a verification email without this one
+    //
     e.add_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST), "true");
 
     // destination email address
+    //
     e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), current_email);
 
     // add the email subject and body using a page
+    //
     e.set_email_path("admin/email/users/verify");
 
     // verification makes use of the existing session identifier
+    //
     e.add_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_VERIFY_EMAIL), session);
 
     // send the email
     //
     // really this just saves it in the database, the sendmail itself
     // happens on the backend; see sendmail::on_backend_action()
+    //
     sendmail::sendmail::instance()->post_email(e);
 
     return true;

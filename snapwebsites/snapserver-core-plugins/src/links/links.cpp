@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage double links
-// Copyright (C) 2012-2016  Made to Order Software Corp.
+// Copyright (C) 2012-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,6 +59,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LINKS_NAMESPACE:
         return "links";
 
+    case name_t::SNAP_NAME_LINKS_SNAP547_FIX_LINK_BRANCHES:
+        return "snap547_fix_link_branches";
+
     case name_t::SNAP_NAME_LINKS_TABLE: // sorted index of links
         return "links";
 
@@ -81,7 +84,7 @@ char const * get_name(name_t name)
  * \li key -- the key is set to an empty string "";
  * \li branch_number -- the branch is marked as undefined.
  *
- * A default link_info is used to setup a link by hand or define the
+ * A default link_info object is used to setup a link by hand or define the
  * link from data read from the database using the from_data() function.
  *
  * To define the unique flag, use the set_name() function.
@@ -93,19 +96,26 @@ char const * get_name(name_t name)
  */
 
 
-/** \fn link_info::link_info(QString const& new_name, bool unique, QString const& new_key, snap_version::version_number_t branch_number);
+/** \fn link_info::link_info(QString const & new_name, bool unique, QString const & new_key, snap_version::version_number_t branch_number);
  * \brief Create a link descriptor.
  *
- * Initialize the link information with a name, a key, and a branch number.
- * See the set_name(), set_key(), and set_branch() functions for more
- * information.
+ * Initialize the link information with a name, whether the name is unique,
+ * a key, and a branch number. See the set_name(), set_key(), and set_branch()
+ * functions for more information.
  *
  * Note that a key and a name are ultimately necessary. If not defined on
  * creation then you must call the set_name() and set_key() functions later
  * but before making use of the link_info object.
  *
+ * \warning
+ * The \p branch_number parameter is the branch of the page you are dealing
+ * with (i.e. if you are setting up a link_info for the source, then this
+ * branch will be the source branch.) When creating certain parameters such
+ * as the cell name, the destination \p branch_number will be required in
+ * the form of the destination link_info object.
+ *
  * \param[in] new_name  The name of the key (column.)
- * \param[in] unique  Whether the link is unique (one to one, or one to many.)
+ * \param[in] unique  Whether the link is unique (one to one, or many to one.)
  * \param[in] new_key  The key is the name of the row.
  * \param[in] branch_number  The branch number where this link is to be saved.
  *
@@ -164,6 +174,27 @@ char const * get_name(name_t name)
  */
 
 
+/** \fn void link_info::set_branch(snap_version::version_number_t branch_number)
+ * \brief Set the branch number of this link_info object.
+ *
+ * The branch is important because a link can originate from several
+ * different branch of one page to another page. For example, if you
+ * create branch 1 and branch 2 of a page and want to link it to it
+ * "content::page_type", the page representing the "content::page_type"
+ * linked needs to be able to point back to both branches, even if that
+ * other page has a single branch (such as branch 0).
+ *
+ * \warning
+ * The \p branch_number parameter is the branch of the page you are dealing
+ * with (i.e. if you are setting up a link_info for the source, then this
+ * branch will be the source branch.) When creating certain parameters such
+ * as the cell name, the destination \p branch_number will be required in
+ * the form of the destination link_info object.
+ *
+ * \param[in] branch_number  This link branch number.
+ */
+
+
 /** \fn bool link_info::is_unique() const
  * \brief Check whether this link is marked as unique.
  *
@@ -178,20 +209,41 @@ char const * get_name(name_t name)
  */
 
 
-/** \fn const QString& link_info::name() const
- * \brief Retrieve the name of the link.
+/** \fn link_info::name() const
+ * \brief Retrieve the basic name of this link.
  *
- * The function returns the name of the link as set on construction
+ * The function returns the basic name of the link as set on construction
  * or with the set_name() function.
  *
- * \return The name of the link that is used to form the full name of
- *         the column.
+ * The basic name is the name you give to your link. For example, the
+ * content plugin defines a type for each page. To do so the page is
+ * linked to another representing the content type. That link uses
+ * the name:
+ *
+ * \code
+ *      "content::page_type"
+ * \endcode
+ *
+ * As we can see, the basic name is expected to be qualified with
+ * a namespace (the name of the plugin, "content" in this example)
+ * in order to avoid clashes between various plugins. So in other
+ * words we could also have a plugin named "example" which offers
+ * a link named "page_type". Because the basic link named is
+ * qualified, it would be "example::page_type" which is different
+ * than the content page type link name shown above.
+ *
+ * This name is used to generate the name of the column as returned
+ * by the cell_name() functions.
+ *
+ * \return The basic name of the link.
  *
  * \sa set_name()
+ * \sa cell_name()
  */
 
 
-/** \fn const QString& link_info::key() const
+
+/** \fn const QString & link_info::key() const
  * \brief Retrieve the key of the link.
  *
  * The function returns the key for the link as set on construction
@@ -203,14 +255,38 @@ char const * get_name(name_t name)
  */
 
 
-/** \var bool link_info::f_unique;
+/** \fn snap_version::version_number_t branch() const
+ * \brief Retrieve the branch number of the link.
+ *
+ * The function returns the branch number for the link as set on construction
+ * or with the set_branch() function.
+ *
+ * \warning
+ * See the set_branch() function documentation for details about which
+ * branch number we are talking about.
+ *
+ * \return the branch number of the link that is used as the row key
+ *
+ * \sa set_branch()
+ */
+
+
+/** \var bool link_info::f_unique
  * \brief Unique (one) or not (many) links.
  *
- * This flag is used to tell the link system whether the link is
- * unique or not.
+ * This flag is used to tell the link plugin whether the link is
+ * unique or not. If true, the link is considered unique. This
+ * prevents you from creating more than one such link in a
+ * given branch with a given name.
+ *
+ * Non unique links receive an additional unique number in their name
+ * which allows you to repeat that link any number of time.
+ *
+ * Note that a unique link on one side does mean that the other side
+ * needs to also be unique.
  *
  * \sa is_unique() const
- * \sa set_name() const
+ * \sa set_name()
  */
 
 
@@ -230,8 +306,403 @@ char const * get_name(name_t name)
  * The key of a link is the key of the row where the link is to be
  * saved.
  *
+ * \sa key() const
  * \sa set_key()
  */
+
+
+/** \var snap_version::version_number_t link_info::f_branch
+ * \brief The branch number of this link.
+ *
+ * The branch number of a link is the branch where the link gets saved.
+ *
+ * \sa branch() const
+ * \sa set_branch()
+ */
+
+
+/** \brief Retrieve the name of the cell (i.e. column name)
+ *
+ * This function computers the name of the cell from this link_info
+ * and the given destination.
+ *
+ * The desstination is used to determine the branch for which the
+ * link is created.
+ *
+ * The cell name is composed as follow:
+ *
+ * \li "links" -- the links plugin namespace
+ * \li "::" -- the namespace separator
+ * \li f_name -- the name of the cell, it usually itself include a namespace
+ *               a namespace separator and a name (i.e. "content::page_type")
+ * \li "#" -- the qualified name and branch separator
+ * \li f_branch -- the branch number from the destination
+ *
+ * When the f_name parameter is not defined (still empty) then the
+ * function returns an empty string. However, a missing branch is
+ * not allowed if the name is defined.
+ *
+ * \exception snap_logic_exception
+ * If this function gets called before the branch gets defined, then this
+ * exception gets raised.
+ *
+ * \param[in] dst  The destination link.
+ *
+ * \return The cell name.
+ */
+QString link_info::cell_name(link_info const & dst) const
+{
+    // make sure the name is valid
+    //
+    if(f_name.isEmpty())
+    {
+        // no name, return an empty string
+        //
+        return f_name;
+    }
+
+    // verify branch
+    //
+    if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+    || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+    || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+    {
+        // TBD: should we return an empty string instead?
+        //
+        throw snap_logic_exception(QString("link_info::cell_name() was requested with the branch still undefined (name: \"%1\", key is \"%2\")")
+                        .arg(f_name).arg(f_key));
+    }
+
+    // prepend "links" as a namespace for all links
+    //
+    return QString("%1::%2#%3")
+            .arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE))
+            .arg(f_name)
+            .arg(dst.f_branch);
+}
+
+
+/** \brief Get the cell name using the specified unique number.
+ *
+ * This function is a specialization of the other cell_name() function
+ * which includes a unique number. A cell name with a unique number
+ * is used whenever the link is not unique (i.e. "*"). This means
+ * any number of that specific cell name can be generated.
+ *
+ * The cell name is composed as follow:
+ *
+ * \li "links" -- the links plugin namespace
+ * \li "::" -- the namespace separator
+ * \li f_name -- the name of the cell, it usually itself include a namespace
+ *               a namespace separator and a name (i.e. "content::page_type")
+ * \li "-" -- the name and unique number separator
+ * \li unique_number -- the unique number
+ * \li "#" -- the qualified and unique name and branch separator
+ * \li f_branch -- the branch number from the destination
+ *
+ * \param[in] dst  The destination for the branch.
+ * \param[in] unique_number  The unique number to be used to generate this name.
+ *
+ * \return The cell name.
+ */
+QString link_info::cell_name(link_info const & dst, QString const & unique_number) const
+{
+    // make sure the name is valid
+    //
+    if(f_name.isEmpty())
+    {
+        // no name, return an empty string
+        return f_name;
+    }
+
+    // verify branch
+    //
+    if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+    || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+    || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+    {
+        // TBD: should we return an empty string instead?
+        //
+        throw snap_logic_exception(QString("link_info::cell_name() was requested with the branch still undefined (name: \"%1\", key is \"%2\")")
+                        .arg(f_name).arg(f_key));
+    }
+
+    // prepend "links" as a namespace for all links
+    return QString("%1::%2-%3#%4")
+            .arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE))
+            .arg(f_name)
+            .arg(unique_number)
+            .arg(dst.f_branch);
+}
+
+
+/** \brief Initialize the predicate to search for cells.
+ *
+ * This function sets up the \p column_predicate to search for the various
+ * cells in the predicate.
+ *
+ * \param[in] column_predicate  Column
+ */
+void link_info::cell_predicate(QtCassandra::QCassandraCellRangePredicate::pointer_t column_predicate, int const count)
+{
+    // validate parameter
+    //
+    if(count < 10)
+    {
+        throw snap_logic_exception(QString("a count of %1 to read links is not valid, expected 10 or more").arg(count));
+    }
+
+    // not even one key available if there isn't a name
+    //
+    if(f_name.isEmpty())
+    {
+        throw snap_logic_exception(QString("link_info::cell_predicate() was requested with the name still undefined (key: \"%1\", branch: \"%2\"")
+                            .arg(f_key).arg(f_branch));
+    }
+
+    // number of cells to return in one go, this is usually pretty small for
+    // unique entries, although one may use a large number
+    //
+    column_predicate->setCount(count);
+
+    // make sure the search behaves like an index so we can go through the
+    // list of predicates
+    //
+    column_predicate->setIndex();
+
+    // setup the start and end as the cell name without the branch number
+    //
+    QString const key(QString("%1::%2#")
+            .arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE))
+            .arg(f_name));
+
+    column_predicate->setStartCellKey(key);
+    column_predicate->setEndCellKey(key + column_predicate->last_char);
+}
+
+
+/** \brief Computer the key for the branch table.
+ *
+ * This function computes the string representing the row key to access the
+ * branch data as defined by the URL (key) and the branch number.
+ *
+ * \exception snap_logic_exception
+ * When this funtion gets called the key and branch number must both be
+ * defined or this exception is raised.
+ *
+ * \return The key to this branch data.
+ */
+QString link_info::row_key() const
+{
+    // verify key
+    //
+    if(f_key.isEmpty())
+    {
+        throw snap_logic_exception(QString("row_key() was requested with the key still undefined (name: \"%1\", branch is \"%2\")")
+                        .arg(f_name).arg(f_branch));
+    }
+
+    // verify branch
+    //
+    if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+    || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+    || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+    {
+        throw snap_logic_exception(QString("row_key() was requested with the branch still undefined (name: \"%1\", key is \"%2\")")
+                        .arg(f_name).arg(f_key));
+    }
+
+    return QString("%1#%2").arg(f_key).arg(f_branch);
+}
+
+
+/** \brief Computer the column key for the links table.
+ *
+ * This function computes the string representing the column key to access
+ * the links data as defined by the URL (key) and the branch number of the
+ * destination.
+ *
+ * \exception snap_logic_exception
+ * When this funtion gets called the key and branch number must both be
+ * defined or this exception is raised.
+ *
+ * \return The key to this branch data.
+ */
+QString link_info::key_with_branch() const
+{
+    // verify key
+    //
+    if(f_key.isEmpty())
+    {
+        throw snap_logic_exception(QString("link_info::key_with_branch() was requested with the key still undefined (name: \"%1\", branch is \"%2\")")
+                        .arg(f_name).arg(f_branch));
+    }
+
+    // verify branch
+    //
+    if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+    || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+    || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+    {
+        throw snap_logic_exception(QString("link_info::key_with_branch() was requested with the branch of the destination still undefined (name: \"%1\", key is \"%2\")")
+                        .arg(f_name).arg(f_key));
+    }
+
+    return QString("%1#%2").arg(f_key).arg(f_branch);
+}
+
+
+/** \brief The link key for this link_info.
+ *
+ * When creating a link that in not unique, we make use of a link key
+ * which is used to define an entry in the "links" table.
+ *
+ * The string is built in this way:
+ *
+ * \li f_key -- the key of the this link (i.e. the URL of the page receiving
+ *              the link)
+ * \li "#" -- a hash to separate the key and the branch
+ * \li f_branch -- the number number of the destination
+ * \li "/" -- a slash to separate the branch and link base name
+ * \li f_name -- the base name of the link
+ *
+ * \return The string representing the link key.
+ */
+QString link_info::link_key() const
+{
+    // no key available if there isn't a name
+    //
+    if(f_name.isEmpty())
+    {
+        throw snap_logic_exception(QString("link_info::link_key() was requested with the name still undefined (key: \"%1\", branch: \"%2\"")
+                            .arg(f_key).arg(f_branch));
+    }
+
+    // no key available if there isn't a key
+    //
+    if(f_key.isEmpty())
+    {
+        throw snap_logic_exception(QString("link_info::link_key() was requested with the key still undefined (name: \"%1\", branch: \"%2\"")
+                            .arg(f_name).arg(f_branch));
+    }
+
+    // no key available if there isn't a branch
+    //
+    if(f_branch == snap_version::SPECIAL_VERSION_INVALID
+    || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
+    || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
+    {
+        throw snap_logic_exception(QString("link_info::link_key() was requested with the branch still undefined (name: \"%1\", key: \"%2\")")
+                            .arg(f_name).arg(f_key));
+    }
+
+    // generate the key now
+    //
+    return QString("%1#%2/%3").arg(f_key).arg(f_branch).arg(f_name);
+}
+
+
+/** \brief Retrieve the data to be saved in the database.
+ *
+ * Defines the string to be saved in the database. We could use the serializer
+ * but this is so limited and used so much that having a direct definition
+ * will generally be much faster (early optimization...)
+ *
+ * The keys are defined as follow:
+ *
+ * \li k[key] -- the key of the destination row
+ * \li n[ame] -- the name of the field in the destination row (i.e. links::\<name>)
+ * \li b[ranch] -- the branch number of the destination page we are linked to
+ * \li u[nique] -- whether the link is unique
+ *
+ * \note
+ * Remember that in the source we save the destination link information and
+ * vice versa. So if you would like to know whether the source is unique, you
+ * have to read the destination link information.
+ *
+ * \return The string representing this link.
+ *
+ * \sa from_data()
+ */
+QString link_info::data() const
+{
+    return QString("k=%1\nn=%2\nb=%3\nu=%4")
+            .arg(f_key)
+            .arg(f_name)
+            .arg(f_branch)
+            .arg(f_unique ? "1" : "*");
+}
+
+
+/** \brief Parse a string of key & name pairs back to a link info.
+ *
+ * This function is the inverse of the data() function. It takes
+ * a string as input and defines the f_key, f_name, f_branch, and
+ * f_unique parameters from the data found in that string.
+ *
+ * The function does not return anything. Instead it saves the
+ * parameters to 'this' link_info object.
+ *
+ * \exception links_exception_invalid_db_data
+ * The data is expected to be read from the database after being generated
+ * using the data() function. If any parameter is missing, misspelled,
+ * not defined as a key/value pair, then the function throws this exception.
+ *
+ * \param[in] db_data  The data to convert to the different parameters.
+ *
+ * \sa data()
+ */
+void link_info::from_data(QString const& db_data)
+{
+    // split on each newline character
+    //
+    snap_string_list lines(db_data.split('\n'));
+    if(lines.count() != 4)
+    {
+        throw links_exception_invalid_db_data(QString("link_info::from_data: \"%1\" is not exactly 4 lines").arg(db_data));
+    }
+
+    // split each parameter at the equal sign
+    //
+    snap_string_list key_data(lines[0].split('='));
+    snap_string_list name_data(lines[1].split('='));
+    snap_string_list branch_data(lines[2].split('='));
+    snap_string_list unique_data(lines[3].split('='));
+
+    // make sure each parameter is a name and a value
+    // and verify each name, they must be in order
+    //
+    if(key_data.count() != 2 || name_data.count() != 2 || branch_data.count() != 2 || unique_data.count() != 2
+    || key_data[0] != "k" || name_data[0] != "n" || branch_data[0] != "b" || unique_data[0] != "u")
+    {
+        throw links_exception_invalid_db_data(QString("wlink_info::from_data: variables in \"%1\" are not k[ey], n[ame], b[ranch], and u[nique]")
+                        .arg(db_data));
+    }
+
+    // make sure the unique definition "1" or "*"
+    //
+    if(unique_data[1] != "1" && unique_data[1] != "*")
+    {
+        throw links_exception_invalid_db_data(QString("link_info::from_data: unique variable \"%1\" in \"%1\" is not exactly \"1\" or \"*\"")
+                        .arg(unique_data[1]).arg(db_data));
+    }
+
+    // make sure the branch is a valid number
+    //
+    bool ok(false);
+    ulong const branch(branch_data[1].toULong(&ok, 10));
+    if(!ok)
+    {
+        throw links_exception_invalid_db_data(QString("link_info::from_data: branch variable \"%1\" in \"%1\" is not a valid number")
+                        .arg(branch_data[1]).arg(db_data));
+    }
+
+    // define the link_info accordingly
+    //
+    set_key(key_data[1]);
+    set_name(name_data[1], unique_data[1] == "1");
+    set_branch(branch);
+}
 
 
 /** \brief Verify that the name is valid.
@@ -297,7 +768,7 @@ void link_info::verify_name(QString const & vname)
             // start of the name is "links::"...
             if(ns == links_namespace)
             {
-                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot make use of the \"links\" namespace.");
+                throw links_exception_invalid_name("link_info::verify_name: name \"" + vname + "\" is not acceptable, a name cannot make use of the \"links\" namespace.");
             }
             ns.clear(); // TBD does that free the reserved buffer?
 
@@ -305,16 +776,16 @@ void link_info::verify_name(QString const & vname)
             ++it;
             if(it == vname.end())
             {
-                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot end with a ':'.");
+                throw links_exception_invalid_name("link_info::verify_name: name \"" + vname + "\" is not acceptable, a name cannot end with a ':'.");
             }
             if(it->unicode() != ':')
             {
-                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, the namespace operator must be '::'.");
+                throw links_exception_invalid_name("link_info::verify_name: name \"" + vname + "\" is not acceptable, the namespace operator must be '::'.");
             }
             ++it;
             if(it == vname.end())
             {
-                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a name cannot end with a namespace operator '::'.");
+                throw links_exception_invalid_name("link_info::verify_name: name \"" + vname + "\" is not acceptable, a name cannot end with a namespace operator '::'.");
             }
             // we must have a character that's not a ':' after a '::'
             c = it->unicode();
@@ -328,95 +799,26 @@ void link_info::verify_name(QString const & vname)
         {
             if(c == ':')
             {
-                throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, character ':' was not expected here.");
+                throw links_exception_invalid_name("link_info::verify_name: name \"" + vname + "\" is not acceptable, character ':' was not expected here.");
             }
-            throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, character '" + QChar(c) + "' is not valid.");
+            throw links_exception_invalid_name("link_info::verify_name: name \"" + vname + "\" is not acceptable, character '" + QChar(c) + "' is not valid.");
         }
         ns += QChar(c);
     }
     if(!has_namespace)
     {
         // at least one namespace is mandatory
-        throw links_exception_invalid_name(QString("name \"%1\" is not acceptable, at least one namespace is expected. (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
+        throw links_exception_invalid_name(QString("link_info::verify_name: name \"%1\" is not acceptable, at least one namespace is expected. (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
     }
 
     if(ns == links_namespace)
     {
-        throw links_exception_invalid_name(QString("name \"%1\" is not acceptable, a link name cannot end with \"links\". (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
+        throw links_exception_invalid_name(QString("link_info::verify_name: name \"%1\" is not acceptable, a link name cannot end with \"links\". (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
     }
 }
 
 
-/** \brief Retrieve the data to be saved in the database.
- *
- * Defines the string to be saved in the database. We could use the serializer
- * but this is so limited and used so much that having a direct definition
- * will generally be much faster (early optimization...)
- *
- * The keys are defined as follow:
- *
- * \li k[key] -- the key of the destination row
- * \li n[ame] -- the name of the field in the destination row (i.e. links::\<name>)
- * \li b[ranch] -- the branch number of the destination page we are linked to
- * \li u[nique] -- whether the link is unique
- *
- * \note
- * Remember that in the source we save the destination link information and
- * vice versa. So if you would like to know whether the source is unique, you
- * have to read the destination link information.
- *
- * \return The string representing this link.
- *
- * \sa from_data()
- */
-QString link_info::data() const
-{
-    return QString("k=%1\nn=%2\nb=%3\nu=%4")
-            .arg(f_key)
-            .arg(f_name)
-            .arg(f_branch)
-            .arg(f_unique ? "1" : "*");
-}
 
-
-/** \brief Parse a string of key & name pairs back to a link info.
- *
- * This function is the inverse of the data() function. It takes
- * a string as input and defines the f_key, f_name, f_branch, and
- * f_unique parameters from the data found in that string.
- *
- * The function does not return anything. Instead it saves the
- * parameters to 'this' link_info object.
- *
- * \exception links_exception_invalid_db_data
- * The data is expected to be read from the database after being generated
- * using the data() function. If any parameter is missing, misspelled,
- * not defined as a key/value pair, then the function throws this exception.
- *
- * \param[in] db_data  The data to convert to the different parameters.
- *
- * \sa data()
- */
-void link_info::from_data(QString const& db_data)
-{
-    snap_string_list lines(db_data.split('\n'));
-    if(lines.count() != 4)
-    {
-        throw links_exception_invalid_db_data(QString("db_data (%1) is not exactly 4 lines").arg(db_data));
-    }
-    snap_string_list key_data(lines[0].split('='));
-    snap_string_list name_data(lines[1].split('='));
-    snap_string_list branch_data(lines[2].split('='));
-    snap_string_list unique_data(lines[3].split('='));
-    if(key_data.count() != 2 || name_data.count() != 2 || branch_data.count() != 2 || unique_data.count() != 2
-    || key_data[0] != "k" || name_data[0] != "n" || branch_data[0] != "b" || unique_data[0] != "u")
-    {
-        throw links_exception_invalid_db_data(QString("db_data variables in \"%1\" are not k[ey], n[ame], b[ranch], and u[nique]").arg(db_data));
-    }
-    set_key(key_data[1]);
-    set_name(name_data[1], unique_data[1] == "1"); // TBD: verify whether unique is "*" if not "1"?
-    set_branch(branch_data[1].toULong()); // TBD: verify that it is an integer?
-}
 
 
 
@@ -491,16 +893,21 @@ link_info const & link_info_pair::destination() const
  *
  * \param[in] snap  The snap_child object pointer.
  * \param[in] info  The link information about this link context.
+ * \param[in] mode  The mode to read unique branches.
  * \param[in] count  Row count to select from the row table.
  */
-link_context::link_context(snap_child * snap, link_info const & info, int const count)
+link_context::link_context(snap_child * snap
+                         , link_info const & info
+                         , link_context::mode_t const mode
+                         , int const count)
     : f_snap(snap)
     , f_info(info)
     //, f_row() -- auto-init
     , f_column_predicate( std::make_shared<QtCassandra::QCassandraCellRangePredicate>() )
     //, f_link() -- auto-init
 {
-    // TODO: verify that unicity is equal on both sides?
+    // TODO: verify that unicity is defined as expected in info and the db?
+    //
 
     // if the link is unique, it only appears in the data table
     // and we don't need the context per se, so we just read
@@ -510,14 +917,201 @@ link_context::link_context(snap_child * snap, link_info const & info, int const 
     if(f_info.is_unique())
     {
         // TODO: we have to somehow remove this content dependency (circular
-        //       dependency)
+        //       dependency), or move the content and links together
+        //
         QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
-        // f_row remains null when unique is true (isNull() returns true)
-        QtCassandra::QCassandraValue link(branch_table->row(f_info.row_key())->cell(f_info.cell_name())->value());
-        if(!link.nullValue())
+
+        if(branch_table->exists(f_info.row_key()))
         {
-            f_link = link.stringValue();
+            f_row = branch_table->row(f_info.row_key());
+            // WARNING: Here the column names are the keys, not the link names...
+            f_info.cell_predicate(f_column_predicate, count);
+
+            switch(mode)
+            {
+            case link_context::mode_t::LINK_CONTENT_MODE_OLDEST:
+            case link_context::mode_t::LINK_CONTENT_MODE_ALL:
+                break;
+
+            default:
+                // in most cases the newest is going to appear first
+                // (assuming branches stay very limited, like under 10)
+                // and the main case is going to be CURRENT or NEWEST
+                // or WORKING or NEWEST which means we are likely to find
+                // them quickly this way... (total guess on the number of
+                // branch for most pages.)
+                //
+                f_column_predicate->setReversed();
+                break;
+
+            }
+
+            // we MUST clear the cache in case we read the same list of links twice
+            f_row->clearCache();
+            // at this point begin() == end()
+            f_cells = f_row->cells(); // <- this is VERY important in case someone wants to delete cells
+            f_cell_iterator = f_cells.begin();
+
+            // now depending on the user's choice, we want to either
+            // read the one link which is considered the one link or
+            // just let the rest of the process read all the cells
+            // as if we had multiple links (even though this is marked
+            // as being unique, we may have multiple links to different
+            // branches...)
+            //
+            // unless we have ALL, we determine a branch and save it in
+            // the f_link variable
+            //
+            if(mode != link_context::mode_t::LINK_CONTENT_MODE_ALL)
+            {
+                // search for the branch the user is interested in
+                //
+                link_info last_info;
+
+                while(f_row != nullptr)
+                {
+                    f_row->readCells(f_column_predicate);
+                    f_cells = f_row->cells();
+                    f_cell_iterator = f_cells.begin();
+                    if(f_cell_iterator == f_cells.end())
+                    {
+                        // found the end
+                        break;
+                    }
+
+                    // read all the branch "hoping" that's not too many...
+                    //
+                    snap_version::version_number_t branch_sought(snap_version::SPECIAL_VERSION_UNDEFINED);
+                    for(; f_cell_iterator != f_cells.end(); ++f_cell_iterator)
+                    {
+                        //key_name = QString::fromUtf8(f_cell_iterator.key());
+
+                        link_info in;
+                        in.from_data(f_cell_iterator.value()->value().stringValue());
+
+                        if(!last_info.is_defined())
+                        {
+                            // first time we save the new input as is
+                            // and get the current or working branch
+                            // number (or nothing)
+                            //
+                            last_info = in;
+
+                            switch(mode)
+                            {
+                            case link_context::mode_t::LINK_CONTENT_MODE_CURRENT:
+                            case link_context::mode_t::LINK_CONTENT_MODE_CURRENT_OR_NEWEST:
+                                {
+                                    content::path_info_t ipath;
+                                    ipath.set_path(last_info.key());
+                                    branch_sought = ipath.get_branch(false, "", content::path_info_t::branch_selection_t::BRANCH_SELECTION_CURRENT);
+                                }
+                                break;
+
+                            case link_context::mode_t::LINK_CONTENT_MODE_WORKING:
+                            case link_context::mode_t::LINK_CONTENT_MODE_WORKING_OR_NEWEST:
+                                {
+                                    content::path_info_t ipath;
+                                    ipath.set_path(last_info.key());
+                                    branch_sought = ipath.get_branch(false, "", content::path_info_t::branch_selection_t::BRANCH_SELECTION_WORKING);
+                                }
+                                break;
+
+                            case link_context::mode_t::LINK_CONTENT_MODE_NEWEST:
+                            case link_context::mode_t::LINK_CONTENT_MODE_OLDEST:
+                                break;
+
+                            //case link_context::mode_t::LINK_CONTENT_MODE_ALL:
+                            default:
+                                throw snap_logic_exception(QString("link_context::link_context(): got mode %1 which is not possible here (1)")
+                                                        .arg(static_cast<int>(mode)));
+
+                            }
+                        }
+                        else
+                        {
+                            switch(mode)
+                            {
+                            case link_context::mode_t::LINK_CONTENT_MODE_CURRENT:
+                            case link_context::mode_t::LINK_CONTENT_MODE_WORKING:
+                                break;
+
+                            case link_context::mode_t::LINK_CONTENT_MODE_CURRENT_OR_NEWEST:
+                            case link_context::mode_t::LINK_CONTENT_MODE_WORKING_OR_NEWEST:
+                            case link_context::mode_t::LINK_CONTENT_MODE_NEWEST:
+                                if(in.branch() > last_info.branch())
+                                {
+                                    last_info = in;
+                                }
+                                break;
+
+                            case link_context::mode_t::LINK_CONTENT_MODE_OLDEST:
+                                if(in.branch() < last_info.branch())
+                                {
+                                    last_info = in;
+                                }
+                                break;
+
+                            //case link_context::mode_t::LINK_CONTENT_MODE_ALL:
+                            default:
+                                throw snap_logic_exception(QString("link_context::link_context(): got mode %1 which is not possible here (2)")
+                                                        .arg(static_cast<int>(mode)));
+
+                            }
+                        }
+
+                        if(in.branch() == branch_sought
+                        && branch_sought != snap_version::SPECIAL_VERSION_UNDEFINED)
+                        {
+                            // exact match, keep that one
+                            //
+                            f_link = in;
+                            f_row.reset();
+                            break;
+                        }
+                    }
+                }
+
+                // if we still have a row, we did not find the current or
+                // working branch, in that case we use the newest or oldest
+                // which is defined in 'last_info'
+                //
+                if(f_row != nullptr)
+                {
+                    switch(mode)
+                    {
+                    case link_context::mode_t::LINK_CONTENT_MODE_CURRENT:
+                    case link_context::mode_t::LINK_CONTENT_MODE_WORKING:
+                        // not found...
+                        break;
+
+                    case link_context::mode_t::LINK_CONTENT_MODE_CURRENT_OR_NEWEST:
+                    case link_context::mode_t::LINK_CONTENT_MODE_WORKING_OR_NEWEST:
+                    case link_context::mode_t::LINK_CONTENT_MODE_NEWEST:
+                    case link_context::mode_t::LINK_CONTENT_MODE_OLDEST:
+                        // if we got some info, that's the one
+                        f_link = last_info;
+                        break;
+
+                    //case link_context::mode_t::LINK_CONTENT_MODE_ALL:
+                    default:
+                        throw snap_logic_exception(QString("link_context::link_context(): got a mode %1 which is not possible here").arg(static_cast<int>(mode)));
+
+                    }
+
+                    // whatever happened, we do not want to read anything more
+                    // from that row, reset it
+                    //
+                    f_row.reset();
+                }
+            }
+            //else -- all, keep the row/cells definition as is
         }
+        //else -- this is the default so we do not need to reset f_row
+        //{
+        //    // no such row; it is empty (link does not exist)
+        //    f_row.reset();
+        //}
     }
     else
     {
@@ -525,14 +1119,15 @@ link_context::link_context(snap_child * snap, link_info const & info, int const 
         // not need to specify the column names in the column predicate
         // it will automatically read all the data from that row
         QtCassandra::QCassandraTable::pointer_t links_table(links::links::instance()->get_links_table());
-        if(links_table->exists(f_info.link_key()))
+        QString const link_key(f_info.link_key());
+        if(links_table->exists(link_key))
         {
             if(count < 10)
             {
-                throw snap_logic_exception(QString("a count of %1 to read links is not valid, expected 10 or more").arg(count));
+                throw snap_logic_exception(QString("link_context::link_context(): a count of %1 to read links is not valid, expected 10 or more").arg(count));
             }
 
-            f_row = links_table->row(f_info.link_key());
+            f_row = links_table->row(link_key);
             // WARNING: Here the column names are the keys, not the link names...
             f_column_predicate->setCount(count);
             f_column_predicate->setIndex(); // behave like an index
@@ -573,23 +1168,59 @@ link_context::link_context(snap_child * snap, link_info const & info, int const 
  * \return true if info is set with the next link, false if no more
  *         links are available.
  */
-bool link_context::next_link(link_info& info)
+bool link_context::next_link(link_info & info)
 {
     // special case of a unique link
+    //
     if(f_info.is_unique())
     {
+        if(f_row != nullptr)
+        {
+            for(;;)
+            {
+                if(f_cell_iterator == f_cells.end())
+                {
+                    // no more cells available in f_cells, try to read more
+                    //
+                    f_row->readCells(f_column_predicate);
+                    f_cells = f_row->cells();
+                    f_cell_iterator = f_cells.begin();
+                    if(f_cell_iterator == f_cells.end())
+                    {
+                        // no more links, we are done
+                        //
+                        f_row.reset();
+                        return false;
+                    }
+                }
+
+                // the result is at the current iterator
+                //
+                QString const link_name(QString::fromUtf8(f_cell_iterator.key()));
+                QString const link_data(f_cell_iterator.value()->value().stringValue());
+
+                ++f_cell_iterator;
+
+                info.from_data(link_data);
+                info.set_destination_cell_name(link_name);
+                return true;
+            }
+            NOTREACHED();
+        }
+
         // return the f_link entry once, then return false (no more data)
-        if(f_link.isEmpty())
+        if(f_link.name().isEmpty())
         {
             return false;
         }
-        info.from_data(f_link);
-        f_link.clear();
+        info = f_link;
+        f_link = link_info(); // reset (use once)
         return true;
     }
 
     // multiple links
-    if(f_row)
+    //
+    if(f_row != nullptr)
     {
         QString links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
         links_namespace += "::";
@@ -603,22 +1234,26 @@ bool link_context::next_link(link_info& info)
         {
             if(f_cell_iterator == f_cells.end())
             {
-                // no more cells available in the cells, try to read more
+                // no more cells available in f_cells, try to read more
+                //
                 f_row->readCells(f_column_predicate);
                 f_cells = f_row->cells();
                 f_cell_iterator = f_cells.begin();
                 if(f_cell_iterator == f_cells.end())
                 {
-                    // no more cells available
+                    // no more links, we are done
+                    //
                     f_row.reset();
                     return false;
                 }
             }
 
             // the result is at the current iterator
+            //
             // note that from the links table we only get keys, no names
             // which does not matter as the name is f_info.name() anyway
-            QString const link_key(QString::fromUtf8(f_cell_iterator.key()));
+            //
+            QString const link_key_and_branch(QString::fromUtf8(f_cell_iterator.key()));
             QString const link_name(f_cell_iterator.value()->value().stringValue());
             if(!link_name.startsWith(links_namespace))
             {
@@ -632,6 +1267,12 @@ bool link_context::next_link(link_info& info)
             // when the name is empty, every link is a match
             // otherwise make sure that the name starts as defined in the
             // input name (f_info)
+            //
+            // TBD: this is most certainly useless (always a match) since
+            //      we use the name to access this list of columns
+            //      (i.e. the row name is URI#<branch>/<name>, and thus
+            //      all the values will be "links::<name>-...")
+            //
             if(name.isEmpty() || name == link_name.left(name.length()))
             {
                 // TODO: find the fastest way to determine the uniqueness?
@@ -654,6 +1295,8 @@ bool link_context::next_link(link_info& info)
                 info.set_branch(static_cast<int64_t>(link_name.mid(hash_pos + 1).toLongLong()));
 
                 // the key (URI) of the destination
+                int const pos(link_key_and_branch.indexOf("#"));
+                QString const link_key(link_key_and_branch.mid(0, pos));
                 info.set_key(link_key);
 
                 return true;
@@ -984,6 +1627,7 @@ void links::create_link(link_info const & src, link_info const & dst)
     // there is one special case: if a page is linked to itself (yes, it
     // happens, the page type of the system-page...); then the source and
     // destination names must differ otherwise we cannot read the link back
+    //
     if(src.key() == dst.key()
     && src.name() == dst.name())
     {
@@ -996,44 +1640,56 @@ void links::create_link(link_info const & src, link_info const & dst)
 
     if(src.is_unique())
     {
-        src_col = src.cell_name();
+        src_col = src.cell_name(dst);
     }
     else
     {
         // not unique, first check whether it was already created
-        QtCassandra::QCassandraValue value(f_links_table->row(src.link_key())->cell(dst.key())->value());
+        //
+        QString const key_with_branch(dst.key_with_branch());
+        QtCassandra::QCassandraValue value(f_links_table->row(src.link_key())->cell(key_with_branch)->value());
         if(value.nullValue())
         {
             // it does not exist, create a unique number
-            src_col = src.cell_name(f_snap->get_unique_number());
+            //
+            src_col = src.cell_name(dst, f_snap->get_unique_number());
+
             // save in the index table
-            (*f_links_table)[src.link_key()][dst.key()] = QtCassandra::QCassandraValue(src_col);
+            //
+            (*f_links_table)[src.link_key()][key_with_branch] = QtCassandra::QCassandraValue(src_col);
         }
         else
         {
             // it exists, make use of the existing key
+            //
             src_col = value.stringValue();
         }
     }
 
     if(dst.is_unique())
     {
-        dst_col = dst.cell_name();
+        dst_col = dst.cell_name(src);
     }
     else
     {
         // not unique, first check whether it was already created
-        QtCassandra::QCassandraValue value(f_links_table->row(dst.link_key())->cell(src.key())->value());
+        //
+        QString const key_with_branch(src.key_with_branch());
+        QtCassandra::QCassandraValue value(f_links_table->row(dst.link_key())->cell(key_with_branch)->value());
         if(value.nullValue())
         {
             // it does not exist, create a unique number
-            dst_col = dst.cell_name(f_snap->get_unique_number());
+            //
+            dst_col = dst.cell_name(src, f_snap->get_unique_number());
+
             // save in the index table
-            (*f_links_table)[dst.link_key()][src.key()] = QtCassandra::QCassandraValue(dst_col);
+            //
+            (*f_links_table)[dst.link_key()][key_with_branch] = QtCassandra::QCassandraValue(dst_col);
         }
         else
         {
             // it exists, make use of the existing key
+            //
             dst_col = value.stringValue();
         }
     }
@@ -1065,13 +1721,17 @@ void links::create_link(link_info const & src, link_info const & dst)
  * links.
  *
  * \param[in] info  The link key and name.
+ * \param[in] mode  The mode to read unique branches.
  * \param[in] count  Row count to fetch.
  *
  * \return A shared pointer to a link context, it will always exist.
  */
-QSharedPointer<link_context> links::new_link_context(const link_info& info, const int count)
+QSharedPointer<link_context> links::new_link_context(link_info const & info
+                                                   , link_context::mode_t const mode
+                                                   , const int count)
+
 {
-    QSharedPointer<link_context> context(new link_context(f_snap, info, count));
+    QSharedPointer<link_context> context(new link_context(f_snap, info, mode, count));
     return context;
 }
 
@@ -1081,7 +1741,7 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info, cons
  * This function reads the list of links defined on this page.
  *
  * In most cases, you should not need to call this function because you
- * show already know what links are present on your page and thus be
+ * should already know what links are present on your page and thus be
  * able to access them without first having to list them. Also this
  * function is considered SLOW.
  *
@@ -1207,7 +1867,7 @@ link_info_pair::vector_t links::list_of_links(QString const & path)
  * \param[in] delete_record_count  The record count of the rows to select
  *                                 to be deleted.
  */
-void links::delete_link(link_info const& info, int const delete_record_count)
+void links::delete_link(link_info const & info, int const delete_record_count)
 {
     // here we assume that the is_unique() could be misleading
     // this way we can avoid all sorts of pitfalls where someone
@@ -1218,122 +1878,154 @@ void links::delete_link(link_info const& info, int const delete_record_count)
     if(!f_branch_table->exists(info.row_key()))
     {
         // probably not an error if the row does not even exist...
+        //
         return;
     }
 
     // note: we consider the content row defined in the info structure
     //       to be the source; obviously, as a result, the other one will
     //       be the destination
+    //
     QtCassandra::QCassandraRow::pointer_t src_row(f_branch_table->row(info.row_key()));
 
     // check if the link is defined as is (i.e. this info represents
     // a unique link, a "1")
-
-    QString const unique_link_name(info.cell_name());
-    if(src_row->exists(unique_link_name))
+    //
+    if(info.is_unique())
     {
-        // we are here, this means it was a "1,1" or "1,*" link
-        QtCassandra::QCassandraValue link(src_row->cell(unique_link_name)->value());
-
-        // delete the source link right now
-        src_row->dropCell(unique_link_name);
-
-        // we read the link so that way we have information about the
-        // destination and can delete it too
+        QSharedPointer<link_context> link_ctxt(links::links::instance()->new_link_context(info, link_context::mode_t::LINK_CONTENT_MODE_ALL));
         link_info destination;
-        destination.from_data(link.stringValue());
-        if(!f_branch_table->exists(destination.row_key()))
+        while(link_ctxt->next_link(destination))
         {
-            // still tell the system that the source page changed
-            modified_link(info, false);
+            QString const unique_link_name(destination.destination_cell_name());
 
-            SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                        (destination.row_key())("\" (destination row missing in \"branch\" table).");
-            return;
-        }
-        QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(destination.row_key()));
+            // delete the source link right now, since it is a "1",
+            // it's just one cell in the source row
+            //
+            src_row->dropCell(unique_link_name);
 
-        // to delete the link on the other side, we have to test whether
-        // it is unique (1:1) or multiple (1:*)
-        QString dest_cell_unique_name(destination.cell_name());
-        if(dst_row->exists(dest_cell_unique_name))
-        {
-            // unique links are easy to handle!
-            dst_row->dropCell(dest_cell_unique_name);
-
-            // in this case, it is easy enough; note that we first use
-            // destination to match the other case on multiple links
-            // (see the else part)
-            modified_link(destination, false);
-            modified_link(info, false);
-        }
-        else
-        {
-            // with a multiple link we have to use the links table to find the
-            // exact destination
-            if(!f_links_table->exists(destination.link_key()))
+            // we read the link so that way we have information about the
+            // destination and can delete it too
+            //
+            if(!f_branch_table->exists(destination.row_key()))
             {
                 // still tell the system that the source page changed
+                //
                 modified_link(info, false);
 
-                // if the unique name does not exist,
-                // then the multi-name must exist...
                 SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                            (destination.row_key())("\" (destination row missing in \"links\" table)).");
-                return;
+                                (destination.row_key())
+                                ("\" (destination row missing in \"branch\" table).");
+                continue;
             }
-            QtCassandra::QCassandraRow::pointer_t dst_multi_row(f_links_table->row(destination.link_key()));
-            if(!dst_multi_row->exists(info.key()))
+            QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(destination.row_key()));
+
+            // to delete the link on the other side, we have to test whether
+            // it is unique (1:1) or multiple (1:*)
+            //
+            // since we have the source available, we can just call
+            // the cell_name() function
+            //
+            QString const dest_cell_unique_name(destination.cell_name(info));
+            if(dst_row->exists(dest_cell_unique_name))
             {
-                // still tell the system that the source page changed
-                modified_link(info, false);
+                // unique links are easy to handle!
+                //
+                dst_row->dropCell(dest_cell_unique_name);
 
-                // the destination does not exist anywhere!?
-                // (this could happen in case the server crashes or something
-                // of the sort...)
-                SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                            (destination.row_key())(" / ")
-                            (info.key())("\" (cell missing in \"links\" table).");
-                return;
-            }
-            // note that this is a multi-link, but in a (1:*) there is only
-            // one destination that correspond to the (1:...) and thus only
-            // one link that we need to load here
-            QtCassandra::QCassandraValue destination_link(dst_multi_row->cell(info.key())->value());
-
-            // we can drop that link immediately, since we got the information we needed
-            // (this is a drop in the "links" table)
-            dst_multi_row->dropCell(info.key());
-
-            // TODO: should we drop the row if empty?
-            //       I think it automatically happens when a row is empty
-            //       (no more cells) then it gets removed by Cassandra anyway
-
-            // this value represents the multi-name (i.e. <link namespace>::<link name>-<server name>-<number>)
-            QString dest_cell_multi_name(destination_link.stringValue());
-            if(dst_row->exists(dest_cell_multi_name))
-            {
-                dst_row->dropCell(dest_cell_multi_name);
-
-                // this worked as expected, tell that both destination and
-                // source were changed (in that order to match the other
-                // case where we delete all the destinations first and
-                // call the signal on destinations first)
+                // in this case, it is easy enough; note that we first use
+                // destination to match the other case on multiple links
+                // (see the else part)
+                //
                 modified_link(destination, false);
                 modified_link(info, false);
             }
             else
             {
-                // still tell the system that the source page changed
-                modified_link(info, false);
+                // with a multiple link we have to use the links table to find the
+                // exact destination
+                //
+                if(!f_links_table->exists(destination.link_key()))
+                {
+                    // still tell the system that the source page changed
+                    //
+                    modified_link(info, false);
 
-                // again, this could happen if the server crashed or was
-                // killed at the wrong time or another computer was deleting
-                // under our feet
-                SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                            (destination.row_key())(" / ")
-                            (dest_cell_multi_name)("\" (destination cell missing in \"branch\" table).");
-                return;
+                    // if the unique name does not exist,
+                    // then the multi-name must exist...
+                    //
+                    SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
+                                    (destination.row_key())
+                                    ("\" (destination row missing in \"links\" table)).");
+                    continue;
+                }
+                QtCassandra::QCassandraRow::pointer_t dst_multi_row(f_links_table->row(destination.link_key()));
+                QString const key_with_branch(info.key_with_branch());
+                if(!dst_multi_row->exists(key_with_branch))
+                {
+                    // still tell the system that the source page changed
+                    //
+                    modified_link(info, false);
+
+                    // the destination does not exist anywhere!?
+                    // (this could happen in case the server crashes or something
+                    // of the sort...)
+                    //
+                    SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
+                                    (destination.row_key())
+                                    (" / ")
+                                    (key_with_branch)
+                                    ("\" (cell missing in \"links\" table).");
+                    return;
+                }
+                // note that this is a multi-link, but in a (1:*) there is only
+                // one destination that correspond to the (1:...) and thus only
+                // one link that we need to load here
+                //
+                QtCassandra::QCassandraValue destination_link(dst_multi_row->cell(key_with_branch)->value());
+
+                // we can drop that link immediately, since we got the information we needed
+                // (this is a drop in the "links" table)
+                //
+                dst_multi_row->dropCell(key_with_branch);
+
+                // TODO: should we drop the row if empty?
+                //       I think it automatically happens when a row is empty
+                //       (no more cells) then it gets removed by Cassandra anyway
+
+                // this value represents the multi-name
+                // (i.e. <link namespace>::<link name>-<server name>-<number>)
+                //
+                QString dest_cell_multi_name(destination_link.stringValue());
+                if(dst_row->exists(dest_cell_multi_name))
+                {
+                    dst_row->dropCell(dest_cell_multi_name);
+
+                    // this worked as expected, tell that both destination and
+                    // source were changed (in that order to match the other
+                    // case where we delete all the destinations first and
+                    // call the signal on destinations first)
+                    //
+                    modified_link(destination, false);
+                    modified_link(info, false);
+                }
+                else
+                {
+                    // still tell the system that the source page changed
+                    //
+                    modified_link(info, false);
+
+                    // again, this could happen if the server crashed or was
+                    // killed at the wrong time or another computer was deleting
+                    // under our feet
+                    //
+                    SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
+                                    (destination.row_key())
+                                    (" / ")
+                                    (dest_cell_multi_name)
+                                    ("\" (destination cell missing in \"branch\" table).");
+                    continue;
+                }
             }
         }
     }
@@ -1342,8 +2034,6 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         // in this case we have a "*,1" or a "*,*" link
         // the links need to be loaded from the links table and there can
         // be many so we have to loop over the rows we read
-
-        QString const links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
 
         // here we get the row, we do not delete it yet because we need
         // to go through the whole list first
@@ -1380,8 +2070,10 @@ void links::delete_link(link_info const& info, int const delete_record_count)
                 {
                     // probably not an error if a link does not exist at all...
                     SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                                (key)("\" with name \"")
-                                (field_name)("\" (destination row missing in \"branch\" table.)");
+                                (key)
+                                ("\" with name \"")
+                                (field_name)
+                                ("\" (destination row missing in \"branch\" table.)");
                 }
                 else
                 {
@@ -1398,7 +2090,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
                     if(destination_info.is_unique())
                     {
                         // here we have a "*:1"
-                        f_branch_table->row(destination_info.row_key())->dropCell(destination_info.cell_name());
+                        f_branch_table->row(destination_info.row_key())->dropCell(destination_info.cell_name(info));
 
                         // let others know that a link changed on a page
                         modified_link(destination_info, false);
@@ -1406,10 +2098,11 @@ void links::delete_link(link_info const& info, int const delete_record_count)
                     else
                     {
                         QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(destination_info.link_key()));
-                        if(dst_row->exists(info.key())) // should always be true
+                        QString const key_with_branch(info.key_with_branch());
+                        if(dst_row->exists(key_with_branch)) // should always be true
                         {
-                            QString const dst_key(dst_row->cell(info.key())->value().stringValue());
-                            dst_row->dropCell(info.key());
+                            QString const dst_key(dst_row->cell(key_with_branch)->value().stringValue());
+                            dst_row->dropCell(key_with_branch);
                             f_branch_table->row(destination_info.row_key())->dropCell(dst_key);
 
                             // let others know that a link changed on a page
@@ -1480,10 +2173,11 @@ void links::delete_this_link(link_info const & source, link_info const & destina
 
     // drop the source info
     QtCassandra::QCassandraRow::pointer_t src_row(f_links_table->row(source.link_key()));
-    if(src_row->exists(destination.key())) // should always be true
+    QString const destination_key_with_branch(destination.key_with_branch());
+    if(src_row->exists(destination_key_with_branch)) // should always be true
     {
-        QString src_key(src_row->cell(destination.key())->value().stringValue());
-        src_row->dropCell(destination.key());
+        QString const src_key(src_row->cell(destination_key_with_branch)->value().stringValue());
+        src_row->dropCell(destination_key_with_branch);
         f_branch_table->row(source.row_key())->dropCell(src_key);
 
         modified_link(source, false);
@@ -1491,10 +2185,11 @@ void links::delete_this_link(link_info const & source, link_info const & destina
 
     // drop the destination info
     QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(destination.link_key()));
-    if(dst_row->exists(source.key())) // should always be true
+    QString const source_key_with_branch(source.key_with_branch());
+    if(dst_row->exists(source_key_with_branch)) // should always be true
     {
-        QString dst_key(dst_row->cell(source.key())->value().stringValue());
-        dst_row->dropCell(source.key());
+        QString const dst_key(dst_row->cell(source_key_with_branch)->value().stringValue());
+        dst_row->dropCell(source_key_with_branch);
         f_branch_table->row(destination.row_key())->dropCell(dst_key);
 
         modified_link(destination, false);
@@ -1512,7 +2207,7 @@ void links::delete_this_link(link_info const & source, link_info const & destina
  * \param[in] source_branch  The source page being cloned.
  * \param[in] destination_branch  The new page.
  */
-void links::adjust_links_after_cloning(QString const& source_branch, QString const& destination_branch)
+void links::adjust_links_after_cloning(QString const & source_branch, QString const & destination_branch)
 {
     init_tables();
 
@@ -1523,7 +2218,7 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
 
     int const dst_branch_pos(destination_branch.indexOf('#'));
     QString const destination_uri(destination_branch.mid(0, dst_branch_pos));
-    snap_version::version_number_t const branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
+    snap_version::version_number_t const dst_branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
 
     auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     column_predicate->setStartCellKey(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
@@ -1532,6 +2227,7 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
     column_predicate->setIndex(); // behave like an index
     int const src_branch_pos(source_branch.indexOf('#'));
     QString const source_uri(source_branch.mid(0, src_branch_pos));
+    snap_version::version_number_t const src_branch_number(source_branch.mid(src_branch_pos + 1).toULong());
     for(;;)
     {
         // we MUST clear the cache in case we read the same list of links twice
@@ -1558,7 +2254,11 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
                 QString cell_name;
                 if(dst_li.is_unique())
                 {
-                    cell_name = dst_li.cell_name();
+                    //cell_name = dst_li.cell_name(); -- use cell_name() if we ever define a full source link_info object
+                    cell_name = QString("%1::%2#%3")
+                            .arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE))
+                            .arg(dst_li.name())
+                            .arg(src_branch_number);
                 }
                 else
                 {
@@ -1577,11 +2277,11 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
                     throw links_exception_invalid_name("invalid link field name, no namespace found");
                 }
                 QString const plugin_name(name.mid(0, namespace_end));
-                plugins::plugin *plugin_owner(plugins::get_plugin(plugin_name));
-                links_cloned *link_owner(dynamic_cast<links_cloned *>(plugin_owner));
+                plugins::plugin * plugin_owner(plugins::get_plugin(plugin_name));
+                links_cloned * link_owner(dynamic_cast<links_cloned *>(plugin_owner));
                 if(link_owner != nullptr)
                 {
-                    link_owner->repair_link_of_cloned_page(destination_uri, branch_number, src_li, dst_li, true);
+                    link_owner->repair_link_of_cloned_page(destination_uri, dst_branch_number, src_li, dst_li, true);
                 }
             }
         }
@@ -1600,11 +2300,13 @@ void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_c
     QString const destination_key(destination_row->rowName());
     int const destination_branch_pos(destination_key.indexOf('#'));
     QString const destination_uri(destination_key.mid(0, destination_branch_pos));
+    //snap_version::version_number_t const dst_branch_number(destination_key.mid(destination_branch_pos + 1).toULong());
 
     QtCassandra::QCassandraRow::pointer_t source_row(source_cell->parentRow());
     QString const source_key(source_row->rowName());
     int const source_branch_pos(source_key.indexOf('#'));
     QString const source_uri(source_key.mid(0, source_branch_pos));
+    snap_version::version_number_t const src_branch_number(source_key.mid(source_branch_pos + 1).toULong());
 
     QString const other_row(dst_li.row_key());
     if(other_row != destination_key)
@@ -1612,12 +2314,17 @@ void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_c
         QString cell_name;
         if(dst_li.is_unique())
         {
-            cell_name = dst_li.cell_name();
+            //cell_name = dst_li.cell_name(); -- we define a src_li below
+            //                                   but that's already too late
+            cell_name = QString("%1::%2#%3")
+                    .arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE))
+                    .arg(dst_li.name())
+                    .arg(src_branch_number);
         }
         else
         {
             // in this case the info is in the links table
-            cell_name = f_links_table->row(dst_li.link_key())->cell(source_uri)->value().stringValue();
+            cell_name = f_links_table->row(dst_li.link_key())->cell(source_key)->value().stringValue();
         }
         QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(other_row));
         QString const src_link(dst_row->cell(cell_name)->value().stringValue());

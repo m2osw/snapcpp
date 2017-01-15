@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *
  * This function repairs parent links.
  */
-void content::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
+void content::repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning)
 {
     if(source.name() == get_name(name_t::SNAP_NAME_CONTENT_PARENT)
     && destination.name() == get_name(name_t::SNAP_NAME_CONTENT_CHILDREN))
