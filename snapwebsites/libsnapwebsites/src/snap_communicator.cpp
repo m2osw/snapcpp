@@ -1320,6 +1320,112 @@ bool snap_communicator::snap_connection::compare(pointer_t const & lhs, pointer_
 }
 
 
+/** \brief Get the number of events a connection will process in a row.
+ *
+ * Depending on the connection, their events may get processed within
+ * a loop. If a new event is received before the current event being
+ * processed is done, then the system generally processes that new event
+ * before exiting the loop.
+ *
+ * This count limit specifies that a certain amount of events can be
+ * processed in a row. After that many events were processed, the loop
+ * exits.
+ *
+ * Some loops may not allow for us to immediately quit that function. In
+ * that case we go on until a breaking point is allowed.
+ *
+ * \return The total amount of microsecond allowed before a connection
+ * processing returns even if additional events are already available
+ * in connection.
+ *
+ * \sa snap_communicator::snap_connection::set_event_limit()
+ */
+uint16_t snap_communicator::snap_connection::get_event_limit() const
+{
+    return f_event_limit;
+}
+
+
+/** \brief Set the number of events a connection will process in a row.
+ *
+ * Depending on the connection, their events may get processed within
+ * a loop. If a new event is received before the current event being
+ * processed is done, then the system generally processes that new event
+ * before exiting the loop.
+ *
+ * This count limit specifies that a certain amount of events can be
+ * processed in a row. After that many events were processed, the loop
+ * exits.
+ *
+ * Some loops may not allow for us to immediately quit that function. In
+ * that case we go on until a breaking point is allowed.
+ *
+ * \param[in] event_limit  Number of events to process in a row.
+ *
+ * \sa snap_communicator::snap_connection::get_event_limit()
+ */
+void snap_communicator::snap_connection::set_event_limit(uint16_t event_limit)
+{
+    f_event_limit = event_limit;
+}
+
+
+/** \brief Get the processing time limit while processing a connection events.
+ *
+ * Depending on the connection, their events may get processed within
+ * a loop. If a new event is received before the current event being
+ * processed is done, then the system generally processes that new event
+ * before exiting the loop.
+ *
+ * This count limit specifies that a certain amount of events can be
+ * processed in a row. After that many events were processed, the loop
+ * exits.
+ *
+ * Some loops may not allow for us to immediately quit that function. In
+ * that case we go on until a breaking point is allowed.
+ *
+ * \return The total amount of microsecond allowed before a connection
+ * processing returns even if additional events are already available
+ * in connection.
+ *
+ * \sa snap_communicator::snap_connection::set_processing_time_limit()
+ */
+uint16_t snap_communicator::snap_connection::get_processing_time_limit() const
+{
+    return f_processing_time_limit;
+}
+
+
+/** \brief Set the processing time limit while processing a connection events.
+ *
+ * Depending on the connection, their events may get processed within
+ * a loop. If a new event is received before the current event being
+ * processed is done, then the system generally processes that new event
+ * before exiting the loop.
+ *
+ * This time limit gives a certain amount of time for a set of events
+ * to get processed. The default is 0.5 seconds. Note that the system
+ * won't stop the current event after 0.5 seconds, however, if it
+ * takes that long or more, then it will not try to process another
+ * event within that loop before it checks all the connections that
+ * exist in your process.
+ *
+ * Some loops may not allow for us to immediately quit that function. In
+ * that case we go on until a breaking point is allowed.
+ *
+ * \param[in] processing_time_limit  The total amount of microsecond
+ *            allowed before a connection processing returns even if
+ *            additional events are already available in connection.
+ *
+ * \sa snap_communicator::snap_connection::get_processing_time_limit()
+ */
+void snap_communicator::snap_connection::set_processing_time_limit(int32_t processing_time_limit)
+{
+    // in mircoseconds.
+    f_processing_time_limit = processing_time_limit;
+}
+
+
 /** \brief Return the delay between ticks when this connection times out.
  *
  * All connections can include a timeout delay in microseconds which is
@@ -2998,11 +3104,13 @@ void snap_communicator::snap_pipe_buffer_connection::process_read()
 {
     if(get_socket() != -1)
     {
-        // we read one character at a time until we get a '\n'
-        // since we have a non-blocking socket we can read as
+        // we could read one character at a time until we get a '\n'
+        // but since we have a non-blocking socket we can read as
         // much as possible and then check for a '\n' and keep
         // any extra data in a cache.
         //
+        int count_lines(0);
+        int64_t const date_limit(snap_communicator::get_current_date() + f_processing_time_limit);
         std::vector<char> buffer;
         buffer.resize(1024);
         for(;;)
@@ -3026,14 +3134,31 @@ void snap_communicator::snap_pipe_buffer_connection::process_read()
                     //
                     f_line += std::string(&buffer[position], it - buffer.begin() - position);
                     process_line(QString::fromUtf8(f_line.c_str()));
+                    ++count_lines;
 
                     // done with that line
+                    //
                     f_line.clear();
 
                     // we had a newline, we may still have some data
                     // in that buffer; (+1 to skip the '\n' itself)
                     //
                     position = it - buffer.begin() + 1;
+                }
+
+                // when we reach here all the data read in `buffer` is
+                // now either fully processed or in f_line
+                //
+                // TODO: change the way this works so we can test the
+                //       limit after each process_line() call
+                //
+                if(count_lines >= f_event_limit
+                || snap_communicator::get_current_date() >= date_limit)
+                {
+                    // we reach one or both limits, stop processing so
+                    // the other events have a chance to run
+                    //
+                    break;
                 }
             }
             else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
@@ -3053,7 +3178,7 @@ void snap_communicator::snap_pipe_buffer_connection::process_read()
             }
         }
     }
-    //else -- TBD: should we at least log an error when read() is called without a valid socket?
+    //else -- TBD: should we at least log an error when process_read() is called without a valid socket?
 
     // process the next level
     snap_pipe_connection::process_read();
@@ -3959,6 +4084,8 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_read()
     //
     if(get_socket() != -1)
     {
+        int count_lines(0);
+        int64_t const date_limit(snap_communicator::get_current_date() + f_processing_time_limit);
         std::vector<char> buffer;
         buffer.resize(1024);
         for(;;)
@@ -3982,14 +4109,31 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_read()
                     //
                     f_line += std::string(&buffer[position], it - buffer.begin() - position);
                     process_line(QString::fromUtf8(f_line.c_str()));
+                    ++count_lines;
 
                     // done with that line
+                    //
                     f_line.clear();
 
                     // we had a newline, we may still have some data
                     // in that buffer; (+1 to skip the '\n' itself)
                     //
                     position = it - buffer.begin() + 1;
+                }
+
+                // when we reach here all the data read in `buffer` is
+                // now either fully processed or in f_line
+                //
+                // TODO: change the way this works so we can test the
+                //       limit after each process_line() call
+                //
+                if(count_lines >= f_event_limit
+                || snap_communicator::get_current_date() >= date_limit)
+                {
+                    // we reach one or both limits, stop processing so
+                    // the other events have a chance to run
+                    //
+                    break;
                 }
             }
             else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
@@ -4733,6 +4877,8 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_read()
     //
     if(get_socket() != -1)
     {
+        int count_lines(0);
+        int64_t const date_limit(snap_communicator::get_current_date() + f_processing_time_limit);
         std::vector<char> buffer;
         buffer.resize(1024);
         for(;;)
@@ -4756,14 +4902,31 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_read()
                     //
                     f_line += std::string(&buffer[position], it - buffer.begin() - position);
                     process_line(QString::fromUtf8(f_line.c_str()));
+                    ++count_lines;
 
                     // done with that line
+                    //
                     f_line.clear();
 
                     // we had a newline, we may still have some data
                     // in that buffer; (+1 to skip the '\n' itself)
                     //
                     position = it - buffer.begin() + 1;
+                }
+
+                // when we reach here all the data read in `buffer` is
+                // now either fully processed or in f_line
+                //
+                // TODO: change the way this works so we can test the
+                //       limit after each process_line() call
+                //
+                if(count_lines >= f_event_limit
+                || snap_communicator::get_current_date() >= date_limit)
+                {
+                    // we reach one or both limits, stop processing so
+                    // the other events have a chance to run
+                    //
+                    break;
                 }
             }
             else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)

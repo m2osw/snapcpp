@@ -2948,7 +2948,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     if(!security.get_secure().allowed())
     {
         // well... someone said "do not save that user in there"!
-        SNAP_LOG_ERROR("user security says no: ")(security.get_secure().reason());
+        SNAP_LOG_ERROR("user security says no to \"")(email)("\": ")(security.get_secure().reason());
         reason = security.get_secure().reason();
         return security.get_status();
     }

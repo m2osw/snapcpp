@@ -176,6 +176,11 @@ public:
         void                        set_priority(priority_t priority);
         static bool                 compare(pointer_t const & lhs, pointer_t const & rhs);
 
+        uint16_t                    get_event_limit() const;
+        void                        set_event_limit(uint16_t event_limit);
+        uint16_t                    get_processing_time_limit() const;
+        void                        set_processing_time_limit(int32_t processing_time_limit);
+
         int64_t                     get_timeout_delay() const;
         void                        set_timeout_delay(int64_t timeout_us);
         void                        calculate_next_tick();
@@ -212,11 +217,13 @@ public:
         QString                     f_name;
         bool                        f_enabled = true;
         bool                        f_done = false;
+        uint16_t                    f_event_limit = 5;                  // limit before giving other events a chance
         priority_t                  f_priority = 100;
-        int64_t                     f_timeout_delay = -1;       // in microseconds
-        int64_t                     f_timeout_next_date = -1;   // in microseconds, when we use the f_timeout_delay
-        int64_t                     f_timeout_date = -1;        // in microseconds
-        int64_t                     f_saved_timeout_stamp = -1; // in microseconds
+        int64_t                     f_timeout_delay = -1;               // in microseconds
+        int64_t                     f_timeout_next_date = -1;           // in microseconds, when we use the f_timeout_delay
+        int64_t                     f_timeout_date = -1;                // in microseconds
+        int64_t                     f_saved_timeout_stamp = -1;         // in microseconds
+        int32_t                     f_processing_time_limit = 500000;   // in microseconds
         int                         f_fds_position = -1;
     };
 

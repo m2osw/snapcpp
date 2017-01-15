@@ -1,8 +1,12 @@
-libsnapwebsites (1.1.74.8~xenial) xenial; urgency=high
+libsnapwebsites (1.1.75.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-537: Added a message and date limits to avoid looping through a
+    single connection messages for possibly a very long time.
+  * Fixed the "is example" function, it would return UNKNOWN for existing
+    and cached MX checks.
+  * Various clean ups.
 
- -- Build Server <build@m2osw.com>  Sun, 08 Jan 2017 02:00:45 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 15 Jan 2017 00:26:51 -0800
 
 libsnapwebsites (1.1.74.0~xenial) xenial; urgency=high
 
