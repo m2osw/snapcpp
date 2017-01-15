@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.48.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 15 Jan 2017 02:00:49 -0800
+
 snapserver-core-plugins (1.0.48.0~xenial) xenial; urgency=high
 
   * SNAP-531: Found another 4 tests that were inverted and fixed them.
