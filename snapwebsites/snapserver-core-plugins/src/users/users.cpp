@@ -2061,7 +2061,7 @@ void users::verify_user(content::path_info_t & ipath)
     if( !user_info.is_valid() )
     {
         SNAP_LOG_FATAL("users::verify_user() could not load the user information! (user_key=")
-                        (user_info.get_user_key());
+                        (user_info.get_user_key())(")");
         // redirect the user to the verification form although it won't work
         // next time either...
         f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
@@ -2184,7 +2184,7 @@ void users::verify_user(content::path_info_t & ipath)
  *         "user validation required" then the validation_required flag
  *         is set to false.
  */
-QString users::login_user(QString const& email, QString const & password, bool & validation_required, login_mode_t login_mode, QString const & password_policy)
+QString users::login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode, QString const & password_policy)
 {
     validation_required = false;
     user_info_t user_info(get_user_info_by_email(email));
@@ -2468,7 +2468,7 @@ QString users::login_user(QString const& email, QString const & password, bool &
  *
  * \param[in] user_info  The key to the user (NOT the raw email address).
  */
-void users::create_logged_in_user_session( user_info_t const& user_info )
+void users::create_logged_in_user_session( user_info_t const & user_info )
 {
     // log the user in by adding the correct object path
     // the other parameters were already defined in the
@@ -2492,7 +2492,7 @@ void users::create_logged_in_user_session( user_info_t const& user_info )
         QtCassandra::QCassandraValue const multisessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTISESSIONS)));
         if(multisessions.nullValue() || !multisessions.signedCharValue())
         {
-            // close session
+            // close other session
             sessions::sessions::session_info old_session;
             login_status_t const display_warning(load_login_session(previous_session, old_session, true));
 
@@ -2948,7 +2948,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     if(!security.get_secure().allowed())
     {
         // well... someone said "do not save that user in there"!
-        SNAP_LOG_ERROR("user security says no: ")(security.get_secure().reason());
+        SNAP_LOG_ERROR("user security says no to \"")(email)("\": ")(security.get_secure().reason());
         reason = security.get_secure().reason();
         return security.get_status();
     }
@@ -3856,7 +3856,7 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
 
     }
 
-    if(f_user_info.is_valid())
+    if(!f_user_info.is_valid())
     {
         // user not logged in
         return;

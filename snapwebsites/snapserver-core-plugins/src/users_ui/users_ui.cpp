@@ -549,7 +549,7 @@ void users_ui::on_check_for_redirect(content::path_info_t & ipath)
     {
         users::users * users_plugin(users::users::instance());
         auto user_info(users_plugin->get_user_info());
-        if( user_info.exists()
+        if(user_info.exists()
         && users_plugin->user_is_logged_in()) // only logged in users can change their password
         {
             password::policy_t pp("users");
@@ -820,7 +820,8 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
         users::users * users_plugin(users::users::instance());
 
         // retrieve the logged in user identifier
-        if(!users_plugin->get_user_info().is_valid())
+        auto const user_info(users_plugin->get_user_info());
+        if(!user_info.is_valid())
         {
             users_plugin->attach_to_session(users::get_name(users::name_t::SNAP_NAME_USERS_LOGIN_REFERRER), "user/password");
 
@@ -833,8 +834,8 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
             // redirect the user to the log in page
             f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
+            return;
         }
-        auto const user_info(users_plugin->get_user_info());
         if(!user_info.exists())
         {
             // This should never happen... we checked that account when the
@@ -1639,7 +1640,7 @@ void users_ui::process_forgot_password_form()
     auto const & user_info( users_plugin->get_user_info_by_email(email) );
 
     // check to make sure that a user with that email address exists
-    if(!user_info.exists())
+    if(user_info.exists())
     {
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -1772,7 +1773,7 @@ void users_ui::process_replace_password_form()
     //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
     //if(users_table->exists(f_user_changing_password_key))
     auto user_info(users_plugin->get_user_info_by_email(f_user_changing_password_key));
-    if(!user_info.exists())
+    if(user_info.exists())
     {
         //QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_changing_password_key));
 
@@ -1912,7 +1913,7 @@ void users_ui::process_password_form()
     QString details;
 
     // replace the password assuming we can find that user information
-    if(!user_info.exists())
+    if(user_info.exists())
     {
         // We're good, save the new password and remove that link.
         // Existing users have a unique identifier, necessary to create the user key below.

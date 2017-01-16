@@ -4391,11 +4391,32 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
 
     QtCassandra::QCassandraTable::pointer_t mx_table(get_table(get_name(name_t::SNAP_NAME_MX)));
 
+    verified_email_t result(verified_email_t::VERIFIED_EMAIL_UNKNOWN);
+
+    // function to set the result to either STANDARD or MIXED
+    // (we use a lambda because we use that twice)
+    //
+    auto set_result = [&result]()
+    {
+        switch(result)
+        {
+        case verified_email_t::VERIFIED_EMAIL_UNKNOWN:
+            result = verified_email_t::VERIFIED_EMAIL_STANDARD;
+        case verified_email_t::VERIFIED_EMAIL_STANDARD:
+            break;
+
+        default:
+            result = verified_email_t::VERIFIED_EMAIL_MIXED;
+            break;
+
+        }
+    };
+
+
     // finally, check that the MX record exists for that email address, if
     // not then we can immediately say its wrong; not that if multiple emails
     // are defined, you get one throw if any one of them is wrong...
     //
-    verified_email_t result(verified_email_t::VERIFIED_EMAIL_UNKNOWN);
     tld_email_list::tld_email_t e;
     while(tld_emails.next(e))
     {
@@ -4440,6 +4461,7 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
                     // considered valid without the need to check again
                     //
                     SNAP_LOG_TRACE("domain \"")(e.f_domain)("\" is considered valid (saved in mx table)");
+                    set_result();
                     continue;
                 }
                 // this is not valid
@@ -4453,7 +4475,7 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
         mail_exchangers exchangers(e.f_domain);
         if(!exchangers.domain_found())
         {
-            signed char failed(0);
+            signed char const failed(0);
             row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
             throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not exist.")
                         .arg(QString::fromUtf8(e.f_domain.c_str()))
@@ -4461,13 +4483,13 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
         }
         if(exchangers.size() == 0)
         {
-            signed char failed(0);
+            signed char const failed(0);
             row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
             throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not provide an MX record.")
                         .arg(QString::fromUtf8(e.f_domain.c_str()))
                         .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
         }
-        signed char succeeded(1);
+        signed char const succeeded(1);
         row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(succeeded);
 
         SNAP_LOG_TRACE("domain \"")(e.f_domain)("\" was just checked and is considered valid (it has an MX record.)");
@@ -4479,18 +4501,7 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
 
         // TODO: also save the MX info (once we are to make use of any of it...)
 
-        switch(result)
-        {
-        case verified_email_t::VERIFIED_EMAIL_UNKNOWN:
-            result = verified_email_t::VERIFIED_EMAIL_STANDARD;
-        case verified_email_t::VERIFIED_EMAIL_STANDARD:
-            break;
-
-        default:
-            result = verified_email_t::VERIFIED_EMAIL_MIXED;
-            break;
-
-        }
+        set_result();
     }
 
     return result;
