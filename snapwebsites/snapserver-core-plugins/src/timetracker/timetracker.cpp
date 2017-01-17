@@ -1,5 +1,5 @@
 // Snap Websites Server -- timetracker plugin to track time and generate invoices
-// Copyright (C) 2013-2016  Made to Order Software Corp.
+// Copyright (C) 2013-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -677,6 +677,10 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
     //
     QString const & login_status(permissions_plugin->get_login_status());
     content::permission_flag allowed;
+
+    // TODO: check whether the user is logged in? (or the page implies such
+    //       already?)
+    //
     path::path::instance()->access_allowed(permissions_plugin->get_user_path(), ipath, "administer", login_status, allowed);
     if(allowed.allowed())
     {

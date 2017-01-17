@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage permissions for users, forms, etc.
-// Copyright (C) 2013-2016  Made to Order Software Corp.
+// Copyright (C) 2013-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1932,7 +1932,8 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
         bool const redirect_method(method == "GET" || method == "POST");
 
         users::users * users_plugin(users::users::instance());
-        if(!users_plugin->get_user_info().is_valid())
+        users::users::user_info_t user_info(users_plugin->get_user_info());
+        if(!user_info.is_valid())
         {
             // special case of spammers
             if(users_plugin->user_is_a_spammer())
@@ -2028,7 +2029,10 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             //
             if( ipath.is_main_page() )
             {
-                users_plugin->set_referrer( ipath.get_cpath() );
+                // we want to save this very page as the referrer but
+                // it is not specific to a user...
+                //
+                users_plugin->set_referrer( ipath.get_cpath(), user_info );
             }
 
             // the title of public pages can be show in the error message;
@@ -2096,9 +2100,12 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
         }
         else
         {
-            if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED) && redirect_to_login && redirect_method)
+            if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED)
+            && redirect_to_login
+            && redirect_method)
             {
                 // allowed if logged in?
+                //
                 content::permission_flag allowed_if_logged_in;
                 path_plugin->access_allowed(user_path, ipath, action, get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
                 if(allowed_if_logged_in.allowed())
@@ -2113,7 +2120,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                     //
                     if( ipath.is_main_page() )
                     {
-                        users_plugin->set_referrer( ipath.get_cpath() );
+                        users_plugin->set_referrer( ipath.get_cpath(), user_info );
                     }
                     if(!users_plugin->is_transparent_hit())
                     {
@@ -2329,7 +2336,7 @@ QString const & permissions::get_user_path()
     {
         f_has_user_path = true;
         users::users * users_plugin(users::users::instance());
-        f_user_path = users_plugin->get_user_info().get_user_path();
+        f_user_path = users_plugin->get_user_info().get_user_path(false);
         if(f_user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
         {
             f_user_path.clear();
@@ -2836,7 +2843,7 @@ void permissions::check_permissions(QString const & email, QString const & page,
 
     // define the path to the user data from his email
     users::users::user_info_t user_info(users::users::instance()->get_user_info_by_email(email));
-    QString user_path(user_info.get_user_path());
+    QString user_path(user_info.get_user_path(false));
     if(user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
     {
         user_path.clear();
@@ -3209,7 +3216,7 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
     // check whether the user has edit rights
     content::permission_flag can_edit;
     path::path::instance()->access_allowed(
-            users::users::instance()->get_user_info().get_user_path(),
+            users::users::instance()->get_user_info().get_user_path(false),
             ipath,
             "edit",
             get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),

@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle listener requests responses
-// Copyright (C) 2014-2016  Made to Order Software Corp.
+// Copyright (C) 2014-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -237,7 +237,7 @@ void listener::on_process_post(QString const & uri_path)
         NOTREACHED();
     }
 
-    QString const & user_path(users_plugin->get_user_info().get_user_path());
+    QString const & user_path(users_plugin->get_user_info().get_user_path(false));
     QString const & login_status(permissions_plugin->get_login_status());
     for(int i(0); i < max_uri; ++i)
     {

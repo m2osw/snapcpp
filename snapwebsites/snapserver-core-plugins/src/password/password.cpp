@@ -1,5 +1,5 @@
 // Snap Websites Server -- verify passwords of all the parts used by snap
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -761,12 +761,8 @@ QString password::check_password_against_policy(users::users::user_info_t user_i
     // reusing an old password
     //
     if(pp.get_prevent_old_passwords()
-    && user_info.is_valid())
+    && user_info.is_valid())  // WARNING: this may not be the current user, so do not check whether it is logged in.
     {
-        users::users * users_plugin(users::users::instance());
-        //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-        //QtCassandra::QCassandraRow::pointer_t row(user_info.get_user_row());
-
         int64_t const minimum_count(pp.get_minimum_old_passwords());
         int64_t const maximum_age(pp.get_old_passwords_maximum_age());
         int64_t const age_limit(f_snap->get_start_date() - maximum_age * 86400LL * 1000000LL);
@@ -779,7 +775,6 @@ QString password::check_password_against_policy(users::users::user_info_t user_i
             //
             QString const password_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD)).arg(idx));
             if( !user_info.value_exists(password_name) )
-            //if(!row->exists(password_name))
             {
                 break;
             }
@@ -788,7 +783,6 @@ QString password::check_password_against_policy(users::users::user_info_t user_i
             // to delete it (and any following passwords)
             //
             QString const password_modified_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED)).arg(idx));
-            //QtCassandra::QCassandraValue const old_password_modified(row->cell(password_modified_name)->value());
             QtCassandra::QCassandraValue const old_password_modified(user_info.get_value(password_modified_name));
             int64_t const password_start_date(old_password_modified.safeInt64Value(0, 0));
             if(idx >= minimum_count && password_start_date < age_limit)
@@ -837,6 +831,8 @@ QString password::check_password_against_policy(users::users::user_info_t user_i
                 // we have to encrypt the new password with the old digest to
                 // get a hash similar to the saved hash
                 //
+                users::users * users_plugin(users::users::instance());
+
                 QByteArray hash;
                 users_plugin->encrypt_password(old_password_digest.stringValue(), user_password, old_password_salt.binaryValue(), hash);
                 if(old_password.size() == hash.size()
@@ -1105,7 +1101,7 @@ void password::on_user_logged_in(users::users::user_logged_info_t & logged_info)
 }
 
 
-void password::on_save_password(users::users::user_info_t user_info, QString const & user_password, QString const & password_policy)
+void password::on_save_password(users::users::user_info_t & user_info, QString const & user_password, QString const & password_policy)
 {
     NOTUSED(user_password);
 
@@ -1248,7 +1244,7 @@ void password::on_save_password(users::users::user_info_t user_info, QString con
  *                       his/her password.
  * \param[in] policy     The policy concerned with this invalid password.
  */
-void password::on_invalid_password(users::users::user_info_t user_info, QString const & policy)
+void password::on_invalid_password(users::users::user_info_t & user_info, QString const & policy)
 {
     policy_t pp(policy);
 
@@ -1307,7 +1303,7 @@ void password::on_invalid_password(users::users::user_info_t user_info, QString 
  *                       his/her password.
  * \param[in] policy     The policy concerned with this invalid password.
  */
-void password::on_blocked_user(users::users::user_info_t user_info, QString const & policy)
+void password::on_blocked_user(users::users::user_info_t & user_info, QString const & policy)
 {
     policy_t pp(policy);
 

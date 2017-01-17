@@ -1,5 +1,5 @@
 // Snap Websites Server -- JavaScript WYSIWYG form widgets
-// Copyright (C) 2013-2016  Made to Order Software Corp.
+// Copyright (C) 2013-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -5153,7 +5153,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     // check whether the user has edit rights
     content::permission_flag can_edit;
     path::path::instance()->access_allowed(
-            users::users::instance()->get_user_info().get_user_path(),
+            users::users::instance()->get_user_info().get_user_path(false),
             ipath,
             "edit",
             permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),

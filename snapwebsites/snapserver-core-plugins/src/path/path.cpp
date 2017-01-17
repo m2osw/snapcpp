@@ -1,5 +1,5 @@
 // Snap Websites Server -- path handling
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -718,7 +718,7 @@ void path::verify_permissions(content::path_info_t & ipath, permission_error_cal
  * In general, just the permissions plugin does that work, but other
  * plugins can also check. The result is true by default and if any
  * plugin decides that the page is not accessible, the result is set
- * to false. A plugin is not allowed to set the flag back to false.
+ * to false. A plugin is not allowed to set the flag back to true.
  *
  * \param[in] user_path  The path to the user being checked.
  * \param[in,out] path  The path being checked.

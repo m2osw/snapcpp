@@ -395,13 +395,17 @@ void users_ui::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
     auto const & user_info(users_plugin->get_user_info());
     if(!user_info.is_valid())
     {
-        // user not logged in
+        // user is not known
         return;
     }
 
-    if(!user_info.exists())
+    if(user_info.is_anonymous()
+    || !user_info.exists())
     {
         // cannot find user...
+        //
+        // (TBD: we may want to have some info for the anonymous user?)
+        //
         return;
     }
 
@@ -733,7 +737,7 @@ void users_ui::on_generate_boxes_content(content::path_info_t & page_cpath, cont
 //           example.com?login=key  (admin can choose the name, i.e. "login")
 
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in()) // logged in users never see the login/register boxes
     {
         if(ipath.get_cpath().endsWith("login")
         || ipath.get_cpath().endsWith("register"))
@@ -741,6 +745,9 @@ void users_ui::on_generate_boxes_content(content::path_info_t & page_cpath, cont
             return;
         }
     }
+    //else -- if the user is not anonymous, we could still hide those boxes
+    //        but in that case we'd want a flag to know whether this website
+    //        works one way or the other...
 
 //std::cerr << "GOT TO USER BOXES!!! [" << ipath.get_key() << "]\n";
     if(ipath.get_cpath().endsWith("/login"))
@@ -785,7 +792,7 @@ void users_ui::prepare_replace_password_form(QDomElement & body)
         f_snap->page_redirect("user/password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Already Logged In", "You are already logged in so you cannot access this page at this time.");
         NOTREACHED();
     }
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // user logged in a while back, ask for credentials again
         // (we want the user to have  administrative permissions,
@@ -820,10 +827,19 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
         users::users * users_plugin(users::users::instance());
 
         // retrieve the logged in user identifier
+        //
+        // (TBD: could we allow the user to go to "/user/me" even when the
+        // user is not fully logged in?)
+        //
         auto const user_info(users_plugin->get_user_info());
-        if(!user_info.is_valid())
+        if(!users_plugin->user_is_logged_in())
         {
-            users_plugin->attach_to_session(users::get_name(users::name_t::SNAP_NAME_USERS_LOGIN_REFERRER), "user/password");
+            // user was trying to change his password?
+            //
+            if(user_id == "password")
+            {
+                users_plugin->set_referrer("user/password", user_info);
+            }
 
             messages::messages::instance()->set_error(
                 "Permission Denied",
@@ -832,6 +848,7 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
                 false
             );
             // redirect the user to the log in page
+            //
             f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
             return;
@@ -839,7 +856,9 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
         if(!user_info.exists())
         {
             // This should never happen... we checked that account when the
-            // user logged in
+            // user logged in, although the anonymous user has no data in
+            // the database in case we are dealing with such.
+            //
             messages::messages::instance()->set_error(
                 "Could Not Find Your Account",
                 "Somehow we could not find your account on this system.",
@@ -847,6 +866,7 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
                 true
             );
             // redirect the user to the log in page
+            //
             f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
             return;
@@ -861,6 +881,7 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
                 true
             );
             // redirect the user to the log in page
+            //
             f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
             return;
@@ -870,13 +891,14 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
         if(user_id == "password")
         {
             // user is editing his password
+            //
             prepare_password_form();
             output::output::instance()->on_generate_main_content(ipath, page, body);
             return;
         }
 
         // Probably not necessary to change user_id now
-        //user_id = QString("%1").arg(identifier);
+        //
         user_path = QString("user/%1").arg(identifier);
     }
     else
@@ -939,7 +961,7 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
 void users_ui::prepare_password_form()
 {
     users::users * users_plugin(users::users::instance());
-    if(!users_plugin->get_user_info().is_valid())
+    if(!users_plugin->user_is_logged_in())
     {
         // user needs to be logged in to edit his password
         f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
@@ -954,15 +976,15 @@ void users_ui::prepare_password_form()
 /** \brief Prepare the login form.
  *
  * This function makes sure that the user is not already logged in because
- * if so the user is just sent to his profile (/user/me).
+ * if so the user can just be sent to his profile (/user/me).
  *
- * Otherwise it saves the HTTP_REFERER information as the redirect
- * after a successfull log in.
+ * Otherwise it saves the current HTTP_REFERER information as the page to
+ * redirect the user after a successfull login.
  */
 void users_ui::prepare_login_form()
 {
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // user is logged in already, just send him to his profile
         f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
@@ -973,7 +995,10 @@ void users_ui::prepare_login_form()
 //       the user adds a query string with a secret key
 //           example.com?login=key  (admin can choose the name, i.e. "login")
 
-    users_plugin->set_referrer( f_snap->snapenv("HTTP_REFERER") );
+    // pass the user info whether it is valid or not
+    //
+    auto const user_info(users_plugin->get_user_info());
+    users_plugin->set_referrer( f_snap->snapenv("HTTP_REFERER"), user_info );
 }
 
 
@@ -986,7 +1011,7 @@ void users_ui::prepare_verify_credentials_form()
 {
     // user is an anonymous user, send him to the login form instead
     users::users * users_plugin(users::users::instance());
-    if(!users_plugin->get_user_info().is_valid())
+    if(!users_plugin->user_is_logged_in())
     {
         f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
@@ -1049,9 +1074,10 @@ void users_ui::logout_user(content::path_info_t & ipath, QDomElement & page, QDo
 void users_ui::prepare_basic_anonymous_form()
 {
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // user is logged in already, just send him to his profile
+        //
         f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
@@ -1074,12 +1100,14 @@ void users_ui::prepare_basic_anonymous_form()
 void users_ui::prepare_forgot_password_form()
 {
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // send user to his change password form if he's logged in
+        //
         // XXX look into changing this policy and allow logged in
         //     users to request a password change? (I don't think
         //     it matters actually)
+        //
         messages::messages::instance()->set_error(
             "You Are Logged In",
             "If you want to change your password and forgot your old password, you'll have to log out and request for a new password while not logged in.",
@@ -1100,7 +1128,7 @@ void users_ui::prepare_forgot_password_form()
 void users_ui::prepare_new_password_form()
 {
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // send user to his change password form if he's logged in
         // XXX look into changing this policy and allow logged in
@@ -1142,7 +1170,7 @@ void users_ui::prepare_new_password_form()
 void users_ui::verify_password(content::path_info_t & ipath)
 {
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // TBD: delete the "password" tag if present?
         //      that would seem wrong; if we have a module that forces
@@ -1154,6 +1182,7 @@ void users_ui::verify_password(content::path_info_t & ipath)
         //
         // user is logged in already, just send him to his profile
         // (if logged in he was verified in some way!)
+        //
         f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
@@ -1313,40 +1342,65 @@ void users_ui::send_to_replace_password_page(QString const & email, bool const s
     users::users * users_plugin(users::users::instance());
     users::users::user_info_t user_info(users_plugin->get_user_info_by_email(email));
 
+    // the only caller already does that but if this is a public function,
+    // we want to make double sure!
+    //
+    if(!user_info.exists())
+    {
+        // This should never happen...
+        messages::messages::instance()->set_error(
+            "Could Not Find Your Account",
+            "Somehow we could not find your account on this system.",
+            QString("user account for \"%1\" does not exist at this point").arg(user_info.get_user_email()),
+            true
+        );
+        // redirect the user to the log in page
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
+
     if(set_status)
     {
         // mark the user with the types/users/password tag
         // (i.e. user requested a new password)
         // source
+        //
         QString const link_name(users::get_name(users::name_t::SNAP_NAME_USERS_STATUS));
         bool const source_unique(true);
         content::path_info_t user_ipath;
-        //user_ipath.set_path(users_plugin->get_user_path(email));
-        user_ipath.set_path(user_info.get_user_path());
+        user_ipath.set_path(user_info.get_user_path(false));
         links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+
         // destination
+        //
         QString const link_to(users::get_name(users::name_t::SNAP_NAME_USERS_STATUS));
         bool const destination_unique(false);
         content::path_info_t password_path;
         password_path.set_path(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_PATH));
         links::link_info destination(link_to, destination_unique, password_path.get_key(), password_path.get_branch());
+
         // create link
+        //
         links::links::instance()->create_link(source, destination);
     }
 
     // Save the date when the user sent the request
+    //
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
     user_info.set_value(users::name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON, value);
 
     // Save the user IP address when the user sent the request
+    //
     value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     user_info.set_value(users::name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_IP, value);
 
     // make sure that this variable is set to a canonicalized user key
+    //
     f_user_changing_password_key = user_info.get_user_key();
 
     // send the user to the "public" replace password page since he got verified
+    //
     f_snap->page_redirect("user/password/replace", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
 }
@@ -1751,7 +1805,7 @@ void users_ui::process_replace_password_form()
 {
     // make sure the user is properly setup
     users::users * users_plugin(users::users::instance());
-    if(users_plugin->get_user_info().is_valid())
+    if(users_plugin->user_is_logged_in())
     {
         // user is logged in already, send him to his normal password form
         f_user_changing_password_key.clear();
@@ -1901,11 +1955,13 @@ void users_ui::process_password_form()
     users::users * users_plugin(users::users::instance());
     auto user_info(users_plugin->get_user_info());
 
-    // make sure the user is properly setup
-    if(!user_info.is_valid())
+    // make sure the user is properly logged in first
+    //
+    if(!users_plugin->user_is_logged_in())
     {
         // user is not even logged in!?
-        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
+        //
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -2024,25 +2080,29 @@ void users_ui::process_password_form()
 
                     // once we sent the new code, we can send the user back
                     // to the verify form
+                    //
                     messages::messages::instance()->set_info(
                         "Password Changed",
                         "Your new password was saved. Next time you want to log in, you must use your email with this new password."
                     );
-                    QString referrer(users_plugin->detach_from_session(users::get_name(users::name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+                    QString referrer(users_plugin->detach_referrer(user_info));
                     if(referrer == "user/password")
                     {
                         // ignore the default redirect if it is to this page
+                        //
                         referrer.clear();
                     }
                     if(referrer.isEmpty())
                     {
                         // Redirect user to his profile
+                        //
                         f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                     }
                     else
                     {
                         // If the user logged in when he needed to still change
-                        // his password, then there may very be a referrer path
+                        // his password and there still was a referrer path
+                        //
                         f_snap->page_redirect(referrer, snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                     }
                     NOTREACHED();
@@ -2247,7 +2307,7 @@ void users_ui::verify_email(QString const & email)
     info.set_session_id(users::users::USERS_SESSION_ID_VERIFY_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path( user_info.get_user_basepath() ); // sessions are always using the user id and not the email directly
+    info.set_object_path( user_info.get_user_path(true) ); // sessions are always using the user id and not the email directly
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
     QString const session(sessions::sessions::instance()->create_session(info));
@@ -2393,7 +2453,7 @@ void users_ui::forgot_password_email(users::users::user_info_t const & user_info
     info.set_session_id(users::users::USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path( user_info.get_user_basepath() ); // sessions are always using the user id and not the email directly
+    info.set_object_path( user_info.get_user_path(true) ); // sessions are always using the user id and not the email directly
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(3600 * 8);  // 8 hours
     QString const session(sessions::sessions::instance()->create_session(info));
@@ -2454,7 +2514,7 @@ void users_ui::on_init_editor_widget
 
     // what follows only interests logged in users
     users::users * users_plugin(users::users::instance());
-    QString const user_path(users_plugin->user_is_logged_in() ? users_plugin->get_user_info().get_user_path() : "");
+    QString const user_path(users_plugin->user_is_logged_in() ? users_plugin->get_user_info().get_user_path(false) : "");
     if(user_path.isEmpty())
     {
         return;

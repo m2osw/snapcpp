@@ -93,7 +93,6 @@
 
 #include <snapwebsites/poison.h>
 
-using namespace QtCassandra;
 
 SNAP_PLUGIN_START(users, 1, 0)
 
@@ -108,6 +107,7 @@ BOOST_STATIC_ASSERT((SALT_SIZE & 1) == 0);
 const int COOKIE_NAME_SIZE = 12; // the real size is (COOKIE_NAME_SIZE / 3) * 4
 // we want 3 bytes to generate 4 characters
 BOOST_STATIC_ASSERT((COOKIE_NAME_SIZE % 3) == 0);
+
 
 } // no name namespace
 
@@ -152,9 +152,6 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY:
         return "users::changing_password_key";
 
-    case name_t::SNAP_NAME_USERS_CHECK:
-        return "check";
-
     case name_t::SNAP_NAME_USERS_CREATED_TIME:
         return "users::created_time";
 
@@ -176,6 +173,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON:
         return "users::forgot_password_on";
 
+    case name_t::SNAP_NAME_USERS_HIT_CHECK:
+        return "check";
+
     case name_t::SNAP_NAME_USERS_HIT_TRANSPARENT:
         return "transparent";
 
@@ -190,6 +190,9 @@ const char * get_name(name_t name)
 
     case name_t::SNAP_NAME_USERS_INDEX_ROW:
         return "*index_row*";
+
+    case name_t::SNAP_NAME_USERS_LAST_USER_PATH:
+        return "users::last_user_path";
 
     case name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION:
         return "users::last_verification_session";
@@ -530,7 +533,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
     //
     users_table->clearCache();
 
-    QCassandraRowPredicate::pointer_t row_predicate( std::make_shared<QCassandraRowPredicate>() );
+    QtCassandra::QCassandraRowPredicate::pointer_t row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
     row_predicate->setCount(100);
 
     // Now go through and find all user rows and change them to ids. Add index entries.
@@ -547,7 +550,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
         auto row_list(users_table->rows());
         for( QByteArray const & row_key : row_list.keys() )
         {
-            QCassandraValue const email( row_key );
+            QtCassandra::QCassandraValue const email( row_key );
             QString email_name(email.stringValue());
             SNAP_LOG_TRACE("checking email_name=")(email_name);
             if( email_name == id_row_name || email_name == index_row_name )
@@ -564,22 +567,22 @@ void users::user_identifier_update(int64_t variables_timestamp)
                 continue;
             }
 
-            QCassandraRow::pointer_t  const & row     ( row_list[row_key] );
-            QCassandraCell::pointer_t const & id_cell ( row->cell(identifier_name) );
-            QCassandraValue const             id      ( id_cell->value() );
-            QCassandraRow::pointer_t  const & new_row ( users_table->row(id.binaryValue()) );
+            QtCassandra::QCassandraRow::pointer_t  const & row     ( row_list[row_key] );
+            QtCassandra::QCassandraCell::pointer_t const & id_cell ( row->cell(identifier_name) );
+            QtCassandra::QCassandraValue const             id      ( id_cell->value() );
+            QtCassandra::QCassandraRow::pointer_t  const & new_row ( users_table->row(id.binaryValue()) );
             SNAP_LOG_TRACE("found email [")(email_name)("], converting to id=[")(id.int64Value());
 
             // Now create the new row
             //
-            QCassandraCellPredicate::pointer_t crp( std::make_shared<QCassandraCellPredicate>() );
+            QtCassandra::QCassandraCellPredicate::pointer_t crp( std::make_shared<QtCassandra::QCassandraCellPredicate>() );
             crp->setCount( 10000 );
             row->readCells( crp );
             auto cell_list(row->cells());
             for( QByteArray const & cell_key : cell_list.keys() )
             {
-                QCassandraValue value( cell_list[cell_key]->value() );
-                QCassandraCell::pointer_t new_cell( new_row->cell(cell_key) );
+                QtCassandra::QCassandraValue value( cell_list[cell_key]->value() );
+                QtCassandra::QCassandraCell::pointer_t new_cell( new_row->cell(cell_key) );
                 new_cell->setValue( value );
             }
 
@@ -599,7 +602,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
     SNAP_LOG_TRACE("Creating *index_row*");
     {
         auto current_email_name( get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL) );
-        QCassandraRow::pointer_t const & index_row( users_table->row(index_row_name) );
+        QtCassandra::QCassandraRow::pointer_t const & index_row( users_table->row(index_row_name) );
         for( ;; )
         {
             uint32_t const count(users_table->readRows(row_predicate));
@@ -612,7 +615,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
             auto row_list(users_table->rows());
             for( QByteArray const & row_key : row_list.keys() )
             {
-                QCassandraValue const id( row_key );
+                QtCassandra::QCassandraValue const id( row_key );
                 QString row_text(id.stringValue());
                 if( row_text == id_row_name || row_text == index_row_name )
                 {
@@ -621,9 +624,9 @@ void users::user_identifier_update(int64_t variables_timestamp)
                     continue;
                 }
 
-                QCassandraRow::pointer_t  const & row           ( row_list[row_key] );
-                QCassandraValue           const & current_email ( row->cell(current_email_name)->value() );
-                QCassandraValue           const & identifier    ( row_key );
+                QtCassandra::QCassandraRow::pointer_t  const & row           ( row_list[row_key] );
+                QtCassandra::QCassandraValue           const & current_email ( row->cell(current_email_name)->value() );
+                QtCassandra::QCassandraValue           const & identifier    ( row_key );
 
                 SNAP_LOG_TRACE("Creating current_email entry: first=")(current_email.stringValue())
                         (", second=")(identifier.int64Value());
@@ -642,8 +645,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
  */
 void users::bootstrap(snap_child * snap)
 {
-    f_snap      = snap;
-    f_user_info = user_info_t( f_snap );
+    f_snap = snap;
 
     SNAP_LISTEN0 ( users, "server",  server,           process_cookies                     );
     SNAP_LISTEN0 ( users, "server",  server,           attach_to_session                   );
@@ -933,7 +935,7 @@ void users::on_process_cookies()
             // so now verify the user
             QString const path(f_info->get_object_path());
             bool ok(false);
-            users::users::identifier_t const id( path.mid(6).toLongLong(&ok) );
+            identifier_t const id( path.mid(6).toLongLong(&ok) );
             if( !ok || !authenticated_user(id, nullptr))
             {
                 // we are logged out because the session timed out
@@ -986,7 +988,7 @@ void users::on_process_cookies()
             // the user specified an action
             f_hit = uri.query_option(qs_hit);
             if(f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_USER)
-            && f_hit != get_name(name_t::SNAP_NAME_USERS_CHECK)
+            && f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_CHECK)
             && f_hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
             {
                 SNAP_LOG_WARNING("received an unknown type of hit \"")(f_hit)("\", forcing to \"user\"");
@@ -997,7 +999,10 @@ void users::on_process_cookies()
 
     // if we are just checking the session, do that and exit right away
     //
-    if(f_hit == get_name(name_t::SNAP_NAME_USERS_CHECK))
+    // TODO: we should move the f_hit initialization and 'check'
+    //       to another function
+    //
+    if(f_hit == get_name(name_t::SNAP_NAME_USERS_HIT_CHECK))
     {
         snap_string_list result;
 
@@ -1017,6 +1022,10 @@ void users::on_process_cookies()
                 {
                     result << "admin";
                 }
+            }
+            else
+            {
+                result << "soft";
             }
         }
 
@@ -1124,7 +1133,7 @@ void users::on_process_cookies()
     f_snap->set_cookie(cookie);
 //std::cerr << "user session id [" << f_info->get_session_key() << "] [" << f_user_key << "]\n";
 
-    if(f_user_info.is_valid())
+    if(f_user_info.is_user())
     {
         // make sure user locale/timezone get used on next
         // locale/timezone access
@@ -1317,9 +1326,9 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  *
  * \li User is not logged in, the function returns false and there
  *     is no user key to speak of... the user can still be tracked
- *     with the cookie, but the data cannot be attacked to an account
+ *     with the cookie, but the data cannot be attached to an account
  *
- *       . f_user_info.is_valid() == false
+ *       . f_user_info.is_user() -- false
  *       . f_user_logged_in -- false
  *       . f_administrative_logged_in -- false
  *
@@ -1338,7 +1347,7 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  *     "now + 3h". If you choose to do that, you probably want to
  *     reduce the time to something much shorter like 15 or 30 min.
  *
- *       . f_user_info.is_valid() == true
+ *       . f_user_info.is_user() -- true
  *       . f_user_logged_in -- true
  *       . f_administrative_logged_in -- true
  *
@@ -1350,18 +1359,18 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  *     the website. So the duration can be very long assuming the user
  *     comes to the website at least once a day or so.
  *
- *       . f_user_info.is_valid() == true
+ *       . f_user_info.is_user() -- true
  *       . f_user_logged_in -- true
  *       . f_administrative_logged_in -- false
  *
  * \li User is weakly logged in, meaning that he was logged in on the
- *     website in the past, but now the logging session still exists
- *     but does not grant much write access at all (if any, it is
+ *     website in the past, although the logging session still exists,
+ *     it does not grant much write access at all (if any, it is
  *     really very safe tasks...); the user is asked to log back in
  *     to edit content. Note that this is called Long Session, it is
  *     turned on by default, but it can be turned off.
  *
- *       . f_user_info.is_valid() == true
+ *       . f_user_info.is_user() -- true
  *       . f_user_logged_in -- false
  *       . f_administrative_logged_in -- false
  *
@@ -1385,13 +1394,13 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  * and the pointer is not nullptr.
  *
  * \note
- * The user email cannot be empty for the function to succeed.
+ * The \p id must be valid for the function to succeed.
  *
  * \warning
  * The user may be marked as known / valid, and even the function may
  * return true and yet the user is not considered logged in. This is
  * the side effect of the long sessions scheme. This scheme gives
- * use the possibility to over a certain number of functionalities to
+ * us the possibility to offer a certain number of functionalities to
  * the user at a reduced level of permissions (i.e. returning registered
  * user opposed to a fully registered user.) To determine whether
  * the user is indeed logged in, please make sure to check the
@@ -1399,31 +1408,31 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  * this is what the user_is_logged_in() or user_has_administrative_rights()
  * functions return.
  *
- * \param[in] email  The user email.
+ * \param[in] id  The user identifier.
  * \param[in] info  A pointer to the user's session information to be used.
  *
  * \return true if the user gets authenticated, false in all other cases.
  */
 bool users::authenticated_user(identifier_t const id, sessions::sessions::session_info * info)
 {
-    // called with a seemingly valid key?
-    //if(email.isEmpty())
-    if( id == -1 )
+    user_info_t user_info(get_user_info_by_id(id));
+
+    if( !user_info.is_user() )
     {
-        SNAP_LOG_INFO("cannot authenticate user without a key (anonymous users get this message).");
+        SNAP_LOG_INFO("cannot authenticate user without a valid key (anonymous users also get this message).");
         return false;
     }
 
-    user_info_t user_info(get_user_info_by_id(id));
-
-    // called with the email address of a user who registered before?
+    // verify that the user is really properly registered
+    //
     if( !user_info.exists() )
     {
-        SNAP_LOG_INFO("user key \"")(user_info.get_user_key())("\" was not found in the users table");
+        SNAP_LOG_INFO("user key \"")(user_info.get_identifier())("\" was not found in the users table");
         return false;
     }
 
     // is the user/application trying to log out
+    //
     QString const uri_path(f_snap->get_uri().path());
     if(uri_path == "logout" || uri_path.startsWith("logout/"))
     {
@@ -1436,7 +1445,7 @@ bool users::authenticated_user(identifier_t const id, sessions::sessions::sessio
         // without the f_user_info setup properly...
         //
         f_user_info = user_info;
-        if(info)
+        if(info != nullptr)
         {
             *f_info = *info;
         }
@@ -1451,11 +1460,11 @@ bool users::authenticated_user(identifier_t const id, sessions::sessions::sessio
     // TODO: we need an additional form to authorize
     //       the user to do more
     //
-    time_t const limit(info ? info->get_time_limit() : f_info->get_time_limit());
+    time_t const limit(info != nullptr ? info->get_time_limit() : f_info->get_time_limit());
     f_user_logged_in = f_snap->get_start_time() < limit;
     if(!f_user_logged_in)
     {
-        SNAP_LOG_TRACE("user authentication timed out by ")(limit - f_snap->get_start_time())(" micro seconds");
+        SNAP_LOG_TRACE("user authentication timed out by ")(limit - f_snap->get_start_time())(" seconds");
 
         // just in case, make sure the administrative logged in variable
         // is also false
@@ -1464,11 +1473,13 @@ bool users::authenticated_user(identifier_t const id, sessions::sessions::sessio
     }
     else
     {
-        time_t const admin_limit(info ? info->get_administrative_login_limit() : f_info->get_administrative_login_limit());
+        // the user may also be "administratively" logged in
+        //
+        time_t const admin_limit(info != nullptr ? info->get_administrative_login_limit() : f_info->get_administrative_login_limit());
         f_administrative_logged_in = f_snap->get_start_time() < admin_limit;
         if(!f_administrative_logged_in)
         {
-            SNAP_LOG_TRACE("user administrative authentication timed out by ")(admin_limit - f_snap->get_start_time())(" micro seconds");
+            SNAP_LOG_TRACE("user administrative authentication timed out by ")(admin_limit - f_snap->get_start_time())(" seconds");
         }
     }
 
@@ -1485,7 +1496,7 @@ bool users::authenticated_user(identifier_t const id, sessions::sessions::sessio
     || (long_sessions.nullValue() || long_sessions.signedCharValue()))
     {
         f_user_info = user_info;
-        if(info)
+        if(info != nullptr)
         {
             *f_info = *info;
         }
@@ -1526,12 +1537,17 @@ bool users::authenticated_user(identifier_t const id, sessions::sessions::sessio
  */
 void users::user_logout()
 {
-    if( !f_user_info.is_valid() )
+    if( !f_user_info.is_user() )
     {
         // just in case, make sure the flag is false
         f_user_logged_in = false;
         return;
     }
+
+    // drop the referrer if there is one, it is a security
+    // issue to keep that info on an explicit log out!
+    //
+    NOTUSED(detach_referrer(f_user_info));
 
     // the software is requesting to log the user out
     //
@@ -1542,18 +1558,14 @@ void users::user_logout()
     int64_t const total_session_duration(get_total_session_duration());
     f_info->set_time_to_live(total_session_duration);
 
-    // drop the referrer if there is one, it is a security
-    // issue to keep that info on an explicit log out!
-    NOTUSED(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
-
     // Save the date when the user logged out
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
-    f_user_info.set_value(name_t::SNAP_NAME_USERS_LOGOUT_ON,value);
+    f_user_info.set_value(name_t::SNAP_NAME_USERS_LOGOUT_ON, value);
 
     // Save the user IP address when logged out
     value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
-    f_user_info.set_value(name_t::SNAP_NAME_USERS_LOGOUT_IP,value);
+    f_user_info.set_value(name_t::SNAP_NAME_USERS_LOGOUT_IP, value);
 
     sessions::sessions::instance()->save_session(*f_info, false);
 
@@ -1580,7 +1592,7 @@ users::user_info_t & users::get_user_info()
 }
 
 
-users::user_info_t const& users::get_user_info() const
+users::user_info_t const & users::get_user_info() const
 {
     return f_user_info;
 }
@@ -1618,7 +1630,7 @@ QString users::basic_email_canonicalization(QString const & email)
         throw users_exception_invalid_email(QString("email \"%1\" does not include an AT ('@') character or it is the first character.").arg(email));
     }
 
-    return email.mid(0, pos) + email.mid(pos).toLower();
+    return email.mid(0, pos + 1) + email.mid(pos + 1).toLower();
 }
 
 
@@ -1669,7 +1681,7 @@ void users::on_generate_header_content(content::path_info_t & ipath, QDomElement
     //QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
     // retrieve the row for that user
-    if( f_user_info.is_valid() && f_user_info.exists() )
+    if(f_user_info.exists())
     {
         {   // snap/head/metadata/desc[@type='users::email']/data
             QDomElement desc(doc.createElement("desc"));
@@ -1793,7 +1805,7 @@ void users::on_generate_page_content(content::path_info_t & ipath, QDomElement &
         content::path_info_t user_ipath;
         user_ipath.set_path(user_info.key());
 
-        int64_t const user_id(user_info_t::get_user_id_by_path( f_snap, user_ipath.get_key() ));
+        int64_t const user_id(user_info_t::get_user_id_by_path( user_ipath.get_key() ));
 
         {   // snap/page/body/author[@type="users::identifier"]/data
             QDomElement author(doc.createElement("author"));
@@ -1842,31 +1854,28 @@ void users::on_create_content(content::path_info_t & ipath, QString const & owne
     NOTUSED(owner);
     NOTUSED(type);
 
-    if(f_user_info.is_valid())
+    if(f_user_info.exists())
     {
-        if(f_user_info.exists())
+        QtCassandra::QCassandraValue const value(f_user_info.get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
+        if(!value.nullValue())
         {
-            QtCassandra::QCassandraValue const value(f_user_info.get_value(name_t::SNAP_NAME_USERS_IDENTIFIER));
-            if(!value.nullValue())
-            {
-                QString const site_key(f_snap->get_site_key_with_slash());
-                QString const user_path(QString("%1%2/%3")
-                                        .arg(site_key)
-                                        .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
-                                        .arg(value.int64Value())
-                                        );
+            QString const site_key(f_snap->get_site_key_with_slash());
+            QString const user_path(QString("%1%2/%3")
+                                    .arg(site_key)
+                                    .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
+                                    .arg(value.int64Value())
+                                    );
 
-                content::path_info_t user_ipath;
-                user_ipath.set_path(user_path);
+            content::path_info_t user_ipath;
+            user_ipath.set_path(user_path);
 
-                QString const link_name(get_name(name_t::SNAP_NAME_USERS_AUTHOR));
-                bool const source_unique(true);
-                links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
-                QString const link_to(get_name(name_t::SNAP_NAME_USERS_AUTHORED_PAGES));
-                bool const destination_multi(false);
-                links::link_info destination(link_to, destination_multi, user_ipath.get_key(), user_ipath.get_branch());
-                links::links::instance()->create_link(source, destination);
-            }
+            QString const link_name(get_name(name_t::SNAP_NAME_USERS_AUTHOR));
+            bool const source_unique(true);
+            links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
+            QString const link_to(get_name(name_t::SNAP_NAME_USERS_AUTHORED_PAGES));
+            bool const destination_multi(false);
+            links::link_info destination(link_to, destination_multi, user_ipath.get_key(), user_ipath.get_branch());
+            links::links::instance()->create_link(source, destination);
         }
     }
 }
@@ -1902,7 +1911,7 @@ void users::verify_user(content::path_info_t & ipath)
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
-    if(f_user_info.is_valid())
+    if(f_user_info.is_user())
     {
         // TODO: consider moving this parameter to the /admin/settings/users
         //       page instead (unless we want to force a "save to sites table"?)
@@ -1935,7 +1944,7 @@ void users::verify_user(content::path_info_t & ipath)
         // drop the referrer if there is one, it is a security
         // issue to keep that info on an almost explicit log out!
         //
-        NOTUSED(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+        NOTUSED(detach_referrer(f_user_info));
 
         sessions::sessions::instance()->save_session(*f_info, new_random);
 
@@ -1987,7 +1996,7 @@ void users::verify_user(content::path_info_t & ipath)
     QtCassandra::QCassandraValue verify_ignore_user_agent(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT)));
     QString const path(info.get_object_path());
     bool ok(false);
-    QCassandraValue const id_val(static_cast<identifier_t>(path.mid(6).toLongLong(&ok))); // this is the identifier from the session (SNAP-258)
+    QtCassandra::QCassandraValue const id_val(static_cast<identifier_t>(path.mid(6).toLongLong(&ok))); // this is the identifier from the session (SNAP-258)
     //
     if( (info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
         || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0
@@ -2058,7 +2067,7 @@ void users::verify_user(content::path_info_t & ipath)
     //
     identifier_t const identifier(id_val.int64Value());
     user_info_t user_info( get_user_info_by_id(identifier) );
-    if( !user_info.is_valid() )
+    if( !user_info.is_user() )
     {
         SNAP_LOG_FATAL("users::verify_user() could not load the user information! (user_key=")
                         (user_info.get_user_key())(")");
@@ -2196,8 +2205,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
         QtCassandra::QCassandraValue value;
 
         // existing users have a unique identifier
-        identifier_t const user_identifier(user_info.get_identifier());
-        if( user_identifier == -1 )
+        if( !user_info.is_user() )
         {
             messages::messages::instance()->set_error(
                 "Could Not Log You In",
@@ -2224,10 +2232,8 @@ QString users::login_user(QString const & email, QString const & password, bool 
 
         user_logged_info_t logged_info(f_snap);
         logged_info.set_password_policy(password_policy);
-        logged_info.set_identifier(user_identifier);
-        logged_info.user_ipath().set_path(QString("%1/%2")
-                .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
-                .arg(user_identifier));
+        logged_info.set_identifier(user_info.get_identifier());
+        logged_info.user_ipath().set_path(user_info.get_user_path(false));
 
         // although the user exists, as in, has an account on this Snap!
         // website, that account may not be attached to this website so
@@ -2363,15 +2369,15 @@ QString users::login_user(QString const & email, QString const & password, bool 
 
                 // Save the date when the user logged in
                 value.setInt64Value(f_snap->get_start_date());
-                user_info.set_value(name_t::SNAP_NAME_USERS_LOGIN_ON,value);
+                user_info.set_value(name_t::SNAP_NAME_USERS_LOGIN_ON, value);
 
                 // Save the user IP address when logging in
                 value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
-                user_info.set_value(name_t::SNAP_NAME_USERS_LOGIN_IP,value);
+                user_info.set_value(name_t::SNAP_NAME_USERS_LOGIN_IP, value);
 
                 // Save the user latest session so we can implement the
                 // "one session per user" feature (which is the default)
-                user_info.set_value(name_t::SNAP_NAME_USERS_LOGIN_SESSION,f_info->get_session_key());
+                user_info.set_value(name_t::SNAP_NAME_USERS_LOGIN_SESSION, f_info->get_session_key());
 
                 // Tell all the other plugins that the user is now logged in
                 // you may specify a URI to where the user should be sent on
@@ -2381,7 +2387,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
                 user_logged_in(logged_info);
 
                 // user got logged out by a plugin and not redirected?!
-                if(f_user_info.is_valid())
+                if(f_user_info.is_user())
                 {
                     // make sure user locale/timezone get used on next
                     // locale/timezone access
@@ -2395,19 +2401,23 @@ QString users::login_user(QString const & email, QString const & password, bool 
                     {
                         // This looks like an API login someone, we just
                         // return and let the caller handle the rest
+                        //
                         return QString();
                     }
 
                     if(logged_info.is_password_change_required())
                     {
                         // this URI has priority over other plugins URIs
+                        //
                         logged_info.set_uri("user/password");
                     }
                     else if(logged_info.get_uri().isEmpty())
                     {
                         // here we detach from the session since we want to
                         // redirect only once to that page
-                        logged_info.set_uri(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+                        //
+                        QString const referrer(detach_referrer(f_user_info));
+                        logged_info.set_uri(referrer);
                         if(logged_info.get_uri().isEmpty())
                         {
                             // User is now logged in, redirect him
@@ -2473,35 +2483,66 @@ void users::create_logged_in_user_session( user_info_t const & user_info )
     // log the user in by adding the correct object path
     // the other parameters were already defined in the
     // on_process_cookies() function
-    f_info->set_object_path(user_info.get_user_basepath());
+    //
+    QString const user_basepath(user_info.get_user_path(true));
+    f_info->set_object_path(user_basepath);
+
+    // define the total duration of the session (usually 1 year)
+    //
     int64_t const total_session_duration(get_total_session_duration());
     f_info->set_time_to_live(total_session_duration);
+
+    // define the user duration (standard login)
+    //
     int64_t const user_session_duration(get_user_session_duration());
     f_info->set_time_limit(f_snap->get_start_time() + user_session_duration);
+
+    // define the administrator duration (admin login)
+    //
     int64_t const administrative_session_duration(get_administrative_session_duration());
     f_info->set_administrative_login_limit(f_snap->get_start_time() + administrative_session_duration);
+
+    // save the info in the session
+    //
     sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
+
+    // add another parameter so we always know whether the user was
+    // logged in before even if he logs out and becomes anonymous again
+    //
+    // this should never be detached, only retrieved
+    //
+    attach_to_session(get_name(name_t::SNAP_NAME_USERS_LAST_USER_PATH), user_basepath);
 
     // if there was another active login for that very user,
     // we want to cancel it and also display a message to the
     // user about the fact
+    //
     QString const previous_session(user_info.get_value(name_t::SNAP_NAME_USERS_LOGIN_SESSION).stringValue());
     if(!previous_session.isEmpty() && previous_session != f_info->get_session_key())
     {
         // Administrator can turn off that feature
+        //
         QtCassandra::QCassandraValue const multisessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTISESSIONS)));
         if(multisessions.nullValue() || !multisessions.signedCharValue())
         {
             // close other session
+            //
             sessions::sessions::session_info old_session;
             login_status_t const display_warning(load_login_session(previous_session, old_session, true));
 
             // whether the user could have been logged in, make sure to close the session
+            //
             old_session.set_object_path(user_info_t::get_full_anonymous_path());
 
-            // drop the referrer if there is one, it is a security
+            // drop the referrers if there are any, it is a security
             // issue to keep that info on an "explicit" log out!
+            //
+            // IMPORTANT: we use the session call directly because we
+            //            are detaching from "old_session" and not the
+            //            current session
+            //
             NOTUSED(sessions::sessions::instance()->detach_from_session(old_session, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+            NOTUSED(sessions::sessions::instance()->detach_from_session(old_session, referrer_identifier(user_info)));
 
             sessions::sessions::instance()->save_session(old_session, false);
 
@@ -2630,11 +2671,11 @@ users::status_t users::user_status_from_email(QString const & email, QString & s
         return status_t::STATUS_UNDEFINED;
     }
 
+    // user_info does the necessary email to user_key conversion
+    //
     user_info_t user_info(get_user_info_by_email(email));
-
-    // get_user_path() does the necessary email to user_key conversion
-    QString const user_path( user_info.get_user_path() );
-    if(user_path.isEmpty())
+    QString const user_path( user_info.get_user_path(false) );
+    if(user_path == get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
         return status_t::STATUS_NOT_FOUND;
     }
@@ -2777,7 +2818,7 @@ users::status_t users::user_status_from_user_path(QString const & user_path, QSt
  */
 QString users::get_user_email(QString const & user_path) const
 {
-    return get_user_email(user_info_t::get_user_id_by_path(f_snap, user_path));
+    return get_user_email(user_info_t::get_user_id_by_path(user_path));
 }
 
 
@@ -2808,7 +2849,7 @@ QString users::get_user_email(identifier_t const identifier) const
 {
     if(identifier > 0)
     {
-        user_info_t user_info(f_snap, identifier);
+        user_info_t user_info(get_user_info_by_id(identifier));
         if(user_info.exists())
         {
             // found the user, retrieve the current email
@@ -2831,44 +2872,93 @@ QString users::get_user_email(identifier_t const identifier) const
  */
 QString users::get_user_path(QString const & email) const
 {
-    user_info_t user_info(f_snap, email);
+    user_info_t user_info(get_user_info_by_email(email));
+    return user_info.get_user_path(false);
+}
+
+
+users::user_info_t users::get_user_info_by_id( identifier_t const & id )
+{
+    user_info_t user_info(id);
+    return user_info;
+}
+
+
+users::user_info_t users::get_user_info_by_email( QString const & email )
+{
+    // user_info(QString) expects either an email or a path...
+    // so this does the same as users::get_user_info_by_path()
     //
-    if( user_info.exists() )
-    {
-        return user_info.get_user_path();
-    }
-
-    // TODO: should this return name_t::SNAP_NAME_USERS_ANONYMOUS_PATH?
-    // see user_info_t::get_user_path()
-    return QString();
-}
-
-
-users::user_info_t users::get_user_info_by_id( identifier_t const& id )
-{
-    user_info_t user_info(f_snap, id);
+    user_info_t user_info(email);
     return user_info;
 }
 
 
-users::user_info_t users::get_user_info_by_email( QString const& email )
+users::user_info_t users::get_user_info_by_path( QString const & path )
 {
-    user_info_t user_info(f_snap, email);
-    return user_info;
-}
-
-
-users::user_info_t users::get_user_info_by_name( name_t const & name )
-{
-    user_info_t user_info(f_snap,name);
+    // user_info(QString) expects either an email or a path...
+    // so this does the same as users::get_user_info_by_email()
+    //
+    user_info_t user_info(path);
     return user_info;
 }
 
 
 users::user_info_t users::get_user_info_by_name( QString const & name )
 {
-    user_info_t user_info(f_snap, name);
+    user_info_t user_info(name);
     return user_info;
+}
+
+
+users::user_info_t users::get_last_logged_in_user_info() const
+{
+    // if the current session includes a SNAP_NAME_USERS_LAST_USER_PATH
+    // field then return the user_info_t for that user
+    //
+    QString const user_path(get_from_session(get_name(name_t::SNAP_NAME_USERS_LAST_USER_PATH)));
+    return get_user_info_by_path(user_path);
+}
+
+
+/** \brief Define the login referrer field name.
+ *
+ * If the specified user_info is not a nullptr and an identifier is defined
+ * (i.e. it is not set to IDENTIFIER_INVALID) then the function returns a
+ * field name including the user identifier:
+ *
+ * \code
+ *      "users::login_referrer::123"
+ * \endcode
+ *
+ * If no user is defined, then the base field name is returned:
+ *
+ * \code
+ *      "users::login_referrer"
+ * \endcode
+ *
+ * \param[in] user_info  The information about the user or nullptr.
+ *
+ * \return The field name to access the login referrer.
+ */
+QString users::referrer_identifier(user_info_t const & user_info)
+{
+    identifier_t id(user_info.get_identifier());
+    if(!user_info.is_user())
+    {
+        user_info_t const last_user_info(get_last_logged_in_user_info());
+        if(!last_user_info.is_user())
+        {
+            // cannot determine the user, make it user agnostic
+            //
+            return QString(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER));
+        }
+        id = last_user_info.get_identifier();
+    }
+
+    return QString("%1::%2")
+            .arg(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER))
+            .arg(id);
 }
 
 
@@ -2917,7 +3007,26 @@ users::status_t users::register_user(QString const & email, QString const & pass
     reason.clear();
 
     user_info_t user_info(get_user_info_by_email(email));
-    auto const & user_key(user_info.get_user_key());   // TODO: change to id
+
+    // WARNING:
+    //
+    //   Here we use the function that computes the key directly from
+    //   our email, this is because the get_user_info_by_email() will
+    //   return a user_info object without an email address if the
+    //   user is not valid (if the user_info_t constructor cannot
+    //   find an identifier from the passed email address, it sends
+    //   ends up calling the reset() function and thus removing the
+    //   email address.)
+    //
+    //   For this reason, we call the get_user_key() function that
+    //   accepts a parameter and that function computes the key from
+    //   that variable instead of a currently empty variable in
+    //   user_info.
+    //
+    //   The user_info will be invalid until we call the define_user()
+    //   function. After that it can be used as is.
+    //
+    auto const user_key(user_info.get_user_key(email));
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
@@ -2928,6 +3037,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     int64_t identifier(0);
     status_t status(status_t::STATUS_NEW);
+    QString const user_identifier_lock("global-users-lock#identifier");
     QString const id_row_name(get_name(name_t::SNAP_NAME_USERS_ID_ROW));
     QString const identifier_key(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER));
     QString const email_key(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
@@ -2957,12 +3067,21 @@ users::status_t users::register_user(QString const & email, QString const & pass
     bool new_user(false);
     {
         // first make sure this email is unique
-        snap_lock lock(user_key);
+        //
+        snap_lock lock(user_identifier_lock);
 
-        // TODO: we have to look at all the possible email addresses
+        // TODO: when this got converted, Doug continued to check the email
+        //       address but this time, in the user object itself; it seems
+        //       to me that I was checking the ID in the index before, not
+        //       100% sure though...
+        //
+        QtCassandra::QCassandraValue email_data;
         QtCassandra::QCassandraCell::pointer_t cell(user_info.get_cell(email_key));
-        cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-        QtCassandra::QCassandraValue const email_data(cell->value());
+        if(cell != nullptr)
+        {
+            cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+            email_data = cell->value();
+        }
         if(!email_data.nullValue())
         {
             // TODO: move this case from under the locked block since
@@ -2970,11 +3089,13 @@ users::status_t users::register_user(QString const & email, QString const & pass
             //
             // "someone else" already registered with that email
             // first check whether that user exists on this website
+            //
             QtCassandra::QCassandraValue const existing_identifier(user_info.get_value(identifier_key));
             if(existing_identifier.size() != sizeof(int64_t))
             {
                 // this means no user can register until this value gets
                 // fixed somehow!
+                //
                 messages::messages::instance()->set_error(
                     "Failed Creating User Account",
                     "Somehow we could not determine your user identifier. Please try again later.",
@@ -3014,6 +3135,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             // the current status could be STATUS_NEW if the user
             // registered in another website but did not yet verify his
             // email address.)
+            //
             status = status_t::STATUS_VALID;
         }
         else
@@ -3025,6 +3147,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             // unique identifier for each user, for that purpose we use
             // a special row in the users table and since we have a lock
             // we can safely do a read-increment-write cycle.
+            //
             if(users_table->exists(id_row_name))
             {
                 QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_row_name));
@@ -3052,11 +3175,15 @@ users::status_t users::register_user(QString const & email, QString const & pass
                 identifier = current_identifier.int64Value();
             }
 
-            // Save the first email the user had when registering
-            user_info.set_identifier( ++identifier );
-            user_info.set_user_email( email        );
+            // Create a new user entry
+            //
+            ++identifier; // next identifier
+            user_info.define_user( identifier, email );
 
             new_user = true;
+
+            // save the new identifier back in the database
+            //
             new_identifier.setInt64Value(identifier);
             users_table->row(id_row_name)->cell(identifier_key)->setValue(new_identifier);
         }
@@ -3065,32 +3192,22 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     // WARNING: if this breaks, someone probably changed the value
     //          content; it should be the user email
+    //
     int64_t const created_date(f_snap->get_start_date());
     if(new_user)
     {
-        // TODO: change to identifier
-        users_table ->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))
-                    ->cell(user_key)
-                    ->setValue(new_identifier.binaryValue());
-
         save_password( user_info, password, "users" );
 
-        // Save the user identifier in his user account so we can easily find
-        // the content user for that user account/email
-        //user_info.set_value( identifier_key, new_identifier );
-
-        // Save the email address as the current email
-        // This is the original untouch email address
-        //value.setStringValue(email);
-        //user_info.set_value( name_t::SNAP_NAME_USERS_CURRENT_EMAIL, value );
-
         // Save the user IP address when registering
+        //
         value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
         user_info.set_value( name_t::SNAP_NAME_USERS_ORIGINAL_IP, value );
 
         // Date when the user was created (i.e. now)
-        // if that field does not exist yet (it could if the user unsubscribe
+        //
+        // If that field does not exist yet (it could if the user unsubscribe
         // from a mailing list or something similar)
+        //
         if(!user_info.value_exists(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME)))
         {
             user_info.set_value( name_t::SNAP_NAME_USERS_CREATED_TIME, created_date );
@@ -3412,46 +3529,159 @@ QString users::get_from_session(QString const & name) const
 }
 
 
+/** \brief Detach the user referrer.
+ *
+ * This function detaches the login referrer for the specified user.
+ *
+ * On an auto-logout, a referrer has to be specific to a user because
+ * otherwise we could end up redirecting a different user to a page
+ * which could be "secret" (it is likely in the browsers cache anyway,
+ * although we want to fix that too at some point.)
+ *
+ * \param[in] user_info  The concerned user.
+ *
+ * \return If user_info represents a user and it has a referrer, that
+ *         referrer, which is also getting removed from the session.
+ *         Otherwise an empty string.
+ */
+QString users::detach_referrer(user_info_t const & user_info)
+{
+    // always detach the default referrer because we do not want
+    // to keep two redirects around
+    //
+    QString const default_referrer(detach_from_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+
+    // if we have a user, check the specific referrer first
+    //
+    if(user_info.is_user())
+    {
+        QString const specific_referrer(detach_from_session(referrer_identifier(user_info)));
+        if(!specific_referrer.isEmpty())
+        {
+            return specific_referrer;
+        }
+    }
+
+    // use the non-specific referrer if there is one...
+    //
+    return default_referrer;
+}
+
+
 /** \brief Set the referrer path for the current session.
  *
- * Call this function instead of
+ * Call this function instead of trying to directly save the login referrer.
+ *
+ * This function verifies that the path is not:
+ *
+ * \li empty -- there is no point in saving such a path and prefer to keep
+ *              the existing path
+ * \li inexistant -- there is no page with that name
+ * \li AJAX requests -- the path represents an AJAX request
+ * \li not-main-page -- a page marked as "not-main-page" cannot be redirected
+ *                      to with this function
+ * \li already defined -- if the referrer is already defined, do not overwrite
+ * \li "forgot-password" -- page is not accessible once logged in
+ * \li "login" -- the page you are trying to save as a referrer is the login
+ *                page to which one cannot go once logged in
+ * \li "logout" -- the page you are trying to save as a referrer is the logout
+ *                 page, which if we were to send a newly logged in user he
+ *                 would be unlogged immediately
+ * \li "new-password" -- page is not accessible once logged in
+ * \li "register" -- page is not accessible once logged in
+ * \li "verify" -- page is not accessible once logged in
+ * \li "verify-credentials" -- page is not accessible once logged in
+ * \li "verify/resend" -- page is not accessible once logged in
+ *
+ * So a line of code like this is going to be completely wrong:
  *
  * \code
  *      attach_to_session( name_t::SNAP_NAME_USERS_LOGIN_REFERRER, path );
  * \endcode
  *
- * This way we can make sure that a certain number of paths never get
- * saved for the log in redirect.
- *
- * \note
- * The special cases "/login" and "/logout" will do nothing, since we
- * do not want a referrer in those cases.
+ * The detach_referrer() function is used to retrieve a path saved by this
+ * function. If a referrer was saved, then it gets used at the time the
+ * user logs in.
  *
  * \note
  * This function ensures that the path gets canonicalized before it
  * gets used.
  *
- * \param[in] path  The path to the page being viewed as the referrer.
+ * \todo
+ * Maybe we could add a callback that would determine whether that path
+ * is allowed to be a referrer or not. That way other plugins could
+ * prevent certain paths using a technique other than the "not-main-page"
+ * link which may not always be possible (i.e. dynamic pages).
  *
+ * \bug
+ * The function may not currently support saving a dynamic path to
+ * the session because such do not exist in the database...
+ *
+ * \param[in] path  The path to the page being viewed as the referrer.
+ * \param[in] user_info  If the user is logged in at the time, the user info
+ *                       or nullptr.
+ *
+ * \sa detach_referrer()
  * \sa attach_to_session()
  * \sa detach_from_session()
  */
-void users::set_referrer( QString path )
+void users::set_referrer( QString path, user_info_t const & user_info )
 {
     // this is acceptable and it happens
     //
     // (note that if you want to go to the home page, you may want
     // to use f_snap->get_site_key_with_slash() instead of "" or "/")
+    //
     if(path.isEmpty())
     {
         return;
     }
 
     // canonicalize the path
+    //
     content::path_info_t ipath;
     ipath.set_path(path);
     path = ipath.get_key();  // make sure it is canonicalized
 
+    // verify that the path is not one of the user login related paths
+    // because once logged in, the user does not have permission to go
+    // to those pages
+    //
+    // The /logout page is particularly funny in this situation: it would
+    // log the user out right after he logged in and it would get readded
+    // and thus create a loop where the user cannot really log in for any
+    // amount of time.
+    //
+    QString const cpath(ipath.get_cpath());
+    if(cpath == "forgot-password"
+    || cpath == "login"
+    || cpath == "logout"
+    || cpath == "new-password"
+    || cpath == "register"
+    || cpath == "verify"
+    || cpath == "verify-credentials"  // this form could have a redirect, but there is probably no real reason to do it...
+    || cpath == "verify/resend")
+    {
+        return;
+    }
+
+    // if there is already a referrer, do not overwrite it
+    //
+    // Note: if both types of referrers are defined, we won't catch the
+    //       second one here, the detach function will properly handle
+    //       the deleting, but we cannot avoid defining the general
+    //       referrer (without a user ID) here if we do not have a
+    //       such an ID in order to determine whether a user specific
+    //       referrer exists...
+    //
+    QString login_referrer(referrer_identifier(user_info));
+    if( !get_from_session(login_referrer).isEmpty() )
+    {
+        return;
+    }
+
+    // make sure it is a valid page
+    //
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(ipath.get_key())
     && ipath.get_real_key().isEmpty())
@@ -3465,6 +3695,7 @@ void users::set_referrer( QString path )
     }
 
     // check whether this is our current page
+    //
     content::path_info_t main_ipath;
     main_ipath.set_path(f_snap->get_uri().path());
     if(path == main_ipath.get_key())
@@ -3488,35 +3719,29 @@ void users::set_referrer( QString path )
     // as boxes and other pages that are not expected to become main pages)
     // note that this does not prevent one from going to the page, only
     // the system will not redirect one to such a page
+    //
     QString const link_name(get_name(name_t::SNAP_NAME_USERS_NOT_MAIN_PAGE));
     links::link_info not_main_page_info(link_name, true, path, ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(not_main_page_info));
-    links::link_info type_info;
-    if(link_ctxt->next_link(type_info))
+    links::link_info has_link_info;
+    if(link_ctxt->next_link(has_link_info))
     {
         return;
     }
 
-    // use the current refererrer if there is one as the redirect page
-    // after log in; once the log in is complete, redirect to this referrer
-    // page; if you send the user on a page that only redirects to /login
-    // then the user will end up on his profile (/user/me)
-    //
-    char const * loginref_name( get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER) );
-    if( sessions::sessions::instance()->get_from_session( *f_info, loginref_name ).isEmpty() )
-    {
-        SNAP_LOG_DEBUG("name_t::SNAP_NAME_USERS_LOGIN_REFERRER being set to ")(path)(" for page path ")(f_info->get_page_path());
+    SNAP_LOG_DEBUG("referrer \"")
+                  (login_referrer)
+                  ("\" being set to \"")
+                  (path)
+                  ("\" for page \"")
+                  (f_info->get_page_path())
+                  ("\" with user path \"")
+                  (f_info->get_object_path())
+                  ("\"");
 
-        // verify that it is not /login or /logout because those cause
-        // real problems!
-        QString const cpath(ipath.get_cpath());
-        if(cpath != "login"
-        && cpath != "logout")
-        {
-            // everything okay!
-            attach_to_session( loginref_name, path );
-        }
-    }
+    // everything okay!
+    //
+    attach_to_session( login_referrer, path );
 }
 
 
@@ -3612,7 +3837,7 @@ void users::on_detach_from_session()
  */
 void users::on_define_locales(QString & locales)
 {
-    if(f_user_info.is_valid())
+    if(f_user_info.is_user())
     {
         if( f_user_info.exists() )
         {
@@ -3856,15 +4081,17 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
 
     }
 
-    if(!f_user_info.is_valid())
+    if(!f_user_info.is_user())
     {
-        // user not logged in
+        // unknown used (it may be the anonymous used too)
+        //
         return;
     }
 
     if( !f_user_info.exists() )
     {
-        // cannot find user...
+        // cannot find user?!?
+        //
         return;
     }
 
@@ -4033,43 +4260,6 @@ bool users::user_is_logged_in() const
 }
 
 
-#if 0
-/** \brief Check whether the specified user is marked as being an example.
- *
- * You may call this function to determine whether a user is marked as
- * an example. This happens whenever a user is created with an example
- * email address such as john@example.com.
- *
- * The function expects the email address of the user. It first canonicolize
- * the email and then checks in the database to see whether the user is
- * considered an example or not.
- *
- * We use the database instead of parsing the email so really any user
- * can be marked as an example user.
- *
- * \note
- * If the specified email does not represent a registered user, then the
- * function always returns false.
- *
- * \param[in] email  The email address of the user to check.
- *
- * \return true if the user is marked as being an example.
- */
-bool users::user_is_an_example_from_email(QString const & email)
-{
-    user_info_t user_info(get_user_info_by_email(email));
-    //
-    // TODO: make sure this is equivalent to row()
-    //
-    if( !user_info.exists() )
-    {
-        return false;
-    }
-    return user_info.get_value(name_t::SNAP_NAME_USERS_EXAMPLE).safeSignedCharValue() != 0;
-}
-#endif
-
-
 /** \brief Whether the user was logged in recently.
  *
  * This function MUST be called to know whether the user is a logged in
@@ -4118,7 +4308,7 @@ void users::on_improve_signature(QString const & path, QDomDocument doc, QDomEle
 {
     NOTUSED(path);
 
-    if(f_user_info.is_valid())
+    if(f_user_info.is_user())
     {
         // add a space between the previous link and this one
         snap_dom::append_plain_text_to_node(signature_tag, " ");
@@ -4127,7 +4317,7 @@ void users::on_improve_signature(QString const & path, QDomDocument doc, QDomEle
         QDomElement a_tag(doc.createElement("a"));
         a_tag.setAttribute("class", "user-account");
         a_tag.setAttribute("target", "_top");
-        a_tag.setAttribute("href", QString("/%1").arg(f_user_info.get_user_path()));
+        a_tag.setAttribute("href", f_user_info.get_user_path(true));
         // TODO: translate
         snap_dom::append_plain_text_to_node(a_tag, "My Account");
 
@@ -4150,8 +4340,13 @@ void users::on_improve_signature(QString const & path, QDomDocument doc, QDomEle
  */
 void users::on_set_locale()
 {
+    if( !f_user_info.is_user() )
+    {
+        return;
+    }
+
     // we may have a user defined locale
-    QString const user_path(f_user_info.get_user_path());
+    QString const user_path(f_user_info.get_user_path(false));
     if(user_path != get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
         content::content * content_plugin(content::content::instance());
@@ -4184,14 +4379,15 @@ void users::on_set_locale()
  */
 void users::on_set_timezone()
 {
-    if( !f_user_info.is_valid() )
+    if( !f_user_info.is_user() )
     {
         return;
     }
 
     // we may have a user defined timezone
-    QString const user_path(f_user_info.get_user_path());
-    if(!user_path.isEmpty())
+    //
+    QString const user_path(f_user_info.get_user_path(false));
+    if(user_path != get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
         content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -4278,7 +4474,7 @@ void users::on_table_is_accessible(QString const & table_name, server::accessibl
  * \param[in] user_password  The new password to save in that user's account.
  * \param[in] password_policy  The policy used to handle this password.
  */
-void users::save_password_done(user_info_t user_info, QString const & user_password, QString const & password_policy)
+void users::save_password_done(user_info_t & user_info, QString const & user_password, QString const & password_policy)
 {
     NOTUSED(password_policy);
 
