@@ -2396,6 +2396,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
  * when we generate the page we can put the errors linked to each widgets.
  *
  * \param[in,out] ipath  The path for which we look for an editor form.
+ * \param[in] saving  Whether we are loading or saving.
  *
  * \return The QDomDocument representing the editor form, may be null.
  */
@@ -2432,67 +2433,75 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool const
                 "The editor layout name is not composed of exactly one or two names.");
             NOTREACHED();
         }
-        if(script == "default")
+
+        // if empty then there is nothing else to do, there is no editor form
+        //
+        if(!script_parts.isEmpty())
         {
-            if(saving)
+            if(script == "default")
             {
-                // the default starts with our hard coded file from the resources
-                // other plugins can add to it whenever their
-                // dynamic_editor_widget() signal implementation is called.
-                //
-                QFile rc_widgets(":/xml/editor/default-page.xml");
-                if(!rc_widgets.open(QIODevice::ReadOnly))
+                if(saving)
                 {
-                    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
-                        "Editor default layout for a standard page could not be opened.",
-                        "The editor \"default-page.xml\" layout file could not be opened.");
-                    NOTREACHED();
+                    // the default starts with our hard coded file from the resources
+                    // other plugins can add to it whenever their
+                    // dynamic_editor_widget() signal implementation is called.
+                    //
+                    QFile rc_widgets(":/xml/editor/default-page.xml");
+                    if(!rc_widgets.open(QIODevice::ReadOnly))
+                    {
+                        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
+                            "Editor default layout for a standard page could not be opened.",
+                            "The editor \"default-page.xml\" layout file could not be opened.");
+                        NOTREACHED();
+                    }
+
+                    QByteArray const data(rc_widgets.readAll());
+                    if(data.isEmpty())
+                    {
+                        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
+                            "Editor default layout for a standard page could not be read.",
+                            "The editor \"default-page.xml\" layout file could not be read.");
+                        NOTREACHED();
+                    }
+
+                    QString const widgets_xml(QString::fromUtf8(data.data(), data.size()));
+                    if(widgets_xml.isEmpty())
+                    {
+                        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
+                            "Editor default layout is empty.",
+                            "The editor \"default-page.xml\" layout file is empty?");
+                        NOTREACHED();
+                    }
+
+                    QDomDocument named_editor_widgets("editor-form");
+                    editor_widgets = named_editor_widgets;
+                    editor_widgets.setContent(widgets_xml);
+
+                    dynamic_editor_widget(ipath, script, editor_widgets);
                 }
-
-                QByteArray const data(rc_widgets.readAll());
-                if(data.isEmpty())
-                {
-                    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
-                        "Editor default layout for a standard page could not be read.",
-                        "The editor \"default-page.xml\" layout file could not be read.");
-                    NOTREACHED();
-                }
-
-                QString const widgets_xml(QString::fromUtf8(data.data(), data.size()));
-                if(widgets_xml.isEmpty())
-                {
-                    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
-                        "Editor default layout is empty.",
-                        "The editor \"default-page.xml\" layout file is empty?");
-                    NOTREACHED();
-                }
-
-                QDomDocument named_editor_widgets("editor-form");
-                editor_widgets = named_editor_widgets;
-                editor_widgets.setContent(widgets_xml);
-
-                dynamic_editor_widget(ipath, script, editor_widgets);
             }
-        }
-        else
-        {
-            // in this case we totally ignore the query string because it would
-            // most certainly not correspond to the right theme (the one that
-            // links us to the editor layout)
-            QString const layout_name(script_parts.size() == 2
-                        ? script_parts[0] // force the layout::layout from the editor::layout
-                        : layout_plugin->get_layout(ipath, layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT), false));
-            snap_string_list const names(layout_name.split("/"));
-            if(names.size() > 0)
+            else
             {
-                QString const name(names[0]);
+                // in this case we totally ignore the query string because it would
+                // most certainly not correspond to the right theme (the one that
+                // links us to the editor layout)
+                //
+                QString const theme_name(script_parts.size() == 2
+                            ? script_parts[0] // force the layout::layout from the editor::layout
+                            : layout_plugin->get_layout(ipath, layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_THEME), false));
+                QString widgets_xml;
+                if(!theme_name.isEmpty())
+                {
+                    // always test for the data in the layout table first
+                    //
+                    QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
+                    widgets_xml = layout_table->row(theme_name)->cell(script + ".xml")->value().stringValue();
+                }
 
-                // always test for the data in the layout table first
-                QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
-                QString widgets_xml(layout_table->row(name)->cell(script + ".xml")->value().stringValue());
                 if(widgets_xml.isEmpty())
                 {
                     // check for a file in the resources instead...
+                    //
                     QFile rc_widgets(QString(":/xml/editor/%1.xml").arg(script));
                     if(rc_widgets.open(QIODevice::ReadOnly))
                     {
@@ -2508,18 +2517,18 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool const
                 {
                     SNAP_LOG_WARNING("Could not find an editor layout parser file named \"")
                             (script)("\". We checked the row \"")
-                            (name)("\" in the \"layout\" table, then in Qt resources with filename \":/xml/editor/")
+                            (theme_name)("\" in the \"layout\" table, then in Qt resources with filename \":/xml/editor/")
                             (script)(".xml\".");
                 }
                 else
                 {
-//std::cerr << "Default [" << script << "," << name << "] -- [" << widgets_xml.mid(0, 256) << "] found " << layout_name << " for " << ipath.get_key() << "\n";
                     QDomDocument named_editor_widgets("editor-form");
                     editor_widgets = named_editor_widgets;
                     editor_widgets.setContent(widgets_xml);
+
+                    dynamic_editor_widget(ipath, script, editor_widgets);
                 }
             }
-            dynamic_editor_widget(ipath, script, editor_widgets);
         }
         g_cached_form[cpath] = editor_widgets;
     }
@@ -4867,7 +4876,6 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     content::content * content_plugin(content::content::instance());
 
     QDomDocument editor_widgets(get_editor_widgets(ipath));
-//std::cerr << "***\n*** Use editor? " << (editor_widgets.isNull() ? "no" : "YES") << " widgets for " << ipath.get_key() << "\n***\n";
     if(editor_widgets.isNull())
     {
         // no editor specified for this page, skip on it (no editing allowed)
@@ -4876,7 +4884,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
 
     QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
     int const max_widgets(widgets.size());
-//std::cerr << "***\n*** Generating editor: " << max_widgets << " widgets for " << ipath.get_key() << "\n***\n";
+//SNAP_LOG_WARNING("generating editor form: ")(max_widgets)(" widgets for ")(ipath.get_key());
     if(max_widgets == 0)
     {
         // no editor we we do not at least have one widget
@@ -5161,6 +5169,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
     // transforms the widgets to HTML
+    //
     xslt x;
     x.set_xsl(f_editor_form);
     x.set_document(editor_widgets);
@@ -5171,8 +5180,8 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     QDomDocument doc_output("widgets");
     x.evaluate_to_document(doc_output);
 
-//std::cerr << "Editor Focus [" << editor_widgets.toString(-1) << "]\n";
-//std::cerr << "Editor Output [" << doc_output.toString(-1) << "]\n";
+//SNAP_LOG_WARNING("Editor Focus [")(editor_widgets.toString(-1))("]");
+//SNAP_LOG_WARNING("Editor Output [")(doc_output.toString(-1))("]");
 
     QDomNodeList result_widgets(doc_output.elementsByTagName("widget"));
     int const max_results(result_widgets.size());
@@ -5189,7 +5198,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
             g_added_editor_form_js_css = added_form_file_support_t::ADDED_FORM_FILE_NOT_YET;
         }
     }
-//std::cerr << "Editor XML [" << doc.toString(-1) << "]\n";
+//SNAP_LOG_WARNING("Editor XML [")(doc.toString(-1))("]");
 
     if(g_added_editor_form_js_css == added_form_file_support_t::ADDED_FORM_FILE_NOT_YET)
     {
