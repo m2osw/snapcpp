@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == output plugin database setup
-Copyright (C) 2011-2016  Made to Order Software Corp.
+Copyright (C) 2011-2017  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -238,16 +238,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View one of the few pages that a spammer can view.</p><p>We offer the spammers to see our home page, our privacy policy, and our terms and conditions. This right is for those few pages.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/view/system-page">
-    <param name="content::title" revision="revision">View System Page Right</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
-    </param>
-  </content>
   <content path="/types/permissions/rights/view/page/public">
     <param name="content::title" revision="revision">Public Page Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Right given to public pages so anonymous visitors can see them.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/administer/page">
+    <param name="content::title" revision="revision">Adminster Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Administer a page of content.</p><p>This right is used to submit editable pages (i.e. HTML body).</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/administer/page/public">
+    <param name="content::title" revision="revision">Adminster Public Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Administer a public page of content.</p><p>This right is used to submit editable pages (i.e. HTML body).</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/view/system-page">
+    <param name="content::title" revision="revision">View System Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/edit/page">
