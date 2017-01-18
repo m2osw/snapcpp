@@ -2135,7 +2135,7 @@ void users::verify_user(content::path_info_t & ipath)
     // send the user to the log in page since he got verified now
     messages::messages::instance()->set_info(
         "Verified!",
-        "Thank you for taking the time to register an account with us. Your account is now verified! You can now log in with the form below."
+        "Thank you for registering an account with us. Your account is now verified! You can now log in with the form below."
     );
     f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
     NOTREACHED();

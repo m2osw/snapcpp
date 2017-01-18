@@ -4611,7 +4611,7 @@ snapwebsites.EditorForm.prototype.changed = function()
 
 /** \brief Retrieve the save dialog.
  *
- * This functio retrieves a reference to the save dialog. It is a
+ * This function retrieves a reference to the save dialog. It is a
  * function because the save dialog doesn't get created until
  * requested.
  *
