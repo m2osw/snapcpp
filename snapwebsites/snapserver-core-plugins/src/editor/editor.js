@@ -1,9 +1,9 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.922
+ * Version: 0.0.3.924
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
- * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
@@ -3598,6 +3598,21 @@ snapwebsites.EditorSaveDialog.prototype.editorForm_ = null;
 snapwebsites.EditorSaveDialog.prototype.saveDialogPopupAutoHide_ = true;
 
 
+/** \brief Whether the saveDialogPopup_ widget is open.
+ *
+ * This parameter is true if the open() function was called. It is
+ * set back to false when close() gets called.
+ *
+ * It is used so the setPopup() function knows whether to show or
+ * hide the dialog / button that it is asked to manage it at the time
+ * it gets called.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.EditorSaveDialog.prototype.saveDialogPopupOpen_ = false;
+
+
 /** \brief The jQuery of the DOM representing the save dialog.
  *
  * This parameter holds the jQuery object referencing the DOM representing
@@ -3669,6 +3684,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
 
     // while creating a new page, the page is kept under "admin/drafts"
     // and in that case "save" and "save new branch" do not make sense
+    //
     if(jQuery("meta[name='path']").attr("content") === "admin/drafts")
     {
         jQuery(".snap_editor_save_p").hide();
@@ -3692,16 +3708,36 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
  * and to keep the buttons "active" but generate errors if clicked
  * while currently saving.
  *
- * @param {Element|jQuery} widget  A DOM or jQuery widget.
+ * @param {Element|jQuery} widget  A jQuery selector.
  * @param {boolean=} opt_hide_button  If true (default) then hide this button.
  */
 snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget, opt_hide_button)
 {
+    // in case we already have a saveDialogPopup_, get rid of it
+    //
+    if(this.saveDialogPopup_)
+    {
+        if(this.saveDialogPopup_.attr("id") == "snap_editor_save_dialog")
+        {
+            // this is the default created by the create_() function, we
+            // can just remove it, no need to keep it around
+            //
+            this.saveDialogPopup_.remove();
+        }
+        else
+        {
+            // this was a user defined widget, so leave it alone but still
+            // hide it so it does not stay on the screen
+            //
+            this.saveDialogPopup_.hide();
+        }
+    }
+
     this.saveDialogPopup_ = jQuery(widget);
     this.saveDialogPopupAutoHide_ = opt_hide_button === undefined || opt_hide_button;
     if(this.saveDialogPopupAutoHide_)
     {
-        this.saveDialogPopup_.hide();
+        this.saveDialogPopup_.toggle(this.saveDialogPopupOpen_);
     }
 };
 
@@ -3736,6 +3772,8 @@ snapwebsites.EditorSaveDialog.prototype.open = function()
     {
         this.saveDialogPopup_.fadeIn(300).css("display", "block");
     }
+
+    this.saveDialogPopupOpen_ = true;
 };
 
 
@@ -3757,6 +3795,8 @@ snapwebsites.EditorSaveDialog.prototype.close = function()
         this.saveDialogPopup_.fadeOut(300);
     }
     // else throw?
+
+    this.saveDialogPopupOpen_ = false;
 };
 
 
