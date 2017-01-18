@@ -1,3 +1,16 @@
+snapserver-core-plugins (1.0.50.0~xenial) xenial; urgency=high
+
+  * SNAP-468: Fixed the loading of the XSLT and XML files from the layout.
+  * Fixed the name of the them used to load the boxes.
+  * Removed some legacy support which is really not required anymore.
+  * Also get the name of the theme when loading an editor form.
+  * Moved the change-email to /change-email to avoid being under /admin.
+  * Removed the '[form::source]' reference in the /change-email page.
+  * Added the auto-save="no" attribute in the change-email form.
+  * Various cleanups and optimizations.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 16 Jan 2017 19:43:45 -0800
+
 snapserver-core-plugins (1.0.49.0~xenial) xenial; urgency=high
 
   * SNAP-329: Fixed login redirect problem by saving the referrer using the
