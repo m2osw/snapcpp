@@ -1,5 +1,5 @@
 // Snap Websites Server -- users security handling
-// Copyright (C) 2012-2016  Made to Order Software Corp.
+// Copyright (C) 2012-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,9 +31,34 @@
 SNAP_PLUGIN_EXTENSION_START(users)
 
 
-void users::user_security_t::set_user_info(user_info_t const & user_info, bool const allow_example_domain )
+/** \brief Setup the user_security_t object.
+ *
+ * This function sets the user_info, email (optional) and whether example
+ * email addresses are allowed.
+ *
+ * Note that the get_email() function returns the email address in
+ * the user_info object if defined (which means that user is considered
+ * valid.) If the user_info object has no email, then the \p email
+ * parameter specified in this function is returned instead. This is
+ * important when creating a new user since at that point the user_info
+ * structure does not have a valid email address.
+ *
+ * If you are unsure, pass QString() as the email address. It is likely
+ * the correct value in all cases except in users::register_user().
+ *
+ * \param[in] user_info  The user being checked. The function makes a copy.
+ * \param[in] email  The email address of the user or QString().
+ * \param[in] allow_example_domain  The domain name may be an example too.
+ *
+ * \sa get_email()
+ * \sa get_user_info()
+ * \sa get_allow_example_domain()
+ * \sa users::register_user()
+ */
+void users::user_security_t::set_user_info(user_info_t const & user_info, QString const & email, bool const allow_example_domain)
 {
     f_user_info            = user_info;
+    f_email                = email;
     f_allow_example_domain = allow_example_domain;
 }
 
@@ -70,6 +95,31 @@ void users::user_security_t::set_status(status_t status)
     {
         f_status = status;
     }
+}
+
+
+/** \brief Return the user email address.
+ *
+ * In most cases this function will return the email address
+ * defined in the user_info parameter passed to set_user_info().
+ *
+ * If we are creating the user, though, that email address will
+ * be empty so instead we return our f_email variable member.
+ * This normally includes the user email if available but it
+ * does not yet represent a valid user in the database.
+ * (i.e. when one called the users::register_user() function.)
+ *
+ * It is still possible that this function return an empty string
+ * although it is not likely.
+ *
+ * \return The user email address or an empty string.
+ *
+ * \sa set_user_info()
+ * \sa users::register_user()
+ */
+QString const & users::user_security_t::get_email() const
+{
+    return f_user_info.get_user_email().isEmpty() ? f_email : f_user_info.get_user_email();
 }
 
 

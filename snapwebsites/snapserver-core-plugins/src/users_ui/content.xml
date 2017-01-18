@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == users database setup
-Copyright (C) 2012-2016  Made to Order Software Corp.
+Copyright (C) 2012-2017  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -117,10 +117,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <!--link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link-->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
-  <content path="/admin/change-email">
+  <content path="/change-email" moved-from="/admin/change-email">
     <param name="content::title" revision="revision">Change Your Email Address</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Please enter your new email address twice for verification.</p>[form::source]]]>
+      <![CDATA[<p>Please enter your new email address twice for verification.</p>]]>
     </param>
     <!--TODO needed?! <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/email</link>-->
     <param name="editor::layout" revision="global" overwrite="yes">"change-email-page";</param>

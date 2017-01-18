@@ -1,5 +1,5 @@
 // Snap Websites Server -- check password strength
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -192,9 +192,9 @@ public:
     // users signals
     void on_check_user_security ( users::users::user_security_t    & security    );
     void on_user_logged_in      ( users::users::user_logged_info_t & logged_info );
-    void on_save_password       ( users::users::user_info_t        user_info, QString const & user_password, QString const & password_policy );
-    void on_invalid_password    ( users::users::user_info_t        user_info, QString const & policy );
-    void on_blocked_user        ( users::users::user_info_t        user_info, QString const & policy );
+    void on_save_password       ( users::users::user_info_t        & user_info, QString const & user_password, QString const & password_policy );
+    void on_invalid_password    ( users::users::user_info_t        & user_info, QString const & policy );
+    void on_blocked_user        ( users::users::user_info_t        & user_info, QString const & policy );
 
     // path::path_execute implementation
     bool                on_path_execute(content::path_info_t & ipath);

@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle the theme/layout information
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -388,6 +388,11 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
 {
     QString layout_name;
 
+    // TODO: if the parameters are the same, then the same result is to
+    //       be returned, we may want to look for a way to cache if it
+    //       makes things faster (i.e. the layout and editor both call
+    //       this function with the same parameters.)
+
     // TODO: We may actually want to first check the page theme, then the
     //       Query String user definition; although frankly that would not
     //       make sense; we definitively have a problem here because the
@@ -395,6 +400,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
     //       not change depending on the part being themed...
 
     // first check whether the user is trying to overwrite the layout
+    //
     if(use_qs_theme && ipath.is_main_page())
     {
         QString const qs_layout(f_snap->get_server_parameter("qs_" + column_name));
@@ -402,6 +408,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
         {
             // although query_option("") works as expected by returning ""
             // we avoid the call to the get_uri() by testing early
+            //
             snap_uri const & uri(f_snap->get_uri());
             layout_name = uri.query_option(qs_layout);
         }
@@ -427,6 +434,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
                 if(layout_value.nullValue())
                 {
                     // user did not define any layout, set the value to "default"
+                    //
                     layout_value = QString("\"default\"");
                 }
                 else
@@ -434,6 +442,9 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
                     // the name coming from the server .conf file will
                     // not be JavaScript, only a name, change it so it
                     // is compatible with the rest of the code below
+                    //
+                    // TODO: make sure the name is not tainted.
+                    //
                     layout_value.setStringValue(QString("\"%1\"").arg(layout_value.stringValue()));
                 }
             }
@@ -482,6 +493,8 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
         // does it look like the script failed? if so get a default
         if(layout_name.isEmpty())
         {
+            // TODO: make sure the name is not tainted.
+            //
             layout_name = f_snap->get_server_parameter(column_name);
         }
         if(layout_name.isEmpty())
@@ -541,28 +554,39 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
  */
 QString layout::apply_layout(content::path_info_t & ipath, layout_content * content_plugin)
 {
-    // First generate the body content (a large XML document)
-    QString layout_name;
-    QString xsl(define_layout(
-                  ipath
-                , get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT)
-                , get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL)
-                , ":/xsl/layout/default-body-parser.xsl"
-                , layout_name));
-
-    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
-    create_body(doc, ipath, xsl, content_plugin, true, layout_name);
-
-    // Then apply a theme to it
-    xsl = define_layout(
+    // Determine the name of the theme
+    // (Note: we need that name to determine the body XSLT data)
+    //
+    QString theme_name;
+    QString theme_xsl(define_layout(
                   ipath
                 , get_name(name_t::SNAP_NAME_LAYOUT_THEME)
                 , get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL)
                 , ":/xsl/layout/default-theme-parser.xsl"
-                , layout_name);
+                , QString() // no theme name defined yet...
+                , theme_name));
 
+    // Get the body XSLT data
+    //
+    QString layout_name;
+    QString body_xsl(define_layout(
+                  ipath
+                , get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT)
+                , get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL)
+                , ":/xsl/layout/default-body-parser.xsl"
+                , theme_name
+                , layout_name));
+
+    // Generate the body document now
+    //
+    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
+    create_body(doc, ipath, body_xsl, content_plugin, true, layout_name, theme_name);
+
+    // Then apply the theme to the body document
+    //
     // HTML5 DOCTYPE is just "html" as follow
-    return "<!DOCTYPE html>" + apply_theme(doc, xsl, layout_name);
+    //
+    return "<!DOCTYPE html>" + apply_theme(doc, theme_xsl, theme_name);
 }
 
 
@@ -597,6 +621,7 @@ QString layout::apply_layout(content::path_info_t & ipath, layout_content * cont
  * \param[in] default_filename  The name of a resource file representing
  *                              the default theme in case no theme was
  *                              already specified.
+ * \param[in] theme_name  A QString holding the name of the theme.
  * \param[out] layout_name  A QString to hold the resulting layout name.
  *
  * \return The XSL code in a string.
@@ -606,20 +631,21 @@ QString layout::define_layout(
             , QString const & name
             , QString const & key
             , QString const & default_filename
+            , QString const & theme_name
             , QString & layout_name)
 {
     // result variable
     //
     QString xsl;
 
-    // Retrieve the name of the layout for this path
+    // Retrieve the name of the layout for this path and column name
     //
     layout_name = get_layout(ipath, name, true);
 
-//SNAP_LOG_TRACE("Got theme / layout name = [")(layout_name)("] (key=")(ipath.get_key())(")");
+//SNAP_LOG_TRACE("Got theme / layout name = [")(layout_name)("] (key=")(ipath.get_key())(", theme_name=")(theme_name)(")");
 
     // If layout_name is not default, attempt to obtain the selected
-    // theme from the layout table.
+    // XSL file from the layout table.
     //
     if(layout_name != "default")
     {
@@ -627,7 +653,7 @@ QString layout::define_layout(
         // that first and cut the name in half if required
         //
         snap_string_list const names(layout_name.split("/"));
-        if(names.size() > 2)
+        if(layout_name.isEmpty() || names.size() > 2)
         {
             // can be one or two workds, no more
             //
@@ -637,8 +663,20 @@ QString layout::define_layout(
                     QString("layout::define_layout() found more than one '/' in \"%1\".").arg(layout_name));
             NOTREACHED();
         }
-        layout_name = names[0];
-        QString cell_name(names.size() >= 2 ? names[1] : key);
+
+        // The following two lines are really ugly:
+        //   1. we may want to remove the support for the "<theme>/<layout>" syntax,
+        //      it's not needed now that we clearly have a theme_name
+        //   2. we may want to do it with if()'s instead of just '?:' expressions
+        //
+        // Note: when theme_name.isEmpty() is true, we are retrieving the theme name...
+        //       and when false, we are retrieving the layout name
+        //
+        layout_name = names.size() >= 2 || theme_name.isEmpty() ? names[0] : theme_name;
+        QString cell_name(names.size() >= 2 ? names[1] : (names[0] == theme_name || theme_name.isEmpty() ? key : names[0]));
+
+        // quick verification of the cell_name, just in case
+        //
         if(cell_name == "content"
         || cell_name == "content.xml"
         || cell_name == "style"
@@ -655,12 +693,16 @@ QString layout::define_layout(
                     "layout::define_layout() found an illegal cell name.");
             NOTREACHED();
         }
+
+        // most often we do not put the .xsl at the end of the name
+        //
         if(!cell_name.endsWith(".xsl"))
         {
             cell_name += ".xsl";
         }
 
-        // try to load the layout from the database, if not found
+        // try to load the layout from the database (i.e. any theme can
+        // thus overload any system/plugin form!), if not found
         // we will try the Qt resources and if that fails too
         // switch to the default layout instead
         //
@@ -674,22 +716,11 @@ QString layout::define_layout(
             // (which is possibly wrong but works with my current tests)
             //
             QByteArray data;
-            QString const rc_name(QString(":/xsl/layout/%1-parser.xsl").arg(layout_name));
+            QString const rc_name(QString(":/xsl/layout/%1").arg(cell_name));
             QFile rc_parser(rc_name);
             if(rc_parser.open(QIODevice::ReadOnly))
             {
                 data = rc_parser.readAll();
-            }
-            else
-            {
-                // try again without adding the "-parser"
-                //
-                QString const qt_name(QString(":/xsl/layout/%1.xsl").arg(layout_name));
-                QFile rc_layout(qt_name);
-                if(rc_layout.open(QIODevice::ReadOnly))
-                {
-                    data = rc_layout.readAll();
-                }
             }
             if(!data.isEmpty())
             {
@@ -701,12 +732,14 @@ QString layout::define_layout(
                 // with loading a layout
                 //
                 SNAP_LOG_WARNING("layout data named \"")(names.join("/"))("\" could not be loaded. We will be using the \"default\" layout instead.");
+
+                // if we could not load any XSL, switch to the default theme
+                //
+                // (note: we do not need to test that in the else part below
+                // since we already checked that layout_value was not empty)
+                //
+                layout_name = "default";
             }
-            // Note: we set the default name here in case the xsl we just
-            //       read returned an empty string (if data was not empty
-            //       xsl should not be either, though.)
-            //
-            layout_name = "default";
         }
         else
         {
@@ -831,13 +864,30 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
  * \param[in] content_plugin  The plugin handling the content (body/title in general.)
  * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
  * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
+ * \param[in] theme_name  The name of the layout (only necessary if handle_boxes is true.)
  *
  * \return The resulting body in an XML document.
  */
-void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool const handle_boxes, QString const & layout_name)
+void layout::create_body(QDomDocument & doc
+                       , content::path_info_t & ipath
+                       , QString const & xsl
+                       , layout_content * content_plugin
+                       , bool const handle_boxes
+                       , QString const & layout_name
+                       , QString const & theme_name)
 {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "] name = [" << layout_name << "]";
+SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
+              (ipath.get_cpath())
+              ("] layout_name = [")
+              (layout_name)
+              ("] theme_name = [")
+              (theme_name)
+              ("]");
+
+//SNAP_LOG_TRACE("The XSL of the layout body is: [")
+//              (xsl)
+//              ("]");
 #endif
 
     // get the elements we are dealing with in this function
@@ -847,6 +897,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     QDomElement body(snap_dom::get_element(doc, "body"));
 
     body.setAttribute("layout-name", layout_name);
+    body.setAttribute("theme-name", theme_name);
 
     // other plugins generate defaults
 //std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
@@ -865,7 +916,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     if(handle_boxes && page.firstChildElement("boxes").isNull())
     {
 //std::cerr << "*** Generate boxes?!...\n";
-        generate_boxes(ipath, layout_name, doc);
+        generate_boxes(ipath, theme_name, doc);
     }
 
     // other plugins are allowed to modify the content if so they wish
@@ -1071,13 +1122,13 @@ void layout::generate_boxes(content::path_info_t & ipath, QString const & layout
     {
         // this should never happen because we do explicitly create this
         // <page> tag before calling this function
-        throw snap_logic_exception("<page> tag not found in the body DOM");
+        throw snap_logic_exception("layout::generate_boxes() <page> tag not found in the body DOM");
     }
     QDomElement page(all_pages.at(0).toElement());
     if(page.isNull())
     {
         // we just got a tag, this is really impossible!?
-        throw snap_logic_exception("<page> tag not a DOM Element???");
+        throw snap_logic_exception("layout::generate_boxes() <page> tag not a DOM Element???");
     }
     page.appendChild(boxes);
 
@@ -1109,6 +1160,9 @@ void layout::generate_boxes(content::path_info_t & ipath, QString const & layout
     {
         type_ipath.set_path(type_key);
     }
+//SNAP_LOG_TRACE("get layout boxes list from this page ")(ipath.get_key())
+//                                          (" or type ")(type_ipath.get_key())
+//                                    (" or boxes_path ")(boxes_ipath.get_key());
 
     content::field_search::search_result_t box_names;
     FIELD_SEARCH
@@ -1154,7 +1208,7 @@ void layout::generate_boxes(content::path_info_t & ipath, QString const & layout
     {
         if(max_names != 1)
         {
-            throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF / COMMAND_ELEMENT_TEXT");
+            throw snap_logic_exception("layout::generate_boxes(): expected zero or one entry from a COMMAND_SELF / COMMAND_ELEMENT_TEXT");
         }
         // an empty list is represented by a period because "" cannot be
         // properly saved in the database!

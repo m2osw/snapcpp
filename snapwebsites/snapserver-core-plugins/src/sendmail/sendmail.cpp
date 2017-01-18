@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sendmail (record, display)
-// Copyright (C) 2013-2016  Made to Order Software Corp.
+// Copyright (C) 2013-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1717,7 +1717,7 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
     //
     //content::permission_flag secure; // TODO: not used?!
     users::users::user_security_t security;
-    security.set_user_info(user_info,true);
+    security.set_user_info(user_info, QString(), true);
     //security.set_password("!"); -- leave the default
     //security.set_policy("users"); -- leave the default
     security.set_bypass_blacklist(bypass_blacklist);
@@ -1766,15 +1766,19 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
  * post_email() so it can check the bypass flag of that email.
  *
  * \param[in,out] security  The user security parameters.
- *
- * \return EMAIL_STATUS_VALID if the email is considered valid, another status
- *         in all other cases.
  */
 void sendmail::on_check_user_security(users::users::user_security_t & security)
 {
+    // at the moment, only valid users have a security check here
+    // (i.e. if their email address bounces, then we place them in our
+    // "semi-blacklist" for a while to avoid sending repetitive emails
+    // to a server that does not accept those emails.)
+    //
     users::users::user_info_t const & user_info( security.get_user_info() );
+    QString const & user_email(security.get_email());
     if(!security.get_secure().allowed()
-    || user_info.get_user_email().isEmpty())
+    || user_email.isEmpty()
+    || !user_info.is_valid())
     {
         return;
     }
@@ -1819,7 +1823,7 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
                 }
                 if(arrival_date_us != 0)
                 {
-                    security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_info.get_user_email()));
+                    security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
                     security.set_status(users::users::status_t::STATUS_BLOCKED);
                     return;
                 }
@@ -1843,18 +1847,19 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
         && security.get_bypass_blacklist())
         {
             // allow these emails
+            //
             level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST);
         }
         if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
         || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
         {
-            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_info.get_user_email()));
+            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
             security.set_status(users::users::status_t::STATUS_BLOCKED);
             return;
         }
     }
 
-    // nothing prevented this email from being used, say it is valid
+    // nothing prevented this email from being used, keep it valid
     //
 }
 

@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle the Stripe payment facility
-// Copyright (C) 2016  Made to Order Software Corp.
+// Copyright (C) 2016-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1270,7 +1270,7 @@ QString epayment_stripe::get_stripe_key(bool const debug)
             //
             content::permission_flag settings_permissions;
             path::path::instance()->access_allowed(
-                            users_plugin->get_user_info().get_user_path(),
+                            users_plugin->get_user_info().get_user_path(false),
                             settings_ipath,
                             "administer",
                             permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
@@ -2733,7 +2733,7 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
     auto const & user_info(users_plugin->get_user_info());
     QString const user_email(user_info.get_user_email());
     content::path_info_t user_ipath;
-    user_ipath.set_path(user_info.get_user_path());
+    user_ipath.set_path(user_info.get_user_path(false));
     QString const customer_key(user_ipath.get_key());
 
     bool create_customer_account(false);

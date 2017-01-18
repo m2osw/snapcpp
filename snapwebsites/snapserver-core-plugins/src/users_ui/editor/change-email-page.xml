@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == users page widgets
-Copyright (C) 2014-2016  Made to Order Software Corp.
+Snap Websites Server == change email page widgets
+Copyright (C) 2014-2017  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <immediate/>
   <no-toolbar/> <!-- none of the fields should have the toolbar -->
   <focus refid="email_address"/>
-  <on-save redirect="/user/me" target="_top" allow-edit="no"/>
+  <on-save redirect="/user/me" target="_top" allow-edit="no" auto-save="no"/>
   <taborder>
     <tabindex refid="email_address"/>
     <tabindex refid="repeat_email_address"/>

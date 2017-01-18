@@ -1,5 +1,5 @@
 // Snap Websites Server -- generate versions of all the parts used by snap
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2011-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -218,9 +218,9 @@ void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
 
     users::users * users_plugin(users::users::instance());
     users::users::user_info_t user_info( users_plugin->get_user_info() );
-    QString const user_path(user_info.get_user_path());
+    QString const user_path(user_info.get_user_path(false));
     if(token.is_token("versions::versions")
-    && !user_path.isEmpty())
+    && user_path != users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
         content::path_info_t page_ipath;
         page_ipath.set_path("admin/versions");
