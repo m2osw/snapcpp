@@ -3051,7 +3051,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     // can this way be checked by another plugin (i.e. password database)
     //
     user_security_t security;
-    security.set_user_info(user_info, allow_example_domain);
+    security.set_user_info(user_info, email, allow_example_domain);
     security.set_password(password);
     security.set_bypass_blacklist(true);
     check_user_security(security);
@@ -3332,7 +3332,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
  */
 bool users::check_user_security_impl(user_security_t & security)
 {
-    auto const & email(security.get_user_info().get_user_email());
+    auto const & email(security.get_email());
     if(!email.isEmpty())
     {
         // make sure that the user email is valid
@@ -3345,6 +3345,10 @@ bool users::check_user_security_impl(user_security_t & security)
             snap_child::verified_email_t const ve(f_snap->verify_email(email, 1, security.get_allow_example_domain()));
             if(ve == snap_child::verified_email_t::VERIFIED_EMAIL_EXAMPLE)
             {
+                // Note: if not EXAMPLE then it is STANDARD because we only
+                //       pass one email address and MIXED would require at
+                //       least 2 emails...
+                //
                 security.set_example(true);
             }
         }
@@ -3387,7 +3391,7 @@ bool users::check_user_security_impl(user_security_t & security)
  */
 void users::check_user_security_done(user_security_t & security)
 {
-    auto const & email(security.get_user_info().get_user_email());
+    auto const & email(security.get_email());
 
     // if the user is not yet blocked, do a final test with the user
     // current status

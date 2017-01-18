@@ -693,7 +693,11 @@ void password::on_check_user_security(users::users::user_security_t & security)
  * the new \p user_password is eventually checked against the old passwords
  * the user used.
  *
- * \param[in] user_info      The user info (email reference in users table).
+ * \warning
+ * No user email address or user identifier are available in user_info
+ * when a new user is being created.
+ *
+ * \param[in] user_info      The user info (email/id reference in users table).
  * \param[in] user_password  The password being checked.
  * \param[in] policy         The policy used to verify the password strength.
  *

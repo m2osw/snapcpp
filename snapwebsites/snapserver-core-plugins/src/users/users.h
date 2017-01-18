@@ -301,10 +301,13 @@ public:
     class user_security_t
     {
     public:
-        void                        set_user_info(user_info_t const & user_info, bool const allow_example_domain = false );
+        void                        set_user_info(user_info_t const & user_info, QString const & email = QString(), bool const allow_example_domain = false);
         user_info_t const &         get_user_info() const;
 
+        QString const &             get_email() const;
+
         void                        set_password(QString const & password);
+        bool                        has_password() const;
         QString const &             get_password() const;
 
         void                        set_policy(QString const & policy);
@@ -316,8 +319,6 @@ public:
         void                        set_status(status_t status);
         status_t                    get_status() const;
 
-        bool                        has_password() const;
-
         bool                        get_allow_example_domain() const;
 
         void                        set_example(bool example);
@@ -327,6 +328,7 @@ public:
 
     private:
         user_info_t                 f_user_info;
+        QString                     f_email;
         QString                     f_password = "!";
         QString                     f_policy = "users";
         bool                        f_bypass_blacklist = false;

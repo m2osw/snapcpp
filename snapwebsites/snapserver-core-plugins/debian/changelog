@@ -1,3 +1,10 @@
+snapserver-core-plugins (1.0.52.0~xenial) xenial; urgency=high
+
+  * SNAP-329: Fixed the email address in the security_info_t object.
+    (because it is not available in the user_info_t object on creation of user.)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 18 Jan 2017 00:19:45 -0800
+
 snapserver-core-plugins (1.0.51.0~xenial) xenial; urgency=high
 
   * EX-165: As I bump in this bug, it created a problem where the default
