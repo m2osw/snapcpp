@@ -1,4 +1,4 @@
-snapserver-core-plugins (1.0.53.0~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.53.1~xenial) xenial; urgency=high
 
   * EX-164: Added new rights for administering a public page. Useful for
     contact forms and things like that.
