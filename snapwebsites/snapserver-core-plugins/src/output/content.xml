@@ -244,6 +244,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Right given to public pages so anonymous visitors can see them.</p>]]>
     </param>
   </content>
+
+  <!-- EX-164: adding this page type for public rights -->
   <content path="/types/permissions/rights/administer/page">
     <param name="content::title" revision="revision">Adminster Page Right</param>
     <param name="content::body" revision="revision">
@@ -256,16 +258,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Administer a public page of content.</p><p>This right is used to submit editable pages (i.e. HTML body).</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/view/system-page">
-    <param name="content::title" revision="revision">View System Page Right</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
-    </param>
-  </content>
+  <!-- EX-164: End of additions -->
+
   <content path="/types/permissions/rights/edit/page">
     <param name="content::title" revision="revision">Edit any Page</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Right give to pages that can be edited.</p>]]>
+    </param>
+  </content>
+
+  <!-- EX-164: adding this page type for public rights -->
+  <content path="/types/permissions/rights/edit/page/public">
+    <param name="content::title" revision="revision">Edit Public Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Edit a public page of content.</p><p>This right is used to submit editable pages (i.e. HTML body).</p>]]>
+    </param>
+  </content>
+  <!-- EX-164: End of additions -->
+
+  <content path="/types/permissions/rights/view/system-page">
+    <param name="content::title" revision="revision">View System Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>View system pages.</p><p>This right is used to mark public pages that are managed by the system.</p>]]>
     </param>
   </content>
   <!--
