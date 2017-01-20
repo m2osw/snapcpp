@@ -1,4 +1,10 @@
-snapserver-core-plugins (1.0.53.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.53.3~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 19 Jan 2017 20:24:16 -0800
+
+snapserver-core-plugins (1.0.53.0~xenial) xenial; urgency=high
 
   * EX-164: Added new rights for administering a public page. Useful for
     contact forms and things like that.
