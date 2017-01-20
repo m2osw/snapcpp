@@ -657,6 +657,12 @@ QString const & users::user_info_t::get_user_key() const
  * This is useful in the users::register_user() function. There should
  * be no reason to use this function anywhere else.
  *
+ * \note
+ * This function cannot be static because there is a required to obtain a site
+ * parameter below, which requires a pointer to the snap_child object. However,
+ * is const and aside from having to access the f_snap member, no other data
+ * members are accessed.
+ *
  * \param[in] user_email  The email to convert.
  *
  * \return The converted email as a user key.
@@ -698,14 +704,14 @@ QString users::user_info_t::get_user_key(QString const & user_email) const
     {
         // in this case, it is easy we can force the entire email to lowercase
         //
-        return f_user_email.toLower();
+        return user_email.toLower();
     }
     else
     {
         // if not forcing the username to lowercase, we still need to force
         // the domain name to lowercase
         //
-        return users::basic_email_canonicalization(f_user_email);
+        return users::basic_email_canonicalization(user_email);
     }
 }
 

@@ -1,7 +1,10 @@
-snapserver-core-plugins (1.0.53.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.53.2~xenial) xenial; urgency=high
 
   * EX-164: Added new rights for administering a public page. Useful for
     contact forms and things like that.
+  * EX-164: Repaired throw in sendmail when email was not a registered user.
+  * EX-164: Fixed bug in user_info_t::get_user_key(), which was using f_user_email
+    instead of the passed in email address.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 18 Jan 2017 13:38:07 -0800
 

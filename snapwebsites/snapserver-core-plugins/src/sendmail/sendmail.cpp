@@ -2032,9 +2032,19 @@ void sendmail::on_backend_action(QString const & action)
             exit(1);
             NOTREACHED();
         }
+        catch( QtCassandra::QCassandraException const & e )
+        {
+            SNAP_LOG_FATAL("sendmail::on_backend_action(): QCassandraException caught: ")(e.what());
+            for( auto bt_line : e.get_stack_trace() )
+            {
+                SNAP_LOG_ERROR("QCassandraException backtrace: ")(bt_line);
+            }
+            exit(1);
+            NOTREACHED();
+        }
         catch( std::exception const & e )
         {
-            SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+            SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(e.what())(" (not a snap_exception nor a QCassandraException!)");
             exit(1);
             NOTREACHED();
         }
@@ -2771,7 +2781,20 @@ void sendmail::attach_user_email(email const & e)
     }
     // Note: here the list of emails is always 1 item
     users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(m.f_email_only.c_str()));
-    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_info.get_user_key())); // TODO: convert to using user identifier
+
+    // EX-164: if the email does not belong to a registered user, then create the key
+    // based on the email only. Otherwise, we get a throw here.
+    //
+    QString const user_key( user_info.exists()
+                            ? user_info.get_user_key()
+                            : user_info.get_user_key(m.f_email_only.c_str())
+                          );
+#if 0
+SNAP_LOG_TRACE  ("sendmail::attach_user_email(): email=")(m.f_email_only)
+                (", user_info.get_identifier()=")(user_info.get_identifier())
+                (", the user_key=")(user_key);
+#endif
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key)); // TODO: convert to using user identifier
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
@@ -2927,7 +2950,7 @@ void sendmail::attach_user_email(email const & e)
         else
         {
             // TODO: warn about invalid value
-            SNAP_LOG_WARNING("Unknown email frequency \"")(frequency)("\" for user \"")(user_info.get_user_key())("\", using daily.");
+            SNAP_LOG_WARNING("Unknown email frequency \"")(frequency)("\" for user \"")(user_key)("\", using daily.");
             ++t.tm_mday; // as DAILY
         }
         t.tm_isdst = 0; // mkgmtime() ignores DST... (i.e. UTC is not affected)
@@ -2966,7 +2989,7 @@ void sendmail::attach_user_email(email const & e)
         unix_date = time_limit;
     }
 
-    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(user_info.get_user_key()));
+    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(user_key));
 
     QtCassandra::QCassandraValue index_value;
     char const * index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
