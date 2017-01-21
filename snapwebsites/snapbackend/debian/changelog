@@ -1,8 +1,8 @@
-snapbackend (1.0.17.49~xenial) xenial; urgency=high
+snapbackend (1.0.18.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Build Server <build@m2osw.com>  Wed, 14 Dec 2016 13:45:54 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Dec 2017 14:44:48 -0800
 
 snapbackend (1.0.17.0~xenial) xenial; urgency=high
 
