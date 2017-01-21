@@ -24,8 +24,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Copyright (c) 2012-2016
-Changes made by Alexis Wilke so the model works in Qt 4.8 and with Snap.
+Copyright (c) 2012-2017
+Changes made by Alexis Wilke so the model works in Qt 5.x and with Snap.
 */
 
 #include "snapwebsites/qdomnodemodel.h"

@@ -1,3 +1,10 @@
+libsnapwebsites (1.1.77.0~xenial) xenial; urgency=high
+
+  * Bumped copyright notices to 2017.
+  * Various clean ups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 14:21:51 -0800
+
 libsnapwebsites (1.1.76.0~xenial) xenial; urgency=high
 
   * SNAP-181: Fixed IPv6 check of ANY and LOOPBACK IPs.
