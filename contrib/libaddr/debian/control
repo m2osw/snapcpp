@@ -6,6 +6,7 @@ Build-Depends: catch,
     debhelper,
     doxygen,
     graphviz,
+    libexcept-dev,
     snapcmakemodules (>= 1.0.28~xenial)
 Standards-Version: 3.9.4
 Section: libs
