@@ -107,7 +107,7 @@ void outputStackTrace( const QtCassandra::QCassandraException& e )
     qDebug() << "Stack trace: " << e.what();
     for( auto const & stack_line : e.get_stack_trace() )
     {
-        qDebug() << stack_line;
+        qDebug() << QString::fromUtf8(stack_line.c_str());
     }
     qDebug() << "End stack trace!" << e.what();
 }
@@ -2414,7 +2414,7 @@ int main(int argc, char *argv[])
         qDebug() << "Stack trace: ";
         for( auto const & stack_line : e.get_stack_trace() )
         {
-            qDebug() << stack_line;
+            qDebug() << QString::fromUtf8(stack_line.c_str());
         }
         qDebug() << "End stack trace!";
         ++err;
@@ -2425,7 +2425,7 @@ int main(int argc, char *argv[])
         qDebug() << "Stack trace: ";
         for( auto const & stack_line : e.get_stack_trace() )
         {
-            qDebug() << stack_line;
+            qDebug() << QString::fromUtf8(stack_line.c_str());
         }
         qDebug() << "End stack trace!";
         ++err;
@@ -2436,7 +2436,7 @@ int main(int argc, char *argv[])
         qDebug() << "Stack trace: ";
         for( auto const & stack_line : e.get_stack_trace() )
         {
-            qDebug() << stack_line;
+            qDebug() << QString::fromUtf8(stack_line.c_str());
         }
         qDebug() << "End stack trace!";
         ++err;

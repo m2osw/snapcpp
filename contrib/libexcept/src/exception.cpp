@@ -47,15 +47,6 @@ namespace libexcept
 {
 
 
-//
-// Remarked out for now. I don't think we need stack tracing here.
-// Plus, having the exception code appear hear means that every project
-// that links against libQtCassandra will be forced to also link against
-// libcasswrapper. My hope one day soon is to have the tie completely
-// severed--which will happen when libQtCassandra no longer needs to enumerate
-// the schema meta data.
-//
-
 /** \brief Initialize this Snap! exception.
  *
  * Initialize the base exception class by generating the output of
@@ -96,28 +87,66 @@ void exception_base_t::collect_stack_trace( int stack_trace_depth )
     array.resize( stack_trace_depth );
     int const size(backtrace( &array[0], stack_trace_depth ));
 
-    // Output to log
+    // save a copy of the system array in our class
     //
     char ** stack_string_list(backtrace_symbols( &array[0], size ));
     for( int idx = 0; idx < size; ++idx )
     {
         char const * stack_string( stack_string_list[idx] );
-        f_stack_trace << stack_string;
+        f_stack_trace.push_back(stack_string);
     }
     free( stack_string_list );
 }
 
 
-/** \brief Initialize an exception from a QString.
+/** \brief Initialize an exception from a C++ string.
  *
  * This function initializes an exception settings its 'what' string to
  * the specified \p what parameter.
  *
+ * \note
+ * Logic exceptions are used for things that just should not ever happen.
+ * More or less, a verification of your class contract that fails.
+ *
  * \param[in] what  The string used to initialize the exception what parameter.
  */
-exception_t::exception_t( const QString & what )
-    : std::runtime_error(qUtf8Printable(what))
+logic_exception_t::logic_exception_t( std::string const & what )
+    : std::logic_error(what.c_str())
 {
+}
+
+
+/** \brief Initialize an exception from a C string.
+ *
+ * This function initializes an exception settings its 'what' string to
+ * the specified \p what parameter.
+ *
+ * \note
+ * Logic exceptions are used for things that just should not ever happen.
+ * More or less, a verification of your class contract that fails.
+ *
+ * \param[in] what  The string used to initialize the exception what parameter.
+ */
+logic_exception_t::logic_exception_t( char const * what )
+    : std::logic_error(what)
+{
+}
+
+
+/** \brief Retrieve the `what` parameter as passed to the constructor.
+ *
+ * This function returns the `what` description of the exception when the
+ * exception was initialized.
+ *
+ * \note
+ * We have an overload because of the dual derivation.
+ *
+ * \return A pointer to the what string. Must be used before the exception
+ *         gets destructed.
+ */
+char const * logic_exception_t::what() const throw()
+{
+    return std::logic_error::what();
 }
 
 
@@ -128,7 +157,7 @@ exception_t::exception_t( const QString & what )
  *
  * \param[in] what  The string used to initialize the exception what parameter.
  */
-exception_t::exception_t( const std::string & what )
+exception_t::exception_t( std::string const & what )
     : std::runtime_error(what.c_str())
 {
 }
@@ -141,7 +170,7 @@ exception_t::exception_t( const std::string & what )
  *
  * \param[in] what  The string used to initialize the exception what parameter.
  */
-exception_t::exception_t( const char * what )
+exception_t::exception_t( char const * what )
     : std::runtime_error(what)
 {
 }
@@ -149,7 +178,7 @@ exception_t::exception_t( const char * what )
 
 /** \brief Retrieve the `what` parameter as passed to the constructor.
  *
- * This function returns the what description of the exception when the
+ * This function returns the `what` description of the exception when the
  * exception was initialized.
  *
  * \note

@@ -47,10 +47,6 @@ namespace casswrapper
 {
 
 
-//cassandra_exception_t::cassandra_exception_t( const QString&     what ) : libexcept::exception_t(what) {}
-//cassandra_exception_t::cassandra_exception_t( const std::string& what ) : libexcept::exception_t(what) {}
-//cassandra_exception_t::cassandra_exception_t( const char*        what ) : libexcept::exception_t(what) {}
-
 cassandra_exception_impl::cassandra_exception_impl( const casswrapper::future& future, QString const& msg )
     : f_code(future.get_error_code())
     , f_errmsg(future.get_error_message())

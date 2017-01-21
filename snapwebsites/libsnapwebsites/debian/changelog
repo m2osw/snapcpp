@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.75.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.76.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-181: Fixed IPv6 check of ANY and LOOPBACK IPs.
 
- -- Build Server <build@m2osw.com>  Sun, 15 Jan 2017 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 03:03:51 -0800
 
 libsnapwebsites (1.1.75.0~xenial) xenial; urgency=high
 

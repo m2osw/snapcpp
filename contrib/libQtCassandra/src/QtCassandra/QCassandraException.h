@@ -46,23 +46,6 @@
 namespace QtCassandra
 {
 
-#if 0
-class QCassandraExceptionBase
-{
-public:
-    static int const            STACK_TRACE_DEPTH = 20;
-
-                                QCassandraExceptionBase();
-    virtual                     ~QCassandraExceptionBase() {}
-
-    QStringList const &         get_stack_trace() const { return f_stack_trace; }
-
-private:
-    QStringList                 f_stack_trace;
-
-    void                        collect_stack_trace(int stack_track_depth = STACK_TRACE_DEPTH);
-};
-#endif
 
 
 class QCassandraException : public std::runtime_error, public libexcept::exception_base_t

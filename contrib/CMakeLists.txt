@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2011-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -55,16 +55,17 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
         -DLOG4CPLUS_QT5=OFF
 )
 
-ConfigureMakeProject( PROJECT_NAME iplock             )
-ConfigureMakeProject( PROJECT_NAME libtld             )
 ConfigureMakeProject( PROJECT_NAME advgetopt          )
 ConfigureMakeProject( PROJECT_NAME as2js              )
 ConfigureMakeProject( PROJECT_NAME csspp              )
+ConfigureMakeProject( PROJECT_NAME iplock             )
+ConfigureMakeProject( PROJECT_NAME libaddr            )
 ConfigureMakeProject( PROJECT_NAME libcassvalue       )
 ConfigureMakeProject( PROJECT_NAME libcasswrapper     )
 ConfigureMakeProject( PROJECT_NAME libexcept          )
 ConfigureMakeProject( PROJECT_NAME libQtCassandra     )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization )
+ConfigureMakeProject( PROJECT_NAME libtld             )
 
 
 ################################################################################
@@ -76,19 +77,19 @@ get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
 
 add_custom_target( build-contrib ALL
     DEPENDS ${BUILD_TARGETS}
-    )
+)
 add_custom_target( clean-contrib
     #COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
-    )
+)
 add_custom_target( debuild-contrib
     DEPENDS ${PACKAGE_TARGETS}
-    )
+)
 add_custom_target( dput-contrib
     DEPENDS ${DPUT_TARGETS}
-    )
+)
 add_custom_target( pbuilder-contrib
     DEPENDS ${PBUILDER_TARGETS}
-    )
+)
 
 # vim: ts=4 sw=4 et nocindent

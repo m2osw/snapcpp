@@ -695,10 +695,10 @@ addr::network_type_t addr::get_network_type() const
             // for IPv6 it was simplified by using a prefix for
             // all types; really way easier than IPv4
             //
-            if(f_address.sin6_addr.s6_addr16[0] == 0      // ::
-            && f_address.sin6_addr.s6_addr16[1] == 0
-            && f_address.sin6_addr.s6_addr16[2] == 0
-            && f_address.sin6_addr.s6_addr16[3] == 0)
+            if(f_address.sin6_addr.s6_addr32[0] == 0      // ::
+            && f_address.sin6_addr.s6_addr32[1] == 0
+            && f_address.sin6_addr.s6_addr32[2] == 0
+            && f_address.sin6_addr.s6_addr32[3] == 0)
             {
                 // this is the "any" IP address
                 f_private_network_defined = network_type_t::NETWORK_TYPE_ANY;
@@ -717,10 +717,11 @@ addr::network_type_t addr::get_network_type() const
                     f_private_network_defined = network_type_t::NETWORK_TYPE_LINK_LOCAL; // i.e. DHCP
                 }
                 else if((prefix & 0xFF0F) == 0xFF01    // ffx1::/16
-                     || (f_address.sin6_addr.s6_addr16[0] == 0      // ::1
-                      && f_address.sin6_addr.s6_addr16[1] == 0
-                      && f_address.sin6_addr.s6_addr16[2] == 0
-                      && f_address.sin6_addr.s6_addr16[3] == 1))
+                     || (f_address.sin6_addr.s6_addr32[0] == 0      // ::1
+                      && f_address.sin6_addr.s6_addr32[1] == 0
+                      && f_address.sin6_addr.s6_addr32[2] == 0
+                      && f_address.sin6_addr.s6_addr16[6] == 0
+                      && f_address.sin6_addr.s6_addr16[7] == htons(1)))
                 {
                     f_private_network_defined = network_type_t::NETWORK_TYPE_LOOPBACK;
                 }

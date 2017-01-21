@@ -403,7 +403,7 @@ void Value::parseVariant( const value& val )
 
         default:
             throw libexcept::exception_t( QString("This type [%1] is not a bare type!")
-                               .arg(static_cast<uint32_t>(type)) );
+                               .arg(static_cast<uint32_t>(type)).toUtf8().data() );
     }
 }
 

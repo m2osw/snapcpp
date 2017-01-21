@@ -37,9 +37,9 @@
 project( except )
 
 configure_file(
-		version.h.in
-		${PROJECT_BINARY_DIR}/libexcept/version.h
-		)
+    version.h.in
+    ${PROJECT_BINARY_DIR}/libexcept/version.h
+)
 
 set( HEADER_FILES
     exception.h
@@ -52,22 +52,23 @@ add_library(${PROJECT_NAME} SHARED
     exception.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
-    Qt5::Core
-)
-
 set_target_properties( ${PROJECT_NAME} PROPERTIES
     VERSION ${LIBEXCEPT_VERSION_MAJOR}.${LIBEXCEPT_VERSION_MINOR}
     SOVERSION ${LIBEXCEPT_VERSION_MAJOR}
 )
 
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
+    TARGETS
+        ${PROJECT_NAME}
+    LIBRARY DESTINATION
+        lib
 )
 
 install(
-	FILES ${HEADER_FILES}
-	DESTINATION include/libexcept
+    FILES
+        ${HEADER_FILES}
+    DESTINATION
+        include/libexcept
 )
 
 # vim: ts=4 sw=4 et

@@ -39,11 +39,8 @@
 //
 #include <stdexcept>
 #include <string>
+#include <vector>
 
-// Qt includes
-//
-#include <QString>
-#include <QStringList>
 
 
 namespace libexcept
@@ -53,25 +50,38 @@ namespace libexcept
 class exception_base_t
 {
 public:
+    typedef std::vector<std::string>        stack_trace_t;
+
     static int const            STACK_TRACE_DEPTH = 20;
 
                                 explicit exception_base_t( int const stack_track_depth = STACK_TRACE_DEPTH );
 
     virtual                     ~exception_base_t() {}
 
-    QStringList const &         get_stack_trace() const { return f_stack_trace; }
+    stack_trace_t const &       get_stack_trace() const { return f_stack_trace; }
 
 private:
-    QStringList                 f_stack_trace;
+    stack_trace_t               f_stack_trace;
 
     void                        collect_stack_trace( int const stack_trace_depth );
+};
+
+
+class logic_exception_t : public std::logic_error, public exception_base_t
+{
+public:
+                                explicit logic_exception_t( std::string const & what );
+                                explicit logic_exception_t( char const *        what );
+
+    virtual                     ~logic_exception_t() override {}
+
+    virtual char const *        what() const throw() override;
 };
 
 
 class exception_t : public std::runtime_error, public exception_base_t
 {
 public:
-                                explicit exception_t( QString const &     what );
                                 explicit exception_t( std::string const & what );
                                 explicit exception_t( char const *        what );
 
