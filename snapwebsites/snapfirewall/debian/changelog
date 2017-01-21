@@ -1,8 +1,8 @@
-snapfirewall (1.1.28.41~xenial) xenial; urgency=high
+snapfirewall (1.1.29.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notice to 2017.
 
- -- Build Server <build@m2osw.com>  Thu, 22 Dec 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 15:39:48 -0800
 
 snapfirewall (1.1.28.0~xenial) xenial; urgency=high
 
