@@ -1,0 +1,6 @@
+libaddr (1.0.0.0~xenial) xenial; urgency=medium
+
+  * First release of libaddr.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 18 Jan 2017 13:46:22 -0700
+
