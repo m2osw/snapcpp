@@ -3,10 +3,13 @@
  *      snapwebsites/snaplog/snaplog.cpp
  *
  * Description:
- *      TODO
+ *      Logger for the Snap! system. This service uses snapcommunicator to
+ *      listen to all "LOG" messages. It records each message into a MySQL
+ *      database for later retrieval, making reporting a lot easier for
+ *      the admin.
  *
  * License:
- *      Copyright (c) 2016 Made to Order Software Corp.
+ *      Copyright (c) 2016-2017 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com

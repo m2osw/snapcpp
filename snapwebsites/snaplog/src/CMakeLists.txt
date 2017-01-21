@@ -4,13 +4,13 @@
 #
 # Description:
 #      A logging server which listens to logs broadcast via snapcommunicator
-#      and which stores the logs into a mysql database.
+#      and which stores the logs into a MySQL database.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2016 Made to Order Software Corp.
+#      Copyright (c) 2016-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com

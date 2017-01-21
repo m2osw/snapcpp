@@ -1,13 +1,13 @@
-snaplog (1.0.10.84~xenial) xenial; urgency=high
+snaplog (1.0.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notice to 2017.
 
- -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 15:51:50 -0800
 
 snaplog (1.0.10.0~xenial) xenial; urgency=high
 
   * SNAP-110: CRON script must be smart enough to not execute if the snaplog
-    package was removed (opposed to purge).
+    package was removed (opposed to purged).
   * Added test in logrotate script to skip the postrotate in
     case snapsignal is not available anymore.
 
