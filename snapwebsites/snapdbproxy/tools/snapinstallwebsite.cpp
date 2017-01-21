@@ -22,6 +22,7 @@
 #include <snapwebsites/snap_initialize_website.h>
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_config.h>
+#include <snapwebsites/snap_cassandra.h>
 
 
 namespace
@@ -106,6 +107,67 @@ namespace
         }
     };
 
+
+    void create_domain_and_website( QString const & orig_domain, QString const & protocol, int const port )
+    {
+        QString const domains_table_name      ( snap::get_name( snap::name_t::SNAP_NAME_DOMAINS));
+        QString const websites_table_name     ( snap::get_name( snap::name_t::SNAP_NAME_WEBSITES));
+        QString const core_rules_name         ( snap::get_name( snap::name_t::SNAP_NAME_CORE_RULES));
+        QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
+
+        snap::snap_cassandra sc;
+        sc.connect();
+
+        snap::snap_uri uri( QString("%1://%2").arg(protocol.toLower()).arg(orig_domain) );
+        QString const domain     ( uri.domain() + uri.top_level_domain() );
+        QString const full_domain( uri.full_domain() );
+
+        auto domains_table( sc.get_table(domains_table_name) );
+        if( !domains_table->exists(domain) )
+        {
+            SNAP_LOG_INFO("Domain does not exist in domains table. Creating");
+            QString const rules(
+                QString( "main {\n"
+                         "  required host = \"%1\\.\";\n"
+                         "};\n"
+                       ).arg(uri.sub_domains())
+                );
+            snap::snap_uri_rules domain_rules;
+            QByteArray compiled_rules;
+            if(!domain_rules.parse_domain_rules(rules, compiled_rules))
+            {
+                throw snap::snap_exception( QString("An error was detected in your domain rules: %1").arg(domain_rules.errmsg()) );
+            }
+
+            auto domain_row( domains_table->row(domain) );
+            domain_row->cell(core_original_rules_name)->setValue(rules.toUtf8());
+            domain_row->cell(core_rules_name)->setValue(compiled_rules);
+        }
+
+        auto websites_table( sc.get_table(websites_table_name) );
+        if( !websites_table->exists(full_domain) )
+        {
+            SNAP_LOG_INFO("Website does not exist in websites table. Creating");
+            QString const rules(
+                QString( "main {\n"
+                         "  protocol = \"%1\";\n"
+                         "  port = \"%2\";\n"
+                         "};\n")
+                .arg(protocol.toLower())
+                .arg(port)
+                );
+            snap::snap_uri_rules website_rules;
+            QByteArray compiled_rules;
+            if(!website_rules.parse_website_rules(rules, compiled_rules))
+            {
+                throw snap::snap_exception( QString("An error was detected in your website rules: %1").arg(website_rules.errmsg()) );
+            }
+
+            auto website_row( websites_table->row(full_domain) );
+            website_row->cell(core_original_rules_name)->setValue(rules.toUtf8());
+            website_row->cell(core_rules_name)->setValue(compiled_rules);
+        }
+    }
 
 }
 //namespace
@@ -211,6 +273,10 @@ int main(int argc, char * argv[])
         }
 
         SNAP_LOG_INFO("website is at \"")(protocol.toLower())("://")(url)(":")(site_port)("/\".");
+
+        // Create domain/website if non-existent
+        //
+        create_domain_and_website( url, protocol, site_port );
 
         // create a snap_initialize_website object and listen for messages
         // up until is_done() returns true

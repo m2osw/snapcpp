@@ -348,7 +348,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/public</link>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/system-page</link>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/edit/page/public</link>
     <!-- at this time the editor uses "administer" instead of "submit" -->
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/page/public</link>
     <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/submit/form</link>
     <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/submit/survey</link>
@@ -356,8 +358,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/form</link>
     <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/survey</link>
     <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/application</link>
-  </content>
-  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor" owner="permissions">
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer">
     <param name="content::title" revision="revision">Spammer Group</param>
