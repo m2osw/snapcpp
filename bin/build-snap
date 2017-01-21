@@ -17,7 +17,7 @@ rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
 #export CXX=g++-4.9 cmake
 
 #PROCESSORS=1
-PROCESSORS=4
+PROCESSORS=2
 
 # Configure and generate the Release version
 mkdir RELEASE
