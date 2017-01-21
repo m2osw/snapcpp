@@ -1,21 +1,23 @@
 //===============================================================================
-// Copyright (c) 2005-2016 by Made to Order Software Corporation
+// Copyright (c) 2011-2017 by Made to Order Software Corporation
 // 
-// All Rights Reserved.
-// 
-// The source code in this file ("Source Code") is provided by Made to Order Software Corporation
-// to you under the terms of the GNU General Public License, version 2.0
-// ("GPL").  Terms of the GPL can be found in doc/GPL-license.txt in this distribution.
-// 
-// By copying, modifying or distributing this software, you acknowledge
-// that you have read and understood your obligations described above,
-// and agree to abide by those obligations.
-// 
-// ALL SOURCE CODE IN THIS DISTRIBUTION IS PROVIDED "AS IS." THE AUTHOR MAKES NO
-// WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
-// COMPLETENESS OR PERFORMANCE.
+// http://snapwebsites.org/
+// contact@m2osw.com
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //===============================================================================
-
 #pragma once
 
 #include <casswrapper/query_model.h>
@@ -32,7 +34,7 @@ class RowModel
 public:
     RowModel();
 
-    const QByteArray&	  rowKey() const		             { return f_rowKey; }
+    const QByteArray&     rowKey() const                     { return f_rowKey; }
     void                  setRowKey( const QByteArray& key ) { f_rowKey = key;  }
 
     virtual bool          fetchFilter( const QByteArray& key ) override;
@@ -49,7 +51,7 @@ public:
     bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
     virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
 
-    void 				doQuery();
+    void                doQuery();
 
 private:
     QByteArray                      f_rowKey;
