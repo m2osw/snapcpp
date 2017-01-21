@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      doc/CMakeLists.txt
 #
 # Description:
 #      Create the documentation of the libtld library.

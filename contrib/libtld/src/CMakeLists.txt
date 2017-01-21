@@ -1,5 +1,5 @@
 #
-# File:         CMakeLists.txt
+# File:         src/CMakeLists.txt
 # Object:       Definitions to create the build environment with cmake
 #
 # Copyright:    Copyright (c) 2011-2017 Made to Order Software Corp.
@@ -78,9 +78,9 @@ add_library(tld SHARED
     tld_object.cpp
 )
 set_target_properties( tld PROPERTIES
-        VERSION ${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}
-        SOVERSION ${LIBTLD_VERSION_MAJOR}
-        )
+    VERSION ${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}
+    SOVERSION ${LIBTLD_VERSION_MAJOR}
+)
 install(
     TARGETS tld
     LIBRARY DESTINATION lib

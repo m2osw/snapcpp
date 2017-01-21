@@ -36,11 +36,11 @@ project(tld_library)
 # (must be included in a project even though it is not made
 # specific to that project)
 #
-find_package( SnapCMakeModules )
-find_package( SnapDoxygen      )
+find_package( SnapCMakeModules REQUIRED )
 find_package( Boost            REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
+find_package( SnapDoxygen               )
 
 SnapGetVersion( LIBTLD ${CMAKE_CURRENT_SOURCE_DIR} )
 
@@ -62,4 +62,3 @@ add_subdirectory( tests   )
 add_subdirectory( package )
 
 # vim: ts=4 sw=4 et
-
