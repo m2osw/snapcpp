@@ -22,7 +22,6 @@
 #include "snapwebsites/snap_communicator.h"
 #include "snapwebsites/snap_config.h"
 #include "snapwebsites/snap_expr.h"
-#include "snapwebsites/snap_listen_thread.h"
 
 #include <advgetopt/advgetopt.h>
 
@@ -350,9 +349,6 @@ private:
     snap_child_vector_t                     f_children_waiting;
 
     getopt_ptr_t                            f_opt;
-
-    std::unique_ptr<snap_listen_thread>     f_listen_runner;
-    std::unique_ptr<snap_thread>            f_listen_thread;
 
 #ifdef SNAP_NO_FORK
     bool                                    f_nofork = false;

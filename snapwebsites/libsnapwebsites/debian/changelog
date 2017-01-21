@@ -1,3 +1,10 @@
+libsnapwebsites (1.1.78.0~xenial) xenial; urgency=high
+
+  * SNAP-168: Archived the snap_listen_thread class since it was replaced
+    by the snap_communicator environment.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 15:36:51 -0800
+
 libsnapwebsites (1.1.77.0~xenial) xenial; urgency=high
 
   * Bumped copyright notices to 2017.

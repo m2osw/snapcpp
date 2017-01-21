@@ -107,7 +107,6 @@ set( HEADERS
     snapwebsites/snap_expr.h
     snapwebsites/snap_image.h
     snapwebsites/snap_initialize_website.h
-    snapwebsites/snap_listen_thread.h
     snapwebsites/snap_lock.h
     snapwebsites/snap_magic.h
     snapwebsites/snap_parser.h
@@ -173,7 +172,6 @@ add_library( ${PROJECT_NAME} SHARED
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries
     snap_pipe.cpp                               # RAII popen()/pclose() class
-    snap_listen_thread.cpp                      # thread which listens on UDP and allows snapsignal to direct snapserver
     snap_tables.cpp                             # table schema/definitions
     snap_thread.cpp                             # a C++ thread implementation
     snap_uri.cpp                                # URI handling
