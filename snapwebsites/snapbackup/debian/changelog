@@ -1,8 +1,8 @@
-snapbackup (1.0.1.84~xenial) xenial; urgency=high
+snapbackup (1.0.2.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Build Server <build@m2osw.com>  Fri, 11 Nov 2016 02:00:49 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 14:47:50 -0800
 
 snapbackup (1.0.1.0~xenial) xenial; urgency=high
 
