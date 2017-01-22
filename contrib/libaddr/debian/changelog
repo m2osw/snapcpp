@@ -1,3 +1,10 @@
+libaddr (1.0.0.1~xenial) xenial; urgency=medium
+
+  * Fixed the mask_count test which would return an overflow error.
+  * Added a test in case the mask is an interger which is way too large.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 16:05:22 -0700
+
 libaddr (1.0.0.0~xenial) xenial; urgency=medium
 
   * First release of libaddr.

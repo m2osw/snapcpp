@@ -735,6 +735,13 @@ void addr_parser::parse_mask(std::string const & mask, addr & cidr)
             if(*s >= '0' && *s <= '9')
             {
                 mask_count = mask_count * 10 + *s - '0';
+                if(mask_count > 1000)
+                {
+                    emit_error("Mask number too large ("
+                             + mask
+                             + ", expected a maximum of 128).");
+                    return;
+                }
             }
             else
             {
@@ -744,9 +751,9 @@ void addr_parser::parse_mask(std::string const & mask, addr & cidr)
         }
     }
 
-    // the conversion worked if mask_count != -1
+    // the conversion to an integer worked if mask_count != -1
     //
-    if(mask_count >= 0)
+    if(mask_count != -1)
     {
         if(cidr.is_ipv4())
         {
