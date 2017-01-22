@@ -1,8 +1,8 @@
-snapmanager (1.1.4.138~xenial) xenial; urgency=high
+snapmanager (1.1.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Build Server <build@m2osw.com>  Sat, 01 Oct 2016 02:00:48 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 16:08:48 -0700
 
 snapmanager (1.1.4.0~xenial) xenial; urgency=high
 
