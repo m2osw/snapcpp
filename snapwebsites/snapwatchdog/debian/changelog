@@ -1,8 +1,8 @@
-snapwatchdog (0.2.18.75~xenial) xenial; urgency=high
+snapwatchdog (0.2.19.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Build Server <build@m2osw.com>  Sun, 20 Nov 2016 02:00:47 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 16:26:48 -0800
 
 snapwatchdog (0.2.18.0~xenial) xenial; urgency=high
 
