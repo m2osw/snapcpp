@@ -1,8 +1,8 @@
-snapmanagercgi (1.2.47.47~xenial) xenial; urgency=high
+snapmanagercgi (1.2.48.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Build Server <build@m2osw.com>  Sat, 17 Dec 2016 02:00:48 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 16:14:49 -0700
 
 snapmanagercgi (1.2.47.0~xenial) xenial; urgency=high
 

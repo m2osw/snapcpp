@@ -2,7 +2,7 @@
 // File:        form.cpp
 // Object:      Helper functions to generate a simple form.
 //
-// Copyright:   Copyright (c) 2016 Made to Order Software Corp.
+// Copyright:   Copyright (c) 2016-2017 Made to Order Software Corp.
 //              All Rights Reserved.
 //
 // http://snapwebsites.org/

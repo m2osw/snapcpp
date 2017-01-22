@@ -2,7 +2,7 @@
 // File:        status.cpp
 // Object:      Manager the status object.
 //
-// Copyright:   Copyright (c) 2016 Made to Order Software Corp.
+// Copyright:   Copyright (c) 2016-2017 Made to Order Software Corp.
 //              All Rights Reserved.
 //
 // http://snapwebsites.org/
