@@ -1,3 +1,9 @@
+snapbounce (1.0.10.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:05 -0800
+
 snapbounce (1.0.10.0~xenial) xenial; urgency=high
 
   * Bumped copyright notice to 2017.

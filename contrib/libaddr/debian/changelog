@@ -1,3 +1,9 @@
+libaddr (1.0.0.3~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:08 -0800
+
 libaddr (1.0.0.2~xenial) xenial; urgency=medium
 
   * The library does not offer a static (.a) version.
