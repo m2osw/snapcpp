@@ -3,7 +3,7 @@
  * Version: 0.0.1.65
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
- * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 

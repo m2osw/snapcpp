@@ -4,7 +4,7 @@
 This sitemap XSL processor was taken from Drupal.org
 
 Copyright (c) 2010  Dave Reid <http://drupal.org/user/53892>
-Copyright (c) 2015-2016  Alexis Wilke <http://snapwebsites.org/>
+Copyright (c) 2015-2017  Alexis Wilke <http://snapwebsites.org/>
 
 This file is free software: you may copy, redistribute and/or modify it
 under the terms of the GNU General Public License as published by the

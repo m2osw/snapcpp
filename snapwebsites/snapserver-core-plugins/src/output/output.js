@@ -2,7 +2,7 @@
  * Name: output
  * Version: 0.1.6.4
  * Browsers: all
- * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
  * License: GPL 2.0
  */

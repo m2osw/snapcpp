@@ -3,7 +3,7 @@
  * Version: 0.0.1.5
  * Browsers: all
  * Depends: epayment (>= 0.0.1.33)
- * Copyright: Copyright 2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2016-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 

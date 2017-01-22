@@ -2,7 +2,7 @@
  * Name: flash-detection
  * Version: 0.0.1
  * Browsers: all
- * Copyright: Copyright 2005-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2005-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery (1.11.2)
  * License: GPL 2.0
  */

@@ -2,7 +2,7 @@
  * Name: sortable
  * Version: 1.0.0
  * Browsers: all
- * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
