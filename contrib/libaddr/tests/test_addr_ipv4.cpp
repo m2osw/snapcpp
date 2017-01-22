@@ -233,6 +233,24 @@ TEST_CASE( "ipv4::invalid_input", "ipv4" )
 
     GIVEN("addr_parser() with invalid masks")
     {
+        SECTION("really large numbers (over 1000)")
+        {
+            for(int idx(0); idx < 5; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                int const mask((rand() & 0xFF) + 1001);
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                addr::addr_range::vector_t ips(p.parse("172.19.6.91:" + std::to_string(port) + "/" + std::to_string(mask)));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Mask number too large (" + std::to_string(mask) + ", expected a maximum of 128).\n");
+                REQUIRE(ips.size() == 0);
+            }
+        }
+
         SECTION("ipv4 mask is limited between 0 and 32")
         {
             for(int idx(0); idx < 5; ++idx)

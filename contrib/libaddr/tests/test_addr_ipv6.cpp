@@ -153,6 +153,44 @@ TEST_CASE( "ipv6::invalid_input", "ipv6" )
 
     GIVEN("addr_parser() with invalid masks")
     {
+        SECTION("really large numbers (over 1000)")
+        {
+            for(int idx(0); idx < 5; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                int const mask((rand() & 0xFF) + 1001);
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                addr::addr_range::vector_t ips(p.parse("[1:2:3:4:5:6:7:8]:" + std::to_string(port) + "/" + std::to_string(mask)));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Mask number too large (" + std::to_string(mask) + ", expected a maximum of 128).\n");
+                REQUIRE(ips.size() == 0);
+            }
+
+            // in case the number is between square brackets it looks like
+            // an IPv4 to getaddrinfo() so we get a different error...
+            // (i.e. the '[' is not a digit so we do not get the "too large"
+            // error...)
+            //
+            for(int idx(0); idx < 5; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                int const mask((rand() & 0xFF) + 1001);
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                addr::addr_range::vector_t ips(p.parse("[1:2:3:4:5:6:7:8]:" + std::to_string(port) + "/[" + std::to_string(mask) + "]"));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Incompatible address between the address and mask address (first was an IPv6 second an IPv4).\n");
+                REQUIRE(ips.size() == 0);
+            }
+        }
+
         SECTION("ipv6 mask is limited between 0 and 128")
         {
             for(int idx(0); idx < 5; ++idx)
