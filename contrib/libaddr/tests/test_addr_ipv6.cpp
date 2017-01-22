@@ -140,14 +140,27 @@ TEST_CASE( "ipv6::invalid_input", "ipv6" )
 
         SECTION("port not allowed")
         {
-            addr::addr_parser p;
-            p.set_protocol(IPPROTO_TCP);
-            p.set_allow(addr::addr_parser::flag_t::PORT, false);
-            addr::addr_range::vector_t ips(p.parse("[1:2:3:4:5:6:7:8]:123"));
-            REQUIRE(p.has_errors());
-            REQUIRE(p.error_count() == 1);
-            REQUIRE(p.error_messages() == "Port not allowed ([1:2:3:4:5:6:7:8]:123).\n");
-            REQUIRE(ips.size() == 0);
+            {
+                addr::addr_parser p;
+                p.set_protocol(IPPROTO_TCP);
+                p.set_allow(addr::addr_parser::flag_t::PORT, false);
+                addr::addr_range::vector_t ips(p.parse("[1:2:3:4:5:6:7:8]:123"));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Port not allowed ([1:2:3:4:5:6:7:8]:123).\n");
+                REQUIRE(ips.size() == 0);
+            }
+
+            {
+                addr::addr_parser p;
+                p.set_protocol(IPPROTO_TCP);
+                p.set_allow(addr::addr_parser::flag_t::PORT, false);
+                addr::addr_range::vector_t ips(p.parse("1:2:3:4:5:6:7:8:123.5"));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Port not allowed (1:2:3:4:5:6:7:8:123.5).\n");
+                REQUIRE(ips.size() == 0);
+            }
         }
     }
 
@@ -187,6 +200,40 @@ TEST_CASE( "ipv6::invalid_input", "ipv6" )
                 REQUIRE(p.has_errors());
                 REQUIRE(p.error_count() == 1);
                 REQUIRE(p.error_messages() == "Incompatible address between the address and mask address (first was an IPv6 second an IPv4).\n");
+                REQUIRE(ips.size() == 0);
+            }
+
+            // an empty address with a mask too large gets us to another place
+            //
+            for(int idx(0); idx < 5; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                int const mask((rand() & 0xFF) + 1001);
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                addr::addr_range::vector_t ips(p.parse(":" + std::to_string(port) + "/" + std::to_string(mask)));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Mask number too large (" + std::to_string(mask) + ", expected a maximum of 128).\n");
+                REQUIRE(ips.size() == 0);
+            }
+
+            // an empty address with a mask too large gets us to another place
+            //
+            for(int idx(0); idx < 5; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                int const mask((rand() & 0xFF));
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                addr::addr_range::vector_t ips(p.parse(":" + std::to_string(port) + "/" + std::to_string(mask) + "q"));
+                REQUIRE(p.has_errors());
+                REQUIRE(p.error_count() == 1);
+                REQUIRE(p.error_messages() == "Invalid mask in \"/" + std::to_string(mask) + "q\", error -2 -- Name or service not known (errno: 0 -- Success).\n");
                 REQUIRE(ips.size() == 0);
             }
         }
@@ -266,6 +313,64 @@ TEST_CASE( "ipv6::invalid_input", "ipv6" )
             REQUIRE(p.error_count() == 1);
             REQUIRE(p.error_messages() == "Incompatible address between the address and mask address (first was an IPv6 second an IPv4).\n");
             REQUIRE(ips.size() == 0);
+        }
+
+        SECTION("verify default mask")
+        {
+            addr::addr_parser p;
+
+            REQUIRE_THROWS_AS(p.set_default_address("[4:5:4:5:7:8:7:8"), addr::addr_invalid_argument_exception);
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "");
+
+            p.set_default_address("[1:7:1:7:1:7:1:7]");
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "1:7:1:7:1:7:1:7");
+
+            REQUIRE_THROWS_AS(p.set_default_address("[9:5:9:5:9:8:9:8"), addr::addr_invalid_argument_exception);
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "1:7:1:7:1:7:1:7");
+
+            p.set_default_address("12.55.1.9");
+            REQUIRE(p.get_default_address4() == "12.55.1.9");
+            REQUIRE(p.get_default_address6() == "1:7:1:7:1:7:1:7");
+
+            REQUIRE_THROWS_AS(p.set_default_address("[9:f00f:9:e00e:9:d00d:9:c00c"), addr::addr_invalid_argument_exception);
+            REQUIRE(p.get_default_address4() == "12.55.1.9");
+            REQUIRE(p.get_default_address6() == "1:7:1:7:1:7:1:7");
+
+            p.set_default_address("");
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "");
+        }
+
+        SECTION("verify default mask")
+        {
+            addr::addr_parser p;
+
+            REQUIRE_THROWS_AS(p.set_default_mask("[4:5:4:5:7:8:7:8"), addr::addr_invalid_argument_exception);
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "");
+
+            p.set_default_mask("[1:7:1:7:1:7:1:7]");
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "1:7:1:7:1:7:1:7");
+
+            REQUIRE_THROWS_AS(p.set_default_mask("[9:5:9:5:9:8:9:8"), addr::addr_invalid_argument_exception);
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "1:7:1:7:1:7:1:7");
+
+            p.set_default_mask("12.55.1.9");
+            REQUIRE(p.get_default_mask4() == "12.55.1.9");
+            REQUIRE(p.get_default_mask6() == "1:7:1:7:1:7:1:7");
+
+            REQUIRE_THROWS_AS(p.set_default_mask("[9:f00f:9:e00e:9:d00d:9:c00c"), addr::addr_invalid_argument_exception);
+            REQUIRE(p.get_default_mask4() == "12.55.1.9");
+            REQUIRE(p.get_default_mask6() == "1:7:1:7:1:7:1:7");
+
+            p.set_default_mask("");
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "");
         }
     }
 }
@@ -1029,6 +1134,77 @@ TEST_CASE( "ipv6::masks", "ipv6" )
                 {
                     REQUIRE(verify_mask[j] == mask[j]);
                 }
+            }
+        }
+
+        SECTION("no address, but one IPv6 number masks")
+        {
+            // with just a number, the mask is considered an IPv6 mask
+            // if it is 33 or more
+            //
+            for(int idx(33); idx <= 128; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                //p.set_default_address("55:33:22:11:0:cc:bb:aa");
+                addr::addr_range::vector_t ips(p.parse(":" + std::to_string(port) + "/" + std::to_string(idx)));
+                REQUIRE_FALSE(p.has_errors());
+                REQUIRE(ips.size() == 1);
+                addr::addr_range const & r(ips[0]);
+                addr::addr f(r.get_from());
+                REQUIRE_FALSE(f.is_ipv4());
+                uint8_t mask[16] = { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
+                int j(15);
+                int m(128 - idx);
+                for(; m > 8; m -= 8, --j)
+                {
+                    mask[j] = 0;
+                }
+                if(j < 0)
+                {
+                    throw std::logic_error("invalid j here");
+                }
+                mask[j] = 255 << m;
+                char buf[1024]; // really large buffer to make sure it does not get truncated
+                if(inet_ntop(AF_INET6, mask, buf, sizeof(buf)) == nullptr)
+                {
+                    throw std::logic_error("somehow we could not convert our mask to an IPv6 address.");
+                }
+                std::string result("[::]:" + std::to_string(port) + "/[" + buf + "]");
+                REQUIRE(f.to_ipv6_string(addr::addr::string_ip_t::STRING_IP_ALL) == result);
+                REQUIRE(f.to_ipv4or6_string(addr::addr::string_ip_t::STRING_IP_ALL) == result);
+                REQUIRE(f.get_port() == port);
+                REQUIRE(f.get_protocol() == proto);
+            }
+        }
+
+        SECTION("no address, but one IPv6 masks")
+        {
+            // with just a number, the mask is considered an IPv6 mask
+            // if it is 33 or more
+            //
+            for(int idx(0); idx < 5; ++idx)
+            {
+                int const proto(rand() & 1 ? IPPROTO_TCP : IPPROTO_UDP);
+                int const port(rand() & 0xFFFF);
+                addr::addr_parser p;
+                p.set_protocol(proto);
+                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                //p.set_default_address("55:33:22:11:0:cc:bb:aa");
+                addr::addr_range::vector_t ips(p.parse(":" + std::to_string(port) + "/[1:2:3:4:5:6:7:8]"));
+                REQUIRE_FALSE(p.has_errors());
+                REQUIRE(ips.size() == 1);
+                addr::addr_range const & r(ips[0]);
+                addr::addr f(r.get_from());
+                REQUIRE_FALSE(f.is_ipv4());
+                std::string result("[::]:" + std::to_string(port) + "/[1:2:3:4:5:6:7:8]");
+                REQUIRE(f.to_ipv6_string(addr::addr::string_ip_t::STRING_IP_ALL) == result);
+                REQUIRE(f.to_ipv4or6_string(addr::addr::string_ip_t::STRING_IP_ALL) == result);
+                REQUIRE(f.get_port() == port);
+                REQUIRE(f.get_protocol() == proto);
             }
         }
     }

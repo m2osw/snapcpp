@@ -195,6 +195,7 @@ TEST_CASE( "ipv4::invalid_input", "ipv4" )
             addr::addr_parser p;
             p.set_protocol(IPPROTO_TCP);
             p.set_allow(addr::addr_parser::flag_t::PORT, false);
+            REQUIRE_FALSE(p.get_allow(addr::addr_parser::flag_t::REQUIRED_PORT));
             addr::addr_range::vector_t ips(p.parse("1.2.3.4:123"));
             REQUIRE(p.has_errors());
             REQUIRE(p.error_count() == 1);
@@ -242,7 +243,7 @@ TEST_CASE( "ipv4::invalid_input", "ipv4" )
                 int const mask((rand() & 0xFF) + 1001);
                 addr::addr_parser p;
                 p.set_protocol(proto);
-                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                p.set_allow(p.flag_t::MASK, true);
                 addr::addr_range::vector_t ips(p.parse("172.19.6.91:" + std::to_string(port) + "/" + std::to_string(mask)));
                 REQUIRE(p.has_errors());
                 REQUIRE(p.error_count() == 1);
@@ -260,7 +261,7 @@ TEST_CASE( "ipv4::invalid_input", "ipv4" )
                 int const mask((rand() & 0xFF) + 33);
                 addr::addr_parser p;
                 p.set_protocol(proto);
-                p.set_allow(addr::addr_parser::flag_t::MASK, true);
+                p.set_allow(p.flag_t::MASK, true);
                 addr::addr_range::vector_t ips(p.parse("172.19.6.91:" + std::to_string(port) + "/" + std::to_string(mask)));
                 REQUIRE(p.has_errors());
                 REQUIRE(p.error_count() == 1);
@@ -603,9 +604,11 @@ TEST_CASE( "ipv4::address", "ipv4" )
         {
             addr::addr_parser p;
             p.set_protocol(IPPROTO_TCP);
-            REQUIRE(p.get_default_address() == "");
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "");
             REQUIRE(p.get_default_port() == -1);
-            REQUIRE(p.get_default_mask() == "");
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "");
             addr::addr_range::vector_t ips(p.parse("1.2.3.4"));
             REQUIRE_FALSE(p.has_errors());
             REQUIRE(ips.size() == 1);
@@ -627,6 +630,50 @@ TEST_CASE( "ipv4::address", "ipv4" )
             {
                 REQUIRE(mask[idx] == 255);
             }
+        }
+
+        SECTION("verify default address")
+        {
+            addr::addr_parser p;
+
+            p.set_default_address("1.5.19.200");
+            REQUIRE(p.get_default_address4() == "1.5.19.200");
+            REQUIRE(p.get_default_address6() == "");
+            p.set_default_address("");
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "");
+
+            p.set_default_address("1.5.19.200");
+            REQUIRE(p.get_default_address4() == "1.5.19.200");
+            REQUIRE(p.get_default_address6() == "");
+            p.set_default_address("[4:5:4:5:7:8:7:8]");
+            REQUIRE(p.get_default_address4() == "1.5.19.200");
+            REQUIRE(p.get_default_address6() == "4:5:4:5:7:8:7:8");
+            p.set_default_address("");
+            REQUIRE(p.get_default_address4() == "");
+            REQUIRE(p.get_default_address6() == "");
+        }
+
+        SECTION("verify default mask")
+        {
+            addr::addr_parser p;
+
+            p.set_default_mask("1.5.19.200");
+            REQUIRE(p.get_default_mask4() == "1.5.19.200");
+            REQUIRE(p.get_default_mask6() == "");
+            p.set_default_mask("");
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "");
+
+            p.set_default_mask("1.5.19.200");
+            REQUIRE(p.get_default_mask4() == "1.5.19.200");
+            REQUIRE(p.get_default_mask6() == "");
+            p.set_default_mask("[4:5:4:5:7:8:7:8]");
+            REQUIRE(p.get_default_mask4() == "1.5.19.200");
+            REQUIRE(p.get_default_mask6() == "4:5:4:5:7:8:7:8");
+            p.set_default_mask("");
+            REQUIRE(p.get_default_mask4() == "");
+            REQUIRE(p.get_default_mask6() == "");
         }
 
         SECTION("verify default allow flags")
@@ -717,7 +764,8 @@ TEST_CASE( "ipv4::address", "ipv4" )
             addr::addr_parser p;
             p.set_protocol(IPPROTO_TCP);
             p.set_default_address("5.5.5.5");
-            REQUIRE(p.get_default_address() == "5.5.5.5");
+            REQUIRE(p.get_default_address4() == "5.5.5.5");
+            REQUIRE(p.get_default_address6() == "");
             addr::addr_range::vector_t ips(p.parse(""));
             REQUIRE_FALSE(p.has_errors());
             REQUIRE(ips.size() == 1);
@@ -742,7 +790,8 @@ TEST_CASE( "ipv4::address", "ipv4" )
                 p.set_allow(addr::addr_parser::flag_t::PORT, false);
                 p.set_protocol(IPPROTO_TCP);
                 p.set_default_address("5.5.5.5");
-                REQUIRE(p.get_default_address() == "5.5.5.5");
+                REQUIRE(p.get_default_address4() == "5.5.5.5");
+                REQUIRE(p.get_default_address6() == "");
                 addr::addr_range::vector_t ips(p.parse("9.9.9.9"));
                 REQUIRE_FALSE(p.has_errors());
                 REQUIRE(ips.size() == 1);
@@ -765,7 +814,8 @@ TEST_CASE( "ipv4::address", "ipv4" )
                 p.set_allow(addr::addr_parser::flag_t::PORT, false);
                 p.set_protocol(IPPROTO_TCP);
                 p.set_default_address("5.5.5.5");
-                REQUIRE(p.get_default_address() == "5.5.5.5");
+                REQUIRE(p.get_default_address4() == "5.5.5.5");
+                REQUIRE(p.get_default_address6() == "");
                 addr::addr_range::vector_t ips(p.parse(""));
                 REQUIRE_FALSE(p.has_errors());
                 REQUIRE(ips.size() == 1);
@@ -1047,7 +1097,8 @@ TEST_CASE( "ipv4::ports", "ipv4" )
                 addr::addr_parser p;
                 p.set_protocol(IPPROTO_TCP);
                 p.set_default_address("5.5.5.5");
-                REQUIRE(p.get_default_address() == "5.5.5.5");
+                REQUIRE(p.get_default_address4() == "5.5.5.5");
+                REQUIRE(p.get_default_address6() == "");
                 addr::addr_range::vector_t ips(p.parse(":" + std::to_string(static_cast<int>(port))));
                 REQUIRE_FALSE(p.has_errors());
                 REQUIRE(ips.size() == 1);

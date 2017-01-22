@@ -34,6 +34,124 @@
 
 
 
+/** \mainpage
+ * \brief libaddr, a C++ library to handle network IP addresses in IPv4 and IPv6.
+ *
+ * ### Introduction
+ *
+ * This library is used to parse strings of IP addresses to lists of
+ * binary IP addresses ready to be used by functions such as bind(),
+ * send(), recv(), etc.
+ *
+ * The library supports multiple addresses separated by commas and/or
+ * spaces, ports, and CIDR masks. It can check whether an address matches
+ * another taking the mask in account. It can sort IPs numerically. It
+ * can determine the type of an IP address (i.e. is it a local address,
+ * a private address, a public address?)
+ *
+ * The library also has a function to read IP addresses from your
+ * computer interfaces and return that list. Very practical to know
+ * whether an IP address represents your computer or not.
+ *
+ * ### Usage
+ *
+ * The library is composed of three main classes:
+ *
+ * \li addr
+ *
+ * The address class holds one address, a port, a protocol and a few
+ * other parts. This is what one uses to connect or listen with an
+ * address.
+ *
+ * The address is kept by addr in an IPv6 address structure.
+ *
+ * By default the CIDR of the address is all 1s (i.e. no masking, all
+ * bits considered important.) The mask is always 128 bits. If you are
+ * dealing with IPv4, make sure that the first 12 bytes are set to 255.
+ *
+ * The class also offers a set of functions to transform the binary
+ * address it is holding to a string.
+ *
+ * \li addr_range
+ *
+ * It is possible to define a range of addresses and ports. This class
+ * holds a 'from' address and a 'to' address. By default neither is
+ * defined. You have to call the set_from() and set_to() functions.
+ *
+ * The addr_range::vector_t is what the addr_parser returns after
+ * parsing a string representing one of more addresses.
+ *
+ * \note
+ * The range is functional, however, the parser does not yet support
+ * parsing range of addresses and ports.
+ *
+ * \li addr_parser
+ *
+ * The parser is used to transform a string to an address.
+ *
+ * It supports many variations of its input, which are handled by
+ * the 'allow' flags. The set_allow() and get_allow() functions can
+ * be used to tweak the parser in supporting such and such feature.
+ *
+ * By default, the input is expected to be an address and a port
+ * separated by a colon (i.e. `"1.2.3.4:1234"` in IPv4 and `"[::1]:1234"`
+ * in IPv6.)
+ *
+ * ### Parser
+ *
+ * The parser supports the following syntax (ranges are not yet supported
+ * and they do not appear in the following list):
+ *
+ * \code
+ *    start: address_list
+ *
+ *    address_list: address_cidr
+ *                | address_list address_list_separators address_cidr
+ *
+ *    address_list_separators: ' '
+ *                           | ','
+ *                           | address_list_separators address_list_separators
+ *
+ *    address_cidr: address_port
+ *                | address_port '/' cidr
+ *
+ *    address_port: address
+ *                | address ':' port
+ *
+ *    address: ipv4
+ *           | ipv6
+ *
+ *    cidr: decimal_number
+ *        | ipv4
+ *        | ipv6
+ *
+ *    ipv4: decimal_number '.' decimal_number '.' decimal_number '.' decimal_number
+ *
+ *    ipv6: '[' hexadecimal_number_list ']'
+ *
+ *    port: decimal_number
+ *
+ *    hexadecimal_number_list: hexadecimal_number
+ *                           | hexadecimal_number_list ':' hexadecimal_number
+ *
+ *    decimal_number: [0-9]+
+ *
+ *    hexadecimal_number: [0-9a-fA-F]+
+ * \endcode
+ *
+ * When accepting multiple addresses separated by commas or spaces, the
+ * number of commas and spaces separating two address is not significant.
+ * The input string can also start or end with commas and spaces. The
+ * following variable defines exactly two IP address:
+ *
+ * \code
+ *       addresses=  ,1.2.3.4,   ,5.6.7.8,,
+ * \endcode
+ *
+ * (note that the parser should not be passed the "addresses=" part.)
+ */
+
+
 namespace addr
 {
 

@@ -210,11 +210,13 @@ public:
     };
 
     void                    set_default_address(std::string const & addr);
-    std::string const &     get_default_address() const;
+    std::string const &     get_default_address4() const;
+    std::string const &     get_default_address6() const;
     void                    set_default_port(int const port);
     int                     get_default_port() const;
     void                    set_default_mask(std::string const & mask);
-    std::string const &     get_default_mask() const;
+    std::string const &     get_default_mask4() const;
+    std::string const &     get_default_mask6() const;
     void                    set_protocol(std::string const & protocol);
     void                    set_protocol(int const protocol);
     void                    clear_protocol();
@@ -232,15 +234,17 @@ public:
 
 private:
     void                    parse_cidr(std::string const & in, addr_range::vector_t & result);
-    void                    parse_address(std::string const & in, addr_range::vector_t & result);
+    void                    parse_address(std::string const & in, std::string const & mask, addr_range::vector_t & result);
     void                    parse_address4(std::string const & in, addr_range::vector_t & result);
     void                    parse_address6(std::string const & in, addr_range::vector_t & result);
-    void                    parse_address_port(std::string const & address, std::string const & port_str, addr_range::vector_t & result);
+    void                    parse_address_port(std::string address, std::string const & port_str, addr_range::vector_t & result, std::string const & default_address);
     void                    parse_mask(std::string const & mask, addr & cidr);
 
     bool                    f_flags[static_cast<int>(flag_t::FLAG_max)] = { true, false, true, false, false, false, false, false, false, false, false, false };
-    std::string             f_default_address;
-    std::string             f_default_mask;
+    std::string             f_default_address4;
+    std::string             f_default_address6;
+    std::string             f_default_mask4;
+    std::string             f_default_mask6;
     int                     f_protocol = -1;
     int                     f_default_port = -1;
     std::string             f_error;

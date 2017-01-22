@@ -1,3 +1,15 @@
+libaddr (1.0.4.0~xenial) xenial; urgency=medium
+
+  * Put two default addresses and mask: one for IPv4 and one for IPv6.
+  * Test the commas & spaces first.
+  * Try to use the mask, if present, to know whether we deal with an
+    IPv4 or IPv6 address if we cannot otherwise know.
+  * Define a default address in case it is empty and not marked required.
+  * Updated the test accordingly.
+  * Added documentation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 22 Jan 2017 02:55:22 -0700
+
 libaddr (1.0.3.0~xenial) xenial; urgency=medium
 
   * Added a couple of tests to verify that a CIDR larger than 1000 generates
