@@ -201,3 +201,5 @@ Organization:
 
 
 vim: ts=4 sw=4 et
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._

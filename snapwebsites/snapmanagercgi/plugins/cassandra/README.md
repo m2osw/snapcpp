@@ -136,3 +136,5 @@ is running against it:
     nodetool cleanup
     nodetool repair
 
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._

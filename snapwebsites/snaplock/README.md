@@ -130,3 +130,5 @@ interferences.
 Note that this is different from draining a computer from client
 accesses.
 
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._

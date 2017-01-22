@@ -55,3 +55,5 @@ after that message was broadcast, it will miss it. This is why
 `snapdbproxy` also sends the `NOCASSANDRA` or `CASSANDRAREADY` to
 a service that sends it a `CASSANDRASTATUS` message.
 
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._

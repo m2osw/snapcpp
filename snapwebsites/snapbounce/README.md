@@ -97,3 +97,5 @@ To make sure postfix takes the changes in account, make sure to restart.
 
     sudo systemctl restart postfix
 
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._

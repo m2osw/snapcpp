@@ -11,3 +11,5 @@ actually has this directory commented out by default.
 These are kept here as "good" examples of what one can do to access
 this or that resource.
 
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._

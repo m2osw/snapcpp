@@ -23,3 +23,5 @@ We make use of the bundle installation mechanism to get everything
 installed as required, including the MySQL database system. Everything
 else should be automatic.
 
+
+_This file is part of the [snapcpp project](http://snapwebsites.org/)._
