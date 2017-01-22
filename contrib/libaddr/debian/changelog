@@ -1,3 +1,9 @@
+libaddr (1.0.0.2~xenial) xenial; urgency=medium
+
+  * The library does not offer a static (.a) version.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 17:31:22 -0700
+
 libaddr (1.0.0.1~xenial) xenial; urgency=medium
 
   * Fixed the mask_count test which would return an overflow error.

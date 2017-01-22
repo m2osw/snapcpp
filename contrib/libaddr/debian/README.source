@@ -2,6 +2,7 @@ libaddr for Debian
 ------------------
 
 The libaddr requires the snapCMakeModules package in order to be compiled.
+It also depends on the libexcept library.
 
 The SnapDoxygen package can be ignored (commented out) if you do not need
 to regenerate the documentation. (Also comment out the line:
