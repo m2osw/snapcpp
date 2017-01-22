@@ -1,8 +1,8 @@
-snapserver (1.0.17.100~xenial) xenial; urgency=high
+snapserver (1.0.18.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Bumped copyright notices to 2017.
 
- -- Doug Barbieri <doug@dooglio.net>  Wed, 26 Oct 2016 16:40:15 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 21 Jan 2017 16:2222:49 -0700
 
 snapserver (1.0.17.0~xenial) xenial; urgency=high
 
