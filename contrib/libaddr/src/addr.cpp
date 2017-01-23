@@ -17,17 +17,25 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief The implementation of the addr class.
+ *
+ * This file includes the implementation of the addr class. The one that
+ * deals with low level classes.
+ */
+
 // self
 //
 #include "libaddr/addr.h"
+#include "libaddr/addr_exceptions.h"
 
-// C++ lib
+// C++ library
 //
-#include <algorithm>
+//#include <algorithm>
 #include <sstream>
 #include <iostream>
 
-// C lib
+// C library
 //
 #include <ifaddrs.h>
 #include <netdb.h>
@@ -152,18 +160,33 @@
  */
 
 
+/** \brief The libaddr classes are all defined in this namespace.
+ *
+ * The addr namespace includes all the addr classes.
+ */
 namespace addr
 {
 
 /*
  * Various sytem address structures
 
+// Any address is 16 bytes or less
 struct sockaddr {
    unsigned short    sa_family;    // address family, AF_xxx
    char              sa_data[14];  // 14 bytes of protocol address
 };
 
+struct sockaddr_storage {
+    sa_family_t  ss_family;     // address family
 
+    // all this is padding, implementation specific, ignore it:
+    char      __ss_pad1[_SS_PAD1SIZE];
+    int64_t   __ss_align;
+    char      __ss_pad2[_SS_PAD2SIZE];
+};
+
+
+// IPv4
 struct sockaddr_in {
     short            sin_family;   // e.g. AF_INET, AF_INET6
     unsigned short   sin_port;     // e.g. htons(3490)
@@ -171,7 +194,12 @@ struct sockaddr_in {
     char             sin_zero[8];  // zero this if you want to
 };
 
+struct in_addr {
+	__be32	s_addr;
+};
 
+
+// IPv6
 struct sockaddr_in6 {
     u_int16_t       sin6_family;   // address family, AF_INET6
     u_int16_t       sin6_port;     // port number, Network Byte Order
@@ -197,22 +225,18 @@ struct in6_addr
 #endif
   };
 
-struct in_addr {
-	__be32	s_addr;
-};
-
-struct sockaddr_storage {
-    sa_family_t  ss_family;     // address family
-
-    // all this is padding, implementation specific, ignore it:
-    char      __ss_pad1[_SS_PAD1SIZE];
-    int64_t   __ss_align;
-    char      __ss_pad2[_SS_PAD2SIZE];
-};
 
 */
 
 
+/** \brief Details used by the addr class implementation.
+ *
+ * We have a function to check whether an address is part of
+ * the interfaces of your computer. This check requires the
+ * use of a `struct ifaddrs` and as such it requires to
+ * delete that structure. We define a deleter for that
+ * strucure here.
+ */
 namespace
 {
 
@@ -870,6 +894,242 @@ std::string addr::get_iface_name() const
 }
 
 
+/** \brief Create a socket from the IP address held by this addr object.
+ *
+ * This function creates a socket that corresponds to the addr object
+ * definitions, it takes the protocol and family information in account.
+ *
+ * The flags can be used to add one or more of the following flags:
+ *
+ * \li SOCKET_FLAG_NONBLOCK -- create socket as non-block
+ * \li SOCKET_FLAG_CLOEXEC -- close socket on an execv()
+ * \li SOCKET_FLAG_REUSE -- for TCP socket, mark the address as immediately
+ * reusable, ignored for UDP; only useful for server (bind + listen after
+ * this call)
+ *
+ * \note
+ * The IP protocol is viewed as TCP in this function.
+ *
+ * \warning
+ * This class does not hold the socket created by this function.
+ *
+ * \todo
+ * Move this to our libsnapnetwork once we create that separate library.
+ * Probably within a form of low level socket class.
+ *
+ * \param[in] flags  A set of socket flags to use when creating the socket.
+ * \param[in] reuse_address  Set the reuse address flag.
+ *
+ * \return The socket file descriptor.
+ */
+int addr::create_socket(socket_flag_t flags) const
+{
+    int const sock_flags(
+              ((flags & SOCKET_FLAG_CLOEXEC)  != 0 ? SOCK_CLOEXEC  : 0)
+            | ((flags & SOCKET_FLAG_NONBLOCK) != 0 ? SOCK_NONBLOCK : 0));
+    int const family(is_ipv4() ? AF_INET : AF_INET6);
+
+    switch(f_protocol)
+    {
+    case IPPROTO_IP: // interpret as TCP...
+    case IPPROTO_TCP:
+        {
+            int s(socket(family, SOCK_STREAM | sock_flags, IPPROTO_TCP));
+
+            if((flags & SOCKET_FLAG_REUSE) != 0)
+            {
+                // set the "reuse that address immediately" flag, we totally
+                // ignore errors on that one
+                //
+                int optval(1);
+                socklen_t const optlen(sizeof(optval));
+                static_cast<void>(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
+            }
+            return s;
+        }
+
+    case IPPROTO_UDP:
+        return socket(family, SOCK_DGRAM | sock_flags, IPPROTO_UDP);
+
+    default:
+        // this should never happen since we control the f_protocol field
+        //
+        return -1;      // LCOV_EXCL_LINE
+
+    }
+}
+
+
+/** \brief Connect the specified socket to this IP address.
+ *
+ * When you create a TCP client, you can connect to a server. This
+ * is done by using the connect() function which makes use of the
+ * address to connect to the server.
+ *
+ * This function makes sure to select the correct connect() function
+ * depending on whether this IP address is an IPv4 or an IPv6 address
+ * (although we could always try with the IPv6 structure, it may or
+ * may not work properly on all systems, so for now we use the
+ * distinction.)
+ *
+ * \todo
+ * Move this to our libsnapnetwork once we create that separate library.
+ * Probably within a form of low level socket class.
+ *
+ * \param[in] s  The socket to connect to the address.
+ *
+ * \return 0 if the bind() succeeded, -1 on errors
+ */
+int addr::connect(int s) const
+{
+    // only TCP can connect, UDP binds and sends only
+    //
+    switch(f_protocol)
+    {
+    case IPPROTO_IP: // interpret as TCP...
+    case IPPROTO_TCP:
+        if(is_ipv4())
+        {
+            // this would most certainly work using the IPv6 address
+            // as in the else part, but to be sure, we use the IPv4
+            // as specified in the address (there could be other reasons
+            // than just your OS for this to fail if using IPv6.)
+            //
+            // IMPORTANT NOTE: also the family is used in the socket()
+            //                 call above and must match the address here...
+            //
+            sockaddr_in ipv4;
+            get_ipv4(ipv4);
+            return ::connect(s, reinterpret_cast<sockaddr const *>(&ipv4), sizeof(ipv4));
+        }
+        else
+        {
+            return ::connect(s, reinterpret_cast<sockaddr const *>(&f_address), sizeof(struct sockaddr_in6));
+        }
+        break;
+
+    }
+
+    return -1;
+}
+
+
+/** \brief Create a server with this socket listening on this IP address.
+ *
+ * This function will bind the socket \p s to the address defined in
+ * this addr object. This creates a server listening on that IP address.
+ *
+ * If the IP address is 127.0.0.1, then only local processes can connect
+ * to that server. If the IP address is 0.0.0.0, then anyone can connect
+ * to the server.
+ *
+ * This function works for TCP and UDP servers.
+ *
+ * If the IP address represents an IPv4 addressm then the bind() is done
+ * with an IPv4 address and not the IPv6 as it is stored.
+ *
+ * \todo
+ * Move this to our libsnapnetwork once we create that separate library.
+ * Probably within a form of low level socket class.
+ *
+ * \param[in] s  The socket to bind to this address.
+ *
+ * \return 0 if the bind() succeeded, -1 on errors
+ */
+int addr::bind(int s) const
+{
+    if(is_ipv4())
+    {
+        sockaddr_in ipv4;
+        get_ipv4(ipv4);
+        return ::bind(s, reinterpret_cast<sockaddr const *>(&ipv4), sizeof(ipv4));
+    }
+    else
+    {
+        return ::bind(s, reinterpret_cast<sockaddr const *>(&f_address), sizeof(struct sockaddr_in6));
+    }
+}
+
+
+/** \brief Initializes this addr object from a socket information.
+ *
+ * When you connect to a server or a clients connect to your server, the
+ * socket defines two IP addresses and ports: one on your side and one on
+ * the other side.
+ *
+ * The other side is called the _peer name_.
+ *
+ * You side is called the _socket name_ (i.e. the IP address of your computer,
+ * representing the interface used to perform that connection.)
+ *
+ * If you call this function with \p peer set to false then you get the
+ * address and port from your side. If you set \p peer to true,
+ * you get the other side address and port details.
+ *
+ * \todo
+ * Move this to our libsnapnetwork once we create that separate library.
+ * Probably within a form of low level socket class.
+ *
+ * \param[in] s  The socket from which you want to retrieve peer information.
+ * \param[in] peer  Whether to retrieve the peer or socket name.
+ */
+void addr::set_from_socket(int s, bool peer)
+{
+    // make sure the socket is defined and well
+    //
+    if(s < 0)
+    {
+        throw addr_invalid_argument_exception("addr::set_from_socket(): the socket cannot be a negative number.");
+    }
+
+    struct sockaddr_storage address = sockaddr_storage();
+    socklen_t length(sizeof(address));
+    int r;
+    if(peer)
+    {
+        // this retrieves the information from the other side
+        //
+        r = getpeername(s, reinterpret_cast<struct sockaddr *>(&address), &length);
+    }
+    else
+    {
+        // retrieve the local socket information
+        //
+        r = getsockname(s, reinterpret_cast<struct sockaddr *>(&address), &length);
+    }
+    if(r != 0)
+    {
+        int const e(errno);
+        throw addr_io_exception(
+                  std::string("addr::set_from_socket(): ")
+                + (peer ? "getpeername()" : "getsockname()")
+                + " failed to retrieve IP address details (errno: "
+                + std::to_string(e)
+                + ", "
+                + strerror(e)
+                + ").");
+    }
+
+    switch(address.ss_family)
+    {
+    case AF_INET:
+        set_ipv4(reinterpret_cast<struct sockaddr_in &>(address));
+        break;
+
+    case AF_INET6:
+        set_ipv6(reinterpret_cast<struct sockaddr_in6 &>(address));
+        break;
+
+    default:
+        throw addr_invalid_state_exception(
+                  std::string("addr::set_from_socket(): ")
+                + (peer ? "getpeername()" : "getsockname()")
+                + " returned a type of address, which is not understood, i.e. not AF_INET or AF_INET6.");
+
+    }
+}
+
+
 /** \brief Transform the IP into a domain name.
  *
  * This function transforms the IP address in this `addr` object in a
@@ -1131,6 +1391,8 @@ void addr::address_changed()
  *
  * Peruse the list of available interfaces, and return any detected ip addresses
  * in a vector.
+ *
+ * \return A vector of all the local interface IP addresses.
  */
 addr::vector_t addr::get_local_addresses()
 {
@@ -1246,18 +1508,6 @@ addr::computer_interface_address_t addr::is_computer_interface_address() const
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 }
-// snap_addr namespace
+// addr namespace
 // vim: ts=4 sw=4 et

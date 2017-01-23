@@ -1,4 +1,4 @@
-/* test_addr_ibterfaces.cpp
+/* test_addr_interfaces.cpp
  * Copyright (C) 2011-2017  Made to Order Software Corporation
  *
  * Project: http://snapwebsites.org/project/libaddr
@@ -29,16 +29,17 @@
  * SOFTWARE.
  */
 
+/** \file
+ * \brief Verify the interfaces function.
+ *
+ * This file implements a test that verifies the function that
+ * reads the list of IP addresses as defined in your local
+ * interfaces.
+ */
+
+// self
+//
 #include "test_addr_main.h"
-#include "libaddr/addr.h"
-
-#include <sstream>
-#include <fstream>
-
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
-
 
 
 TEST_CASE( "ipv4::interfaces", "ipv4" )
@@ -55,9 +56,6 @@ TEST_CASE( "ipv4::interfaces", "ipv4" )
         }
     }
 }
-
-
-
 
 
 // vim: ts=4 sw=4 et

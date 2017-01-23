@@ -29,17 +29,49 @@
  * SOFTWARE.
  */
 
+/** \file
+ * \brief Test the IPv6 interface.
+ *
+ * These test verify that the IPv6 side of things function as expected.
+ *
+ * Note that some of the tests between the IPv4 and IPv6 overlap. Here
+ * you mainly find the IPv6 side of things.
+ *
+ * Also, the IPv6 test include a certain number of default/global
+ * test because by default the addr class implements an IPv6 object.
+ */
+
+// self
+//
 #include "test_addr_main.h"
-#include "libaddr/addr.h"
 
-#include <sstream>
-#include <fstream>
 
-#include <string.h>
-//#include <math.h>
-//#include <time.h>
-#include <unistd.h>
-#include <limits.h>
+/** \brief Details used by the addr class implementation.
+ *
+ * We have a function to check whether an address is part of
+ * the interfaces of your computer. This check requires the
+ * use of a `struct ifaddrs` and as such it requires to
+ * delete that structure. We define a deleter for that
+ * strucure here.
+ */
+namespace
+{
+
+/** \brief Delete an ifaddrs structure.
+ *
+ * This deleter is used to make sure all the ifaddrs get released when
+ * an exception occurs or the function using such exists.
+ *
+ * \param[in] ia  The ifaddrs structure to free.
+ */
+void socket_deleter(int * s)
+{
+    close(*s);
+}
+
+
+}
+// no name namespace
 
 
 
@@ -376,12 +408,12 @@ TEST_CASE( "ipv4::addr", "ipv4" )
 
             struct sockaddr_in in;
             REQUIRE_THROWS_AS(a.get_ipv4(in), addr::addr_invalid_state_exception);
-            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY),         addr::addr_invalid_state_exception);
+            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY),          addr::addr_invalid_state_exception);
             REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_BRACKETS),      addr::addr_invalid_state_exception);
-            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_PORT),         addr::addr_invalid_state_exception);
-            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_MASK),         addr::addr_invalid_state_exception);
+            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_PORT),          addr::addr_invalid_state_exception);
+            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_MASK),          addr::addr_invalid_state_exception);
             REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_BRACKETS_MASK), addr::addr_invalid_state_exception);
-            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ALL),          addr::addr_invalid_state_exception);
+            REQUIRE_THROWS_AS(a.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ALL),           addr::addr_invalid_state_exception);
         }
 
         SECTION("default network type (0.0.0.0)")
@@ -1845,6 +1877,150 @@ TEST_CASE( "ipv4::network_type", "ipv4" )
 }
 
 
+TEST_CASE( "ipv4::network", "ipv4" )
+{
+    GIVEN("set_from_socket()")
+    {
+        SECTION("invalid socket")
+        {
+            addr::addr a;
+            REQUIRE_THROWS_AS(a.set_from_socket(-1, true),  addr::addr_invalid_argument_exception);
+            REQUIRE_THROWS_AS(a.set_from_socket(-1, false), addr::addr_invalid_argument_exception);
+        }
+
+        SECTION("non-opened file descriptor")
+        {
+            addr::addr a;
+
+            // unless we have a bug, there should not be any file descriptor
+            // currently open with an ID of 1,000
+            //
+            REQUIRE_THROWS_AS(a.set_from_socket(1000, true),  addr::addr_io_exception);
+            REQUIRE_THROWS_AS(a.set_from_socket(1000, false), addr::addr_io_exception);
+        }
+
+        SECTION("unknown socket type")
+        {
+            addr::addr a;
+
+            int s(socket(AF_UNIX, SOCK_STREAM, 0));
+            REQUIRE(s >= 0);
+            std::shared_ptr<int> auto_free(&s, socket_deleter);
+
+            // unless we have a bug, there should not be any file descriptor
+            // currently open with an ID of 1,000
+            //
+            REQUIRE_THROWS_AS(a.set_from_socket(s, true),  addr::addr_io_exception);
+            REQUIRE_THROWS_AS(a.set_from_socket(s, false), addr::addr_invalid_state_exception);
+        }
+
+        SECTION("create a server, but do not test it (yet)...")
+        {
+            addr::addr_parser p;
+            addr::addr_range::vector_t ips(p.parse("127.0.0.1:49999"));
+            REQUIRE(ips.size() >= 1);
+
+            addr::addr & a(ips[0].get_from());
+            int s(a.create_socket(addr::addr::SOCKET_FLAG_NONBLOCK | addr::addr::SOCKET_FLAG_CLOEXEC | addr::addr::SOCKET_FLAG_REUSE));
+            REQUIRE(s >= 0);
+            std::shared_ptr<int> auto_free(&s, socket_deleter);
+
+            REQUIRE(a.bind(s) == 0);
+        }
+
+        SECTION("connect with TCP to 127.0.0.1")
+        {
+            if(unittest::g_tcp_port != -1)
+            {
+                addr::addr_parser p;
+                addr::addr_range::vector_t ips(p.parse("127.0.0.1:" + std::to_string(unittest::g_tcp_port)));
+                REQUIRE(ips.size() >= 1);
+
+                addr::addr & a(ips[0].get_from());
+                int s(a.create_socket(addr::addr::SOCKET_FLAG_CLOEXEC));// | addr::addr::SOCKET_FLAG_REUSE));
+                REQUIRE(s >= 0);
+                std::shared_ptr<int> auto_free(&s, socket_deleter);
+
+                REQUIRE(a.connect(s) == 0);
+
+                // get socket info from the other side (peer == true)
+                //
+                addr::addr b;
+                b.set_from_socket(s, true);
+                REQUIRE(b.is_ipv4());
+                REQUIRE(b.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY)    == "127.0.0.1");
+                REQUIRE(b.to_ipv4or6_string(addr::addr::string_ip_t::STRING_IP_ONLY) == "127.0.0.1");
+
+                // in this case we know what the port is since we specified
+                // that when connecting
+                //
+                REQUIRE(b.get_port() == unittest::g_tcp_port);
+
+                // now try this side (peer == false)
+                //
+                addr::addr c;
+                c.set_from_socket(s, false);
+                REQUIRE(c.is_ipv4());
+                REQUIRE(c.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY)    == "127.0.0.1");
+                REQUIRE(c.to_ipv4or6_string(addr::addr::string_ip_t::STRING_IP_ONLY) == "127.0.0.1");
+
+                // we cannot be sure of the port, there is a range we could
+                // test better (more constraining) but for this test is
+                // certainly does not matter much; it has to be more than
+                // 1023, though
+                //
+                REQUIRE(c.get_port() > 1023);
+            }
+            else
+            {
+                std::cout << "connect to 127.0.0.1 test skipped as no TCP port was specified on the command line." << std::endl;
+            }
+        }
+
+        SECTION("connect with UDP to 127.0.0.1")
+        {
+            addr::addr_parser p;
+            p.set_protocol("udp");
+            addr::addr_range::vector_t ips(p.parse("127.0.0.1:53"));
+            REQUIRE(ips.size() >= 1);
+
+            addr::addr & a(ips[0].get_from());
+            int s(a.create_socket(addr::addr::SOCKET_FLAG_CLOEXEC));// | addr::addr::SOCKET_FLAG_REUSE));
+            REQUIRE(s >= 0);
+            std::shared_ptr<int> auto_free(&s, socket_deleter);
+
+            REQUIRE(a.connect(s) == -1);
+
+            // get socket info from the other side (peer == true)
+            //
+            addr::addr b;
+            REQUIRE_THROWS_AS(b.set_from_socket(s, true), addr::addr_io_exception);
+            REQUIRE_FALSE(b.is_ipv4());
+            REQUIRE(b.to_ipv6_string(addr::addr::string_ip_t::STRING_IP_ONLY)    == "::");
+            REQUIRE(b.to_ipv4or6_string(addr::addr::string_ip_t::STRING_IP_ONLY) == "::");
+
+            // in this case we know what the port is since we specified
+            // that when connecting
+            //
+            REQUIRE(b.get_port() == 0);
+
+            // now try this side (peer == false)
+            //
+            addr::addr c;
+            c.set_from_socket(s, false);
+            REQUIRE(c.is_ipv4());
+            REQUIRE(c.to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY)    == "0.0.0.0");
+            REQUIRE(c.to_ipv4or6_string(addr::addr::string_ip_t::STRING_IP_ONLY) == "0.0.0.0");
+
+            // we cannot be sure of the port, there is a range we could
+            // test better (more constraining) but for this test is
+            // certainly does not matter much; it has to be more than
+            // 1023, though
+            //
+            REQUIRE(c.get_port() == 0);
+        }
+    }
+}
 
 
 // vim: ts=4 sw=4 et

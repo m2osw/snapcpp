@@ -29,6 +29,20 @@
  * SOFTWARE.
  */
 
+/** \file
+ * \brief Check the global functions.
+ *
+ * This test file includes test that checks the global functions.
+ *
+ * At this time, the only global functions we check here are the
+ * version functions.
+ *
+ * The address_match_ranges() function is checked in the IPv4
+ * and IPv6 tests along with other address tests.
+ */
+
+// self
+//
 #include "test_addr_main.h"
 #include "libaddr/addr.h"
 #include "libaddr/version.h"

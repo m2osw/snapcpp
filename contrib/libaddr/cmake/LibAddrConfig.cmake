@@ -9,9 +9,8 @@
 
 find_path( LIBADDR_INCLUDE_DIR libaddr/addr.h
 			PATHS $ENV{LIBADDR_INCLUDE_DIR}
-			PATH_SUFFIXES libaddr
 		 )
-find_library( LIBADDR_LIBRARY tld
+find_library( LIBADDR_LIBRARY addr
 			PATHS $ENV{LIBADDR_LIBRARY}
 		 )
 mark_as_advanced( LIBADDR_INCLUDE_DIR LIBADDR_LIBRARY )

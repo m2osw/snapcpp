@@ -18,47 +18,38 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "libexcept/exception.h"
+/** \file
+ * \brief The various libaddr classes.
+ *
+ * This header includes the base addr class used to handle one binary
+ * address.
+ */
 
-#include <arpa/inet.h>
-
+// C++ library
+//
 #include <memory>
 #include <cstring>
+#include <vector>
+
+// C library
+//
+#include <arpa/inet.h>
+
+
 
 namespace addr
 {
 
 
-class addr_invalid_argument_exception : public libexcept::exception_t
-{
-public:
-    addr_invalid_argument_exception(char const *        what_msg) : exception_t(what_msg) {}
-    addr_invalid_argument_exception(std::string const & what_msg) : exception_t(what_msg) {}
-};
-
-class addr_invalid_state_exception : public libexcept::exception_t
-{
-public:
-    addr_invalid_state_exception(char const *        what_msg) : exception_t(what_msg) {}
-    addr_invalid_state_exception(std::string const & what_msg) : exception_t(what_msg) {}
-};
-
-class addr_invalid_structure_exception : public libexcept::logic_exception_t
-{
-public:
-    addr_invalid_structure_exception(char const *        what_msg) : logic_exception_t(what_msg) {}
-    addr_invalid_structure_exception(std::string const & what_msg) : logic_exception_t(what_msg) {}
-};
-
-class addr_invalid_parameter_exception : public libexcept::logic_exception_t
-{
-public:
-    addr_invalid_parameter_exception(char const *        what_msg) : logic_exception_t(what_msg) {}
-    addr_invalid_parameter_exception(std::string const & what_msg) : logic_exception_t(what_msg) {}
-};
 
 
-
+/** \brief Initialize an IPv6 address as such.
+ *
+ * This function initializes a sockaddr_in6 with all zeroes except
+ * for the sin6_family which is set to AF_INET6.
+ *
+ * return The initialized IPv6 address.
+ */
 constexpr struct sockaddr_in6 init_in6()
 {
     struct sockaddr_in6 in6 = sockaddr_in6();
@@ -102,6 +93,11 @@ public:
 
     typedef std::shared_ptr<addr>   pointer_t;
     typedef std::vector<addr>       vector_t;
+    typedef int                     socket_flag_t;
+
+    static socket_flag_t const      SOCKET_FLAG_CLOEXEC  = 0x01;
+    static socket_flag_t const      SOCKET_FLAG_NONBLOCK = 0x02;
+    static socket_flag_t const      SOCKET_FLAG_REUSE    = 0x04;
 
                                     addr();
                                     addr(struct sockaddr_in const & in);
@@ -109,7 +105,7 @@ public:
 
     static vector_t                 get_local_addresses();
 
-    void                            set_from_socket(int s);
+    void                            set_from_socket(int s, bool peer);
     void                            set_ipv4(struct sockaddr_in const & in);
     void                            set_ipv6(struct sockaddr_in6 const & in6);
     void                            set_port(int port);
@@ -130,6 +126,9 @@ public:
     computer_interface_address_t    is_computer_interface_address() const;
 
     std::string                     get_iface_name() const;
+    int                             create_socket(socket_flag_t flags) const;
+    int                             connect(int s) const;
+    int                             bind(int s) const;
     std::string                     get_name() const;
     std::string                     get_service() const;
     int                             get_port() const;
@@ -157,103 +156,11 @@ private:
 };
 
 
-class addr_range
-{
-public:
-    typedef std::shared_ptr<addr_range>     pointer_t;
-    typedef std::vector<addr_range>         vector_t;
-
-    bool                            has_from() const;
-    bool                            has_to() const;
-    bool                            is_range() const;
-    bool                            is_empty() const;
-    bool                            is_in(addr const & rhs) const;
-
-    void                            set_from(addr const & from);
-    addr &                          get_from();
-    addr const &                    get_from() const;
-    void                            set_to(addr const & to);
-    addr &                          get_to();
-    addr const &                    get_to() const;
-
-    addr_range                      intersection(addr_range const & rhs) const;
-
-private:
-    bool                            f_has_from = false;
-    bool                            f_has_to = false;
-    addr                            f_from;
-    addr                            f_to;
-};
-
-
-class addr_parser
-{
-public:
-    enum class flag_t
-    {
-        ADDRESS,                            // address (IP)
-        REQUIRED_ADDRESS,                   // address cannot be empty
-        PORT,                               // port
-        REQUIRED_PORT,                      // port cannot be empty
-        MASK,                               // mask
-        MULTI_ADDRESSES_COMMAS,             // IP:port/mask,IP:port/mask,...
-        MULTI_ADDRESSES_SPACES,             // IP:port/mask IP:port/mask ...
-        MULTI_ADDRESSES_COMMAS_AND_SPACES,  // IP:port/mask, IP:port/mask, ...
-
-        // the following are not yet implemented
-        MULTI_PORTS_SEMICOLONS,             // port1;port2;...
-        MULTI_PORTS_COMMAS,                 // port1,port2,...
-        PORT_RANGE,                         // port1-port2
-        ADDRESS_RANGE,                      // IP-IP
-
-        FLAG_max
-    };
-
-    void                    set_default_address(std::string const & addr);
-    std::string const &     get_default_address4() const;
-    std::string const &     get_default_address6() const;
-    void                    set_default_port(int const port);
-    int                     get_default_port() const;
-    void                    set_default_mask(std::string const & mask);
-    std::string const &     get_default_mask4() const;
-    std::string const &     get_default_mask6() const;
-    void                    set_protocol(std::string const & protocol);
-    void                    set_protocol(int const protocol);
-    void                    clear_protocol();
-    int                     get_protocol() const;
-
-    void                    set_allow(flag_t const flag, bool const allow);
-    bool                    get_allow(flag_t const flag) const;
-
-    bool                    has_errors() const;
-    void                    emit_error(std::string const & msg);
-    std::string const &     error_messages() const;
-    int                     error_count() const;
-    void                    clear_errors();
-    addr_range::vector_t    parse(std::string const & in);
-
-private:
-    void                    parse_cidr(std::string const & in, addr_range::vector_t & result);
-    void                    parse_address(std::string const & in, std::string const & mask, addr_range::vector_t & result);
-    void                    parse_address4(std::string const & in, addr_range::vector_t & result);
-    void                    parse_address6(std::string const & in, addr_range::vector_t & result);
-    void                    parse_address_port(std::string address, std::string const & port_str, addr_range::vector_t & result, std::string const & default_address);
-    void                    parse_mask(std::string const & mask, addr & cidr);
-
-    bool                    f_flags[static_cast<int>(flag_t::FLAG_max)] = { true, false, true, false, false, false, false, false, false, false, false, false };
-    std::string             f_default_address4;
-    std::string             f_default_address6;
-    std::string             f_default_mask4;
-    std::string             f_default_mask6;
-    int                     f_protocol = -1;
-    int                     f_default_port = -1;
-    std::string             f_error;
-    int                     f_error_count = 0;
-};
 
 
 
-} // addr namespace
+}
+// addr namespace
 
 
 inline bool operator == (struct sockaddr_in6 const & a, struct sockaddr_in6 const & b)

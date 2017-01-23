@@ -1,8 +1,19 @@
-libaddr (1.0.4.1~xenial) xenial; urgency=high
+libaddr (1.0.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the cmake file, the library name is "addr", not "tld".
+  * Added port 80 as one I can use to run the coverage tests.
+  * Fixed the STRIP_FROM_PATH in the doxy file.
+  * Fixed the path to the version.h in the doxy file.
+  * Fixed the cmake to properly install the libaddr include files.
+  * Fixed the documentation further.
+  * Broke up the header file into one file per class and exceptions.
+  * Added a couple of match() functions to the addr_range class.
+  * Added some socket related functions, although those should be moved
+    to a socket class of our future "libsnapnetwork" library...
+  * Updated the tests accordingly. We still have 100% coverage.
+  * Various clean ups.
 
- -- Build Server <build@m2osw.com>  Mon, 23 Jan 2017 02:00:52 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 23 Jan 2017 11:40:22 -0700
 
 libaddr (1.0.4.0~xenial) xenial; urgency=medium
 
@@ -14,7 +25,7 @@ libaddr (1.0.4.0~xenial) xenial; urgency=medium
   * Updated the test accordingly.
   * Added documentation.
 
- -- Alexis Wilke <alexis@m2osw.com>  Sat, 22 Jan 2017 02:55:22 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 22 Jan 2017 02:55:22 -0700
 
 libaddr (1.0.3.0~xenial) xenial; urgency=medium
 

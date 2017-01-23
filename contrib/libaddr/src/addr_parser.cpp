@@ -17,17 +17,25 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief The implementation of the IP address parser.
+ *
+ * This function is used to parse IP addresses from a string to a
+ * vector of ranges.
+ */
+
 // self
 //
-#include "libaddr/addr.h"
+#include "libaddr/addr_parser.h"
+#include "libaddr/addr_exceptions.h"
 
-// C++ lib
+// C++ library
 //
 #include <algorithm>
-#include <sstream>
-#include <iostream>
+//#include <sstream>
+//#include <iostream>
 
-// C lib
+// C library
 //
 #include <ifaddrs.h>
 #include <netdb.h>
@@ -249,17 +257,17 @@ int addr_parser::get_default_port() const
  *      parser.set_default_mask(std::string());
  * \endcode
  *
- * \bug
- * At this time the default mask can only be an IPv4 or an IPv6
- * mask and therefore you may have problems if it does not match
- * the input string with a missing mask. At some point we may
- * offer two default masks: one for IPv4 and one for IPv6.
- *
  * \note
- * As you can see, here we espect the mask as a string. This is because
- * it gets parsed as if it came from the input string. This also means
- * that if the mask is invalid, it won't be detected until you attempt
- * to parse an input string that does not include a mask.
+ * As you can see, here we expect the mask to be a string. This is because
+ * it gets parsed as if it came from the input string of the parser. This
+ * also means that if the mask is invalid, it will not be detected until
+ * you attempt to parse an input string that does not include a mask and
+ * the default gets used.
+ *
+ * \todo
+ * Add a check of the default mask when it gets set so we can throw on
+ * errors and that way it is much more likely that programmers can fix
+ * their errors early.
  *
  * \param[in] mask  The mask to use by default.
  */
@@ -1274,10 +1282,7 @@ void addr_parser::parse_address_port(std::string address, std::string const & po
                 addr a(*reinterpret_cast<struct sockaddr_in *>(addrlist->ai_addr));
                 // in most cases we do not get a protocol from
                 // the getaddrinfo() function...
-                if(addrlist->ai_protocol != 0)
-                {
-                    a.set_protocol(addrlist->ai_protocol);
-                }
+                a.set_protocol(addrlist->ai_protocol);
                 addr_range r;
                 r.set_from(a);
                 result.push_back(r);
@@ -1553,10 +1558,6 @@ void addr_parser::parse_mask(std::string const & mask, addr & cidr)
 
 
 
-
-
-
-
 }
-// snap_addr namespace
+// addr namespace
 // vim: ts=4 sw=4 et

@@ -28,13 +28,36 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef TEST_ADDR_MAIN_H
-#define TEST_ADDR_MAIN_H
+#pragma once
+
+/** \file
+ * \brief Basic definitions for all of our libaddr unit tests.
+ *
+ * This files includes and declares basics that are to be used
+ * by all our unit tests.
+ */
+
+// libaddr library
+//
+#include "libaddr/addr_parser.h"
+#include "libaddr/addr_exceptions.h"
+#include "libaddr/version.h"
+
+// C++ library
+//
 #include <string>
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
+// C library
+#include <unistd.h>
+#include <limits.h>
+#include <netdb.h>
+
+// catch
+//
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -43,12 +66,19 @@
 #pragma GCC diagnostic pop
 
 
+
+
+
 namespace unittest
 {
 
+// Place globals defined by main() from the command line and used
+// by various tests in here
+//
 
-
+extern int          g_tcp_port;
 
 
 }
-#endif
+// namespace unittest
+// vim: ts=4 sw=4 et

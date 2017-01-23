@@ -70,7 +70,7 @@ install(
 
 install(
     DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/libaddr
     DESTINATION
         include
     FILES_MATCHING PATTERN

@@ -17,6 +17,13 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief A tool to check the validity of an IP address.
+ *
+ * This tool can be used to check that an IP address or a list of
+ * IP addresses are all valid.
+ */
+
 #include "libaddr/addr.h"
 
 #include <iostream>

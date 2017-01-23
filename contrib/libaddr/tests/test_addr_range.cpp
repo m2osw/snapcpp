@@ -29,15 +29,17 @@
  * SOFTWARE.
  */
 
+/** \file
+ * \brief Check the addr_range class basics.
+ *
+ * This set of unit tests do basic verification of the range class.
+ *
+ * The point here is to test the range functionality and not the
+ * addr_parser class.
+ */
+
 #include "test_addr_main.h"
-#include "libaddr/addr.h"
 
-#include <sstream>
-#include <fstream>
-
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
 
 
 
@@ -128,6 +130,9 @@ TEST_CASE( "ipv4::range", "ipv4" )
             REQUIRE(r1.get_to() == a);
             REQUIRE_THROWS_AS(range.is_in(other), addr::addr_invalid_state_exception);
             REQUIRE_THROWS_AS(r1.is_in(other), addr::addr_invalid_state_exception);
+            REQUIRE(range.match(a));
+            REQUIRE_FALSE(range.match(f));
+            REQUIRE_FALSE(range.match(t));
 
             range.set_from(f);
 
@@ -144,6 +149,9 @@ TEST_CASE( "ipv4::range", "ipv4" )
             REQUIRE(r2.get_to() == a);
             REQUIRE_THROWS_AS(range.is_in(other), addr::addr_invalid_state_exception);
             REQUIRE_THROWS_AS(r2.is_in(other), addr::addr_invalid_state_exception);
+            REQUIRE_FALSE(range.match(a));
+            REQUIRE(range.match(f));
+            REQUIRE_FALSE(range.match(t));
 
             range.set_to(t);
 
@@ -158,6 +166,9 @@ TEST_CASE( "ipv4::range", "ipv4" )
             auto const & r3(range);
             REQUIRE(r3.get_from() == f);
             REQUIRE(r3.get_to() == t);
+            REQUIRE_FALSE(range.match(a));
+            REQUIRE(range.match(f));
+            REQUIRE(range.match(t));
 
             // IP before range
             {
@@ -284,6 +295,9 @@ TEST_CASE( "ipv4::range", "ipv4" )
             REQUIRE(r1.get_to() == a);
             REQUIRE_THROWS_AS(range.is_in(other), addr::addr_invalid_state_exception);
             REQUIRE_THROWS_AS(r1.is_in(other), addr::addr_invalid_state_exception);
+            REQUIRE(range.match(a));
+            REQUIRE_FALSE(range.match(f));
+            REQUIRE_FALSE(range.match(t));
 
             range.set_from(f);
 
@@ -300,6 +314,9 @@ TEST_CASE( "ipv4::range", "ipv4" )
             REQUIRE(r2.get_to() == a);
             REQUIRE_THROWS_AS(range.is_in(other), addr::addr_invalid_state_exception);
             REQUIRE_THROWS_AS(r2.is_in(other), addr::addr_invalid_state_exception);
+            REQUIRE_FALSE(range.match(a));
+            REQUIRE(range.match(f));
+            REQUIRE_FALSE(range.match(t));
 
             range.set_to(t);
 
@@ -314,6 +331,9 @@ TEST_CASE( "ipv4::range", "ipv4" )
             auto const & r3(range);
             REQUIRE(r3.get_from() == f);
             REQUIRE(r3.get_to() == t);
+            REQUIRE_FALSE(range.match(a));
+            REQUIRE_FALSE(range.match(f));
+            REQUIRE_FALSE(range.match(t));
 
             // IP before range
             {
@@ -545,6 +565,14 @@ TEST_CASE( "ipv4::range", "ipv4" )
             //
             REQUIRE(range3.get_from().to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY) == "10.10.0.0");
             REQUIRE(range3.get_to().to_ipv4_string(addr::addr::string_ip_t::STRING_IP_ONLY) == "10.5.255.255");
+
+            addr::addr_range::vector_t rlist;
+            rlist.push_back(range1);
+            rlist.push_back(range2);
+            REQUIRE(addr::address_match_ranges(rlist, f1));
+            REQUIRE(addr::address_match_ranges(rlist, f2));
+            REQUIRE(addr::address_match_ranges(rlist, t1));
+            REQUIRE(addr::address_match_ranges(rlist, t2));
         }
     }
 }

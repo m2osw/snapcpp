@@ -17,29 +17,27 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief The implementation of the addr_range class.
+ *
+ * This file includes the implementation of the addr_range class
+ * and the address_match_ranges() global function.
+ */
+
 // self
 //
-#include "libaddr/addr.h"
+#include "libaddr/addr_range.h"
+#include "libaddr/addr_exceptions.h"
 
-// C++ lib
+// C++ library
 //
 #include <algorithm>
-#include <sstream>
-#include <iostream>
-
-// C lib
-//
-#include <ifaddrs.h>
-#include <netdb.h>
+//#include <iostream>
 
 
 
 namespace addr
 {
-
-
-
-
 
 
 /** \brief Return true if the range has a 'from' address defined.
@@ -273,11 +271,79 @@ addr_range addr_range::intersection(addr_range const & rhs) const
 }
 
 
+/** \brief Check whether an address matches a range.
+ *
+ * This function checks whether an address matches a range of addresses.
+ *
+ * The range may be empty, in which case the result is always false.
+ *
+ * If the range is a range (i.e. 'from' and 'to' are both defined,)
+ * then the is_in() function is used to determine whether the address
+ * is a match.
+ *
+ * If only one of the 'from' or 'to' addresses is defined, then that
+ * one address addr::match() function is used to determine whether the
+ * input \p address is a match.
+ *
+ * \param[in] address  The address to match against a range of addresses.
+ *
+ * \return true if address matches this range.
+ */
+bool addr_range::match(addr const & address) const
+{
+    // if neith 'from' nor 'to' were defined, return
+    //
+    if(is_empty())
+    {
+        return false;
+    }
 
+    if(is_range())
+    {
+        return is_in(address);
+    }
+
+    if(has_from())
+    {
+        return f_from.match(address);
+    }
+    else
+    {
+        // if not empty and it does not have 'from', it has to be 'to'
+        //
+        return f_to.match(address);
+    }
+}
+
+
+/** \brief Check whether an address matches a range.
+ *
+ * When you call the addr_parser::parse() function, you get a vector of
+ * ranges as a result. This function allows you to check whether an
+ * address matches any one of those ranges.
+ *
+ * \param[in] ranges  The vector of ranges to search for \p address.
+ * \param[in] address  The address to search in \p ranges.
+ *
+ * \return true if \p address matches any one of the \p ranges.
+ */
+bool address_match_ranges(addr_range::vector_t ranges, addr const & address)
+{
+    auto const it(std::find_if
+            ( ranges.begin()
+            , ranges.end()
+            , [&address](auto const & range)
+                {
+                    return range.match(address);
+                }
+            ));
+
+    return it != ranges.end();
+}
 
 
 
 
 }
-// snap_addr namespace
+// addr namespace
 // vim: ts=4 sw=4 et

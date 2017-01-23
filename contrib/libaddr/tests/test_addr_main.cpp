@@ -29,19 +29,31 @@
  * SOFTWARE.
  */
 
+/** \file
+ * \brief The main() function of the addr library tests.
+ *
+ * This file implements the main() function of the unit tests used to
+ * verify the addr library.
+ *
+ * It defines any globals (none at this point) and a few basic command
+ * line options such as --help and --version.
+ */
+
 // Tell catch we want it to add the runner code in this file.
 #define CATCH_CONFIG_RUNNER
 
+// self
+//
 #include "test_addr_main.h"
 
-#include "libaddr/addr.h"
-#include "libaddr/version.h"
 
-#include <sstream>
 
 
 namespace unittest
 {
+
+int         g_tcp_port = -1;
+
 }
 
 
@@ -52,6 +64,7 @@ namespace
         bool        help = false;
         bool        version = false;
         int         seed = 0;
+        int         tcp_port = -1;
     };
 
     void remove_from_args( std::vector<std::string> & vect, std::string const & long_opt, std::string const & short_opt )
@@ -83,7 +96,11 @@ int test_addr_main(int argc, char * argv[])
 
     cli["-S"]["--seed"]
         .describe("value to seed the randomizer, if not specified, randomize")
-        .bind(&UnitTestCLData::seed, "the seed value");
+        .bind(&UnitTestCLData::seed, "seed");
+
+    cli["--tcp-port"]
+        .describe("define a TCP port we can connect to to test the get_from_socket() function")
+        .bind(&UnitTestCLData::tcp_port, "port");
 
     cli["-V"]["--version"]
         .describe("print out the advgetopt library version these unit tests pertain to")
@@ -121,6 +138,14 @@ int test_addr_main(int argc, char * argv[])
     }
     srand(seed);
     std::cout << "libaddr[" << getpid() << "]:test: seed is " << seed << std::endl;
+
+    // make a copy of the port specified on the command line
+    //
+    if( configData.tcp_port != -1 )
+    {
+        unittest::g_tcp_port = configData.tcp_port;
+        remove_from_args( arg_list, "--tcp-port", "" );
+    }
 
     std::vector<char *> new_argv;
     std::for_each( arg_list.begin(), arg_list.end(), [&new_argv]( const std::string& arg )
