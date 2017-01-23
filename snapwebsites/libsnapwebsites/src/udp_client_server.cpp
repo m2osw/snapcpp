@@ -182,8 +182,8 @@ int udp_client::send(char const * msg, size_t size)
  * The address is a string and it can represent an IPv4 or IPv6
  * address.
  *
- * Note that this function calls connect() to connect the socket
- * to the specified address. To accept data on different UDP addresses
+ * Note that this function calls bind() to listen to the socket
+ * at the specified address. To accept data on different UDP addresses
  * and ports, multiple UDP servers must be created.
  *
  * \note
