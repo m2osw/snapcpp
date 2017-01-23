@@ -1,14 +1,15 @@
-iplock (3.0.10.22~xenial) xenial; urgency=high
+iplock (3.0.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-141: Added IP with a mask (CIDR) to our white list support.
+  * Fixed the cmake file boost include directories.
 
- -- Build Server <build@m2osw.com>  Thu, 05 Jan 2017 02:00:52 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 23 Jan 2017 11:36:37 -0700
 
 iplock (3.0.10.0~xenial) xenial; urgency=high
 
   * Bumped copyright date to 2017.
 
- -- Alexis Wilke <alexis@m2osw.com>  wed,  4 Jan 2017 23:34:37 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  4 Jan 2017 23:34:37 -0700
 
 iplock (3.0.9.0~xenial) xenial; urgency=high
 
@@ -16,12 +17,6 @@ iplock (3.0.9.0~xenial) xenial; urgency=high
   * Added flush command.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 18 Nov 2016 10:07:41 -0800
-
-iplock (3.0.8.15~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 02 Nov 2016 02:00:47 -0700
 
 iplock (3.0.8.0~xenial) xenial; urgency=high
 

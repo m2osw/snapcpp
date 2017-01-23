@@ -42,8 +42,9 @@
 
 
 #include "iplock.h"
-#include "tokenize_string.h"
 #include "version.h"
+
+#include "libaddr/addr_parser.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -664,11 +665,11 @@ void iplock::command::verify_ip(std::string const & ip)
 
 
 iplock::scheme::scheme
-    ( iplock * parent
-    , const char* command_name
-    , advgetopt::getopt::pointer_t opt
-    , char const * scheme_name
-    )
+        ( iplock * parent
+        , const char* command_name
+        , advgetopt::getopt::pointer_t opt
+        , char const * scheme_name
+        )
     : command( parent, command_name, opt )
     , f_scheme( scheme_name? scheme_name : opt->get_string("scheme") )
 {
@@ -835,11 +836,16 @@ std::cout << "check_command: " << check_command << std::endl << "block_command: 
 std::cout << "check_cmdline: " << check_cmdline << std::endl << "block_cmdline: " << block_cmdline << std::endl;
 #endif
 
-    std::vector<std::string> whitelist_ips;
+    addr::addr_range::vector_t whitelist_ips;
     if(f_scheme_opt->is_defined("whitelist"))
     {
         std::string const whitelist(f_scheme_opt->get_string("whitelist"));
-        snap::tokenize_string(whitelist_ips, whitelist, ",", true, " \t");
+        addr::addr_parser p;
+        p.set_protocol(IPPROTO_TCP);        // define a protocol because otherwise we get many IPs with various protocols...
+        p.set_allow(addr::addr_parser::flag_t::MULTI_ADDRESSES_COMMAS_AND_SPACES, true);
+        p.set_allow(p.flag_t::MASK, true);
+        p.set_allow(p.flag_t::PORT, false);
+        whitelist_ips = p.parse(whitelist);
     }
 
     int const max(f_opt->size("--"));
@@ -858,12 +864,13 @@ std::cout << "check_cmdline: " << check_cmdline << std::endl << "block_cmdline: 
         if(run_on_result == 1)
         {
             // is this IP address white listed? if so, skip it
+            // as we do not want to block white listed IPs
             //
-            auto const & white_listed(std::find(
-                whitelist_ips.begin(),
-                whitelist_ips.end(),
-                ip));
-            if(white_listed != whitelist_ips.end())
+            addr::addr_parser p;
+            p.set_allow(p.flag_t::PORT, false);
+            addr::addr_range::vector_t ips(p.parse(ip));
+            if(ips.size() > 0
+            && addr::address_match_ranges(whitelist_ips, ips[0].get_from()))
             {
                 if(f_verbose)
                 {
