@@ -1687,7 +1687,7 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  * parameter as expected.
  *
  * \param[in] user_email  The email address to check.
- * \param[in] e  The email that you want to use to that email address.
+ * \param[in] e           The email that you want to use to that email address.
  *
  * \return true if the email validates; false if you should not call the
  *         post_email() function.
@@ -1695,6 +1695,8 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
 bool sendmail::validate_email(QString const & user_email, email const * e)
 {
     users::users * users_plugin(users::users::instance());
+
+//SNAP_LOG_TRACE("sendmail::validate_email(): user_email=")(user_email)(", e=")(e);
 
     // prevent attempts of sending an email to an example email address
     // (even if the example address is a valid email address)
