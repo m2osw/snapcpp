@@ -1,3 +1,9 @@
+libaddr (1.0.4.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 23 Jan 2017 02:00:52 -0800
+
 libaddr (1.0.4.0~xenial) xenial; urgency=medium
 
   * Put two default addresses and mask: one for IPv4 and one for IPv6.
