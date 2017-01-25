@@ -3352,9 +3352,13 @@ bool users::check_user_security_impl(user_security_t & security)
                 security.set_example(true);
             }
         }
-        catch(snap_child_exception_invalid_email const &)
+        catch(snap_child_exception_invalid_email const & e)
         {
-            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(email));
+            security.get_secure().not_permitted(
+                        QString("\"%1\" does not look like a valid email address. Reason='%2'")
+                            .arg(email)
+                            .arg(e.what())
+                        );
             security.set_status(status_t::STATUS_BLOCKED);
             return false;
         }

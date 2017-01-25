@@ -2760,10 +2760,6 @@ void sendmail::attach_user_email(email const & e)
     //      (it may be easier to implement events to send emails
     //      from anyway and use that from the user plugin and avoid
     //      the sendmail reference in the user plugin)
-    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
-    users::users * users_plugin(users::users::instance());
-    char const * email_key(users::get_name(users::name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
-    //QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
 
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we are not about to add it ourselves, I
@@ -2782,7 +2778,8 @@ void sendmail::attach_user_email(email const & e)
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
     // Note: here the list of emails is always 1 item
-    users::users::user_info_t const user_info(users_plugin->get_user_info_by_email(m.f_email_only.c_str()));
+    users::users * users_plugin(users::users::instance());
+    users::users::user_info_t user_info( users_plugin->get_user_info_by_email(m.f_email_only.c_str()) );
 
     // EX-164: if the email does not belong to a registered user, then create the key
     // based on the email only. Otherwise, we get a throw here.
@@ -2796,11 +2793,9 @@ SNAP_LOG_TRACE  ("sendmail::attach_user_email(): email=")(m.f_email_only)
                 (", user_info.get_identifier()=")(user_info.get_identifier())
                 (", the user_key=")(user_key);
 #endif
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key)); // TODO: convert to using user identifier
-    QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
-    cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    QtCassandra::QCassandraValue email_data(cell->value());
-    if(email_data.nullValue())
+    if( !user_info.exists() )
     {
         // the user does not yet exist, we only email people who have some
         // sort of account because otherwise we could not easily track
@@ -2833,6 +2828,8 @@ SNAP_LOG_TRACE  ("sendmail::attach_user_email(): email=")(m.f_email_only)
             return;
 
         }
+
+        user_info = users_plugin->get_user_info_by_email(m.f_email_only.c_str());
     }
 
     // TODO: if the user is a placeholder (i.e. user changed his email
