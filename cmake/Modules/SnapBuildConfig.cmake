@@ -49,7 +49,7 @@ if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
 		#OUTPUT_VARIABLE NUM_PROCS
 		OUTPUT_VARIABLE NUM_JOBS
 	)
-	string(REGEX REPLACE "\n$" "" NUM_JOBS "${NUM_JOBS}")
+	string(STRIP NUM_JOBS NUM_JOBS)
 	# http://stackoverflow.com/questions/2499070/gnu-make-should-the-number-of-jobs-equal-the-number-of-cpu-cores-in-a-system#2499574
 	# The question is if we want to try num procs + 1.
 	#
