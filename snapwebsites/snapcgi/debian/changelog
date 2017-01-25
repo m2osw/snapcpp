@@ -1,8 +1,8 @@
 snapcgi (1.1.9.3~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Somehow missed a few files where the copyright notice was not updated.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:05 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 24 Jan 2017 20:08:48 -0800
 
 snapcgi (1.1.9.0~xenial) xenial; urgency=high
 
