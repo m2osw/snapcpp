@@ -31,11 +31,11 @@
 include( CMakeParseArguments )
 
 find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl          PATHS ${CMAKE_MODULE_PATH} )
-find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl           	   PATHS ${CMAKE_MODULE_PATH} )
-find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl           PATHS ${CMAKE_MODULE_PATH} )
-find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh	   PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl		   PATHS ${CMAKE_MODULE_PATH} )
+find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl			   PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl		   PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl		   PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
 
@@ -48,7 +48,8 @@ if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
 		COMMAND nproc
 		#OUTPUT_VARIABLE NUM_PROCS
 		OUTPUT_VARIABLE NUM_JOBS
-		)
+	)
+	string(REGEX REPLACE "\n$" "" NUM_JOBS "${NUM_JOBS}")
 	# http://stackoverflow.com/questions/2499070/gnu-make-should-the-number-of-jobs-equal-the-number-of-cpu-cores-in-a-system#2499574
 	# The question is if we want to try num procs + 1.
 	#
@@ -77,7 +78,7 @@ message( STATUS "Scanning all projects..." )
 execute_process( 
 	COMMAND ${MAKE_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${DEP_CACHE_FILE}
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	)
+)
 
 option( INCREMENT_BUILD_NUMBERS "Increment the build number in the version of all debian/changelog files." OFF )
 if( ${INCREMENT_BUILD_NUMBERS} )
@@ -86,12 +87,12 @@ if( ${INCREMENT_BUILD_NUMBERS} )
 		COMMAND ${INC_VERS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		COMMENT "Incrementing build version for all debian packages."
-		)
+	)
 else()
 	add_custom_target(
 		snap-incvers
 		COMMENT "Incrementing build version number skipped."
-		)
+	)
 endif()
 
 option( INCREMENT_DEPENDENCIES "Increment ALL dependencies in all packages." OFF )
@@ -102,13 +103,13 @@ if( ${INCREMENT_DEPENDENCIES} )
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		DEPENDS snap-incvers
 		COMMENT "Incrementing dependencies for all debian packages."
-		)
+	)
 else()
 	add_custom_target(
 		snap-incdeps
 		DEPENDS snap-incvers
 		COMMENT "Incrementing dependencies skipped."
-		)
+	)
 endif()
 
 function( ConfigureMakeProjectInternal )
@@ -168,7 +169,7 @@ function( ConfigureMakeProjectInternal )
 	else()
 		get_property( DEPENDS_LIST
 			GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST
-			)
+		)
 	endif()
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
@@ -180,7 +181,7 @@ function( ConfigureMakeProjectInternal )
 			DEPENDS ${DEPENDS_LIST}
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_TARGET_NAME} configure script..."
-			)
+		)
 	else()
 		set( SNAP_CMAKE_GENERATOR "CodeBlocks - Unix Makefiles" CACHE STRING "CMake generator to use to configure all projects. Defaults to CodeBlocks, which is qtcreator friendly." )
 		set( BUILD_TYPE ${CMAKE_BUILD_TYPE} )
@@ -203,7 +204,7 @@ function( ConfigureMakeProjectInternal )
 				${SANITIZE_ADDRESS_OPT}
 				${ARG_CONFIG_ARGS}
 				${SRC_DIR}
-	    )
+		)
 		set( CMD_FILE ${BUILD_DIR}/configure.cmd )
 		file( REMOVE ${CMD_FILE} )
 		file( APPEND ${CMD_FILE} "cd " ${BUILD_DIR} "\n" )
@@ -231,7 +232,7 @@ function( ConfigureMakeProjectInternal )
 		set( MAKE_OUTPUT_COMMAND COMMAND echo > ${MAKE_OUTPUT} )
 	endif()
 	add_custom_command(
-        OUTPUT ${MAKE_OUTPUT}
+		OUTPUT ${MAKE_OUTPUT}
 		COMMAND ${THE_CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
@@ -242,21 +243,21 @@ function( ConfigureMakeProjectInternal )
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${ARG_TARGET_NAME}"
-		)
+	)
 	add_custom_target(
 		${ARG_TARGET_NAME}-make
 		DEPENDS ${MAKE_OUTPUT}
 		WORKING_DIRECTORY ${BUILD_DIR}
-		)
+	)
 
-    #set( MAKE_TARGET ${BUILD_DIR}/MAKE_BUILD_SUCCESSFUL  )
-    #add_custom_command(
-    #    OUTPUT ${MAKE_TARGET}
-    #    COMMAND echo > ${MAKE_TARGET}
-    #    DEPENDS ${ARG_TARGET_NAME}-make
-    #    WORKING_DIRECTORY ${BUILD_DIR}
-    #    COMMENT "Target ${ARG_TARGET_NAME} successfully built!" 
-    #    )
+	#set( MAKE_TARGET ${BUILD_DIR}/MAKE_BUILD_SUCCESSFUL  )
+	#add_custom_command(
+	#    OUTPUT ${MAKE_TARGET}
+	#    COMMAND echo > ${MAKE_TARGET}
+	#    DEPENDS ${ARG_TARGET_NAME}-make
+	#    WORKING_DIRECTORY ${BUILD_DIR}
+	#    COMMENT "Target ${ARG_TARGET_NAME} successfully built!" 
+	#    )
 
 	unset( PBUILDER_DEPS )
 	unset( DPUT_DEPS     )
@@ -270,11 +271,11 @@ function( ConfigureMakeProjectInternal )
 	set( EMAIL_ADDY "${DEBUILD_EMAIL}" )
 	separate_arguments( EMAIL_ADDY )
 	#
-    if( ARG_IGNORE_DEPS )
-        unset( SNAPINCDEPS )
-    else()
-        set( SNAPINCDEPS snap-incdeps )
-    endif()
+	if( ARG_IGNORE_DEPS )
+		unset( SNAPINCDEPS )
+	else()
+		set( SNAPINCDEPS snap-incdeps )
+	endif()
 	add_custom_target(
 		${ARG_TARGET_NAME}-debuild
 		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
