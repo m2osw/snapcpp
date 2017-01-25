@@ -1,3 +1,9 @@
+libaddr (1.0.5.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 23 Jan 2017 12:24:45 -0800
+
 libaddr (1.0.5.0~xenial) xenial; urgency=high
 
   * Fixed the cmake file, the library name is "addr", not "tld".

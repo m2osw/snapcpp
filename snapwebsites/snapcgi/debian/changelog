@@ -1,4 +1,4 @@
-snapcgi (1.1.9.3~xenial) xenial; urgency=high
+snapcgi (1.1.9.5~xenial) xenial; urgency=high
 
   * Somehow missed a few files where the copyright notice was not updated.
 
