@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.30.0~xenial) xenial; urgency=high
+
+  * Fixed the missing "..." around the generator in "condigure.cmd".
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 25 Jan 2017 16:31:08 -0700
+
 snapcmakemodules (1.0.29.0~xenial) xenial; urgency=high
 
   * Removed the ending \n from the NUM_JOB variable.
