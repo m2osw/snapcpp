@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.54.6~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.55.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: a for(;;) loop was not necessary, removed.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:07 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 25 Jan 2017 23:12:45 -0800
 
 snapserver-core-plugins (1.0.54.0~xenial) xenial; urgency=high
 

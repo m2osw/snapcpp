@@ -1176,36 +1176,32 @@ bool link_context::next_link(link_info & info)
     {
         if(f_row != nullptr)
         {
-            for(;;)
+            if(f_cell_iterator == f_cells.end())
             {
+                // no more cells available in f_cells, try to read more
+                //
+                f_row->readCells(f_column_predicate);
+                f_cells = f_row->cells();
+                f_cell_iterator = f_cells.begin();
                 if(f_cell_iterator == f_cells.end())
                 {
-                    // no more cells available in f_cells, try to read more
+                    // no more links, we are done
                     //
-                    f_row->readCells(f_column_predicate);
-                    f_cells = f_row->cells();
-                    f_cell_iterator = f_cells.begin();
-                    if(f_cell_iterator == f_cells.end())
-                    {
-                        // no more links, we are done
-                        //
-                        f_row.reset();
-                        return false;
-                    }
+                    f_row.reset();
+                    return false;
                 }
-
-                // the result is at the current iterator
-                //
-                QString const link_name(QString::fromUtf8(f_cell_iterator.key()));
-                QString const link_data(f_cell_iterator.value()->value().stringValue());
-
-                ++f_cell_iterator;
-
-                info.from_data(link_data);
-                info.set_destination_cell_name(link_name);
-                return true;
             }
-            NOTREACHED();
+
+            // the result is at the current iterator
+            //
+            QString const link_name(QString::fromUtf8(f_cell_iterator.key()));
+            QString const link_data(f_cell_iterator.value()->value().stringValue());
+
+            ++f_cell_iterator;
+
+            info.from_data(link_data);
+            info.set_destination_cell_name(link_name);
+            return true;
         }
 
         // return the f_link entry once, then return false (no more data)
