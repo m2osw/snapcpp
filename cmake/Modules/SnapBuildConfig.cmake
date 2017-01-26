@@ -197,7 +197,7 @@ function( ConfigureMakeProjectInternal )
 		endif()
 		set( COMMAND_LIST
 			${THE_CMAKE_COMMAND}
-				-G \"${SNAP_CMAKE_GENERATOR}\"
+				-G "${SNAP_CMAKE_GENERATOR}"
 				-DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 				-DCMAKE_INSTALL_PREFIX:PATH="${SNAP_DIST_DIR}"
 				-DCMAKE_PREFIX_PATH:PATH=${SNAP_DIST_DIR}
@@ -210,7 +210,11 @@ function( ConfigureMakeProjectInternal )
 		file( APPEND ${CMD_FILE} "cd " ${BUILD_DIR} "\n" )
 		file( APPEND ${CMD_FILE} "rm -f CMakeCache.txt\n" )
 		foreach( line ${COMMAND_LIST} )
-			file( APPEND ${CMD_FILE} ${line} " \\\n" )
+			if( "${line}" STREQUAL "${SNAP_CMAKE_GENERATOR}")
+				file( APPEND ${CMD_FILE} "\"${SNAP_CMAKE_GENERATOR}\" \\\n" )
+			else()
+				file( APPEND ${CMD_FILE} ${line} " \\\n" )
+			endif()
 		endforeach()
 		#
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/CMakeCache.txt  )
