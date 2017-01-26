@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.30.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 26 Jan 2017 02:00:51 -0800
+
 snapcmakemodules (1.0.30.0~xenial) xenial; urgency=high
 
   * Fixed the missing "..." around the generator in "condigure.cmd".
