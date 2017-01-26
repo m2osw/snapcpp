@@ -920,7 +920,7 @@ std::string addr::get_iface_name() const
  * \param[in] flags  A set of socket flags to use when creating the socket.
  * \param[in] reuse_address  Set the reuse address flag.
  *
- * \return The socket file descriptor.
+ * \return The socket file descriptor or -1 on errors.
  */
 int addr::create_socket(socket_flag_t flags) const
 {
@@ -936,7 +936,8 @@ int addr::create_socket(socket_flag_t flags) const
         {
             int s(socket(family, SOCK_STREAM | sock_flags, IPPROTO_TCP));
 
-            if((flags & SOCKET_FLAG_REUSE) != 0)
+            if(s >= 0
+            && (flags & SOCKET_FLAG_REUSE) != 0)
             {
                 // set the "reuse that address immediately" flag, we totally
                 // ignore errors on that one

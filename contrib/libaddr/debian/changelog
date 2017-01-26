@@ -1,8 +1,9 @@
-libaddr (1.0.5.3~xenial) xenial; urgency=high
+libaddr (1.0.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Applied a fixed where variable 's' representing a socket is
+    now checked for validity before using setsockop().
 
- -- Build Server <build@m2osw.com>  Mon, 23 Jan 2017 12:24:45 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 25 Jan 2017 23:07:22 -0700
 
 libaddr (1.0.5.0~xenial) xenial; urgency=high
 
