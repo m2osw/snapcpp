@@ -34,7 +34,7 @@ if( ${CATCH_INCLUDE_DIR} STREQUAL "CATCH_INCLUDE_DIR-NOTFOUND" )
     message( FATAL_ERROR "catch.hpp not found! Please run 'apt install catch'." )
 endif()
 include_directories(
-    SYSTEM
+    #SYSTEM
     ${CATCH_INCLUDE_DIR}
 )
 
