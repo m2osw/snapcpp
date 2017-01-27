@@ -5169,7 +5169,7 @@ void snap_child::canonicalize_options()
     http_strings::WeightedHttpString::part_t::vector_t browser_languages(languages.get_parts());
     if(!browser_languages.isEmpty())
     {
-        qStableSort(browser_languages);
+        std::stable_sort(browser_languages.begin(), browser_languages.end());
         int const max_languages(browser_languages.size());
         for(int i(max_languages - 1); i >= 0; --i)
         {
@@ -5344,7 +5344,7 @@ void snap_child::canonicalize_options()
 
     // now check all the other encodings and add them
     http_strings::WeightedHttpString::part_t::vector_t browser_compressions(encodings.get_parts());
-    qStableSort(browser_compressions);
+    std::stable_sort(browser_compressions.begin(), browser_compressions.end());
     int const max_compressions(browser_compressions.size());
     for(int i(0); i < max_compressions; ++i)
     {
@@ -8344,7 +8344,7 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
             http_strings::WeightedHttpString::part_t::vector_t plugins_languages(language_country.get_parts());
             if(!plugins_languages.isEmpty())
             {
-                qStableSort(plugins_languages);
+                std::stable_sort(plugins_languages.begin(), plugins_languages.end());
                 int const max_languages(plugins_languages.size());
                 for(int i(0); i < max_languages; ++i)
                 {
