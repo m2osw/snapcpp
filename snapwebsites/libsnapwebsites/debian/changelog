@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.78.7~xenial) xenial; urgency=high
+libsnapwebsites (1.1.79.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Removed use of qStableSort() which is deprecated in Qt 5.x.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:05 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 26 Jan 2017 16:41:51 -0800
 
 libsnapwebsites (1.1.78.0~xenial) xenial; urgency=high
 
