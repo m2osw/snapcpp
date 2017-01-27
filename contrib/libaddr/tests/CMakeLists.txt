@@ -27,6 +27,17 @@
 # THE SOFTWARE.
 #
 
+# Setup Catch
+#
+find_package( Catch )
+if( ${CATCH_INCLUDE_DIR} STREQUAL "CATCH_INCLUDE_DIR-NOTFOUND" )
+    message( FATAL_ERROR "catch.hpp not found! Please run 'apt install catch'." )
+endif()
+include_directories(
+    SYSTEM
+    ${CATCH_INCLUDE_DIR}
+)
+
 ##
 ## libaddr tests
 ##
