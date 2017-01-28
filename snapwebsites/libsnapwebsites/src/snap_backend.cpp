@@ -1572,7 +1572,7 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         f_auto_retry_cassandra = true;
         if(!connect_cassandra(false))
         {
-            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy");
+            SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy (process_message())");
 
             disconnect_cassandra();
         }
@@ -1646,6 +1646,7 @@ void snap_backend::disconnect_cassandra()
     //
     if(f_backend_table != nullptr)
     {
+SNAP_LOG_WARNING("clear f_backend_table in snap_backend::disconnect_cassandra()");
         f_backend_table->clearCache();
         f_backend_table.reset();
     }
@@ -1655,6 +1656,7 @@ void snap_backend::disconnect_cassandra()
     //
     if(f_sites_table != nullptr)
     {
+SNAP_LOG_WARNING("clear f_sites_table in snap_backend::disconnect_cassandra()");
         f_sites_table->clearCache();
         f_sites_table.reset();
     }
@@ -1691,6 +1693,7 @@ void snap_backend::request_cassandra_status()
 
     // whether the user wants to request a new CASSANDRASTATUS to be sent
     //
+SNAP_LOG_WARNING("get ready for a reconnect in 30 seconds");
     int64_t const now(snap::snap_communicator::get_current_date());
     int64_t const reconnect_date(now + 30LL * 1000000LL);
     g_reconnect_timer->set_timeout_date(reconnect_date);
@@ -2053,7 +2056,7 @@ bool snap_backend::is_ready(QString const & uri)
             //
             if(!connect_cassandra(false))
             {
-                SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy");
+                SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy (is_ready())");
 
                 // note that the connect_cassandra() function should already
                 // do a proper cleanup, but just in case...

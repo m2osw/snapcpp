@@ -100,9 +100,6 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     f_cassandra->contexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     return f_cassandra->findContext(context_name);
-
-    //QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    //return f_cassandra->context(context_name);
 }
 
 
