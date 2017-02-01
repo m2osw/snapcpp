@@ -7,17 +7,11 @@
 # This special exception was added by Craig Small in version 0.37 of dh-make.
 
 # Uncomment this to turn on verbose mode.
-export DH_VERBOSE=1
-
-CONF_DIR=$(DESTDIR)/share/postsrsd/conf
-CHROOT_DIR=$(CONF_DIR)/chroot
-SYSCONF_DIR=$(CONF_DIR)/sysconf
-SYSD_UNIT_DIR=$(CONF_DIR)/systemd
-CONFIG_DIR=$(CONF_DIR)/config
+#export DH_VERBOSE=1
 
 %:
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DCHROOT_DIR=$(CHROOT_DIR) -DSYSCONF_DIR=$(SYSCONF_DIR) -DSYSD_UNIT_DIR=$(SYSD_UNIT_DIR) -DCONFIG_DIR=$(CONFIG_DIR)
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DINIT_FLAVOR:STRING=systemd
 
