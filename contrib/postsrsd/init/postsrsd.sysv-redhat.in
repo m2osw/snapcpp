@@ -1,0 +1,85 @@
+#! /bin/sh
+#
+# @PROJECT_NAME@
+#               start/stop the @PROJECT_NAME@ daemon for Postfix
+#
+# chkconfig: 2345 75 35
+# description: Sender Rewriting Scheme (SRS) for Postfix.
+# processname: @POSTSRSD@
+# pidfile: /var/run/@PROJECT_NAME@.pid
+# config: @CONFIG_DIR@/@PROJECT_NAME@
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=@CMAKE_INSTALL_PREFIX@/sbin/@POSTSRSD@
+NAME=@PROJECT_NAME@
+prog=@POSTSRSD@
+DESC="Postfix Sender Rewriting Scheme daemon"
+
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=@SYSCONF_DIR@/init.d/$NAME
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+. @SYSCONF_DIR@/init.d/functions
+
+# Default configuration
+SRS_DOMAIN=`postconf -h mydomain || true`
+SRS_EXCLUDE_DOMAINS=
+
+# Read config file
+. @CONFIG_DIR@/$NAME
+
+test -r "$SRS_SECRET" -a -n "$SRS_DOMAIN" || exit 0
+
+do_start()
+{
+	echo -n "Starting $DESC: "
+	daemon $DAEMON -f "$SRS_FORWARD_PORT" -r "$SRS_REVERSE_PORT" -d "$SRS_DOMAIN" -s "$SRS_SECRET" \
+	               -u "$RUN_AS" -p "$PIDFILE" -a "$SRS_SEPARATOR" -c "$CHROOT" -D -X"$SRS_EXCLUDE_DOMAINS"
+	RETVAL=$?
+	echo
+    	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$NAME
+    	return $RETVAL
+}
+
+do_stop()
+{
+	echo -n "Stopping $DESC: "
+	killproc $prog
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$NAME
+        return $RETVAL
+}
+
+case "$1" in
+  start)
+	do_start
+	;;
+  stop)
+	do_stop
+	;;
+  status)
+	status $NAME
+	;;
+  restart|force-reload)
+	do_stop
+	do_start
+	;;
+  reload)
+	;;
+  condrestart|try-restart)
+	if [ -f /var/lock/subsys/$NAME ]; then
+		do_stop
+		do_start
+	fi
+	;;
+  *)
+	echo "Usage: $NAME {start|stop|restart|condrestart|try-restart|reload|force-reload|status|usage}"
+	[ "$1" = "usage" ] && exit 0
+	exit 2
+	;;
+esac
+exit $?
+

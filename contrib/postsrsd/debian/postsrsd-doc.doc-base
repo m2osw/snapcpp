@@ -1,0 +1,10 @@
+Document: as2js
+Title: Debian as2js compiler manual
+Author: Alexis Wilke
+Abstract: This is the reference manual for the as2js
+ JavaScript compiler, library, and tools.
+Section: web
+
+Format: HTML
+Index: /usr/share/doc/as2js/html/index.html
+Files: /usr/share/doc/as2js/html/*
