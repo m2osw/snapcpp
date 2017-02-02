@@ -42,7 +42,7 @@
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PUBLIC_IP@ -j ACCEPT
 -A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_IP@ -j ACCEPT
 #-A INPUT -i @PRIVATE_INTERFACE@ -p tcp -m state --state ESTABLISHED,RELATED -m tcp ! --syn -d @PRIVATE_NETWORK_IPS@ -j ACCEPT
--A INPUT -i @PUBLIC_INTERFACE@ -p udp -m state --state ESTABLISH,RELATED -m udp -d @PUBLIC_IP@ -j ACCEPT
+-A INPUT -i @PUBLIC_INTERFACE@ -p udp -m state --state ESTABLISHED,RELATED -m udp -d @PUBLIC_IP@ -j ACCEPT
 
 # Very much limit port 22 (SSH)
 -A INPUT -i @PUBLIC_INTERFACE@ -p tcp -m tcp --dport 22 -d @PUBLIC_IP@ -s @ADMIN_IPS@ --syn -j ACCEPT
