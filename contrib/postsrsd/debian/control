@@ -24,6 +24,7 @@ Package: postsrsd
 Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, coreutils
+Recommends: postfix
 Suggests: postsrsd-doc (>=2.4)
 Description: Postfix Sender Rewriting Scheme daemon
  PostSRSd provides the Sender Rewriting Scheme (SRS) via TCP-based lookup
