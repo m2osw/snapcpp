@@ -1,0 +1,21 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+URANDOM=/dev/urandom
+SECRETKEY=/etc/postsrsd.secret
+
+if [ "$1" = "configure" ]
+then
+    if [ -e "${URANDOM}" ] && [ ! -e "${SECRETKEY}" ]
+    then
+        echo "Generating secret key for postsrsd."
+        dd if=${URANDOM} bs=18 count=1 | base64 > ${SECRETKEY}
+        chmod 0600 ${SECRETKEY}
+    fi
+fi
+
+# vim: ts=4 sw=4 et nocindent
