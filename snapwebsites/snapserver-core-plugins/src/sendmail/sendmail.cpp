@@ -1696,7 +1696,7 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
 {
     users::users * users_plugin(users::users::instance());
 
-//SNAP_LOG_TRACE("sendmail::validate_email(): user_email=")(user_email)(", e=")(e);
+SNAP_LOG_TRACE("sendmail::validate_email(): user_email=")(user_email)(", e=")(e);
 
     // prevent attempts of sending an email to an example email address
     // (even if the example address is a valid email address)
@@ -1825,6 +1825,7 @@ void sendmail::on_check_user_security(users::users::user_security_t & security)
                 }
                 if(arrival_date_us != 0)
                 {
+SNAP_LOG_TRACE("arrival_date_us=")(arrival_date_us);
                     security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
                     security.set_status(users::users::status_t::STATUS_BLOCKED);
                     return;
@@ -2788,7 +2789,7 @@ void sendmail::attach_user_email(email const & e)
                             ? user_info.get_user_key()
                             : user_info.get_user_key(m.f_email_only.c_str())
                           );
-#if 0
+#if 1
 SNAP_LOG_TRACE  ("sendmail::attach_user_email(): email=")(m.f_email_only)
                 (", user_info.get_identifier()=")(user_info.get_identifier())
                 (", the user_key=")(user_key);
@@ -3383,6 +3384,8 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     cmd += f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_FROM));
     cmd += " ";
     cmd += m.f_email_only.c_str();
+    //
+    SNAP_LOG_TRACE("sendmail command: [")(cmd)("]");
 
     // XXX: capture the throw in case the pipe cannot be created?
     snap_pipe spipe(cmd, snap_pipe::mode_t::PIPE_MODE_IN);

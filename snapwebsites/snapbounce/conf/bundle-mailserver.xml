@@ -31,7 +31,7 @@
       </description>
     </field>
   </fields>
-  <packages>snapbounce,postfix,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc</packages>
+  <packages>snapbounce,postfix,postfix-policyd-spf-python,opendkim,opendkim-tools,opendmarc,postsrsd</packages>
   <postinst>
     ################################################################################
     # Setup the transport.map file
@@ -43,7 +43,7 @@
     #
     # For now, I removed them from the file altogether.
     #
-    cat &gt;/etc/postfix/transport.maps &lt;&lt;EOF
+    cat &gt;/etc/postfix/transport.maps &lt;EOF
 # See SNAP-67
 # After changes, run postmap:
 #   postmap /etc/postfix/transport.maps
@@ -63,27 +63,40 @@ EOF
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
 
     ################################################################################
-    cat &gt;&gt; /etc/postfix/main.cf &lt;&lt;EOF
+    postconf -e "notify_classes               = bounce"
+    postconf -e "bounce_notice_recipient      = bounces@${BUNDLE_INSTALLATION_DOMAIN}"
+    postconf -e "transport_maps               = hash:/etc/postfix/transport.maps"
 
-# `date`
-# Tell postfix how we want to handle bounced emails (SNAP-67) 
-#
-notify_classes               = bounce
-bounce_notice_recipient      = bounces@${BUNDLE_INSTALLATION_DOMAIN}
-transport_maps               = hash:/etc/postfix/transport.maps
-EOF
+    ################################################################################
+    # Add postsrsd support.
+    #
+    postconf -e "sender_canonical_maps       = tcp:127.0.0.1:10001"
+    postconf -e "sender_canonical_classes    = envelope_sender"
+    postconf -e "recipient_canonical_maps    = tcp:127.0.0.1:10002"
+    postconf -e "recipient_canonical_classes = envelope_recipient"
+    #
+    sed -i.bak \
+      -e "s/^SRS_DOMAIN=[^$]*$/SRS_DOMAIN=${BUNDLE_INSTALLATION_DOMAIN}/" \
+      /etc/default/postsrsd
 
     ################################################################################
     # we then need to add a snapbounce entry to the master.cf file
     #
-    MASTER=/etc/postfix/master.cf
-    cat &gt;&gt; ${MASTER} &lt;&lt;EOF
+    postconf -M snapbounce/unix="snapbounce unix -       n       n       -       -       pipe"
+    postconf -P "snapbounce/unix/flags=FRq"
+    postconf -P "snapbounce/unix/user=snapwebsites"
+    postconf -P "snapbounce/unix/argv=/usr/bin/snapbounce --sender \${sender} --recipient \${recipient}"
 
-# `date`
-# Service to save bounced emails in Cassandra"                                                      
-snapbounce unix -       n       n       -       -       pipe
-  flags=FRq user=snapwebsites argv=/usr/bin/snapbounce --sender \${sender} --recipient \${recipient}
-EOF
+    ################################################################################
+    # make sure submission/inet is turned on as well
+    #
+    # TODO: create TLS keys automatically...don't use the snakeoil stuff.
+    # TODO: add imap-ssl support.
+    #
+    postconf -M submission/inet="submission inet n       -       y       -       -       smtpd"
+    postconf -P "submission/inet/smtpd_enforce_tls=yes"
+    postconf -P "submission/inet/smtpd_sasl_auth_enable=yes"
+    postconf -P "submission/inet/syslog_name=postfix/submission"
 
     ################################################################################
     # (re)start services with the correct parameters

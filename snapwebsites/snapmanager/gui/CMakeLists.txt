@@ -30,10 +30,31 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+# Required packages to build GUI
+#
+find_package( CassWrapper      REQUIRED )
+find_package( Qt5Widgets       REQUIRED )
+find_package( Qt5WebKit        REQUIRED )
+find_package( Qt5WebKitWidgets REQUIRED )
+
+add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGERCGI_VERSION_MAJOR}.${SNAPMANAGERCGI_VERSION_MINOR}.${SNAPMANAGERCGI_VERSION_PATCH}\" )
+
+include_directories( SYSTEM
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5WebKit_INCLUDE_DIRS}
+    ${Qt5WebKitWidgets_INCLUDE_DIRS}
+)
+
+list( APPEND QT_LIBRARIES
+    Qt5::Widgets
+    Qt5::WebKit
+    Qt5::WebKitWidgets
+)
+
 ##
 ## The Snap! Manager
 ##
-project( snapmanager )
+project( snapmanagergui )
 
 qt5_wrap_ui(SNAP_MANAGER_UIS_H
     snap-manager-mainwindow.ui
@@ -78,8 +99,13 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin )
-install( FILES snapmanager.desktop         DESTINATION share/applications                       )
-install( FILES images/snap-medium-icon.png DESTINATION share/pixmaps     RENAME snapmanager.png )
+install( FILES snapmanagergui.desktop
+    DESTINATION share/applications
+)
+install( FILES images/snap-medium-icon.png
+    DESTINATION share/pixmaps
+    RENAME snapmanagergui.png
+)
 
 ## TODO: add code coverage, doxygen and unittests
 

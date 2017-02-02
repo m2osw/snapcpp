@@ -1,0 +1,92 @@
+#! /bin/sh
+#
+# @PROJECT_NAME@
+#               start/stop the @PROJECT_NAME@ daemon for Postfix
+#
+### BEGIN INIT INFO
+# Provides:          @PROJECT_NAME@
+# Required-Start:    $syslog $network $local_fs
+# Required-Stop:     $syslog $network $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop the @PROJECT_NAME@ daemon
+### END INIT INFO
+
+set -e
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=@CMAKE_INSTALL_PREFIX@/sbin/@POSTSRSD@
+NAME=@PROJECT_NAME@
+DESC="Postfix Sender Rewriting Scheme daemon"
+
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=@SYSCONF_DIR@/init.d/$NAME
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+# Default configuration
+SRS_DOMAIN=`postconf -h mydomain || true`
+SRS_EXCLUDE_DOMAINS=
+
+# Read config file
+. @CONFIG_DIR@/$NAME
+
+test -r "$SRS_SECRET" -a -n "$SRS_DOMAIN" || exit 0
+
+ret=0
+case "$1" in
+  start)
+	log_daemon_msg "Starting $DESC" "$NAME"
+	if start-stop-daemon --start --oknodo --quiet \
+		--pidfile $PIDFILE \
+		--name $NAME \
+		--startas $DAEMON \
+		-- -f "$SRS_FORWARD_PORT" -r "$SRS_REVERSE_PORT" -d "$SRS_DOMAIN" -s "$SRS_SECRET" -a "$SRS_SEPARATOR" -u "$RUN_AS" -p "$PIDFILE" -c "$CHROOT" -D -X"$SRS_EXCLUDE_DOMAINS"
+	then
+	    log_end_msg 0
+	else
+	    ret=$?
+	    log_end_msg 1
+	fi
+	;;
+  stop)
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	if start-stop-daemon --stop --oknodo --quiet \
+		--pidfile $PIDFILE --name $NAME
+	then
+	    log_end_msg 0
+	else
+	    ret=$?
+	    log_end_msg 1
+	fi
+        rm -f $PIDFILE
+	;;
+  reload|force-reload|restart)
+	$0 stop
+	$0 start
+	ret=$?
+	;;
+  status)
+        log_daemon_msg "postsrsd is running"
+        if [ -s $PIDFILE ]; then
+            PID=`cat $PIDFILE`
+            if kill -0 "$PID" 2>/dev/null; then
+                log_end_msg 0
+            else
+                log_end_msg 1
+            fi
+        else
+            log_end_msg 1
+        fi
+        ;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload|status}" >&2
+	exit 1
+	;;
+esac
+
+exit $ret
+

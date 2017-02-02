@@ -1,16 +1,16 @@
 #
 # File:
-#      snapmanager/CMakeLists.txt
+#      snapmanagercgi/CMakeLists.txt
 #
 # Description:
-#      The Snap! Manager to edit data in the Cassandra cluster
-#      using a simple Qt graphical interface.
+#      The Snap! Manager CGI to manage a Snap! cluster from your
+#      browser.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2017 Made to Order Software Corp.
+#      Copyright (c) 2016-2017 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -32,9 +32,9 @@
 cmake_minimum_required(VERSION 3.5)
 
 ##
-## The Snap! Manager
+## The Snap! Manager CGI
 ##
-project( snapmanager )
+project( snapmanagercgi_project )
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -57,58 +57,58 @@ set( CMAKE_MODULE_PATH
 ##
 ## Find required packages
 ##
-find_package( AdvGetOpt        REQUIRED )
-find_package( CassWrapper      REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Network       REQUIRED )
-find_package( Qt5Widgets       REQUIRED )
-find_package( Qt5WebKit        REQUIRED )
-find_package( Qt5WebKitWidgets REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+find_package( AdvGetOpt         REQUIRED )
+find_package( As2Js 0.1.0       REQUIRED )
+find_package( LibTLD            REQUIRED )
+find_package( log4cplus         REQUIRED )
+find_package( OpenSSL           REQUIRED )
+find_package( Qt5Core           REQUIRED )
+find_package( Qt5Network        REQUIRED )
+find_package( Qt5Xml            REQUIRED )
+find_package( QtCassandra       REQUIRED )
+find_package( QtSerialization   REQUIRED )
+find_package( SnapCMakeModules  REQUIRED )
+find_package( SnapWebsites      REQUIRED )
+find_package( SnapDoxygen )
 
 ##
 ## Version
 ##
-SnapGetVersion( SNAPMANAGER ${CMAKE_CURRENT_SOURCE_DIR} )
-add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANAGER_VERSION_MINOR}.${SNAPMANAGER_VERSION_PATCH}\" )
-
-include_directories( SYSTEM
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Network_INCLUDE_DIRS}
-    ${Qt5Widgets_INCLUDE_DIRS}
-    ${Qt5WebKit_INCLUDE_DIRS}
-    ${Qt5WebKitWidgets_INCLUDE_DIRS}
-    ${Qt5Xml_INCLUDE_DIRS}
-)
+SnapGetVersion( SNAPMANAGERCGI ${CMAKE_CURRENT_SOURCE_DIR} )
 
 set( QT_LIBRARIES
     Qt5::Core
     Qt5::Network
-    Qt5::Widgets
-    Qt5::WebKit
-    Qt5::WebKitWidgets
     Qt5::Xml
 )
 
-# We remove the -Wswitch-default because qt has some problematic headers in that regard
-#set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
-
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CASSWRAPPER_INCLUDE_DIRS}
-    ${LIBTLD_INCLUDE_DIRS}
-    ${LOG4CPLUS_INCLUDE_DIR}
-    ${QT_INCLUDES}
+    ${CMAKE_CURRENT_BINARY_DIR}/lib
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
-add_subdirectory( src )
 
-## TODO: add code coverage, doxygen and unittests
+##
+## Add sub-projects
+##
+add_subdirectory( conf     )          # Configuration files and samples
+add_subdirectory( cmake    )          # CMake helper files
+add_subdirectory( lib      )          # Common code to CGI, daemon, plugins
+add_subdirectory( cgi      )          # The snapmanager.cgi application
+add_subdirectory( daemon   )          # The snapmanagerdaemon to apply commands on any computer
+add_subdirectory( plugins  )          # "Core" plugins used to gather and update the status
+add_subdirectory( upgrader )          # Tool to run "apt-get upgrade" without getting smashed
+add_subdirectory( password )          # Tool to manager password files
+add_subdirectory( doc      )          # Documentation generation
+
+option( BUILD_GUI "Build the snapmanager gui (requires Qt5 Widgets and Webkit)." ON )
+if( ${BUILD_GUI} )
+    add_subdirectory( gui )
+endif()
+
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et nocindent
