@@ -185,7 +185,7 @@ int64_t no_iframe::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 2, 1, 18, 26, 49, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -239,11 +239,34 @@ void no_iframe::on_generate_header_content(content::path_info_t & ipath, QDomEle
 {
     NOTUSED(metadata);
 
+    snap_string_list const & segments(ipath.get_segments());
+    if(segments.size() > 0
+    && segments[0] == "admin")
+    {
+        // no need under /admin
+        //
+        return;
+    }
+
     content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     content::path_info_t mode_ipath;
     mode_ipath.set_path(get_name(name_t::SNAP_NAME_NO_IFRAME_MODE_PATH));
+    if(!content_table->exists(mode_ipath.get_key()))
+    {
+        // the content.xml was not yet installed?
+        //
+        return;
+    }
+    if(!revision_table->exists(mode_ipath.get_revision_key()))
+    {
+        // if the content.xml exists, then the revision should also exist?!
+        //
+        return;
+    }
+
     QtCassandra::QCassandraRow::pointer_t mode_row(revision_table->row(mode_ipath.get_revision_key()));
 
     QString mode("always");
