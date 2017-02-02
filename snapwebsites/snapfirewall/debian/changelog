@@ -1,8 +1,8 @@
-snapfirewall (1.1.29.10~xenial) xenial; urgency=high
+snapfirewall (1.1.30.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the ESTABLISH[ED] for UDP connections, the "ED" was missing.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:04 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  1 Jan 2017 17:44:48 -0800
 
 snapfirewall (1.1.29.0~xenial) xenial; urgency=high
 

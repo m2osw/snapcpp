@@ -1,8 +1,12 @@
-snapserver-core-plugins (1.0.56.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.57.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Tested the No IFrame plugin and applied a few fixes.
+  * Created a valid icon for the new plugin.
+  * Made the plugin not throw even between the "Add Plugin" and "Install" calls.
+  * Added a comment about the fact that the server-access.js script uses
+    document.location instead of window.location (i.e. cross origin problem.)
 
- -- Build Server <build@m2osw.com>  Wed, 01 Feb 2017 17:46:18 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  1 Feb 2017 18:27:45 -0800
 
 snapserver-core-plugins (1.0.56.0~xenial) xenial; urgency=high
 
