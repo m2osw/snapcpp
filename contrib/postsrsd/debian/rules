@@ -13,5 +13,5 @@
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DINIT_FLAVOR:STRING=systemd
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DINIT_FLAVOR:STRING=systemd -DGENERATE_SRS_SECRET:BOOL=OFF
 
