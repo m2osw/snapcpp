@@ -1,2 +1,0 @@
-Run cmake -DSYSCONF_DIR=<dir to hold config>. This defaults to `/etc`.
-Then run "make", then "make install".

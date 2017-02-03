@@ -66,7 +66,6 @@ ConfigureMakeProject( PROJECT_NAME libexcept          )
 ConfigureMakeProject( PROJECT_NAME libQtCassandra     )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization )
 ConfigureMakeProject( PROJECT_NAME libtld             )
-ConfigureMakeProject( PROJECT_NAME postsrsd           CONFIG_ARGS -DSYSCONF_DIR=${SNAP_DIST_DIR}/etc)
 
 
 ################################################################################
