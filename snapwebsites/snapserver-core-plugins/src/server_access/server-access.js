@@ -1115,6 +1115,11 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
                                                .replace(/\?a=edit&/, "?")
                                                .replace(/&a=edit&/, "&");
                 }
+                // TODO: the following is problematic because the doc
+                //       parameter of an IFRAME is not accessible cross
+                //       origins, that being said, we should only be
+                //       dealing with our own popups here...
+                //
                 doc.location = redirect_uri;
                 // avoid anything else after a redirect
                 return;

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: no-iframe
- * Version: 0.0.1.0
+ * Version: 0.0.1.3
  * Browsers: all
  * Copyright: Copyright 2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery (1.11)
@@ -33,7 +33,7 @@ jQuery(document).ready(
     {
         if(window.self != window.top)
         {
-            window.top.document.location = window.location;
+            window.top.location = window.location;
         }
     }
 );

@@ -1,5 +1,5 @@
 // Snap Websites Server -- advanced handling of lists
-// Copyright (C) 2014-2016  Made to Order Software Corp.
+// Copyright (C) 2014-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1902,7 +1902,7 @@ void list::on_register_backend_cron(server::backend_action_set & actions)
  * recompute lists in one go.
  *
  * \code
- * snapbackend http://example.com --action list::processalllists
+ * snapbackend http://example.com/ --action list::processalllists
  * \endcode
  *
  * The "processlist" expects a URL parameter set to the page to be
@@ -1915,7 +1915,7 @@ void list::on_register_backend_cron(server::backend_action_set & actions)
  * without doing such. The URL may just include the path.
  *
  * \code
- * snapbackend http://example.com --action list::processlist -p URL=journal/201508
+ * snapbackend http://example.com/ --action list::processlist -p URL=journal/201508
  * \endcode
  *
  * The "list::resetlists" goes through the pages marked as lists and delete
@@ -1924,7 +1924,7 @@ void list::on_register_backend_cron(server::backend_action_set & actions)
  * of just a few changes.
  *
  * \code
- * snapbackend http://example.com --action list::resetlists
+ * snapbackend http://example.com/ --action list::resetlists
  * \endcode
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
