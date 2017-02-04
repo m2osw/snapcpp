@@ -1,8 +1,12 @@
-snapbackup (1.0.2.12~xenial) xenial; urgency=high
+snapbackup (1.0.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-440: Added a BACKUP_OPTIONS= in the default parameters so one can
+    change various other options such as the --use-ssl.
+  * Renamed the HOST variable as BACKUP_HOST.
+  * Added a BACKUP_PATH so it is possible to change the destination path too.
+  * Added `set -e` in the cron script just in case.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:08 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat,  4 Feb 2017 11:07:50 -0800
 
 snapbackup (1.0.2.0~xenial) xenial; urgency=high
 

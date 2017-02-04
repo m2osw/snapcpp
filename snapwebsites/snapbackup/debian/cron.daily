@@ -7,6 +7,8 @@
 # Important note: we are in cron.daily which means we run as root:root
 #
 
+set -e
+
 # make sure we are still installed, if not exit right away
 #
 test -x /usr/bin/snapbackup || exit 0
@@ -20,7 +22,7 @@ test -x /usr/bin/snapbackup || exit 0
 # TODO: should change the ownership? Right now this will all be root which
 #       should be just fine.
 #
-mkdir -p /var/backups/snapwebsites/cassandra-backups
+mkdir -p ${BACKUP_PATH}
 
 # one backup per day of the week
 #
@@ -28,7 +30,7 @@ DAY=`date +%w`
 
 # create the backup
 #
-snapbackup --host ${HOST} --dump-context /var/backups/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
+snapbackup ${BACKUP_OPTIONS} --host ${BACKUP_HOST} --dump-context ${BACKUP_PATH}/backup-${DAY}.sqlite3
 
 # make sure only root can read it (it includes all the secure data from the
 # database!)
