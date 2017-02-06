@@ -1,12 +1,12 @@
-snapfirewall (1.1.30.4~xenial) xenial; urgency=high
+snapfirewall (1.1.31.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-181: Enhanced the showfw script to save all the rules at once.
 
- -- Build Server <build@m2osw.com>  Thu, 02 Feb 2017 04:12:04 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  5 Feb 2017 19:47:48 -0800
 
 snapfirewall (1.1.30.0~xenial) xenial; urgency=high
 
-  * Fixed the ESTABLISH[ED] for UDP connections, the "ED" was missing.
+  * SNAP-181: Fixed the ESTABLISH[ED] for UDP connections, "ED" was missing.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed,  1 Jan 2017 17:44:48 -0800
 

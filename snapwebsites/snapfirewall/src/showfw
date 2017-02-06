@@ -40,5 +40,14 @@ do
 	shift
 done
 
-
-$IPTABLES -t $TYPE -L -nvx | less -S
+# Save the content in a file so that way we do not block the firewall while
+# looking at the output (the one drawback is that you have to wait for the
+# entire set to be output before seeing anything)
+#
+OUTPUT=/tmp/iprules.txt
+rm -rf $OUTPUT
+touch $OUTPUT
+chown root:root $OUTPUT
+chmod 600 $OUTPUT
+$IPTABLES -t $TYPE -L -nvx > $OUTPUT
+less -S $OUTPUT
