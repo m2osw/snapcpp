@@ -68,6 +68,11 @@ EOF
     postconf -e "transport_maps               = hash:/etc/postfix/transport.maps"
 
     ################################################################################
+    # Remove RC4 from the server side TLS support, it is really not secure
+    #
+    postconf -e "smtpd_tls_exclude_ciphers = RC4, aNULL"
+
+    ################################################################################
     # Add postsrsd support.
     #
     postconf -e "sender_canonical_maps       = tcp:127.0.0.1:10001"

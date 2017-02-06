@@ -1,8 +1,8 @@
-snapbounce (1.0.10.13~xenial) xenial; urgency=high
+snapbounce (1.0.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SMAP-110: Added the smtpd_tls_exclude_ciphers parameter.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:05 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat,  5 Feb 2017 17:39:48 -0700
 
 snapbounce (1.0.10.0~xenial) xenial; urgency=high
 
