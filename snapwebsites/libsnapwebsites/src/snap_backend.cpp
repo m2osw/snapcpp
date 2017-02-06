@@ -1000,7 +1000,10 @@ void snap_backend::run_backend()
     {
         process_action();
 
+        SNAP_LOG_INFO("snap_backend::run_backend(): exiting naturally.");
+
         // return normally if no exception occurred
+        //
         return;
     }
     catch( snap_exception const & e )
@@ -1981,7 +1984,10 @@ void snap_backend::capture_zombies(pid_t pid)
     //          sure it is gone, we have to call a function for the
     //          purpose! (i.e. we want the UNLOCK to be sent now)
     //
-    g_child_connection->unlock();
+    if(g_child_connection != nullptr)
+    {
+        g_child_connection->unlock();
+    }
     g_communicator->remove_connection(g_child_connection);
     g_child_connection.reset();
 
@@ -2307,6 +2313,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
             int const e(errno);
 
             // fork() failed
+            //
             g_communicator->remove_connection(g_child_connection);
             g_child_connection.reset();
 
@@ -2315,7 +2322,10 @@ bool snap_backend::process_backend_uri(QString const & uri)
             //       is ENOMEM or EAGAIN
             //
             SNAP_LOG_FATAL("snap_backend::process_backend_uri() could not create a child process (errno: ")(e)(" -- ")(strerror(e))(").");
+
             // we do not try again, we just abandon the whole process
+            // (i.e. we're in the parent so the backend is quitting 100%)
+            //
             exit(1);
             NOTREACHED();
         }
@@ -2507,6 +2517,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     NOTREACHED();
 
     // compiler expects a return
+    //
     return false;
 }
 
