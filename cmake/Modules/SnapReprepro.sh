@@ -21,9 +21,9 @@ DEST=$3
 reprepro -C ${COMP} -Vb ${DEST} removematched ${DIST} "*"
 
 INDIR=${HOME}/pbuilder/${DIST}_result/${COMP}
-for file in ${INDIR}/*.changes
+for file in ${INDIR}/*.deb
 do
-    reprepro -C ${COMP} -Vb ${DEST} include ${DIST} ${file}
+    reprepro -C ${COMP} -Vb ${DEST} includedeb ${DIST} ${file}
 done
 
 # vim: ts=4 sw=4 et
