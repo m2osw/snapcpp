@@ -30,13 +30,14 @@
 #
 include( CMakeParseArguments )
 
-find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh	   PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl		   PATHS ${CMAKE_MODULE_PATH} )
 find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl			   PATHS ${CMAKE_MODULE_PATH} )
 find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl		   PATHS ${CMAKE_MODULE_PATH} )
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl		   PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh	   PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl		   PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
+find_program( REPREPRO_SCRIPT    SnapReprepro.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
 
 # RDB: Sun Jan  8 12:42:10 PST 2017
@@ -73,6 +74,7 @@ endif()
 set( DEBUILD_PLATFORM "xenial"                         CACHE STRING   "Name of the Debian/Ubuntu platform to build against." )
 set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}"       CACHE STRING   "Email address of the package signer."                 )
 set( DEP_CACHE_FILE   "${CMAKE_BINARY_DIR}/deps.cache" CACHE INTERNAL "Cache file for dependencies."                         )
+set( REPO_ROOT_DIR    "/var/www/debian/nightly"        CACHE PATH     "Root level where the repository will go."             )
 
 message( STATUS "Scanning all projects..." )
 execute_process( 
@@ -114,7 +116,7 @@ endif()
 
 function( ConfigureMakeProjectInternal )
 	set( options        USE_CONFIGURE_SCRIPT IGNORE_DEPS )
-	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH )
+	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH COMPONENT )
 	set( multiValueArgs CONFIG_ARGS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 	#
@@ -124,6 +126,9 @@ function( ConfigureMakeProjectInternal )
 	if( NOT ARG_TARGET_NAME )
 		message( FATAL_ERROR "You must specify TARGET_NAME!" )
 	endif()
+    if( NOT ARG_COMPONENT )
+        message( FATAL_ERROR "You must specify COMPONENT (main, config, non-free, etc)!" )
+    endif()
 
 	set( SRC_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT_NAME} )
 	set( BUILD_DIR      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_PROJECT_NAME} )
@@ -299,7 +304,7 @@ function( ConfigureMakeProjectInternal )
 	set( PBUILD_OUTPUT ${BUILD_DIR}/pbuild.completed )
 	add_custom_command(
         OUTPUT ${PBUILD_OUTPUT}
-		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
+		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${ARG_COMPONENT} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
 		COMMAND echo > ${PBUILD_OUTPUT}
 		DEPENDS ${PBUILDER_DEPS}
@@ -323,6 +328,17 @@ function( ConfigureMakeProjectInternal )
 		)
 endfunction()
 
+
+#function( GetComponent PROJECT_NAME )
+#	get_filename_component( FULL_PATH     ${PROJECT_NAME}	ABSOLUTE  )
+#	get_filename_component( COMPONENT_DIR ${FULL_PATH}      DIRECTORY )
+#	if( ${COMPONENT_DIR} STREQUAL ${CMAKE_SOURCE_DIR} )
+#		message( FATAL_ERROR "You need to specify the component as I cannot deduce it via subdirs." )
+#	endif()
+#	get_filename_component( COMPONENT     ${COMPONENT_DIR}    NAME      )
+#	set( COMPONENT ${COMPONENT} PARENT_SCOPE )
+#endfunction()
+
 function( ConfigureMakeProject )
 	set( options
 		USE_CONFIGURE_SCRIPT
@@ -330,6 +346,7 @@ function( ConfigureMakeProject )
 	set( oneValueArgs
 		PROJECT_NAME
 		DISTFILE_PATH
+        COMPONENT
 	)
 	set( multiValueArgs
 		CONFIG_ARGS
@@ -345,6 +362,9 @@ function( ConfigureMakeProject )
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONF_SCRIPT_OPTION "USE_CONFIGURE_SCRIPT" )
 	endif()
+    if( NOT ARG_COMPONENT )
+        message( FATAL_ERROR "You must specify COMPONENT (main, config, non-free, etc)!" )
+    endif()
 
 	message( STATUS "Searching dependencies for project '${ARG_PROJECT_NAME}'")
 	execute_process( 
@@ -364,6 +384,7 @@ function( ConfigureMakeProject )
 		TARGET_NAME   ${ARG_PROJECT_NAME}
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
 		CONFIG_ARGS   ${ARG_CONFIG_ARGS}
+        COMPONENT     ${ARG_COMPONENT}
 	)
 
 	ConfigureMakeProjectInternal(
@@ -372,6 +393,7 @@ function( ConfigureMakeProject )
 		TARGET_NAME   ${ARG_PROJECT_NAME}-nodeps
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
 		CONFIG_ARGS   ${ARG_CONFIG_ARGS}
+        COMPONENT     ${ARG_COMPONENT}
 		IGNORE_DEPS
 	)
 
@@ -380,6 +402,60 @@ function( ConfigureMakeProject )
 	set_property( GLOBAL APPEND PROPERTY PACKAGE_TARGETS  ${ARG_PROJECT_NAME}-debuild  )
 	set_property( GLOBAL APPEND PROPERTY DPUT_TARGETS     ${ARG_PROJECT_NAME}-dput     )
 	set_property( GLOBAL APPEND PROPERTY PBUILDER_TARGETS ${ARG_PROJECT_NAME}-pbuilder )
+endfunction()
+
+function( BuildRepro COMPONENT )
+	get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
+
+	set( SRC_DIR   ${CMAKE_CURRENT_SOURCE_DIR} )
+	set( BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} )
+
+	add_custom_target(
+		${COMPONENT}-reprepro
+		COMMAND ${REPREPRO_SCRIPT}
+			${DEBUILD_PLATFORM} ${COMPONENT} ${REPO_ROOT_DIR}
+			1> ${BUILD_DIR}/${COMPONENT}-reprepro.log
+		DEPENDS ${PBUILDER_TARGETS}
+		WORKING_DIRECTORY ${SRC_DIR}
+		COMMENT "Building debian source repro for component ${COMPONENT}."
+		)
+	set_property( GLOBAL APPEND PROPERTY REPREPRO_TARGETS ${COMPONENT}-reprepro )
+endfunction()
+
+
+function( CreateTargets COMPONENT )
+	get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
+	get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
+	get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
+	get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
+	get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
+	get_property( REPREPRO_TARGETS GLOBAL PROPERTY REPREPRO_TARGETS )
+
+	if( ${COMPONENT} STREQUAL "top" )
+		unset( COMP_SUFFIX )
+	else()
+		set( COMP_SUFFIX "-${COMPONENT}" )
+	endif()
+
+	add_custom_target( build${COMP_SUFFIX} ALL
+		DEPENDS ${BUILD_TARGETS}
+	)
+	add_custom_target( clean-all${COMP_SUFFIX}
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+		DEPENDS ${CLEAN_TARGETS}
+	)
+	add_custom_target( debuild${COMP_SUFFIX}
+		DEPENDS ${PACKAGE_TARGETS}
+	)
+	add_custom_target( dput${COMP_SUFFIX}
+		DEPENDS ${DPUT_TARGETS}
+	)
+	add_custom_target( pbuilder${COMP_SUFFIX}
+		DEPENDS ${PBUILDER_TARGETS}
+	)
+	add_custom_target( reprepro${COMP_SUFFIX}
+		DEPENDS ${REPREPRO_TARGETS}
+	)
 endfunction()
 
 # vim: ts=4 sw=4 noexpandtab

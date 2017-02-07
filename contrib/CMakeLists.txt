@@ -44,6 +44,7 @@ project( snapwebsites_contrib )
 ConfigureMakeProject( PROJECT_NAME zipios2
     CONFIG_ARGS
         -DBUILD_ZIPIOS_TESTS:BOOL=OFF
+    COMPONENT main
 )
 
 ConfigureMakeProject( PROJECT_NAME log4cplus
@@ -53,43 +54,23 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
         -DLOG4CPLUS_SINGLE_THREADED=OFF
         -DLOG4CPLUS_QT4=OFF
         -DLOG4CPLUS_QT5=OFF
+    COMPONENT main
 )
 
-ConfigureMakeProject( PROJECT_NAME advgetopt          )
-ConfigureMakeProject( PROJECT_NAME as2js              )
-ConfigureMakeProject( PROJECT_NAME csspp              )
-ConfigureMakeProject( PROJECT_NAME iplock             )
-ConfigureMakeProject( PROJECT_NAME libaddr            )
-ConfigureMakeProject( PROJECT_NAME libcassvalue       )
-ConfigureMakeProject( PROJECT_NAME libcasswrapper     )
-ConfigureMakeProject( PROJECT_NAME libexcept          )
-ConfigureMakeProject( PROJECT_NAME libQtCassandra     )
-ConfigureMakeProject( PROJECT_NAME libQtSerialization )
-ConfigureMakeProject( PROJECT_NAME libtld             )
-
+ConfigureMakeProject( PROJECT_NAME advgetopt          COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME as2js              COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME csspp              COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME iplock             COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libaddr            COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libcassvalue       COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libcasswrapper     COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libexcept          COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libQtCassandra     COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libQtSerialization COMPONENT contrib )
+ConfigureMakeProject( PROJECT_NAME libtld             COMPONENT contrib )
 
 ################################################################################
-get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
-get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
-get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
-get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
-get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
-
-add_custom_target( build-contrib ALL
-    DEPENDS ${BUILD_TARGETS}
-)
-add_custom_target( clean-contrib
-    #COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
-    DEPENDS ${CLEAN_TARGETS}
-)
-add_custom_target( debuild-contrib
-    DEPENDS ${PACKAGE_TARGETS}
-)
-add_custom_target( dput-contrib
-    DEPENDS ${DPUT_TARGETS}
-)
-add_custom_target( pbuilder-contrib
-    DEPENDS ${PBUILDER_TARGETS}
-)
+BuildRepro   ( contrib )
+CreateTargets( contrib )
 
 # vim: ts=4 sw=4 et nocindent

@@ -42,96 +42,57 @@ ConfigureMakeProject( PROJECT_NAME libsnapwebsites
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    COMPONENT main
 )
 
-ConfigureMakeProject( PROJECT_NAME cassview
-)
-
-ConfigureMakeProject( PROJECT_NAME snapbackend
-)
-
-ConfigureMakeProject( PROJECT_NAME snapbackup
-)
-
-ConfigureMakeProject( PROJECT_NAME snapbase
-)
-
-ConfigureMakeProject( PROJECT_NAME snapbounce
-)
-
-ConfigureMakeProject( PROJECT_NAME snapcgi
-)
-
-ConfigureMakeProject( PROJECT_NAME snapcommunicator
-)
-
-ConfigureMakeProject( PROJECT_NAME snapdb
-)
-
-ConfigureMakeProject( PROJECT_NAME snapdbproxy
-)
-
+ConfigureMakeProject( PROJECT_NAME cassview         COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapbackend      COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapbackup       COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapbase         COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapbounce       COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapcgi          COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapcommunicator COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapdb           COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snapdbproxy      COMPONENT main )
 ConfigureMakeProject( PROJECT_NAME snapfirewall
     CONFIG_ARGS
         -DSNAPMANAGERCGI_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    COMPONENT main
 )
-
-ConfigureMakeProject( PROJECT_NAME snaplayout
-)
-
-ConfigureMakeProject( PROJECT_NAME snaplock
-)
-
-ConfigureMakeProject( PROJECT_NAME snaplog
-)
-
+ConfigureMakeProject( PROJECT_NAME snaplayout       COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snaplock         COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snaplog          COMPONENT main )
 ConfigureMakeProject( PROJECT_NAME snapmanager
     CONFIG_ARGS
         -DADVGETOPT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
+    COMPONENT main
 )
 
 ConfigureMakeProject( PROJECT_NAME snapserver
     CONFIG_ARGS
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    COMPONENT main
 )
 
 ConfigureMakeProject( PROJECT_NAME snapserver-core-plugins
     CONFIG_ARGS
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    COMPONENT main
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwatchdog
     CONFIG_ARGS
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    COMPONENT main
 )
 
-get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
-get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
-get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
-get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
-get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
-
-add_custom_target( build-snapwebsites ALL
-    DEPENDS ${BUILD_TARGETS}
-)
-add_custom_target( clean-snapwebsites
-    COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
-    DEPENDS ${CLEAN_TARGETS}
-)
-add_custom_target( debuild-snapwebsites
-    DEPENDS ${PACKAGE_TARGETS}
-)
-add_custom_target( dput-snapwebsites
-    DEPENDS ${DPUT_TARGETS}
-)
-add_custom_target( pbuilder-snapwebsites
-    DEPENDS ${PBUILDER_TARGETS}
-)
+BuildRepro   ( "main" )
+CreateTargets( "main" )
 
 # vim: ts=4 sw=4 et nocindent
