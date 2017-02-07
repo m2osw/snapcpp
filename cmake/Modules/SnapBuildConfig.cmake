@@ -1,7 +1,7 @@
 # File:         FindSnapBuild.cmake
 # Object:       Provide functions to build projects.
 #
-# Copyright:    Copyright (c) 2011-2014 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2017 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/
@@ -30,13 +30,36 @@
 #
 include( CMakeParseArguments )
 
+find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl			   PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl		   PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl		   PATHS ${CMAKE_MODULE_PATH} )
 find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl          PATHS ${CMAKE_MODULE_PATH} )
-find_program( FIND_DEPS_SCRIPT   SnapFindDeps.pl           	   PATHS ${CMAKE_MODULE_PATH} )
-find_program( INC_VERS_SCRIPT    SnapBuildIncVers.pl           PATHS ${CMAKE_MODULE_PATH} )
-find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh	   PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DEPS_SCRIPT   SnapMakeDepsCache.pl		   PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
+find_program( REPREPRO_SCRIPT    SnapReprepro.sh			   PATHS ${CMAKE_MODULE_PATH} )
+
+
+# RDB: Sun Jan  8 12:42:10 PST 2017
+# Moved this to the top so it's done only once
+#
+set( THE_CMAKE_BUILD_TOOL ${CMAKE_BUILD_TOOL} )
+if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
+	execute_process( 
+		COMMAND nproc
+		#OUTPUT_VARIABLE NUM_PROCS
+		OUTPUT_VARIABLE NUM_JOBS
+	)
+	string(STRIP NUM_JOBS NUM_JOBS)
+	# http://stackoverflow.com/questions/2499070/gnu-make-should-the-number-of-jobs-equal-the-number-of-cpu-cores-in-a-system#2499574
+	# The question is if we want to try num procs + 1.
+	#
+	#math( EXPR NUM_JOBS "${NUM_PROCS} + 1" )
+	set( MAKEFLAGS "-j${NUM_JOBS}" CACHE STRING "Number of jobs make should run. CMake vers 3+ only!" )
+	if( NOT "${MAKEFLAGS}" STREQUAL "-j1" OR "${MAKEFLAGS}" STREQUAL "" )
+		set( THE_CMAKE_BUILD_TOOL ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL} )
+	endif()
+endif()
 
 # RDB: Tue Jan 26 10:13:24 PST 2016
 # Adding ability to take the DEBUILD_EMAIL var from the environment as a default
@@ -51,12 +74,13 @@ endif()
 set( DEBUILD_PLATFORM "xenial"                         CACHE STRING   "Name of the Debian/Ubuntu platform to build against." )
 set( DEBUILD_EMAIL    "${DEBUILD_EMAIL_DEFAULT}"       CACHE STRING   "Email address of the package signer."                 )
 set( DEP_CACHE_FILE   "${CMAKE_BINARY_DIR}/deps.cache" CACHE INTERNAL "Cache file for dependencies."                         )
+set( REPO_ROOT_DIR    "/var/www/debian/nightly"        CACHE PATH     "Root level where the repository will go."             )
 
 message( STATUS "Scanning all projects..." )
 execute_process( 
 	COMMAND ${MAKE_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${DEP_CACHE_FILE}
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	)
+)
 
 option( INCREMENT_BUILD_NUMBERS "Increment the build number in the version of all debian/changelog files." OFF )
 if( ${INCREMENT_BUILD_NUMBERS} )
@@ -65,12 +89,12 @@ if( ${INCREMENT_BUILD_NUMBERS} )
 		COMMAND ${INC_VERS_SCRIPT} ${DEP_CACHE_FILE} ${DEBUILD_PLATFORM}
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		COMMENT "Incrementing build version for all debian packages."
-		)
+	)
 else()
 	add_custom_target(
 		snap-incvers
 		COMMENT "Incrementing build version number skipped."
-		)
+	)
 endif()
 
 option( INCREMENT_DEPENDENCIES "Increment ALL dependencies in all packages." OFF )
@@ -81,18 +105,18 @@ if( ${INCREMENT_DEPENDENCIES} )
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 		DEPENDS snap-incvers
 		COMMENT "Incrementing dependencies for all debian packages."
-		)
+	)
 else()
 	add_custom_target(
 		snap-incdeps
 		DEPENDS snap-incvers
 		COMMENT "Incrementing dependencies skipped."
-		)
+	)
 endif()
 
 function( ConfigureMakeProjectInternal )
 	set( options        USE_CONFIGURE_SCRIPT IGNORE_DEPS )
-	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH )
+	set( oneValueArgs   PROJECT_NAME TARGET_NAME DISTFILE_PATH COMPONENT )
 	set( multiValueArgs CONFIG_ARGS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 	#
@@ -102,6 +126,9 @@ function( ConfigureMakeProjectInternal )
 	if( NOT ARG_TARGET_NAME )
 		message( FATAL_ERROR "You must specify TARGET_NAME!" )
 	endif()
+    if( NOT ARG_COMPONENT )
+        message( FATAL_ERROR "You must specify COMPONENT (main, config, non-free, etc)!" )
+    endif()
 
 	set( SRC_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT_NAME} )
 	set( BUILD_DIR      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_PROJECT_NAME} )
@@ -147,7 +174,7 @@ function( ConfigureMakeProjectInternal )
 	else()
 		get_property( DEPENDS_LIST
 			GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST
-			)
+		)
 	endif()
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log  )
@@ -159,12 +186,19 @@ function( ConfigureMakeProjectInternal )
 			DEPENDS ${DEPENDS_LIST}
 			WORKING_DIRECTORY ${BUILD_DIR}
 			COMMENT "Running ${ARG_TARGET_NAME} configure script..."
-			)
+		)
 	else()
 		set( SNAP_CMAKE_GENERATOR "CodeBlocks - Unix Makefiles" CACHE STRING "CMake generator to use to configure all projects. Defaults to CodeBlocks, which is qtcreator friendly." )
 		set( BUILD_TYPE ${CMAKE_BUILD_TYPE} )
 		if( NOT BUILD_TYPE )
 			set( BUILD_TYPE Release )
+		endif()
+		unset( SANITIZE_ADDRESS_OPT )
+		if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+			option( SANITIZE_ADDRESS "Sanitize addresses for ${PROJECT_NAME}. Debug mode only." OFF )
+			if( ${SANITIZE_ADDRESS} )
+				set( SANITIZE_ADDRESS_OPT "-DSANTIZE_ADDRESS:BOOL=TRUE" )
+			endif()
 		endif()
 		set( COMMAND_LIST
 			${THE_CMAKE_COMMAND}
@@ -172,15 +206,20 @@ function( ConfigureMakeProjectInternal )
 				-DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 				-DCMAKE_INSTALL_PREFIX:PATH="${SNAP_DIST_DIR}"
 				-DCMAKE_PREFIX_PATH:PATH=${SNAP_DIST_DIR}
+				${SANITIZE_ADDRESS_OPT}
 				${ARG_CONFIG_ARGS}
 				${SRC_DIR}
-	    )
+		)
 		set( CMD_FILE ${BUILD_DIR}/configure.cmd )
 		file( REMOVE ${CMD_FILE} )
 		file( APPEND ${CMD_FILE} "cd " ${BUILD_DIR} "\n" )
 		file( APPEND ${CMD_FILE} "rm -f CMakeCache.txt\n" )
 		foreach( line ${COMMAND_LIST} )
-			file( APPEND ${CMD_FILE} ${line} " \\\n" )
+			if( "${line}" STREQUAL "${SNAP_CMAKE_GENERATOR}")
+				file( APPEND ${CMD_FILE} "\"${SNAP_CMAKE_GENERATOR}\" \\\n" )
+			else()
+				file( APPEND ${CMD_FILE} ${line} " \\\n" )
+			endif()
 		endforeach()
 		#
 		set( CONFIGURE_TARGETS ${BUILD_DIR}/CMakeCache.txt  )
@@ -195,14 +234,6 @@ function( ConfigureMakeProjectInternal )
 			)
 	endif()
 
-	set( THE_CMAKE_BUILD_TOOL ${CMAKE_BUILD_TOOL} )
-	if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
-		set( MAKEFLAGS "-j1" CACHE STRING "Number of jobs make should run. CMake vers 3+ only!" )
-		if( NOT "${MAKEFLAGS}" STREQUAL "-j1" OR "${MAKEFLAGS}" STREQUAL "" )
-			set( THE_CMAKE_BUILD_TOOL ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL} )
-		endif()
-	endif()
-
 	set( MAKE_OUTPUT ${BUILD_DIR}/make.completed )
 	option( BUILD_ONCE "Build projects once depending on 'make.completed' file" ON )
 	unset( MAKE_OUTPUT_COMMAND )
@@ -210,7 +241,7 @@ function( ConfigureMakeProjectInternal )
 		set( MAKE_OUTPUT_COMMAND COMMAND echo > ${MAKE_OUTPUT} )
 	endif()
 	add_custom_command(
-        OUTPUT ${MAKE_OUTPUT}
+		OUTPUT ${MAKE_OUTPUT}
 		COMMAND ${THE_CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
@@ -221,21 +252,21 @@ function( ConfigureMakeProjectInternal )
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${ARG_TARGET_NAME}"
-		)
+	)
 	add_custom_target(
 		${ARG_TARGET_NAME}-make
 		DEPENDS ${MAKE_OUTPUT}
 		WORKING_DIRECTORY ${BUILD_DIR}
-		)
+	)
 
-    #set( MAKE_TARGET ${BUILD_DIR}/MAKE_BUILD_SUCCESSFUL  )
-    #add_custom_command(
-    #    OUTPUT ${MAKE_TARGET}
-    #    COMMAND echo > ${MAKE_TARGET}
-    #    DEPENDS ${ARG_TARGET_NAME}-make
-    #    WORKING_DIRECTORY ${BUILD_DIR}
-    #    COMMENT "Target ${ARG_TARGET_NAME} successfully built!" 
-    #    )
+	#set( MAKE_TARGET ${BUILD_DIR}/MAKE_BUILD_SUCCESSFUL  )
+	#add_custom_command(
+	#    OUTPUT ${MAKE_TARGET}
+	#    COMMAND echo > ${MAKE_TARGET}
+	#    DEPENDS ${ARG_TARGET_NAME}-make
+	#    WORKING_DIRECTORY ${BUILD_DIR}
+	#    COMMENT "Target ${ARG_TARGET_NAME} successfully built!" 
+	#    )
 
 	unset( PBUILDER_DEPS )
 	unset( DPUT_DEPS     )
@@ -249,11 +280,11 @@ function( ConfigureMakeProjectInternal )
 	set( EMAIL_ADDY "${DEBUILD_EMAIL}" )
 	separate_arguments( EMAIL_ADDY )
 	#
-    if( ARG_IGNORE_DEPS )
-        unset( SNAPINCDEPS )
-    else()
-        set( SNAPINCDEPS snap-incdeps )
-    endif()
+	if( ARG_IGNORE_DEPS )
+		unset( SNAPINCDEPS )
+	else()
+		set( SNAPINCDEPS snap-incdeps )
+	endif()
 	add_custom_target(
 		${ARG_TARGET_NAME}-debuild
 		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
@@ -273,7 +304,7 @@ function( ConfigureMakeProjectInternal )
 	set( PBUILD_OUTPUT ${BUILD_DIR}/pbuild.completed )
 	add_custom_command(
         OUTPUT ${PBUILD_OUTPUT}
-		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
+		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${ARG_COMPONENT} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
 		COMMAND echo > ${PBUILD_OUTPUT}
 		DEPENDS ${PBUILDER_DEPS}
@@ -297,6 +328,17 @@ function( ConfigureMakeProjectInternal )
 		)
 endfunction()
 
+
+#function( GetComponent PROJECT_NAME )
+#	get_filename_component( FULL_PATH     ${PROJECT_NAME}	ABSOLUTE  )
+#	get_filename_component( COMPONENT_DIR ${FULL_PATH}      DIRECTORY )
+#	if( ${COMPONENT_DIR} STREQUAL ${CMAKE_SOURCE_DIR} )
+#		message( FATAL_ERROR "You need to specify the component as I cannot deduce it via subdirs." )
+#	endif()
+#	get_filename_component( COMPONENT     ${COMPONENT_DIR}    NAME      )
+#	set( COMPONENT ${COMPONENT} PARENT_SCOPE )
+#endfunction()
+
 function( ConfigureMakeProject )
 	set( options
 		USE_CONFIGURE_SCRIPT
@@ -304,6 +346,7 @@ function( ConfigureMakeProject )
 	set( oneValueArgs
 		PROJECT_NAME
 		DISTFILE_PATH
+        COMPONENT
 	)
 	set( multiValueArgs
 		CONFIG_ARGS
@@ -319,6 +362,9 @@ function( ConfigureMakeProject )
 	if( ARG_USE_CONFIGURE_SCRIPT )
 		set( CONF_SCRIPT_OPTION "USE_CONFIGURE_SCRIPT" )
 	endif()
+    if( NOT ARG_COMPONENT )
+        message( FATAL_ERROR "You must specify COMPONENT (main, config, non-free, etc)!" )
+    endif()
 
 	message( STATUS "Searching dependencies for project '${ARG_PROJECT_NAME}'")
 	execute_process( 
@@ -338,6 +384,7 @@ function( ConfigureMakeProject )
 		TARGET_NAME   ${ARG_PROJECT_NAME}
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
 		CONFIG_ARGS   ${ARG_CONFIG_ARGS}
+        COMPONENT     ${ARG_COMPONENT}
 	)
 
 	ConfigureMakeProjectInternal(
@@ -346,6 +393,7 @@ function( ConfigureMakeProject )
 		TARGET_NAME   ${ARG_PROJECT_NAME}-nodeps
 		DISTFILE_PATH ${ARG_DISTFILE_PATH}
 		CONFIG_ARGS   ${ARG_CONFIG_ARGS}
+        COMPONENT     ${ARG_COMPONENT}
 		IGNORE_DEPS
 	)
 
@@ -354,6 +402,60 @@ function( ConfigureMakeProject )
 	set_property( GLOBAL APPEND PROPERTY PACKAGE_TARGETS  ${ARG_PROJECT_NAME}-debuild  )
 	set_property( GLOBAL APPEND PROPERTY DPUT_TARGETS     ${ARG_PROJECT_NAME}-dput     )
 	set_property( GLOBAL APPEND PROPERTY PBUILDER_TARGETS ${ARG_PROJECT_NAME}-pbuilder )
+endfunction()
+
+function( BuildRepro COMPONENT )
+	get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
+
+	set( SRC_DIR   ${CMAKE_CURRENT_SOURCE_DIR} )
+	set( BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} )
+
+	add_custom_target(
+		${COMPONENT}-reprepro
+		COMMAND ${REPREPRO_SCRIPT}
+			${DEBUILD_PLATFORM} ${COMPONENT} ${REPO_ROOT_DIR}
+			1> ${BUILD_DIR}/${COMPONENT}-reprepro.log
+		DEPENDS ${PBUILDER_TARGETS}
+		WORKING_DIRECTORY ${SRC_DIR}
+		COMMENT "Building debian source repro for component ${COMPONENT}."
+		)
+	set_property( GLOBAL APPEND PROPERTY REPREPRO_TARGETS ${COMPONENT}-reprepro )
+endfunction()
+
+
+function( CreateTargets COMPONENT )
+	get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
+	get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
+	get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
+	get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
+	get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
+	get_property( REPREPRO_TARGETS GLOBAL PROPERTY REPREPRO_TARGETS )
+
+	if( ${COMPONENT} STREQUAL "top" )
+		unset( COMP_SUFFIX )
+	else()
+		set( COMP_SUFFIX "-${COMPONENT}" )
+	endif()
+
+	add_custom_target( build${COMP_SUFFIX} ALL
+		DEPENDS ${BUILD_TARGETS}
+	)
+	add_custom_target( clean-all${COMP_SUFFIX}
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+		DEPENDS ${CLEAN_TARGETS}
+	)
+	add_custom_target( debuild${COMP_SUFFIX}
+		DEPENDS ${PACKAGE_TARGETS}
+	)
+	add_custom_target( dput${COMP_SUFFIX}
+		DEPENDS ${DPUT_TARGETS}
+	)
+	add_custom_target( pbuilder${COMP_SUFFIX}
+		DEPENDS ${PBUILDER_TARGETS}
+	)
+	add_custom_target( reprepro${COMP_SUFFIX}
+		DEPENDS ${REPREPRO_TARGETS}
+	)
 endfunction()
 
 # vim: ts=4 sw=4 noexpandtab

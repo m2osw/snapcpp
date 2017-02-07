@@ -53,7 +53,7 @@ find_package( SnapBuild REQUIRED )
 
 ################################################################################
 #
-ConfigureMakeProject( PROJECT_NAME cmake )
+ConfigureMakeProject( PROJECT_NAME cmake COMPONENT contrib )
 #
 # Include snapwebsites projects next
 #
@@ -61,27 +61,6 @@ add_subdirectory( contrib      )
 add_subdirectory( snapwebsites )
 
 
-################################################################################
-get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
-get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
-get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
-get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
-get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
-
-add_custom_target( build-all ALL
-    DEPENDS ${BUILD_TARGETS}
-    )
-add_custom_target( clean-all
-    DEPENDS ${CLEAN_TARGETS}
-    )
-add_custom_target( debuild
-    DEPENDS ${PACKAGE_TARGETS}
-    )
-add_custom_target( dput
-    DEPENDS ${DPUT_TARGETS}
-    )
-add_custom_target( pbuilder
-    DEPENDS ${PBUILDER_TARGETS}
-    )
+CreateTargets( "top" )
 
 # vim: ts=4 sw=4 et nocindent
