@@ -1,3 +1,9 @@
+snapbase (1.0.31.0~xenial) xenial; urgency=high
+
+  * Added stop-gap measure to force upgrade to new apt source.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 08 Feb 2017 11:06:31 -0800
+
 snapbase (1.0.30.33~xenial) xenial; urgency=high
 
   * Nightly build.
