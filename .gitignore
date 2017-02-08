@@ -1,4 +1,9 @@
 BUILD
+build
 private
 tmp
+tags
 *.user
+*.swp
+*.log
+*.out

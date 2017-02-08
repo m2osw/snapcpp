@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.33.0~xenial) xenial; urgency=high
+
+  * Added reprepro support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 08 Feb 2017 09:45:18 -0800
+
 snapcmakemodules (1.0.32.10~xenial) xenial; urgency=high
 
   * Nightly build.
@@ -34,6 +40,12 @@ snapcmakemodules (1.0.28.0~xenial) xenial; urgency=high
   * Fixed the copyright file.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sat,  7 Jan 2017 15:16:08 -0700
+
+snapcmakemodules (1.0.27.99~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 25 Sep 2016 02:00:47 -0700
 
 snapcmakemodules (1.0.27.0~xenial) xenial; urgency=high
 
