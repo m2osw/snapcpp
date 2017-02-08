@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.28.0~xenial) xenial; urgency=high
+
+  * Added reprepro support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 08 Feb 2017 09:45:18 -0800
+
 snapcmakemodules (1.0.27.99~xenial) xenial; urgency=high
 
   * Nightly build.
@@ -30,7 +36,7 @@ snapcmakemodules (1.0.25.1~trusty) trusty; urgency=high
 snapcmakemodules (1.0.8~saucy) saucy; urgency=high
 
   * In order to read headers from the core module headers in libsnapwebsites,
-  the path needs to also include the snapwebsites include dir itself.
+    the path needs to also include the snapwebsites include dir itself.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 21 Mar 2014 11:18:44 -0700
 
@@ -62,7 +68,7 @@ snapcmakemodules (1.0.4) saucy; urgency=high
 snapcmakemodules (1.0.3) saucy; urgency=high
 
   * Now puts dolint script into an INTERNAL variable so it will remain global,
-  and it now lives at the top of the binary tree.
+    and it now lives at the top of the binary tree.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Feb 2014 10:43:05 -0800
 

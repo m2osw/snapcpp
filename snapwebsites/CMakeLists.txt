@@ -75,6 +75,7 @@ ConfigureMakeProject( PROJECT_NAME snapmanagercgi
     CONFIG_ARGS
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    COMPONENT main
 )
 
 ConfigureMakeProject( PROJECT_NAME snapserver

@@ -18,6 +18,8 @@ DIST=$1
 COMP=$2
 DEST=$3
 
+reprepro -C ${COMP} -Vb ${DEST} removematched ${DIST} "*"
+
 INDIR=${HOME}/pbuilder/${DIST}_result/${COMP}
 for file in ${INDIR}/*.deb
 do
