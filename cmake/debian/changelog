@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.33.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 09 Feb 2017 02:00:52 -0800
+
 snapcmakemodules (1.0.33.0~xenial) xenial; urgency=high
 
   * Added reprepro support.
