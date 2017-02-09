@@ -1,4 +1,4 @@
-// Snap Websites Server -- handle user VPN installation
+// Snap Websites Server -- manage APT sources
 // Copyright (C) 2016-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -70,12 +70,12 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_SNAPMANAGERCGI_VPN_NAME:
+    case name_t::SNAP_NAME_SNAPMANAGERCGI_APT_NAME:
         return "name";
 
     default:
         // invalid index
-        throw snap_logic_exception("Invalid SNAP_NAME_SNAPMANAGERCGI_VPN_...");
+        throw snap_logic_exception("Invalid SNAP_NAME_SNAPMANAGERCGI_APT_* name...");
 
     }
     NOTREACHED();

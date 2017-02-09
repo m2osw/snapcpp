@@ -1,4 +1,4 @@
-// Snap Websites Server -- handle user VPN id_rsa.pub key
+// Snap Websites Server -- manage APT sources
 // Copyright (C) 2016-2017  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,7 @@ namespace apt
 
 enum class name_t
 {
-    SNAP_NAME_SNAPMANAGERCGI_VPN_NAME
+    SNAP_NAME_SNAPMANAGERCGI_APT_NAME
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
