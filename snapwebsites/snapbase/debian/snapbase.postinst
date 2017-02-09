@@ -90,9 +90,9 @@ then
         rm -f ${SOURCES_LIST_DIR}/doug.list ${SOURCES_LIST_DIR}/snap.list
     fi
 
-    if [ ! -f ${SOURCES_LIST_DIR}/exdox.list ]
+    if [ ! -f ${SOURCES_LIST_DIR}/snapcpp.list ]
     then
-        cat > ${SOURCES_LIST_DIR}/exdox.list <<EOF
+        cat > ${SOURCES_LIST_DIR}/snapcpp.list <<EOF
 # M2OSW source for ExDox
 #
 deb https://debian:Iob8uRah@build.m2osw.com/stable xenial main contrib non-free
