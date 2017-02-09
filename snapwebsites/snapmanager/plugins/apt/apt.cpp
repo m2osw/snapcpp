@@ -46,11 +46,11 @@
 
 namespace
 {
-    QString const APT_SOURCE_DIR   = QString("/etc/apt/sources.list.d");
-    QString const EXDOX_APT_SOURCE = QString("exdox_apt_source");
-    QString const OLD_APT_SOURCE   = QString("old_apt_source");
+    QString     const APT_SOURCE_DIR     = QString("/etc/apt/sources.list.d");
+    QString     const SNAPCPP_APT_SOURCE = QString("snapcpp_apt_source");
+    QString     const OLD_APT_SOURCE     = QString("old_apt_source");
 
-    QStringList const EXTENSIONS   = {"list"};
+    QStringList const EXTENSIONS         = {"list"};
 }
 
 
@@ -239,7 +239,7 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
             return;
         }
 
-        if( info.baseName() != "exdox" )
+        if( info.baseName() != "snapcpp" )
         {
             // Continue until we find a match
             continue;
@@ -261,7 +261,7 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
                 snap_manager::status_t const ctl
                     ( snap_manager::status_t::state_t::STATUS_STATE_INFO
                     , get_plugin_name()
-                    , EXDOX_APT_SOURCE
+                    , SNAPCPP_APT_SOURCE
                     , in.readAll()
                     );
                 server_status.set_field(ctl);
@@ -319,16 +319,16 @@ bool apt::display_value ( QDomElement parent
     }
 
     QString default_value;
-    if( s.get_field_name() == EXDOX_APT_SOURCE )
+    if( s.get_field_name() == SNAPCPP_APT_SOURCE )
     {
         default_value = s.get_value();
     }
     else if( s.get_field_name() == OLD_APT_SOURCE )
     {
         default_value = 
-            "# M2OSW source for ExDox\n"
+            "# M2OSW source for SnapCPP\n"
             "#\n"
-            "deb https://debian:Iob8uRah@build.m2osw.com/stable xenial main contrib non-free\n"
+            "deb https://debian:<PASSWORD>@build.m2osw.com/stable xenial main contrib non-free\n"
             ;
     }
     else
@@ -343,7 +343,7 @@ bool apt::display_value ( QDomElement parent
             , snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
             );
     snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
-                "Enter or edit the APT source which points to the ExDox sources:"
+                "Enter or edit the APT source which points to the SnapCPP sources:"
                 , s.get_field_name()
                 , default_value
                 , "<p>The form should be as follows:</p>"
@@ -415,7 +415,7 @@ bool apt::apply_setting ( QString const & button_name
         }
     }
 
-    QFile file( QString("%1/exdox.list").arg(APT_SOURCE_DIR) );
+    QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
     if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
     {
         QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
