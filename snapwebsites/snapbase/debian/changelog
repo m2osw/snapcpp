@@ -1,3 +1,9 @@
+snapbase (1.0.33.0~xenial) xenial; urgency=high
+
+  * Now forces our APT sources into `exdox.list`.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 08 Feb 2017 22:38:26 -0800
+
 snapbase (1.0.32.17~xenial) xenial; urgency=high
 
   * Nightly build.
