@@ -334,14 +334,13 @@ bool apt::display_value ( QDomElement parent
     else
     {
         SNAP_LOG_ERROR("Field name '")(s.get_field_name())("' is unknown!");
-        return;
+        return false;
     }
 
     snap_manager::form f(
             get_plugin_name()
             , s.get_field_name()
-            , snap_manager::form::FORM_BUTTON_SAVE
-            , snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+            , snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
             );
     snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
                 "Enter or edit the APT source which points to the ExDox sources:"
