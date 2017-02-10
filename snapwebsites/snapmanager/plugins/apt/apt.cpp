@@ -400,7 +400,7 @@ bool apt::apply_setting ( QString const & button_name
     NOTUSED(button_name);
     NOTUSED(old_or_installation_value);
     NOTUSED(affected_services);
-    
+
     if( field_name == OLD_APT_SOURCE )
     {
         // Blow away the old legacy apt sources
@@ -426,10 +426,10 @@ bool apt::apply_setting ( QString const & button_name
                 for( auto const & ext : EXTENSIONS )
                 {
                     QFile file( QString("%1/%2.%3")
-                        .arg(info.path())
-                        .arg(info.baseName())
-                        .arg(ext)
-                        );
+                                .arg(info.path())
+                                .arg(info.baseName())
+                                .arg(ext)
+                                );
                     file.remove();
                 }
             }
@@ -463,22 +463,20 @@ bool apt::apply_setting ( QString const & button_name
         // Remove the temporary file
         file.remove();
 
+        // And...done!
         return success;
     }
-    else
-    {
-        QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
-        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
-        {
-            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-            SNAP_LOG_ERROR(errmsg);
-            return false;
-        }
 
-        QTextStream out( &file );
-        out << new_value;
+    QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
+    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+    {
+        QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+        SNAP_LOG_ERROR(errmsg);
+        return false;
     }
 
+    QTextStream out( &file );
+    out << new_value;
     return true;
 }
 
