@@ -43,21 +43,21 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     apt.qrc
 )
 
-add_library(${PROJECT_NAME} SHARED
+add_library(apt SHARED
     apt.h
     apt.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(apt
     snapmanager
     ${QT_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS apt LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 
 file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
