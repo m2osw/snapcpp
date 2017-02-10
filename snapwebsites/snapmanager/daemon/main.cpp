@@ -67,30 +67,30 @@ int main(int argc, char * argv[])
     }
     catch(snap::snap_exception const & e)
     {
-        std::cerr << "snap_exception in snapmanagerdaemon: " << e.what() << std::endl;
+        SNAP_LOG_ERROR("snap_exception in snapmanagerdaemon: ")(e.what());
     }
     catch(QtCassandra::QCassandraException const & e)
     {
-        std::cerr << "QCassandraException in snapmanagerdaemon: " << e.what() << std::endl;
+        SNAP_LOG_ERROR("QCassandraException in snapmanagerdaemon: ")(e.what());
     }
     catch(std::runtime_error const & e)
     {
         // this should rarely happen!
-        std::cerr << "snapmanagerdaemon: caught a runtime exception: " << e.what() << std::endl;
+        SNAP_LOG_ERROR("snapmanagerdaemon: caught a runtime exception: ")(e.what());
     }
     catch(std::logic_error const & e)
     {
         // this should never happen!
-        std::cerr << "snapmanagerdaemon: caught a logic exception: " << e.what() << std::endl;
+        SNAP_LOG_ERROR("snapmanagerdaemon: caught a logic exception: ")(e.what());
     }
     catch(std::exception const & e)
     {
         // we are in trouble, we cannot even answer!
-        std::cerr << "snapmanagerdaemon: standard exception: " << e.what() << std::endl;
+        SNAP_LOG_ERROR("snapmanagerdaemon: standard exception: ")(e.what());
     }
     catch(...)
     {
-        std::cerr << "snapmanagerdaemon: caught an unknown exception.";
+        SNAP_LOG_ERROR("snapmanagerdaemon: caught an unknown exception!");
     }
 
     return 1;
