@@ -49,6 +49,7 @@ namespace
     QString     const APT_SOURCE_DIR     = QString("/etc/apt/sources.list.d");
     QString     const SNAPCPP_APT_SOURCE = QString("snapcpp_apt_source");
     QString     const OLD_APT_SOURCE     = QString("old_apt_source");
+    QString     const GPG_KEY            = QString("gpg_key");
 
     QStringList const EXTENSIONS         = {"list"};
 }
@@ -205,11 +206,6 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
         return;
     }
 
-    // we want one field per user on the system, at this point we
-    // assume that the system does not have hundreds of users since
-    // only a few admins should be permitted on those computers
-    // anyway...
-    //
     QStringList filters;
     for( auto const &ext : EXTENSIONS )
     {
@@ -271,6 +267,16 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
                     , "APT sources are out of date!");
         server_status.set_field(outofdate);
     }
+
+    // Add GPG key field for the apt source
+    {
+        snap_manager::status_t const conf_field(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , GPG_KEY
+                    , "");
+        server_status.set_field(conf_field);
+    }
 }
 
 
@@ -315,12 +321,13 @@ bool apt::display_value ( QDomElement parent
         return false;
     }
 
+    QString const field_name(s.get_field_name());
     QString default_value;
-    if( s.get_field_name() == SNAPCPP_APT_SOURCE )
+    if( field_name == SNAPCPP_APT_SOURCE )
     {
         default_value = s.get_value();
     }
-    else if( s.get_field_name() == OLD_APT_SOURCE )
+    else if( field_name == OLD_APT_SOURCE )
     {
         default_value = 
             "# M2OSW source for SnapCPP\n"
@@ -328,23 +335,40 @@ bool apt::display_value ( QDomElement parent
             "deb https://debian:<PASSWORD>@build.m2osw.com/stable xenial main contrib non-free\n"
             ;
     }
+    else if( field_name == GPG_KEY )
+    {
+        snap_manager::form f(
+                    get_plugin_name()
+                    , field_name
+                    , snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                    );
+        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                                                       "GPG public key used to sign the archive:"
+                                                       , field_name
+                                                       , ""
+                                                       , "<p>Paste in the key here.</p>"
+                                                       ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
+    }
     else
     {
-        SNAP_LOG_WARNING("Field name '")(s.get_field_name())("' is unknown!");
+        SNAP_LOG_WARNING("Field name '")(field_name)("' is unknown!");
         return true;
     }
 
     snap_manager::form f(
             get_plugin_name()
-            , s.get_field_name()
+            , field_name
             , snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
             );
     snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
                 "Enter or edit the APT source which points to the SnapCPP sources:"
-                , s.get_field_name()
+                , field_name
                 , default_value
                 , "<p>The form should be as follows:</p>"
-                " <code>deb http[s]://<i>server</i>/<i>path</i> <i>platform</i> main contrib non-free</code>"
+                " <code>deb http[s]://<i>server/path platform</i> main contrib non-free</code>"
                 " <p>where `server/path` is the full path to the archive, platform is the release (like <i>xenial</i>),"
                 " and the components you require.</p>"
                 " <p>When you are satisfied, click the 'Refresh' button to force an update of the APT sources.</p>"
@@ -411,17 +435,50 @@ bool apt::apply_setting ( QString const & button_name
             }
         }
     }
-
-    QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
-    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+    else if( field_name == GPG_KEY )
     {
-        QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-        SNAP_LOG_ERROR(errmsg);
-        return false;
+        QFile file( QString("/tmp/key_%1.asc").arg(getpid()) );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(errmsg);
+            return false;
+        }
+        //
+        QTextStream out( &file );
+        out << new_value;
+        //
+        file.flush();
+        file.close();
+
+        bool success = true;
+        QStringList params;
+        params << "add" << file.fileName();
+        if( QProcess::execute( "apt-key", params ) != 0 )
+        {
+            SNAP_LOG_ERROR("Cannot import GPG key!");
+            success = false;
+        }
+
+        // Remove the temporary file
+        file.remove();
+
+        return success;
+    }
+    else
+    {
+        QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(errmsg);
+            return false;
+        }
+
+        QTextStream out( &file );
+        out << new_value;
     }
 
-    QTextStream out( &file );
-    out << new_value;
     return true;
 }
 
