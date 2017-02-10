@@ -222,57 +222,54 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
     keys_path.setSorting( QDir::Name );
     keys_path.setFilter( QDir::Files );
 
+    bool snapcpp_list_found = false;
+
     for( QFileInfo const &info : keys_path.entryInfoList() )
     {
-        SNAP_LOG_TRACE("file info=")(info.filePath());
+        //SNAP_LOG_TRACE("file info=")(info.filePath());
 
-        if( info.baseName() == "doug" || info.baseName() == "snap" )
+        if( info.baseName() == "snapcpp" )
         {
-            snap_manager::status_t const outofdate(
-                                  snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT
-                                , get_plugin_name()
-                                , OLD_APT_SOURCE
-                                , "APT sources are out of date!");
-            server_status.set_field(outofdate);
-
-            // STOP HERE!
-            return;
-        }
-
-        if( info.baseName() != "snapcpp" )
-        {
-            // Continue until we find a match
-            continue;
-        }
-
-        // create a field for this one, it worked
-        //
-        for( auto const & ext : EXTENSIONS )
-        {
-            QFile file( QString("%1/%2.%3")
-                .arg(info.path())
-                .arg(info.baseName())
-                .arg(ext)
-                );
-            if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+            // create a field for this one, it worked
+            //
+            for( auto const & ext : EXTENSIONS )
             {
-                QString const name(QString("%1.%2").arg(info.baseName()).arg(ext));
-                QTextStream in(&file);
-                snap_manager::status_t const ctl
-                    ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                QFile file( QString("%1/%2.%3")
+                            .arg(info.path())
+                            .arg(info.baseName())
+                            .arg(ext)
+                            );
+                if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+                {
+                    QTextStream in(&file);
+                    snap_manager::status_t const list
+                            ( snap_manager::status_t::state_t::STATUS_STATE_INFO
+                              , get_plugin_name()
+                              , SNAPCPP_APT_SOURCE
+                              , in.readAll()
+                              );
+                    server_status.set_field(list);
+                    snapcpp_list_found = true;
+                }
+                else
+                {
+                    QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
+                    SNAP_LOG_ERROR(errmsg);
+                    //throw apt_exception( errmsg );
+                }
+            }
+            break;
+        }
+    }
+
+    if( !snapcpp_list_found )
+    {
+        snap_manager::status_t const outofdate(
+                    snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT
                     , get_plugin_name()
-                    , SNAPCPP_APT_SOURCE
-                    , in.readAll()
-                    );
-                server_status.set_field(ctl);
-            }
-            else
-            {
-                QString const errmsg(QString("Cannot open '%1' for reading!").arg(info.filePath()));
-                SNAP_LOG_ERROR(errmsg);
-                //throw apt_exception( errmsg );
-            }
-        }
+                    , OLD_APT_SOURCE
+                    , "APT sources are out of date!");
+        server_status.set_field(outofdate);
     }
 }
 
