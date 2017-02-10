@@ -65,6 +65,14 @@ int main(int argc, char * argv[])
 
         return daemon->run();
     }
+    catch(snap::snap_exception const & e)
+    {
+        std::cerr << "snap_exception in snapmanagerdaemon: " << e.what() << std::endl;
+    }
+    catch(QtCassandra::QCassandraException const & e)
+    {
+        std::cerr << "QCassandraException in snapmanagerdaemon: " << e.what() << std::endl;
+    }
     catch(std::runtime_error const & e)
     {
         // this should rarely happen!
