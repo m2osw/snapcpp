@@ -62,17 +62,8 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_INFO_LONG_NAME:
-        return "long_name";
-
-    case name_t::SNAP_NAME_INFO_NAME:
-        return "name";
-
     case name_t::SNAP_NAME_INFO_PLUGIN_SELECTION:
         return "admin/plugins";
-
-    case name_t::SNAP_NAME_INFO_SHORT_NAME:
-        return "short_name";
 
     default:
         // invalid index
@@ -358,6 +349,9 @@ void info::on_finish_editor_form_processing(content::path_info_t & ipath, bool &
 
     value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME), value);
+
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL))->value();
+    f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL), value);
 }
 
 

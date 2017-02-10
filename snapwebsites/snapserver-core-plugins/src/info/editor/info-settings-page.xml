@@ -51,6 +51,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Help</help>
   </widget>
 
+  <!-- administrator email -->
+  <widget id="administrator_email" type="line-edit" field="core::administrator_email" path="info/administrator_email" no-toolbar="no-toolbar" auto-save="string">
+    <tooltip>Enter the label to use for the Home breadcrumb label.</tooltip>
+    <help>Help</help>
+    <filters>
+      <regex name="email"/>
+    </filters>
+    <background-value>administrator email</background-value>
+  </widget>
+
   <!-- breadcrumbs -->
   <widget id="breadcrumbs_home_label" type="line-edit" field="content::breadcrumbs_home_label" path="info/breadcrumbs_home_label" no-toolbar="no-toolbar" auto-save="string">
     <tooltip>Enter the label to use for the Home breadcrumb label.</tooltip>

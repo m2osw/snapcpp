@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.57.9~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.58.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-30: Added the core::administrator_email to the info form.
 
- -- Build Server <build@m2osw.com>  Thu, 02 Feb 2017 04:12:04 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  9 Feb 2017 23:28:45 -0800
 
 snapserver-core-plugins (1.0.57.0~xenial) xenial; urgency=high
 

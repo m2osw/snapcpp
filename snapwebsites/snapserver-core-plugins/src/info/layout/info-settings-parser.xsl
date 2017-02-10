@@ -69,6 +69,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						</div>
 					</fieldset>
 
+					<fieldset class="administrator-email">
+						<legend>Administrator Email</legend>
+
+						<!-- administrator email -->
+						<div class="editor-block">
+							<label for="administrator_email" class="editor-title">Administrator Email:</label>
+							<xsl:copy-of select="page/body/info/administrator_email/node()"/>
+						</div>
+					</fieldset>
+
 					<fieldset class="breadcrumbs">
 						<legend>Breadcrumbs</legend>
 

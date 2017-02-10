@@ -30,10 +30,7 @@ namespace info
 
 enum class name_t
 {
-    SNAP_NAME_INFO_LONG_NAME,
-    SNAP_NAME_INFO_NAME,
-    SNAP_NAME_INFO_PLUGIN_SELECTION,
-    SNAP_NAME_INFO_SHORT_NAME
+    SNAP_NAME_INFO_PLUGIN_SELECTION
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
