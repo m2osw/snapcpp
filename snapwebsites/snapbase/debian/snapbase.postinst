@@ -81,58 +81,6 @@ then
     # The external script will restart apache2 as well
     #
     /usr/lib/snapwebsites/scripts/snapapacheinit install
-
-    # Add our apt source and remove the old sources
-    #
-    SOURCES_LIST_DIR=/etc/apt/sources.list.d
-    if [ -f ${SOURCES_LIST_DIR}/snap.list ]
-    then
-        rm -f ${SOURCES_LIST_DIR}/doug.list ${SOURCES_LIST_DIR}/snap.list
-    fi
-
-    if [ ! -f ${SOURCES_LIST_DIR}/snapcpp.list ]
-    then
-        cat > ${SOURCES_LIST_DIR}/snapcpp.list <<EOF
-# M2OSW source for ExDox
-#
-deb https://debian:Iob8uRah@build.m2osw.com/stable xenial main contrib non-free
-EOF
-        if available apt-key 
-        then
-            apt-key add - > /dev/null <<EOF
------BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1
-
-mQENBFPue9EBCAC4quhknKd3agULjolPSKAOl8Tj4FIcliwTjyrIZe4sJ2H93pDm
-aR+iR3jpFUUrUVcJiYZmw2ezvKM+A6rtq6FsnUCtNxtDkeiPDC+PYVoHlIPGi0Lg
-M/tGBvYBYUHA4SFX0JbJGEFcOOE362ng42G7zUDO7N8Soh8UAHvNq+Fr+FB7o4/c
-01tkeC+LjT27Uro3/aBhTT1T9LCPh81oT+1t8821kBv8JSEXNgOV4YhKWBKjbKKI
-IF2FyJjoiQw3DhXCtgV38el5VIwZyLu+9T12bAlwU3IU9z2oAvDlVyjHAL70HENm
-aFYBKTfxkLep/QR23d//vHXlXSbLdqoCifq3ABEBAAG0HkJ1aWxkIFNlcnZlciA8
-YnVpbGRAbTJvc3cuY29tPokBOAQTAQIAIgUCU+570QIbAwYLCQgHAwIGFQgCCQoL
-BBYCAwECHgECF4AACgkQVRoQrAu7aqs2CQf/XxVg4QWKvWFCfai/AOIWNgl1cKLh
-+mzKDmzkT81jkre2MIdHpmys/0cxq1+T2vS0qHkm1yyYImAMKFf+nRBD9XZO7vN5
-vKFvgk9Sw9q1f9fv9Nq51ozjzq51qIMzRpKsAtV+wSwgXRTXb+dICkNOnqVeK1FK
-JxOQdvHcYf6jCw/o4MYTd5BvGx2wqbdnOkb0g3E3v1ukVFGc/E0EQhchuyQ5SzsT
-CEoHEdRiqVRxjEl6eXlEb5yD2ZsytSt2ej+73sJjCHtEKCBYDQIWgfqorwTAPJNi
-kcrkSvTvDTZ+uPn6QhuH7ped3c8cpXf/vCpgLaCSa8mV/96hncNiDQiY97kBDQRT
-7nvRAQgA8oPJ/KuI2brT3QQ0+xFdR+Mtt+KmnDxtJb9bJ/a5uzh9jbqrSze3ImAZ
-EI23cGPIjQ9712TzHlhGKxCdGrQw/nF6msAmJyIRZH2qJRAKccwOhZZRby7HOK1U
-7qWefSckzf9OqA9ar4tQZpDbPrByuND47fnwiU5cDNBDkt837HH1ZzYT61B3QFxO
-IuPytPFCnsAmVjQcRcOwke7HZ0W+72TqJsuK1s+DuyzGCpNFnqfmHjeI5Y7oT37s
-dsv1lDZbC+NU9EEPI2lIChmKkcRRBsuiywbZ4ksgQ/xhL7AD+QWPYtk6tkkcYIFL
-2FHgCGaTyeglpmdJy1Zt1IkGO4y2yQARAQABiQEfBBgBAgAJBQJT7nvRAhsMAAoJ
-EFUaEKwLu2qrX1QH/35rWbTSh94uabD/TIC+o5H2CIVRnelvEtSR+zx+sBf+0TpK
-Mp+6c0+xBWdk+9e9mcXicxBBUDlfpfXxhoFkonIqlj/OjF3BGt4jw7CzHS0MPWPM
-JRp50YEQsSpBywPOHmt5VC7UhyCrAEc18imHL8iPyOy2oUUDuG6C14BZvnry40gs
-skfTBADhGx16yh5xes1aSlCchQhTeFwUcpxIm4/IBjVlYEwv9p0u7F5pZCIQAXy8
-kyS0l/+xxHCPFPudyHPYyDFs3dYrn/Akb34KmVnqBNa2qEfJsCc1PmvfgRUclBsE
-NT7j8AJJON42F0B7cW2+uXXHUmLRM110364DOdw=
-=oKTr
------END PGP PUBLIC KEY BLOCK-----
-EOF
-        fi
-    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent
