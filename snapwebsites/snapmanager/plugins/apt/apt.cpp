@@ -333,8 +333,8 @@ bool apt::display_value ( QDomElement parent
     }
     else
     {
-        SNAP_LOG_ERROR("Field name '")(s.get_field_name())("' is unknown!");
-        return false;
+        SNAP_LOG_WARNING("Field name '")(s.get_field_name())("' is unknown!");
+        return true;
     }
 
     snap_manager::form f(
