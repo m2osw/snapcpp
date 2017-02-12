@@ -1,6 +1,6 @@
 csspp (1.0.13.0~xenial) xenial; urgency=high
 
-  * EX-79: Added support for @viewport.
+  * SNAP-187: Added support for @viewport.
   * Added support for @keyframes (quite different compiling!)
   * Added a new node type: FRAME, for the @keyframes.
   * Updated the mk script so it corresponds to the new BUILD scheme.
