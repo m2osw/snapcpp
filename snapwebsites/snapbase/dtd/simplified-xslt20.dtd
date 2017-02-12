@@ -250,7 +250,7 @@ DTD of the XSLT 2.0.
                rel CDATA #REQUIRED
                sizes CDATA #IMPLIED
                title CDATA #IMPLIED
-               type CDATA #REQUIRED>
+               type CDATA #IMPLIED>
 
 <!ELEMENT meta ANY>
 <!ATTLIST meta charset CDATA #IMPLIED
