@@ -23,7 +23,19 @@ and $pseudo_name != "grammar-error"
 and $pseudo_name != "marker"
 and $pseudo_name != "placeholder"
 and $pseudo_name != "selection"
-and $pseudo_name != "spelling-error" {
+and $pseudo_name != "spelling-error"
+// And some specialized names
+and $pseudo_name != "-webkit-input-placeholder"
+and $pseudo_name != "-webkit-inner-spin-button"
+and $pseudo_name != "-webkit-outer-spin-button"
+and $pseudo_name != "-webkit-search-cancel-button"
+and $pseudo_name != "-webkit-search-decoration"
+and $pseudo_name != "-moz-placeholder"
+and $pseudo_name != "-moz-focus-inner"
+and $pseudo_name != "-moz-selection"
+and $pseudo_name != "-ms-input-placeholder"
+and $pseudo_name != "-ms-expand"
+{
     @error $pseudo_name + " is not a valid name for a pseudo element; CSS only supports after, before, first-letter, first-line, grammar-error, marker, placeholder, selection, and spelling-error.";
 }
 

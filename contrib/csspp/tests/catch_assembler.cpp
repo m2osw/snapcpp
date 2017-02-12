@@ -30,6 +30,7 @@
 #include "csspp/parser.h"
 
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include <string.h>
@@ -2871,6 +2872,111 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "@import url(//css.m2osw.com/store/colors.css) only screen or (printer and color);\n"
++ csspp_test::get_close_comment()
+                );
+            break;
+
+        }
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @keyframes
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "@keyframes name {\n"
+           << "  from {\n"
+           << "    left: 0;\n"
+           << "  }\n"
+           << "  33% {\n"
+           << "    left: 5px;\n"
+           << "  }\n"
+           << "  67% {\n"
+           << "    left: 45px;\n"
+           << "  }\n"
+           << "  to {\n"
+           << "    left: 50px;\n"
+           << "  }\n"
+           << "};\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        switch(static_cast<csspp::output_mode_t>(i))
+        {
+        case csspp::output_mode_t::COMPACT:
+            REQUIRE(out.str() ==
+"@keyframes name {\n"
+"0% { left: 0 }\n"
+"33% { left: 5px }\n"
+"67% { left: 45px }\n"
+"to { left: 50px }\n"
+"}\n"
++ csspp_test::get_close_comment()
+                );
+            break;
+
+        case csspp::output_mode_t::COMPRESSED:
+            REQUIRE(out.str() ==
+"@keyframes name{0%{left:0}33%{left:5px}67%{left:45px}to{left:50px}}\n"
++ csspp_test::get_close_comment()
+                );
+            break;
+
+        case csspp::output_mode_t::EXPANDED:
+            REQUIRE(out.str() ==
+"@keyframes name {\n"
+"0%\n"
+"{\n"
+"  left: 0;\n"
+"}\n"
+"33%\n"
+"{\n"
+"  left: 5px;\n"
+"}\n"
+"67%\n"
+"{\n"
+"  left: 45px;\n"
+"}\n"
+"to\n"
+"{\n"
+"  left: 50px;\n"
+"}\n"
+"}\n"
++ csspp_test::get_close_comment()
+                );
+            break;
+
+        case csspp::output_mode_t::TIDY:
+            REQUIRE(out.str() ==
+"@keyframes name{\n"
+"0%{left:0}\n"
+"33%{left:5px}\n"
+"67%{left:45px}\n"
+"to{left:50px}\n"
+"}\n"
 + csspp_test::get_close_comment()
                 );
             break;

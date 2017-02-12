@@ -221,6 +221,8 @@ node::pointer_t parser::at_rule(node::pointer_t at_keyword)
         node::pointer_t last_child(n->get_last_child());
         if(f_last_token->is(node_type_t::SEMICOLON))
         {
+            // skip the semi-colon
+            //
             next_token();
         }
         else if(!last_child->is(node_type_t::OPEN_CURLYBRACKET))
@@ -501,12 +503,14 @@ node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
 
             // remove leading and trailing whitespace, no need really
             // (to make sure the tests below work as expected)
+            //
             while(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
             {
                 list->remove_child(0);
             }
 
             // return or that were sub-definitions?
+            //
             if(!is_variable_set(list, true)
             && !is_nested_declaration(list))
             {

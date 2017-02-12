@@ -1,8 +1,19 @@
-csspp (1.0.12.40~xenial) xenial; urgency=high
+csspp (1.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Added support for @viewport.
+  * Added support for @keyframes (quite different compiling!)
+  * Added a new node type: FRAME, for the @keyframes.
+  * Updated the mk script so it corresponds to the new BUILD scheme.
+  * Enhanced an error I ran into in output_component_value().
+  * Added support for specialized pseudo names.
+  * Added a compiler and assembler tests for the @keyframes.
+  * Updated the node test with the FRAME node type.
+  * Updated the tests so they all pass.
+  * Fixed version definition in top CMakeLists.txt, we now use the changelog.
+  * Fixed version definition in dev/version to read it from changelog.
+  * Updated the coverage script to the new BUILD scheme.
 
- -- Build Server <build@m2osw.com>  Thu, 05 Jan 2017 02:00:52 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sen, 12 Feb 2017 00:18:22 -0700
 
 csspp (1.0.12.0~xenial) xenial; urgency=high
 

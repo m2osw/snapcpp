@@ -630,6 +630,46 @@ void assembler::output(node::pointer_t n)
         }
         break;
 
+    case node_type_t::FRAME:
+        {
+            // output the frame position
+            //
+            decimal_number_t p(n->get_decimal_number());
+            if(p >= 1.0)
+            {
+                f_out << "to";  // strlen("to") < strlen("100%")!
+            }
+            else
+            {
+                // strlen("from") > strlen("0%") so we use "0%"
+                //
+                if(p < 0.0)
+                {
+                    p = 0.0;
+                }
+                f_out << decimal_number_to_string(p * 100.0, true) << "%";
+            }
+
+            // output the frame component values
+            //
+            f_impl->output_operator("{", g_flag_optional_spaces_or_newlines);
+            size_t const max_children(n->size());
+            for(size_t idx(0); idx < max_children; ++idx)
+            {
+                node::pointer_t item(n->get_child(idx));
+                output(n->get_child(idx));
+                if(item->is(node_type_t::DECLARATION)
+                && idx + 1 < max_children)
+                {
+                    f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
+                }
+            }
+            f_impl->output_operator(";", g_flag_optional_operator);
+            f_impl->output_operator("}", g_flag_optional_space_before_or_newline);
+            f_impl->newline();
+        }
+        break;
+
     case node_type_t::UNKNOWN:
     case node_type_t::AND:
     case node_type_t::ASSIGNMENT:
@@ -692,10 +732,19 @@ void assembler::output_component_value(node::pointer_t n)
         else if(!c->is(node_type_t::ARG))
         {
             // unexpected for a component value
+            //
             std::stringstream ss;                                                                           // LCOV_EXCL_LINE
             ss << "assembler.cpp: expected all direct children of COMPONENT_VALUE to be ARG instead of "    // LCOV_EXCL_LINE
                << c->get_type()                                                                             // LCOV_EXCL_LINE
-               << ".";                                                                                      // LCOV_EXCL_LINE
+               << " on line "
+               << c->get_position().get_line()
+               << " in \""
+               << c->get_position().get_filename()
+               << "\".";                                                                                    // LCOV_EXCL_LINE
+            if(c->is(node_type_t::IDENTIFIER))
+            {
+                ss << " (identifier is \"" << escape_id(c->get_string()) << "\")";
+            }
             throw csspp_exception_logic(ss.str());                                                          // LCOV_EXCL_LINE
         }
         else if(c->empty() || !c->get_last_child()->is(node_type_t::PLACEHOLDER))
@@ -756,51 +805,71 @@ void assembler::output_at_keyword(node::pointer_t n)
     size_t const max_children(n->size());
     if(max_children > 0)
     {
-        for(size_t idx(0); idx < max_children; ++idx)
+        if(n->get_string() == "-o-keyframes"
+        || n->get_string() == "-webkit-keyframes"
+        || n->get_string() == "keyframes")
         {
-            node::pointer_t child(n->get_child(idx));
-            if(idx + 1 == max_children
-            && child->is(node_type_t::OPEN_CURLYBRACKET))
+            // in this case we have one identifier followed by X frames
+            // which need to appear between '{' ... '}'
+            //
+            output(n->get_child(0));
+            f_impl->output_operator("{", g_flag_optional_space_before);
+            f_impl->newline();
+            for(size_t idx(1); idx < max_children; ++idx)
             {
-                f_impl->newline();
-                no_block = false;  // do not output ';'
+                output(n->get_child(idx));
             }
-            //if(child->is(node_type_t::COMPONENT_VALUE))
-            //{
-            //    f_impl->newline();
-            //    f_impl->output_operator("{", 0);
-            //    f_impl->newline();
-            //    output(child);
-            //    f_impl->output_operator("}", 0);
-            //    f_impl->newline();
-            //}
-            //else
-            if(child->is(node_type_t::OPEN_CURLYBRACKET))
+            f_impl->output_operator("}", 0);
+            no_block = false;  // do not output ';'
+        }
+        else
+        {
+            for(size_t idx(0); idx < max_children; ++idx)
             {
-                // nearly like output(child), except that we do not add
-                // a ';' before the '}'
-                f_impl->output_operator("{", 0);
-                f_impl->newline();
-                size_t const max_sub_children(child->size());
-                for(size_t j(0); j < max_sub_children; ++j)
+                node::pointer_t child(n->get_child(idx));
+                if(idx + 1 == max_children
+                && child->is(node_type_t::OPEN_CURLYBRACKET))
                 {
-                    output(child->get_child(j));
+                    f_impl->newline();
+                    no_block = false;  // do not output ';'
                 }
-                f_impl->output_operator("}", 0);
-                f_impl->newline();
-            }
-            else if(child->is(node_type_t::ARG))
-            {
-                output(child);
-                if(idx + 1 < max_children
-                && n->get_child(idx + 1)->is(node_type_t::ARG))
+                //if(child->is(node_type_t::COMPONENT_VALUE))
+                //{
+                //    f_impl->newline();
+                //    f_impl->output_operator("{", 0);
+                //    f_impl->newline();
+                //    output(child);
+                //    f_impl->output_operator("}", 0);
+                //    f_impl->newline();
+                //}
+                //else
+                if(child->is(node_type_t::OPEN_CURLYBRACKET))
                 {
-                    f_impl->output_operator(",", g_flag_optional_space_after);
+                    // nearly like output(child), except that we do not add
+                    // a ';' before the '}'
+                    f_impl->output_operator("{", 0);
+                    f_impl->newline();
+                    size_t const max_sub_children(child->size());
+                    for(size_t j(0); j < max_sub_children; ++j)
+                    {
+                        output(child->get_child(j));
+                    }
+                    f_impl->output_operator("}", 0);
+                    f_impl->newline();
                 }
-            }
-            else
-            {
-                output(child);
+                else if(child->is(node_type_t::ARG))
+                {
+                    output(child);
+                    if(idx + 1 < max_children
+                    && n->get_child(idx + 1)->is(node_type_t::ARG))
+                    {
+                        f_impl->output_operator(",", g_flag_optional_space_after);
+                    }
+                }
+                else
+                {
+                    output(child);
+                }
             }
         }
     }

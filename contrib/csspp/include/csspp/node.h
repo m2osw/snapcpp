@@ -106,6 +106,7 @@ enum class node_type_t
     DECLARATION,            // <id> ':' ...
     LIST,                   // bare "token token token ..." until better qualified
     MAP,                    // "index value index value ..." (a property list)
+    FRAME,                  // @keyframes <name> { frame { ... } frame { ... } ... };
 
     max_type
 };

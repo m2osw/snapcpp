@@ -28,6 +28,7 @@
 #include "csspp/lexer.h"
 #include "csspp/unicode_range.h"
 
+#include <iostream>
 #include <sstream>
 
 #include <string.h>
@@ -140,6 +141,15 @@ TEST_CASE("Node types", "[node] [type]")
             REQUIRE(n->get_decimal_number() == 123.456);
 #pragma GCC diagnostic pop
             REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
+            break;
+
+        case csspp::node_type_t::FRAME:
+            // no boolean for FRAME (TBD?)
+            n->set_decimal_number(123.456);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            REQUIRE(n->get_decimal_number() == 123.456);
+#pragma GCC diagnostic pop
             break;
 
         default:
@@ -306,6 +316,7 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::OPEN_PARENTHESIS:
         case csspp::node_type_t::OPEN_SQUAREBRACKET:
         case csspp::node_type_t::VARIABLE_FUNCTION:
+        case csspp::node_type_t::FRAME:
             {
                 // try adding one child
                 if(w == csspp::node_type_t::LIST)
@@ -912,6 +923,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "MAP");
             break;
 
+        case csspp::node_type_t::FRAME:
+            REQUIRE(name == "FRAME");
+            break;
+
         case csspp::node_type_t::max_type:
             REQUIRE(name == "max_type");
             break;
@@ -1204,6 +1219,10 @@ TEST_CASE("Node output", "[node] [output]")
 
         case csspp::node_type_t::MAP:
             REQUIRE(name == "MAP");
+            break;
+
+        case csspp::node_type_t::FRAME:
+            REQUIRE(name == "FRAME");
             break;
 
         case csspp::node_type_t::max_type:
@@ -1900,6 +1919,8 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 {
                     // the defaults are empty...
                     REQUIRE(n->to_string(flags) == "");
+                    n->set_string("name");
+                    REQUIRE(n->to_string(flags) == "name: ");
 
                     // test with an actual function
                     csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
@@ -1913,7 +1934,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
                     p->set_integer(33);
                     n->add_child(p);
-                    REQUIRE(n->to_string(flags) == "0 - 33");
+                    REQUIRE(n->to_string(flags) == "name: 0 - 33");
                 }
 
                 {
@@ -1943,7 +1964,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p->set_decimal_number(1.15);
                     arg->add_child(p);
 
-                    REQUIRE(n->to_string(flags) == "1.45+15,7-1.15");
+                    REQUIRE(n->to_string(flags) == "name: 1.45+15,7-1.15");
                 }
                 break;
 
@@ -2054,6 +2075,30 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     n->add_child(p);
 
                     REQUIRE(n->to_string(flags) == "(number: 3.22, string: \"hello world!\")");
+                }
+                break;
+
+            case csspp::node_type_t::FRAME:
+                {
+                    REQUIRE(n->to_string(flags) == "from{}");
+                    n->set_decimal_number(0.25);
+                    REQUIRE(n->to_string(flags) == "25%{}");
+                    n->set_decimal_number(1.0);
+                    REQUIRE(n->to_string(flags) == "to{}");
+
+                    // 68% { right: 322px }
+                    n->set_decimal_number(0.68);
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::DECLARATION, n->get_position()));
+                    p->set_string("right");
+                    n->add_child(p);
+                    csspp::node::pointer_t q(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    p->add_child(q);
+                    csspp::node::pointer_t r(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    r->set_string("px");
+                    r->set_integer(322);
+                    q->add_child(r);
+
+                    REQUIRE(n->to_string(flags) == "68%{right: 322px}");
                 }
                 break;
 
@@ -2408,6 +2453,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
 
         case csspp::node_type_t::MAP:
             REQUIRE_ERRORS("test.css(1): error: node name \"MAP\".\n");
+            break;
+
+        case csspp::node_type_t::FRAME:
+            REQUIRE_ERRORS("test.css(1): error: node name \"FRAME\".\n");
             break;
 
         case csspp::node_type_t::max_type:
