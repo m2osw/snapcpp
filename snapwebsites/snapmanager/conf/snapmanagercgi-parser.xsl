@@ -47,7 +47,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					</ul>
 				</div>
 				<h1>Snap! Manager</h1>
-				<div id="accordion">
+				<div id="tabs">
 					<xsl:copy-of select="output/node()"/>
 				</div>
 			</body>

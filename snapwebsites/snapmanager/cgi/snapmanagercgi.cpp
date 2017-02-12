@@ -1811,7 +1811,7 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     //
     load_plugins();
 
-    // Start with self plugin
+    // Make a map of all of the status-to-plugins.
     //
     snap_manager::status_t::map_t const & statuses(file.get_statuses());
     std::map< QString, std::vector<snap_manager::status_t> > status_map;
@@ -1820,12 +1820,44 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
         status_map[s.second.get_plugin_name()].push_back( s.second );
     }
 
+    // Create <ul>...</ul> "menu" at the top. jQuery::tabs will turn this into
+    // the tab button list.
+    //
+    // The 'self' plugin is always first.
+    //
+    int li_count = 0;
+    QDomElement ul(doc.createElement("ul"));
+    output.appendChild(ul);
     {
-        QDomElement h3(doc.createElement("h3"));
+        QDomElement li(doc.createElement("li"));
+        ul.appendChild(li);
+        //
+        QDomElement a(doc.createElement("a"));
+        a.setAttribute( "href", QString("#tabs-%1").arg(++li_count) );
         QDomText text(doc.createTextNode("self"));
-        h3.appendChild(text);
-        output.appendChild(h3);
+        a.appendChild(text);
+        li.appendChild(a);
+    }
+    for( auto const& s : status_map )
+    {
+        if( s.first == "self" || s.first == "header" ) continue;
+
+        QDomElement li(doc.createElement("li"));
+        ul.appendChild(li);
+        //
+        QDomElement a(doc.createElement("a"));
+        a.setAttribute( "href", QString("#tabs-%1").arg(++li_count) );
+        QDomText text(doc.createTextNode(s.first));
+        a.appendChild(text);
+        li.appendChild(a);
+    }
+
+    li_count = 0;
+    // First, put 'self' as number one in the tab order.
+    //
+    {
         QDomElement div(doc.createElement("div"));
+        div.setAttribute( "id", QString("tabs-%1").arg(++li_count) );
         output.appendChild(div);
 
         // output/table
@@ -1867,11 +1899,8 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
                 continue;
             }
 
-            QDomElement h3(doc.createElement("h3"));
-            QDomText text(doc.createTextNode(plugin_name));
-            h3.appendChild(text);
-            output.appendChild(h3);
             QDomElement div(doc.createElement("div"));
+            div.setAttribute( "id", QString("tabs-%1").arg(++li_count) );
             output.appendChild(div);
 
             QDomElement table( create_table_header( doc ) );
