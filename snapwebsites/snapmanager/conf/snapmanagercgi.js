@@ -9,12 +9,8 @@
 
 jQuery(document).ready(function()
 {
-    jQuery("#accordion").accordion({
-        animate: 300,
-        collapsible: true,
-        header: "h3",
+    jQuery("#tabs").tabs({
         heightStyle: "content",
-        icons: { "header": "ui-icon-triangle-1-e", "activeHeader": "ui-icon-triangle-1-s" }
     }); 
 });
 
