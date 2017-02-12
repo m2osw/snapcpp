@@ -33,10 +33,6 @@
 ##
 ## Initialization
 ##
-set(CSSPP_VERSION_MAJOR 1)
-set(CSSPP_VERSION_MINOR 0)
-set(CSSPP_VERSION_PATCH 10)
-
 cmake_minimum_required(VERSION 2.8.4)
 
 project( csspp_project )
@@ -55,6 +51,8 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 find_package( AdvGetOpt        REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen )
+
+SnapGetVersion( CSSPP ${CMAKE_CURRENT_SOURCE_DIR} )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for csspp!")

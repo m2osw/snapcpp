@@ -167,12 +167,12 @@ BUILD_PATH=`pwd`
 cd $DIRNAME
 ln -s ../../../../snapCMakeModules .
 # request coverage in this build
-export ADVGETOPT_INCLUDE_DIR=$SOURCE_PATH/../BUILD/dist/include
-export ADVGETOPT_LIBRARY=$SOURCE_PATH/../BUILD/dist/lib
-export AdvGetOpt_DIR=$SOURCE_PATH/../BUILD/dist/share/cmake
-export SnapCMakeModules_DIR=$SOURCE_PATH/../BUILD/dist/share/cmake
-export SnapDoxygen_DIR=$SOURCE_PATH/../BUILD/dist/share/cmake
-export Catch_DIR=$SOURCE_PATH/../BUILD/dist/share/cmake
+export ADVGETOPT_INCLUDE_DIR=$SOURCE_PATH/../../../BUILD/dist/include
+export ADVGETOPT_LIBRARY=$SOURCE_PATH/../../../BUILD/dist/lib
+export AdvGetOpt_DIR=$SOURCE_PATH/../../../BUILD/dist/share/cmake
+export SnapCMakeModules_DIR=$SOURCE_PATH/../../../BUILD/dist/share/cmake
+export SnapDoxygen_DIR=$SOURCE_PATH/../../../BUILD/dist/share/cmake
+export Catch_DIR=$SOURCE_PATH/../../../BUILD/dist/share/cmake
 cmake -DCMAKE_INSTALL_PREFIX:PATH="$SOURCE_PATH/$BUILD_PATH/dist" \
       -DCMAKE_BUILD_TYPE=Debug \
       -Dcsspp_project_COVERAGE:BOOL=ON \

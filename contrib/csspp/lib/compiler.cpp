@@ -608,6 +608,7 @@ void compiler::compile(node::pointer_t n)
     switch(n->get_type())
     {
     case node_type_t::LIST:
+    case node_type_t::FRAME:
         // transparent item, just compile all the children
         {
             size_t idx(0);
@@ -626,6 +627,15 @@ void compiler::compile(node::pointer_t n)
             }
             // TODO: remove LIST if it now is empty or has 1 item
         }
+        break;
+
+    case node_type_t::DECLARATION:
+        // because of lists of compolent values this can happen...
+        // we just ignore those since it is already compiled
+        //
+        // (we get it to happen with @framekeys ... { ... } within the list
+        // of declarations at a given position)
+        //
         break;
 
     case node_type_t::COMPONENT_VALUE:
@@ -1278,7 +1288,9 @@ void compiler::compile_at_keyword(node::pointer_t n)
     }
 
     if(at == "font-face"
-    || at == "page")
+    || at == "page"
+    || at == "viewport"
+    || at == "-ms-viewport")
     {
         if(!n->empty())
         {
@@ -1331,6 +1343,7 @@ void compiler::compile_at_keyword(node::pointer_t n)
         }
 
         // transform the @return <expr> in a one node result
+        //
         expression return_expr(n);
         return_expr.set_variable_handler(&f_state);
         f_return_result = return_expr.compile();
@@ -1343,6 +1356,257 @@ void compiler::compile_at_keyword(node::pointer_t n)
             // return a NULL as the result
             f_return_result.reset(new node(node_type_t::NULL_TOKEN, n->get_position()));
         }
+
+        return;
+    }
+
+    if(at == "keyframes"
+    || at == "-o-keyframes"
+    || at == "-webkit-keyframes")
+    {
+        // the format of this @-at keyword is rather peculiar since
+        // it expects the identifier "from" or "to" or a percentage
+        // followed by a set of components defined between curly
+        // brackets
+        //
+        //     '@keyframes' <name> '{'
+        //         'from' | 'to' | <number>'%' '{'
+        //             ...  /* regular components */
+        //         '}'
+        //         ...  /* repeat any number of key frames */
+        //     '}';
+        //
+        // the node tree looks like this:
+        //
+        //     AT_KEYWORD "keyframes" I:0
+        //       IDENTIFIER "progress-bar-stripes"
+        //       OPEN_CURLYBRACKET B:true
+        //         COMPONENT_VALUE
+        //           IDENTIFIER "from"
+        //           OPEN_CURLYBRACKET B:true
+        //             LIST
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "background-position"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "px" I:40
+        //                 WHITESPACE
+        //                 INTEGER "" I:0
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "left"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "" I:0
+        //         COMPONENT_VALUE
+        //           PERCENT D:0.3
+        //           OPEN_CURLYBRACKET B:true
+        //             LIST
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "background-position"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "px" I:30
+        //                 WHITESPACE
+        //                 INTEGER "" I:0
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "left"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "px" I:20
+        //         COMPONENT_VALUE
+        //           PERCENT D:0.6
+        //           OPEN_CURLYBRACKET B:true
+        //             LIST
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "background-position"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "px" I:5
+        //                 WHITESPACE
+        //                 INTEGER "" I:0
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "left"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "px" I:27
+        //         COMPONENT_VALUE
+        //           IDENTIFIER "to"
+        //           OPEN_CURLYBRACKET B:true
+        //             LIST
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "background-position"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "" I:0
+        //                 WHITESPACE
+        //                 INTEGER "" I:0
+        //               COMPONENT_VALUE
+        //                 IDENTIFIER "left"
+        //                 COLON
+        //                 WHITESPACE
+        //                 INTEGER "px" I:35
+
+//std::cerr << "@keyframes before compiling... [" << *n << "]\n";
+
+        if(n->size() != 2)
+        {
+            error::instance() << n->get_position()
+                    << "@keyframes must be followed by an identifier and '{' ... '}'."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        // TBD: we may be able to write an expression instead?
+        //
+        node::pointer_t identifier(n->get_child(0));
+        if(!identifier->is(node_type_t::IDENTIFIER))
+        {
+//std::cerr << "ERROR compiling keyframes (1)\n";
+            error::instance() << n->get_position()
+                    << "@keyframes must first be followed by an identifier."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        node::pointer_t positions(n->get_child(1));
+        if(!positions->is(node_type_t::OPEN_CURLYBRACKET))
+        {
+//std::cerr << "ERROR compiling keyframes (2)\n";
+            error::instance() << n->get_position()
+                    << "@keyframes must be followed by an identifier and '{' ... '}'."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        // our list of frame positions
+        //
+        node::pointer_t list(new node(node_type_t::LIST, positions->get_position()));
+
+        size_t const max_positions(positions->size());
+        for(size_t idx(0); idx < max_positions; ++idx)
+        {
+            node::pointer_t component_value(positions->get_child(idx));
+            if(!component_value->is(node_type_t::COMPONENT_VALUE))
+            {
+//std::cerr << "ERROR compiling keyframes (3)\n";
+                error::instance() << n->get_position()
+                        << "@keyframes is only expecting component values as child entries."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+            if(component_value->size() != 2)
+            {
+//std::cerr << "ERROR compiling keyframes (4)\n";
+                error::instance() << n->get_position()
+                        << "@keyframes is expected to be followed by an identifier or a percent number and a '{'."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+            node::pointer_t components(component_value->get_child(1));
+            if(!components->is(node_type_t::OPEN_CURLYBRACKET))
+            {
+//std::cerr << "ERROR compiling keyframes (5)\n";
+                error::instance() << n->get_position()
+                        << "@keyframes is expected to be followed by an identifier or a percent number and a '{'."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+            if(components->size() != 1)
+            {
+//std::cerr << "ERROR compiling keyframes (6)\n";
+                error::instance() << n->get_position()
+                        << "@keyframes is expected to be followed by an identifier or a percent number and a '{'."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+            node::pointer_t component_list(components->get_child(0));
+            if(component_list->is(node_type_t::COMPONENT_VALUE))
+            {
+                // if there is only one component value, there won't be a LIST
+                //
+                node::pointer_t sub_list(new node(node_type_t::LIST, positions->get_position()));
+                sub_list->add_child(component_list);
+                component_list = sub_list;
+            }
+            else if(!component_list->is(node_type_t::LIST))
+            {
+//std::cerr << "ERROR compiling keyframes (7)\n";
+                error::instance() << n->get_position()
+                        << "@keyframes is expected to be followed by an identifier or a percent number and a list of component values '{' ... '}'."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+
+            node::pointer_t position(component_value->get_child(0));
+
+            decimal_number_t p(0.0);
+            if(position->is(node_type_t::IDENTIFIER))
+            {
+                std::string const l(position->get_string());
+                if(l == "from")
+                {
+                    p = 0.0;
+                }
+                else if(l == "to")
+                {
+                    p = 1.0;
+                }
+                else
+                {
+//std::cerr << "ERROR compiling keyframes (8)\n";
+                    error::instance() << n->get_position()
+                            << "@keyframes position can be \"from\" or \"to\", other identifiers are not supported."
+                            << error_mode_t::ERROR_ERROR;
+                    return;
+                }
+            }
+            else if(position->is(node_type_t::PERCENT))
+            {
+                p = position->get_decimal_number();
+                if(p < 0.0 || p > 1.0)
+                {
+//std::cerr << "ERROR compiling keyframes (9)\n";
+                    error::instance() << n->get_position()
+                            << "@keyframes position must be a percentage between 0% and 100%."
+                            << error_mode_t::ERROR_ERROR;
+                    return;
+                }
+            }
+            else
+            {
+//std::cerr << "ERROR compiling keyframes (10)\n";
+                error::instance() << n->get_position()
+                        << "@keyframes positions must either be \"from\" or \"to\" or a percent number between 0% and 100%."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+
+            //compile(component_list);
+
+            // create a frame
+            //
+            node::pointer_t frame(new node(node_type_t::FRAME, position->get_position()));
+            frame->set_decimal_number(p);
+            frame->take_over_children_of(component_list);
+
+            list->add_child(frame);
+
+//std::cerr << "frame component list ready? [" << *frame << "]\n";
+
+            // now compile the component list
+            //
+            compile(frame);
+        }
+
+        // first copy the list of frames
+        //
+        n->take_over_children_of(list);
+
+        // then re-insert the identifier at the start
+        //
+        n->insert_child(0, identifier);
+
+//std::cerr << "@keyframes in compiler after reorganized: [" << *n << "]\n";
 
         return;
     }

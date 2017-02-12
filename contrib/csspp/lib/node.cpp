@@ -106,6 +106,7 @@ void type_supports_decimal_number(node_type_t const type)
     {
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
+    case node_type_t::FRAME:
         break;
 
     default:
@@ -197,6 +198,7 @@ void type_supports_children(node_type_t const type)
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
     case node_type_t::VARIABLE_FUNCTION:
+    case node_type_t::FRAME:
         break;
 
     default:
@@ -1157,6 +1159,10 @@ std::string node::to_string(int flags) const
         break;
 
     case node_type_t::DECLARATION:
+        if(!f_string.empty())
+        {
+            out << f_string << ": ";
+        }
         for(size_t idx(0); idx < f_children.size(); ++idx)
         {
             if(f_children[idx]->f_type == node_type_t::ARG)
@@ -1241,6 +1247,27 @@ std::string node::to_string(int flags) const
             }
             out << ")";
         }
+        break;
+
+    case node_type_t::FRAME:
+        if(f_decimal_number <= 0.0)
+        {
+            out << "from";
+        }
+        else if(f_decimal_number >= 1.0)
+        {
+            out << "to";
+        }
+        else
+        {
+            out << decimal_number_to_string(f_decimal_number * 100.0, false) << "%";
+        }
+        out << "{";
+        for(auto c : f_children)
+        {
+            out << c->to_string(flags);
+        }
+        out << "}";
         break;
 
     case node_type_t::UNKNOWN:
@@ -1363,6 +1390,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     {
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
+    case node_type_t::FRAME:
         out << " D:" << decimal_number_to_string(f_decimal_number, false);
         break;
 
@@ -1400,6 +1428,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::VARIABLE_FUNCTION:
+    case node_type_t::FRAME:
         // display the children now
         for(size_t i(0); i < f_children.size(); ++i)
         {
@@ -1687,6 +1716,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
 
     case csspp::node_type_t::MAP:
         out << "MAP";
+        break;
+
+    case csspp::node_type_t::FRAME:
+        out << "FRAME";
         break;
 
     case csspp::node_type_t::max_type:

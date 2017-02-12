@@ -1,10 +1,11 @@
 snapbase (1.0.33.0~xenial) xenial; urgency=high
 
   * Added 'src' attribute to <script> tag.
+  * Changed 'type' attribute of <link> tag so it's not required.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 11 Feb 2017 23:31:44 -0800
 
-snapbase (1.0.32.21~xenial) xenial; urgency=high
+snapbase (1.0.32.22~xenial) xenial; urgency=high
 
   * Nightly build.
 

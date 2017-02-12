@@ -30,6 +30,7 @@
 #include "csspp/parser.h"
 
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include <string.h>
@@ -4427,7 +4428,7 @@ TEST_CASE("Invalid complex terms", "[compiler] [invalid]")
 
         c.compile(true);
 
-        REQUIRE_ERRORS("scripts/validation/pseudo-elements.scss(27): error: unknown is not a valid name for a pseudo element; CSS only supports after, before, first-letter, first-line, grammar-error, marker, placeholder, selection, and spelling-error.\n");
+        REQUIRE_ERRORS("scripts/validation/pseudo-elements.scss(39): error: unknown is not a valid name for a pseudo element; CSS only supports after, before, first-letter, first-line, grammar-error, marker, placeholder, selection, and spelling-error.\n");
     }
 
     // '::' must be followed an IDENTIFIER
@@ -9982,6 +9983,529 @@ TEST_CASE("Invalid variable in comment", "[compiler] [conditional] [invalid]")
 
     // no left over?
     REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Compile keyframes", "[compiler] [stylesheet] [attribute]")
+{
+    {
+        std::stringstream ss;
+        ss << "/* testing keyframes */"
+           << "normal { right: 45px; }\n"
+           << "@keyframes progress-bar-stripes\n"
+              "{\n"
+              "  from {\n"
+              "    background-position: 40px 0;\n"
+              "    left: 0;\n"
+              "  }\n"
+              "  30% {\n"
+              "    background-position: 30px 0;\n"
+              "    left: 20px;\n"
+              "  }\n"
+              "  60% {\n"
+              "    background-position: 5px 0;\n"
+              "    left: 27px;\n"
+              "  }\n"
+              "  to {\n"
+              "    background-position: 0 0;\n"
+              "    left: 35px;\n"
+              "  }\n"
+              "}\n"
+           << "/* @preserver test \"Compile keyframes\" */";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"normal\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"right\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:45\n"
+"  AT_KEYWORD \"keyframes\" I:0\n"
+"    IDENTIFIER \"progress-bar-stripes\"\n"
+"    FRAME D:0\n"
+"      DECLARATION \"background-position\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:40\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:0\n"
+"      DECLARATION \"left\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:0\n"
+"    FRAME D:0.3\n"
+"      DECLARATION \"background-position\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:30\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:0\n"
+"      DECLARATION \"left\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:20\n"
+"    FRAME D:0.6\n"
+"      DECLARATION \"background-position\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:5\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:0\n"
+"      DECLARATION \"left\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:27\n"
+"    FRAME D:1\n"
+"      DECLARATION \"background-position\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:0\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:0\n"
+"      DECLARATION \"left\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:35\n"
+"  COMMENT \"@preserver test \"Compile keyframes\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // without spaces
+    {
+        std::stringstream ss;
+        ss << "/* testing compile */"
+           << "body,a[q]>b[p=\"344.5\"]+c[z=33]~d[e],html *[ff=fire] *.blue { background:white url(/images/background.png) }"
+           << "/* @preserver test \"Compile Simple Stylesheet\" with version #{$_csspp_major}.#{$_csspp_minor} */";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"      OPEN_SQUAREBRACKET\n"
+"        IDENTIFIER \"q\"\n"
+"      GREATER_THAN\n"
+"      IDENTIFIER \"b\"\n"
+"      OPEN_SQUAREBRACKET\n"
+"        IDENTIFIER \"p\"\n"
+"        EQUAL\n"
+"        STRING \"344.5\"\n"
+"      ADD\n"
+"      IDENTIFIER \"c\"\n"
+"      OPEN_SQUAREBRACKET\n"
+"        IDENTIFIER \"z\"\n"
+"        EQUAL\n"
+"        INTEGER \"\" I:33\n"
+"      PRECEDED\n"
+"      IDENTIFIER \"d\"\n"
+"      OPEN_SQUAREBRACKET\n"
+"        IDENTIFIER \"e\"\n"
+"    ARG\n"
+"      IDENTIFIER \"html\"\n"
+"      WHITESPACE\n"
+"      OPEN_SQUAREBRACKET\n"
+"        IDENTIFIER \"ff\"\n"
+"        EQUAL\n"
+"        IDENTIFIER \"fire\"\n"
+"      WHITESPACE\n"
+"      PERIOD\n"
+"      IDENTIFIER \"blue\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"background\"\n"
+"        ARG\n"
+"          COLOR H:ffffffff\n"
+"          WHITESPACE\n"
+"          URL \"/images/background.png\"\n"
+"  COMMENT \"@preserver test \"Compile Simple Stylesheet\" with version 1.0\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // rules with !important
+    {
+        std::stringstream ss;
+        ss << "div.blackness { color: red !important }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"blackness\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\" F:important\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // rules with ! important
+    {
+        std::stringstream ss;
+        ss << "div.blackness { color: red ! important }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"blackness\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\" F:important\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // rules with !important and no spaces
+    {
+        std::stringstream ss;
+        ss << "div.blackness { color: red!important }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"blackness\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\" F:important\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // empty rules have to compile too
+    {
+        std::stringstream ss;
+        ss << "div.blackness section.light span.clear\n"
+           << "{\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables()
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // special IE8 value which has to be skipped
+    {
+        std::stringstream ss;
+        ss << ".transparent img\n"
+           << "{\n"
+           << "  $alpha: 5% * 4;\n"
+           << "  filter: opacity($alpha);\n"
+           << "  filter: alpha( opacity=20 );\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        // no error left over
+        REQUIRE_ERRORS(
+                "test.css(4): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
+                "test.css(5): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
+            );
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      PERIOD\n"
+"      IDENTIFIER \"transparent\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"img\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"        V:alpha\n"
+"          LIST\n"
+"            VARIABLE \"alpha\"\n"
+"            LIST\n"
+"              PERCENT D:0.05\n"
+"              WHITESPACE\n"
+"              MULTIPLY\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:4\n"
+"      LIST\n"
+"        DECLARATION \"filter\"\n"
+"          FUNCTION \"opacity\"\n"
+"            PERCENT D:0.05\n"
+"            WHITESPACE\n"
+"            MULTIPLY\n"
+"            WHITESPACE\n"
+"            INTEGER \"\" I:4\n"
+"        DECLARATION \"filter\"\n"
+"          FUNCTION \"alpha\"\n"
+"            IDENTIFIER \"opacity\"\n"
+"            EQUAL\n"
+"            INTEGER \"\" I:20\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a simple test with '--no-logo' specified
+    {
+        std::stringstream ss;
+        ss << ".box\n"
+           << "{\n"
+           << "  color: $_csspp_no_logo ? red : blue;\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.set_no_logo();
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables(csspp_test::flag_no_logo_true) +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      PERIOD\n"
+"      IDENTIFIER \"box\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
+//+ csspp_test::get_close_comment(true) -- with --no-logo this is gone
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
 }
 
 // This does not work under Linux, the ifstream.open() accepts a
