@@ -638,7 +638,6 @@ int manager_cgi::process()
     char const * query_string(getenv("QUERY_STRING"));
     if(query_string != nullptr)
     {
-SNAP_LOG_TRACE("QUERY_STRING=")(query_string);
         f_uri.set_query_string(QString::fromUtf8(query_string));
     }
 
