@@ -85,6 +85,9 @@ private:
     int                         read_post_variables();
     int                         process_post();
     void                        generate_content(QDomDocument doc, QDomElement root, QDomElement menu);
+    QDomElement                 create_table_header( QDomDocument& doc, QDomElement& output );
+    void                        generate_self_refresh_plugin_entry( QDomDocument& doc, QDomElement& table );
+    void                        generate_plugin_entry( snap_manager::status_t status, QDomDocument& doc, QDomElement& table );
     void                        get_host_status(QDomDocument doc, QDomElement output, QString const host);
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
     int                         is_logged_in(std::string & request_method);

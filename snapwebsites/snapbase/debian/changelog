@@ -1,10 +1,10 @@
-snapbase (1.0.33.1~xenial) xenial; urgency=high
+snapbase (1.0.33.0~xenial) xenial; urgency=high
 
-  * Removed force of APT sources into `exdox.list`.
+  * Added 'src' attribute to <script> tag.
 
- -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 10 Feb 2017 11:54:00 -0800
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 11 Feb 2017 23:31:44 -0800
 
-snapbase (1.0.32.17~xenial) xenial; urgency=high
+snapbase (1.0.32.21~xenial) xenial; urgency=high
 
   * Nightly build.
 

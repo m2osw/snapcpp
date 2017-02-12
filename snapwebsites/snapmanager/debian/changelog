@@ -1,10 +1,34 @@
-snapmanager (1.3.1.0~xenial) xenial; urgency=high
+snapmanager (1.3.3.0~xenial) xenial; urgency=high
 
-  * Added snapmanager module `apt`, which manages apt sources and gpg keys.
+  * Adding accordion jQuery UI to the main snapmanager page.
 
- -- Doug Barbieri <doug@dooglio.net>  Fri, 10 Feb 2017 12:00:57 -0800
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 12 Feb 2017 00:08:29 -0800
 
-snapmanager (1.3.0.9~xenial) xenial; urgency=high
+snapmanager (1.3.2.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 11 Feb 2017 02:00:56 -0800
+
+snapmanager (1.3.2.1~xenial) xenial; urgency=high
+
+  * Now captures apt-key for import.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 10 Feb 2017 09:18:44 -0800
+
+snapmanager (1.3.1.7~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 10 Feb 2017 02:03:05 -0800
+
+snapmanager (1.3.1.6~xenial) xenial; urgency=high
+
+  * Added apt plugin.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 09 Feb 2017 10:09:01 -0800
+
+snapmanager (1.3.0.11~xenial) xenial; urgency=high
 
   * Nightly build.
 

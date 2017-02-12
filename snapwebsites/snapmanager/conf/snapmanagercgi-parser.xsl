@@ -28,7 +28,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta charset="utf-8"/>
 				<title>Snap! Manager</title>
 				<meta name="generator" content="Snap! Manager CGI"/>
-				<link href="/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
+                <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
+                <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+                <script type="text/javascript">
+                    $(document).ready(function() {
+                        $("#accordion").accordion();
+                    });
+                </script>
+                <link href="/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
 				<style>
 					body
 					{
@@ -122,7 +129,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					</ul>
 				</div>
 				<h1>Snap! Manager</h1>
-				<div>
+                <div id="accordion">
 					<xsl:copy-of select="output/node()"/>
 				</div>
 			</body>
