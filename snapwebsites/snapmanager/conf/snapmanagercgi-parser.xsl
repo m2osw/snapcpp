@@ -28,94 +28,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<meta charset="utf-8"/>
 				<title>Snap! Manager</title>
 				<meta name="generator" content="Snap! Manager CGI"/>
-                <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
-                <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-                <script type="text/javascript">
-                    $(document).ready(function() {
-                        $("#accordion").accordion();
-                    });
-                </script>
-                <link href="/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
-				<style>
-					body
-					{
-						font-family: sans;
-					}
-					div.access-warning
-					{
-						width: 80%;
-						margin: 20px auto;
-						border: 1px solid red;
-						background: #ffe0e0;
-						padding: 10px;
-						padding-bottom: 0;
-					}
-					div.access-warning div.access-title
-					{
-						text-align: center;
-						font-weight: bold;
-						font-size: 120%;
-					}
-					table
-					{
-						border-top: 1px solid black;
-						border-left: 1px solid black;
-						border-spacing: 0;
-						border-collapse: collapse;
-					}
-					table th
-					{
-						background-color: #e0e0e0;
-					}
-					table th,
-					table td
-					{
-						border-bottom: 1px solid black;
-						border-right: 1px solid black;
-						padding: 3px;
-						vertical-align: top;
-					}
-					table .errors td
-					{
-						border-bottom: 1px solid red;
-						border-right: 1px solid red;
-					}
-					table tr.modified
-					{
-						background-color: #d6b2ff;
-					}
-					table tr.highlight
-					{
-						background-color: #fff881;
-					}
-					table tr.warnings
-					{
-						background-color: #ffde9f;
-					}
-					table tr.down
-					{
-						background-color: #ffdede;
-						text-decoration: line-through;
-					}
-					table tr.errors
-					{
-						background-color: #ffd8d8;
-						border-left: 1px solid red;
-					}
-					label
-					{
-						font-weight: bold;
-						display: block;
-					}
-					input[type="input"]
-					{
-						width: calc(100% - 20px);
-					}
-					button
-					{
-						margin: 5px 10px;
-					}
-				</style>
+				<link href="/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
+				<link rel="stylesheet" href="jquery-ui.css"/>
+				<link rel="stylesheet" href="snapmanagercgi.css"/>
+				<script type="text/javascript" src="jquery.js"/>
+				<script type="text/javascript" src="jquery-ui.js"/>
+				<script type="text/javascript" src="snapmanagercgi.js"/>
 			</head>
 			<body>
 				<div>
@@ -129,7 +47,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					</ul>
 				</div>
 				<h1>Snap! Manager</h1>
-                <div id="accordion">
+				<div id="accordion">
 					<xsl:copy-of select="output/node()"/>
 				</div>
 			</body>

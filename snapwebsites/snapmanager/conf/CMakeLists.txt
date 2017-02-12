@@ -42,6 +42,8 @@ snap_validate_xml( bundle-tools.xml      bundles.xsd )
 snap_validate_xml( bundle-tripwire.xml   bundles.xsd )
 snap_validate_xml( bundle-vpn_client.xml bundles.xsd )
 snap_validate_xml( bundle-vpn_server.xml bundles.xsd )
+snap_validate_js ( snapmanagercgi.js                 )
+snap_validate_css( snapmanagercgi.css                )
 
 
 #################################################################################
@@ -54,9 +56,21 @@ install(
 
         # misc files
         snapmanagercgi-parser.xsl
+        snapmanagercgi.js
+        snapmanagercgi.css
 
     DESTINATION
         share/snapwebsites/conf
+)
+#
+install(
+    FILES
+        jquery/jquery.js
+        jquery/jquery-ui.js
+        jquery/jquery-ui.css
+
+    DESTINATION
+        share/snapwebsites/conf/jquery
 )
 
 

@@ -638,6 +638,7 @@ int manager_cgi::process()
     char const * query_string(getenv("QUERY_STRING"));
     if(query_string != nullptr)
     {
+SNAP_LOG_TRACE("QUERY_STRING=")(query_string);
         f_uri.set_query_string(QString::fromUtf8(query_string));
     }
 
@@ -1572,11 +1573,10 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
 }
 
 
-QDomElement manager_cgi::create_table_header( QDomDocument& doc, QDomElement& output )
+QDomElement manager_cgi::create_table_header( QDomDocument& doc )
 {
     // output/table
     QDomElement table(doc.createElement("table"));
-    output.appendChild(table);
     table.setAttribute("class", "server-status");
 
     // output/table/tr
@@ -1587,14 +1587,16 @@ QDomElement manager_cgi::create_table_header( QDomDocument& doc, QDomElement& ou
     QDomElement th(doc.createElement("th"));
     tr.appendChild(th);
 
+#if 0
     QDomText text(doc.createTextNode(QString("Plugin")));
     th.appendChild(text);
 
     // output/table/tr/th[2]
     th = doc.createElement("th");
     tr.appendChild(th);
+#endif
 
-    text = doc.createTextNode(QString("Name"));
+    QDomText text(doc.createTextNode(QString("Name")));
     th.appendChild(text);
 
     // output/table/tr/th[3]
@@ -1626,17 +1628,19 @@ void manager_cgi::generate_self_refresh_plugin_entry( QDomDocument& doc, QDomEle
     table.appendChild(tr);
 
     // output/table/tr/td[1]
+#if 0
     QDomElement td(doc.createElement("td"));
     tr.appendChild(td);
 
     QDomText text(doc.createTextNode("self"));
     td.appendChild(text);
+#endif
 
     // output/table/tr/td[2]
-    td = doc.createElement("td");
+    QDomElement td(doc.createElement("td"));
     tr.appendChild(td);
 
-    text = doc.createTextNode("refresh");
+    QDomText text(doc.createTextNode("refresh"));
     td.appendChild(text);
 
     // output/table/tr/td[3]
@@ -1710,19 +1714,21 @@ void manager_cgi::generate_plugin_entry( snap_manager::status_t status, QDomDocu
         tr.setAttribute("class", tr_classes.join(" "));
     }
 
+#if 0
     // output/table/tr/td[1]
     QDomElement td(doc.createElement("td"));
     tr.appendChild(td);
 
     QDomText text(doc.createTextNode(plugin_name));
     td.appendChild(text);
+#endif
 
     // output/table/tr/td[2]
-    td = doc.createElement("td");
+    QDomElement td(doc.createElement("td"));
     tr.appendChild(td);
 
     QString const & field_name(status.get_field_name());
-    text = doc.createTextNode(field_name);
+    QDomText text(doc.createTextNode(field_name));
     td.appendChild(text);
 
     // output/table/tr/td[3]
@@ -1801,43 +1807,81 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
         return;
     }
 
-    // output/table
-    QDomElement table( create_table_header( doc, output ) );
-
     // we need the plugins for the following (non-raw) loop
     //
     load_plugins();
 
-    // add a "special" field so one can do a Refresh
-    //
-    generate_self_refresh_plugin_entry( doc, table );
-
-    // read each name/value pair
+    // Start with self plugin
     //
     snap_manager::status_t::map_t const & statuses(file.get_statuses());
+    std::map< QString, std::vector<snap_manager::status_t> > status_map;
     for(auto const & s : statuses)
     {
-        QString const & plugin_name(s.second.get_plugin_name());
-        if(plugin_name != "self")
+        status_map[s.second.get_plugin_name()].push_back( s.second );
+    }
+
+    {
+        QDomElement h3(doc.createElement("h3"));
+        QDomText text(doc.createTextNode("self"));
+        h3.appendChild(text);
+        output.appendChild(h3);
+        QDomElement div(doc.createElement("div"));
+        output.appendChild(div);
+
+        // output/table
+        //
+        QDomElement table( create_table_header( doc ) );
+        div.appendChild(table);
+
+        // add a "special" field so one can do a Refresh
+        //
+        generate_self_refresh_plugin_entry( doc, table );
+
+        // read each name/value pair
+        //
+        for(auto const & s : status_map)
         {
-            // Do self plugins first
-            continue;
+            QString const & plugin_name(s.first);
+            if(plugin_name != "self")
+            {
+                // Do self plugins first
+                continue;
+            }
+            for( auto const &inner_s : s.second )
+            {
+                generate_plugin_entry( inner_s, doc, table );
+            }
         }
-        generate_plugin_entry( s.second, doc, table );
     }
     //
-    for(auto const & s : statuses)
     {
-        QString const & plugin_name(s.second.get_plugin_name());
-        if(plugin_name == "header" || plugin_name == "self")
+        for(auto const & s : status_map)
         {
-            // we already displayed self-plugins--now display the others
-            //
-            // ignore header fields because those are copies of other
-            // fields and no plugin can manage those anyway
-            continue;
+            QString const & plugin_name(s.first);
+            if(plugin_name == "header" || plugin_name == "self")
+            {
+                // we already displayed self-plugins--now display the others
+                //
+                // ignore header fields because those are copies of other
+                // fields and no plugin can manage those anyway
+                continue;
+            }
+
+            QDomElement h3(doc.createElement("h3"));
+            QDomText text(doc.createTextNode(plugin_name));
+            h3.appendChild(text);
+            output.appendChild(h3);
+            QDomElement div(doc.createElement("div"));
+            output.appendChild(div);
+
+            QDomElement table( create_table_header( doc ) );
+            div.appendChild(table);
+
+            for( auto const &inner_s : s.second )
+            {
+                generate_plugin_entry( inner_s, doc, table );
+            }
         }
-        generate_plugin_entry( s.second, doc, table );
     }
 }
 

@@ -9,4 +9,4 @@ conf/snapmanagercgi.properties etc/snapwebsites/logger/
 conf/snapmanager-apache2.conf etc/apache2/sites-available/
 conf/snapmanager-README.md etc/apache2/snap-conf/snapmanager/
 conf/passwords-README.md etc/snapwebsites/passwords/
-conf/index.html conf/favicon.ico var/www/snapmanager/public_html/
+conf/index.html conf/favicon.ico conf/snapmanagercgi.js conf/snapmanagercgi.css conf/jquery/* var/www/snapmanager/public_html/
