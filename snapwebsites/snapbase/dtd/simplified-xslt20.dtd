@@ -266,7 +266,8 @@ DTD of the XSLT 2.0.
 <!ATTLIST pre class CDATA #IMPLIED>
 
 <!ELEMENT script ANY>
-<!ATTLIST script type CDATA #REQUIRED>
+<!ATTLIST script type CDATA #REQUIRED
+                 src  CDATA #IMPLIED>
 
 <!ELEMENT small ANY>
 <!ATTLIST small class CDATA #IMPLIED>

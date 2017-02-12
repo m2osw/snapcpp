@@ -1572,6 +1572,224 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
 }
 
 
+QDomElement manager_cgi::create_table_header( QDomDocument& doc, QDomElement& output )
+{
+    // output/table
+    QDomElement table(doc.createElement("table"));
+    output.appendChild(table);
+    table.setAttribute("class", "server-status");
+
+    // output/table/tr
+    QDomElement tr(doc.createElement("tr"));
+    table.appendChild(tr);
+
+    // output/table/tr/th[1]
+    QDomElement th(doc.createElement("th"));
+    tr.appendChild(th);
+
+    QDomText text(doc.createTextNode(QString("Plugin")));
+    th.appendChild(text);
+
+    // output/table/tr/th[2]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+    text = doc.createTextNode(QString("Name"));
+    th.appendChild(text);
+
+    // output/table/tr/th[3]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+    text = doc.createTextNode(QString("State"));
+    th.appendChild(text);
+
+    // output/table/tr/th[4]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+    text = doc.createTextNode("Value");
+    th.appendChild(text);
+
+    return table;
+}
+
+
+void manager_cgi::generate_self_refresh_plugin_entry( QDomDocument& doc, QDomElement& table )
+{
+    // add a "special" field so one can do a Refresh
+    //
+    snap::plugins::plugin * p(snap::plugins::get_plugin("self"));
+
+    // output/table/tr
+    QDomElement tr(doc.createElement("tr"));
+    table.appendChild(tr);
+
+    // output/table/tr/td[1]
+    QDomElement td(doc.createElement("td"));
+    tr.appendChild(td);
+
+    QDomText text(doc.createTextNode("self"));
+    td.appendChild(text);
+
+    // output/table/tr/td[2]
+    td = doc.createElement("td");
+    tr.appendChild(td);
+
+    text = doc.createTextNode("refresh");
+    td.appendChild(text);
+
+    // output/table/tr/td[3]
+    td = doc.createElement("td");
+    tr.appendChild(td);
+
+    text = doc.createTextNode("valid");
+    td.appendChild(text);
+
+    // output/table/tr/td[4]
+    td = doc.createElement("td");
+    tr.appendChild(td);
+
+    plugin_base * pb(dynamic_cast<plugin_base *>(p));
+    if(pb != nullptr)
+    {
+        // call that signal directly on that one plugin
+        //
+        snap_manager::status_t const refresh_status(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                    "self",
+                    "refresh",
+                    "");
+        pb->display_value(td, refresh_status, f_uri);
+    }
+}
+
+
+void manager_cgi::generate_plugin_entry( snap_manager::status_t status, QDomDocument& doc, QDomElement& table )
+{
+    QString const & plugin_name(status.get_plugin_name());
+    snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
+
+    // output/table/tr
+    QDomElement tr(doc.createElement("tr"));
+    table.appendChild(tr);
+
+    snap::snap_string_list tr_classes;
+    if(p == nullptr)
+    {
+        tr_classes << "missing-plugin";
+    }
+
+    snap_manager::status_t::state_t const state(status.get_state());
+    switch(state)
+    {
+    case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
+        tr_classes << "modified";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
+        tr_classes << "highlight";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
+        tr_classes << "warnings";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
+    case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
+        tr_classes << "errors";
+        break;
+
+    default:
+        // do nothing otherwise
+        break;
+
+    }
+    if(!tr_classes.isEmpty())
+    {
+        tr.setAttribute("class", tr_classes.join(" "));
+    }
+
+    // output/table/tr/td[1]
+    QDomElement td(doc.createElement("td"));
+    tr.appendChild(td);
+
+    QDomText text(doc.createTextNode(plugin_name));
+    td.appendChild(text);
+
+    // output/table/tr/td[2]
+    td = doc.createElement("td");
+    tr.appendChild(td);
+
+    QString const & field_name(status.get_field_name());
+    text = doc.createTextNode(field_name);
+    td.appendChild(text);
+
+    // output/table/tr/td[3]
+    td = doc.createElement("td");
+    tr.appendChild(td);
+
+    QString field_state("???");
+    switch(state)
+    {
+    case snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED:
+        field_state = "undefined";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_DEBUG:
+        field_state = "debug";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_INFO:
+        field_state = "valid";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
+        field_state = "modified";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
+        field_state = "highlight";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
+        field_state = "warning";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
+        field_state = "error";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
+        field_state = "fatal error";
+        break;
+
+    }
+    text = doc.createTextNode(field_state);
+    td.appendChild(text);
+
+    // output/table/tr/td[4]
+    td = doc.createElement("td");
+    tr.appendChild(td);
+
+    bool managed(false);
+    plugin_base * pb(dynamic_cast<plugin_base *>(p));
+    if(pb != nullptr
+            && state != snap_manager::status_t::state_t::STATUS_STATE_MODIFIED)
+    {
+        // call that signal directly on that one plugin
+        //
+        managed = pb->display_value(td, status, f_uri);
+    }
+
+    if(!managed)
+    {
+        text = doc.createTextNode(status.get_value());
+        td.appendChild(text);
+    }
+}
+
+
 void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const host)
 {
     // create, open, read the file
@@ -1584,42 +1802,7 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     }
 
     // output/table
-    QDomElement table(doc.createElement("table"));
-    output.appendChild(table);
-
-    table.setAttribute("class", "server-status");
-
-    // output/table/tr
-    QDomElement tr(doc.createElement("tr"));
-    table.appendChild(tr);
-
-    // output/table/tr/th[1]
-    QDomElement th(doc.createElement("th"));
-    tr.appendChild(th);
-
-        QDomText text(doc.createTextNode(QString("Plugin")));
-        th.appendChild(text);
-
-    // output/table/tr/th[2]
-    th = doc.createElement("th");
-    tr.appendChild(th);
-
-        text = doc.createTextNode(QString("Name"));
-        th.appendChild(text);
-
-    // output/table/tr/th[3]
-    th = doc.createElement("th");
-    tr.appendChild(th);
-
-        text = doc.createTextNode(QString("State"));
-        th.appendChild(text);
-
-    // output/table/tr/th[4]
-    th = doc.createElement("th");
-    tr.appendChild(th);
-
-        text = doc.createTextNode("Value");
-        th.appendChild(text);
+    QDomElement table( create_table_header( doc, output ) );
 
     // we need the plugins for the following (non-raw) loop
     //
@@ -1627,186 +1810,34 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 
     // add a "special" field so one can do a Refresh
     //
-    {
-        snap::plugins::plugin * p(snap::plugins::get_plugin("self"));
-
-        // output/table/tr
-        tr = doc.createElement("tr");
-        table.appendChild(tr);
-
-            // output/table/tr/td[1]
-            QDomElement td(doc.createElement("td"));
-            tr.appendChild(td);
-
-                text = doc.createTextNode("self");
-                td.appendChild(text);
-
-            // output/table/tr/td[2]
-            td = doc.createElement("td");
-            tr.appendChild(td);
-
-                text = doc.createTextNode("refresh");
-                td.appendChild(text);
-
-            // output/table/tr/td[3]
-            td = doc.createElement("td");
-            tr.appendChild(td);
-
-                text = doc.createTextNode("valid");
-                td.appendChild(text);
-
-            // output/table/tr/td[4]
-            td = doc.createElement("td");
-            tr.appendChild(td);
-
-                plugin_base * pb(dynamic_cast<plugin_base *>(p));
-                if(pb != nullptr)
-                {
-                    // call that signal directly on that one plugin
-                    //
-                    snap_manager::status_t const refresh_status(
-                                snap_manager::status_t::state_t::STATUS_STATE_INFO,
-                                "self",
-                                "refresh",
-                                "");
-                    pb->display_value(td, refresh_status, f_uri);
-                }
-    }
+    generate_self_refresh_plugin_entry( doc, table );
 
     // read each name/value pair
     //
-    QString name;
-    QString value;
     snap_manager::status_t::map_t const & statuses(file.get_statuses());
     for(auto const & s : statuses)
     {
         QString const & plugin_name(s.second.get_plugin_name());
-        if(plugin_name == "header")
+        if(plugin_name != "self")
         {
+            // Do self plugins first
+            continue;
+        }
+        generate_plugin_entry( s.second, doc, table );
+    }
+    //
+    for(auto const & s : statuses)
+    {
+        QString const & plugin_name(s.second.get_plugin_name());
+        if(plugin_name == "header" || plugin_name == "self")
+        {
+            // we already displayed self-plugins--now display the others
+            //
             // ignore header fields because those are copies of other
             // fields and no plugin can manage those anyway
             continue;
         }
-
-        snap::plugins::plugin * p(snap::plugins::get_plugin(plugin_name));
-
-        // output/table/tr
-        tr = doc.createElement("tr");
-        table.appendChild(tr);
-
-        snap::snap_string_list tr_classes;
-        if(p == nullptr)
-        {
-            tr_classes << "missing-plugin";
-        }
-
-        snap_manager::status_t::state_t const state(s.second.get_state());
-        switch(state)
-        {
-        case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
-            tr_classes << "modified";
-            break;
-
-        case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
-            tr_classes << "highlight";
-            break;
-
-        case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
-            tr_classes << "warnings";
-            break;
-
-        case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
-        case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
-            tr_classes << "errors";
-            break;
-
-        default:
-            // do nothing otherwise
-            break;
-
-        }
-        if(!tr_classes.isEmpty())
-        {
-            tr.setAttribute("class", tr_classes.join(" "));
-        }
-
-            // output/table/tr/td[1]
-            QDomElement td(doc.createElement("td"));
-            tr.appendChild(td);
-
-                text = doc.createTextNode(plugin_name);
-                td.appendChild(text);
-
-            // output/table/tr/td[2]
-            td = doc.createElement("td");
-            tr.appendChild(td);
-
-                QString const & field_name(s.second.get_field_name());
-                text = doc.createTextNode(field_name);
-                td.appendChild(text);
-
-            // output/table/tr/td[3]
-            td = doc.createElement("td");
-            tr.appendChild(td);
-
-                QString field_state("???");
-                switch(state)
-                {
-                case snap_manager::status_t::state_t::STATUS_STATE_UNDEFINED:
-                    field_state = "undefined";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_DEBUG:
-                    field_state = "debug";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_INFO:
-                    field_state = "valid";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
-                    field_state = "modified";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
-                    field_state = "highlight";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
-                    field_state = "warning";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
-                    field_state = "error";
-                    break;
-
-                case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
-                    field_state = "fatal error";
-                    break;
-
-                }
-                text = doc.createTextNode(field_state);
-                td.appendChild(text);
-
-            // output/table/tr/td[4]
-            td = doc.createElement("td");
-            tr.appendChild(td);
-
-                bool managed(false);
-                plugin_base * pb(dynamic_cast<plugin_base *>(p));
-                if(pb != nullptr
-                && state != snap_manager::status_t::state_t::STATUS_STATE_MODIFIED)
-                {
-                    // call that signal directly on that one plugin
-                    //
-                    managed = pb->display_value(td, s.second, f_uri);
-                }
-
-                if(!managed)
-                {
-                    text = doc.createTextNode(s.second.get_value());
-                    td.appendChild(text);
-                }
+        generate_plugin_entry( s.second, doc, table );
     }
 }
 
