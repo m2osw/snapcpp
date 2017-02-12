@@ -1741,7 +1741,7 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
         {
         }
 
-        bool check(QString const& line, QString& value)
+        bool check(QString const & line, QString & value)
         {
             // find the field name if available
 
