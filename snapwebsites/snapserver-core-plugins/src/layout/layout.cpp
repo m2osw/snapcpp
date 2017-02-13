@@ -450,6 +450,9 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
             }
         }
 
+        // TODO: remove support for the ';' at the end of the line
+        //       (or add support for multiple lines in snap_expr?)
+
         QString const layout_script(layout_value.stringValue());
 
         bool run_script(true);
