@@ -398,8 +398,7 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
         f_valueGroup->setTitle( tr("Value") );
         f_rowModel->clear();
 
-        if( current.isValid()
-                && (f_rowsView->selectionModel()->selectedRows().size() == 1) )
+        if( current.isValid() )
         {
             const QByteArray row_key( f_tableModel->data(current,Qt::UserRole).toByteArray() );
 

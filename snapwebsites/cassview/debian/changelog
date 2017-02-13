@@ -1,4 +1,10 @@
-cassview (0.1.8.22~xenial) xenial; urgency=high
+cassview (0.1.9.0~xenial) xenial; urgency=high
+
+  * SNAP-551: took out check for selection size.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 13 Feb 2017 10:22:57 -0800
+
+cassview (0.1.8.23~xenial) xenial; urgency=high
 
   * Nightly build.
 
