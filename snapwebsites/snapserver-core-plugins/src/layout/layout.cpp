@@ -452,20 +452,29 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
 
         // TODO: remove support for the ';' at the end of the line
         //       (or add support for multiple lines in snap_expr?)
+        //
 
-        QString const layout_script(layout_value.stringValue());
+        QString layout_script(layout_value.stringValue());
+        if(layout_script.endsWith(";"))
+        {
+            // get rid of the ending ";" (snap_expr does not support that)
+            //
+            layout_script = layout_script.mid(0, layout_script.length() - 1);
+        }
 
         bool run_script(true);
-        bool const ends_with_quote_colon(layout_script.endsWith("\";"));
         if(layout_script.startsWith("\"")
-        && (layout_script.endsWith("\"") || ends_with_quote_colon)
+        && layout_script.endsWith("\"")
         && layout_script.length() >= 3)
         {
             run_script = false;
-            QString const check_name(layout_script.mid(1, layout_script.length() - (ends_with_quote_colon ? 3 : 2)));
+            QString const check_name(layout_script.mid(1, layout_script.length() - 2));
             QByteArray const utf8(check_name.toUtf8());
             for(char const *s(utf8.data()); *s != '\0'; ++s)
             {
+                // verify allowed characters, if one is not allowed, run
+                // the script, to make sure...
+                //
                 if((*s < 'a' || *s > 'z')
                 && (*s < 'A' || *s > 'Z')
                 && (*s < '0' || *s > '9')
@@ -514,11 +523,13 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
         }
         else
         {
-            // remove the quotes really quick, we avoid the whole JS deal!
-            layout_name = layout_script.mid(1, layout_script.length() - (ends_with_quote_colon ? 3 : 2));
+            // remove the quotes really quick, we avoid the whole script deal!
+            //
+            layout_name = layout_script.mid(1, layout_script.length() - 2);
         }
 
         // does it look like the script failed? if so get a default
+        //
         if(layout_name.isEmpty())
         {
             // TODO: make sure the name is not tainted.
