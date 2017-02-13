@@ -18,7 +18,6 @@
 #include "layout.h"
 
 #include "../filter/filter.h"
-#include "../javascript/javascript.h"
 #include "../taxonomy/taxonomy.h"
 #include "../path/path.h"
 
@@ -30,6 +29,7 @@
 #include <snapwebsites/qstring_stream.h>
 #include <snapwebsites/qdomxpath.h>
 //#include <snapwebsites/qdomnodemodel.h> -- at this point the DOM Node Model seems bogus.
+#include <snapwebsites/snap_expr.h>
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/xslt.h>
@@ -478,11 +478,36 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
 
         if(run_script)
         {
-            // TODO: remove dependency on JS with an event on this one!
-            //       (TBD: as far as I know this is okay now although we
-            //       may want to use snap_expr expressions instead?)
-            QVariant const v(javascript::javascript::instance()->evaluate_script(layout_script));
-            layout_name = v.toString();
+            snap_expr::expr e;
+            if(e.compile(layout_script))
+            {
+                // TODO: we could serialize the program and save it in the
+                //       cache table. That way we could avoid calling
+                //       "compile()" each time.
+                //
+                snap_expr::variable_t::variable_map_t variables;
+                snap_expr::variable_t var_path("path");
+                var_path.set_value(ipath.get_cpath());
+                variables["path"] = var_path;
+                snap_expr::variable_t var_page("page");
+                var_page.set_value(ipath.get_key());
+                variables["page"] = var_page;
+                snap_expr::variable_t var_column_name("column_name");
+                var_column_name.set_value(column_name);
+                variables["column_name"] = var_column_name;
+
+                snap_expr::variable_t result;
+                snap_expr::functions_t functions;
+                e.execute(result, variables, functions);
+
+                layout_name = result.get_string("result");
+            }
+            else
+            {
+                // let admins know there is a bug in their layout script
+                //
+                SNAP_LOG_ERROR("could not compile layout script: [")(layout_script)("]");
+            }
         }
         else
         {

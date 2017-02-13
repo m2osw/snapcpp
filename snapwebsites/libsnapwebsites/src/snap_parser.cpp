@@ -29,6 +29,10 @@
 #include <QList>
 #include <QPointer>
 
+// C++ lib
+//
+#include <iostream>
+
 // last include
 //
 #include "snapwebsites/poison.h"
@@ -221,6 +225,22 @@ void lexer::set_input(const QString& input)
  */
 token lexer::next_token()
 {
+    auto xdigit = [](int c)
+    {
+        if(c >= '0' && c <= '9')
+        {
+            return c - '0';
+        }
+        else if(c >= 'a' && c <= 'f')
+        {
+            return c - 'a' + 10;
+        }
+        else if(c >= 'A' && c <= 'F')
+        {
+            return c - 'A' + 10;
+        }
+        return -1;
+    };
     token        result;
 
 // restart is called whenever we find a comment or
@@ -792,7 +812,7 @@ restart:
     case '"':
         {
             ++f_pos;
-            QString::const_iterator start(f_pos);
+            QString str;
             while(f_pos != f_input.end() && *f_pos != '"')
             {
                 if(*f_pos == '\n' || *f_pos == '\r')
@@ -808,6 +828,129 @@ restart:
                         // this is an invalid backslash
                         break;
                     }
+                    // TODO: add support for \x## and various other
+                    //       escaped characters
+                    switch(f_pos->unicode())
+                    {
+                    case 'a':
+                        str += "\a";
+                        break;
+
+                    case 'b':
+                        str += "\b";
+                        break;
+
+                    case 'f':
+                        str += "\f";
+                        break;
+
+                    case 'n':
+                        str += "\n";
+                        break;
+
+                    case 'r':
+                        str += "\r";
+                        break;
+
+                    case 't':
+                        str += "\t";
+                        break;
+
+                    case 'v':
+                        str += "\v";
+                        break;
+
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                        // "\nnn" -- maximum of 3 digits
+                        {
+                            int v(f_pos->unicode() - '0');
+                            if(f_pos + 1 != f_input.end() && (f_pos + 1)->unicode() >= '0' && (f_pos + 1)->unicode() <= '7')
+                            {
+                                ++f_pos;
+                                v = v * 8 + f_pos->unicode() - '0';
+
+                                if(f_pos + 1 != f_input.end() && (f_pos + 1)->unicode() >= '0' && (f_pos + 1)->unicode() <= '7')
+                                {
+                                    ++f_pos;
+                                    v = v * 8 + f_pos->unicode() - '0';
+                                }
+                            }
+                            str += QChar(v);
+                        }
+                        break;
+
+                    case 'x':
+                    case 'X':
+                        {
+                            if(f_pos + 1 != f_input.end() && std::isxdigit((f_pos + 1)->unicode()))
+                            {
+                                ++f_pos;
+                                int v(xdigit(f_pos->unicode()));
+
+                                if(f_pos + 1 != f_input.end() && std::isxdigit((f_pos + 1)->unicode()))
+                                {
+                                    ++f_pos;
+                                    v = v * 16 + xdigit(f_pos->unicode());
+                                }
+
+                                str += QChar(v);
+                            }
+                        }
+                        break;
+
+                    case 'u':
+                        // take 0 to 4 digits
+                        {
+                            int v(0);
+                            for(int idx(0); idx < 4; ++idx)
+                            {
+                                if(f_pos == f_input.end()
+                                || !std::isxdigit((f_pos + 1)->unicode()))
+                                {
+                                    break;
+                                }
+                                ++f_pos;
+                                v = v * 16 + xdigit(f_pos->unicode());
+                            }
+                            str += QChar(v);
+                        }
+                        break;
+
+                    case 'U':
+                        // take 0 to 8 digits
+                        {
+                            uint v(0);
+                            for(int idx(0); idx < 8; ++idx)
+                            {
+                                if(f_pos == f_input.end()
+                                || !std::isxdigit((f_pos + 1)->unicode()))
+                                {
+                                    break;
+                                }
+                                ++f_pos;
+                                v = v * 16 + xdigit(f_pos->unicode());
+                            }
+                            str += QString::fromUcs4(&v, 1);
+                        }
+                        break;
+
+                    default:
+                        // anything, keep as is (", ', ?, \)
+                        str += *f_pos;
+                        break;
+
+                    }
+                }
+                else
+                {
+                    str += *f_pos;
                 }
                 ++f_pos;
             }
@@ -821,7 +964,7 @@ restart:
             else
             {
                 result.set_id(token_t::TOKEN_ID_STRING_ENUM);
-                result.set_value(QString(start, static_cast<int>(f_pos - start)));
+                result.set_value(str);
                 ++f_pos; // skip the closing quote
             }
         }
@@ -1908,7 +2051,7 @@ void next_token(parser_state *state, state_array_t& current, state_array_t& free
 //parser_state::display_array(current);
 }
 
-bool grammar::parse(lexer& input, choices& start)
+bool grammar::parse(lexer & input, choices & start)
 {
     // the result of the parser against the lexer is a tree of tokens
     //
@@ -1919,7 +2062,7 @@ bool grammar::parse(lexer& input, choices& start)
     choices root(this, "root");
     root >>= start >> TOKEN_ID_NONE;
     // TODO: all the state pointers leak if we throw...
-    parser_state *s = new parser_state(nullptr, root, 0);
+    parser_state * s(new parser_state(nullptr, root, 0));
     s->f_line = 1;
 
     state_array_t free_states;
@@ -1933,7 +2076,7 @@ bool grammar::parse(lexer& input, choices& start)
         // a copy of the current vector so the current
         // vector can change in size
 #ifdef DEBUG
-//std::cerr << "B: ================================================================= (line: " << input.line() << ")\n";
+//SNAP_LOG_TRACE("B: ================================================================= (line: ")(input.line())(")");
 //parser_state::display_array(current);
 #endif
 
@@ -1956,7 +2099,7 @@ bool grammar::parse(lexer& input, choices& start)
                 if(token_id == token_t::TOKEN_ID_CHOICES_ENUM)
                 {
                     // follow the choice by adding all of the rules it points to
-                    choices *c(&ref.get_choices());
+                    choices * c(&ref.get_choices());
 
                     int const max_choices(c->count());
                     for(int r(0); r < max_choices; ++r)
@@ -1972,7 +2115,7 @@ bool grammar::parse(lexer& input, choices& start)
 //std::cerr << "  SKIP RECURSIVE -- " << c->name() << "  --> " << (*c)[r].to_string() << "\n";
                             continue;
                         }
-                        parser_state *child(parser_state::alloc(free_states, state, *c, r));
+                        parser_state * child(parser_state::alloc(free_states, state, *c, r));
                         child->f_line = line;
 //std::cerr << "  " << c->name() << "  --> " << (*c)[r].to_string() << "\n";
 
@@ -2114,6 +2257,7 @@ bool grammar::parse(lexer& input, choices& start)
                     case token_t::TOKEN_ID_NONE_ENUM:
                         // this state is the root state, this means the result
                         // is really the child node of this current state
+                        //
                         f_result = qSharedPointerDynamicCast<token_node, token>((*state->f_node)[0]);
                         return true;
 

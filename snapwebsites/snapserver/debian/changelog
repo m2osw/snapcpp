@@ -1,8 +1,8 @@
-snapserver (1.0.18.22~xenial) xenial; urgency=high
+snapserver (1.0.19.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Fixed the snapexpr tool, we need to connect to port 4042 now.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:07 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 12 Feb 2017 20:59:45 -0800
 
 snapserver (1.0.18.0~xenial) xenial; urgency=high
 

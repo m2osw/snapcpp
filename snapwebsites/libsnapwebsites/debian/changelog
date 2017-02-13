@@ -1,8 +1,11 @@
-libsnapwebsites (1.1.81.8~xenial) xenial; urgency=high
+libsnapwebsites (1.1.82.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Added support for functions without parameters in snap_expr.
+  * Call toupper() for the toupper() function, instead of tolower().
+  * Properly interpret the backslash in parsing a string in snap_parser.
+  * Various clean ups.
 
- -- Build Server <build@m2osw.com>  Mon, 06 Feb 2017 02:00:46 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 12 Feb 2017 20:59:45 -0800
 
 libsnapwebsites (1.1.81.0~xenial) xenial; urgency=high
 

@@ -67,8 +67,8 @@ const website_variable::website_variable_type_t website_variable::WEBSITE_VARIAB
  * \sa set_anchor()
  */
 snap_uri::snap_uri()
-    //: f_original("" -- auto-init)
-    : f_protocol("http")
+    //: f_original("") -- auto-init
+    //, f_protocol("http") --auto-init
     //, f_username("") -- auto-init
     //, f_password("") -- auto-init
     //, f_port(80) -- auto-init
@@ -466,7 +466,7 @@ bool snap_uri::set_uri(QString const & uri)
  *
  * \return A constant reference to the original Snap URI.
  */
-QString const& snap_uri::get_original_uri() const
+QString const & snap_uri::get_original_uri() const
 {
     return f_original;
 }

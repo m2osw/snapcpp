@@ -917,7 +917,7 @@ public:
     public:
         static int64_t integers(int64_t a, int64_t b) { return a + b; }
         static double floating_points(double a, double b) { return a + b; }
-        static QString strings(QString const& a, QString const& b) { return a + b; }
+        static QString strings(QString const & a, QString const & b) { return a + b; }
     };
 
     class op_subtract
@@ -2430,7 +2430,7 @@ public:
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call string() expected exactly 1");
         }
         QString str;
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2514,12 +2514,12 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call strmatch() expected 2 or 3");
         }
-        QString const pattern(sub_results[0].get_string("substr(1)"));
-        QString const str(sub_results[1].get_string("substr(2)"));
+        QString const pattern(sub_results[0].get_string("submatch(1)"));
+        QString const str(sub_results[1].get_string("submatch(2)"));
         QString flags;
         if(size == 3)
         {
-            flags = sub_results[2].get_string("substr(3)");
+            flags = sub_results[2].get_string("submatch(3)");
         }
         Qt::CaseSensitivity cs(Qt::CaseSensitive);
         if(flags.contains("i"))
@@ -2589,7 +2589,7 @@ public:
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call toupper() expected exactly 1");
         }
-        QString const str(sub_results[0].get_string("tolower(1)"));
+        QString const str(sub_results[0].get_string("toupper(1)"));
         QtCassandra::QCassandraValue value;
         value.setStringValue(str.toUpper());
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
@@ -2602,7 +2602,7 @@ public:
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint16() expected exactly 1");
         }
         uint16_t r(0);
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2674,7 +2674,7 @@ public:
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint32() expected exactly 1");
         }
         uint32_t r(0);
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2746,7 +2746,7 @@ public:
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint64() expected exactly 1");
         }
         uint64_t r(0);
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2818,7 +2818,7 @@ public:
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call uint8() expected exactly 1");
         }
         uint8_t r(0);
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2883,7 +2883,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8, value);
     }
 
-    void call_function(variable_t& result, variable_t::variable_vector_t const& sub_results, functions_t& functions)
+    void call_function(variable_t & result, variable_t::variable_vector_t const & sub_results, functions_t & functions)
     {
         functions_t::function_call_t f(functions.get_function(f_name));
         if(f == nullptr)
@@ -2908,7 +2908,7 @@ public:
         f(result, sub_results);
     }
 
-    bool get_variable_value(variable_t const& var, int64_t& integer, double& floating_point, QString& string, bool& signed_integer, bool& is_floating_point, bool& is_string_type)
+    bool get_variable_value(variable_t const & var, int64_t & integer, double & floating_point, QString & string, bool & signed_integer, bool & is_floating_point, bool & is_string_type)
     {
         switch(var.get_type())
         {
@@ -2971,7 +2971,7 @@ public:
     }
 
     template<typename F>
-    void binary_operation(char const *op, variable_t& result, variable_t::variable_vector_t const& sub_results)
+    void binary_operation(char const * op, variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         verify_binary(sub_results);
 
@@ -3644,7 +3644,7 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     },
     { // convert string to uppercase
         "toupper",
-        expr_node::call_tolower
+        expr_node::call_toupper
     },
     { // cast to uint16
         "uint16",
@@ -3922,6 +3922,21 @@ void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
     {
         v->add_child(l);
     }
+
+    t->set_user_data(v);
+}
+
+
+void list_expr_function_no_param(rule const & r, QSharedPointer<token_node> & t)
+{
+    NOTUSED(r);
+
+    // the function name is a string
+    QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
+    QString const func_name((*n0)[0]->get_value().toString());
+
+    QSharedPointer<expr_node> v(new expr_node(expr_node::node_type_t::NODE_TYPE_OPERATION_FUNCTION));
+    v->set_name(func_name);
 
     t->set_user_data(v);
 }
@@ -4246,6 +4261,8 @@ expr_node::expr_node_pointer_t compile_expression(QString const& script)
                                                     >= list_expr_negate
                  | "(" >> expr_list >> ")"
                                                     >= list_expr_level_list
+                 | qualified_name >> "(" >> ")"
+                                                    >= list_expr_function_no_param
                  | qualified_name >> "(" >> expr_list >> ")"
                                                     >= list_expr_function
                  | TOKEN_ID_IDENTIFIER

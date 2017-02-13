@@ -90,7 +90,7 @@ advgetopt::getopt::option const g_options[] =
         'p',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "port",
-        "9042",
+        "4042",
         "Define the port used by the Cassandra node.",
         advgetopt::getopt::argument_mode_t::required_argument
     },
@@ -154,7 +154,10 @@ void connect_cassandra()
 
     // connect to Cassandra
     g_cassandra = QtCassandra::QCassandra::create();
-    if(!g_cassandra->connect(g_opt->get_string("host").c_str(), QString(g_opt->get_string("port").c_str()).toInt()))
+    g_cassandra->setDefaultConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+    QString const host(QString::fromUtf8(g_opt->get_string("host").c_str()));
+    int const port(QString(g_opt->get_string("port").c_str()).toInt());
+    if(!g_cassandra->connect(host, port))
     {
         std::cerr << "error: could not connect to Cassandra." << std::endl;
         exit(1);
@@ -178,7 +181,7 @@ void connect_cassandra()
 }
 
 
-void expr(std::string const& expr)
+void expr(std::string const & expr)
 {
     if(g_verbose)
     {
@@ -269,7 +272,74 @@ void expr(std::string const& expr)
         break;
 
     case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
-        std::cout << "(string) \"" << result.get_value().stringValue() << "\"";
+        {
+            std::cout << "(string) \"";
+            QByteArray const str(result.get_value().stringValue().toUtf8());
+            int const len(str.size());
+            for(int idx(0); idx < len; ++idx)
+            {
+                int const c(static_cast<unsigned char>(str[idx]));
+                switch(c)
+                {
+                case 0x07:
+                    std::cout << "\\a";
+                    break;
+
+                case 0x08:
+                    std::cout << "\\b";
+                    break;
+
+                case 0x09:
+                    std::cout << "\\t";
+                    break;
+
+                case 0x0A:
+                    std::cout << "\\n";
+                    break;
+
+                case 0x0B:
+                    std::cout << "\\v";
+                    break;
+
+                case 0x0C:
+                    std::cout << "\\f";
+                    break;
+
+                case 0x0D:
+                    std::cout << "\\r";
+                    break;
+
+                case 0x22:
+                    std::cout << "\\\"";
+                    break;
+
+                case 0x27:
+                    std::cout << "'";
+                    break;
+
+                case 0x5C:
+                    std::cout << "\\\\";
+                    break;
+
+                default:
+                    // TODO: the following is incorrect (i.e. we are dealing
+                    //       with UTF-8 and not just ISO-8859-1 or such)
+                    //
+                    if(c < 0x20
+                    || (c >= 0x80 && c <= 0x9F))
+                    {
+                        std::cout << "\\" << std::oct << c << std::dec;
+                    }
+                    else
+                    {
+                        std::cout << static_cast<unsigned char>(c);
+                    }
+                    break;
+
+                }
+            }
+            std::cout << "\"";
+        }
         break;
 
     case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
@@ -283,11 +353,11 @@ void expr(std::string const& expr)
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     try
     {
-        const std::vector<std::string> no_config;
+        std::vector<std::string> const no_config;
         g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
         if(g_opt->is_defined("help"))
         {
@@ -306,15 +376,16 @@ int main(int argc, char *argv[])
         //        not load the plugins (yet); should we not? for instance
         //        the secure fields are returned because the code does
         //        not know whether the cell is considered secure
+        //
         int const max_expressions(g_opt->size("expression"));
-        for(int i = 0; i < max_expressions; ++i)
+        for(int i(0); i < max_expressions; ++i)
         {
             expr(g_opt->get_string("expression", i));
         }
 
         return g_errcnt == 0 ? 0 : 1;
     }
-    catch(std::exception const& e)
+    catch(std::exception const & e)
     {
         std::cerr << "snapexpr: exception: " << e.what() << std::endl;
         return 1;

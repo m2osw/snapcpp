@@ -776,6 +776,7 @@ void editor::process_new_draft()
     // TODO: fix the locale; it should come from the favorite locale of that
     //       user and we should offer the user to select another locale if
     //       he/she has more than one in his account
+    //
     QString const locale("xx");
     QString const owner(output::output::instance()->get_plugin_name());
     content::path_info_t draft_ipath;

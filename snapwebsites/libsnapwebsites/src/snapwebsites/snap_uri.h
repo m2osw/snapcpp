@@ -170,7 +170,7 @@ private:
     // f_original is the unchanged source (from constructor or
     // last set_uri() call)
     QString                         f_original;
-    QString                         f_protocol;
+    QString                         f_protocol = "http";
     QString                         f_username;
     QString                         f_password;
     int                             f_port = 80;

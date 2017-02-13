@@ -34,7 +34,7 @@ void call_page_status(snap_expr::variable_t & result, snap_expr::variable_t::var
 {
     if(sub_results.size() != 1)
     {
-        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call page_status() expected 3 or 4 parameters");
+        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call page_status() expected 1 parameter");
     }
     QString const path(sub_results[0].get_string("page_status(1)"));
 
@@ -53,11 +53,33 @@ void call_page_status(snap_expr::variable_t & result, snap_expr::variable_t::var
 }
 
 
+void call_website_uri(snap_expr::variable_t & result, snap_expr::variable_t::variable_vector_t const & sub_results)
+{
+    if(sub_results.size() != 0)
+    {
+        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call website_uri() expected no parameters");
+    }
+
+    snap_child * snap(content::content::instance()->get_snap());
+    snap_uri const main_uri(snap->get_uri());
+    QString const website_uri(main_uri.get_website_uri(false));
+
+    // save the result
+    QtCassandra::QCassandraValue value;
+    value.setStringValue(website_uri);
+    result.set_value(snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+}
+
+
 snap_expr::functions_t::function_call_table_t const content_functions[] =
 {
     { // check whether a user has permissions to access a page
         "page_status",
         call_page_status
+    },
+    { // return the website URL without path
+        "website_uri",
+        call_website_uri
     },
     {
         nullptr,

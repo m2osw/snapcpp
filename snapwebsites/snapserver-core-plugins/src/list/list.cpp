@@ -2970,7 +2970,6 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
     if(!f_check_expressions.contains(branch_key))
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
-        QByteArray program;
         content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->value());
@@ -3061,7 +3060,6 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
     if(!f_item_key_expressions.contains(branch_key))
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
-        QByteArray program;
         content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
