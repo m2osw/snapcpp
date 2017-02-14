@@ -639,6 +639,7 @@ int manager_cgi::process()
     if(query_string != nullptr)
     {
         f_uri.set_query_string(QString::fromUtf8(query_string));
+        SNAP_LOG_TRACE("QUERY_STRING=")(query_string);
     }
 
     // make sure the user is logged in
@@ -1586,15 +1587,6 @@ QDomElement manager_cgi::create_table_header( QDomDocument& doc )
     QDomElement th(doc.createElement("th"));
     tr.appendChild(th);
 
-#if 0
-    QDomText text(doc.createTextNode(QString("Plugin")));
-    th.appendChild(text);
-
-    // output/table/tr/th[2]
-    th = doc.createElement("th");
-    tr.appendChild(th);
-#endif
-
     QDomText text(doc.createTextNode(QString("Name")));
     th.appendChild(text);
 
@@ -1625,15 +1617,6 @@ void manager_cgi::generate_self_refresh_plugin_entry( QDomDocument& doc, QDomEle
     // output/table/tr
     QDomElement tr(doc.createElement("tr"));
     table.appendChild(tr);
-
-    // output/table/tr/td[1]
-#if 0
-    QDomElement td(doc.createElement("td"));
-    tr.appendChild(td);
-
-    QDomText text(doc.createTextNode("self"));
-    td.appendChild(text);
-#endif
 
     // output/table/tr/td[2]
     QDomElement td(doc.createElement("td"));
@@ -1712,15 +1695,6 @@ void manager_cgi::generate_plugin_entry( snap_manager::status_t status, QDomDocu
     {
         tr.setAttribute("class", tr_classes.join(" "));
     }
-
-#if 0
-    // output/table/tr/td[1]
-    QDomElement td(doc.createElement("td"));
-    tr.appendChild(td);
-
-    QDomText text(doc.createTextNode(plugin_name));
-    td.appendChild(text);
-#endif
 
     // output/table/tr/td[2]
     QDomElement td(doc.createElement("td"));

@@ -47,9 +47,11 @@
 namespace
 {
     QString     const APT_SOURCE_DIR     = QString("/etc/apt/sources.list.d");
+    QString     const APT_PREFS_DIR      = QString("/etc/apt/preferences.d");
     QString     const SNAPCPP_APT_SOURCE = QString("snapcpp_apt_source");
     QString     const OLD_APT_SOURCE     = QString("old_apt_source");
     QString     const GPG_KEY            = QString("gpg_key");
+    QString     const RELEASE_PIN        = QString("release_pin");
 
     QStringList const EXTENSIONS         = {"list"};
 }
@@ -184,6 +186,19 @@ void apt::bootstrap(snap_child * snap)
 }
 
 
+/** \brief Sanity check to make sure APT is installed
+ *
+ * \return true if /usr/bin/apt is present on the system, false otherwise.
+ */
+bool apt::is_installed()
+{
+    // for now we just check whether the executable is here, this is
+    // faster than checking whether the package is installed.
+    //
+    return access("/usr/bin/apt", R_OK | X_OK) == 0;
+}
+
+
 /** \brief Determine this plugin status data.
  *
  * This function builds a tree of statuses.
@@ -277,15 +292,32 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
                     , "");
         server_status.set_field(conf_field);
     }
-}
 
-
-bool apt::is_installed()
-{
-    // for now we just check whether the executable is here, this is
-    // faster than checking whether the package is installed.
-    //
-    return access("/usr/bin/apt", R_OK | X_OK) == 0;
+    // Add release-pin field (stable, unstable or other).
+    {
+        QString pin_name("none");
+        QFile file( QString("%1/snapcpp").arg(APT_PREFS_DIR) );
+        if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        {
+            QTextStream in(&file);
+            QStringList lines(in.readAll().split('\n'));;
+            for( auto const & line : lines )
+            {
+                QRegExp reg( "Pin: release a=(\\w+)");
+                if( reg.indexIn(line) != -1 )
+                {
+                    pin_name = reg.cap();
+                    break;
+                }
+            }
+        }
+        snap_manager::status_t const conf_field(
+                    snap_manager::status_t::state_t::STATUS_STATE_INFO
+                    , get_plugin_name()
+                    , RELEASE_PIN
+                    , pin_name);
+        server_status.set_field(conf_field);
+    }
 }
 
 
@@ -347,6 +379,26 @@ bool apt::display_value ( QDomElement parent
                                                        , field_name
                                                        , ""
                                                        , "<p>Paste in the key here.</p>"
+                                                       ));
+        f.add_widget(field);
+        f.generate(parent, uri);
+        return true;
+    }
+    else if( field_name == RELEASE_PIN )
+    {
+        snap_manager::form f(
+                    get_plugin_name()
+                    , field_name
+                    , snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                    );
+        snap_manager::widget_text::pointer_t field(std::make_shared<snap_manager::widget_text>(
+                                                       "Enter APT release pin name:"
+                                                       , field_name
+                                                       , s.get_value()
+                                                       , "<p>Available options:</p>"
+                                                       " <b>none</b>, <b>stable</b>, <b>unstable</b>, or <b><i>codename</i></b>"
+                                                       ", where <i>codename</i> any the name of the distribution"
+                                                       ", or <b>none</b> to remove the pin entirely."
                                                        ));
         f.add_widget(field);
         f.generate(parent, uri);
@@ -421,7 +473,10 @@ bool apt::apply_setting ( QString const & button_name
         {
             SNAP_LOG_TRACE("file info=")(info.filePath());
 
-            if( info.baseName() == "doug" || info.baseName() == "snap" )
+            if(    info.baseName() == "doug"
+                || info.baseName() == "snap"
+                || info.baseName() == "exdox"
+              )
             {
                 for( auto const & ext : EXTENSIONS )
                 {
@@ -466,17 +521,45 @@ bool apt::apply_setting ( QString const & button_name
         // And...done!
         return success;
     }
-
-    QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
-    if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+    else if( field_name == RELEASE_PIN )
     {
-        QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
-        SNAP_LOG_ERROR(errmsg);
-        return false;
+        // Write out the pin to the preferences
+        //
+        QFile file( QString("%1/snapcpp").arg(APT_PREFS_DIR) );
+        if( new_value == "none" )
+        {
+            file.remove();
+        }
+        else if( file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QTextStream out( &file );
+            out << "Package: *"
+                << "Pin: release a=" << new_value
+                << "Pin-Priority: 1001";
+        }
+        else
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(errmsg);
+            return false;
+        }
+        return true;
     }
 
-    QTextStream out( &file );
-    out << new_value;
+    // Default write to snapcpp.list
+    //
+    {
+        QFile file( QString("%1/snapcpp.list").arg(APT_SOURCE_DIR) );
+        if( !file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
+        {
+            QString const errmsg = QString("Cannot open '%1' for writing!").arg(file.fileName());
+            SNAP_LOG_ERROR(errmsg);
+            return false;
+        }
+
+        QTextStream out( &file );
+        out << new_value;
+    }
     return true;
 }
 
