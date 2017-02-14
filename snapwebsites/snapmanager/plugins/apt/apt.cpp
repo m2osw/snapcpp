@@ -299,14 +299,14 @@ void apt::on_retrieve_status(snap_manager::server_status & server_status)
         QFile file( QString("%1/snapcpp").arg(APT_PREFS_DIR) );
         if( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
         {
+            const QString preamble("Pin: release a=");
             QTextStream in(&file);
             QStringList lines(in.readAll().split('\n'));;
             for( auto const & line : lines )
             {
-                QRegExp reg( "Pin: release a=(\\w+)");
-                if( reg.indexIn(line) != -1 )
+                if( line.startsWith(preamble) )
                 {
-                    pin_name = reg.cap();
+                    pin_name = line.mid(preamble.length());
                     break;
                 }
             }
@@ -533,9 +533,9 @@ bool apt::apply_setting ( QString const & button_name
         else if( file.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
         {
             QTextStream out( &file );
-            out << "Package: *"
-                << "Pin: release a=" << new_value
-                << "Pin-Priority: 1001";
+            out << "Package: *\n"
+                << "Pin: release a=" << new_value << "\n"
+                << "Pin-Priority: 1001\n";
         }
         else
         {
