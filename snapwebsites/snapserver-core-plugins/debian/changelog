@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.61.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 14 Feb 2017 02:00:53 -0800
+
 snapserver-core-plugins (1.0.61.0~xenial) xenial; urgency=high
 
   * EX-79: remove the ";" at the end of layout scripts early.
