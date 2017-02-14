@@ -308,6 +308,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_USERNAME:
         return "users::username";
 
+    case name_t::SNAP_NAME_USERS_USER_PAGE_PATH:
+        return "types/taxonomy/system/content-types/user-page";
+
     case name_t::SNAP_NAME_USERS_USER_SESSION_DURATION:
         return "users::user_session_duration";
 

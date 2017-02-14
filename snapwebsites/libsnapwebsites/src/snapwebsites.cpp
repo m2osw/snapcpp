@@ -1113,6 +1113,17 @@ void server::config(int argc, char * argv[])
         logging::reduce_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
     }
 
+    QString const lock_obtension_duration( f_parameters["lock_obtension_duration"] );
+    if( !lock_obtension_duration.isEmpty() )
+    {
+        bool ok(false);
+        int const lock_obtension(lock_obtension_duration.toInt(&ok, 10));
+        if(ok)
+        {
+            snap_lock::initialize_lock_obtention_timeout(lock_obtension);
+        }
+    }
+
     // determine the name of the server
     //
     get_server_name();

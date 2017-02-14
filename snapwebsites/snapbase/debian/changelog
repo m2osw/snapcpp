@@ -1,8 +1,9 @@
-snapbase (1.0.33.2~xenial) xenial; urgency=high
+snapbase (1.0.34.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Added a "lock_obtension_duration" parameter to snapserver.conf.
+  * Added the "table_schema_path" to the snapserver.conf, it was missing.
 
- -- Build Server <build@m2osw.com>  Mon, 13 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 14 Feb 2017 13:13:48 -0800
 
 snapbase (1.0.33.0~xenial) xenial; urgency=high
 
@@ -10,12 +11,6 @@ snapbase (1.0.33.0~xenial) xenial; urgency=high
   * Changed 'type' attribute of <link> tag so it's not required.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 11 Feb 2017 23:31:44 -0800
-
-snapbase (1.0.32.22~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:07 -0800
 
 snapbase (1.0.32.0~xenial) xenial; urgency=high
 

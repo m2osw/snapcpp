@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.82.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.83.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Load the "lock_obtension_duration" parameter on snapserver startup.
 
- -- Build Server <build@m2osw.com>  Mon, 13 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 14 Feb 2017 13:14:45 -0800
 
 libsnapwebsites (1.1.82.0~xenial) xenial; urgency=high
 
