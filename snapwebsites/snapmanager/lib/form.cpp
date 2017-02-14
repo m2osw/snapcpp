@@ -211,6 +211,7 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
     // create the form tag
     //
     QDomElement form_tag(doc.createElement("form"));
+    form_tag.setAttribute("class", "manager_form");
     form_tag.setAttribute("accept-charset", "UTF-8");
     form_tag.setAttribute("action", "?" + uri.query_string());
     form_tag.setAttribute("method", "POST");
