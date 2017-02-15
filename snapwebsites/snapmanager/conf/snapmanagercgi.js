@@ -7,41 +7,70 @@
  * License: GPLv2
  */
 
+var button_name;
+var last_tr;
+var last_serialized_data;
+
+// Find first ancestor of el with tagName
+// or undefined if not found
+function upTo(el, tagName)
+{
+    tagName = tagName.toLowerCase();
+    while (el && el.parentNode)
+    {
+        el = el.parentNode;
+        if (el.tagName && el.tagName.toLowerCase() === tagName)
+        {
+            return el;
+        }
+    }
+    return null;
+}
+
+
 jQuery(document).ready(function()
 {
-    var button_name;
-
     jQuery("#tabs").tabs({
         heightStyle: "content",
     }); 
 
     jQuery("button").click( function() {
         button_name = jQuery(this).attr("name");
-        console.log("button clicked: " + button_name);
     });
 
-    jQuery(".manager_form").submit( function( event ) {
-        var field_objs  = jQuery(this).serializeArray();
-        var my_fields   = {};
-        jQuery.each( field_objs, function( index, field ) {
-            my_fields[field.name] = field.value;
-        });
-        var data = jQuery(this).serialize() + "&" + button_name + "=";
+    jQuery(".manager_form").submit( function( event )
+    {
         event.preventDefault();
+
+        /*
+         * Not sure I will need this again, but leaving just in case
+        var fields = jQuery(this).serializeArray();
+        jQuery.each( fields, function(i,element) {
+            if( element.name === "hostname" )
+            {
+                host_name = element.value;
+            }
+            else if( element.name === "plugin_name" )
+            {
+                plugin_name = element.value;
+            }
+        });
+        */
+
+        last_serialized_data = jQuery(this).serialize();
+        last_tr = upTo(this,"tr");
+        jQuery(last_tr).addClass( "modified" );
+
         jQuery.ajax({
             url : "snapmanager",
             type: "POST",
-            data: data
+            data: last_serialized_data + "&" + button_name + "="
         })
         .done( function(response) {
-            //alert( "success! " + response );
-            location.reload();
+            jQuery(last_tr).removeClass("modified");
         })
-        .fail( function( xhr, status, errorThrown ) {
-            alert( "Sorry, there was a problem! See console log for details." );
-            console.log( "Error: " + errorThrown );
-            console.log( "Status: " + status );
-            console.dir( xhr );
+        .fail( function(xhr,status,errorThrown) {
+            server_fail(xhr,status,errorThrown);
         });
     });
 });

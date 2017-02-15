@@ -185,7 +185,10 @@ void messenger::process_message(snap::snap_communicator_message const & message)
             // whether it worked on all computers (if broadcast to all) is a
             // different story!
             //
-            mark_done();
+            if( message.has_parameter("done") || message.has_parameter("failed") )
+            {
+                mark_done();
+            }
             return;
         }
         break;

@@ -174,16 +174,41 @@ void manager_daemon::set_manager_status(snap::snap_communicator_message const & 
 }
 
 
+void manager_daemon::send_ack( snap::snap_communicator_message const & message, bool const done )
+{
+    snap::snap_communicator_message acknowledge;
+    acknowledge.reply_to(message);
+    acknowledge.set_command("MANAGERACKNOWLEDGE");
+    acknowledge.add_parameter("who", f_server_name);
+    if( done )
+    {
+        acknowledge.add_parameter( "done", "true" );
+    }
+    else
+    {
+        acknowledge.add_parameter( "start", "true" );
+    }
+    f_messenger->send_message(acknowledge);
+}
+
+
+void manager_daemon::send_nak(snap::snap_communicator_message const & message)
+{
+    snap::snap_communicator_message acknowledge;
+    acknowledge.reply_to(message);
+    acknowledge.set_command("MANAGERACKNOWLEDGE");
+    acknowledge.add_parameter("who", f_server_name);
+    acknowledge.add_parameter("failed", "true");
+    f_messenger->send_message(acknowledge);
+}
+
+
 void manager_daemon::modify_settings(snap::snap_communicator_message const & message)
 {
     // sender wants at least one snapmanagerdaemon to acknowledge so we
     // have to send this reply
     //
-    snap::snap_communicator_message acknowledge;
-    acknowledge.reply_to(message);
-    acknowledge.set_command("MANAGERACKNOWLEDGE");
-    acknowledge.add_parameter("who", f_server_name);
-    f_messenger->send_message(acknowledge);
+    send_ack( message );
 
     // TODO: unfortunately, although it looks like we're sending that message
     //       right now, it's stuck until we're done because this process is
@@ -231,6 +256,7 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
     if(p == nullptr)
     {
         SNAP_LOG_WARNING("received message requiring to access plugin \"")(plugin_name)("\" which is not installed on this system. This is a normal warning when using the \"Save Everywhere\" button.");
+        send_nak(message);
         return;
     }
     plugin_base * pb(dynamic_cast<plugin_base *>(p));
@@ -238,6 +264,7 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
     {
         // this shoud never happens!
         SNAP_LOG_ERROR("plugin \"")(plugin_name)("\" is not a snapmanager base plugin.");
+        send_nak(message);
         return;
     }
     std::set<QString> affected_services;
@@ -293,6 +320,8 @@ void manager_daemon::modify_settings(snap::snap_communicator_message const & mes
             f_messenger->send_message(reload_config);
         }
     }
+
+    send_ack( message, true /*done*/ );
 }
 
 

@@ -184,7 +184,9 @@ private:
     // the MANAGE command and all of its sub-functions
     void                            manager_install(snap::snap_communicator_message const & message);
     void                            set_manager_status(snap::snap_communicator_message const & message);
-    void                                modify_settings(snap::snap_communicator_message const & message);
+    void                            modify_settings(snap::snap_communicator_message const & message);
+    void                            send_ack( snap::snap_communicator_message const & message, bool const done = false );
+    void                            send_nak( snap::snap_communicator_message const & message );
 
     //QString                                     f_server_types;                         // sent to use by snapcommunicator
     int                                         f_communicator_port = 4040;             // snap server port

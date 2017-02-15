@@ -659,49 +659,78 @@ int manager_cgi::process()
     {
         if(process_post() != 0)
         {
+            SNAP_LOG_ERROR("POST discarded due to error!");
             // an error occurred, exit now
             return 0;
         }
     }
 
-    QDomDocument doc;
-    QDomElement root(doc.createElement("manager"));
-    doc.appendChild(root);
-    QDomElement output(doc.createElement("output"));
-    root.appendChild(output);
-    QDomElement menu(doc.createElement("menu"));
-    root.appendChild(menu);
-
+    if( (request_method == "POST") ) //|| f_uri.has_query_option("status") )
     {
-        // we force HTTPS by default, but someone could turn that feature
-        // off...
-        //
-        char const * https(getenv("HTTPS"));
-        if(https == nullptr
-        || strcmp(https, "on") != 0)
-        {
-            QDomElement warning_div(doc.createElement("div"));
-            warning_div.setAttribute("class", "access-warning");
-            output.appendChild(warning_div);
+        QString const host  = //(request_method == "POST")
+                            /*?*/ f_post_variables["hostname"].c_str()
+                            //: f_uri.query_option("host")
+                            ;
+        QString const plugin_name  = //(request_method == "POST")
+                            /*?*/ f_post_variables["plugin_name"].c_str()
+                            //: f_uri.query_option("plugin_name")
+                            ;
 
-            // TODO: add a link to a help page on snapwebsites.org
-            snap::snap_dom::insert_html_string_to_xml_doc(warning_div,
-                    "<div class=\"access-title\">WARNING</div>"
-                    "<p>You are accessing this website without SSL. All the data transfers will be unencrypted.</p>");
-        }
+        QDomDocument doc;
+        QDomElement output(doc.createElement("output"));
+        get_host_status( doc, output, host, plugin_name );
+        doc.appendChild(output.firstChildElement());
+
+        QString const new_div( doc.toString() );
+//SNAP_LOG_TRACE("Handling POST: new_div=")(new_div);
+        std::cout
+                << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                << "Connection: close"                      << std::endl
+                << "Content-Type: text/html; charset=utf-8" << std::endl
+                << "Content-Length: " << new_div.length()   << std::endl
+                << f_cookie
+                << "X-Powered-By: snapmanager.cgi"          << std::endl
+                << std::endl
+                << new_div;
     }
+    else
+    {
+        QDomDocument doc;
+        QDomElement root(doc.createElement("manager"));
+        doc.appendChild(root);
+        QDomElement output(doc.createElement("output"));
+        root.appendChild(output);
+        QDomElement menu(doc.createElement("menu"));
+        root.appendChild(menu);
+        {
+            // we force HTTPS by default, but someone could turn that feature
+            // off...
+            //
+            char const * https(getenv("HTTPS"));
+            if(https == nullptr
+            || strcmp(https, "on") != 0)
+            {
+                QDomElement warning_div(doc.createElement("div"));
+                warning_div.setAttribute("class", "access-warning");
+                output.appendChild(warning_div);
 
-    generate_content(doc, output, menu);
+                // TODO: add a link to a help page on snapwebsites.org
+                snap::snap_dom::insert_html_string_to_xml_doc(warning_div,
+                        "<div class=\"access-title\">WARNING</div>"
+                        "<p>You are accessing this website without SSL. All the data transfers will be unencrypted.</p>");
+            }
+        }
 
-//SNAP_LOG_WARNING("Doc = [")(doc.toString())("]");
+        generate_content( doc, output, menu );
 
-    snap::xslt x;
-    x.set_xsl_from_file(f_config["stylesheet"]); // setup the .xsl file
-    x.set_document(doc);
-    QString const body("<!DOCTYPE html>" + x.evaluate_to_string());
+        snap::xslt x;
+        x.set_xsl_from_file(f_config["stylesheet"]); // setup the .xsl file
+        x.set_document(doc);
 
-    //std::string body("<html><head><title>Snap Manager</title></head><body><p>...TODO...</p></body></html>");
-    std::cout   //<< "Status: 200 OK"                         << std::endl
+        QString const body("<!DOCTYPE html>" + x.evaluate_to_string());
+
+        //std::string body("<html><head><title>Snap Manager</title></head><body><p>...TODO...</p></body></html>");
+        std::cout   //<< "Status: 200 OK"                         << std::endl
                 << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                 << "Connection: close"                      << std::endl
                 << "Content-Type: text/html; charset=utf-8" << std::endl
@@ -710,6 +739,7 @@ int manager_cgi::process()
                 << "X-Powered-By: snapmanager.cgi"          << std::endl
                 << std::endl
                 << body;
+    }
 
     return 0;
 }
@@ -1269,7 +1299,7 @@ int manager_cgi::is_logged_in(std::string & request_method)
 
 int manager_cgi::process_post()
 {
-    SNAP_LOG_WARNING("processing POST now!");
+    SNAP_LOG_TRACE("processing POST now!");
 
     // check that the plugin name is defined
     //
@@ -1496,10 +1526,12 @@ int manager_cgi::process_post()
             modify_settings.add_parameter("install_values", QString::fromUtf8(install_variables.c_str()));
         }
 
+SNAP_LOG_TRACE("msg.run()");
         // we need to quickly create a connection for that one...
         //
         messenger msg(f_communicator_address, f_communicator_port, modify_settings);
         msg.run();
+SNAP_LOG_TRACE("msg.run() finished");
     }
 
     return 0;
@@ -1522,9 +1554,9 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
     // is a host name specified?
     // if so then the function / page has to be applied to that specific host
     //
-    if(f_uri.has_query_option("host"))
+    if( f_uri.has_query_option("host") )
     {
-        QString const host(f_uri.query_option("host"));
+        QString const host( f_uri.query_option("host") );
 
         // either way, if we are here, we can show two additional menus:
         //    host status
@@ -1569,7 +1601,6 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
             get_cluster_status(doc, output);
         }
     }
-
 }
 
 
@@ -1769,7 +1800,65 @@ void manager_cgi::generate_plugin_entry( snap_manager::status_t status, QDomDocu
 }
 
 
-void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const host)
+void manager_cgi::generate_plugin_status
+    ( QDomDocument& doc
+    , QDomElement& output
+    , QString const & plugin_name
+    , status_list_t const & status_list
+    , int const tab_count
+    , bool const parent_div
+    )
+{
+    QDomElement table( create_table_header( doc ) );
+
+    if( parent_div )
+    {
+        QDomElement div(doc.createElement("div"));
+        div.setAttribute( "id", QString("tabs-%1").arg(tab_count) );
+        output.appendChild(div);
+        div.appendChild(table);
+    }
+    else
+    {
+        output.appendChild(table);
+    }
+
+    if( plugin_name == "self" && tab_count == 1 )
+    {
+        // add a "special" field so one can do a Refresh, at the top of the list
+        //
+        generate_self_refresh_plugin_entry( doc, table );
+    }
+
+    for( auto const &status : status_list )
+    {
+        generate_plugin_entry( status, doc, table );
+    }
+}
+
+
+void manager_cgi::get_ordered_statuses( snap_manager::status_t::map_t const & statuses, statuses_list_t& list ) const
+{
+    std::map<QString, status_list_t> status_map;
+    for(auto const & s : statuses)
+    {
+        QString const & plugin_name(s.second.get_plugin_name());
+        if( plugin_name == "header" ) continue; // avoid the "header" plugins, since we cannot modify those statuses anyway
+        status_map[plugin_name].push_back( s.second );
+    }
+
+    // Sort self first, then respect the order of the rest of the map
+    //
+    list.push_back(status_map["self"]);
+    for( auto const & s : status_map )
+    {
+        if( s.first == "self" ) continue;
+        list.push_back(s.second);
+    }
+}
+
+
+void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const & host)
 {
     // create, open, read the file
     //
@@ -1786,12 +1875,8 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 
     // Make a map of all of the status-to-plugins.
     //
-    snap_manager::status_t::map_t const & statuses(file.get_statuses());
-    std::map< QString, std::vector<snap_manager::status_t> > status_map;
-    for(auto const & s : statuses)
-    {
-        status_map[s.second.get_plugin_name()].push_back( s.second );
-    }
+    statuses_list_t ordered_statuses;
+    get_ordered_statuses( file.get_statuses(), ordered_statuses );
 
     // Create <ul>...</ul> "menu" at the top. jQuery::tabs will turn this into
     // the tab button list.
@@ -1801,88 +1886,61 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
     int li_count = 0;
     QDomElement ul(doc.createElement("ul"));
     output.appendChild(ul);
+    for( auto const& s : ordered_statuses )
     {
         QDomElement li(doc.createElement("li"));
         ul.appendChild(li);
         //
         QDomElement a(doc.createElement("a"));
         a.setAttribute( "href", QString("#tabs-%1").arg(++li_count) );
-        QDomText text(doc.createTextNode("self"));
-        a.appendChild(text);
-        li.appendChild(a);
-    }
-    for( auto const& s : status_map )
-    {
-        if( s.first == "self" || s.first == "header" ) continue;
-
-        QDomElement li(doc.createElement("li"));
-        ul.appendChild(li);
-        //
-        QDomElement a(doc.createElement("a"));
-        a.setAttribute( "href", QString("#tabs-%1").arg(++li_count) );
-        QDomText text(doc.createTextNode(s.first));
+        QDomText text(doc.createTextNode(s[0].get_plugin_name()));
         a.appendChild(text);
         li.appendChild(a);
     }
 
-    li_count = 0;
-    // First, put 'self' as number one in the tab order.
+    // Now put in the table entries
     //
+    int tab_count = 0;
+    for(auto const & s : ordered_statuses)
     {
-        QDomElement div(doc.createElement("div"));
-        div.setAttribute( "id", QString("tabs-%1").arg(++li_count) );
-        output.appendChild(div);
-
-        // output/table
-        //
-        QDomElement table( create_table_header( doc ) );
-        div.appendChild(table);
-
-        // add a "special" field so one can do a Refresh
-        //
-        generate_self_refresh_plugin_entry( doc, table );
-
-        // read each name/value pair
-        //
-        for(auto const & s : status_map)
-        {
-            QString const & plugin_name(s.first);
-            if(plugin_name != "self")
-            {
-                // Do self plugins first
-                continue;
-            }
-            for( auto const &inner_s : s.second )
-            {
-                generate_plugin_entry( inner_s, doc, table );
-            }
-        }
+        generate_plugin_status( doc, output, s[0].get_plugin_name(), s, ++tab_count );
     }
+}
+
+
+void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const & host, QString const& post_plugin_name )
+{
+    // create, open, read the file
     //
+    server_status file(f_cluster_status_path, host);
+    if(!file.read_all())
     {
-        for(auto const & s : status_map)
+        // TODO: add error info in output
+        return;
+    }
+
+    // we need the plugins for the following (non-raw) loop
+    //
+    load_plugins();
+
+    // Make a map of all of the status-to-plugins.
+    //
+    statuses_list_t ordered_statuses;
+    get_ordered_statuses( file.get_statuses(), ordered_statuses );
+
+    // Generate only the div which contains the plugin entries.
+    //
+    // We also must preserve the tab_count, so the id will be the same. Then the js code
+    // can just replace the div in the existing dom tree.
+    //
+    int tab_count = 0;
+    for(auto const & s : ordered_statuses)
+    {
+        tab_count++;
+        QString const & plugin_name(s[0].get_plugin_name());
+        if( plugin_name == post_plugin_name )
         {
-            QString const & plugin_name(s.first);
-            if(plugin_name == "header" || plugin_name == "self")
-            {
-                // we already displayed self-plugins--now display the others
-                //
-                // ignore header fields because those are copies of other
-                // fields and no plugin can manage those anyway
-                continue;
-            }
-
-            QDomElement div(doc.createElement("div"));
-            div.setAttribute( "id", QString("tabs-%1").arg(++li_count) );
-            output.appendChild(div);
-
-            QDomElement table( create_table_header( doc ) );
-            div.appendChild(table);
-
-            for( auto const &inner_s : s.second )
-            {
-                generate_plugin_entry( inner_s, doc, table );
-            }
+            generate_plugin_status( doc, output, plugin_name, s, tab_count, false /*parent_div*/ );
         }
     }
 }
