@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.63.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 15 Feb 2017 02:00:58 -0800
+
 snapserver-core-plugins (1.0.63.0~xenial) xenial; urgency=high
 
   * EX-79: The editor now accepts a layout="..." name in <editor-form> tags.
