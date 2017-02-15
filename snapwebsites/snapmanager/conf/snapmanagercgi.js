@@ -7,8 +7,9 @@
  * License: GPLv2
  */
 
-// Find first ancestor of el with tagName
+// Find first ancestor of element with tagName
 // or undefined if not found
+//
 function upTo(el, tagName)
 {
     tagName = tagName.toLowerCase();
@@ -24,12 +25,16 @@ function upTo(el, tagName)
 }
 
 
+// Replace the div which contiains the "modified" tr.
+// If you set save_form_data to 'true', it will first
+// save the embedded form data, useful for POSTs.
+//
 function replace_div( response, save_form_data )
 {
     var the_data;
     var modified_tr = jQuery("tr[class='modified']");
 
-    if( save_form_data === "true" )
+    if( save_form_data )
     {
         var the_form = modified_tr.find("form");
         the_data     = the_form.data("form_data");
@@ -38,17 +43,19 @@ function replace_div( response, save_form_data )
     var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
     parent_div.html(response);
 
-    if( save_form_data === "true" )
+    if( save_form_data )
     {
         parent_div.data("form_data",the_data);
     }
     else
     {
-        parent_div.data("ajax_pending", "false");
+        parent_div.data("ajax_pending", false);
     }
 }
 
 
+// Common failure function.
+//
 function server_fail( xhr, the_status, errorThrown )
 {
     console.log( "Failed to connect to server!"  );
@@ -58,6 +65,25 @@ function server_fail( xhr, the_status, errorThrown )
 }
 
 
+// Disable/enable form events based on the presence of the 'modified' class.
+//
+function enable_disable_forms()
+{
+    if( jQuery("tr[class='modified']").length == 0 )
+    {
+        jQuery(".manager_form").prop( "disabled", false );
+    }
+    else
+    {
+        jQuery(".manager_form").prop( "disabled", true );
+    }
+}
+
+
+// Hook up form events.
+//
+// For new DOM objects we injected, this is imperative.
+//
 function hook_up_form_events()
 {
     jQuery("button").click( function() {
@@ -81,10 +107,10 @@ function hook_up_form_events()
 
         var last_tr = upTo(this,"tr");
         jQuery(last_tr).addClass("modified");
+        enable_disable_forms();
 
         var button_name = the_form.data("button_name");
 
-        console.log("Sending data POST...");
         jQuery.ajax(
         {
             url : "snapmanager",
@@ -93,7 +119,7 @@ function hook_up_form_events()
         })
         .done( function(response)
         {
-            replace_div( response, "true" );
+            replace_div( response, true );
             hook_up_form_events();
         })
         .fail( function( xhr, the_status, errorThrown )
@@ -104,6 +130,11 @@ function hook_up_form_events()
 }
 
 
+// When the document is ready, move the ul and divs into jQuery tabs.
+//
+// Set the interval once per second to send queries for modified divs
+// which we are waiting on.
+//
 jQuery(document).ready(function()
 {
     jQuery("#tabs").tabs(
@@ -116,15 +147,13 @@ jQuery(document).ready(function()
         var modified_tr = jQuery("tr[class='modified']");
         if( modified_tr.length > 0 )
         {
-            console.log("modified trs found!");
             var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
-            if( parent_div.data("ajax_pending") !== "true" )
+            if( parent_div.data("ajax_pending") !== true )
             {
-                console.log("Sending status POST...");
                 var the_data  = parent_div.data("form_data");
                 if( the_data )
                 {
-                    parent_div.data("ajax_pending", "true");
+                    parent_div.data("ajax_pending", true);
                     jQuery.ajax(
                     {
                         url : "snapmanager",
@@ -136,8 +165,9 @@ jQuery(document).ready(function()
                     })
                     .done( function(response)
                     {
-                        replace_div( response, "false" );
+                        replace_div( response, false );
                         hook_up_form_events();
+                        enable_disable_forms();
                     })
                     .fail( function( xhr, the_status, errorThrown )
                     {
