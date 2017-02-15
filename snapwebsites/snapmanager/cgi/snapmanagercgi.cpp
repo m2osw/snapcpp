@@ -670,6 +670,13 @@ int manager_cgi::process()
         QString const host         = f_post_variables["hostname"].c_str();
         QString const plugin_name  = f_post_variables["plugin_name"].c_str();
 
+        // Make sure host appears in the URI parameters.
+        //
+        if( !f_uri.has_query_option("host") )
+        {
+            f_uri.set_query_option("host",host);
+        }
+
         QDomDocument doc;
         QDomElement output(doc.createElement("output"));
         get_host_status( doc, output, host, plugin_name );
