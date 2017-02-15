@@ -4916,6 +4916,12 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
                 // /snap/head/metadata/editor[@owner='...']
                 editor_tag.setAttribute("owner", owner_name);
             }
+            QString const layout_name(root.attribute("layout"));
+            if(!layout_name.isEmpty() || !owner_name.isEmpty())
+            {
+                // /snap/head/metadata/editor[@layout='...']
+                editor_tag.setAttribute("layout", layout_name.isEmpty() ? owner_name : layout_name);
+            }
             QString const form_id(root.attribute("id"));
             if(!form_id.isEmpty())
             {

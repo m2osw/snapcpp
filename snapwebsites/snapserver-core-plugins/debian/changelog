@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.63.0~xenial) xenial; urgency=high
+
+  * EX-79: The editor now accepts a layout="..." name in <editor-form> tags.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 14 Feb 2017 16:21:45 -0800
+
 snapserver-core-plugins (1.0.62.0~xenial) xenial; urgency=high
 
   * EX-79: Added the path to the user-page as a get_name().

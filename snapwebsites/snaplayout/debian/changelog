@@ -1,8 +1,9 @@
-snaplayout (1.0.6.24~xenial) xenial; urgency=high
+snaplayout (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Added support for layouts that are owned by a different plugin.
+  * Fixed the search for a name in content.xml, a position was wrong.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:06 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 14 Feb 2017 16:20:48 -0700
 
 snaplayout (1.0.6.0~xenial) xenial; urgency=high
 
