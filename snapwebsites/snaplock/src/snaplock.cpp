@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapwebsites/snaplock/src/snaplock.cpp
+ *      src/snaplock.cpp
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers
@@ -536,6 +536,22 @@ int snaplock::quorum() const
 }
 
 
+/** \brief Get the name of the server we are running on.
+ *
+ * This function returns the name of the server this instance of
+ * snaplock is running. It is used by the ticket implementation
+ * to know whether to send a reply to the snap_lock object (i.e.
+ * at this time we can send messages to that object only from the
+ * server it was sent from.)
+ *
+ * \return The name of the server snaplock is running on.
+ */
+QString const & snaplock::get_server_name() const
+{
+    return f_server_name;
+}
+
+
 /** \brief Process a message received from Snap! Communicator.
  *
  * This function gets called whenever the Snap! Communicator sends
@@ -906,14 +922,21 @@ void snaplock::stop(bool quitting)
  * the message, there is no minimum or maximum (i.e. it may already
  * have timed out.)
  *
+ * \exception snap_communicator_invalid_message
+ * If a required parameter (object_name, client_pid, or key) is missing
+ * then this exception is raised. You will have to fix your software
+ * to avoid the exception.
+ *
  * \param[in] message  The message from which we get parameters.
  * \param[out] object_name  A pointer to a QString that receives the object name.
  * \param[out] client_pid  A pointer to a pid_t that receives the client pid.
  * \param[out] timeout  A pointer to an int64_t that receives the timeout date in seconds.
+ * \param[out] key  A pointer to a QString that receives the key parameter.
+ * \param[out] source  A pointer to a QString that receives the source parameter.
  *
  * \return true if all specified parameters could be retrieved.
  */
-void snaplock::get_parameters(snap::snap_communicator_message const & message, QString * object_name, pid_t * client_pid, time_t * timeout, QString * key)
+void snaplock::get_parameters(snap::snap_communicator_message const & message, QString * object_name, pid_t * client_pid, time_t * timeout, QString * key, QString * source)
 {
     // get the "object name" (what we are locking)
     // in Snap, the object name is often a URI plus the action we are performing
@@ -974,6 +997,19 @@ void snaplock::get_parameters(snap::snap_communicator_message const & message, Q
             throw snap::snap_communicator_invalid_message("snaplock::get_parameters(): A key cannot be an empty string.");
         }
     }
+
+    // get the key of a ticket or entering object
+    //
+    if(source != nullptr)
+    {
+        *source = message.get_parameter("source");
+        if(source->isEmpty())
+        {
+            // source missing
+            //
+            throw snap::snap_communicator_invalid_message("snaplock::get_parameters(): A source cannot be an empty string.");
+        }
+    }
 }
 
 
@@ -1015,7 +1051,7 @@ void snaplock::lock(snap::snap_communicator_message const & message)
     QString object_name;
     pid_t client_pid(0);
     time_t timeout(0);
-    get_parameters(message, &object_name, &client_pid, &timeout, nullptr);
+    get_parameters(message, &object_name, &client_pid, &timeout, nullptr, nullptr);
 
     if(timeout <= time(nullptr))
     {
@@ -1063,7 +1099,7 @@ void snaplock::unlock(snap::snap_communicator_message const & message)
 {
     QString object_name;
     pid_t client_pid(0);
-    get_parameters(message, &object_name, &client_pid, nullptr, nullptr);
+    get_parameters(message, &object_name, &client_pid, nullptr, nullptr, nullptr);
 
     // make sure this ticket exists
     auto const obj_ticket(f_tickets.find(object_name));
@@ -1092,7 +1128,7 @@ void snaplock::unlock(snap::snap_communicator_message const & message)
 //{
 //    QString object_name;
 //    QString key;
-//    get_parameters(message, &object_name, nullptr, nullptr, &key);
+//    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 //
 //    auto obj_ticket(f_tickets.find(object_name));
 //    if(obj_ticket != f_tickets.end())
@@ -1126,7 +1162,8 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
     QString object_name;
     time_t timeout(0);
     QString key;
-    get_parameters(message, &object_name, nullptr, &timeout, &key);
+    QString source;
+    get_parameters(message, &object_name, nullptr, &timeout, &key, &source);
 
     // the server_name and client_pid never include a slash so using
     // such as separators is safe
@@ -1157,6 +1194,14 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
                 throw snap::snap_communicator_invalid_message("snaplock::lockentering(): Invalid duration, the minimum accepted is 3.");
             }
 
+            // we have to know where this message comes from
+            //
+            snap::snap_string_list const source_segments(source.split("/"));
+            if(source_segments.size() != 2)
+            {
+                throw snap::snap_communicator_invalid_message("snaplock::lockentering(): Invalid number of parameters in source.");
+            }
+
             f_entering_tickets[object_name][key] = std::make_shared<snaplock_ticket>(
                                       this
                                     , f_messenger
@@ -1164,8 +1209,8 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
                                     , key
                                     , timeout
                                     , duration
-                                    , ""
-                                    , "");
+                                    , source_segments[0]
+                                    , source_segments[1]);
         }
 
         snap::snap_communicator_message reply;
@@ -1194,7 +1239,7 @@ void snaplock::lockentered(snap::snap_communicator_message const & message)
 {
     QString object_name;
     QString key;
-    get_parameters(message, &object_name, nullptr, nullptr, &key);
+    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 
     auto const obj_entering_ticket(f_entering_tickets.find(object_name));
     if(obj_entering_ticket != f_entering_tickets.end())
@@ -1218,7 +1263,7 @@ void snaplock::lockexiting(snap::snap_communicator_message const & message)
 {
     QString object_name;
     QString key;
-    get_parameters(message, &object_name, nullptr, nullptr, &key);
+    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 
     // when exiting we just remove the entry with that key
     //
@@ -1499,7 +1544,7 @@ void snaplock::drop_ticket(snap::snap_communicator_message const & message)
 {
     QString object_name;
     QString key;
-    get_parameters(message, &object_name, nullptr, nullptr, &key);
+    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 
     snap::snap_string_list const segments(key.split('/'));
 
@@ -1573,7 +1618,7 @@ void snaplock::get_max_ticket(snap::snap_communicator_message const & message)
 {
     QString object_name;
     QString key;
-    get_parameters(message, &object_name, nullptr, nullptr, &key);
+    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 
     // remove any f_tickets that timed out by now because these should
     // not be taken in account in the max. computation
@@ -1622,7 +1667,7 @@ void snaplock::max_ticket(snap::snap_communicator_message const & message)
 {
     QString object_name;
     QString key;
-    get_parameters(message, &object_name, nullptr, nullptr, &key);
+    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 
     // the MAXTICKET is an answer that has to go in a still un-added ticket
     //
@@ -1656,7 +1701,7 @@ void snaplock::add_ticket(snap::snap_communicator_message const & message)
     QString object_name;
     QString key;
     time_t timeout;
-    get_parameters(message, &object_name, nullptr, &timeout, &key);
+    get_parameters(message, &object_name, nullptr, &timeout, &key, nullptr);
 
 #ifdef _DEBUG
     {
@@ -1679,13 +1724,13 @@ void snaplock::add_ticket(snap::snap_communicator_message const & message)
     snap::snap_string_list const segments(key.split('/'));
     if(segments.size() < 3)
     {
-        throw std::logic_error("snaplock_ticket::add_ticket() called with an invalid ticket key (not enough segments).");
+        throw std::logic_error("snaplock::add_ticket() called with an invalid ticket key (not enough segments).");
     }
     //bool ok(false);
     //pid_t const client_pid(segments[2].toInt(&ok, 10));
     //if(!ok)
     //{
-    //    throw std::logic_error("snaplock_ticket::add_ticket() called with an invalid ticket key (client_pid is not a number).");
+    //    throw std::logic_error("snaplock::add_ticket() called with an invalid ticket key (client_pid is not a number).");
     //}
 
     // by now all existing snaplock instances should already have
@@ -1735,7 +1780,7 @@ void snaplock::ticket_added(snap::snap_communicator_message const & message)
 {
     QString object_name;
     QString key;
-    get_parameters(message, &object_name, nullptr, nullptr, &key);
+    get_parameters(message, &object_name, nullptr, nullptr, &key, nullptr);
 
     auto const obj_ticket(f_tickets.find(object_name));
     if(obj_ticket != f_tickets.end())
@@ -1751,7 +1796,7 @@ void snaplock::ticket_added(snap::snap_communicator_message const & message)
                 // this can happen whenever someone enters the ring midway
                 // and never received the LOCKENTERING and other such messages
                 //
-                SNAP_LOG_DEBUG("snaplock_ticket::ticket_added() called with an object not present in f_entering_ticket.");
+                SNAP_LOG_DEBUG("snaplock::ticket_added() called with an object not present in f_entering_ticket.");
                 return;
             }
             key_ticket->second->ticket_added(obj_entering_ticket->second);

@@ -476,8 +476,7 @@ bool snap_layout::load_xml_info(QDomDocument & doc, QString const & filename, QS
             }
             if(path.startsWith("/layouts/"))
             {
-                int pos(path.indexOf('/', 15));
-               // int const end(path.indexOf('/', pos + 1));
+                int pos(path.indexOf('/', 9));
                 if(pos < 0)
                 {
                     pos = path.length();
@@ -505,7 +504,14 @@ bool snap_layout::load_xml_info(QDomDocument & doc, QString const & filename, QS
     }
     else
     {
-        content_name = snap_tree.attribute("owner");
+        // in case the layout and plugin have different names, the layout
+        // will be in the layout parameter
+        //
+        content_name = snap_tree.attribute("layout");
+        if(content_name.isEmpty())
+        {
+            content_name = snap_tree.attribute("owner");
+        }
     }
 
     if(content_name.isEmpty())
@@ -1056,13 +1062,13 @@ void snap_layout::add_files()
 
         if(f_verbose && cell_name != filename)
         {
-            std::cout << "info: saving file \"" << filename << "\" in field \"" << cell_name << "\"." << std::endl;
+            std::cout << "info: saving file \"" << filename << "\" in field \"" << row_name << "." << cell_name << "\"." << std::endl;
         }
 
         try
         {
             auto q( Query::create(f_session) );
-            q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? and column1 = ?;").arg(context_name) );
+            q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
             q->bindByteArray( bind++, content            );
             q->bindByteArray( bind++, row_name.toUtf8()  );

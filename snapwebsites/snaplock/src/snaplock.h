@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplock.h
+ *      src/snaplock.h
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers
@@ -207,6 +207,7 @@ public:
 
     int                         get_computer_count() const;
     int                         quorum() const;
+    QString const &             get_server_name() const;
 
     static void                 sighandler( int sig );
 
@@ -217,7 +218,7 @@ private:
     void                        usage(advgetopt::getopt::status_t status);
     void                        setup_firewall();
     void                        next_wakeup();
-    void                        get_parameters(snap::snap_communicator_message const & message, QString * object_name, pid_t * client_pid, time_t * timeout, QString * key);
+    void                        get_parameters(snap::snap_communicator_message const & message, QString * object_name, pid_t * client_pid, time_t * timeout, QString * key, QString * source);
     void                        lock(snap::snap_communicator_message const & message);
     void                        unlock(snap::snap_communicator_message const & message);
     void                        dropticket(snap::snap_communicator_message const & message);

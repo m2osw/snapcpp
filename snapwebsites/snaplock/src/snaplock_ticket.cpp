@@ -426,6 +426,7 @@ void snaplock_ticket::entering()
     entering_message.add_parameter("key", f_entering_key);
     entering_message.add_parameter("timeout", f_obtention_timeout);
     entering_message.add_parameter("duration", f_lock_duration);
+    entering_message.add_parameter("source", f_server_name + "/" + f_service_name);
     f_messenger->send_message(entering_message);
 }
 
@@ -579,8 +580,7 @@ void snaplock_ticket::add_ticket()
     add_ticket_message.add_parameter("object_name", f_object_name);
     add_ticket_message.add_parameter("key", f_ticket_key);
     add_ticket_message.add_parameter("timeout", f_obtention_timeout);
-    //add_ticket_message.add_parameter("source_service", f_service_name); -- that can be tricky, who should send the LOCKFAILED message now?
-    //add_ticket_message.add_parameter("source_sent_from", f_sent_from);
+    //add_ticket_message.add_parameter("source", f_server_name + "/" + f_service_name); -- done in LOCKENTERING already
     f_messenger->send_message(add_ticket_message);
 }
 
@@ -692,7 +692,8 @@ void snaplock_ticket::activate_lock()
     if(f_ticket_ready
     && !f_locked
     && !f_lock_failed
-    && !f_service_name.isEmpty())
+    && !f_service_name.isEmpty()
+    && f_server_name == f_snaplock->get_server_name())
     {
         f_locked = true;
         f_lock_timeout = f_lock_duration + time(nullptr);
@@ -725,7 +726,8 @@ void snaplock_ticket::drop_ticket()
     drop_ticket_message.add_parameter("key", f_ticket_key.isEmpty() ? f_entering_key : f_ticket_key);
     f_messenger->send_message(drop_ticket_message);
 
-    if(!f_service_name.isEmpty())
+    if(!f_service_name.isEmpty()
+    && f_server_name == f_snaplock->get_server_name())
     {
         // we can immediately say it got unlocked...
         //
@@ -786,7 +788,8 @@ bool snaplock_ticket::timed_out() const
 void snaplock_ticket::lock_failed()
 {
     if(!f_lock_failed
-    && !f_service_name.isEmpty())
+    && !f_service_name.isEmpty()
+    && f_server_name == f_snaplock->get_server_name())
     {
         // send that message at most once
         f_lock_failed = true;
