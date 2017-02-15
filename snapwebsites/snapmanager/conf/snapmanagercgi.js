@@ -7,10 +7,6 @@
  * License: GPLv2
  */
 
-var button_name;
-var last_tr;
-var last_serialized_data;
-
 // Find first ancestor of el with tagName
 // or undefined if not found
 function upTo(el, tagName)
@@ -35,39 +31,75 @@ jQuery(document).ready(function()
     }); 
 
     jQuery("button").click( function() {
-        button_name = jQuery(this).attr("name");
+        var button_name = jQuery(this).attr("name");
+        var parent_form = jQuery(this).parent();
+        parent_form.data( "button_name", button_name );
     });
+
+    setInterval( function() {
+        var modified_tr = jQuery("tr[class='modified']");
+        if( modified_tr.length > 0 )
+        {
+            console.log("modified trs found!");
+            var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
+            if( parent_div.data("ajax_pending") !== "true" )
+            {
+                console.log("Sending ajax...");
+                var the_data  = parent_div.data("form_data");
+                if( the_data )
+                {
+                    parent_div.data("ajax_pending", "true");
+                    jQuery.ajax({
+                                    url : "snapmanager",
+                                    type: "POST",
+                                    data: "hostname="+the_data.hostname
+                                          + "&field_name="+the_data.field_name
+                                          + "&plugin_name="+the_data.plugin_name
+                                          + "&status=true"
+                                })
+                    .done( function(response) {
+                        var modified_tr = jQuery("tr[class='modified']");
+                        var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
+                        parent_div.html(response);
+                        parent_div.data("ajax_pending", "false");
+                    })
+                    .fail( function(xhr,status,errorThrown) {
+                        server_fail(xhr,status,errorThrown);
+                    });
+                }
+            }
+        }
+    }, 1000 );
 
     jQuery(".manager_form").submit( function( event )
     {
         event.preventDefault();
 
-        /*
-         * Not sure I will need this again, but leaving just in case
-        var fields = jQuery(this).serializeArray();
+        var the_form = jQuery(this);
+
+        var fields_array = {};
+        var fields = the_form.serializeArray();
         jQuery.each( fields, function(i,element) {
-            if( element.name === "hostname" )
-            {
-                host_name = element.value;
-            }
-            else if( element.name === "plugin_name" )
-            {
-                plugin_name = element.value;
-            }
+            fields_array[element.name] = element.value;
         });
-        */
+        the_form.data( "form_data", fields_array );
 
-        last_serialized_data = jQuery(this).serialize();
-        last_tr = upTo(this,"tr");
-        jQuery(last_tr).addClass( "modified" );
+        var last_tr = upTo(this,"tr");
+        jQuery(last_tr).addClass("modified");
 
+        var button_name = the_form.data("button_name");
         jQuery.ajax({
             url : "snapmanager",
             type: "POST",
-            data: last_serialized_data + "&" + button_name + "="
+            data: the_form.serialize() + "&" + button_name + "="
         })
         .done( function(response) {
-            jQuery(last_tr).removeClass("modified");
+            var modified_tr = jQuery("tr[class='modified']");
+            var the_form    = modified_tr.find("form");
+            var the_data    = the_form.data("form_data");
+            var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
+            parent_div.html(response);
+            parent_div.data("form_data",the_data);
         })
         .fail( function(xhr,status,errorThrown) {
             server_fail(xhr,status,errorThrown);

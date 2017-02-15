@@ -665,16 +665,10 @@ int manager_cgi::process()
         }
     }
 
-    if( (request_method == "POST") ) //|| f_uri.has_query_option("status") )
+    if( (request_method == "POST") )
     {
-        QString const host  = //(request_method == "POST")
-                            /*?*/ f_post_variables["hostname"].c_str()
-                            //: f_uri.query_option("host")
-                            ;
-        QString const plugin_name  = //(request_method == "POST")
-                            /*?*/ f_post_variables["plugin_name"].c_str()
-                            //: f_uri.query_option("plugin_name")
-                            ;
+        QString const host         = f_post_variables["hostname"].c_str();
+        QString const plugin_name  = f_post_variables["plugin_name"].c_str();
 
         QDomDocument doc;
         QDomElement output(doc.createElement("output"));
@@ -1313,6 +1307,7 @@ int manager_cgi::process_post()
     // determine which button was clicked
     //
     std::vector<std::string> const button_names{
+                "status",
                 "save",
                 "save_everywhere",
                 "restore_default",
@@ -1424,6 +1419,12 @@ int manager_cgi::process_post()
                           + "\" field defined.").c_str()
                         , nullptr);
         }
+    }
+
+    if( button_name == "status" )
+    {
+        // This is for checking, not for modifying, so do nothing else here.
+        return 0;
     }
 
     // that very field should be defined in the POST variables
