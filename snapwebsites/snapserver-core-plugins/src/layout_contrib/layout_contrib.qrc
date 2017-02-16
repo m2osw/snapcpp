@@ -18,37 +18,42 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/xml/layout_contrib">
+  <qresource prefix="/plugins/layout_contrib">
     <file>content.xml</file>
   </qresource>
   <qresource prefix="/images/layout_contrib">
     <file>layout_contrib-logo-64x64.png</file>
   </qresource>
-  <qresource prefix="/js/layout_contrib">
-    <file>js/agency.js</file>
-    <file>js/bootstrap.js</file>
-    <file>js/metis-menu.js</file>
+  <qresource prefix="/images">
+    <file>layout_contrib/header-background.jpg</file>
+    <file>layout_contrib/world-map.png</file>
   </qresource>
-  <qresource prefix="/css/layout_contrib">
-    <file>css/agency.css</file>
-    <file>css/bootstrap.css</file>
-    <file>css/bootstrap-social.css</file>
-    <file>css/bootstrap-theme.css</file>
-    <file>css/font-awesome.css</file>
-    <file>css/metis-menu.css</file>
+  <qresource prefix="/js">
+    <file>layout_contrib/agency.js</file>
+    <file>layout_contrib/bootstrap.js</file>
+    <file>layout_contrib/jquery-easing.js</file>
+    <file>layout_contrib/metis-menu.js</file>
   </qresource>
-  <qresource prefix="/fonts/layout_contrib">
-    <file>fonts/FontAwesome.otf</file>
-    <file>fonts/fontawesome-webfont.eot</file>
-    <file>fonts/fontawesome-webfont.svg</file>
-    <file>fonts/fontawesome-webfont.ttf</file>
-    <file>fonts/fontawesome-webfont.woff</file>
-    <file>fonts/fontawesome-webfont.woff2</file>
-    <file>fonts/glyphicons-halflings-regular.eot</file>
-    <file>fonts/glyphicons-halflings-regular.svg</file>
-    <file>fonts/glyphicons-halflings-regular.ttf</file>
-    <file>fonts/glyphicons-halflings-regular.woff</file>
-    <file>fonts/glyphicons-halflings-regular.woff2</file>
+  <qresource prefix="/css">
+    <file>layout_contrib/agency.css</file>
+    <file>layout_contrib/bootstrap.css</file>
+    <file>layout_contrib/bootstrap-social.css</file>
+    <file>layout_contrib/bootstrap-theme.css</file>
+    <file>layout_contrib/font-awesome.css</file>
+    <file>layout_contrib/metis-menu.css</file>
+  </qresource>
+  <qresource prefix="/fonts">
+    <file>layout_contrib/FontAwesome.otf</file>
+    <file>layout_contrib/fontawesome-webfont.eot</file>
+    <file>layout_contrib/fontawesome-webfont.svg</file>
+    <file>layout_contrib/fontawesome-webfont.ttf</file>
+    <file>layout_contrib/fontawesome-webfont.woff</file>
+    <file>layout_contrib/fontawesome-webfont.woff2</file>
+    <file>layout_contrib/glyphicons-halflings-regular.eot</file>
+    <file>layout_contrib/glyphicons-halflings-regular.svg</file>
+    <file>layout_contrib/glyphicons-halflings-regular.ttf</file>
+    <file>layout_contrib/glyphicons-halflings-regular.woff</file>
+    <file>layout_contrib/glyphicons-halflings-regular.woff2</file>
   </qresource>
 </RCC>
 <!--

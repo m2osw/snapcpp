@@ -7,6 +7,8 @@
  * Bootstrap v3.3.7 (http://getbootstrap.com)
  * Copyright: Copyright 2011-2016 Twitter, Inc.
  * License: Licensed under the MIT license
+ *
+ * @preserve
  */
 
 if (typeof jQuery === 'undefined') {

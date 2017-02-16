@@ -46,16 +46,16 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 ##
 snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_css( css/agency.css       )
-snap_validate_css( css/bootstrap.css    )
-snap_validate_css( css/bootstrap-social.css )
-snap_validate_css( css/bootstrap-theme.css  )
-snap_validate_css( css/font-awesome.css )
-snap_validate_css( css/metis-menu.css    )
+snap_validate_css( layout_contrib/agency.css           )
+snap_validate_css( layout_contrib/bootstrap.css        )
+snap_validate_css( layout_contrib/bootstrap-social.css )
+snap_validate_css( layout_contrib/bootstrap-theme.css  )
+snap_validate_css( layout_contrib/font-awesome.css     )
+snap_validate_css( layout_contrib/metis-menu.css       )
 
-snap_validate_js( js/agency.js    )
-#snap_validate_js( js/bootstrap.js ) -- apparently the author does not believe in having ';' at the end of lines
-snap_validate_js( js/metis-menu.js )
+snap_validate_js( layout_contrib/agency.js    )
+#snap_validate_js( layout_contrib/bootstrap.js ) -- apparently the author does not believe in having ';' at the end of lines
+snap_validate_js( layout_contrib/metis-menu.js )
 
 
 
@@ -64,15 +64,28 @@ add_library(layout_contrib SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    css/agency.css
-    css/bootstrap.css
-    css/bootstrap-social.css
-    css/bootstrap-theme.css
-    css/font-awesome.css
-    css/metis-menu.css
-    js/agency.js
-    js/bootstrap.js
-    js/metis-menu.js
+    layout_contrib/agency.css
+    layout_contrib/bootstrap.css
+    layout_contrib/bootstrap-social.css
+    layout_contrib/bootstrap-theme.css
+    layout_contrib/font-awesome.css
+    layout_contrib/metis-menu.css
+    layout_contrib/agency.js
+    layout_contrib/bootstrap.js
+    layout_contrib/metis-menu.js
+    layout_contrib/FontAwesome.otf
+    layout_contrib/fontawesome-webfont.eot
+    layout_contrib/fontawesome-webfont.svg
+    layout_contrib/fontawesome-webfont.ttf
+    layout_contrib/fontawesome-webfont.woff
+    layout_contrib/fontawesome-webfont.woff2
+    layout_contrib/glyphicons-halflings-regular.eot
+    layout_contrib/glyphicons-halflings-regular.svg
+    layout_contrib/glyphicons-halflings-regular.ttf
+    layout_contrib/glyphicons-halflings-regular.woff
+    layout_contrib/glyphicons-halflings-regular.woff2
+    layout_contrib/header-background.jpg
+    layout_contrib/world-map.png
 )
 
 target_link_libraries( layout_contrib Qt5::Core )

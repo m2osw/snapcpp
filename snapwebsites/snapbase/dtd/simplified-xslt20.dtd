@@ -131,15 +131,42 @@ DTD of the XSLT 2.0.
             target CDATA #IMPLIED
             title CDATA ""
             product-guid CDATA #IMPLIED
-            tabindex CDATA #IMPLIED>
+            tabindex CDATA #IMPLIED
+            data-toggle CDATA #IMPLIED
+            data-target CDATA #IMPLIED>
+
+<!ELEMENT button ANY>
+<!ATTLIST button id CDATA #IMPLIED
+                 type CDATA #IMPLIED
+                 class CDATA #IMPLIED
+                 data-toggle CDATA #IMPLIED
+                 data-target CDATA #IMPLIED>
 
 <!-- product-guid is from ecommerce -->
 
-<!ELEMENT b ANY>
 <!ELEMENT br EMPTY>
+
+<!ELEMENT header ANY>
+<!ATTLIST header class CDATA #IMPLIED
+                 id CDATA #IMPLIED
+                 style CDATA #IMPLIED
+                 popup CDATA #IMPLIED>
+
+<!ELEMENT footer ANY>
+<!ATTLIST footer class CDATA #IMPLIED
+                 id CDATA #IMPLIED
+                 style CDATA #IMPLIED
+                 popup CDATA #IMPLIED>
+
+<!ELEMENT section ANY>
+<!ATTLIST section class CDATA #IMPLIED
+                  id CDATA #IMPLIED
+                  style CDATA #IMPLIED
+                  popup CDATA #IMPLIED>
 
 <!ELEMENT body ANY>
 <!ATTLIST body class CDATA #IMPLIED
+               id CDATA #IMPLIED
                popup CDATA #IMPLIED>
 
 <!ELEMENT code ANY>
@@ -161,10 +188,17 @@ DTD of the XSLT 2.0.
               value CDATA #IMPLIED
               data-item-name CDATA #IMPLIED>
 
+<!ELEMENT nav ANY>
+<!ATTLIST nav class CDATA #IMPLIED
+              id CDATA #IMPLIED
+              style CDATA #IMPLIED>
+
 <!ELEMENT form ANY>
 <!ATTLIST form accept-charset CDATA #IMPLIED
                action CDATA #IMPLIED
                id CDATA #IMPLIED
+               name CDATA #IMPLIED
+               novalidate CDATA #IMPLIED
                method (get|post) "get">
 
 <!ELEMENT h1 ANY>
@@ -198,14 +232,34 @@ DTD of the XSLT 2.0.
                prefix CDATA #IMPLIED
                xml:lang CDATA #IMPLIED>
 
+<!ELEMENT b ANY>
+<!ATTLIST b class CDATA #IMPLIED>
+
 <!ELEMENT i ANY>
+<!ATTLIST i class CDATA #IMPLIED
+            aria-hidden CDATA #IMPLIED>
 
 <!ELEMENT input ANY>
 <!ATTLIST input disabled (disabled) #IMPLIED
                 id CDATA #IMPLIED
                 name CDATA #IMPLIED
                 type CDATA #IMPLIED
-                value CDATA #IMPLIED>
+                value CDATA #IMPLIED
+                placeholder CDATA #IMPLIED
+                required CDATA #IMPLIED
+                class CDATA #IMPLIED
+                data-validation-required-message CDATA #IMPLIED>
+
+<!ELEMENT textarea ANY>
+<!ATTLIST textarea disabled (disabled) #IMPLIED
+                   id CDATA #IMPLIED
+                   name CDATA #IMPLIED
+                   type CDATA #IMPLIED
+                   value CDATA #IMPLIED
+                   placeholder CDATA #IMPLIED
+                   required CDATA #IMPLIED
+                   class CDATA #IMPLIED
+                   data-validation-required-message CDATA #IMPLIED>
 
 <!ELEMENT em ANY>
 
@@ -218,6 +272,7 @@ DTD of the XSLT 2.0.
               width CDATA #IMPLIED
               height CDATA #IMPLIED
               title CDATA #IMPLIED
+              class CDATA #IMPLIED
               alt CDATA #IMPLIED
               style CDATA #IMPLIED
               type CDATA #IMPLIED

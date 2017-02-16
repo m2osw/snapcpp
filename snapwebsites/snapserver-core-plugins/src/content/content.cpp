@@ -1921,7 +1921,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                 {
                     // that is not the same filename, trash the old one
                     //
-                    SNAP_LOG_INFO("deleting now unused attachment \"")(old_attachment_key)("\".");
+                    SNAP_LOG_INFO("deleting now unused attachment \"")(old_attachment_key)("\" replacing with \"")(attachment_ipath.get_key())("\".");
                     path_info_t old_attachment_ipath;
                     old_attachment_ipath.set_path(old_attachment_key);
                     trash_page(old_attachment_ipath);
