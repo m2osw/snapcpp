@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.64.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 16 Feb 2017 02:00:57 -0800
+
 snapserver-core-plugins (1.0.64.0~xenial) xenial; urgency=high
 
   * EX-79: Moved the layout_contrib files so they properly fit in the QRC file.
