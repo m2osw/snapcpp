@@ -25,31 +25,56 @@ function upTo(el, tagName)
 }
 
 
-// Replace the div which contiains the "modified" tr.
-// If you set save_form_data to 'true', it will first
-// save the embedded form data, useful for POSTs.
-//
-function replace_div( response, save_form_data )
+var div_map = {};
+
+function FieldDiv( the_form )
 {
-    var the_data;
-    var modified_tr = jQuery("tr[class='modified']");
+    jq_form             = jQuery(the_form);
+    this.parent_tr      = upTo(the_form,"tr");
+    this.parent_div     = jQuery( upTo(this.parent_tr,"div") );
+    this.button_name    = jq_form.data("button_name");
+    this.form_post_data = jq_form.serialize();
+    this.form_data      = {}
+    this.ajax_pending   = true; // Set to true when we are waiting for an ajax response.
 
-    if( save_form_data )
+    var that = this;
+    jQuery.each( jq_form.serializeArray(), function(i,element) {
+        that.form_data[element.name] = element.value;
+    });
+
+    jQuery(this.parent_tr).addClass("modified");
+
+    // Replace the div which contiains the "modified" tr.
+    // If you set save_form_data to 'true', it will first
+    // save the embedded form data, useful for POSTs.
+    //
+    this.replace_div = function( response )
     {
-        var the_form = modified_tr.find("form");
-        the_data     = the_form.data("form_data");
+        this.parent_div.html(response);
+        this.ajax_pending = false;
     }
 
-    var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
-    parent_div.html(response);
-
-    if( save_form_data )
+    this.get_field_id = function()
     {
-        parent_div.data("form_data",the_data);
+        return this.form_data["plugin_name"] + "::" + this.form_data["field_name"];
     }
-    else
+
+    this.is_modified = function()
     {
-        parent_div.data("ajax_pending", false);
+        return this.parent_div.find("tr[class='modified']").length > 0;
+    }
+
+    this.get_post_data = function()
+    {
+        return this.form_post_data + "&" + this.button_name + "=";
+    }
+
+    this.get_query_data = function()
+    {
+        return    "hostname="     + this.form_data.hostname
+                + "&field_name="  + this.form_data.field_name
+                + "&plugin_name=" + this.form_data.plugin_name
+                + "&status=true";
     }
 }
 
@@ -65,18 +90,17 @@ function server_fail( xhr, the_status, errorThrown )
 }
 
 
-// Disable/enable form events based on the presence of the 'modified' class.
-//
-function enable_disable_forms()
+function check_for_modified_divs()
 {
-    if( jQuery("tr[class='modified']").length == 0 )
+    var pending = false;
+    jQuery.each( div_map, function( index, div_object )
     {
-        jQuery(".manager_form").prop( "disabled", false );
-    }
-    else
-    {
-        jQuery(".manager_form").prop( "disabled", true );
-    }
+        if( div_object.is_modified() )
+        {
+            pending = true;
+        }
+    });
+    return pending;
 }
 
 
@@ -86,7 +110,16 @@ function enable_disable_forms()
 //
 function hook_up_form_events()
 {
-    jQuery("button").click( function() {
+    jQuery("button").click( function(event)
+    {
+        if( check_for_modified_divs() )
+        {
+            //alert( "Operation pending, try again later." );
+            // Ignore button hit if operation pending.
+            event.preventDefault();
+            return;
+        }
+
         var button_name = jQuery(this).attr("name");
         var parent_form = jQuery(this).parent();
         parent_form.data( "button_name", button_name );
@@ -96,30 +129,18 @@ function hook_up_form_events()
     {
         event.preventDefault();
 
-        var the_form = jQuery(this);
-
-        var fields_array = {};
-        var fields = the_form.serializeArray();
-        jQuery.each( fields, function(i,element) {
-            fields_array[element.name] = element.value;
-        });
-        the_form.data( "form_data", fields_array );
-
-        var last_tr = upTo(this,"tr");
-        jQuery(last_tr).addClass("modified");
-        enable_disable_forms();
-
-        var button_name = the_form.data("button_name");
+        var div_object = new FieldDiv( this );
+        div_map[div_object.get_field_id()] = div_object;
 
         jQuery.ajax(
         {
             url : "snapmanager",
             type: "POST",
-            data: the_form.serialize() + "&" + button_name + "="
+            data: div_object.get_post_data()
         })
         .done( function(response)
         {
-            replace_div( response, true );
+            div_object.replace_div( response );
             hook_up_form_events();
         })
         .fail( function( xhr, the_status, errorThrown )
@@ -127,6 +148,38 @@ function hook_up_form_events()
             server_fail( xhr, the_status, errorThrown );
         });
     });
+}
+
+
+// Start monitor interval that runs forever, but only
+// gets activated if a div_map is modified.
+//
+function start_monitor()
+{
+    setInterval( function()
+    {
+        jQuery.each( div_map, function( index, div_object )
+        {
+            if( !div_object.is_modified() || div_object.ajax_pending ) return;
+
+            div_object.ajax_pending = true;
+            jQuery.ajax(
+            {
+                url : "snapmanager",
+                type: "POST",
+                data: div_object.get_query_data()
+            })
+            .done( function(response)
+            {
+                div_object.replace_div( response );
+                hook_up_form_events();
+            })
+            .fail( function( xhr, the_status, errorThrown )
+            {
+                server_fail( xhr, the_status, errorThrown );
+            });
+        });
+    }, 1000 );
 }
 
 
@@ -142,41 +195,7 @@ jQuery(document).ready(function()
         heightStyle: "content",
     }); 
 
-    setInterval( function()
-    {
-        var modified_tr = jQuery("tr[class='modified']");
-        if( modified_tr.length > 0 )
-        {
-            var parent_div  = jQuery(upTo(modified_tr.get(0),"div"));
-            if( parent_div.data("ajax_pending") !== true )
-            {
-                var the_data  = parent_div.data("form_data");
-                if( the_data )
-                {
-                    parent_div.data("ajax_pending", true);
-                    jQuery.ajax(
-                    {
-                        url : "snapmanager",
-                        type: "POST",
-                        data: "hostname="+the_data.hostname
-                            + "&field_name="+the_data.field_name
-                            + "&plugin_name="+the_data.plugin_name
-                            + "&status=true"
-                    })
-                    .done( function(response)
-                    {
-                        replace_div( response, false );
-                        hook_up_form_events();
-                        enable_disable_forms();
-                    })
-                    .fail( function( xhr, the_status, errorThrown )
-                    {
-                        server_fail( xhr, the_status, errorThrown );
-                    });
-                }
-            }
-        }
-    }, 1000 );
+    start_monitor();
 
     hook_up_form_events();
 });
