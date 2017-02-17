@@ -1,3 +1,11 @@
+snapmanager (1.3.4.0~xenial) xenial; urgency=high
+
+  * Changed the tabs so that they are no longer incrementing a number, but
+    instead using the plugin name. This simplifies the code a lot.
+  * Replaced the js interval with a timeout. This is more efficient.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 16 Feb 2017 19:38:46 -0800
+
 snapmanager (1.3.3.5~xenial) xenial; urgency=high
 
   * Nightly build.
