@@ -128,6 +128,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<meta charset="utf-8"/>
 		<!-- force UTF-8 encoding (at the very beginning to avoid an IE6 bug) -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<!-- viewport for smart phones support (TODO: we need to have some support
+		     in the header plugin to tweak the values...) -->
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
 
 		<!-- title is required, no need to test its presence -->
 		<xsl:variable name="title" select="page/body/titles/title/node()"/>
