@@ -1,8 +1,14 @@
-snapserver-core-plugins (1.0.64.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.65.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Thu, 16 Feb 2017 02:00:57 -0800
+ -- Build Server <build@m2osw.com>  Fri, 17 Feb 2017 02:00:57 -0800
+
+snapserver-core-plugins (1.0.65.0~xenial) xenial; urgency=high
+
+  * EX-79: Added the viewport meta tag with standard defaults.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 16 Feb 2017 21:10:45 -0800
 
 snapserver-core-plugins (1.0.64.0~xenial) xenial; urgency=high
 
