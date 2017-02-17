@@ -186,7 +186,10 @@ DTD of the XSLT 2.0.
               invoice_number CDATA #IMPLIED
               title CDATA ""
               value CDATA #IMPLIED
-              data-item-name CDATA #IMPLIED>
+              data-item-name CDATA #IMPLIED
+              tabindex CDATA #IMPLIED
+              role CDATA #IMPLIED
+              aria-labelledby CDATA #IMPLIED>
 
 <!ELEMENT nav ANY>
 <!ATTLIST nav class CDATA #IMPLIED
