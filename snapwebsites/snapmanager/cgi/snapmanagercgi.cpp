@@ -1585,6 +1585,11 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
         QDomText text(doc.createTextNode("Host Status"));
         item.appendChild(text);
 
+        QDomElement status(doc.createElement("status"));
+        menu.appendChild(status);
+        status.appendChild( doc.createTextNode("Host: ") );
+        status.appendChild( doc.createTextNode(host)     );
+
         // the function is to be applied to that specific host
         //
         if(!function.isEmpty())
@@ -1602,6 +1607,10 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
     }
     else
     {
+        QDomElement status(doc.createElement("status"));
+        menu.appendChild(status);
+        status.appendChild( doc.createTextNode("Select Host:") );
+
         // no host specified, if there is a function it has to be applied
         // to all computers, otherwise show the list of computers and their
         // basic status

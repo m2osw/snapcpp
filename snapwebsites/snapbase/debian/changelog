@@ -1,3 +1,9 @@
+snapbase (1.0.37.0~xenial) xenial; urgency=high
+
+  * Added `id` attribute defs to `img`, `ul`, and `li`.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 17 Feb 2017 10:42:08 -0800
+
 snapbase (1.0.36.0~xenial) xenial; urgency=high
 
   * EX-79: Added definitions to simplified-xslt20.dtd.

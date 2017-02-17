@@ -113,6 +113,8 @@ install(
         # HTML files
         index.html
         favicon.ico
+        globe.gif
+        globe_still.png
         snapmanagercgi-login.html
 
     DESTINATION
