@@ -679,7 +679,16 @@ int manager_cgi::process()
 
         QDomDocument doc;
         QDomElement output(doc.createElement("output"));
-        get_host_status( doc, output, host, plugin_name );
+        //
+        // Only generate the child div of the named plugin.
+        //
+        status_map_t status_map;
+        get_status_map( host, status_map );
+        generate_plugin_status( doc, output, plugin_name, status_map[plugin_name], false /*parent_div*/ );
+        //
+        // Add only this element to the "output" and send it back as a post.
+        // Also, avoid the enclosed <output> section and send the div only.
+        //
         doc.appendChild(output.firstChildElement());
 
         QString const new_div( doc.toString() );
@@ -1813,7 +1822,6 @@ void manager_cgi::generate_plugin_status
     , QDomElement& output
     , QString const & plugin_name
     , status_list_t const & status_list
-    , int const tab_count
     , bool const parent_div
     )
 {
@@ -1822,7 +1830,7 @@ void manager_cgi::generate_plugin_status
     if( parent_div )
     {
         QDomElement div(doc.createElement("div"));
-        div.setAttribute( "id", QString("tabs-%1").arg(tab_count) );
+        div.setAttribute( "id", plugin_name );
         output.appendChild(div);
         div.appendChild(table);
     }
@@ -1831,7 +1839,7 @@ void manager_cgi::generate_plugin_status
         output.appendChild(table);
     }
 
-    if( plugin_name == "self" && tab_count == 1 )
+    if( plugin_name == "self" )
     {
         // add a "special" field so one can do a Refresh, at the top of the list
         //
@@ -1845,111 +1853,73 @@ void manager_cgi::generate_plugin_status
 }
 
 
-void manager_cgi::get_ordered_statuses( snap_manager::status_t::map_t const & statuses, statuses_list_t& list ) const
+void manager_cgi::get_status_map( QString const & host, status_map_t& map )
 {
-    std::map<QString, status_list_t> status_map;
-    for(auto const & s : statuses)
+    // create, open, read the file
+    //
+    server_status file(f_cluster_status_path, host);
+    if(!file.read_all())
+    {
+        // TODO: add error info in output
+        return;
+    }
+
+    // we need the plugins for the following (non-raw) loop
+    //
+    load_plugins();
+
+    for(auto const & s : file.get_statuses())
     {
         QString const & plugin_name(s.second.get_plugin_name());
         if( plugin_name == "header" ) continue; // avoid the "header" plugins, since we cannot modify those statuses anyway
-        status_map[plugin_name].push_back( s.second );
-    }
-
-    // Sort self first, then respect the order of the rest of the map
-    //
-    list.push_back(status_map["self"]);
-    for( auto const & s : status_map )
-    {
-        if( s.first == "self" ) continue;
-        list.push_back(s.second);
+        map[plugin_name].push_back( s.second );
     }
 }
 
 
 void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const & host)
 {
-    // create, open, read the file
-    //
-    server_status file(f_cluster_status_path, host);
-    if(!file.read_all())
-    {
-        // TODO: add error info in output
-        return;
-    }
-
-    // we need the plugins for the following (non-raw) loop
-    //
-    load_plugins();
-
     // Make a map of all of the status-to-plugins.
+    // get_status_map() loads the plugins for us
     //
-    statuses_list_t ordered_statuses;
-    get_ordered_statuses( file.get_statuses(), ordered_statuses );
+    std::map<QString, status_list_t> status_map;
+    get_status_map( host, status_map );
+
+    // Sort self first, then respect the order of the rest of the map
+    //
+    std::vector<status_list_t> ordered_statuses;
+    ordered_statuses.push_back(status_map["self"]);
+    for( auto const & s : status_map )
+    {
+        if( s.first == "self" ) continue;
+        ordered_statuses.push_back(s.second);
+    }
 
     // Create <ul>...</ul> "menu" at the top. jQuery::tabs will turn this into
     // the tab button list.
     //
     // The 'self' plugin is always first.
     //
-    int li_count = 0;
     QDomElement ul(doc.createElement("ul"));
     output.appendChild(ul);
     for( auto const& s : ordered_statuses )
     {
+        QString const plugin_name(s[0].get_plugin_name());
         QDomElement li(doc.createElement("li"));
         ul.appendChild(li);
         //
         QDomElement a(doc.createElement("a"));
-        a.setAttribute( "href", QString("#tabs-%1").arg(++li_count) );
-        QDomText text(doc.createTextNode(s[0].get_plugin_name()));
+        a.setAttribute( "href", QString("#%1").arg(plugin_name) );
+        QDomText text(doc.createTextNode(plugin_name));
         a.appendChild(text);
         li.appendChild(a);
     }
 
     // Now put in the table entries
     //
-    int tab_count = 0;
     for(auto const & s : ordered_statuses)
     {
-        generate_plugin_status( doc, output, s[0].get_plugin_name(), s, ++tab_count );
-    }
-}
-
-
-void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const & host, QString const& post_plugin_name )
-{
-    // create, open, read the file
-    //
-    server_status file(f_cluster_status_path, host);
-    if(!file.read_all())
-    {
-        // TODO: add error info in output
-        return;
-    }
-
-    // we need the plugins for the following (non-raw) loop
-    //
-    load_plugins();
-
-    // Make a map of all of the status-to-plugins.
-    //
-    statuses_list_t ordered_statuses;
-    get_ordered_statuses( file.get_statuses(), ordered_statuses );
-
-    // Generate only the div which contains the plugin entries.
-    //
-    // We also must preserve the tab_count, so the id will be the same. Then the js code
-    // can just replace the div in the existing dom tree.
-    //
-    int tab_count = 0;
-    for(auto const & s : ordered_statuses)
-    {
-        tab_count++;
-        QString const & plugin_name(s[0].get_plugin_name());
-        if( plugin_name == post_plugin_name )
-        {
-            generate_plugin_status( doc, output, plugin_name, s, tab_count, false /*parent_div*/ );
-        }
+        generate_plugin_status( doc, output, s[0].get_plugin_name(), s );
     }
 }
 

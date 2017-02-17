@@ -35,7 +35,6 @@ function FieldDiv( the_form )
     this.button_name    = jq_form.data("button_name");
     this.form_post_data = jq_form.serialize();
     this.form_data      = {}
-    this.ajax_pending   = true; // Set to true when we are waiting for an ajax response.
 
     var that = this;
     jQuery.each( jq_form.serializeArray(), function(i,element) {
@@ -51,7 +50,6 @@ function FieldDiv( the_form )
     this.replace_div = function( response )
     {
         this.parent_div.html(response);
-        this.ajax_pending = false;
     }
 
     this.get_field_id = function()
@@ -104,6 +102,43 @@ function check_for_modified_divs()
 }
 
 
+// Forward declare this function
+function hook_up_form_events()
+{}
+
+
+// Start monitor interval that runs forever, but only
+// gets activated if a div_map is modified.
+//
+function start_monitor( div_object )
+{
+    setTimeout( function()
+    {
+        //if( !div_object.is_modified() ) return; // Fall through and don't reset the timer.
+        jQuery.ajax(
+        {
+            url : "snapmanager",
+            type: "POST",
+            data: div_object.get_query_data()
+        })
+        .done( function(response)
+        {
+            div_object.replace_div( response );
+            hook_up_form_events();
+            //
+            if( div_object.is_modified() )
+            {
+                start_monitor(div_object);
+            }
+        })
+        .fail( function( xhr, the_status, errorThrown )
+        {
+            server_fail( xhr, the_status, errorThrown );
+        });
+    }, 1000 );
+}
+
+
 // Hook up form events.
 //
 // For new DOM objects we injected, this is imperative.
@@ -142,6 +177,7 @@ function hook_up_form_events()
         {
             div_object.replace_div( response );
             hook_up_form_events();
+            start_monitor(div_object);
         })
         .fail( function( xhr, the_status, errorThrown )
         {
@@ -151,42 +187,10 @@ function hook_up_form_events()
 }
 
 
-// Start monitor interval that runs forever, but only
-// gets activated if a div_map is modified.
-//
-function start_monitor()
-{
-    setInterval( function()
-    {
-        jQuery.each( div_map, function( index, div_object )
-        {
-            if( !div_object.is_modified() || div_object.ajax_pending ) return;
-
-            div_object.ajax_pending = true;
-            jQuery.ajax(
-            {
-                url : "snapmanager",
-                type: "POST",
-                data: div_object.get_query_data()
-            })
-            .done( function(response)
-            {
-                div_object.replace_div( response );
-                hook_up_form_events();
-            })
-            .fail( function( xhr, the_status, errorThrown )
-            {
-                server_fail( xhr, the_status, errorThrown );
-            });
-        });
-    }, 1000 );
-}
-
-
 // When the document is ready, move the ul and divs into jQuery tabs.
 //
-// Set the interval once per second to send queries for modified divs
-// which we are waiting on.
+// Hook up all form events, so when we click on a button, an Ajax POST
+// is sent to the server.
 //
 jQuery(document).ready(function()
 {
@@ -194,8 +198,6 @@ jQuery(document).ready(function()
     {
         heightStyle: "content",
     }); 
-
-    start_monitor();
 
     hook_up_form_events();
 });
