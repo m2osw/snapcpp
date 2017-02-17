@@ -82,7 +82,8 @@ public:
 private:
     typedef std::map<std::string, std::string>      post_variables_t;
     typedef std::vector<snap_manager::status_t>     status_list_t;
-    typedef std::vector<status_list_t>              statuses_list_t;
+    //typedef std::vector<status_list_t>              statuses_list_t;
+    typedef std::map<QString, status_list_t>        status_map_t;
 
     int                         read_post_variables();
     int                         process_post();
@@ -95,12 +96,10 @@ private:
                                     , QDomElement& output
                                     , QString const & plugin_name
                                     , status_list_t const & status_list
-                                    , int const tab_count
                                     , bool const parent_div = true
                                     );
-    void                        get_ordered_statuses( snap_manager::status_t::map_t const & statuses, statuses_list_t& list ) const;
+    void                        get_status_map( QString const & doc, status_map_t& map );
     void                        get_host_status(QDomDocument doc, QDomElement output, QString const & host);
-    void                        get_host_status(QDomDocument doc, QDomElement output, QString const & host, QString const& post_plugin_name );
     void                        get_cluster_status(QDomDocument doc, QDomElement output);
     int                         is_logged_in(std::string & request_method);
 
