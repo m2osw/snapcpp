@@ -279,6 +279,7 @@ DTD of the XSLT 2.0.
               alt CDATA #IMPLIED
               style CDATA #IMPLIED
               type CDATA #IMPLIED
+              id CDATA #IMPLIED
               align (middle|left|right|bottom|top) #IMPLIED
               data-original CDATA #IMPLIED>
 
@@ -297,6 +298,7 @@ DTD of the XSLT 2.0.
 <!ELEMENT li ANY>
 <!ATTLIST li class CDATA #IMPLIED
              value CDATA #IMPLIED
+             id CDATA #IMPLIED
              for CDATA #IMPLIED>
 
 <!-- WARNING: the rel parameter accepts a space separated list of
@@ -385,6 +387,7 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT ul ANY>
 <!ATTLIST ul class CDATA #IMPLIED>
+<!ATTLIST ul id CDATA #IMPLIED>
 
 <!-- Editor tags, these are simplified -->
 <!ELEMENT editor-form ANY>
