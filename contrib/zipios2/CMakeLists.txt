@@ -114,10 +114,11 @@ else()
     include(GNUInstallDirs)
 endif()
 
-set( BIN_INSTALL_DIR     ${CMAKE_INSTALL_BINDIR}     CACHE PATH "Location to install binaries relative to the install prefix."   )
-set( INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE PATH "Location to install headers relative to the install prefix."    )
-set( LIB_INSTALL_DIR     ${CMAKE_INSTALL_LIBDIR}     CACHE PATH "Location to install libraries relative to the install prefix."  )
-set( DATA_INSTALL_DIR    ${CMAKE_INSTALL_DATADIR}    CACHE PATH "Location to install data files relative to the install prefix." )
+set(BIN_INSTALL_DIR             ${CMAKE_INSTALL_BINDIR}             CACHE PATH "Location to install binaries relative to the install prefix."   )
+set(INCLUDE_INSTALL_DIR         ${CMAKE_INSTALL_INCLUDEDIR}         CACHE PATH "Location to install headers relative to the install prefix."    )
+set(LIB_INSTALL_DIR             ${CMAKE_INSTALL_LIBDIR}             CACHE PATH "Location to install libraries relative to the install prefix."  )
+set(DATA_INSTALL_DIR            ${CMAKE_INSTALL_DATADIR}            CACHE PATH "Location to install data files relative to the install prefix." )
+
 
 find_package( ZLIB REQUIRED )
 

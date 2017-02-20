@@ -116,16 +116,18 @@ enum class func_t
 int main(int argc, char *argv[])
 {
     // define program name
-    g_progname = argv[0];
-    char *e(strrchr(g_progname, '/'));
-    if(e)
     {
-        g_progname = e + 1;
-    }
-    e = strrchr(g_progname, '\\');
-    if(e)
-    {
-        g_progname = e + 1;
+        g_progname = argv[0];
+        char *e(strrchr(g_progname, '/'));
+        if(e)
+        {
+            g_progname = e + 1;
+        }
+        e = strrchr(g_progname, '\\');
+        if(e)
+        {
+            g_progname = e + 1;
+        }
     }
 
     try
@@ -239,10 +241,10 @@ int main(int argc, char *argv[])
 
         }
     }
-    catch(zipios::Exception const & ex)
+    catch(zipios::Exception const & e)
     {
         std::cerr << g_progname << ":error: an exception occurred: "
-                  << ex.what() << std::endl;
+                  << e.what() << std::endl;
     }
 
     return 0;
