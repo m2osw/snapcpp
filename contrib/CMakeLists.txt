@@ -41,7 +41,7 @@ project( snapwebsites_contrib )
 ################################################################################
 # Snap Contrib libraries
 #
-ConfigureMakeProject( PROJECT_NAME zipios2
+ConfigureMakeProject( PROJECT_NAME zipios
     CONFIG_ARGS
         -DBUILD_ZIPIOS_TESTS:BOOL=OFF
     COMPONENT main
