@@ -131,8 +131,8 @@ void ZipOutputStream::putNextEntry(FileEntry::pointer_t entry)
     // if we do not yet have a ZipCentralDirectoryEntry object, create
     // one from the input entry (the input entry is actually expected
     // to be a DirectoryEntry!)
-    ZipCentralDirectoryEntry *central_directory_entry(dynamic_cast<ZipCentralDirectoryEntry *>(entry.get()));
-    if(!central_directory_entry)
+    ZipCentralDirectoryEntry * central_directory_entry(dynamic_cast<ZipCentralDirectoryEntry *>(entry.get()));
+    if(central_directory_entry == nullptr)
     {
         entry.reset(new ZipCentralDirectoryEntry(*entry));
     }

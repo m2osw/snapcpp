@@ -46,7 +46,7 @@ node::pointer_t expression::logical_or()
     node::pointer_t result(logical_and());
     if(!result)
     {
-        return false;
+        return node::pointer_t();
     }
 
     while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "or")
@@ -60,7 +60,7 @@ node::pointer_t expression::logical_or()
         node::pointer_t rhs(logical_and());
         if(!rhs)
         {
-            return false;
+            return node::pointer_t();
         }
 
         // apply the OR

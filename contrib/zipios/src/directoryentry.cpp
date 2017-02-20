@@ -110,7 +110,7 @@ DirectoryEntry::~DirectoryEntry()
 bool DirectoryEntry::isEqual(FileEntry const & file_entry) const
 {
     DirectoryEntry const * const de(dynamic_cast<DirectoryEntry const * const>(&file_entry));
-    if(!de)
+    if(de == nullptr)
     {
         return false;
     }

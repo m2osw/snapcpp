@@ -125,7 +125,7 @@ void FilePath::check() const
 {
     if(!m_checked)
     {
-        m_checked     = true;
+        m_checked = true;
 
         /** \TODO
          * Under MS-Windows, we need to use _wstat() to make it work in

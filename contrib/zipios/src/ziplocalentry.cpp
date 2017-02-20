@@ -208,7 +208,7 @@ bool ZipLocalEntry::isDirectory() const
 bool ZipLocalEntry::isEqual(FileEntry const & file_entry) const
 {
     ZipLocalEntry const * const ze(dynamic_cast<ZipLocalEntry const * const>(&file_entry));
-    if(!ze)
+    if(ze == nullptr)
     {
         return false;
     }

@@ -77,7 +77,7 @@ namespace zipios
  * \param[in] chunk_size   Specifies the size of the chunks to read the
  *                         file into the BackBuffer in.
  */
-BackBuffer::BackBuffer(std::istream& is, VirtualSeeker const& vs, ssize_t const chunk_size)
+BackBuffer::BackBuffer(std::istream & is, VirtualSeeker const & vs, ssize_t const chunk_size)
     : m_vs(vs)
     , m_chunk_size(chunk_size)
     , m_is(is)

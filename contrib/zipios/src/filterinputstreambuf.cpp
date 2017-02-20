@@ -51,10 +51,10 @@ namespace zipios
  *
  * \param[in] inbuf  The streambuf to use for input.
  */
-FilterInputStreambuf::FilterInputStreambuf(std::streambuf *inbuf)
+FilterInputStreambuf::FilterInputStreambuf(std::streambuf * inbuf)
     : m_inbuf(inbuf)
 {
-    if(!m_inbuf)
+    if(m_inbuf == nullptr)
     {
         throw InvalidStateException("FilterInputStreambuf::FilterInputStreambuf() was called with a null streambuf pointer");
     }

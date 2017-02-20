@@ -53,10 +53,10 @@ namespace zipios
  *
  * \param[in] outbuf  The streambuf to pass the filtered data on to.
  */
-FilterOutputStreambuf::FilterOutputStreambuf(std::streambuf *outbuf)
+FilterOutputStreambuf::FilterOutputStreambuf(std::streambuf * outbuf)
     : m_outbuf(outbuf)
 {
-    if(!m_outbuf)
+    if(m_outbuf == nullptr)
     {
         throw InvalidStateException("FilterOutputStreambuf was called with a null streambuf pointer");
     }

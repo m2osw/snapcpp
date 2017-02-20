@@ -6,6 +6,8 @@ zipios (2.1.4.0~xenial) xenial; urgency=high
   * Moved dependencies, one per line.
   * Fixed position of some vim comments.
   * Bumped copyright notices to 2017.
+  * Fixed several return false which needed to be return node::pointer_t().
+  * Fixed a few if(!<pointer>) which should be != or == nullptr.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun, 19 Feb 2017 22:02:22 -0700
 

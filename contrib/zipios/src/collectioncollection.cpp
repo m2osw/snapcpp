@@ -235,7 +235,7 @@ bool CollectionCollection::addCollection(FileCollection const& collection)
  */
 bool CollectionCollection::addCollection(FileCollection::pointer_t collection)
 {
-    if(!collection)
+    if(collection == nullptr)
     {
         // TBD: should we return false instead?
         throw InvalidException("CollectionCollection::addCollection(): called with a null collection pointer");

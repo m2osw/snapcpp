@@ -202,10 +202,10 @@ FileEntry::pointer_t DirectoryCollection::getEntry(std::string const & name, Mat
  * \sa FileCollection
  * \sa ZipFile
  */
-DirectoryCollection::stream_pointer_t DirectoryCollection::getInputStream(std::string const& entry_name, MatchPath matchpath)
+DirectoryCollection::stream_pointer_t DirectoryCollection::getInputStream(std::string const & entry_name, MatchPath matchpath)
 {
     FileEntry::pointer_t ent(getEntry(entry_name, matchpath));
-    if(!ent || ent->isDirectory())
+    if(ent == nullptr || ent->isDirectory())
     {
         return DirectoryCollection::stream_pointer_t();
     }
