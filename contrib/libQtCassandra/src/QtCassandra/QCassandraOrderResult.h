@@ -37,6 +37,8 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 
+#include <vector>
+
 
 namespace QtCassandra
 {
@@ -50,7 +52,7 @@ public:
     void                setSucceeded(bool success);
 
     size_t              resultCount() const;
-    const QByteArray&   result(int index) const;
+    const QByteArray &  result(int index) const;
     void                addResult(QByteArray const & data);
 
     QByteArray          encodeResult() const;
