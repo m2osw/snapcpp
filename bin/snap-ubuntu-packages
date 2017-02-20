@@ -7,8 +7,18 @@
 #
 
 # Qt changed from 4 to 5 when moving to 16.04
-# libprocps3-dev changed to libprocps4-dev when moving to 16.04
 # added mysql-server for snaplog, you do not need it just to compile
+
+# libprocps3-dev changed to libprocps4-dev when moving from 14.04 to 16.04
+# it looks like libprocps<version>-dev will now be libprocps-dev (no version)
+if apt-cache show libprocps4-dev >/dev/null
+then
+    LIBPROCPS=libprocps4-dev
+else
+    # Use the package without version if version 4 is not available
+    # (since 16.10)
+    LIBPROCPS=libprocps-dev
+fi
 
 apt-get install \
     catch \
@@ -20,7 +30,7 @@ apt-get install \
     libboost-dev \
     libmagic-dev \
     libmagick++-dev \
-    libprocps4-dev \
+    ${LIBPROCPS} \
     libqrencode-dev \
     libqt5script5 \
     libqt5scripttools5 \
