@@ -78,6 +78,9 @@ if(CATCH_FOUND)
         ${SNAP_TESTS}
         test_unix_timestamp.cpp
     )
+    target_link_libraries(${PROJECT_NAME}
+        ${QT_LIBRARIES}
+    )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
