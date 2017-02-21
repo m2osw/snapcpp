@@ -1,3 +1,9 @@
+snapcommunicator (1.0.50.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 21 Feb 2017 02:00:57 -0800
+
 snapcommunicator (1.0.50.0~xenial) xenial; urgency=high
 
   * Use the C++ fabs() function instead of C.
