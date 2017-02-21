@@ -10,15 +10,8 @@
 # added mysql-server for snaplog, you do not need it just to compile
 
 # libprocps3-dev changed to libprocps4-dev when moving from 14.04 to 16.04
-# it looks like libprocps<version>-dev will now be libprocps-dev (no version)
-if apt-cache show libprocps4-dev >/dev/null
-then
-    LIBPROCPS=libprocps4-dev
-else
-    # Use the package without version if version 4 is not available
-    # (since 16.10)
-    LIBPROCPS=libprocps-dev
-fi
+# yet, the correct way is to install libprocps-dev instead (especially since
+# 16.10 where libprocps6-dev does not exist)
 
 apt-get install \
     catch \
@@ -27,10 +20,10 @@ apt-get install \
     dpkg-dev \
     gcc \
     g++ \
-    libboost-dev \
+    libboost-all-dev \
     libmagic-dev \
     libmagick++-dev \
-    ${LIBPROCPS} \
+    libprocps-dev \
     libqrencode-dev \
     libqt5script5 \
     libqt5scripttools5 \
