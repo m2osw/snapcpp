@@ -365,7 +365,7 @@ void remove_all_children(QDomElement& parent)
  *
  * \return The element found in the document.
  */
-QDomElement get_element(QDomDocument& doc, QString const& name, bool must_exist)
+QDomElement get_element(QDomDocument & doc, QString const & name, bool must_exist)
 {
     QDomNodeList elements(doc.elementsByTagName(name));
     if(elements.isEmpty())
@@ -376,8 +376,7 @@ QDomElement get_element(QDomDocument& doc, QString const& name, bool must_exist)
         {
             throw snap_logic_exception(QString("<%1> tag not found in the body DOM").arg(name));
         }
-        QDomElement null;
-        return null;
+        return QDomElement();
     }
 
     QDomElement element(elements.at(0).toElement());

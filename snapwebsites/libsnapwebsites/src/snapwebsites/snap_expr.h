@@ -16,11 +16,21 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+// snapwebsites lib
+//
 #include "snapwebsites/snap_exception.h"
 
+// libQtCassandra lib
+//
 #include <QtCassandra/QCassandraValue.h>
 #include <QtCassandra/QCassandraContext.h>
 
+// C++ lib
+//
+#include <cmath>
+
+// Qt lib
+//
 #include <QMap>
 #include <QSharedPointer>
 
@@ -104,6 +114,11 @@ public:
 };
 
 
+
+constexpr double pi_number()
+{
+    return std::acos(-1.0);
+}
 
 
 

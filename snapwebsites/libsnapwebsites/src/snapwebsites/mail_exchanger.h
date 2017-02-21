@@ -20,24 +20,10 @@
 //
 #include "snapwebsites/snap_exception.h"
 
-// #include "snapwebsites/cache_control.h"
-// #include "snapwebsites/http_cookie.h"
-// #include "snapwebsites/snap_signals.h"
-// #include "snapwebsites/snap_thread.h"
-// #include "snapwebsites/snap_uri.h"
-// #include "snapwebsites/snap_version.h"
-// #include "snapwebsites/tcp_client_server.h"
-// #include "snapwebsites/udp_client_server.h"
-// 
-// // QtCassandra lib
-// //
-// #include <QtCassandra/QCassandra.h>
-// #include <QtCassandra/QCassandraContext.h>
-// 
-// // Qt lib
-// //
-// #include <QBuffer>
-// #include <QDomDocument>
+// C++ lib
+//
+#include <vector>
+
 
 
 namespace snap

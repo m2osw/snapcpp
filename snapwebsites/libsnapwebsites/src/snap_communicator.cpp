@@ -2247,7 +2247,10 @@ snap_communicator::snap_signal::~snap_signal()
         sigaddset(&set, f_signal); // ignore error, we already know f_signal is valid
         if(sigprocmask(SIG_UNBLOCK, &set, nullptr) != 0)
         {
-            throw snap_communicator_runtime_error("sigprocmask() failed to block signal.");
+            // we cannot throw in a destructor...
+            //throw snap_communicator_runtime_error("sigprocmask() failed to block signal.");
+            std::cerr << "sigprocmask() failed to block signal." << std::endl;
+            std::terminate();
         }
     }
 }

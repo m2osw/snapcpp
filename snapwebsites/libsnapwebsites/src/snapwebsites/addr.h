@@ -20,8 +20,9 @@
 
 #include <arpa/inet.h>
 
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace snap_addr
 {
