@@ -587,11 +587,11 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
  * result in a page.
  *
  * \param[in,out] ipath  The canonicalized path of content to be laid out.
- * \param[in] content_plugin  The plugin that will generate the content of the page.
+ * \param[in] body_plugin  The plugin that will generate the content of the page.
  *
  * \return The result is the output of the layout applied to the data in cpath.
  */
-QString layout::apply_layout(content::path_info_t & ipath, layout_content * content_plugin)
+QString layout::apply_layout(content::path_info_t & ipath, layout_content * body_plugin)
 {
     // Determine the name of the theme
     // (Note: we need that name to determine the body XSLT data)
@@ -618,8 +618,8 @@ QString layout::apply_layout(content::path_info_t & ipath, layout_content * cont
 
     // Generate the body document now
     //
-    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
-    create_body(doc, ipath, body_xsl, content_plugin, true, layout_name, theme_name);
+    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(body_plugin)));
+    create_body(doc, ipath, body_xsl, body_plugin, true, layout_name, theme_name);
 
     // Then apply the theme to the body document
     //
@@ -901,7 +901,7 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
  * \param[in,out] doc  The layout document being created.
  * \param[in,out] ipath  The path being dealt with.
  * \param[in] xsl  The XSL of this body layout.
- * \param[in] content_plugin  The plugin handling the content (body/title in general.)
+ * \param[in] body_plugin  The plugin handling the content (body/title in general.)
  * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
  * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
  * \param[in] theme_name  The name of the layout (only necessary if handle_boxes is true.)
@@ -909,7 +909,7 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
 void layout::create_body(QDomDocument & doc
                        , content::path_info_t & ipath
                        , QString const & xsl
-                       , layout_content * content_plugin
+                       , layout_content * body_plugin
                        , bool const handle_boxes
                        , QString const & layout_name
                        , QString const & theme_name)
@@ -943,7 +943,7 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
 
     // concerned (owner) plugin generates content
 //std::cerr << "*** Generate main content...\n";
-    content_plugin->on_generate_main_content(ipath, page, body);
+    body_plugin->on_generate_main_content(ipath, page, body);
 //std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
 
     // add boxes content
@@ -1064,7 +1064,7 @@ out.write(doc.toString(-1).toUtf8());
  * \param[in,out] doc  The layout document being created.
  * \param[in,out] ipath  The path being dealt with.
  * \param[in] xsl  The XSL of this body layout.
- * \param[in] content_plugin  The plugin handling the content (body/title in general.)
+ * \param[in] body_plugin  The plugin handling the content (body/title in general.)
  * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
  * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
  * \param[in] theme_name  The name of the layout (only necessary if handle_boxes is true.)
@@ -1074,7 +1074,7 @@ out.write(doc.toString(-1).toUtf8());
 QString layout::create_body_string(
                          QDomDocument & doc
                        , content::path_info_t & ipath
-                       , layout_content * content_plugin)
+                       , layout_content * body_plugin)
 {
     // Determine the name of the theme
     // (Note: we need that name to determine the body XSLT data)
@@ -1092,7 +1092,7 @@ QString layout::create_body_string(
     // Get the body XSLT data
     //
     QString layout_name;
-    QString body_xsl(define_layout(
+    QString filtered_xsl(define_layout(
                   ipath
                 , get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT)
                 , get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL)
@@ -1102,15 +1102,17 @@ QString layout::create_body_string(
 
     // Generate the body document now
     //
-    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
-    create_body(doc, ipath, body_xsl, content_plugin, true, layout_name, theme_name);
+    QDomDocument page_doc(create_document(ipath, dynamic_cast<plugin *>(body_plugin)));
 
+    // the following is the same as the create_body() function without
+    // the boxes and using different documents
+    //
 #ifdef DEBUG
 SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
               (ipath.get_cpath())
               ("] layout_name = [")
               (layout_name)
-              ("] theme_name = [")
+              ("] unused theme_name = [")
               (theme_name)
               ("]");
 
@@ -1120,38 +1122,32 @@ SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
 #endif
 
     // get the elements we are dealing with in this function
-    QDomElement head(snap_dom::get_element(doc, "head"));
-    QDomElement metadata(snap_dom::get_element(doc, "metadata"));
-    QDomElement page(snap_dom::get_element(doc, "page"));
-    QDomElement body(snap_dom::get_element(doc, "body"));
+    QDomElement head(snap_dom::get_element(page_doc, "head"));
+    QDomElement metadata(snap_dom::get_element(page_doc, "metadata"));
+    QDomElement page(snap_dom::get_element(page_doc, "page"));
+    QDomElement body(snap_dom::get_element(page_doc, "body"));
 
     metadata.setAttribute("layout-name", layout_name);
     metadata.setAttribute("theme-name", theme_name);
 
     // other plugins generate defaults
-//std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
+//std::cerr << "*** Generate header...\n" << page_doc.toString() << "-------------------------\n";
     generate_header_content(ipath, head, metadata);
 
     // concerned (owner) plugin generates content
 //std::cerr << "*** Generate main content...\n";
-    content_plugin->on_generate_main_content(ipath, page, body);
-//std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
+    body_plugin->on_generate_main_content(ipath, page, body);
+//std::cout << "Header + Main XML is [" << page_doc.toString(-1) << "]\n";
 
-    // add boxes content
-    // if the "boxes" entry does not exist yet then we can create it now
-    // (i.e. we are creating a parent if the "boxes" element is not present;
-    //       although we should not get called recursively, this makes things
-    //       safer!)
-    if(handle_boxes && page.firstChildElement("boxes").isNull())
-    {
-//std::cerr << "*** Generate boxes?!...\n";
-        generate_boxes(ipath, theme_name, doc);
-    }
+    // no boxes for this one, boxes should appear only once and be handled
+    // by the main layout and not the layout that will handle a standalone
+    // page (although I'm not too sure whether that is correct right now,
+    // I am sure that we do not want the boxes!)
 
     // other plugins are allowed to modify the content if so they wish
 //std::cerr << "*** Generate page content...\n";
     generate_page_content(ipath, page, body);
-//std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
+//std::cout << "Prepared XML is [" << page_doc.toString(-1) << "]\n";
 
     // replace all tokens
     //
@@ -1161,13 +1157,12 @@ SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
     //
-//SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
+//SNAP_LOG_WARNING("*** Filter all of that...: [")(page_doc.toString())("]");
     filter::filter * filter_plugin(filter::filter::instance());
-    filter_plugin->on_token_filter(ipath, doc);
+    filter_plugin->on_token_filter(ipath, page_doc);
 
     // XSLT parser may also request a pre-filtering
     //
-    QString filtered_xsl(xsl);
     int const output_pos(filtered_xsl.indexOf("<output"));
     if(output_pos > 0)
     {
@@ -1209,17 +1204,17 @@ SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
     }
 
 //std::cerr << "*** Filtered content...\n";
-    filtered_content(ipath, doc, filtered_xsl);
+    filtered_content(ipath, page_doc, filtered_xsl);
 
 #if 0
-std::cout << "Generated XML is [" << doc.toString(-1) << "]\n";
+std::cout << "Generated XML is [" << page_doc.toString(-1) << "]\n";
 std::cout << "Generated XSL is [" << xsl            << "]\n";
 #endif
 
 #if 0
-QFile out("/tmp/doc.xml");
+QFile out("/tmp/page_doc.xml");
 out.open(QIODevice::WriteOnly);
-out.write(doc.toString(-1).toUtf8());
+out.write(page_doc.toString(-1).toUtf8());
 #endif
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
@@ -1229,11 +1224,13 @@ out.write(doc.toString(-1).toUtf8());
 
     xslt x;
     x.set_xsl(filtered_xsl);
-    x.set_document(doc);
+    x.set_document(page_doc);
     x.evaluate_to_document(doc_output);
 
     extract_js_and_css(doc, doc_output);
-    body.appendChild(doc.importNode(doc_output.documentElement(), true));
+    //body.appendChild(doc.importNode(doc_output.documentElement(), true));
+
+    return doc_output.toString(-1);
 }
 
 

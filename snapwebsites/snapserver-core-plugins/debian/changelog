@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.67.0~xenial) xenial; urgency=high
+
+  * EX-79: Got the layout.cpp to actually compile with the new function.
+  * Renamed a variable in functions that used "content_plugin" when it is a
+    pointer to a plugin which does not have to be the actual `content` plugin.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 20 Feb 2017 18:00:45 -0800
+
 snapserver-core-plugins (1.0.66.0~xenial) xenial; urgency=high
 
   * Various fixes so it compiles with g++ 6.x.
