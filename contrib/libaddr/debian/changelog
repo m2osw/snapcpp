@@ -1,8 +1,8 @@
-libaddr (1.0.6.23~xenial) xenial; urgency=high
+libaddr (1.0.7.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Changed -1LL with std::numeric_limits<uint64_t>::max() which is better.
 
- -- Build Server <build@m2osw.com>  Thu, 26 Jan 2017 02:00:50 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 20 Feb 2017 16:29:22 -0700
 
 libaddr (1.0.6.0~xenial) xenial; urgency=high
 
