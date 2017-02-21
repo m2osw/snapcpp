@@ -291,7 +291,7 @@ QtCassandra::QCassandraTable::pointer_t test_plugin::get_test_results_table()
  * replaced by the version of this plugin. To get the version
  * of all the plugins, send the user to the /admin/versions page.
  */
-void test_plugin::on_replace_token(content::path_info_t& ipath, QDomDocument& xml, filter::filter::token_info_t& token)
+void test_plugin::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
     NOTUSED(ipath);
 

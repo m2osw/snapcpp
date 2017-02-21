@@ -188,7 +188,7 @@ QString layout::description() const
  */
 QString layout::dependencies() const
 {
-    return "|content|filter|javascript|links|path|server_access|taxonomy|";
+    return "|content|filter|links|path|server_access|taxonomy|";
 }
 
 
@@ -874,6 +874,7 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
     return doc;
 }
 
+
 /** \brief Create the body XML data.
  *
  * This function creates the entire XML data that will be used by the
@@ -904,8 +905,6 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
  * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
  * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
  * \param[in] theme_name  The name of the layout (only necessary if handle_boxes is true.)
- *
- * \return The resulting body in an XML document.
  */
 void layout::create_body(QDomDocument & doc
                        , content::path_info_t & ipath
@@ -935,8 +934,8 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
     QDomElement page(snap_dom::get_element(doc, "page"));
     QDomElement body(snap_dom::get_element(doc, "body"));
 
-    body.setAttribute("layout-name", layout_name);
-    body.setAttribute("theme-name", theme_name);
+    metadata.setAttribute("layout-name", layout_name);
+    metadata.setAttribute("theme-name", theme_name);
 
     // other plugins generate defaults
 //std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
@@ -963,56 +962,247 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
     generate_page_content(ipath, page, body);
 //std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
 
+    // replace all tokens
+    //
     // TODO: the filtering needs to be a lot more generic!
     //       plus the owner of the page should be able to select the
-    //       filters he wants to apply agains the page content
+    //       filters he wants to apply against the page content
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
-    QString filtered_xsl(xsl);
-    //if(plugins::exists("filter")) -- this is a core module, so it is always installed
-    {
+    //
 //SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
-        // replace all tokens when filtering is available
-        filter::filter::instance()->on_token_filter(ipath, doc);
+    filter::filter * filter_plugin(filter::filter::instance());
+    filter_plugin->on_token_filter(ipath, doc);
 
-        // XSLT parser may also request a pre-filtering
-        //
-        int const output_pos(filtered_xsl.indexOf("<output"));
-        if(output_pos > 0)
+    // XSLT parser may also request a pre-filtering
+    //
+    QString filtered_xsl(xsl);
+    int const output_pos(filtered_xsl.indexOf("<output"));
+    if(output_pos > 0)
+    {
+        for(QChar const * s(filtered_xsl.data() + output_pos + 7); !s->isNull(); ++s)
         {
-            for(QChar const * s(filtered_xsl.data() + output_pos + 7); !s->isNull(); ++s)
+            ushort c(s->unicode());
+            if(c == '>')
             {
-                ushort c(s->unicode());
-                if(c == '>')
+                // found end of tag, exit loop now
+                break;
+            }
+            if(c == 'f')
+            {
+                // filter="token" or filter='token'
+                if(s[1].unicode() == 'i'
+                && s[2].unicode() == 'l'
+                && s[3].unicode() == 't'
+                && s[4].unicode() == 'e'
+                && s[5].unicode() == 'r'
+                && s[6].unicode() == '='
+                && (s[7].unicode() == '"' || s[7].unicode() == '\'')
+                && s[8].unicode() == 't'
+                && s[9].unicode() == 'o'
+                && s[10].unicode() == 'k'
+                && s[11].unicode() == 'e'
+                && s[12].unicode() == 'n'
+                && (s[7].unicode() == s[13].unicode())) // closing must be the same as opening
                 {
-                    // found end of tag, exit loop now
+                    QDomDocument xsl_doc;
+                    if(xsl_doc.setContent(filtered_xsl))
+                    {
+                        filter_plugin->on_token_filter(ipath, xsl_doc);
+                        filtered_xsl = xsl_doc.toString(-1);
+                    }
                     break;
                 }
-                if(c == 'f')
+            }
+        }
+    }
+
+//std::cerr << "*** Filtered content...\n";
+    filtered_content(ipath, doc, filtered_xsl);
+
+#if 0
+std::cout << "Generated XML is [" << doc.toString(-1) << "]\n";
+std::cout << "Generated XSL is [" << xsl            << "]\n";
+#endif
+
+#if 0
+QFile out("/tmp/doc.xml");
+out.open(QIODevice::WriteOnly);
+out.write(doc.toString(-1).toUtf8());
+#endif
+
+    // Somehow binding crashes everything at this point?! (Qt 4.8.1)
+//std::cerr << "*** Generate output...\n";
+
+    QDomDocument doc_output("output");
+
+    xslt x;
+    x.set_xsl(filtered_xsl);
+    x.set_document(doc);
+    x.evaluate_to_document(doc_output);
+
+    extract_js_and_css(doc, doc_output);
+    body.appendChild(doc.importNode(doc_output.documentElement(), true));
+}
+
+
+/** \brief Create the body of a page and return it as a string.
+ *
+ * This function, like apply_layout(), determines the name of the
+ * layout to be used to parse the specified \p ipath page. Then
+ * it generates the body in the existing document and returns it
+ * as a string.
+ *
+ * The system may apply modifications to the header and other
+ * parts of the document, but only if it was not already in
+ * the source document. (i.e. it does not overwrite anything.)
+ *
+ * \note
+ * You may want to call the replace_includes() function on your XSLT
+ * document before calling this function.
+ *
+ * \param[in,out] doc  The layout document being created.
+ * \param[in,out] ipath  The path being dealt with.
+ * \param[in] xsl  The XSL of this body layout.
+ * \param[in] content_plugin  The plugin handling the content (body/title in general.)
+ * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
+ * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
+ * \param[in] theme_name  The name of the layout (only necessary if handle_boxes is true.)
+ *
+ * \return The resulting body as a string.
+ */
+QString layout::create_body_string(
+                         QDomDocument & doc
+                       , content::path_info_t & ipath
+                       , layout_content * content_plugin)
+{
+    // Determine the name of the theme
+    // (Note: we need that name to determine the body XSLT data)
+    // (Note: here we do not need the theme XSLT data so we ignore it)
+    //
+    QString theme_name;
+    NOTUSED(define_layout(
+                  ipath
+                , get_name(name_t::SNAP_NAME_LAYOUT_THEME)
+                , get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL)
+                , ":/xsl/layout/default-theme-parser.xsl"
+                , QString() // no theme name defined yet...
+                , theme_name));
+
+    // Get the body XSLT data
+    //
+    QString layout_name;
+    QString body_xsl(define_layout(
+                  ipath
+                , get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT)
+                , get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL)
+                , ":/xsl/layout/default-body-parser.xsl"
+                , theme_name
+                , layout_name));
+
+    // Generate the body document now
+    //
+    QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
+    create_body(doc, ipath, body_xsl, content_plugin, true, layout_name, theme_name);
+
+#ifdef DEBUG
+SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
+              (ipath.get_cpath())
+              ("] layout_name = [")
+              (layout_name)
+              ("] theme_name = [")
+              (theme_name)
+              ("]");
+
+//SNAP_LOG_TRACE("The XSL of the layout body is: [")
+//              (xsl)
+//              ("]");
+#endif
+
+    // get the elements we are dealing with in this function
+    QDomElement head(snap_dom::get_element(doc, "head"));
+    QDomElement metadata(snap_dom::get_element(doc, "metadata"));
+    QDomElement page(snap_dom::get_element(doc, "page"));
+    QDomElement body(snap_dom::get_element(doc, "body"));
+
+    metadata.setAttribute("layout-name", layout_name);
+    metadata.setAttribute("theme-name", theme_name);
+
+    // other plugins generate defaults
+//std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
+    generate_header_content(ipath, head, metadata);
+
+    // concerned (owner) plugin generates content
+//std::cerr << "*** Generate main content...\n";
+    content_plugin->on_generate_main_content(ipath, page, body);
+//std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
+
+    // add boxes content
+    // if the "boxes" entry does not exist yet then we can create it now
+    // (i.e. we are creating a parent if the "boxes" element is not present;
+    //       although we should not get called recursively, this makes things
+    //       safer!)
+    if(handle_boxes && page.firstChildElement("boxes").isNull())
+    {
+//std::cerr << "*** Generate boxes?!...\n";
+        generate_boxes(ipath, theme_name, doc);
+    }
+
+    // other plugins are allowed to modify the content if so they wish
+//std::cerr << "*** Generate page content...\n";
+    generate_page_content(ipath, page, body);
+//std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
+
+    // replace all tokens
+    //
+    // TODO: the filtering needs to be a lot more generic!
+    //       plus the owner of the page should be able to select the
+    //       filters he wants to apply against the page content
+    //       (i.e. ultimately we want to have some sort of filter
+    //       tagging capability)
+    //
+//SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
+    filter::filter * filter_plugin(filter::filter::instance());
+    filter_plugin->on_token_filter(ipath, doc);
+
+    // XSLT parser may also request a pre-filtering
+    //
+    QString filtered_xsl(xsl);
+    int const output_pos(filtered_xsl.indexOf("<output"));
+    if(output_pos > 0)
+    {
+        for(QChar const * s(filtered_xsl.data() + output_pos + 7); !s->isNull(); ++s)
+        {
+            ushort c(s->unicode());
+            if(c == '>')
+            {
+                // found end of tag, exit loop now
+                break;
+            }
+            if(c == 'f')
+            {
+                // filter="token" or filter='token'
+                if(s[1].unicode() == 'i'
+                && s[2].unicode() == 'l'
+                && s[3].unicode() == 't'
+                && s[4].unicode() == 'e'
+                && s[5].unicode() == 'r'
+                && s[6].unicode() == '='
+                && (s[7].unicode() == '"' || s[7].unicode() == '\'')
+                && s[8].unicode() == 't'
+                && s[9].unicode() == 'o'
+                && s[10].unicode() == 'k'
+                && s[11].unicode() == 'e'
+                && s[12].unicode() == 'n'
+                && (s[7].unicode() == s[13].unicode())) // closing must be the same as opening
                 {
-                    // filter="token" or filter='token'
-                    if(s[1].unicode() == 'i'
-                    && s[2].unicode() == 'l'
-                    && s[3].unicode() == 't'
-                    && s[4].unicode() == 'e'
-                    && s[5].unicode() == 'r'
-                    && s[6].unicode() == '='
-                    && (s[7].unicode() == '"' || s[7].unicode() == '\'')
-                    && s[8].unicode() == 't'
-                    && s[9].unicode() == 'o'
-                    && s[10].unicode() == 'k'
-                    && s[11].unicode() == 'e'
-                    && s[12].unicode() == 'n'
-                    && (s[7].unicode() == s[13].unicode())) // closing must be the same as opening
+                    QDomDocument xsl_doc;
+                    if(xsl_doc.setContent(filtered_xsl))
                     {
-                        QDomDocument xsl_doc;
-                        if(xsl_doc.setContent(filtered_xsl))
-                        {
-                            filter::filter::instance()->on_token_filter(ipath, xsl_doc);
-                            filtered_xsl = xsl_doc.toString(-1);
-                        }
-                        break;
+                        filter_plugin->on_token_filter(ipath, xsl_doc);
+                        filtered_xsl = xsl_doc.toString(-1);
                     }
+                    break;
                 }
             }
         }
@@ -1300,6 +1490,7 @@ SNAP_LOG_TRACE("box_ipath key = ")(box_ipath.get_key())(", branch_key=")(box_ipa
                             {
                                 // put each box in a filter tag because we have to
                                 // specify a different owner and path for each
+                                //
                                 QDomElement filter_box(doc.createElement("filter"));
                                 filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                                 filter_box.setAttribute("owner", box_plugin->get_plugin_name());

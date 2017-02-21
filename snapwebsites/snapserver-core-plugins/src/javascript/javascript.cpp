@@ -300,11 +300,11 @@ public:
     }
 
 private:
-    javascript *                f_javascript;
-    QScriptEngine *             f_engine;
+    javascript *                f_javascript = nullptr;
+    QScriptEngine *             f_engine = nullptr;
     int32_t                     f_pos = -1;
     QScriptValue                f_object;
-    javascript_dynamic_plugin * f_plugin;
+    javascript_dynamic_plugin * f_plugin = nullptr;
 };
 
 
@@ -391,8 +391,8 @@ public:
 #pragma GCC diagnostic pop
 
 private:
-    javascript *                f_javascript;
-    javascript_dynamic_plugin * f_plugin;
+    javascript *                f_javascript = nullptr;
+    javascript_dynamic_plugin * f_plugin = nullptr;
 };
 
 
@@ -477,8 +477,8 @@ public:
     }
 
 private:
-    javascript *                f_javascript;
-    QScriptEngine *             f_engine;
+    javascript *                f_javascript = nullptr;
+    QScriptEngine *             f_engine = nullptr;
     int32_t                     f_pos = -1;
     QScriptValue                f_object;
 };

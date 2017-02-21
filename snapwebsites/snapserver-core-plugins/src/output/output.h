@@ -21,7 +21,7 @@
 #include "../filter/filter.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
-#include "../javascript/javascript.h"
+//#include "../javascript/javascript.h"
 
 
 namespace snap
@@ -64,7 +64,7 @@ class output
         , public path::path_execute
         , public layout::layout_content
         , public layout::layout_boxes
-        , public javascript::javascript_dynamic_plugin
+        //, public javascript::javascript_dynamic_plugin
 {
 public:
     enum class phone_number_type_t
@@ -103,10 +103,10 @@ public:
     void                on_token_help(filter::filter::token_help_t & help);
 
     // javascript::javascript_dynamic_plugin implementation
-    virtual int         js_property_count() const;
-    virtual QVariant    js_property_get(QString const & name) const;
-    virtual QString     js_property_name(int index) const;
-    virtual QVariant    js_property_get(int index) const;
+    //virtual int         js_property_count() const;
+    //virtual QVariant    js_property_get(QString const & name) const;
+    //virtual QString     js_property_name(int index) const;
+    //virtual QVariant    js_property_get(int index) const;
 
     static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
     void                breadcrumb(content::path_info_t & ipath, QDomElement parent);

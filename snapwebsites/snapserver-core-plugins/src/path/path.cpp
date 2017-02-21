@@ -85,9 +85,15 @@ void path_error_callback::set_autologout(bool autologout)
 }
 
 
-void path_error_callback::on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
+void path_error_callback::on_error(
+              snap_child::http_code_t err_code
+            , QString const & err_name
+            , QString const & err_description
+            , QString const & err_details
+            , bool const err_by_mime_type)
 {
     // first check whether we are handling an AJAX request
+    //
     server_access::server_access * server_access_plugin(server_access::server_access::instance());
     if(server_access_plugin->is_ajax_request())
     {
@@ -104,31 +110,38 @@ void path_error_callback::on_error(snap_child::http_code_t err_code, QString con
 
     // give a chance to other plugins to handle the error
     // (Especially the attachment plugin when "weird" data was requested)
+    //
     if(err_by_mime_type && f_plugin != nullptr)
     {
         // will this plugin handle that error?
+        //
         permission_error_callback::error_by_mime_type * handle_error(dynamic_cast<permission_error_callback::error_by_mime_type *>(f_plugin));
         if(handle_error)
         {
             // attempt to inform the user using the proper type of data
             // so that way it is easier to debug than sending HTML
+            //
             try
             {
                 // define a default error name if undefined
+                //
                 QString http_name;
                 f_snap->define_http_name(err_code, http_name);
 
                 // log the error
+                //
                 SNAP_LOG_FATAL("path::on_error(): ")(err_details)(" (")(static_cast<int>(err_code))(" ")(err_name)(": ")(err_description)(")");
 
                 // On error we do not return the HTTP protocol, only the Status field
                 // it just needs to be first to make sure it works right
+                //
                 f_snap->set_header("Status", QString("%1 %2\n")
                         .arg(static_cast<int>(err_code))
                         .arg(http_name));
 
                 // content type has to be defined by the handler, also
                 // the output auto-generated
+                //
                 //f_snap->set_header(get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
                 //f_snap->output_result(HEADER_MODE_ERROR, html.toUtf8());
                 handle_error->on_handle_error_by_mime_type(err_code, err_name, err_description, f_ipath.get_key());
@@ -136,10 +149,12 @@ void path_error_callback::on_error(snap_child::http_code_t err_code, QString con
             catch(...)
             {
                 // ignore all errors because at this point we must die quickly.
+                //
                 SNAP_LOG_FATAL("path.cpp:on_error(): try/catch caught an exception");
             }
 
             // exit with an error
+            //
             f_snap->exit(1);
             NOTREACHED();
         }
@@ -657,6 +672,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
     if(owner_plugin != nullptr)
     {
         // got a valid plugin, verify that the user has permission
+        //
         path_error_callback * pec(dynamic_cast<path_error_callback *>(&err_callback));
         if(pec)
         {

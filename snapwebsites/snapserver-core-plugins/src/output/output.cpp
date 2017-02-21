@@ -146,7 +146,7 @@ QString output::description() const
  */
 QString output::dependencies() const
 {
-    return "|content|filter|javascript|layout|locale|path|server_access|";
+    return "|content|filter|layout|locale|path|server_access|";
 }
 
 
@@ -690,6 +690,8 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
  * The supported tokens are:
  *
  * \li content::created -- the date when this page was created
+ * \li content::last_updated -- the date when this page was last updated
+ * \li content::page(path[, action]) -- the content (body) of another page
  *
  * \param[in,out] ipath  The path to the page being worked on.
  * \param[in,out] xml  The XML document used with the layout.
@@ -742,6 +744,35 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
             token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
         }
         return;
+    }
+
+    if(token.is_token("content::page"))
+    {
+        if(token.verify_args(1, 2))
+        {
+            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::token_t::TOK_STRING));
+
+            content::path_info_t page_ipath;
+            page_ipath.set_path(param.f_value);
+
+            // user can specify the action to use on this one
+            //
+            if(token.has_arg("action", 1))
+            {
+                filter::filter::parameter_t action_param(token.get_arg("action", 0, filter::filter::token_t::TOK_STRING));
+                page_ipath.set_parameter("action", action_param.f_value);
+            }
+
+            // before we can add the output to the token,
+            // we MUST verify the permission of this user to that other page
+            //
+            quiet_error_callback page_error_callback(f_snap, true);
+            path::path::instance()->verify_permissions(page_ipath, page_error_callback);
+            if(!page_error_callback.has_error())
+            {
+                token.f_replacement = layout::layout::instance()->apply_layout(page_ipath, this);
+            }
+        }
     }
 
     // For now breadcrumbs are created as a DOM so we skip this part
@@ -1009,41 +1040,42 @@ QString output::phone_to_uri(QString const phone, phone_number_type_t const type
 // javascript can depend on content, not the other way around
 // so this plugin has to define the default content support
 
-
-int output::js_property_count() const
-{
-    return 1;
-}
-
-
-QVariant output::js_property_get(QString const& name) const
-{
-    if(name == "modified")
-    {
-        return "content::modified";
-    }
-    return QVariant();
-}
-
-
-QString output::js_property_name(int index) const
-{
-    if(index == 0)
-    {
-        return "modified";
-    }
-    return "";
-}
-
-
-QVariant output::js_property_get(int index) const
-{
-    if(index == 0)
-    {
-        return "content::modified";
-    }
-    return QVariant();
-}
+// right now we do not use the QScript anymore anywhere, so we
+// are cancelling these functions (instead we have snap_expr)
+//int output::js_property_count() const
+//{
+//    return 1;
+//}
+//
+//
+//QVariant output::js_property_get(QString const& name) const
+//{
+//    if(name == "modified")
+//    {
+//        return "content::modified";
+//    }
+//    return QVariant();
+//}
+//
+//
+//QString output::js_property_name(int index) const
+//{
+//    if(index == 0)
+//    {
+//        return "modified";
+//    }
+//    return "";
+//}
+//
+//
+//QVariant output::js_property_get(int index) const
+//{
+//    if(index == 0)
+//    {
+//        return "content::modified";
+//    }
+//    return QVariant();
+//}
 
 
 SNAP_PLUGIN_END()

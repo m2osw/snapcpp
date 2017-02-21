@@ -399,7 +399,7 @@ char const * js_extensions[] =
     ".min.js",
     ".org.js",
     ".js",
-    //".as", -- TODO allow AS files as original JS files
+    //".as", -- TODO allow AS files as original JS files (see as2js)
     nullptr
 };
 
@@ -408,7 +408,7 @@ char const * css_extensions[] =
     // longer first
     ".min.css",
     ".org.css",
-    //".scss", -- TODO allow SCSS files as original CSS files
+    //".scss", -- TODO allow SCSS files as original CSS files (see csspp)
     ".css",
     nullptr
 };
