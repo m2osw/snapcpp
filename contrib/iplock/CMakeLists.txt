@@ -37,8 +37,9 @@ if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
 endif()
 
 find_package( AdvGetOpt        REQUIRED )
-find_package( Boost            COMPONENTS filesystem system REQUIRED )
+find_package( Boost            REQUIRED COMPONENTS filesystem system )
 find_package( LibAddr          REQUIRED )
+find_package( LibExcept        REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen )
 

@@ -1,8 +1,8 @@
-iplock (3.0.11.26~xenial) xenial; urgency=high
+iplock (3.0.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Added the LibExcept library as a dependency, gcc 6.x requires it.
 
- -- Build Server <build@m2osw.com>  Mon, 23 Jan 2017 12:24:45 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 20 Feb 2017 16:26:37 -0700
 
 iplock (3.0.11.0~xenial) xenial; urgency=high
 

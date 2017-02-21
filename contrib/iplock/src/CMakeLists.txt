@@ -41,6 +41,7 @@ include_directories(
     ${ADVGETOPT_INCLUDE_DIRS}
     ${BOOST_INCLUDE_DIRS}
     ${LIBADDR_INCLUDE_DIRS}
+    ${LIBEXCEPT_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME}
@@ -53,6 +54,7 @@ target_link_libraries(${PROJECT_NAME}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${LIBADDR_LIBRARIES}
+    ${LIBEXCEPT_LIBRARIES}
 )
 
 install(
