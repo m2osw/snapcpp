@@ -4847,22 +4847,36 @@ bool editor::save_inline_image(
     //       complex when considering path right under the root...
     //
     QString result_src;
-    QString file_suffix;
     if(ipath.get_cpath() != "")
     {
         // this is important because otherwise we end up with "//favicon.ico"
         // or similar invalid paths since "//" references a domain name
         //
-        // EX-167: append revisioning information to the filename to overcome
-        // browser caching if the user uploads a new version of the picture.
-        //
         result_src  = QString("/%1").arg(ipath.get_cpath());
+    }
+
+    // EX-167: append revisioning information to the filename to overcome
+    // browser caching if the user uploads a new version of the picture.
+    //
+    QString file_suffix;
+    content::path_info_t img_ipath;
+    img_ipath.set_path( filename );
+SNAP_LOG_TRACE("filename cpath=")(img_ipath.get_cpath());
+    //
+    if( img_ipath.has_branch() && img_ipath.has_revision() )
+    {
         file_suffix = QString("?branch=%1&revision=%2")
-                    .arg(ipath.get_branch())
-                    .arg(ipath.get_revision())
+                    .arg(img_ipath.get_branch())
+                    .arg(img_ipath.get_revision())
                     ;
     }
-    result_src = QString("%1/%2%3").arg(result_src).arg(filename).arg(file_suffix);
+
+    result_src = QString("%1/%2%3")
+                .arg(result_src)
+                .arg(filename)
+                .arg(file_suffix)
+                ;
+SNAP_LOG_TRACE("src=")(result_src);
     img.setAttribute("src", result_src);
 
     new_attachment_saved(the_attachment, widget, attachment_tag);
