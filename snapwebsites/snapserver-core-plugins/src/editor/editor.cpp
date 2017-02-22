@@ -4556,93 +4556,97 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
     for(int i(0); i < max_images; ++i)
     {
         QDomElement img(imgs.at(i).toElement());
-        if(!img.isNull())
+        if(img.isNull())
         {
-            // data:image/jpeg;base64,...
-            QString const src(img.attribute("src"));
-            if(src.startsWith("data:"))
+            continue;
+        }
+
+        // data:image/jpeg;base64,...
+        QString const src(img.attribute("src"));
+        if( !src.startsWith("data:") )
+        {
+            continue;
+        }
+
+        // TBD: should multi-image + force_filename be an error?
+        //if(has_changed && !force_filename.isEmpty()) ...error...
+
+        has_changed = true;
+
+        // TODO: we need to extract the function from save_inline_image()
+        //       to "calculate" the proper filename, especially because
+        //       we need to force the correct extension and the current
+        //       version does not do it 100% correctly
+        QString ff(force_filename);
+        if(ff.isEmpty())
+        {
+            ff = img.attribute("filename");
+            if(ff.isEmpty())
             {
-                // TBD: should multi-image + force_filename be an error?
-                //if(has_changed && !force_filename.isEmpty()) ...error...
-
-                has_changed = true;
-
-                // TODO: we need to extract the function from save_inline_image()
-                //       to "calculate" the proper filename, especially because
-                //       we need to force the correct extension and the current
-                //       version does not do it 100% correctly
-                QString ff(force_filename);
-                if(ff.isEmpty())
-                {
-                    ff = img.attribute("filename");
-                    if(ff.isEmpty())
-                    {
-                        ff = "image";
-                    }
-                }
-                if(used_filenames.contains(ff))
-                {
-                    // add "-<count>" to the filename just before the
-                    // extension; note that the parameter 'count' is
-                    // always unique and incremented on each iteration
-                    // which means it may not be incremented one by
-                    // one when it comes to saving the files to the
-                    // database (i.e. if 2 has a different filename
-                    // then 3 has the same as 1, not you have 1 saved
-                    // as is, and 3 saved with "-2" and not "-1".)
-                    //
-                    int const p1(ff.lastIndexOf('.'));
-                    int const p2(ff.lastIndexOf('/'));
-                    if(p1 > p2)
-                    {
-                        // make sure to remove the extension
-                        ff = QString("%1-%2%3").arg(ff.mid(0, p1)).arg(count).arg(ff.mid(p1));
-                    }
-                    else
-                    {
-                        // no valid extension it looks like
-                        ff = QString("%1-%2").arg(ff).arg(count);
-                    }
-                }
-                //else -- although we should be able to do that, a hacker could send us a matching filename of a name with -<number>...
-                {
-                    used_filenames.push_back(ff);
-                }
-                content::path_info_t attachment_ipath;
-                if(force_path == "#")
-                {
-                    attachment_ipath = ipath;
-                }
-                else
-                {
-                    attachment_ipath.set_path(force_path);
-                    // the locale is defined in the call to
-                    // create_attachment() (last parameter at this time)
-                }
-                bool const valid(save_inline_image(attachment_ipath, img, src, ff, widget));
-                if(valid)
-                {
-                    // XXX: the counter may need to be incremented any time
-                    //      it gets used rather than here?
-                    //
-                    ++count;
-
-                    // TODO: check whether the img tag has a width/height
-                    //       which are (way) smaller than the image, and
-                    //       if so create a script to have a resized version
-                    //       and use that version instead (i.e. will be a
-                    //       lot faster to load)
-                }
-                else
-                {
-                    // remove that tag, it is not considered valid so it
-                    // may cause harm, who knows...
-                    //
-                    // TODO: let the user know what we have just done
-                    //
-                    img.parentNode().removeChild(img);
-                }
+                ff = "image";
             }
+        }
+        if(used_filenames.contains(ff))
+        {
+            // add "-<count>" to the filename just before the
+            // extension; note that the parameter 'count' is
+            // always unique and incremented on each iteration
+            // which means it may not be incremented one by
+            // one when it comes to saving the files to the
+            // database (i.e. if 2 has a different filename
+            // then 3 has the same as 1, not you have 1 saved
+            // as is, and 3 saved with "-2" and not "-1".)
+            //
+            int const p1(ff.lastIndexOf('.'));
+            int const p2(ff.lastIndexOf('/'));
+            if(p1 > p2)
+            {
+                // make sure to remove the extension
+                ff = QString("%1-%2%3").arg(ff.mid(0, p1)).arg(count).arg(ff.mid(p1));
+            }
+            else
+            {
+                // no valid extension it looks like
+                ff = QString("%1-%2").arg(ff).arg(count);
+            }
+        }
+        //else -- although we should be able to do that, a hacker could send us a matching filename of a name with -<number>...
+        {
+            used_filenames.push_back(ff);
+        }
+        content::path_info_t attachment_ipath;
+        if(force_path == "#")
+        {
+            attachment_ipath = ipath;
+        }
+        else
+        {
+            attachment_ipath.set_path(force_path);
+            // the locale is defined in the call to
+            // create_attachment() (last parameter at this time)
+        }
+        bool const valid(save_inline_image(attachment_ipath, img, src, ff, widget));
+        if(valid)
+        {
+            // XXX: the counter may need to be incremented any time
+            //      it gets used rather than here?
+            //
+            ++count;
+
+            // TODO: check whether the img tag has a width/height
+            //       which are (way) smaller than the image, and
+            //       if so create a script to have a resized version
+            //       and use that version instead (i.e. will be a
+            //       lot faster to load)
+        }
+        else
+        {
+            // remove that tag, it is not considered valid so it
+            // may cause harm, who knows...
+            //
+            // TODO: let the user know what we have just done
+            //
+            img.parentNode().removeChild(img);
         }
     }
 
@@ -4826,14 +4830,22 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     //       complex when considering path right under the root...
     //
     QString result_src;
+    QString file_suffix;
     if(ipath.get_cpath() != "")
     {
         // this is important because otherwise we end up with "//favicon.ico"
         // or similar invalid paths since "//" references a domain name
         //
-        result_src = QString("/%1").arg(ipath.get_cpath());
+        // EX-167: append revisioning information to the filename to overcome
+        // browser caching if the user uploads a new version of the picture.
+        //
+        result_src  = QString("/%1").arg(ipath.get_cpath());
+        file_suffix = QString("?branch=%1&revision=%2")
+                    .arg(ipath.get_branch())
+                    .arg(ipath.get_revision())
+                    ;
     }
-    result_src = QString("%1/%2").arg(result_src).arg(filename);
+    result_src = QString("%1/%2%3").arg(result_src).arg(filename).arg(file_suffix);
     img.setAttribute("src", result_src);
 
     new_attachment_saved(the_attachment, widget, attachment_tag);
