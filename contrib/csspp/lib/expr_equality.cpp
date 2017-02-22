@@ -241,9 +241,9 @@ node::pointer_t expression::equality()
         next();
 
         node::pointer_t rhs(relational());
-        if(!rhs)
+        if(rhs == nullptr)
         {
-            return false;
+            return node::pointer_t();
         }
 
         // apply the equality operation

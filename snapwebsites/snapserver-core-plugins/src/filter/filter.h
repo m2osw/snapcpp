@@ -138,6 +138,12 @@ public:
         bool                        f_error = false;
         bool                        f_name_used = false;
         QString                     f_replacement;
+        QDomDocument &              f_xml;
+
+        token_info_t(QDomDocument & xml)
+            : f_xml(xml)
+        {
+        }
 
         bool is_namespace(char const *name)
         {

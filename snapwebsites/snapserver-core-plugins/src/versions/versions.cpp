@@ -283,7 +283,7 @@ void versions::on_token_help(filter::filter::token_help_t & help)
 }
 
 
-bool versions::versions_libraries_impl(filter::filter::token_info_t& token)
+bool versions::versions_libraries_impl(filter::filter::token_info_t & token)
 {
     token.f_replacement += "<h3>Libraries</h3><ul>";
 

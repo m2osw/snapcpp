@@ -1264,7 +1264,7 @@ TEST_CASE( "ipv4::masks", "ipv4" )
                 addr::addr_range const & r(ips[0]);
                 addr::addr f(r.get_from());
                 REQUIRE(f.is_ipv4());
-                uint64_t const mask(-1LL << (32 - idx));
+                uint64_t const mask(std::numeric_limits<uint64_t>::max() << (32 - idx));
                 std::string mask_str(
                           std::to_string((mask >> 24) & 255)
                         + "."

@@ -1236,7 +1236,12 @@ int process_list::field_to_flag(field_t fld) const
         return PROC_FILLSTAT;
 
     case field_t::WAIT_CHANNEL:
+#ifdef PROC_FILLWCHAN
+        // in version 6, this was removed
         return PROC_FILLWCHAN;
+#else
+        break;
+#endif
 
     case field_t::COMMAND_LINE:
         return PROC_FILLCOM | PROC_FILLARG;

@@ -24,6 +24,7 @@
 // C++ lib
 //
 #include <memory>
+#include <numeric>
 #include <queue>
 
 // C lib

@@ -779,9 +779,9 @@ node::pointer_t expression::multiplicative()
         next();
 
         node::pointer_t rhs(power());
-        if(!rhs)
+        if(rhs == nullptr)
         {
-            return false;
+            return node::pointer_t();
         }
 
         // apply the multiplicative operation

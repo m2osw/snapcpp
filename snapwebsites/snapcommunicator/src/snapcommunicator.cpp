@@ -38,6 +38,7 @@
 // C++ lib
 //
 #include <atomic>
+#include <cmath>
 #include <fstream>
 #include <thread>
 
@@ -4432,7 +4433,7 @@ void snap_communicator_server::process_load_balancing()
         float const avg(std::stof(avg_str) / f_number_of_processors);
 
         // TODO: see whether the current epsilon is good enough
-        if(fabsf(f_last_loadavg - avg) < 0.1f)
+        if(std::fabs(f_last_loadavg - avg) < 0.1f)
         {
             // do not send if it did not change lately
             return;

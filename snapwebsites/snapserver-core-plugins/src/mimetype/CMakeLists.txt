@@ -66,7 +66,9 @@ add_library(mimetype SHARED
     mimetype-basics.js
 )
 
-target_link_libraries( mimetype Qt5::Core )
+target_link_libraries( mimetype
+    Qt5::Core
+)
 
 install(
     TARGETS mimetype LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
@@ -153,6 +155,7 @@ include_directories(
 )
 target_link_libraries( ${PROJECT_NAME}
     ${SNAPWEBSITES_LIBRARIES}
+    Qt5::Core
 )
 # TODO: only install in the development version? (do we have such a component?)
 install(

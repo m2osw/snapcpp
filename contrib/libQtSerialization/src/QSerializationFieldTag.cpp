@@ -124,11 +124,12 @@ QFieldTag::QFieldTag(QComposite& composite, const QString& name, QSerializationO
       f_name(name),
       f_obj(obj)
 {
-    if(&composite == NULL) {
-        throw QExceptionNullReference("the composite reference cannot be a NULL pointer");
-    }
-    if(f_obj == NULL) {
-        throw QExceptionNullReference("the object pointer cannot be a NULL pointer");
+    // with g++ version 7.0+ testing a reference pointer generates a warning!
+    //if(&composite == nullptr) {
+    //    throw QExceptionNullReference("the composite reference cannot be a nullptr pointer");
+    //}
+    if(f_obj == nullptr) {
+        throw QExceptionNullReference("the object pointer cannot be a nullptr pointer");
     }
 }
 

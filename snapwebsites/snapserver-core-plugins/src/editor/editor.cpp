@@ -40,6 +40,7 @@
 #include <libtld/tld.h>
 
 #include <iostream>
+#include <cmath>
 
 #include <QTextDocument>
 #include <QFile>
@@ -635,15 +636,19 @@ bool editor::on_path_execute(content::path_info_t & ipath)
 }
 
 
-void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
-                                         QDomElement const& widget, QString const& widget_name,
-                                         QString const& widget_type, bool const is_secret)
+void editor::on_validate_post_for_widget(
+          content::path_info_t & ipath
+        , sessions::sessions::session_info & info
+        , QDomElement const & widget
+        , QString const & widget_name
+        , QString const & widget_type
+        , bool const is_secret)
 {
     NOTUSED(widget);
     NOTUSED(widget_type);
     NOTUSED(is_secret);
 
-    messages::messages *messages(messages::messages::instance());
+    messages::messages * messages(messages::messages::instance());
 
     // we are only interested by our widgets
     QString const cpath(ipath.get_cpath());
@@ -1182,7 +1187,7 @@ void editor::retrieve_original_field(content::path_info_t & ipath)
  *
  * \return One of the EDITOR_SAVE_MODE_...
  */
-editor::save_mode_t editor::string_to_save_mode(QString const& mode)
+editor::save_mode_t editor::string_to_save_mode(QString const & mode)
 {
     if(mode == "draft")
     {
@@ -3864,6 +3869,10 @@ bool editor::validate_editor_post_for_widget_impl(
                     // through the callbacks
                     f_value_to_validate = value;
 
+                    // TODO: convert the use of javascript->evaluate_scrtip()
+                    //       to using snap_expr so we can eliminate the
+                    //       dependency completely
+                    //
                     javascript::javascript::instance()->register_dynamic_plugin(this);
                     QString const validate_script(validate_tag.text());
                     QVariant v(javascript::javascript::instance()->evaluate_script(validate_script));
@@ -4522,7 +4531,10 @@ QString editor::verify_html_validity(QString body)
  * \param[in,out] body  The HTML to be parsed and "fixed."
  * \param[in] widget  The tag representing the widget being saved.
  */
-void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget)
+void editor::parse_out_inline_img(
+          content::path_info_t & ipath
+        , QString & body
+        , QDomElement widget)
 {
     QDomDocument doc;
     doc.setContent(QString("<element>%1</element>").arg(body));
@@ -4677,7 +4689,12 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
  *                      save as "image.<type>"
  * \param[in] widget  The widget being saved.
  */
-bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget)
+bool editor::save_inline_image(
+          content::path_info_t & ipath
+        , QDomElement img
+        , QString const & src
+        , QString filename
+        , QDomElement widget)
 {
     static uint32_t g_index = 0;
 
@@ -4876,7 +4893,10 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
  * \param[in,out] page  The XML element named "page".
  * \param[in,out] body  The XML element named "body".
  */
-void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
+void editor::on_generate_page_content(
+          content::path_info_t & ipath
+        , QDomElement & page
+        , QDomElement & body)
 {
     enum class added_form_file_support_t
     {
@@ -5261,7 +5281,7 @@ void editor::add_editor_widget_templates(QString const & xslt)
 }
 
 
-void editor::add_editor_widget_templates_from_file(QString const& filename)
+void editor::add_editor_widget_templates_from_file(QString const & filename)
 {
     QFile editor_xsl_file(filename);
     if(!editor_xsl_file.open(QIODevice::ReadOnly))
@@ -5277,7 +5297,7 @@ void editor::add_editor_widget_templates_from_file(QString const& filename)
 }
 
 
-bool editor::prepare_editor_form_impl(editor *e)
+bool editor::prepare_editor_form_impl(editor * e)
 {
     // no need to use 'e' in this implementation,
     // it is useful in other plugins though
@@ -5296,7 +5316,11 @@ bool editor::prepare_editor_form_impl(editor *e)
 }
 
 
-void editor::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
+void editor::on_generate_boxes_content(
+          content::path_info_t & page_cpath
+        , content::path_info_t & ipath
+        , QDomElement & page
+        , QDomElement & box)
 {
     NOTUSED(page_cpath);
 
@@ -5320,7 +5344,12 @@ void editor::on_generate_boxes_content(content::path_info_t & page_cpath, conten
  * which is used once a draft is saved as a full page. This type has to
  * be duplicated here.
  */
-void editor::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
+void editor::repair_link_of_cloned_page(
+          QString const & clone
+        , snap_version::version_number_t branch_number
+        , links::link_info const & source
+        , links::link_info const & destination
+        , bool const cloning)
 {
     NOTUSED(cloning);
 

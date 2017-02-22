@@ -1,8 +1,18 @@
-libsnapwebsites (1.1.83.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.84.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Wed, 15 Feb 2017 02:00:57 -0800
+ -- Build Server <build@m2osw.com>  Tue, 21 Feb 2017 02:00:57 -0800
+
+libsnapwebsites (1.1.84.0~xenial) xenial; urgency=high
+
+  * Various fixes so it compiles with g++ 6.x.
+  * Removed the need for PROC_FILLWCHAN, newer system do not support it.
+  * Make use of C++ math functions, replace M_PI with a function.
+  * Removed a throw in a destructor and replaced with an std::terminate().
+  * Added some missing #include (string, vector, cmath...)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 20 Feb 2017 16:31:45 -0800
 
 libsnapwebsites (1.1.83.0~xenial) xenial; urgency=high
 

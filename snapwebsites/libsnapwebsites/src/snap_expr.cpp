@@ -4470,7 +4470,7 @@ void expr::execute(variable_t& result, variable_t::variable_map_t& variables, fu
 
     // an internal variable
     variable_t pi("pi");
-    pi.set_value(M_PI);
+    pi.set_value(pi_number());
     variables["pi"] = pi;
 
     static_cast<expr_node *>(&*f_program_tree)->execute(result, variables, functions);

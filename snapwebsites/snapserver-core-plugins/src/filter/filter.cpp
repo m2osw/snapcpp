@@ -884,6 +884,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         QVector<QDomNode> to_pop;
 
         // determine the next node before we handle this node
+        //
         QDomNode parent(n.parentNode());
         QDomNode next(n.firstChild());
         if(next.isNull())
@@ -1073,11 +1074,13 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
 
     private:
         // it is not yet proven to be a token...
+        //
         bool parse_token(bool const add_as_string)
         {
-            token_info_t info;
+            token_info_t info(f_xml);
 
             // reset the token variable
+            //
             f_token = "[";
             if(add_as_string)
             {
@@ -1195,11 +1198,13 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
 
             // valid input, now verify that it does exist in the current
             // installation
+            //
             f_filter->replace_token(f_ipath, f_xml, info);
             if(!info.f_found)
             {
                 // the token is not known, that's an error so we do not
                 // replace anything
+                //
                 return false;
             }
             // TODO: at this point this check test whether the page as a
@@ -1210,6 +1215,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
             {
                 // if the editor is turned on, then we want to mark all
                 // fields as such so the editor is aware of them
+                //
                 QByteArray utf8(info.f_replacement.toUtf8());
                 bool use_span(true);
                 for(char const * s(utf8.data()); *s != '\0'; ++s)
@@ -1239,10 +1245,14 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
             }
             if(add_as_string)
             {
+                // add the replacement as a string between quotes
+                //
                 ungets(QString("\"%1\"").arg(info.f_replacement));
             }
             else
             {
+                // add the replacement as is
+                //
                 ungets(info.f_replacement);
             }
 
@@ -1261,7 +1271,9 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                     bool const view_as_string(c == '*');
                     if(!view_as_string)
                     {
-                        // transform to string
+                        // do not transform to string, restore that
+                        // character for the parse_token() function
+                        //
                         ungetc(c);
                     }
                     // recursively parse sub-tokens

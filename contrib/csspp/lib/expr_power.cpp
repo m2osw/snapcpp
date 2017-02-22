@@ -199,9 +199,9 @@ node::pointer_t expression::power()
         next();
 
         node::pointer_t rhs(post());
-        if(!rhs)
+        if(rhs == nullptr)
         {
-            return false;
+            return node::pointer_t();
         }
 
         // apply the power operation

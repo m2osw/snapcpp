@@ -15,15 +15,24 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// self
+//
 #include "snapwebsites/qdomxpath.h"
 
+// snapwebsites lib
+//
 #include "snapwebsites/floats.h"
 #include "snapwebsites/not_used.h"
 #include "snapwebsites/qstring_stream.h"
 
+// C++ lib
+//
+#include <cmath>
 #include <iomanip>
 #include <limits>
 
+// last include
+//
 #include "snapwebsites/poison.h"
 
 
@@ -986,10 +995,10 @@ public:
             return f_integer;
 
         case type_t::ATOMIC_TYPE_SINGLE:
-            return static_cast<int64_t>(floor(f_single));
+            return static_cast<int64_t>(std::floor(f_single));
 
         case type_t::ATOMIC_TYPE_DOUBLE:
-            return static_cast<int64_t>(floor(f_double));
+            return static_cast<int64_t>(std::floor(f_double));
 
         case type_t::ATOMIC_TYPE_STRING:
             // TODO -- create a "correct" string to integer convertion
@@ -3815,11 +3824,11 @@ void inst_ceiling()
         break;
 
     case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
-        value.atomic_value_t::setValue(ceilf(value.getSingleValue()));
+        value.atomic_value_t::setValue(std::ceil(value.getSingleValue()));
         break;
 
     case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
-        value.atomic_value_t::setValue(ceil(value.getDoubleValue()));
+        value.atomic_value_t::setValue(std::ceil(value.getDoubleValue()));
         break;
 
     default:
@@ -3862,11 +3871,11 @@ void inst_floor()
         break;
 
     case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
-        value.atomic_value_t::setValue(floorf(value.getSingleValue()));
+        value.atomic_value_t::setValue(std::floor(value.getSingleValue()));
         break;
 
     case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
-        value.atomic_value_t::setValue(floor(value.getDoubleValue()));
+        value.atomic_value_t::setValue(std::floor(value.getDoubleValue()));
         break;
 
     default:
@@ -3915,11 +3924,11 @@ void inst_round()
         break;
 
     case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
-        value.atomic_value_t::setValue(floorf(value.getSingleValue() + 0.5f));
+        value.atomic_value_t::setValue(std::floor(value.getSingleValue() + 0.5f));
         break;
 
     case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
-        value.atomic_value_t::setValue(floor(value.getDoubleValue() + 0.5));
+        value.atomic_value_t::setValue(std::floor(value.getDoubleValue() + 0.5));
         break;
 
     default:
@@ -4242,7 +4251,7 @@ void inst_modulo()
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
-        result.atomic_value_t::setValue(fmodf(lhs.getSingleValue(true), rhs.getSingleValue(true)));
+        result.atomic_value_t::setValue(std::fmod(lhs.getSingleValue(true), rhs.getSingleValue(true)));
         break;
 
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
@@ -4250,7 +4259,7 @@ void inst_modulo()
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
     case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
-        result.atomic_value_t::setValue(fmod(lhs.getDoubleValue(true), rhs.getDoubleValue(true)));
+        result.atomic_value_t::setValue(std::fmod(lhs.getDoubleValue(true), rhs.getDoubleValue(true)));
         break;
 
     default:

@@ -37,6 +37,7 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 
+#include <vector>
 
 
 namespace QtCassandra

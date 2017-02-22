@@ -110,6 +110,7 @@ public:
     QString             apply_layout(content::path_info_t & ipath, layout_content * plugin);
     QString             define_layout(content::path_info_t & ipath, QString const & name, QString const & key, QString const & default_filename, QString const & theme_name, QString & layout_name);
     void                create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool const handle_boxes = false, QString const & layout_name = QString(), QString const & theme_name = QString());
+    QString             create_body_string(QDomDocument & doc , content::path_info_t & ipath, layout_content * content_plugin);
     QString             apply_theme(QDomDocument doc, QString const & xsl, QString const & theme_name);
     void                replace_includes(QString & xsl);
     //void                add_layout_from_resources(QString const & name);
