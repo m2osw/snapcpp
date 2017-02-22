@@ -1588,6 +1588,7 @@ void manager_cgi::generate_content(QDomDocument doc, QDomElement output, QDomEle
         QDomElement status(doc.createElement("status"));
         menu.appendChild(status);
         status.appendChild( doc.createTextNode("Host: ") );
+        status.appendChild( doc.createElement("br")      );
         status.appendChild( doc.createTextNode(host)     );
 
         // the function is to be applied to that specific host
