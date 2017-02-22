@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.68.0~xenial) xenial; urgency=high
+
+  * EX-167: append revisioning information to images presented by the editor
+    plugin. This overcomes browser caching of the same filename, even if the
+    user uploads a new image.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 21 Feb 2017 21:44:00 -0800
+
 snapserver-core-plugins (1.0.67.1~xenial) xenial; urgency=high
 
   * Nightly build.
