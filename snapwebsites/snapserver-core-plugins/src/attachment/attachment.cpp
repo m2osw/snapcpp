@@ -706,7 +706,12 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
 
     // get the file MD5 which must be exactly 16 bytes
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue const attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue const attachment_key(
+            revision_table
+                ->row(attachment_ipath.get_revision_key())
+                    ->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
+                        ->value()
+            );
     if(attachment_key.size() != 16)
     {
         // somehow the file key is not available
@@ -1022,7 +1027,12 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //}
 
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(
+            revision_table
+                ->row(attachment_ipath.get_revision_key())
+                    ->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
+                        ->value()
+            );
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
