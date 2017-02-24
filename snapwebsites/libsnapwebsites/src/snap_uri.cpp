@@ -1544,6 +1544,16 @@ void snap_uri::set_query_string(QString const & uri_query_string)
 }
 
 
+/** \brief Clear all query option strings.
+ *
+ * This is useful if you want to "start fresh" with the base URI.
+ */
+void snap_uri::clear_query_options()
+{
+    f_query_strings.clear();
+}
+
+
 /** \brief Generate the query string.
  *
  * This function goes through the list of defined query string options

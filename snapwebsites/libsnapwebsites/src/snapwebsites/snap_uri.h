@@ -143,6 +143,7 @@ public:
     void                set_query_string(QString const & uri_query_string);
     QString             query_string() const;
     bool                has_query_option(QString const & name) const;
+    void                clear_query_options();
     QString             query_option(QString const & name) const;
     int                 query_option_count() const;
     QString             query_option(int part, QString & name) const;
