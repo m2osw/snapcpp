@@ -4799,7 +4799,7 @@ bool editor::save_inline_image(
         throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
     }
 
-    QString widget_identification; // this one is #IMPLIED
+    //QString widget_identification; // this one is #IMPLIED
     QDomElement attachment_tag;
     if(max_attachments == 1)
     {
@@ -4861,7 +4861,6 @@ bool editor::save_inline_image(
     QString file_suffix;
     content::path_info_t img_ipath;
     img_ipath.set_path( filename );
-SNAP_LOG_TRACE("filename cpath=")(img_ipath.get_cpath());
     //
     if( img_ipath.has_branch() && img_ipath.has_revision() )
     {
@@ -4876,7 +4875,6 @@ SNAP_LOG_TRACE("filename cpath=")(img_ipath.get_cpath());
                 .arg(filename)
                 .arg(file_suffix)
                 ;
-SNAP_LOG_TRACE("src=")(result_src);
     img.setAttribute("src", result_src);
 
     new_attachment_saved(the_attachment, widget, attachment_tag);

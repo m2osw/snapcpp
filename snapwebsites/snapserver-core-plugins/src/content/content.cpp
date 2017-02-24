@@ -4611,6 +4611,9 @@ bool content::is_updating()
  */
 void content::on_load_file(snap_child::post_file_t& file, bool& found)
 {
+#ifdef DEBUG
+    SNAP_LOG_TRACE("content::on_load_file(), filename=")(file.get_filename());
+#endif
     if(!found)
     {
         QString filename(file.get_filename());
