@@ -1063,11 +1063,7 @@ out.write(doc.toString(-1).toUtf8());
  *
  * \param[in,out] doc  The layout document being created.
  * \param[in,out] ipath  The path being dealt with.
- * \param[in] xsl  The XSL of this body layout.
  * \param[in] body_plugin  The plugin handling the content (body/title in general.)
- * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
- * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
- * \param[in] theme_name  The name of the layout (only necessary if handle_boxes is true.)
  *
  * \return The resulting body as a string.
  */
@@ -1151,6 +1147,17 @@ SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
 
     // replace all tokens
     //
+    // Note that we are in create_body_string() which is expected to
+    // be called through a filter already and since the filtering
+    // is "recursive" (whatever gets added to the output gets itself
+    // parsed) we should not have to filter at this level. However,
+    // the page_doc variable is very different and thus the filtering
+    // for this very page is going to be different from filtering
+    // using the parent QDomDocument variable. As a side effect, this
+    // allows us to have a standalone function (i.e. it can be called
+    // from other places than just the filter implementing the
+    // "content::page" token.)
+    //
     // TODO: the filtering needs to be a lot more generic!
     //       plus the owner of the page should be able to select the
     //       filters he wants to apply against the page content
@@ -1204,6 +1211,11 @@ SNAP_LOG_TRACE("layout::create_body_string() ... cpath = [")
     }
 
 //std::cerr << "*** Filtered content...\n";
+    // XXX: although we filtered, I'm not totally sure we want to run this
+    //      one here--the ipath is different from the caller's so it could
+    //      have side effects we would not otherwise get in the parent's
+    //      page filtered_content() call.
+    //
     filtered_content(ipath, page_doc, filtered_xsl);
 
 #if 0
@@ -1230,7 +1242,7 @@ out.write(page_doc.toString(-1).toUtf8());
     extract_js_and_css(doc, doc_output);
     //body.appendChild(doc.importNode(doc_output.documentElement(), true));
 
-    return doc_output.toString(-1);
+    return snap_dom::xml_children_to_string(doc_output.documentElement());
 }
 
 

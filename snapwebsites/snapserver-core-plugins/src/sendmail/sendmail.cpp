@@ -3105,6 +3105,7 @@ void sendmail::copy_filename_to_content_type(email::header_map_t & attachment_he
         && content_type_parts.size() > 0)
         {
             // we only use part 1 (there should not be more than one though)
+            //
             QString const filename(content_disposition_parts[0].get_parameter("filename"));
             if(!filename.isEmpty())
             {

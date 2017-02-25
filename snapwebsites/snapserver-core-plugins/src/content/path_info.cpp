@@ -292,13 +292,21 @@ void path_info_t::force_extended_revision(QString const & revision, QString cons
  *     be distinguished. The "xx" revision is used when no other
  *     languages match the user's language.
  *
+ * \note
+ * If you specify a non-existant locale, then you are likely to get
+ * an exception a little later. In most cases you do not want to
+ * force the locale. Instead, the plugins (users), browser, or
+ * various internal defaults will be checked.
+ *
  * \param[in] locale  The locale two letter abbreviation.
  */
 void path_info_t::force_locale(QString const & locale)
 {
     if(f_locale != locale)
     {
-        // TBD: not too sure how valid this is...
+        // If defined in this way and the corresponding revision does not
+        // exist, you get an error...
+        //
         f_locale = locale;
         f_revision_key.clear();
     }
@@ -619,6 +627,8 @@ snap_version::version_number_t path_info_t::get_branch(bool create_new_if_requir
             if(create_new_if_required
             && snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
             {
+                // use the specified locale as we are creating a new branch
+                //
                 f_locale = locale;
                 f_branch = f_content_plugin->get_new_branch(key, f_locale);
             }
@@ -654,7 +664,13 @@ snap_version::version_number_t path_info_t::get_revision() const
             return f_revision;
         }
 
+        // define the key we are going to use for our tests below
+        //
+        QString const & key(f_real_key.isEmpty() ? f_key : f_real_key);
+
         // reset values
+        //
+        f_revision_key.clear();
         f_revision = f_main_page
                     ? f_snap->get_revision()
                     : static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
@@ -665,45 +681,61 @@ snap_version::version_number_t path_info_t::get_revision() const
         //      specified in the URI
         if(f_locale.isEmpty())
         {
-            f_locale = f_snap->get_language_key();
-        }
-        QString const default_language(f_locale);
-        f_revision_key.clear();
+            snap_child::locale_info_vector_t locales(f_snap->get_all_locales());
 
-        if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
-        {
-            QString const & key(f_real_key.isEmpty() ? f_key : f_real_key);
-
-            // try with the full locale
-            f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
-            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision && f_locale.length() == 5)
-            {
-                // try without the country
-                f_locale = f_locale.left(2);
-                f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
-            }
+            // the locale was not forced, we can check with the plugins
+            // (i.e. "users" if known), browser, internal default locales
+            //
             if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
             {
-                // try with the neutral language
-                f_locale = "xx";
-                f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
-            }
-            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
-            {
-                // try without a language
-                f_locale.clear();
-                f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
-            }
-            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision
-            && default_language.left(2) != "en")
-            {
-                // try an "internal" default language as a last resort...
-                f_revision = f_content_plugin->get_current_revision(key, f_branch, "en", get_working_branch());
-                if(snap_version::SPECIAL_VERSION_UNDEFINED != f_revision)
+                // search for a locale that works
+                //
+                for(auto const & l: locales)
                 {
-                    f_locale = "en";
+                    QString const locale(l.get_composed());
+                    f_revision = f_content_plugin->get_current_revision(key, f_branch, locale, get_working_branch());
+                    if(snap_version::SPECIAL_VERSION_UNDEFINED != f_revision)
+                    {
+                        f_locale = locale;
+                        break;
+                    }
                 }
             }
+            else
+            {
+                // the revision is already defined, so instead of searching
+                // for a revision, we check whether a revision exists with
+                // the possible locales
+                //
+                QtCassandra::QCassandraTable::pointer_t revision_table(f_content_plugin->get_revision_table());
+                for(auto const & l: locales)
+                {
+                    QString const locale(l.get_composed());
+                    QString const revision_key(f_content_plugin->generate_revision_key(key, f_branch, f_revision, locale));
+                    if(revision_table->exists(revision_key))
+                    {
+                        // it exists, we select that language!
+                        //
+                        f_locale = locale;
+                        break;
+                    }
+                }
+            }
+        }
+        else if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+        {
+            // the locale was forced (or already defined?!) in which
+            // case that very locale has to exist... or the revision
+            // remains undefined
+            //
+            f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
+        }
+
+        // if nothing worked, force the locale to "en" as a default
+        //
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
+        {
+            f_locale = "en";
         }
     }
 
@@ -775,6 +807,18 @@ QString path_info_t::get_branch_key() const
 }
 
 
+/** \brief Retrieve the revision key for this path.
+ *
+ * If the revision key cannot be determined by the get_revision(), the
+ * function attempts to get the current revision key as a fallback. In
+ * most cases the get_revision() function will already have attempted
+ * such unless the user put the wrong release on the URI.
+ *
+ * The function will return a key one can use to directly access the
+ * revision data in the `revision` table.
+ *
+ * \return The key to access the `revision` table data.
+ */
 QString path_info_t::get_revision_key() const
 {
     if(f_revision_key.isEmpty())
@@ -797,34 +841,62 @@ QString path_info_t::get_revision_key() const
                 get_revision();
             }
 
-            // name of the field in the content table of that page
-            QString field(QString("%1::%2::%3")
-                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
-                        .arg(get_name(get_working_branch()
-                                ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
-                                : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
-                        .arg(f_branch));
-            if(!f_locale.isEmpty())
+            // if this happens, as far as I know, we already tried the
+            // default... but maybe not (we would need unit tests to
+            // make sure).
+            //
+            QString field;
+            if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision
+            || snap_version::SPECIAL_VERSION_INVALID == f_revision)
             {
-                field += "::" + f_locale;
-            }
+                // name of the field in the content table of that page
+                field = QString("%1::%2::%3")
+                            .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                            .arg(get_name(get_working_branch()
+                                    ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                                    : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
+                            .arg(f_branch);
+                if(!f_locale.isEmpty())
+                {
+                    field += "::" + f_locale;
+                }
 
-            QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
-            if(content_table->exists(f_key)
-            && content_table->row(f_key)->exists(field))
-            {
-                QtCassandra::QCassandraValue value(content_table->row(f_key)->cell(field)->value());
-                f_revision_key = value.stringValue();
+                QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
+                if(content_table->exists(f_key)
+                && content_table->row(f_key)->exists(field))
+                {
+                    QtCassandra::QCassandraValue value(content_table->row(f_key)->cell(field)->value());
+                    f_revision_key = value.stringValue();
+                }
+                // else -- no default revision...
             }
-            // else -- no default revision...
+            else
+            {
+                // in this case we have all the parameters so use them to
+                // generate the key; still verify that the key exists
+                //
+                QString revision_key(f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale));
+                QtCassandra::QCassandraTable::pointer_t revision_table(f_content_plugin->get_revision_table());
+                if(revision_table->exists(revision_key))
+                {
+                    f_revision_key = revision_key;
+                }
+                // else -- no specific revision...
+            }
 
             if(f_revision_key.isEmpty())
             {
-                // the revision is still undefined...
-                QString const msg = QString("path_info_t::get_revision_key() request failed for \"%1\", revision for \"%2\" not defined for field \"%3\".")
+                // the revision is still undefined... so one cannot get it.
+                // see has_revision() for a way to determine this feat
+                // before calling get_revision_key() if necessary
+                //
+                QString const msg(QString("path_info_t::get_revision_key() request failed for \"%1\", revision for \"%2\" not defined for %3 \"%4\".")
                     .arg(f_cpath)
                     .arg(f_key)
-                    .arg(field);
+                    .arg(field.isEmpty() ? " revision key "
+                                         : " field ")
+                    .arg(field.isEmpty() ? f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale)
+                                         : field));
                 SNAP_LOG_FATAL(msg);
                 throw content_exception_data_missing(msg);
             }

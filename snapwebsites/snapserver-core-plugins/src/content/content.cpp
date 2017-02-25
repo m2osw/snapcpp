@@ -2549,7 +2549,7 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
         QString path(content_element.attribute("path"));
         if(path.isEmpty())
         {
-            throw content_exception_invalid_content_xml("all <content> tags supplied to add_xml() must include a valid \"path\" attribute");
+            throw content_exception_invalid_content_xml("all <content> tags supplied to add_xml_document() must include a valid \"path\" attribute");
         }
         f_snap->canonicalize_path(path);
         QString const key(f_snap->get_site_key_with_slash() + path);
@@ -3193,10 +3193,12 @@ void content::add_param(QString const & path, QString const & name, param_revisi
         }
 
         // replace the data
+        //
         // TBD: should we generate an error because if defined by several
         //      different plugins then we cannot ensure which one is going
         //      to make it to the database! At the same time, we cannot
         //      know whether we're overwriting a default value.
+        //
         p->f_data[locale] = data;
     }
 }
@@ -3219,7 +3221,7 @@ void content::add_param(QString const & path, QString const & name, param_revisi
  *
  * \sa add_param()
  */
-void content::set_param_overwrite(const QString& path, const QString& name, bool overwrite)
+void content::set_param_overwrite(QString const & path, QString const & name, bool overwrite)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -3522,6 +3524,7 @@ void content::on_save_content()
         //       added by content.xml. Also the branch does not include the
         //       locale so I do not see why I mentioned that. Maybe I had
         //       the locale there at the time.
+        //
         initialize_branch(d->f_path);
 
         // TODO: add support to specify the "revision owner" of the parameter
@@ -3536,13 +3539,14 @@ void content::on_save_content()
         branch_table->row(branch_key)->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
         // save the parameters (i.e. cells of data defined by the developer)
-        bool use_new_revision(true);
+        std::map<QString, bool> use_new_revision;
         for(content_params_t::iterator p(d->f_params.begin());
                 p != d->f_params.end(); ++p)
         {
             // make sure no parameter is defined as content::primary_owner
             // because we are 100% in control of that one!
             // (we may want to add more as time passes)
+            //
             if(p->f_name == primary_owner)
             {
                 throw content_exception_invalid_content_xml("content::on_save_content() cannot accept a parameter named \"content::primary_owner\" as it is reserved");
@@ -3578,12 +3582,13 @@ void content::on_save_content()
 
                     // path + "#xx/0.<revision>" in the data table
                     param_table = revision_table;
-                    if(!use_new_revision)
+                    bool const create_revision(use_new_revision.find(locale) == use_new_revision.end());
+                    if(create_revision)
                     {
                         row_key = get_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false);
                     }
                     // else row_key.clear(); -- I think it is faster to test the flag again
-                    if(use_new_revision || row_key.isEmpty())
+                    if(!create_revision || row_key.isEmpty())
                     {
                         // the revision does not exist yet, create it
                         snap_version::version_number_t revision_number(get_new_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false));
@@ -3591,7 +3596,7 @@ void content::on_save_content()
                         set_current_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
                         set_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
                         row_key = set_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
-                        use_new_revision = false;
+                        use_new_revision[locale] = false;
 
                         // mark when the row was created
                         revision_table->row(row_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);

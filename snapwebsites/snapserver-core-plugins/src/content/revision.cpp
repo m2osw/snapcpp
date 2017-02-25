@@ -804,9 +804,11 @@ void content::initialize_branch(QString const & key)
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     // *** BRANCH ***
+    //
     snap_version::version_number_t branch_number(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
     {
         // Last branch
+        //
         QString const last_branch_key(QString("%1::%2")
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
@@ -814,6 +816,7 @@ void content::initialize_branch(QString const & key)
         if(branch_value.nullValue())
         {
             // last branch does not exist yet, create it with zero (0)
+            //
             content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
         }
         else
@@ -846,20 +849,24 @@ void content::initialize_branch(QString const & key)
 
     {
         // Current branch key
+        //
         QString const current_branch_key(get_branch_key(key, false));
         if(current_branch_key.isEmpty())
         {
             // there is no branch yet, create one
+            //
             set_branch_key(key, branch_number, false);
         }
     }
 
     {
         // Current working branch key
+        //
         QString const current_branch_key(get_branch_key(key, true));
         if(current_branch_key.isEmpty())
         {
             // there is no branch yet, create one
+            //
             set_branch_key(key, branch_number, true);
         }
     }
@@ -879,7 +886,7 @@ void content::initialize_branch(QString const & key)
  *
  * \return A string representing the end of the key
  */
-QString content::get_revision_key(QString const& key, snap_version::version_number_t branch, QString const& locale, bool working_branch)
+QString content::get_revision_key(QString const & key, snap_version::version_number_t branch, QString const & locale, bool working_branch)
 {
     // key in the content table
     QString current_key(QString("%1::%2::%3")

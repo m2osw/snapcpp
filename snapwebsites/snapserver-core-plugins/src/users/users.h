@@ -394,7 +394,7 @@ public:
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
-    void                    on_define_locales(QString & locales);
+    void                    on_define_locales(http_strings::WeightedHttpString & locales);
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
 
     // path::path_execute implementation

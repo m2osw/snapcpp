@@ -763,14 +763,26 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
                 page_ipath.set_parameter("action", action_param.f_value);
             }
 
-            // before we can add the output to the token,
-            // we MUST verify the permission of this user to that other page
+            // WARNING: here we have to allocate the error callback,
+            //          otherwise the plugin_load() fails
             //
-            quiet_error_callback page_error_callback(f_snap, true);
-            path::path::instance()->verify_permissions(page_ipath, page_error_callback);
-            if(!page_error_callback.has_error())
+            path::path * path_plugin(path::path::instance());
+            std::shared_ptr<path::path_error_callback> main_page_error_callback(std::make_shared<path::path_error_callback>(f_snap, page_ipath));
+            plugins::plugin * owner_plugin(path_plugin->get_plugin(page_ipath, *main_page_error_callback));
+            layout::layout_content * body_plugin(dynamic_cast<layout::layout_content *>(owner_plugin));
+
+            if(body_plugin != nullptr)
             {
-                token.f_replacement = layout::layout::instance()->apply_layout(page_ipath, this);
+
+                // before we can add the output to the token,
+                // we MUST verify the permission of this user to that other page
+                //
+                quiet_error_callback page_error_callback(f_snap, true);
+                path_plugin->verify_permissions(page_ipath, page_error_callback);
+                if(!page_error_callback.has_error())
+                {
+                    token.f_replacement = layout::layout::instance()->create_body_string(token.f_xml, page_ipath, body_plugin);
+                }
             }
         }
     }

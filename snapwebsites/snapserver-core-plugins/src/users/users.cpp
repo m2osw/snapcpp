@@ -3846,25 +3846,18 @@ void users::on_detach_from_session()
  *
  * \param[in,out] locales  Locales as defined by the user.
  */
-void users::on_define_locales(QString & locales)
+void users::on_define_locales(http_strings::WeightedHttpString & locales)
 {
-    if(f_user_info.is_user())
+    // if we know the user and it still exists in our database, then check
+    // whether he has a locales defined, if so use it.
+    //
+    if(f_user_info.is_user()
+    && f_user_info.exists())
     {
-        if( f_user_info.exists() )
+        QtCassandra::QCassandraValue const value(f_user_info.get_value(name_t::SNAP_NAME_USERS_LOCALES));
+        if(!value.nullValue())
         {
-            QtCassandra::QCassandraValue const value(f_user_info.get_value(name_t::SNAP_NAME_USERS_LOCALES));
-            if(!value.nullValue())
-            {
-                if(locales.isEmpty())
-                {
-                    locales = value.stringValue();
-                }
-                else
-                {
-                    locales += ',';
-                    locales += value.stringValue();
-                }
-            }
+            locales.parse(value.stringValue());
         }
     }
 }

@@ -513,6 +513,14 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
 
     content::path_info_t parent_ipath;
     ipath.get_parent(parent_ipath);
+
+    // make sure we do not lose the branch, revision, and locale
+    //
+    parent_ipath.force_branch(ipath.get_branch());
+    parent_ipath.force_revision(ipath.get_revision());
+    parent_ipath.force_locale(ipath.get_locale());
+    parent_ipath.set_main_page(ipath.is_main_page());
+
     if(!content_table->exists(parent_ipath.get_key()))
     {
         // this should always be true, although we may later want to support
@@ -679,6 +687,14 @@ bool images::on_path_execute(content::path_info_t & ipath)
         // TODO: that data may NOT be available yet in which case a plugin
         //       needs to offer it... how do we do that?!
         attachment_ipath.set_path(renamed);
+
+        // make sure we do not lose the branch, revision, and locale
+        //
+        attachment_ipath.force_branch(ipath.get_branch());
+        attachment_ipath.force_revision(ipath.get_revision());
+        attachment_ipath.force_locale(ipath.get_locale());
+        attachment_ipath.set_main_page(ipath.is_main_page());
+
         field_name = ipath.get_parameter("attachment_field");
     }
 
