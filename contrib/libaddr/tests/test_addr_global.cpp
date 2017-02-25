@@ -50,7 +50,7 @@
 
 
 
-TEST_CASE( "version", "global" )
+TEST_CASE( "version", "[global]" )
 {
     REQUIRE(addr::get_version_major() == LIBADDR_VERSION_MAJOR);
     REQUIRE(addr::get_version_minor() == LIBADDR_VERSION_MINOR);

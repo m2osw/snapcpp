@@ -1,8 +1,8 @@
-libaddr (1.0.7.3~xenial) xenial; urgency=high
+libaddr (1.0.8.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the tests, the tags need to be between '[' ... ']'.
 
- -- Build Server <build@m2osw.com>  Tue, 21 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 24 Feb 2017 20:52:22 -0700
 
 libaddr (1.0.7.0~xenial) xenial; urgency=high
 

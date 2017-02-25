@@ -75,7 +75,7 @@ void socket_deleter(int * s)
 
 
 
-TEST_CASE( "ipv4::invalid_input", "ipv4" )
+TEST_CASE( "ipv4::invalid_input", "[ipv4]" )
 {
     GIVEN("addr()")
     {
@@ -396,7 +396,7 @@ TEST_CASE( "ipv4::invalid_input", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::addr", "ipv4" )
+TEST_CASE( "ipv4::addr", "[ipv4]" )
 {
     GIVEN("addr()")
     {
@@ -540,7 +540,7 @@ TEST_CASE( "ipv4::addr", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::address", "ipv4" )
+TEST_CASE( "ipv4::address", "[ipv4]" )
 {
     GIVEN("addr() with an IPv4")
     {
@@ -1096,7 +1096,7 @@ TEST_CASE( "ipv4::address", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::ports", "ipv4" )
+TEST_CASE( "ipv4::ports", "[ipv4]" )
 {
     GIVEN("addr_parser() with IPv4 addresses and port")
     {
@@ -1203,7 +1203,7 @@ TEST_CASE( "ipv4::ports", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::masks", "ipv4" )
+TEST_CASE( "ipv4::masks", "[ipv4]" )
 {
     GIVEN("addr_parser() of address:port/mask")
     {
@@ -1531,7 +1531,7 @@ TEST_CASE( "ipv4::masks", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::protocol", "ipv4" )
+TEST_CASE( "ipv4::protocol", "[ipv4]" )
 {
     GIVEN("addr()")
     {
@@ -1702,7 +1702,7 @@ TEST_CASE( "ipv4::protocol", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::network_type", "ipv4" )
+TEST_CASE( "ipv4::network_type", "[ipv4]" )
 {
     GIVEN("addr()")
     {
@@ -1877,7 +1877,7 @@ TEST_CASE( "ipv4::network_type", "ipv4" )
 }
 
 
-TEST_CASE( "ipv4::network", "ipv4" )
+TEST_CASE( "ipv4::network", "[ipv4]" )
 {
     GIVEN("set_from_socket()")
     {

@@ -42,7 +42,7 @@
 #include "test_addr_main.h"
 
 
-TEST_CASE( "ipv4::interfaces", "ipv4" )
+TEST_CASE( "ipv4::interfaces", "[ipv4]" )
 {
     GIVEN("addr::get_local_addresses()")
     {

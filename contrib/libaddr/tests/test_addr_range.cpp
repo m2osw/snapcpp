@@ -43,7 +43,7 @@
 
 
 
-TEST_CASE( "ipv4::range", "ipv4" )
+TEST_CASE( "ipv4::range", "[ipv4]" )
 {
     GIVEN("addr_range()")
     {

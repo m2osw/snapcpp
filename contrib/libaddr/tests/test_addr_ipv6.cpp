@@ -85,7 +85,7 @@ void socket_deleter(int * s)
 
 
 
-TEST_CASE( "ipv6::invalid_input", "ipv6" )
+TEST_CASE( "ipv6::invalid_input", "[ipv6]" )
 {
     GIVEN("addr()")
     {
@@ -412,7 +412,7 @@ TEST_CASE( "ipv6::invalid_input", "ipv6" )
 }
 
 
-TEST_CASE( "ipv6::address", "ipv6" )
+TEST_CASE( "ipv6::address", "[ipv6]" )
 {
     GIVEN("addr() with an IPv6")
     {
@@ -639,7 +639,7 @@ TEST_CASE( "ipv6::address", "ipv6" )
 }
 
 
-TEST_CASE( "ipv6::ports", "ipv6" )
+TEST_CASE( "ipv6::ports", "[ipv6]" )
 {
     // by default addr() is an IPv6 address so we test the basic port
     // functions here, although it could be in a common place instead...
@@ -765,7 +765,7 @@ TEST_CASE( "ipv6::ports", "ipv6" )
 }
 
 
-TEST_CASE( "ipv6::masks", "ipv6" )
+TEST_CASE( "ipv6::masks", "[ipv6]" )
 {
     GIVEN("addr()")
     {
@@ -1247,7 +1247,7 @@ TEST_CASE( "ipv6::masks", "ipv6" )
 }
 
 
-TEST_CASE( "ipv6::network_type", "ipv6" )
+TEST_CASE( "ipv6::network_type", "[ipv6]" )
 {
     GIVEN("addr()")
     {
@@ -1469,7 +1469,7 @@ TEST_CASE( "ipv6::network_type", "ipv6" )
 }
 
 
-TEST_CASE( "ipv6::network", "ipv4" )
+TEST_CASE( "ipv6::network", "[ipv6]" )
 {
     GIVEN("set_from_socket()")
     {
