@@ -124,6 +124,10 @@ public:
     // listener signals
     void                on_listener_check(snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result);
 
+    // filter signals
+    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                on_token_help(filter::filter::token_help_t & help);
+
     Magick::Image       apply_image_script(QString const & script, content::path_info_t::map_path_info_t image_ipaths);
 
 private:

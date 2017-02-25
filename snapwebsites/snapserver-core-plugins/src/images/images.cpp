@@ -323,15 +323,17 @@ void images::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN0(images, "server", server, attach_to_session);
-    SNAP_LISTEN(images, "server", server, register_backend_cron, _1);
-    SNAP_LISTEN(images, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(images, "links", links::links, modified_link, _1);
-    SNAP_LISTEN(images, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(images, "content", content::content, create_content, _1, _2, _3);
-    SNAP_LISTEN(images, "content", content::content, modified_content, _1);
-    SNAP_LISTEN(images, "listener", listener::listener, listener_check, _1, _2, _3, _4);
-    SNAP_LISTEN(images, "versions", versions::versions, versions_libraries, _1);
+    SNAP_LISTEN0(images, "server",   server,             attach_to_session);
+    SNAP_LISTEN(images,  "server",   server,             register_backend_cron,   _1);
+    SNAP_LISTEN(images,  "server",   server,             register_backend_action, _1);
+    SNAP_LISTEN(images,  "links",    links::links,       modified_link,           _1);
+    SNAP_LISTEN(images,  "path",     path::path,         can_handle_dynamic_path, _1,  _2);
+    SNAP_LISTEN(images,  "content",  content::content,   create_content,          _1,  _2,  _3);
+    SNAP_LISTEN(images,  "content",  content::content,   modified_content,        _1);
+    SNAP_LISTEN(images,  "listener", listener::listener, listener_check,          _1,  _2,  _3,  _4);
+    SNAP_LISTEN(images,  "versions", versions::versions, versions_libraries,      _1);
+    SNAP_LISTEN(images,  "filter",   filter::filter,     replace_token,           _1,  _2,  _3);
+    SNAP_LISTEN(images,  "filter",   filter::filter,     token_help,              _1);
 }
 
 
@@ -2436,6 +2438,50 @@ bool images::func_write(parameters_t & params)
     files_table->row(md5)->cell(field_name)->setValue(array);
 
     return true;
+}
+
+
+void images::on_replace_token( content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token )
+{
+    snap::NOTUSED(ipath);
+    snap::NOTUSED(xml);
+
+    if( !token.is_token("images::inline_uri") ) return;
+    //
+    if( !token.verify_args(1, 1) )
+    {
+        SNAP_LOG_ERROR("images::on_replace_token(): no arguments supplied!");
+        return;
+    }
+
+    // EX-167: append revisioning information to the filename to overcome
+    // browser caching if the user uploads a new version of the picture.
+    //
+    QString const uri( token.get_arg("",0).f_value );
+    content::path_info_t img_ipath;
+    img_ipath.set_path(uri);
+SNAP_LOG_TRACE("image_path cpath=")(img_ipath.get_cpath());
+    //
+    if( img_ipath.has_branch() && img_ipath.has_revision() )
+    {
+        token.f_replacement = QString("%1?branch=%2&revision=%3")
+                    .arg(uri)
+                    .arg(img_ipath.get_branch())
+                    .arg(img_ipath.get_revision())
+                    ;
+SNAP_LOG_TRACE("token.f_replacement=")(token.f_replacement);
+    }
+    else
+    {
+        token.f_replacement = uri;
+    }
+}
+
+
+void images::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("images::inline_uri",
+        "Substitute inline URI. This is useful for appending versioning information to the asset.");
 }
 
 

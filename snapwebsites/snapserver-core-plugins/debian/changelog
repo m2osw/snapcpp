@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.69.0~xenial) xenial; urgency=high
+
+  * EX-167: Added image filter to handle inline image sources and versioning the URI
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 24 Feb 2017 16:35:18 -0800
+
 snapserver-core-plugins (1.0.68.3~xenial) xenial; urgency=high
 
   * Nightly build.
