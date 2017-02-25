@@ -23,7 +23,7 @@ as2js (0.1.14.1~trusty) trusty; urgency=high
 
  -- Doug Barbieri <doug@dooglo.net>  Sun, 24 Jan 2016 14:22:14 -0800
 
-as2js (0.1.0) UNRELEASED; urgency=low
+as2js (0.1.0) trusty; urgency=low
 
   * Initial release.
 

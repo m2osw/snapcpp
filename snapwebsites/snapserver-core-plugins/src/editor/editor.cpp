@@ -4799,7 +4799,7 @@ bool editor::save_inline_image(
         throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
     }
 
-    QString widget_identification; // this one is #IMPLIED
+    //QString widget_identification; // this one is #IMPLIED
     QDomElement attachment_tag;
     if(max_attachments == 1)
     {
@@ -4855,28 +4855,14 @@ bool editor::save_inline_image(
         result_src  = QString("/%1").arg(ipath.get_cpath());
     }
 
-    // EX-167: append revisioning information to the filename to overcome
-    // browser caching if the user uploads a new version of the picture.
+    // EX-167: transform the image so that it contains standard revisioning information,
+    // since it is an asset in our system. Also, we want to make sure we overcome the
+    // browser's caching ability should the image change (but not the filename).
     //
-    QString file_suffix;
-    content::path_info_t img_ipath;
-    img_ipath.set_path( filename );
-SNAP_LOG_TRACE("filename cpath=")(img_ipath.get_cpath());
-    //
-    if( img_ipath.has_branch() && img_ipath.has_revision() )
-    {
-        file_suffix = QString("?branch=%1&revision=%2")
-                    .arg(img_ipath.get_branch())
-                    .arg(img_ipath.get_revision())
-                    ;
-    }
-
-    result_src = QString("%1/%2%3")
+    result_src = QString("[images::inline_uri('%1/%2')]")
                 .arg(result_src)
                 .arg(filename)
-                .arg(file_suffix)
                 ;
-SNAP_LOG_TRACE("src=")(result_src);
     img.setAttribute("src", result_src);
 
     new_attachment_saved(the_attachment, widget, attachment_tag);

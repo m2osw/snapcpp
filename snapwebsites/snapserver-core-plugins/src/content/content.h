@@ -709,7 +709,7 @@ public:
     virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
     // signal handling
-    void                on_execute(QString const & uri_path);
+    //void                on_execute(QString const & uri_path); // TODO: there is no method body!
     void                on_save_content();
     void                on_register_backend_action(server::backend_action_set & actions);
     virtual void        on_backend_action(QString const & action);

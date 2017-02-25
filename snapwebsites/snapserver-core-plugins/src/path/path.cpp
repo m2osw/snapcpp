@@ -511,6 +511,11 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
         f_last_modified = value.int64Value();
 
         // retrieve the plugin pointer
+#ifdef DEBUG
+        SNAP_LOG_TRACE("path::get_plugin() cpath=")(ipath.get_cpath());
+        SNAP_LOG_TRACE("   action=")(action);
+        SNAP_LOG_TRACE("   execute [")(ipath.get_key())("] with plugin [")(owner)("]");
+#endif
 //std::cerr << "Execute [" << ipath.get_key() << "] with plugin [" << owner << "]\n";
         owner_plugin = plugins::get_plugin(owner);
         if(owner_plugin == nullptr)
@@ -869,7 +874,11 @@ void path::on_execute(QString const & uri_path)
     ipath.set_main_page(true);
 
 #ifdef DEBUG
-SNAP_LOG_TRACE("path::on_execute(\"")(uri_path)("\") -> [")(ipath.get_cpath())("] [")(ipath.get_branch())("] [")(ipath.get_revision())("]");
+    SNAP_LOG_TRACE("path::on_execute(\"")(uri_path)
+            ("\") -> [")(ipath.get_cpath())
+            ("] [branch=")(ipath.get_branch())
+            ("] [revision=")(ipath.get_revision())
+            ("]");
 #endif
 
     // allow modules to redirect now, it has to be really early, note
@@ -963,6 +972,9 @@ SNAP_LOG_TRACE("path::on_execute(\"")(uri_path)("\") -> [")(ipath.get_cpath())("
         // an AJAX response, so go on by executing the page
         if(f_snap->empty_output())
         {
+#ifdef DEBUG
+            SNAP_LOG_TRACE("**** calling pe->on_path_execute(")(ipath.get_cpath())(")");
+#endif
             if(!pe->on_path_execute(ipath))
             {
                 // TODO (TBD):

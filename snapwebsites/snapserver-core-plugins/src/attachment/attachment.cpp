@@ -651,6 +651,9 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
  */
 bool attachment::on_path_execute(content::path_info_t & ipath)
 {
+#ifdef DEBUG
+    SNAP_LOG_TRACE("attachment::on_path_execute(")(ipath.get_key())(")");
+#endif
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
 
@@ -673,9 +676,11 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
     {
         attachment_ipath = ipath;
         field_name = files_data;
+SNAP_LOG_TRACE("renamed is empty, setting attachment_ipath=")(attachment_ipath.get_key())(", field_name=")(field_name);
     }
     else
     {
+SNAP_LOG_TRACE("renamed=")(renamed)(", field_name=")(field_name);
         // TODO: that data may NOT be available yet in which case a plugin
         //       needs to offer it... how do we do that?!
         attachment_ipath.set_path(renamed);
@@ -705,6 +710,7 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
     }
 
     // get the file MD5 which must be exactly 16 bytes
+SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath=")(ipath.get_cpath());
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     QtCassandra::QCassandraValue const attachment_key(
             revision_table

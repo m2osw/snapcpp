@@ -2115,6 +2115,9 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
  */
 void layout::on_load_file(snap_child::post_file_t & file, bool & found)
 {
+#ifdef DEBUG
+    SNAP_LOG_TRACE("layout::on_load_file(), filename=")(file.get_filename());
+#endif
     if(!found)
     {
         QString filename(file.get_filename());
