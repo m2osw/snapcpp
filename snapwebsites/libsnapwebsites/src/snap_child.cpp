@@ -2334,6 +2334,25 @@ snap_child::country_name_t const g_country_names[] =
 
 
 
+/** \brief Get a composed version of this locale.
+ *
+ * The locale can be empty, just a language name, or a language
+ * named, an underscore, and a country name.
+ *
+ * \return The composed locale.
+ */
+QString snap_child::locale_info_t::get_composed() const
+{
+    if(f_country.isEmpty())
+    {
+        return f_language;
+    }
+
+    return QString("%1_%2").arg(f_language).arg(f_country);
+}
+
+
+
 /** \brief Save the file data in the post_file_t object.
  *
  * This function makes a copy of the data in the post_file_t
@@ -5168,12 +5187,15 @@ void snap_child::canonicalize_options()
 
     // transform the language specified by the browser in an array
     http_strings::WeightedHttpString languages(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE)));
-    http_strings::WeightedHttpString::part_t::vector_t browser_languages(languages.get_parts());
+    http_strings::WeightedHttpString::part_t::vector_t const & browser_languages(languages.get_parts());
     if(!browser_languages.isEmpty())
     {
-        std::stable_sort(browser_languages.begin(), browser_languages.end());
+        // not sorted by default, make sure it gets sorted
+        //
+        languages.sort_by_level();
+
         int const max_languages(browser_languages.size());
-        for(int i(max_languages - 1); i >= 0; --i)
+        for(int i(0); i < max_languages; ++i)
         {
             QString browser_lang(browser_languages[i].get_name());
             QString browser_country;
@@ -5435,9 +5457,17 @@ void snap_child::canonicalize_options()
  * (\p lang) includes the entire locale such as: de_DE or am-BY. It is
  * not mandatory so the country can also be define in which case it
  * should not appear in the \p lang parameter.
+ *
+ * \param[in,out] lang  The language to be verified.
+ * \param[out] country  The resulting country if defined in \p lang.
+ * \param[in] generate_errors  Whether to call die() on errors.
+ *
+ * \return true if no errors were detected.
  */
 bool snap_child::verify_locale(QString & lang, QString & country, bool generate_errors)
 {
+    country.clear();
+
     // search for a '-' or '_' separator as in:
     //
     //    fr-ca   (browser locale)
@@ -5573,6 +5603,7 @@ bool snap_child::verify_language_name(QString & lang)
     // TODO: make use of a fully optimized search with a binary search like
     //       capability (i.e. a switch on a per character basis in a
     //       sub-function generated using the language table)
+    //
     lang = lang.toLower();
     if(lang.length() == 2)
     {
@@ -8234,23 +8265,160 @@ QString snap_child::get_language()
         if(!f_plugins_locales.isEmpty())
         {
             // a plugin defined a language
+            //
             f_language = f_plugins_locales[0].get_language();
             f_country = f_plugins_locales[0].get_country();
         }
         else if(!f_browser_locales.isEmpty())
         {
-            // use client locale defined by the browser
+            // use client locale as provided by the browser
+            //
             f_language = f_browser_locales[0].get_language();
             f_country = f_browser_locales[0].get_country();
         }
         else
         {
-            // no language defined, use the default in that case
+            // no language defined, use the "no language" default in that case
+            //
             f_language = "xx";
         }
     }
 
     return f_language;
+}
+
+
+/** \brief Retrieve all the languages in the order of preference.
+ *
+ * This function returns a vector of languages in the preference order
+ * which can be used to search for a match.
+ *
+ * \todo
+ * Look into whether we could have a vector of references instead because
+ * right now we copy all the languages twice!
+ *
+ * \todo
+ * Look into converting all the language/location to use the
+ * WeightedHttpStrings so we can have additional parameters
+ * attached to each language.
+ *
+ * \return An array of locales (language/country pairs).
+ */
+snap_child::locale_info_vector_t snap_child::get_all_locales()
+{
+    if(f_all_locales.isEmpty())
+    {
+        // first we want to check with the f_language and f_country
+        //
+        if(!f_language.isEmpty())
+        {
+            locale_info_t lang;
+            lang.set_language(f_language);
+            lang.set_country(f_country);
+
+            f_all_locales.push_back(lang);
+        }
+
+        // next we want to add the plugin definitions because a logged
+        // in user (or known, at least) who has preferences, we have to
+        // respect those preferences
+        //
+        get_plugins_locales();
+        for(auto const & l : f_plugins_locales)
+        {
+            if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+            {
+                // not in the list yet, add it
+                //
+                f_all_locales.push_back(l);
+            }
+        }
+
+        // next we use the browser defined languages
+        //
+        for(auto const & l : f_browser_locales)
+        {
+            if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+            {
+                // not in the list yet, add it
+                //
+                f_all_locales.push_back(l);
+            }
+        }
+
+        // now we want to re-add all those languages but without a country
+        // it is important before we add tests for default languages
+        //
+        if(!f_language.isEmpty()
+        && !f_country.isEmpty())
+        {
+            locale_info_t l;
+            l.set_language(f_language);
+            if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+            {
+                f_all_locales.push_back(l);
+            }
+        }
+
+        for(auto p : f_plugins_locales)
+        {
+            if(!p.get_country().isEmpty())
+            {
+                locale_info_t l;
+                l.set_language(p.get_language());
+                f_all_locales.push_back(l);
+            }
+        }
+
+        for(auto p : f_browser_locales)
+        {
+            if(!p.get_country().isEmpty())
+            {
+                locale_info_t l;
+                l.set_language(p.get_language());
+                if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+                {
+                    f_all_locales.push_back(l);
+                }
+            }
+        }
+
+        // finally, we add a few defaults in case no other languages
+        // matches we want to have those fallbacks
+        //
+        {
+            // Any English
+            //
+            locale_info_t l;
+            l.set_language("en");
+            if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+            {
+                f_all_locales.push_back(l);
+            }
+        }
+        {
+            // Try without a language ("neutral" for pages like a photo)
+            //
+            locale_info_t l;
+            l.set_language("xx");
+            if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+            {
+                f_all_locales.push_back(l);
+            }
+        }
+        {
+            // Finally we want to try with no language / no country
+            // (it should never already be in the list?!)
+            //
+            locale_info_t l;
+            if(std::find(f_all_locales.begin(), f_all_locales.end(), l) == f_all_locales.end())
+            {
+                f_all_locales.push_back(l);
+            }
+        }
+    }
+
+    return f_all_locales;
 }
 
 
@@ -8328,47 +8496,54 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
         if(!f_ready)
         {
             // I do not think this happens, but just in case warn myself
+            //
             SNAP_LOG_WARNING("get_plugins_locales() called before f_ready was set to true");
         }
 
         // retrieve the locales from all the plugins
         // we expect a string of locales defined as weighted HTTP strings
         // remember that without a proper weight the algorithm uses 1.0
-        QString locales;
+        //
         server::pointer_t server( f_server.lock() );
         if(!server)
         {
             throw snap_logic_exception("server pointer is nullptr");
         }
+        http_strings::WeightedHttpString locales;
         server->define_locales(locales);
-        if(!locales.isEmpty())
+
+        http_strings::WeightedHttpString::part_t::vector_t const & plugins_languages(locales.get_parts());
+        if(!plugins_languages.isEmpty())
         {
-            http_strings::WeightedHttpString language_country(locales);
-            http_strings::WeightedHttpString::part_t::vector_t plugins_languages(language_country.get_parts());
-            if(!plugins_languages.isEmpty())
+            // not sorted by default, make sure it gets sorted
+            // (if empty we can avoid this call and since the plugins_languages
+            // parameter is a reference, we will still see the result)
+            //
+            locales.sort_by_level();
+
+            int const max_languages(plugins_languages.size());
+            for(int i(0); i < max_languages; ++i)
             {
-                std::stable_sort(plugins_languages.begin(), plugins_languages.end());
-                int const max_languages(plugins_languages.size());
-                for(int i(0); i < max_languages; ++i)
+                QString plugins_lang(plugins_languages[i].get_name());
+                QString plugins_country;
+                if(verify_locale(plugins_lang, plugins_country, false))
                 {
-                    QString plugins_lang(plugins_languages[0].get_name());
-                    QString plugins_country;
-                    if(verify_locale(plugins_lang, plugins_country, false))
-                    {
-                        // only keep those that are considered valid (they all should
-                        // be, but in case a hacker or strange client access our
-                        // systems...)
-                        locale_info_t l;
-                        l.set_language(plugins_lang);
-                        l.set_country(plugins_country);
-                        f_plugins_locales.push_back(l);
-                        // added in order
-                    }
-                    else
-                    {
-                        // plugin sent us something we don't understand
-                        SNAP_LOG_WARNING(QString("plugin locale \"%1\" does not look like a legal locale").arg(plugins_languages[0].get_name()));
-                    }
+                    // only keep those that are considered valid (they all should
+                    // be, but in case a hacker or strange client access our
+                    // systems...)
+                    //
+                    locale_info_t l;
+                    l.set_language(plugins_lang);
+                    l.set_country(plugins_country);
+                    f_plugins_locales.push_back(l);
+                    // added in order
+                }
+                else
+                {
+                    // plugin sent us something we do not understand
+                    //
+                    SNAP_LOG_WARNING(QString("plugin locale \"%1\" does not look like a legal locale, ignore")
+                                                .arg(plugins_languages[i].get_name()));
                 }
             }
         }
@@ -8387,7 +8562,7 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
  *
  * \return A constant reference to the browser locales.
  */
-snap_child::locale_info_vector_t const& snap_child::get_browser_locales() const
+snap_child::locale_info_vector_t const & snap_child::get_browser_locales() const
 {
     return f_browser_locales;
 }
@@ -9146,7 +9321,7 @@ int snap_child::last_day_of_month(int month, int year)
  *
  * \return A pointer to the table of languages.
  */
-snap_child::language_name_t const *snap_child::get_languages()
+snap_child::language_name_t const * snap_child::get_languages()
 {
     return g_language_names;
 }

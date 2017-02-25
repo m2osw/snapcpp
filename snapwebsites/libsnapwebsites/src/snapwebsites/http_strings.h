@@ -34,83 +34,52 @@ public:
     class part_t
     {
     public:
-        typedef QVector<part_t> vector_t; // do NOT use a map, we want to keep them in order!
-
-        // part_t() is for the vector, otherwise we cannot initialize it properly
-        part_t()
-            //: f_name("") -- auto-init
-            //, f_level(0.0f) -- auto-init
-        {
-        }
+        typedef float               level_t;
+        typedef QVector<part_t>     vector_t; // do NOT use a map, we want to keep them in order!
 
         // an authoritative document at the IANA clearly says that
         // the default level (quality value) is 1.0f.
-        part_t(QString const & name)
-            : f_name(name)
-            , f_level(1.0f)
-        {
-        }
+        //
+        static level_t constexpr    DEFAULT_LEVEL() { return 1.0f; }
 
-        QString const & get_name() const
-        {
-            return f_name;
-        }
+        static level_t constexpr    UNDEFINED_LEVEL() { return -1.0f; }
 
-        float get_level() const
-        {
-            return f_level;
-        }
+                                    part_t();
+                                    part_t(QString const & name);
 
-        void set_level(float const level)
-        {
-            f_level = level;
-        }
+        QString const &             get_name() const;
+        level_t                     get_level() const;
+        void                        set_level(level_t const level);
+        QString                     get_parameter(QString const & name) const;
+        void                        add_parameter(QString const & name, QString const & value);
+        QString                     to_string() const;
 
-        QString get_parameter(QString const & name) const
-        {
-            if(!f_param.contains(name))
-            {
-                return "";
-            }
-            return f_param[name];
-        }
-
-        void add_parameter(QString const & name, QString const & value)
-        {
-            f_param[name] = value;
-        }
-
-        QString to_string() const;
-
-        /** \brief Operator used to sort elements.
-         *
-         * This oeprator overload is used by the different sort
-         * algorithm that we can apply against this type.
-         */
-        bool operator < (part_t const & rhs) const
-        {
-            return f_level < rhs.f_level;
-        }
+        bool                        operator < (part_t const & rhs) const;
 
     private:
         typedef QMap<QString, QString>      parameters_t;
 
         QString                     f_name;
-        float                       f_level = 0.0f; // q=0.8
+        level_t                     f_level = DEFAULT_LEVEL(); // i.e.  q=0.8
         // TODO add support for any other parameter
         parameters_t                f_param;
     };
 
-                            WeightedHttpString(QString const & str);
+                            WeightedHttpString(QString const & str = QString());
 
+    bool                    parse(QString const & str, bool reset = false);
     QString const &         get_string() const { return f_str; }
-    float                   get_level(QString const & name);
+    part_t::level_t         get_level(QString const & name);
+    void                    sort_by_level();
     part_t::vector_t &      get_parts() { return f_parts; }
+    part_t::vector_t const &get_parts() const { return f_parts; }
     QString                 to_string() const;
+    QString const &         error_messages() const { return f_error_messages; }
 
 private:
     QString                 f_str;
     part_t::vector_t        f_parts; // do NOT use a map, we want to keep them in order
+    QString                 f_error_messages;
 };
 
 

@@ -295,6 +295,10 @@ public:
         QString const & get_language() const { return f_language; }
         QString const & get_country() const { return f_country; }
 
+        QString         get_composed() const;
+
+        bool            operator == (locale_info_t const & rhs) const { return f_language == rhs.f_language && f_country == rhs.f_country; }
+
     private:
         QString         f_language;
         QString         f_country;
@@ -390,6 +394,7 @@ public:
                                 get_plugins_locales();
     locale_info_vector_t const &
                                 get_browser_locales() const;
+    locale_info_vector_t        get_all_locales();
     bool                        get_working_branch() const;
     snap_version::version_number_t
                                 get_branch() const;
@@ -518,6 +523,7 @@ private:
     bool                                        f_plugins_locales_was_not_ready = false;
     locale_info_vector_t                        f_plugins_locales;
     locale_info_vector_t                        f_browser_locales;
+    locale_info_vector_t                        f_all_locales;
     bool                                        f_working_branch = false;
     snap_version::version_number_t              f_branch;
     snap_version::version_number_t              f_revision;

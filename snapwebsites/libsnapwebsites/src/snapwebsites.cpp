@@ -2883,16 +2883,57 @@ void server::configure_messenger_logging( snap_communicator::snap_tcp_client_per
  */
 
 
-/** \fn void server::define_locales(QString & locales)
+/** \fn void server::define_locales(http_strings::WeightedHttpString & locales)
  * \brief Give plugins a chance to define the acceptable page locales.
  *
- * This signal is used whenever the user tries to access a page and
- * the language and/or country was not already defined as a sub-domain,
- * a path segment, or an option (a GET variable, also called a query string
- * variable.)
+ * This signal is used to give a chance to plugins to define the user's
+ * locale. Note that the user locale is in second position. If the
+ * information was defined in the URI (query string, path, domain, or
+ * sub-domain...) then the URI locale gets used if it exists.
  *
- * This function requests the plugins to define a list of
- * \<language>_\<country> pairs separated by commas.
+ * In most cases, on the `users` plugin should deal with this signal.
+ * However, other plugins may also accept this signal and add to the
+ * list of locales.
+ *
+ * This signals passes a \p locales parameter which can be used to
+ * add more locales to the acceptable locales. In most cases, all
+ * you want to do is call the parse() function as in:
+ *
+ * \code
+ *      // add Spanish as a choice, albeit very low level
+ *      locales.parse("es;q=0.1");
+ * \endcode
+ *
+ * Other example of language strings:
+ *
+ * \code
+ *      # as is (spaces not required)
+ *      "de, fr"
+ *
+ *      # the same with weights (again, spaces not required)
+ *      "de; q=0.9, fr; q=0.3"
+ * \endcode
+ *
+ * If you already have the language, country, and level separated, you
+ * may instead create a part_t and push it on the vector. At this time
+ * you have to retrieve a reference to the vector to do the push.
+ *
+ * \code
+ *      http_strings::WeightedHttpString::part_t p;
+ *      p.set_language("es");
+ *      p.set_country("PE"); // optional
+ *      p.set_level(0.1);
+ *      locales.get_parts().push_back(p);
+ * \endcode
+ *
+ * You do not have to worry about the sort order, the caller will take
+ * care of it.
+ *
+ * \warning
+ * At this time the sort is executed after we are done with this function
+ * and that can mean that the order in which the final set of locales is
+ * given has nothing to do with the order in which the various signal
+ * implementations get called.
  *
  * \param[in,out] locales  The variable receiving the locales.
  */

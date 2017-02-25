@@ -29,8 +29,20 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-add_subdirectory(ip)	# IP address/ports related
+# The "catch" folder has all sorts of unit tests that do not require scripts,
+# multiple binaries, network connections, etc.
+#
+# Those should have no side effects between each others and thus can all be
+# placed together within one large binary.
+#
+add_subdirectory(catch)
+
+# The other tests require multiple binaries, network connections, things that
+# tweak the runtime environment in such a way that it could mess up other
+# tests, etc.
+#
 add_subdirectory(cs)	# Client/Server related
+add_subdirectory(ip)	# IP address/ports related
 
 
 # By default "os" tests are turned off. These are used to test an OS feature

@@ -1,8 +1,26 @@
-libsnapwebsites (1.1.84.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.85.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-167: Moved the implementation of the part_t class to the .cpp file.
+  * Made the default and undefined level values constexpr functions.
+  * Fixed the `<` operator so it sorts for largest to smallest.
+  * Broke out the parsing code of the WeightedHttpString so we can call it
+    multiple times cumulatively.
+  * The parser also generate error messages now.
+  * Moved the sorting of parts of the WeightedHttpString to the class.
+  * Added a get_composed() so we can composed a locale without each time
+    guessing whether a `_` or `-` is necessary.
+  * In parsing the browser languages, avoid the copy of the resulting vector.
+  * Added snap_child::get_all_locales() so one can check for a revision with
+    any one language the user prefers, plus a few defaults: "en", "xx", "".
+  * Fixed a loop that used `0` instead of `i` to access the data in the loop.
+  * Finally added a catch test for the libsnapwebsite library. At this time
+    this only includes a test for the WeightedHttpString object, but we are
+    to grow that with any number of tests we can add. It will be easy to add
+    more so we should not hesitate to do that as time passes.
+  * Added some documentation.
+  * Various clean ups.
 
- -- Build Server <build@m2osw.com>  Tue, 21 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 25 Feb 2017 14:12:45 -0800
 
 libsnapwebsites (1.1.84.0~xenial) xenial; urgency=high
 

@@ -16,16 +16,24 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites/version.h"
+// self
+//
+#include "snapwebsites/http_strings.h"
 #include "snapwebsites/plugins.h"
 #include "snapwebsites/snap_child.h"
 #include "snapwebsites/snap_communicator.h"
 #include "snapwebsites/snap_config.h"
 #include "snapwebsites/snap_expr.h"
+#include "snapwebsites/version.h"
 
+// advgetopt lib
+//
 #include <advgetopt/advgetopt.h>
 
+// Qt lib
+//
 #include <QTranslator>
+
 
 /** \file
  * \brief Main header file of the libsnapwebsites library.
@@ -290,7 +298,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(process_cookies, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(attach_to_session, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(detach_from_session, (), (), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(define_locales, (QString & locales), (locales), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(define_locales, (http_strings::WeightedHttpString & locales), (locales), NEITHER);
     SNAP_SIGNAL_WITH_MODE(process_post, (QString const & url), (url), NEITHER);
     SNAP_SIGNAL_WITH_MODE(execute, (QString const & url), (url), NEITHER);
     SNAP_SIGNAL_WITH_MODE(register_backend_cron, (backend_action_set & actions), (actions), NEITHER);
