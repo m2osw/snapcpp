@@ -651,7 +651,7 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
  */
 bool attachment::on_path_execute(content::path_info_t & ipath)
 {
-#if DEBUG
+#ifdef DEBUG
     SNAP_LOG_TRACE("attachment::on_path_execute(")(ipath.get_key())(")");
 #endif
     // TODO: we probably do not want to check for attachments to send if the
