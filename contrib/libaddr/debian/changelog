@@ -1,4 +1,4 @@
-libaddr (1.0.7.4~xenial) xenial; urgency=high
+libaddr (1.0.7.5~xenial) xenial; urgency=high
 
   * Nightly build.
 
