@@ -1,8 +1,9 @@
-as2js (0.1.16.52~xenial) xenial; urgency=high
+as2js (0.1.17.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-179: Fixed a couple of instances were I used `double` instead of
+    the float64.h type: `float64_type`.
 
- -- Build Server <build@m2osw.com>  Thu, 05 Jan 2017 02:00:51 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 25 Feb 2017 12:44:22 -0700
 
 as2js (0.1.16.0~xenial) xenial; urgency=high
 

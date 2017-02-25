@@ -155,9 +155,9 @@ public:
                         float64_type const diff = fabs(f_float - rhs.f_float);
                         if(f_float == 0.0
                         || rhs.f_float == 0.0
-                        || diff < std::numeric_limits<double>::min())
+                        || diff < std::numeric_limits<float64_type>::min())
                         {
-                            return diff < (epsilon * std::numeric_limits<double>::min());
+                            return diff < (epsilon * std::numeric_limits<float64_type>::min());
                         }
 #pragma GCC diagnostic pop
 
