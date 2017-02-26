@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.81.3~xenial) xenial; urgency=high
+libsnapwebsites (1.1.81.4~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-547: There was one link still using a wrong field name.
 
- -- Build Server <build@m2osw.com>  Mon, 06 Feb 2017 02:00:46 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 25 Feb 2017 22:00:45 -0800
 
 libsnapwebsites (1.1.81.0~xenial) xenial; urgency=high
 

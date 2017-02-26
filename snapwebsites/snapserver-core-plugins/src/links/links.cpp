@@ -2222,7 +2222,6 @@ void links::adjust_links_after_cloning(QString const & source_branch, QString co
     column_predicate->setCount(100);
     column_predicate->setIndex(); // behave like an index
     int const src_branch_pos(source_branch.indexOf('#'));
-    QString const source_uri(source_branch.mid(0, src_branch_pos));
     snap_version::version_number_t const src_branch_number(source_branch.mid(src_branch_pos + 1).toULong());
     for(;;)
     {
@@ -2259,7 +2258,7 @@ void links::adjust_links_after_cloning(QString const & source_branch, QString co
                 else
                 {
                     // in this case the info is in the links table
-                    cell_name = f_links_table->row(dst_li.link_key())->cell(source_uri)->value().stringValue();
+                    cell_name = f_links_table->row(dst_li.link_key())->cell(source_branch)->value().stringValue();
                 }
                 QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(other_row));
                 QString const src_link(dst_row->cell(cell_name)->value().stringValue());
@@ -2301,7 +2300,6 @@ void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_c
     QtCassandra::QCassandraRow::pointer_t source_row(source_cell->parentRow());
     QString const source_key(source_row->rowName());
     int const source_branch_pos(source_key.indexOf('#'));
-    QString const source_uri(source_key.mid(0, source_branch_pos));
     snap_version::version_number_t const src_branch_number(source_key.mid(source_branch_pos + 1).toULong());
 
     QString const other_row(dst_li.row_key());
