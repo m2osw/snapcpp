@@ -1,20 +1,15 @@
-snapcmakemodules (1.0.33.17~xenial) xenial; urgency=high
+snapcmakemodules (1.0.34.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Applied a fix to CatchConfig.cmake as the header could appear under catch/
+    and it does on Fedora.
 
- -- Build Server <build@m2osw.com>  Thu, 09 Feb 2017 02:00:52 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 25 Feb 2017 18:29:08 -0700
 
 snapcmakemodules (1.0.33.0~xenial) xenial; urgency=high
 
   * Added reprepro support.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 08 Feb 2017 09:45:18 -0800
-
-snapcmakemodules (1.0.32.10~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 27 Jan 2017 02:00:53 -0800
 
 snapcmakemodules (1.0.32.0~xenial) xenial; urgency=high
 

@@ -27,7 +27,9 @@
 SET(CATCH_FOUND "NO")
 
 FIND_PATH(CATCH_INCLUDE_DIR
-    catch.hpp
+        catch.hpp
+    PATH_SUFFIXES
+        catch
 )
 
 IF(CATCH_INCLUDE_DIR)
