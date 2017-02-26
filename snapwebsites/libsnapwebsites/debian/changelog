@@ -1,6 +1,6 @@
 libsnapwebsites (1.1.87.0~xenial) xenial; urgency=high
 
-  * EX-167: Applied a fix to the images::uri() token after a quick code review.
+  * SNAP-547: There was one link still using a wrong field name.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sat, 25 Feb 2017 14:12:45 -0800
 

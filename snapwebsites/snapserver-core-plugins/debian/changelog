@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.71.0~xenial) xenial; urgency=high
+
+  * EX-167: Fixed the namespace supported by the images plugin.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 26 Feb 2017 11:21:45 -0800
+
 snapserver-core-plugins (1.0.70.0~xenial) xenial; urgency=high
 
   * EX-167: Fixed the image parent ipath with the main branch/revision/language.

@@ -2462,7 +2462,7 @@ void images::on_replace_token( content::path_info_t & ipath, QDomDocument & xml,
     snap::NOTUSED(ipath);
     snap::NOTUSED(xml);
 
-    if(!token.is_namespace("content::"))
+    if(!token.is_namespace("images::"))
     {
         // not an images plugin token
         return;
