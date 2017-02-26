@@ -2462,34 +2462,46 @@ void images::on_replace_token( content::path_info_t & ipath, QDomDocument & xml,
     snap::NOTUSED(ipath);
     snap::NOTUSED(xml);
 
-    if( !token.is_token("images::inline_uri") ) return;
-    //
-    if( !token.verify_args(1, 1) )
+    if(!token.is_namespace("content::"))
     {
-        SNAP_LOG_ERROR("images::on_replace_token(): no arguments supplied!");
+        // not an images plugin token
         return;
     }
 
-    // EX-167: append revisioning information to the filename to overcome
-    // browser caching if the user uploads a new version of the picture.
-    //
-    QString const uri( token.get_arg("",0).f_value );
-    content::path_info_t img_ipath;
-    img_ipath.set_path(uri);
+    if( token.is_token("images::inline_uri") )
+    {
+        if( !token.verify_args(1, 1) )
+        {
+            SNAP_LOG_ERROR("images::on_replace_token(): images::inline_uri() expects exactly 1 argument!");
+            return;
+        }
+
+        // EX-167: append revisioning information to the filename to overcome
+        // browser caching if the user uploads a new version of the picture.
+        //
+        QString const uri( token.get_arg("uri", 0).f_value );
+
+        // TODO: if the URI already includes a query string, we may need to
+        //       do some work on it before we can pass it to set_path()...
+        //
+        content::path_info_t img_ipath;
+        img_ipath.set_path(uri);
+
 SNAP_LOG_TRACE("image_path cpath=")(img_ipath.get_cpath());
-    //
-    if( img_ipath.has_branch() && img_ipath.has_revision() )
-    {
-        token.f_replacement = QString("%1?branch=%2&revision=%3")
-                    .arg(uri)
-                    .arg(img_ipath.get_branch())
-                    .arg(img_ipath.get_revision())
-                    ;
-SNAP_LOG_TRACE("token.f_replacement=")(token.f_replacement);
-    }
-    else
-    {
-        token.f_replacement = uri;
+        //
+        if( img_ipath.has_branch() && img_ipath.has_revision() )
+        {
+            token.f_replacement = QString("%1?branch=%2&revision=%3")
+                        .arg(uri)
+                        .arg(img_ipath.get_branch())
+                        .arg(img_ipath.get_revision())
+                        ;
+        }
+        else
+        {
+            token.f_replacement = uri;
+        }
+SNAP_LOG_TRACE("token.f_replacement=[")(token.f_replacement)("]");
     }
 }
 
