@@ -875,12 +875,19 @@ QString path_info_t::get_revision_key() const
                 // in this case we have all the parameters so use them to
                 // generate the key; still verify that the key exists
                 //
-                QString revision_key(f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale));
-                QtCassandra::QCassandraTable::pointer_t revision_table(f_content_plugin->get_revision_table());
-                if(revision_table->exists(revision_key))
-                {
-                    f_revision_key = revision_key;
-                }
+                // TODO: when creating a page we need to have the revision
+                //       key generated, no matter what... we probably need
+                //       to have a flag in case we expect the key to be
+                //       for a new page.
+                //
+                f_revision_key = f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale);
+
+                //QString revision_key(f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale));
+                //QtCassandra::QCassandraTable::pointer_t revision_table(f_content_plugin->get_revision_table());
+                //if(revision_table->exists(revision_key))
+                //{
+                //    f_revision_key = revision_key;
+                //}
                 // else -- no specific revision...
             }
 
