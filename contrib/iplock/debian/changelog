@@ -1,8 +1,10 @@
-iplock (3.0.12.6~xenial) xenial; urgency=high
+iplock (3.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-141: Added what type of IPs are supported in the `whitelist` parameter.
+  * Updated the README.md files to better describe how to use the .d folder.
+  * Updated the schemes README.md to include `whitelist` and `batch`.
 
- -- Build Server <build@m2osw.com>  Tue, 21 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 27 Feb 2017 11:28:37 -0700
 
 iplock (3.0.12.0~xenial) xenial; urgency=high
 
