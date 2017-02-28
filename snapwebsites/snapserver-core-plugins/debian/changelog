@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.73.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.74.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-167: The default locale, if all else fails, is expected to be "".
 
- -- Build Server <build@m2osw.com>  Tue, 28 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Feb 2017 12:22:45 -0800
 
 snapserver-core-plugins (1.0.73.0~xenial) xenial; urgency=high
 

@@ -734,11 +734,17 @@ snap_version::version_number_t path_info_t::get_revision() const
             f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
         }
 
-        // if nothing worked, force the locale to "en" as a default
+        // if nothing worked, force the locale to "" (nothing) as a default
+        //
+        // TODO: This is not 1 to 1 equivalent to what we had before.
+        //       Before we checked whether "en" was part of the list
+        //       of locales to test (we know it always is now since
+        //       that's one of the defaults) and if "en" was NOT part
+        //       of the list, then use "en"...
         //
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
         {
-            f_locale = "en";
+            f_locale = "";
         }
     }
 

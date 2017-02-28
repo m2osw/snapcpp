@@ -2202,6 +2202,7 @@ bool content::load_attachment(QString const & key, attachment_file & file, bool 
 
     // TODO: select the WORKING_VERSION if the user is logged in and can
     //       edit this attachment
+    //
     QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_attachment_row(revision_table->row(ipath.get_revision_key()));
     QtCassandra::QCassandraValue md5_value(revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
