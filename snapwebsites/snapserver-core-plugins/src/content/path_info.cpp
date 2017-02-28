@@ -97,6 +97,7 @@ void path_info_t::set_path(QString const & path)
         if(path.startsWith(site_key))
         {
             // already canonicalized
+            //
             f_key = path;
             f_cpath = path.mid(site_key.length());
         }
@@ -108,6 +109,7 @@ void path_info_t::set_path(QString const & path)
             //       security problems along the way too.
             //
             // may require canonicalization
+            //
             f_cpath = path;
             f_snap->canonicalize_path(f_cpath);
             f_key = site_key + f_cpath;
@@ -129,6 +131,7 @@ void path_info_t::set_path(QString const & path)
         {
             // add an error so we can get more information about the full key
             // that created an exception
+            //
             SNAP_LOG_ERROR("URI \"")(f_key)("\" was not accepted.");
             throw;
         }

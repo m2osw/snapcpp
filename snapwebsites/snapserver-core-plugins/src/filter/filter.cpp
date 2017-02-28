@@ -1123,6 +1123,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                                 {
                                     // named parameter; the identifier was the name
                                     // and not the value, swap those
+                                    //
                                     param.f_name = param.f_value;
                                     param.f_type = get_token(param.f_value);
                                     f_token += param.f_value;
@@ -1130,6 +1131,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                                     {
                                     case token_t::TOK_STRING:
                                         // remove the quotes from the parameters
+                                        //
                                         param.f_value = param.f_value.mid(1, param.f_value.size() - 2);
                                         break;
 
@@ -1149,6 +1151,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
 
                         case token_t::TOK_STRING:
                             // remove the quotes from the parameters
+                            //
                             param.f_value = param.f_value.mid(1, param.f_value.size() - 2);
                             /*FALLTHROUGH*/
                         case token_t::TOK_INTEGER:
@@ -1173,12 +1176,14 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
 
                         if(tok == ")")
                         {
-                            // we're done reading the list of parameters
+                            // we are done reading the list of parameters
+                            //
                             break;
                         }
                         if(tok != ",")
                         {
                             // we only accept commas between parameters
+                            //
                             return false;
                         }
 
@@ -1207,6 +1212,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                 //
                 return false;
             }
+
             // TODO: at this point this check test whether the page as a
             //       whole is in edit mode, when some parts may not be
             //       editable to the current user
@@ -1216,7 +1222,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                 // if the editor is turned on, then we want to mark all
                 // fields as such so the editor is aware of them
                 //
-                QByteArray utf8(info.f_replacement.toUtf8());
+                QByteArray const utf8(info.f_replacement.toUtf8());
                 bool use_span(true);
                 for(char const * s(utf8.data()); *s != '\0'; ++s)
                 {
@@ -1277,6 +1283,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                         ungetc(c);
                     }
                     // recursively parse sub-tokens
+                    //
                     QString const save_token(f_token);
                     if(!parse_token(view_as_string))
                     {
@@ -1407,13 +1414,15 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
             f_extra_input.remove(0, f_extra_index);
             f_extra_input.insert(0, s);
 
-            // plugins that generate a token  replacement from a QDomDocument
+            // plugins that generate a token replacement from a QDomDocument
             // start with the <!DOCTYPE ...> tag which we have to remove here
+            //
             if(f_extra_input.startsWith("<!DOCTYPE"))
             {
                 // note that if the indexOf() fails to find the '>' then
                 // it returns -1 which is fine because the + 1 will get
                 // it right back to 0 which is what we want in that case
+                //
                 f_extra_index = f_extra_input.indexOf('>') + 1;
             }
             else

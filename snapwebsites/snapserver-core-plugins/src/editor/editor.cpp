@@ -2358,11 +2358,13 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
         QString const mime_type(the_attachment.get_file().get_mime_type());
 
         // make sure the filename is all proper for our system
+        //
         QString ext(mimetype_plugin->mimetype_to_extension(mime_type));
         QString filename(force_filename.isEmpty() ? the_attachment.get_file().get_filename() : force_filename);
         if(!filter::filter::filter_filename(filename, ext))
         {
             // user supplied filename is not considered valid, use a default name
+            //
             filename = QString("attachment.%1").arg(ext);
         }
         the_attachment.set_file_filename(filename);
@@ -4463,10 +4465,18 @@ bool editor::save_editor_fields_impl(save_info_t & info)
         //
         // body may include images, transform the <img src="inline-data"/>
         // to an <img src="/images/..."/> link instead
+        //
         QDomDocument doc;
         QDomElement body_widget(doc.createElement("widget"));
+
         // add stuff as required by the parse_out_inline_img() -- nothing for now for the body
+        //
+        // XXX: check whether the body HTML is already checked in 
+        //      editor::string_to_value_impl() to avoid parsing the
+        //      data twice...
+        //
         parse_out_inline_img(info.ipath(), body, body_widget);
+
         // TODO: XSS filter body
         info.revision_row()->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
@@ -4495,27 +4505,33 @@ bool editor::save_editor_fields_impl(save_info_t & info)
 QString editor::verify_html_validity(QString body)
 {
     // any starting spaces
+    //
     QRegExp const re_start("^(<br */?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+");
     body.replace(re_start, "");
 
     // any ending spaces
+    //
     QRegExp const re_end("(<br */?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+$");
     body.replace(re_end, "");
 
     // replace <br> with <br/>
+    //
     QRegExp const br_without_slash("<br */?>");
     body.replace(br_without_slash, "<br/>");
 
     // replace <hr> with <hr/>
+    //
     QRegExp const hr_without_slash("<hr */?>");
     body.replace(hr_without_slash, "<hr/>");
 
     // replace any entity other than &amp;, &lt;, and &gt; to their Unicode
     // value (very important because QXmlQuery does not like any of the
     // other entities)
+    //
     body = xslt::filter_entities_out(body);
 
     // return the result
+    //
     return body;
 }
 

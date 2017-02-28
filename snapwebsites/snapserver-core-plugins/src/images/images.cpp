@@ -2491,7 +2491,7 @@ SNAP_LOG_TRACE("image_path cpath=")(img_ipath.get_cpath());
         //
         if( img_ipath.has_branch() && img_ipath.has_revision() )
         {
-            token.f_replacement = QString("%1?branch=%2&revision=%3")
+            token.f_replacement = QString("%1?branch=%2&amp;revision=%3")
                         .arg(uri)
                         .arg(img_ipath.get_branch())
                         .arg(img_ipath.get_revision())

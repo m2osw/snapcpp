@@ -970,7 +970,7 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
     //
-//SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
+//SNAP_LOG_TRACE("*** Filter all of that...: [")(doc.toString())("]");
     filter::filter * filter_plugin(filter::filter::instance());
     filter_plugin->on_token_filter(ipath, doc);
 
@@ -1021,8 +1021,8 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
     filtered_content(ipath, doc, filtered_xsl);
 
 #if 0
-std::cout << "Generated XML is [" << doc.toString(-1) << "]\n";
-std::cout << "Generated XSL is [" << xsl            << "]\n";
+//SNAP_LOG_TRACE("Generated XML is [")(doc.toString(-1))("]");
+//std::cout << "Generated XSL is [" << xsl            << "]\n";
 #endif
 
 #if 0

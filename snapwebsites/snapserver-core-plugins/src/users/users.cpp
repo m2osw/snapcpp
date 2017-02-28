@@ -939,7 +939,7 @@ void users::on_process_cookies()
             QString const path(f_info->get_object_path());
             bool ok(false);
             identifier_t const id( path.mid(6).toLongLong(&ok) );
-            if( !ok || !authenticated_user(id, nullptr))
+            if( !ok || !authenticated_user(id, nullptr) )
             {
                 // we are logged out because the session timed out
                 //
