@@ -1000,7 +1000,7 @@ void snap_backend::run_backend()
     {
         process_action();
 
-        SNAP_LOG_INFO("snap_backend::run_backend(): exiting naturally.");
+        SNAP_LOG_INFO("snap_backend::run_backend(): exiting normally.");
 
         // return normally if no exception occurred
         //
