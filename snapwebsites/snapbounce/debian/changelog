@@ -1,8 +1,11 @@
-snapbounce (1.0.11.24~xenial) xenial; urgency=high
+snapbounce (1.0.12.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-110: Added list of not allowed protocols (SSLv2/3, TLSv1).
+  * Force postfix to make use of TLS.
+  * Disabled the VRFY command.
+  * Force sender to use HELO to present itself.
 
- -- Build Server <build@m2osw.com>  Mon, 06 Feb 2017 02:00:46 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon,  6 Mar 2017 16:17:48 -0700
 
 snapbounce (1.0.11.0~xenial) xenial; urgency=high
 

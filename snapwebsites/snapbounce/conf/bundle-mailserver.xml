@@ -63,14 +63,33 @@ EOF
     sed -i.bak -f ${MAILSERVER_SED} /etc/postfix/main.cf
 
     ################################################################################
-    postconf -e "notify_classes               = bounce"
-    postconf -e "bounce_notice_recipient      = bounces@${BUNDLE_INSTALLATION_DOMAIN}"
-    postconf -e "transport_maps               = hash:/etc/postfix/transport.maps"
-
-    ################################################################################
     # Remove RC4 from the server side TLS support, it is really not secure
+    # See http://serverfault.com/questions/744168/how-to-disable-rc4-on-postfix#answer-744171
     #
     postconf -e "smtpd_tls_exclude_ciphers = RC4, aNULL"
+
+    ################################################################################
+    # Remove support for SSL protocols, all versions, and TLS 1.0.
+    # See http://disablessl3.com/#postfix
+    #
+    postconf -e "smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3,!TLSv1"
+    postconf -e "smtp_tls_mandatory_protocols  = !SSLv2,!SSLv3,!TLSv1"
+    postconf -e "smtpd_tls_protocols           = !SSLv2,!SSLv3,!TLSv1"
+    postconf -e "smtp_tls_protocols            = !SSLv2,!SSLv3,!TLSv1"
+
+    ################################################################################
+    # Also force TLS encryption, any major mail server supports that feature!
+    # See http://serverfault.com/questions/653608/how-widely-supported-is-forced-tls-on-inbound-smtp-connections#answer-655775
+    #
+    postconf -e "smtpd_tls_security_level = encrypt"
+    postconf -e "smtp_tls_security_level  = encrypt"
+
+    ################################################################################
+    # Remove VRFY support as it can be used to find Unix/supported users.
+    # Require the HELO (and equivalent) from incoming connects.
+    #
+    postconf -e "disable_vrfy_command = yes"
+    postconf -e "smtpd_helo_required  = yes"
 
     ################################################################################
     # Add postsrsd support.
@@ -83,6 +102,13 @@ EOF
     sed -i.bak \
       -e "s/^SRS_DOMAIN=[^$]*$/SRS_DOMAIN=${BUNDLE_INSTALLATION_DOMAIN}/" \
       /etc/default/postsrsd
+
+    ################################################################################
+    # Setup bouncing so it goes to Snap! and makes admins aware of the problem
+    #
+    postconf -e "notify_classes               = bounce"
+    postconf -e "bounce_notice_recipient      = bounces@${BUNDLE_INSTALLATION_DOMAIN}"
+    postconf -e "transport_maps               = hash:/etc/postfix/transport.maps"
 
     ################################################################################
     # we then need to add a snapbounce entry to the master.cf file
