@@ -181,7 +181,7 @@ TEST_CASE("Assemble rules", "[assembler]")
             ss << "div\n"
                << "{\n"
                << "  color: invert(black);\n"
-               << "  font-size: 1.3em;\n"
+               << "  font-size: 1.3rem;\n"
                << "}\n"
                << "\n"
                << "span\n"
@@ -219,7 +219,7 @@ TEST_CASE("Assemble rules", "[assembler]")
             {
             case csspp::output_mode_t::COMPACT:
                 REQUIRE(out.str() ==
-"div { color: #fff; font-size: 1.3em }\n"
+"div { color: #fff; font-size: 1.3rem }\n"
 "span { border: 3px solid #f5c3c2; border-bottom-width: 1px; box-shadow: 1px 0px 7px #8a1, 0px 3px 1px #a83; font: 17.2px/1.35em Arial }\n"
 + csspp_test::get_close_comment()
                     );
@@ -227,7 +227,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 
             case csspp::output_mode_t::COMPRESSED:
                 REQUIRE(out.str() ==
-"div{color:#fff;font-size:1.3em}span{border:3px solid #f5c3c2;border-bottom-width:1px;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83;font:17.2px/1.35em Arial}\n"
+"div{color:#fff;font-size:1.3rem}span{border:3px solid #f5c3c2;border-bottom-width:1px;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83;font:17.2px/1.35em Arial}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -237,7 +237,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "div\n"
 "{\n"
 "  color: #fff;\n"
-"  font-size: 1.3em;\n"
+"  font-size: 1.3rem;\n"
 "}\n"
 "span\n"
 "{\n"
@@ -252,7 +252,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 
             case csspp::output_mode_t::TIDY:
                 REQUIRE(out.str() ==
-"div{color:#fff;font-size:1.3em}\n"
+"div{color:#fff;font-size:1.3rem}\n"
 "span{border:3px solid #f5c3c2;border-bottom-width:1px;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83;font:17.2px/1.35em Arial}\n"
 + csspp_test::get_close_comment()
                     );
