@@ -2360,7 +2360,7 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
  * \param[in] xsl  The XSLT document that is about to be used to transform
  *                 the body (still as a string).
  */
-void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
+void form::on_filtered_content(content::path_info_t & ipath, QDomDocument & doc, QString const & xsl)
 {
     NOTUSED(ipath);
     NOTUSED(xsl);

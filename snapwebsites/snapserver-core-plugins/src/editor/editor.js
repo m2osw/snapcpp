@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.924
+ * Version: 0.0.3.928
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -4724,14 +4724,15 @@ snapwebsites.EditorForm.prototype.getDefaultButton = function()
  */
 snapwebsites.EditorForm.prototype.readyWidgets_ = function()
 {
-    var that = this;
+    var that = this,
+        form_widget = this.getFormWidget();
 
     // retrieve the widgets defined in this form
     //
     // note that we ignore any widgets that appear in a sub-form that would
     // be included in this form with the .not()
-    this.widgets_ = this.getFormWidget().find(".snap-editor")
-               .not(this.getFormWidget().find(".editor-form .snap-editor"));
+    this.widgets_ = form_widget.find(".snap-editor")
+               .not(form_widget.find("* .editor-form .snap-editor"));
 
     // retrieve the field types for all the widgets
     this.widgets_.each(function(idx, w)
@@ -4745,7 +4746,7 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
     this.newTypeRegistered();
 
     // make labels focus the corresponding editable box
-    this.getFormWidget().find("label[for!='']").click(function(e)
+    form_widget.find("label[for!='']").click(function(e)
         {
             if(!(jQuery(e.target).is("a")))
             {
