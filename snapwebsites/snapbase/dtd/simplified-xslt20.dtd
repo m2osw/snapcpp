@@ -230,6 +230,9 @@ DTD of the XSLT 2.0.
              id ID #IMPLIED>
 
 <!ELEMENT head ANY>
+
+<!-- WARNING: no 'class' attribute because that's added by the html-attribute
+              and thus never need (Wanted) in the html tag itself. -->
 <!ELEMENT html ANY>
 <!ATTLIST html lang CDATA #IMPLIED
                prefix CDATA #IMPLIED

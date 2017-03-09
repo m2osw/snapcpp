@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.6.4
+ * Version: 0.1.7.0
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -716,6 +716,13 @@ snapwebsites.Output = function()
 {
     this.registeredBufferToMIME_ = [];
     this.handleMessages_();
+
+    // clearly mark the HTML tag with "js" so CSS knows that JavaScript
+    // is supported
+    //
+    jQuery("html").removeClass("no-js");
+    jQuery("html").addClass("js");
+
     return this;
 };
 

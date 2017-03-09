@@ -125,7 +125,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<xsl:attribute name="class"><xsl:value-of
 				select="/snap/head/metadata/@layout-name"/> snap <xsl:value-of
 				select="/snap/head/metadata/@theme-name"/> standard <xsl:value-of
-				select="substring-after(/snap/head/metadata/desc[@type='login_status']/data, 'status::')"/></xsl:attribute>
+				select="substring-after(/snap/head/metadata/desc[@type='login_status']/data, 'status::')"/> no-js</xsl:attribute>
 	</xsl:template>
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2

@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.75.3~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.76.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-557: Added support to add a "no-js" or "js" class to the <html> tag.
 
- -- Build Server <build@m2osw.com>  Tue, 07 Mar 2017 02:00:58 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  9 Mar 2017 14:39:45 -0800
 
 snapserver-core-plugins (1.0.75.0~xenial) xenial; urgency=high
 
