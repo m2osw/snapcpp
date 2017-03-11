@@ -155,6 +155,7 @@ int manager_cgi::error(char const * code, char const * msg, char const * details
                 << "Connection: close"                      << std::endl
                 << "Content-Type: text/html; charset=utf-8" << std::endl
                 << "Content-Length: " << body.length()      << std::endl
+                << f_cookie
                 << "X-Powered-By: snapmanager.cgi"          << std::endl
                 << std::endl
                 << body
@@ -641,6 +642,19 @@ int manager_cgi::process()
         return 0;
     }
 
+    // make sure the user is logged in
+    //
+    {
+        int const r(is_logged_in(request_method));
+        if(r != 0)
+        {
+            // return value is 2 if we are showing the logging screen
+            // and 1 in all other cases (i.e. errors)
+            //
+            return r == 2 ? 0 : 1;
+        }
+    }
+
     if(strcasecmp(request_uri, "/favicon.ico") == 0)
     {
         if(request_method != "GET")
@@ -653,39 +667,37 @@ int manager_cgi::process()
                         << "Allow: GET"                             << std::endl
                         << "Content-Type: text/html; charset=utf-8" << std::endl
                         << "Content-Length: " << body.length()      << std::endl
+                        << f_cookie
                         << "X-Powered-By: snapmanager.cgi"          << std::endl
                         << std::endl
                         << body;
             return 0;
         }
 
+SNAP_LOG_WARNING("got a favicon.ico request...");
         char const * filename("/var/www/snapmanager/public_html/favicon.ico");
-        std::ifstream favicon;
-        favicon.open(filename);
-        if(favicon.is_open())
+        snap::file_content favicon(filename);
+        if(favicon.read_all())
         {
-            favicon.seekg(0, std::ios::end);
-            std::streamsize const size(favicon.tellg());
-            favicon.seekg(0);
+            std::string const buffer(favicon.get_content());
+            std::string::size_type const size(buffer.length());
+SNAP_LOG_WARNING(" -- ico says file is ")(size)(" bytes...");
             if(size > 0)
             {
-                std::string buffer;
-                buffer.resize(size);
-                favicon.read(&buffer[0], size);
-                if(favicon.gcount() == size)
-                {
-                    std::cout
-                            << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl // FIXME: this needs to be now + 1 year, no need to avoid the cache!
-                            << "Content-Type: image/x-icon"            << std::endl
-                            << "Content-Length: " << buffer.length()   << std::endl
-                            << f_cookie
-                            << "X-Powered-By: snapmanager.cgi"         << std::endl
-                            << std::endl
-                            << buffer.c_str();
-                    return 0;
-                }
+SNAP_LOG_WARNING(" -- file is not empty...");
+                std::cout
+                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl // FIXME: this needs to be now + 1 year, no need to avoid the cache!
+                        << "Content-Type: image/x-icon"            << std::endl
+                        << "Content-Length: " << buffer.length()   << std::endl
+                        << f_cookie
+                        << "X-Powered-By: snapmanager.cgi"         << std::endl
+                        << std::endl
+                        << buffer.c_str();
+                return 0;
             }
+else SNAP_LOG_ERROR(" -- file is empty?!?");
         }
+else SNAP_LOG_ERROR(" -- error reading favicon.ico file...");
 
         // somehow the favicon.ico file is not available
         //
@@ -716,19 +728,6 @@ int manager_cgi::process()
     {
         f_uri.set_query_string(QString::fromUtf8(query_string));
         SNAP_LOG_TRACE("QUERY_STRING=")(query_string);
-    }
-
-    // make sure the user is logged in
-    //
-    {
-        int const r(is_logged_in(request_method));
-        if(r != 0)
-        {
-            // return value is 2 if we are showing the logging screen
-            // and 1 in all other cases (i.e. errors)
-            //
-            return r == 2 ? 0 : 1;
-        }
     }
 
     if(request_method == "POST")
