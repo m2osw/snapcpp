@@ -1,3 +1,9 @@
+snapmanager (1.3.4.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 10 Mar 2017 22:11:08 -0800
+
 snapmanager (1.3.4.0~xenial) xenial; urgency=high
 
   * Fixed the apache definitions so we do not get blocked when accessing
