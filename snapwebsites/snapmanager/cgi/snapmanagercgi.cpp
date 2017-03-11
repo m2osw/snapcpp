@@ -661,17 +661,13 @@ int manager_cgi::process()
             return 0;
         }
 
-SNAP_LOG_WARNING("got a favicon.ico request...");
         char const * filename("/var/www/snapmanager/public_html/favicon.ico");
         snap::file_content favicon(filename);
         if(favicon.read_all())
         {
             std::string const buffer(favicon.get_content());
-            std::string::size_type const size(buffer.length());
-SNAP_LOG_WARNING(" -- ico says file is ")(size)(" bytes...");
-            if(size > 0)
+            if(buffer.length() > 0)
             {
-SNAP_LOG_WARNING(" -- file is not empty...");
                 std::cout
                         << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl // FIXME: this needs to be now + 1 year, no need to avoid the cache!
                         << "Content-Type: image/x-icon"            << std::endl
@@ -679,12 +675,10 @@ SNAP_LOG_WARNING(" -- file is not empty...");
                         //<< f_cookie -- login not checked yet (i.e. we do not require the user to be logged in to see favicon.ico)
                         << "X-Powered-By: snapmanager.cgi"         << std::endl
                         << std::endl
-                        << buffer.c_str();
+                        << buffer;
                 return 0;
             }
-else SNAP_LOG_ERROR(" -- file is empty?!?");
         }
-else SNAP_LOG_ERROR(" -- error reading favicon.ico file...");
 
         // somehow the favicon.ico file is not available
         //
