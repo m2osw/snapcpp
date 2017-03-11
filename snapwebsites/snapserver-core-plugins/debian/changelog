@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.76.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.77.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-8: Now log the messages sent using the trace().
 
- -- Build Server <build@m2osw.com>  Fri, 10 Mar 2017 02:01:02 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 10 Mar 2017 16:11:19 -0800
 
 snapserver-core-plugins (1.0.76.0~xenial) xenial; urgency=high
 

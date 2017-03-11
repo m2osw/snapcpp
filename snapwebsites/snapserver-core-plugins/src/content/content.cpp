@@ -3446,6 +3446,13 @@ void content::on_save_content()
         // make sense to present such
         QString const cpath(ipath.get_cpath());
         snap_string_list const & segments(ipath.get_segments());
+
+        // TODO: we should now be able to remove that test and show all
+        //       the pages being created because we have a backend only
+        //       system and thus making things a tad bit slower should
+        //       not be a concern; I want to have the time to test that
+        //       theory before removing that if(), though
+        //
         if(segments.size() < 3)
         {
             f_snap->trace(QString("Saving \"%1\".\n").arg(ipath.get_key()));
