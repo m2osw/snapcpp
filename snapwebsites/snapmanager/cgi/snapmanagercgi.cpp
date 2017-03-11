@@ -463,6 +463,19 @@ bool manager_cgi::verify()
         //SNAP_LOG_DEBUG("REQUEST_URI=")(request_uri);
 #endif
 
+        // some browsers, no matter what, send us a /favicon.ico request
+        // we need to capture those and properly handle them
+        //
+        if(strcasecmp(request_uri, "/favicon.ico") == 0)
+        {
+            return true;
+        }
+
+        // TODO: look into whether other browsers check other files and
+        //       handle them properly (i.e. do not block the user's IP
+        //       as we do below for expected, even if unwanted, accesses)
+        //
+
         // if we do not receive this, somehow someone was able to access
         // snapmanager.cgi without specifying /cgi-bin/... which is not
         // correct
@@ -472,7 +485,7 @@ bool manager_cgi::verify()
             error(
                 "404 Page Not Found",
                 "We could not find the page you were looking for.",
-                (std::string("The REQUEST_URI must be \"/snapmanager\", it cannot include \"/cgi-bin/\" as in \"") + request_uri + "\".").c_str());
+                (std::string("The REQUEST_URI must start with \"/snapmanager\", it cannot include \"/cgi-bin/\" as in \"") + request_uri + "\".").c_str());
             snap::server::block_ip(remote_addr);
             return false;
         }
@@ -617,6 +630,69 @@ int manager_cgi::process()
 #ifdef _DEBUG
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 #endif
+
+    char const * request_uri(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_URI)));
+    if(request_uri == nullptr)
+    {
+        // this should NEVER happen because without a path after the method
+        // we probably do not have our snapmanager.cgi run anyway...
+        //
+        error("400 Bad Request", "The path to the page you want to read must be specified.", nullptr);
+        return 0;
+    }
+
+    if(strcasecmp(request_uri, "/favicon.ico") == 0)
+    {
+        if(request_method != "GET")
+        {
+            SNAP_LOG_FATAL("Method not supported for a request of /favicon.ico, expected \"GET\", got \"")(request_method)("\" instead.");
+            std::string body("<html><head><title>Method Not Supported</title></head><body><p>Sorry. We only support GET for /favicon.ico.</p></body></html>");
+            std::cout   << "Status: 405 Method Not Defined"         << std::endl
+                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                        << "Connection: close"                      << std::endl
+                        << "Allow: GET"                             << std::endl
+                        << "Content-Type: text/html; charset=utf-8" << std::endl
+                        << "Content-Length: " << body.length()      << std::endl
+                        << "X-Powered-By: snapmanager.cgi"          << std::endl
+                        << std::endl
+                        << body;
+            return 0;
+        }
+
+        char const * filename("/var/www/snapmanager/public_html/favicon.ico");
+        std::ifstream favicon;
+        favicon.open(filename);
+        if(favicon.is_open())
+        {
+            favicon.seekg(0, std::ios::end);
+            std::streamsize const size(favicon.tellg());
+            favicon.seekg(0);
+            if(size > 0)
+            {
+                std::string buffer;
+                buffer.resize(size);
+                favicon.read(&buffer[0], size);
+                if(favicon.gcount() == size)
+                {
+                    std::cout
+                            << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl // FIXME: this needs to be now + 1 year, no need to avoid the cache!
+                            << "Content-Type: image/x-icon"            << std::endl
+                            << "Content-Length: " << buffer.length()   << std::endl
+                            << f_cookie
+                            << "X-Powered-By: snapmanager.cgi"         << std::endl
+                            << std::endl
+                            << buffer.c_str();
+                    return 0;
+                }
+            }
+        }
+
+        // somehow the favicon.ico file is not available
+        //
+        SNAP_LOG_WARNING("File \"favicon.ico\" was not found. Was it deleted, moved, permissions changed? Current location: \"")(filename)("\"");
+        error("404 File Not Found", "Sorry! File \"favicon.ico\" was not found.", nullptr);
+        return 0;
+    }
 
     if(request_method == "POST")
     {

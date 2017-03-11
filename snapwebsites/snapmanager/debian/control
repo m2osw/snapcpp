@@ -63,23 +63,6 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  projects to offer extensions to snapmanagercgi and snapmanagerdaemon in
  the form of plugins.
 
-Package: snapmanagerbuild
-Section: admin
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: snapbuild
-Description: Fast Websites: powerful CMS for Apache written in C++.
- Snap! C++ runs your CMS using binary code written in C and C++.
- The basic concept is taken from a large set of Drupal 6.x
- modules from Drupal Core and necessary 3rd party modules (we've been using
- over 220 modules on top of the Core modules.) The result is quite
- extensible as it offers a plug-in mechanism that everyone is welcome to use
- to create their own extensions.
- .
- This package offers some files to ease the setup of computer that offers
- the bundle files on a build system. The build script itself handles and
- creates the other files (i.e. directory.xml).
-
 Package: snapmanagercgi
 Section: admin
 Architecture: any
