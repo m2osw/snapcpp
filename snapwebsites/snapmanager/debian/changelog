@@ -1,3 +1,12 @@
+snapmanager (1.3.10.0~xenial) xenial; urgency=high
+
+  * SNAP-110: Nevermind, the bug was actually in conf/snapmanager-apache2.conf.
+    Doug added a link and did not update the skip, also he could have added
+    to the existing regex. So I did that and did not change the skip which
+    are now correct again.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 10 Mar 2017 21:37:20 -0700
+
 snapmanager (1.3.9.0~xenial) xenial; urgency=high
 
   * SNAP-110: Actually output `buffer` and not `buffer.c_str()` or we miss

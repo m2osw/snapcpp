@@ -464,19 +464,6 @@ bool manager_cgi::verify()
         //SNAP_LOG_DEBUG("REQUEST_URI=")(request_uri);
 #endif
 
-        // some browsers, no matter what, send us a /favicon.ico request
-        // we need to capture those and properly handle them
-        //
-        if(strcasecmp(request_uri, "/favicon.ico") == 0)
-        {
-            return true;
-        }
-
-        // TODO: look into whether other browsers check other files and
-        //       handle them properly (i.e. do not block the user's IP
-        //       as we do below for expected, even if unwanted, accesses)
-        //
-
         // if we do not receive this, somehow someone was able to access
         // snapmanager.cgi without specifying /cgi-bin/... which is not
         // correct
@@ -632,74 +619,6 @@ int manager_cgi::process()
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 #endif
 
-    char const * request_uri(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_URI)));
-    if(request_uri == nullptr)
-    {
-        // this should NEVER happen because without a path after the method
-        // we probably do not have our snapmanager.cgi run anyway...
-        //
-        error("400 Bad Request", "The path to the page you want to read must be specified.", nullptr);
-        return 0;
-    }
-
-    if(strcasecmp(request_uri, "/favicon.ico") == 0)
-    {
-        if(request_method != "GET")
-        {
-            SNAP_LOG_FATAL("Method not supported for a request of /favicon.ico, expected \"GET\", got \"")(request_method)("\" instead.");
-            std::string body("<html><head><title>Method Not Supported</title></head><body><p>Sorry. We only support GET for /favicon.ico.</p></body></html>");
-            std::cout   << "Status: 405 Method Not Defined"         << std::endl
-                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                        << "Connection: close"                      << std::endl
-                        << "Allow: GET"                             << std::endl
-                        << "Content-Type: text/html; charset=utf-8" << std::endl
-                        << "Content-Length: " << body.length()      << std::endl
-                        << f_cookie
-                        << "X-Powered-By: snapmanager.cgi"          << std::endl
-                        << std::endl
-                        << body;
-            return 0;
-        }
-
-        char const * filename("/var/www/snapmanager/public_html/favicon.ico");
-        snap::file_content favicon(filename);
-        if(favicon.read_all())
-        {
-            std::string const buffer(favicon.get_content());
-            if(buffer.length() > 0)
-            {
-                std::cout
-                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl // FIXME: this needs to be now + 1 year, no need to avoid the cache!
-                        << "Content-Type: image/x-icon"            << std::endl
-                        << "Content-Length: " << buffer.length()   << std::endl
-                        //<< f_cookie -- login not checked yet (i.e. we do not require the user to be logged in to see favicon.ico)
-                        << "X-Powered-By: snapmanager.cgi"         << std::endl
-                        << std::endl
-                        << buffer;
-                return 0;
-            }
-        }
-
-        // somehow the favicon.ico file is not available
-        //
-        SNAP_LOG_WARNING("File \"favicon.ico\" was not found. Was it deleted, moved, permissions changed? Current location: \"")(filename)("\"");
-        error("404 File Not Found", "Sorry! File \"favicon.ico\" was not found.", nullptr);
-        return 0;
-    }
-
-    // make sure the user is logged in
-    //
-    {
-        int const r(is_logged_in(request_method));
-        if(r != 0)
-        {
-            // return value is 2 if we are showing the logging screen
-            // and 1 in all other cases (i.e. errors)
-            //
-            return r == 2 ? 0 : 1;
-        }
-    }
-
     if(request_method == "POST")
     {
         // a form posted?
@@ -722,6 +641,19 @@ int manager_cgi::process()
     {
         f_uri.set_query_string(QString::fromUtf8(query_string));
         SNAP_LOG_TRACE("QUERY_STRING=")(query_string);
+    }
+
+    // make sure the user is logged in
+    //
+    {
+        int const r(is_logged_in(request_method));
+        if(r != 0)
+        {
+            // return value is 2 if we are showing the logging screen
+            // and 1 in all other cases (i.e. errors)
+            //
+            return r == 2 ? 0 : 1;
+        }
     }
 
     if(request_method == "POST")
@@ -2224,7 +2156,7 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 
     if(has_error)
     {
-        // output/p
+        // output/p/<text>
         QDomElement p(doc.createElement("p"));
         output.appendChild(p);
 
