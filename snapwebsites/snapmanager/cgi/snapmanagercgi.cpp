@@ -642,19 +642,6 @@ int manager_cgi::process()
         return 0;
     }
 
-    // make sure the user is logged in
-    //
-    {
-        int const r(is_logged_in(request_method));
-        if(r != 0)
-        {
-            // return value is 2 if we are showing the logging screen
-            // and 1 in all other cases (i.e. errors)
-            //
-            return r == 2 ? 0 : 1;
-        }
-    }
-
     if(strcasecmp(request_uri, "/favicon.ico") == 0)
     {
         if(request_method != "GET")
@@ -689,7 +676,7 @@ SNAP_LOG_WARNING(" -- file is not empty...");
                         << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl // FIXME: this needs to be now + 1 year, no need to avoid the cache!
                         << "Content-Type: image/x-icon"            << std::endl
                         << "Content-Length: " << buffer.length()   << std::endl
-                        << f_cookie
+                        //<< f_cookie -- login not checked yet (i.e. we do not require the user to be logged in to see favicon.ico)
                         << "X-Powered-By: snapmanager.cgi"         << std::endl
                         << std::endl
                         << buffer.c_str();
@@ -704,6 +691,19 @@ else SNAP_LOG_ERROR(" -- error reading favicon.ico file...");
         SNAP_LOG_WARNING("File \"favicon.ico\" was not found. Was it deleted, moved, permissions changed? Current location: \"")(filename)("\"");
         error("404 File Not Found", "Sorry! File \"favicon.ico\" was not found.", nullptr);
         return 0;
+    }
+
+    // make sure the user is logged in
+    //
+    {
+        int const r(is_logged_in(request_method));
+        if(r != 0)
+        {
+            // return value is 2 if we are showing the logging screen
+            // and 1 in all other cases (i.e. errors)
+            //
+            return r == 2 ? 0 : 1;
+        }
     }
 
     if(request_method == "POST")
