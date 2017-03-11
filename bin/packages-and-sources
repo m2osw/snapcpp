@@ -2,33 +2,35 @@
 #
 
 # Go the right place (it should already exist)
-cd /var/www/debian/xenial
+cd /var/www/debian/nightly
 
 if test "$1" != "--refresh-only"
 then
 	# Use the full path even if the cd worked to make 100% sure we are
-	# not deleting the wrong files
-	rm -f /var/www/debian/xenial/*
+	# not deleting the wrong files (especially with an `rm -rf`!!!)
+	#
+	rm -rf /var/www/debian/nightly/*
 
 	# Copy the files from the build output
+	#
 	if test "$1" = "--tristan"
 	then
-		scp tristan:/home/build/pbuilder/xenial_result/* .
+		scp -r tristan:/var/www/debian/nightly/* .
 	else
-		scp 192.168.2.90:/home/build/pbuilder/xenial_result/* .
+		scp 192.168.2.90:/var/www/debian/nightly/* .
 	fi
 fi
 
-# Run the following in your build directory output against the
-# .deb, .dsc, etc.
-
-# Create Packages[.gz]
-echo "Refresh packages..."
-apt-ftparchive packages . > Packages
-gzip -f9c Packages > Packages.gz
-
-# Create Sources[.gz]
-echo "Refresh sources..."
-apt-ftparchive sources  . > Sources
-gzip -f9c Sources > Sources.gz
+# # Run the following in your build directory output against the
+# # .deb, .dsc, etc.
+# 
+# # Create Packages[.gz]
+# echo "Refresh packages..."
+# apt-ftparchive packages . > Packages
+# gzip -f9c Packages > Packages.gz
+# 
+# # Create Sources[.gz]
+# echo "Refresh sources..."
+# apt-ftparchive sources  . > Sources
+# gzip -f9c Sources > Sources.gz
 
