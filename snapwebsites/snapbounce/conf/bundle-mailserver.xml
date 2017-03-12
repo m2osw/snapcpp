@@ -78,11 +78,14 @@ EOF
     postconf -e "smtp_tls_protocols            = !SSLv2,!SSLv3,!TLSv1"
 
     ################################################################################
-    # Also force TLS encryption, any major mail server supports that feature!
+    # Also use TLS encryption whenever available, any major mail server supports
+    # that feature, but using "encrypt" fails with many legitimate servers,
+    # unfortunately.
+    #
     # See http://serverfault.com/questions/653608/how-widely-supported-is-forced-tls-on-inbound-smtp-connections#answer-655775
     #
-    postconf -e "smtpd_tls_security_level = encrypt"
-    postconf -e "smtp_tls_security_level  = encrypt"
+    postconf -e "smtpd_tls_security_level = may"
+    postconf -e "smtp_tls_security_level  = may"
 
     ################################################################################
     # Remove VRFY support as it can be used to find Unix/supported users.
