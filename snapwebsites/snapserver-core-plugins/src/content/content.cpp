@@ -3591,12 +3591,12 @@ void content::on_save_content()
                     // path + "#xx/0.<revision>" in the data table
                     param_table = revision_table;
                     bool const create_revision(use_new_revision.find(locale) == use_new_revision.end());
-                    if(create_revision)
+                    if(!create_revision)
                     {
                         row_key = get_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false);
                     }
                     // else row_key.clear(); -- I think it is faster to test the flag again
-                    if(!create_revision || row_key.isEmpty())
+                    if(create_revision || row_key.isEmpty())
                     {
                         // the revision does not exist yet, create it
                         snap_version::version_number_t revision_number(get_new_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false));
