@@ -133,7 +133,8 @@ DTD of the XSLT 2.0.
             product-guid CDATA #IMPLIED
             tabindex CDATA #IMPLIED
             data-toggle CDATA #IMPLIED
-            data-target CDATA #IMPLIED>
+            data-target CDATA #IMPLIED
+            data-display-mode CDATA #IMPLIED>
 
 <!ELEMENT button ANY>
 <!ATTLIST button id CDATA #IMPLIED

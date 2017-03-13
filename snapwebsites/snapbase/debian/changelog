@@ -1,8 +1,9 @@
-snapbase (1.0.37.23~xenial) xenial; urgency=high
+snapbase (1.0.38.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Added support so we can setup editor buttons as inline
+    or inline-block instead of the default of block.
 
- -- Build Server <build@m2osw.com>  Sat, 18 Feb 2017 02:00:52 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 12 Mar 2017 23:35:48 -0800
 
 snapbase (1.0.37.0~xenial) xenial; urgency=high
 

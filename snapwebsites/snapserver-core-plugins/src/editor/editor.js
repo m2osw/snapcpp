@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.928
+ * Version: 0.0.3.930
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -3752,6 +3752,11 @@ snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget, opt_hide_but
  *
  * Then it shows the dialog.
  *
+ * In some rare cases, it may be useful to show the block as an
+ * "inline-block" (or some other display mode) instead of the default
+ * of "block". When that is required, define a data attribute named
+ * "data-display-mode" and set its value to the mode you want to use.
+ *
  * \note
  * This function does not change the dialog buttons status. The
  * save function is expected to call the saveDialogStatus() function
@@ -3764,13 +3769,26 @@ snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget, opt_hide_but
  */
 snapwebsites.EditorSaveDialog.prototype.open = function()
 {
+    var mode;
+
     if(!this.saveDialogPopup_)
     {
         this.create_();
     }
     if(this.saveDialogPopupAutoHide_)
     {
-        this.saveDialogPopup_.fadeIn(300).css("display", "block");
+        // user can specify the display mode (in most cases it should be
+        // "block", the default, or "inline-block", although it could be
+        // something else like just "inline".)
+        //
+        mode = this.saveDialogPopup_.data("display-mode");
+        if(mode === undefined)
+        {
+            // default to "block"
+            //
+            mode = "block";
+        }
+        this.saveDialogPopup_.fadeIn(300).css("display", mode);
     }
 
     this.saveDialogPopupOpen_ = true;

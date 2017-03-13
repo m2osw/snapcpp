@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.77.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.78.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Updated the editor code that shows the save dialog to support
+    any type of display mode ("block", "inline-block", "inline", etc.)
 
- -- Build Server <build@m2osw.com>  Sat, 11 Mar 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 12 Mar 2017 23:37:19 -0800
 
 snapserver-core-plugins (1.0.77.0~xenial) xenial; urgency=high
 
