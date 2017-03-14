@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.79.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 14 Mar 2017 02:00:57 -0700
+
 snapserver-core-plugins (1.0.79.0~xenial) xenial; urgency=high
 
   * EX-167: Fixed the create_revision tests, they were inverted (see 1.0.70).
