@@ -1,3 +1,9 @@
+libqtcassandra (0.6.16.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 16 Mar 2017 02:01:01 -0700
+
 libqtcassandra (0.6.16.0~xenial) xenial; urgency=high
 
   * SNAP-529: Fixed QCassandraTable and QCassandraRow destructors: they have

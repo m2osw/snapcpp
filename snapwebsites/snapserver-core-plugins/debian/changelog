@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.80.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 16 Mar 2017 02:01:00 -0700
+
 snapserver-core-plugins (1.0.80.0~xenial) xenial; urgency=high
 
   * EX-169: Fixed the conversion of the user ID from the session path when
