@@ -1217,7 +1217,9 @@ void users_ui::verify_password(content::path_info_t & ipath)
         );
         // we are likely on the verification link for the new password
         // so we want to send people to the new-password page instead
-        // XXX should we avoid the redirect if we're already on that page?
+        //
+        // XXX should we avoid the redirect if we are already on that page?
+        //
         f_snap->page_redirect("new-password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
@@ -1227,7 +1229,21 @@ void users_ui::verify_password(content::path_info_t & ipath)
     //QString const user_email(path.mid(6)); // this is the user_key from the session, it is a canonicalized email TODO! This should be an id!
     //QString const (path.mid(6)); // this is the user_key from the session, it is a canonicalized email TODO! This should be an id!
     //auto const user_info(users_plugin->get_user_info_by_email(user_email));
-    users::users::identifier_t const identifier(QtCassandra::QCassandraValue(path.mid(6)).int64Value()); // this is the identifier from the session (SNAP-258)
+    QString const id_string(path.mid(6));
+    bool ok(false);
+    users::users::identifier_t const identifier(id_string.toLongLong(&ok, 10)); // this is the identifier from the session (SNAP-258)
+    if(!ok)
+    {
+        messages::messages::instance()->set_error(
+            "Could Not Find Your Account",
+            "Somehow we could not find your account on this system.",
+            QString("count not convert user ID from \"%1\" to a valid identifier").arg(path),
+            true
+        );
+        // redirect the user to the log in page
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
+        NOTREACHED();
+    }
     auto const user_info(users_plugin->get_user_info_by_id(identifier));
     if(!user_info.exists())
     {

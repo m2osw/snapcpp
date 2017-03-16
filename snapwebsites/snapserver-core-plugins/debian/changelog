@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.79.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.80.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-169: Fixed the conversion of the user ID from the session path when
+    verifying a "change password" session.
 
- -- Build Server <build@m2osw.com>  Tue, 14 Mar 2017 02:00:57 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 15 Mar 2017 22:57:19 -0800
 
 snapserver-core-plugins (1.0.79.0~xenial) xenial; urgency=high
 
