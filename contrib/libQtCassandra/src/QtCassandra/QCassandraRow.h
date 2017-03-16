@@ -114,5 +114,4 @@ typedef QMap<QByteArray, QCassandraRow::pointer_t > QCassandraRows;
 
 
 } // namespace QtCassandra
-
 // vim: ts=4 sw=4 et

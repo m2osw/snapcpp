@@ -699,7 +699,6 @@ QCassandra::QCassandra()
     // f_partitioner("") -- auto-init
     // f_snitch("") -- auto-init
     // f_default_consistency_level( CONSISTENCY_LEVEL_ONE )
-    // default is CONSISTENCY_LEVEL_DEFAULT
 {
 }
 

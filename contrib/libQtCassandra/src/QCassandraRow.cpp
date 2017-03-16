@@ -70,6 +70,7 @@ namespace QtCassandra
  * \sa exists()
  */
 
+
 /** \typedef QCassandraRow::composite_column_names_t
  * \brief The set of column names.
  *
@@ -86,6 +87,7 @@ namespace QtCassandra
  * their length which is 65536 bytes each.
  */
 
+
 /** \var QCassandraRow::f_table
  * \brief The table this row is part of.
  *
@@ -94,12 +96,14 @@ namespace QtCassandra
  * a table and the table keeps a tight reference on the row.
  */
 
+
 /** \var QCassandraRow::f_key
  * \brief The binary key of the row.
  *
  * The binary key of the row is set to UTF-8 when defined with a
  * string. Otherwise it is defined as specified by the user.
  */
+
 
 /** \var QCassandraRow::f_cells
  * \brief The array of cells defined in this row.
@@ -108,6 +112,7 @@ namespace QtCassandra
  *
  * The values are defined with a timestamp and ttl value.
  */
+
 
 /** \brief Initialize a QCassandraRow object.
  *
@@ -140,6 +145,7 @@ QCassandraRow::QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByte
     }
 }
 
+
 /** \brief Clean up the QCassandraRow object.
  *
  * This function ensures that all resources allocated by the
@@ -147,7 +153,19 @@ QCassandraRow::QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByte
  */
 QCassandraRow::~QCassandraRow()
 {
+    try
+    {
+        // do an explicit clearCache() so we can try/catch otherwise we
+        // could get a throw in the destructor
+        //
+        clearCache();
+    }
+    catch(const QCassandraException&)
+    {
+        // ignore, not much else we can do in a destructor
+    }
 }
+
 
 /** \brief Retrieve the name of the row.
  *
@@ -169,6 +187,7 @@ QString QCassandraRow::rowName() const
     return QString::fromUtf8(f_key.data());
 }
 
+
 /** \brief Retrieve the row key.
  *
  * This function returns the key of this row. The key is a binary buffer
@@ -186,6 +205,7 @@ const QByteArray& QCassandraRow::rowKey() const
 {
     return f_key;
 }
+
 
 /** \brief Retrieve the number of cells defined in this row.
  *
@@ -209,6 +229,7 @@ int QCassandraRow::cellCount( const QCassandraCellPredicate::pointer_t column_pr
     //return static_cast<int>(f_cells.size());
     return parentTable()->getCellCount(f_key, column_predicate);
 }
+
 
 /** \brief Read the cells as defined by a default column predicate.
  *
@@ -244,6 +265,7 @@ uint32_t QCassandraRow::readCells()
 {
     return f_cells.size();
 }
+
 
 /** \brief Read the cells as defined by the predicate.
  *
@@ -388,6 +410,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
     return result_size;
 }
 
+
 /** \brief Retrieve a cell from the row.
  *
  * This function retrieves a cell from this row. If the cell
@@ -469,6 +492,7 @@ QCassandraCell::pointer_t QCassandraRow::cell(const QByteArray& column_key)
     return c;
 }
 
+
 /** \brief Retrieve the map of cells.
  *
  * This function returns a constant reference to the map of cells defined in
@@ -507,6 +531,7 @@ const QCassandraCells& QCassandraRow::cells() const
     return f_cells;
 }
 
+
 /** \brief Retrieve a cell from the row.
  *
  * This function retrieves a cell from this row. If the cell
@@ -532,6 +557,7 @@ QCassandraCell::pointer_t QCassandraRow::findCell(const QString& column_name) co
 {
     return findCell(column_name.toUtf8());
 }
+
 
 /** \brief Retrieve a cell from the row.
  *
@@ -563,6 +589,7 @@ QCassandraCell::pointer_t QCassandraRow::findCell(const QByteArray& column_key) 
     return *ci;
 }
 
+
 /** \brief Check whether a cell exists in this row.
  *
  * The check is happening in memory first. If the cell doesn't exist in memory,
@@ -584,6 +611,7 @@ bool QCassandraRow::exists(const char * column_name) const
     return exists(QString(column_name));
 }
 
+
 /** \brief Check whether a cell exists in this row.
  *
  * The check is happening in memory first. If the cell doesn't exist in memory,
@@ -604,6 +632,7 @@ bool QCassandraRow::exists(const QString& column_name) const
 {
     return exists(column_name.toUtf8());
 }
+
 
 /** \brief Check whether a cell exists in this row.
  *
@@ -649,6 +678,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
     return true;
 }
 
+
 /** \brief Retrieve a cell from the row.
  *
  * This function retrieves a reference to a cell from this row in
@@ -668,6 +698,7 @@ QCassandraCell& QCassandraRow::operator [] (const char * column_name)
 {
     return *cell(column_name);
 }
+
 
 /** \brief Retrieve a cell from the row.
  *
@@ -689,6 +720,7 @@ QCassandraCell& QCassandraRow::operator [] (const QString& column_name)
     return *cell(column_name);
 }
 
+
 /** \brief Retrieve a cell from the row.
  *
  * This function retrieves a reference to a cell from this row in
@@ -707,6 +739,7 @@ QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key)
 {
     return *cell(column_key);
 }
+
 
 /** \brief Retrieve a cell from the row.
  *
@@ -732,6 +765,7 @@ const QCassandraCell& QCassandraRow::operator [] (const char* column_name) const
     return operator [] (QString(column_name));
 }
 
+
 /** \brief Retrieve a cell from the row.
  *
  * This function retrieves a constant reference to a cell from this row
@@ -756,6 +790,7 @@ const QCassandraCell& QCassandraRow::operator [] (const QString& column_name) co
     return operator [] (column_name.toUtf8());
 }
 
+
 /** \brief Retrieve a cell from the row.
  *
  * This function retrieves a cell from this row in array syntax.
@@ -779,6 +814,7 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
 
     return *p_cell;
 }
+
 
 /** \brief Clear the cached cells.
  *
@@ -832,6 +868,7 @@ void QCassandraRow::dropCell(const char * column_name)
     dropCell(QByteArray(column_name, qstrlen(column_name)));
 }
 
+
 /** \brief Drop the named cell.
  *
  * This function is the same as the dropCell() that accepts a QByteArray
@@ -844,6 +881,7 @@ void QCassandraRow::dropCell(const QString& column_name)
 {
     dropCell(column_name.toUtf8());
 }
+
 
 /** \brief Drop the specified cell from the Cassandra database.
  *
@@ -987,5 +1025,4 @@ void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 
 
 } // namespace QtCassandra
-
 // vim: ts=4 sw=4 et

@@ -269,6 +269,17 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
  */
 QCassandraTable::~QCassandraTable()
 {
+    try
+    {
+        // do an explicit clearCache() so we can try/catch otherwise we
+        // could get a throw in the destructor
+        //
+        clearCache();
+    }
+    catch(const QCassandraException&)
+    {
+        // ignore, not much else we can do in a destructor
+    }
 }
 
 

@@ -67,9 +67,35 @@ namespace
  *
  * This function is used with the bio shared pointer to make sure we
  * can automatically remove the bio.
+ *
+ * Also, it prevents the BIO_free_all() function from sending a shutdown()
+ * to the other side. I'm not too sure why the programmers thought that
+ * was a good idea.
+ *
+ * \param[in] bio  The BIO object to be freed.
  */
 void bio_deleter(BIO * bio)
 {
+    // IMPORTANT NOTE:
+    //
+    //   The BIO_free_all() calls shutdown() on the socket. This is not
+    //   acceptable in a normal Unix application that makes use of fork().
+    //   So... instead we ask the BIO interface to not close the socket,
+    //   and instead we close it ourselves. This means the shutdown()
+    //   never gets called.
+    //
+    BIO_set_close(bio, BIO_NOCLOSE);
+
+    int c;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    BIO_get_fd(bio, &c);
+#pragma GCC diagnostic pop
+    if(c != -1)
+    {
+        close(c);
+    }
+
     BIO_free_all(bio);
 }
 
@@ -362,6 +388,9 @@ void QCassandraProxy::bio_get()
         // mark that one as such; although even that does not prevent the
         // BIO_read() and BIO_write() functions from returning early!
         //
+        // TODO: this is wrong, this function needs to be called before
+        //       the BIO_s_connect() call! (see man page for details)
+        //
         BIO_set_nbio(bio.get(), 0);
 
 #pragma GCC diagnostic push
@@ -480,8 +509,16 @@ int QCassandraProxy::bio_write(void const * buf, size_t size)
 
     // the BIO generated an error (TBD should we check BIO_eof() too?)
     // or the BIO is not implemented
+    //
     // XXX: do we have to set errno?
+    //
     ERR_print_errors_fp(stderr);
+
+    // TBD: should we return `count` if it is not zero?
+    //      then on next call it will return -1, but then the user
+    //      knows part of the message was at least buffered if not
+    //      transmitted...
+    //
     return -1;
 }
 

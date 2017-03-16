@@ -71,6 +71,7 @@ namespace QtCassandra
  * and the cache was marked as active.
  */
 
+
 /** \var QCassandraCell::f_row
  * \brief A pointer back to the row onwer.
  *
@@ -79,12 +80,14 @@ namespace QtCassandra
  * back to the Cassandra database.
  */
 
+
 /** \var QCassandraCell::f_key
  * \brief The column name of this cell.
  *
  * This cell has a name paired with its value. This is the name part.
  * The key is saved in binary form only.
  */
+
 
 /** \var QCassandraCell::f_cached
  * \brief Whether a cell is a cache.
@@ -98,6 +101,7 @@ namespace QtCassandra
  * or Cassandra table. As such, the cache flag may be lying.
  */
 
+
 /** \var QCassandraCell::f_value
  * \brief A cell value.
  *
@@ -107,6 +111,7 @@ namespace QtCassandra
  * is not copied, instead it is shared. This is quite useful to avoid many
  * memory copies.
  */
+
 
 /** \brief Initialize a QCassandraRow object.
  *
@@ -139,6 +144,7 @@ QCassandraCell::QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& c
     }
 }
 
+
 /** \brief Clean up the QCassandraCell object.
  *
  * This function ensures that all resources allocated by the
@@ -147,6 +153,7 @@ QCassandraCell::QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& c
 QCassandraCell::~QCassandraCell()
 {
 }
+
 
 /** \brief Retrieve the name of the column.
  *
@@ -172,6 +179,7 @@ QString QCassandraCell::columnName() const
     return QString::fromUtf8(f_key.data());
 }
 
+
 /** \brief Retrieve the column key.
  *
  * This function returns the column key of this cell. The key is a binary
@@ -189,6 +197,7 @@ const QByteArray& QCassandraCell::columnKey() const
 {
     return f_key;
 }
+
 
 /** \brief Retrieve the cell value.
  *
@@ -214,6 +223,7 @@ const QCassandraValue& QCassandraCell::value() const
     }
     return f_value;
 }
+
 
 /** \brief Change the value.
  *
@@ -246,6 +256,7 @@ void QCassandraCell::setValue(const QCassandraValue& val)
         f_cached = true;
     }
 }
+
 
 /** \brief Change the value as if read from Cassandra.
  *
@@ -289,6 +300,7 @@ void QCassandraCell::assignValue(const QCassandraValue& val)
     f_cached = true;
 }
 
+
 /** \brief Set the cell value.
  *
  * This function is called whenever you write a value to the Cassandra
@@ -315,6 +327,7 @@ QCassandraCell& QCassandraCell::operator = (const QCassandraValue& val)
     setValue(val);
     return *this;
 }
+
 
 /** \brief Retrieve the cell value.
  *
@@ -391,6 +404,7 @@ void QCassandraCell::add(int64_t val)
     parentRow()->insertValue( f_key, f_value );
 }
 
+
 /** \brief Add to a counter.
  *
  * This operator adds a value to a counter.
@@ -420,6 +434,7 @@ QCassandraCell& QCassandraCell::operator += (int64_t val)
     return *this;
 }
 
+
 /** \brief Increment a counter.
  *
  * This operator is used to add one to a counter.
@@ -438,6 +453,7 @@ QCassandraCell& QCassandraCell::operator ++ ()
     add(1);
     return *this;
 }
+
 
 /** \brief Increment a counter.
  *
@@ -461,6 +477,7 @@ QCassandraCell& QCassandraCell::operator ++ (int)
     add(1);
     return *this;
 }
+
 
 /** \brief Subtract from a counter.
  *
@@ -491,6 +508,7 @@ QCassandraCell& QCassandraCell::operator -= (int64_t val)
     return *this;
 }
 
+
 /** \brief Decrement a counter.
  *
  * This operator is used to subtract one from a counter.
@@ -509,6 +527,7 @@ QCassandraCell& QCassandraCell::operator -- ()
     add(-1);
     return *this;
 }
+
 
 /** \brief Decrement a counter.
  *
@@ -533,6 +552,7 @@ QCassandraCell& QCassandraCell::operator -- (int)
     return *this;
 }
 
+
 /** \brief Retrieve the current consistency level of this value.
  *
  * This function returns the consistency level of this value. By default
@@ -549,6 +569,7 @@ consistency_level_t QCassandraCell::consistencyLevel() const
 {
     return f_value.consistencyLevel();
 }
+
 
 /** \brief Define the consistency level of this cell.
  *
@@ -572,6 +593,7 @@ void QCassandraCell::setConsistencyLevel(consistency_level_t level)
     f_value.setConsistencyLevel(level);
 }
 
+
 /** \brief The value of a cell is automatically cached in memory.
  *
  * This function can be used to mark that the currently cached
@@ -594,6 +616,7 @@ void QCassandraCell::clearCache()
     f_cached = false;
     f_value.setNullValue();
 }
+
 
 #if 0
 /** \brief Retrieve the current timestamp of this cell value.
