@@ -4677,7 +4677,6 @@ void snap_child::disconnect_cassandra()
     //
     f_context.reset();
 
-SNAP_LOG_WARNING("clear f_cassandra in snap_child::disconnect_cassandra()");
     f_cassandra.reset();
 }
 
