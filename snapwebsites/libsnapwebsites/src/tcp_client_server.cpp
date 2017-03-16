@@ -375,28 +375,14 @@ void bio_deleter(BIO * bio)
 {
     // IMPORTANT NOTE:
     //
-    //   The following is terribly ugly, unfortunately, the BIO_free_all()
-    //   function does this:
+    //   The BIO_free_all() calls shutdown() on the socket. This is not
+    //   acceptable in a normal Unix application that makes use of fork().
+    //   So... instead we ask the BIO interface to not close the socket,
+    //   and instead we close it ourselves. This means the shutdown()
+    //   never gets called.
     //
-    //      shutdown(s, SHUT_RDWR);
-    //      close(s);
-    //
-    //   instead of just the expected close(s). This means it destroys the
-    //   connection. In general, that's not the end of the world, but in our
-    //   case, since we often create a socket in a parent, then fork(),
-    //   the parent or child (whoever wants to close the socket on their
-    //   end) is likely to destroy the socket communication for both
-    //   parties.
-    //
-    //   Now, the good thing is that when applied in the following order,
-    //   the shutdown() does nothing:
-    //
-    //      close(s);
-    //      shutdown(s); // err, ignore
-    //      close(s);    // err, ignore
-    //
-    //   Therefore we force a close ahead of time.
-    //
+    BIO_set_close(bio, BIO_NOCLOSE);
+
     int c;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -2040,7 +2026,7 @@ bio_client::pointer_t bio_server::accept()
     // retrieve the new connection by "popping it"
     //
     std::shared_ptr<BIO> bio(BIO_pop(f_listen.get()), bio_deleter);
-    if(!bio)
+    if(bio == nullptr)
     {
         bio_log_errors();
         throw tcp_client_server_runtime_error("failed retrieving the accepted BIO");

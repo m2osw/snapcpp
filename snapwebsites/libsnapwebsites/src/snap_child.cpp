@@ -4675,12 +4675,7 @@ void snap_child::disconnect_cassandra()
 
     // make sure the context cache is cleared too
     //
-    if(f_context != nullptr)
-    {
-SNAP_LOG_WARNING("clear f_context in snap_child::disconnect_cassandra()");
-        f_context->clearCache();
-        f_context.reset();
-    }
+    f_context.reset();
 
 SNAP_LOG_WARNING("clear f_cassandra in snap_child::disconnect_cassandra()");
     f_cassandra.reset();
@@ -5749,12 +5744,7 @@ void snap_child::site_redirect()
  */
 void snap_child::reset_sites_table()
 {
-    if(f_sites_table != nullptr)
-    {
-SNAP_LOG_WARNING("clear f_sites_table in snap_child::reset_sites_table()");
-        f_sites_table->clearCache();
-        f_sites_table.reset();
-    }
+    f_sites_table.reset();
 }
 
 

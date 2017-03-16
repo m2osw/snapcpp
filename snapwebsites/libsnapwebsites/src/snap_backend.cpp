@@ -1647,22 +1647,12 @@ void snap_backend::disconnect_cassandra()
 {
     // we are in control of the backend table
     //
-    if(f_backend_table != nullptr)
-    {
-SNAP_LOG_WARNING("clear f_backend_table in snap_backend::disconnect_cassandra()");
-        f_backend_table->clearCache();
-        f_backend_table.reset();
-    }
+    f_backend_table.reset();
 
     // we have our own f_sites_table variable
     // (TBD: maybe we could share the snap_child one? right now it is private.)
     //
-    if(f_sites_table != nullptr)
-    {
-SNAP_LOG_WARNING("clear f_sites_table in snap_backend::disconnect_cassandra()");
-        f_sites_table->clearCache();
-        f_sites_table.reset();
-    }
+    f_sites_table.reset();
 
     // the disconnect_cassandra() in snap_child already takes care of
     //
@@ -2050,116 +2040,130 @@ void snap_backend::capture_zombies(pid_t pid)
  */
 bool snap_backend::is_ready(QString const & uri)
 {
-    if(!f_cassandra)
+    try
     {
-        if(f_auto_retry_cassandra
-        && getpid() == f_parent_pid)
+        if(!f_cassandra)
         {
-            // we received the CASSANDRAREADY message, but did not
-            // get a valid connection yet, try again (only in the
-            // parent though as the child has one chance and if it
-            // fails it just exists)
-            //
-            if(!connect_cassandra(false))
+            if(f_auto_retry_cassandra
+            && getpid() == f_parent_pid)
             {
-                SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy (is_ready())");
-
-                // note that the connect_cassandra() function should already
-                // do a proper cleanup, but just in case...
+                // we received the CASSANDRAREADY message, but did not
+                // get a valid connection yet, try again (only in the
+                // parent though as the child has one chance and if it
+                // fails it just exists)
                 //
-                disconnect_cassandra();
+                if(!connect_cassandra(false))
+                {
+                    SNAP_LOG_WARNING("snapwebsites failed to connect to snapdbproxy (is_ready())");
+
+                    // note that the connect_cassandra() function should already
+                    // do a proper cleanup, but just in case...
+                    //
+                    disconnect_cassandra();
+                    return false;
+                }
+            }
+            else
+            {
+                // we are in the NOCASSANDRA to CASSANDRAREADY window
                 return false;
             }
         }
-        else
+
+        if(!f_snaplock)
         {
-            // we are in the NOCASSANDRA to CASSANDRAREADY window
+            // we are waiting on the "snaplock" daemon to be registered as
+            // a service to the "snapcommunicator"
+            //
             return false;
         }
-    }
 
-    if(!f_snaplock)
-    {
-        // we are waiting on the "snaplock" daemon to be registered as
-        // a service to the "snapcommunicator"
-        //
-        return false;
-    }
-
-    if(f_sites_table == nullptr)
-    {
-        f_context->clearCache();
-
-        // get the "sites" table
-        //
-        // we do the findTable() here otherwise we would have to try/catch
-        // which is slow, not really clean or useful here...
-        //
-        f_sites_table = f_context->findTable(get_name(name_t::SNAP_NAME_SITES));
         if(f_sites_table == nullptr)
         {
-            // sites table does not even exist...
+            f_context->clearCache();
+
+            // get the "sites" table
             //
-            // we have to reset the connection otherwise we would not get the
-            // new context
+            // we do the findTable() here otherwise we would have to try/catch
+            // which is slow, not really clean or useful here...
             //
-            request_cassandra_status();
-            return false;
+            f_sites_table = f_context->findTable(get_name(name_t::SNAP_NAME_SITES));
+            if(f_sites_table == nullptr)
+            {
+                // sites table does not even exist...
+                //
+                // we have to reset the connection otherwise we would not get the
+                // new context
+                //
+                request_cassandra_status();
+                return false;
+            }
+
+            // get the "backend" table
+            //
+            // we do the findTable() here otherwise we would have to try/catch
+            // which is slow, not really clean or useful here...
+            //
+            f_backend_table = f_context->findTable(get_name(name_t::SNAP_NAME_BACKEND));
+            if(f_backend_table == nullptr)
+            {
+                // backend table does not exist...
+                //
+                // we have to reset the connection otherwise we would not get the
+                // new context
+                //
+                request_cassandra_status();
+                return false;
+            }
         }
 
-        // get the "backend" table
-        //
-        // we do the findTable() here otherwise we would have to try/catch
-        // which is slow, not really clean or useful here...
-        //
-        f_backend_table = f_context->findTable(get_name(name_t::SNAP_NAME_BACKEND));
-        if(f_backend_table == nullptr)
+        if(uri.isEmpty())
         {
-            // backend table does not exist...
+            // the mere existance of the sites_table is enough here
             //
-            // we have to reset the connection otherwise we would not get the
-            // new context
+            return true;
+        }
+
+        // so that specific website must be considered valid
+        // which at this time just means having the "core::last_updated"
+        // field in the "sites" table
+        //
+        if(f_sites_table->exists(uri))
+        {
+            // TODO: to fix SNAP-125 we also want a form of lock, i.e. a parameter
+            //       (or just a lock? but our locks are exclusive... see SNAP-470)
+            //       that tells us that the website is being updated now...
             //
-            request_cassandra_status();
-            return false;
+            //       and conversely we need to know that a backend is running
+            //       against a given website so we do not start an update while
+            //       that is going on!
+            //
+            //       with SNAP-470 we can create support for a read-only or
+            //       read/write type of semaphore which will resolve that
+            //       problem once and for all
+            //
+            return f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED))
+                && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+        }
+
+        if(!f_cron_action)
+        {
+            // the regular CRON action did not make it, just quit
+            //
+            SNAP_LOG_ERROR("website URI \"")(uri)("\" does not reference an existing website.");
+            disconnect();
         }
     }
-
-    if(uri.isEmpty())
+    catch(std::exception const & e)
     {
-        // the mere existance of the sites_table is enough here
+        // a problem occurred while dealing with the Cassandra cluster
+        // through our snapdbproxy daemon
         //
-        return true;
-    }
+        SNAP_LOG_ERROR("is_ready() received an exception: ")(e.what());
 
-    // so that specific website must be considered valid
-    // which at this time just means having the "core::last_updated"
-    // field in the "sites" table
-    //
-    if(f_sites_table->exists(uri))
-    {
-        // TODO: to fix SNAP-125 we also want a form of lock, i.e. a parameter
-        //       (or just a lock? but our locks are exclusive... see SNAP-470)
-        //       that tells us that the website is being updated now...
+        // pause for 30 seconds, then we will try again
         //
-        //       and conversely we need to know that a backend is running
-        //       against a given website so we do not start an update while
-        //       that is going on!
-        //
-        //       with SNAP-470 we can create support for a read-only or
-        //       read/write type of semaphore which will resolve that
-        //       problem once and for all
-        //
-        return f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED))
-            && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-    }
-
-    if(!f_cron_action)
-    {
-        // the regular CRON action did not make it, just quit
-        //
-        SNAP_LOG_ERROR("website URI \"")(uri)("\" does not reference an existing website.");
-        disconnect();
+        request_cassandra_status();
     }
 
     return false;
@@ -2377,12 +2381,6 @@ bool snap_backend::process_backend_uri(QString const & uri)
         // this is already done in process_action() so we have to reset the
         // pointer before we can call this function again otherwise it throws
         //
-
-        // keep a copy of the parent's cassandra pointer so it does not
-        // send unwanted messages when getting destroyed below.
-        //
-        QtCassandra::QCassandra::pointer_t cassandra(f_cassandra);
-
         snap_expr::expr::set_cassandra_context(nullptr);
         f_sites_table.reset();
         f_backend_table.reset();
@@ -2391,7 +2389,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
 
         if(!is_ready(uri))
         {
-            SNAP_LOG_FATAL("snap_backend::process_backend_uri() URI is not ready any more for \"")(uri)("\" once in the child:.");
+            SNAP_LOG_FATAL("snap_backend::process_backend_uri(): once prepared in the child, URI \"")(uri)("\" is not ready anymore.");
             exit(1);
             NOTREACHED();
         }

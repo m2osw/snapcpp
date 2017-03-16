@@ -341,6 +341,11 @@ void process::add_environ(QString const & name, QString const & value)
  * if that indeed runs faster. Both sockets can be used to read and
  * write data, instead of 4 descriptors in case of the pipe() call.
  *
+ * \todo
+ * The raii_pipe class blocks the SIGPIPE and then restores it to whatever
+ * it was before. This may clash with other such calls in other places.
+ * We should instead have one place where we block such calls, always.
+ *
  * \return The exit code of the child process (0 to 255)
  *         or -1 if an error occurs
  */

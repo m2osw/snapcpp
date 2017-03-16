@@ -1,8 +1,20 @@
-libsnapwebsites (1.1.88.4~xenial) xenial; urgency=high
+libsnapwebsites (1.1.89.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-529: Applied several fixes to avoid crashes when we lose a connection:
+  * (1) reset backend/sites/context pointers with just .reset(), the
+    destructors now know to safely clearCache() themselves.
+  * (2) added a try/catch in the is_ready() function since it can end up
+    throwing and we want to continue instead of "crashing".
+  * (3) removed the hack in the child process of snapbackend, we do not need
+    to keep the f_cassandra pointer of the parent around anymore.
+  * (4) added a signal handler so if we receive a SIGPIPE we know about it.
+  * (5) fixed the bio_deleter() to prevent BIO_free_all() from closing the
+    socket and thus avoid the shutdown(), that wayt the connect can continue
+    in the parent process. There is still a potential for a clash in
+    multi-threaded pr multi-process application, though.
+  * Added a note to the snap::process implementation and SIGPIPE.
 
- -- Build Server <build@m2osw.com>  Sat, 11 Mar 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 15 Mar 2017 19:51:19 -0800
 
 libsnapwebsites (1.1.88.0~xenial) xenial; urgency=high
 

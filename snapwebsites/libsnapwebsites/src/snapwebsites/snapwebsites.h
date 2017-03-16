@@ -333,6 +333,7 @@ private:
     friend class listener_impl;
 
     static void                             sighandler( int sig );
+    static void                             sigloghandler( int sig );
 
     void                                    process_connection(tcp_client_server::bio_client::pointer_t client);
     void                                    stop_thread_func();

@@ -879,6 +879,12 @@ void server::config(int argc, char * argv[])
     signal( SIGINT,  sighandler );
     signal( SIGQUIT, sighandler );
 
+    // we want to ignore SIGPIPE, but having a log is really useful so
+    // we use a signal handler that logs the info and returns,
+    // letting the daemon continue
+    //
+    signal( SIGPIPE,  sigloghandler );
+
     // ignore console signals
     //
     signal( SIGTSTP,  SIG_IGN );
@@ -2758,7 +2764,7 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
  */
 void server::sighandler( int sig )
 {
-    QString signame;
+    std::string signame;
     bool output_stack_trace(true);
     switch( sig )
     {
@@ -2777,7 +2783,7 @@ void server::sighandler( int sig )
         snap_exception_base::output_stack_trace();
     }
     //
-    SNAP_LOG_FATAL("signal caught: ")(signame);
+    SNAP_LOG_FATAL("POSIX signal caught: ")(signame);
 
     // is server available?
     if(g_instance)
@@ -2787,6 +2793,47 @@ void server::sighandler( int sig )
 
     // server not available, exit directly
     ::exit(1);
+}
+
+
+/** \brief Capture POSIX signals, log that they happened, and continue.
+ *
+ * This function is a callback we use to capture certain signals that
+ * we want to know of but do not want to kill the process.
+ *
+ * The function logs the fact that the signal occurred and then returns.
+ * This means the software continues to run. The function that generated
+ * the signal should fail, in many cases, meaning that it returns -1 or
+ * some similar error code. errno should then be set to EINTR. It is
+ * the responsibility of the caller to properly handle such error codes.
+ *
+ * \note
+ * Signals such as SIGSEGV and SIGILL should never use this function
+ * since those signals are considered terminal.
+ *
+ * \param[in] sig  The signal that just generated an interrupt.
+ */
+void server::sigloghandler( int sig )
+{
+    std::string signame;
+
+    switch( sig )
+    {
+    case SIGPIPE : signame = "SIGPIPE"; break;
+    default      : signame = "UNKNOWN"; break;
+    }
+
+    // in most cases we do not want to waste time with the stack trace here
+    // but if you need it, just uncomment the next line, just try NOT commit
+    // it uncommented because that could then end up in a release version...
+    //
+    //snap_exception_base::output_stack_trace();
+
+    SNAP_LOG_WARNING("POSIX signal caught: ")(signame);
+
+    // in this case we return because we want the process to continue
+    //
+    return;
 }
 
 
