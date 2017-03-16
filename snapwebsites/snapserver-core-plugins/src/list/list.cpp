@@ -1977,6 +1977,7 @@ void list::on_backend_action(QString const & action)
         }
 
         // by default the date limit is 'now + 5 minutes'
+        //
         f_date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
 
         // if we did some work, we want to restart our process again
@@ -2054,6 +2055,7 @@ void list::on_backend_action(QString const & action)
     else
     {
         // unknown action (we should not have been called with that name!)
+        //
         throw snap_logic_exception(QString("list.cpp:on_backend_action(): list::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
 }
