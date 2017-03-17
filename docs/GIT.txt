@@ -48,6 +48,10 @@ git commit --amend -c 123...123
 git remote set-url origin git@github.com:m2osw/snapcpp.git
 
 
+# watchout with the --hard option! It is useful to reset all the files
+# from a "bad" checkout (i.e. from a different branch for example)
+git reset --hard HEAD
+
 # Remove one or more files from your last commit (assuming you did not push yet)
 git reset --soft HEAD^
 git reset HEAD path/to/unwanted_file
