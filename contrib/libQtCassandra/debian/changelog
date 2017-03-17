@@ -1,4 +1,4 @@
-libqtcassandra (0.6.16.1~xenial) xenial; urgency=high
+libqtcassandra (0.6.16.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
