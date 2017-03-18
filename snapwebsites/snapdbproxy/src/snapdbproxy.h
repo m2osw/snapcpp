@@ -186,13 +186,13 @@ class snapdbproxy_connection
 {
 public:
                                 snapdbproxy_connection
-                                  ( snapdbproxy* proxy
-                                  , casswrapper::Session::pointer_t session
-                                  , tcp_client_server::bio_client::pointer_t & client
-                                  , QString const & cassandra_host_list
-                                  , int cassandra_port
-                                  , bool use_ssl
-                                  );
+                                    ( snapdbproxy * proxy
+                                    , casswrapper::Session::pointer_t session
+                                    , tcp_client_server::bio_client::pointer_t & client
+                                    , QString const & cassandra_host_list
+                                    , int cassandra_port
+                                    , bool use_ssl
+                                    );
     virtual                     ~snapdbproxy_connection() override;
 
     // implement snap_runner

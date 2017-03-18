@@ -1,8 +1,9 @@
-snapdbproxy (1.1.29.55~xenial) xenial; urgency=high
+snapdbproxy (1.1.30.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Added a couple of try/catch because the mutex may throw while
+    we are in a destructor.
 
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:06 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 17 Mar 2017 23:59:49 -0800
 
 snapdbproxy (1.1.29.0~xenial) xenial; urgency=high
 

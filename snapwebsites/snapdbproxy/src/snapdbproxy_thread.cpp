@@ -58,13 +58,13 @@
  * thread.
  */
 snapdbproxy_thread::snapdbproxy_thread
-    ( snapdbproxy* proxy
-      , casswrapper::Session::pointer_t session
-      , tcp_client_server::bio_client::pointer_t & client
-      , QString const & cassandra_host_list
-      , int cassandra_port
-      , bool use_ssl
-      )
+    ( snapdbproxy * proxy
+    , casswrapper::Session::pointer_t session
+    , tcp_client_server::bio_client::pointer_t & client
+    , QString const & cassandra_host_list
+    , int cassandra_port
+    , bool use_ssl
+    )
     : f_connection(proxy, session, client, cassandra_host_list, cassandra_port, use_ssl)
     , f_thread("connection", &f_connection)
 {
@@ -86,8 +86,31 @@ snapdbproxy_thread::snapdbproxy_thread
  */
 snapdbproxy_thread::~snapdbproxy_thread()
 {
-    f_connection.kill();
-    f_thread.stop();
+    // the kill() and stop() create a snap_lock which uses a snap_mutex and
+    // the constructor and other functions eventually throw
+    //
+
+    try
+    {
+        f_connection.kill();
+    }
+    catch(snap::snap_thread_exception_mutex_failed_error const &)
+    {
+    }
+    catch(snap::snap_thread_exception_invalid_error const &)
+    {
+    }
+
+    try
+    {
+        f_thread.stop();
+    }
+    catch(snap::snap_thread_exception_mutex_failed_error const &)
+    {
+    }
+    catch(snap::snap_thread_exception_invalid_error const &)
+    {
+    }
 }
 
 

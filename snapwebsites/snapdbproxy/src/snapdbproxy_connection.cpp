@@ -112,23 +112,23 @@ pid_t gettid()
 
 
 snapdbproxy_connection::snapdbproxy_connection
-    ( snapdbproxy * proxy
-    , casswrapper::Session::pointer_t session
-    , tcp_client_server::bio_client::pointer_t & client
-    , QString const & cassandra_host_list
-    , int cassandra_port
-    , bool use_ssl
-    )
-        : snap_runner("snapdbproxy_connection")
-        , f_snapdbproxy(proxy)
-        //, f_proxy()
-        , f_session(session)
-        //, f_cursors() -- auto-init
-        //, f_client(nullptr) -- auto-init
-        , f_socket(client->get_socket())
-        , f_cassandra_host_list(cassandra_host_list)
-        , f_cassandra_port(cassandra_port)
-        , f_use_ssl(use_ssl)
+        ( snapdbproxy * proxy
+        , casswrapper::Session::pointer_t session
+        , tcp_client_server::bio_client::pointer_t & client
+        , QString const & cassandra_host_list
+        , int cassandra_port
+        , bool use_ssl
+        )
+    : snap_runner("snapdbproxy_connection")
+    , f_snapdbproxy(proxy)
+    //, f_proxy()
+    , f_session(session)
+    //, f_cursors() -- auto-init
+    //, f_client(nullptr) -- auto-init
+    , f_socket(client->get_socket())
+    , f_cassandra_host_list(cassandra_host_list)
+    , f_cassandra_port(cassandra_port)
+    , f_use_ssl(use_ssl)
 {
     // take ownership of the client's pointer (we are not in the thread
     // yet, so a simple swap is sufficient)
