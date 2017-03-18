@@ -112,7 +112,14 @@ QWriter::QWriter(QIODevice& stream, const QString& name, quint16 major_version, 
 QWriter::~QWriter()
 {
     if(f_initialized) {
-        writeData("</r>");
+        // we have to avoid exceptions in the destructor
+        try {
+            writeData("</r>");
+        }
+        catch(QExceptionNullReference const &) {
+        }
+        catch(QExceptionIOError const &) {
+        }
     }
 }
 
