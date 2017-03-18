@@ -1042,12 +1042,23 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
 
         ~save_current_cursor_index_t()
         {
-            f_table->closeCursor();
+            try
+            {
+                f_table->closeCursor();
+            }
+            catch(const QCassandraException&)
+            {
+                // not muc we can do here (destructor and exceptions do not
+                // work together)
+                //
+                // exception can happen if we lose the network connection
+                // and try to close the cursor
+            }
             f_cursor_index_ref = f_saved_cursor_index;
         }
 
     private:
-        QCassandraTable *   f_table;
+        QCassandraTable *   f_table = nullptr;
         int32_t &           f_cursor_index_ref;
         int32_t             f_saved_cursor_index;
     };
