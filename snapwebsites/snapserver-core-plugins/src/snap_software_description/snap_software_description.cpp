@@ -420,7 +420,13 @@ void snap_software_description::on_backend_process()
         ~restore_path_t()
         {
             // reset the main URI
-            f_snap->set_uri_path("/");
+            try
+            {
+                f_snap->set_uri_path("/");
+            }
+            catch(snap_uri_exception_invalid_path const &)
+            {
+            }
         }
 
     private:

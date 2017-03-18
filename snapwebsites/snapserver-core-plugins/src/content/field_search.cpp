@@ -454,7 +454,13 @@ field_search::field_search(char const *filename, char const *func, int line, sna
  */
 field_search::~field_search()
 {
-    run();
+    try
+    {
+        run();
+    }
+    catch(QtCassandra::QCassandraException const &)
+    {
+    }
 }
 
 

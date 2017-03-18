@@ -355,8 +355,24 @@ permissions::sets_t::sets_t(snap_child * snap, QString const & user_path, conten
  */
 permissions::sets_t::~sets_t()
 {
-    save_to_user_cache();
-    save_to_plugin_cache();
+    try
+    {
+        save_to_user_cache();
+    }
+    catch(snap_exception_base const &)
+    {
+    }
+    catch(libexcept::exception_t const &)
+    {
+    }
+
+    try
+    {
+        save_to_plugin_cache();
+    }
+    catch(QtCassandra::QCassandraException const &)
+    {
+    }
 }
 
 

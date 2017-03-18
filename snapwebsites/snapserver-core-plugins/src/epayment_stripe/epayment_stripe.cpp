@@ -2709,7 +2709,16 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
 
         ~raii_invoice_status_t()
         {
-            f_epayment_plugin->set_invoice_status(f_invoice_ipath, f_final_state);
+            try
+            {
+                f_epayment_plugin->set_invoice_status(f_invoice_ipath, f_final_state);
+            }
+            catch(boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::bad_function_call> > const &)
+            {
+            }
+            catch(QtCassandra::QCassandraException const &)
+            {
+            }
         }
 
         void success()
