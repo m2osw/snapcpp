@@ -86,7 +86,14 @@ DeflateOutputStreambuf::DeflateOutputStreambuf(std::streambuf *outbuf)
  */
 DeflateOutputStreambuf::~DeflateOutputStreambuf()
 {
-    closeStream();
+    try
+    {
+        closeStream();
+    }
+    catch(IOException const &)
+    {
+        // we have to avoid exceptions in destructors
+    }
 }
 
 

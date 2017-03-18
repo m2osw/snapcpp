@@ -70,7 +70,14 @@ GZIPOutputStreambuf::GZIPOutputStreambuf(std::streambuf *outbuf, FileEntry::Comp
  */
 GZIPOutputStreambuf::~GZIPOutputStreambuf()
 {
-    finish();
+    try
+    {
+        finish();
+    }
+    catch(IOException const &)
+    {
+        // cannot have an exception in a destructor
+    }
 }
 
 

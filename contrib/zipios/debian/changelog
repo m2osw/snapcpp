@@ -1,8 +1,9 @@
-zipios (2.1.5.20~xenial) xenial; urgency=high
+zipios (2.1.6.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: added a couple of try/catch in destructors to avoid potential
+    std::terminate() calls when an error is discovered in a compressed file.
 
- -- Build Server <build@m2osw.com>  Sun, 26 Feb 2017 02:00:58 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 19 Mar 2017 22:02:22 -0700
 
 zipios (2.1.5.0~xenial) xenial; urgency=high
 
