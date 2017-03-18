@@ -268,7 +268,14 @@ NodeLock::NodeLock(Node::pointer_t node)
  */
 NodeLock::~NodeLock()
 {
-    unlock();
+    try
+    {
+        unlock();
+    }
+    catch(exception_internal_error const &)
+    {
+        // not much we can do here, we are in a destructor...
+    }
 }
 
 
