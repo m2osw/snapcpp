@@ -17,6 +17,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "csspp/exceptions.h"
+
 #include <cstdint>
 #include <string>
 #include <sstream>
@@ -100,7 +102,13 @@ public:
 
     ~safe_precision_t()
     {
-        set_precision(f_precision);
+        try
+        {
+            set_precision(f_precision);
+        }
+        catch(csspp_exception_overflow const &)
+        {
+        }
     }
 
 private:
