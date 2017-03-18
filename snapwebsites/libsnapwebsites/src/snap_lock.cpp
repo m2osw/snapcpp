@@ -246,7 +246,13 @@ lock_connection::lock_connection(QString const & object_name, snap_lock::timeout
  */
 lock_connection::~lock_connection()
 {
-    unlock();
+    try
+    {
+        unlock();
+    }
+    catch(snap_communicator_invalid_message const &)
+    {
+    }
 }
 
 

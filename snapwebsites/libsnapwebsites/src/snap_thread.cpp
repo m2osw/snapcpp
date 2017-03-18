@@ -820,7 +820,16 @@ snap_thread::snap_thread(QString const & name, snap_runner * runner)
  */
 snap_thread::~snap_thread()
 {
-    stop();
+    try
+    {
+        stop();
+    }
+    catch(snap_thread_exception_mutex_failed_error const &)
+    {
+    }
+    catch(snap_thread_exception_invalid_error const &)
+    {
+    }
     f_runner->f_thread = nullptr;
 
     int const err(pthread_attr_destroy(&f_thread_attr));

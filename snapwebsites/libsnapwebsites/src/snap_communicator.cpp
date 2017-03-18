@@ -5492,7 +5492,16 @@ public:
         // to make sure we can lose the messenger, first we want to be sure
         // that we do not have a thread running
         //
-        f_thread.stop();
+        try
+        {
+            f_thread.stop();
+        }
+        catch(snap_thread_exception_mutex_failed_error const &)
+        {
+        }
+        catch(snap_thread_exception_invalid_error const &)
+        {
+        }
 
         // in this case we may still have an instance of the f_thread_done
         // which linger around, we want it out

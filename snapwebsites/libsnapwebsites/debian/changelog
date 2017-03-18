@@ -1,8 +1,8 @@
-libsnapwebsites (1.1.89.2~xenial) xenial; urgency=high
+libsnapwebsites (1.1.90.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-289: Protected several destructors that could receive an exception.
 
- -- Build Server <build@m2osw.com>  Thu, 16 Mar 2017 02:01:00 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 18 Mar 2017 01:13:19 -0800
 
 libsnapwebsites (1.1.89.0~xenial) xenial; urgency=high
 

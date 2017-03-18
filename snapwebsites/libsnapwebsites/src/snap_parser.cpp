@@ -1740,7 +1740,13 @@ struct parser_state
     ~parser_state()
     {
 //std::cerr << "destructor! " << this << "\n";
-        clear();
+        try
+        {
+            clear();
+        }
+        catch(snap_logic_exception const &)
+        {
+        }
     }
 
     void clear()
