@@ -334,7 +334,12 @@ QWriter::QTag::QTag(QWriter& writer, const QString& name)
  */
 QWriter::QTag::~QTag()
 {
-    f_writer.writeEndTag();
+    try
+    {
+        f_writer.writeEndTag();
+    }
+    catch(QExceptionIOError const &) {
+    }
 }
 
 
