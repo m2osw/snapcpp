@@ -1,8 +1,11 @@
-snapserver-core-plugins (1.0.82.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.83.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Actually fixed the position of the footer in the HTML document
+    which means we can correctly calculate the min-height of the page
+    (but I had to fix the JavaScript code which was wrong in many ways.)
+  * Removed the `div` from `div.zordered` so we can use it with other tags.
 
- -- Build Server <build@m2osw.com>  Sun, 19 Mar 2017 02:00:59 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 19 Mar 2017 15:29:19 -0800
 
 snapserver-core-plugins (1.0.82.0~xenial) xenial; urgency=high
 
