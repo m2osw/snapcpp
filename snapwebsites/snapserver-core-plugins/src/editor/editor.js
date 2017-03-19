@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.930
+ * Version: 0.0.3.931
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -1435,7 +1435,7 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
     this.linkDialogDarkenScreen_ = new snapwebsites.DarkenScreen(150, false);
     this.linkDialogPopup_.css("left", left);
     this.linkDialogPopup_.css("z-index", 0);
-    z = jQuery("div.zordered").maxZIndex() + 1;
+    z = jQuery(".zordered").maxZIndex() + 1;
     this.linkDialogPopup_.css("z-index", z);
     this.linkDialogPopup_.fadeIn(300, function()
         {
@@ -7545,7 +7545,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
     // setup z-index
     // (reset itself first so we do not just +1 each time)
     this.openDropdown_.css("z-index", 0);
-    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
+    z = window.top.jQuery(".zordered").maxZIndex() + 1;
     this.openDropdown_.css("z-index", z);
 
     // position, this makes use of the "dropdown algorithm" that the

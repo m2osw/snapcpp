@@ -164,7 +164,7 @@ int64_t layout_contrib::do_update(int64_t last_updated)
 
     // first time, make sure the default theme is installed
     //
-    SNAP_PLUGIN_UPDATE(2017, 3, 18, 18, 28, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 3, 19, 15, 7, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

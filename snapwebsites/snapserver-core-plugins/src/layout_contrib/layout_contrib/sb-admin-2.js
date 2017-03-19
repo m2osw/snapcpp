@@ -1,6 +1,6 @@
 /*!
  * Name: sb-admin-2
- * Version: 2.1.0.0
+ * Version: 2.1.0.14
  * Browsers: all
  * Dependencies: metis-menu
  *
@@ -19,21 +19,30 @@ $(function() {
 // Sets the min-height of #page-wrapper to window size
 $(function() {
     $(window).bind("load resize", function() {
-        var topOffset = 50;
-        var width = (this.window.innerWidth > 0) ? this.window.innerWidth : this.screen.width;
-        if (width < 768) {
-            $('div.navbar-collapse').addClass('collapse');
-            topOffset = 100; // 2-row-menu
-        } else {
-            $('div.navbar-collapse').removeClass('collapse');
-        }
+        var topOffset,
+            width = this.window.innerWidth > 0 ? this.window.innerWidth : this.screen.width,
+            height = (this.window.innerHeight > 0 ? this.window.innerHeight : this.screen.height) - 1;
 
-        var height = ((this.window.innerHeight > 0) ? this.window.innerHeight : this.screen.height) - 1;
-        height = height - topOffset;
-        if (height < 1) height = 1;
-        if (height > topOffset) {
-            $("#page-wrapper").css("min-height", (height) + "px");
+        // are we on a narrow screen (i.e. smart phone)?
+        $('div.navbar-collapse').toggleClass('collapse', width < 768);
+
+        // now that the sidebar is visible or not, get the height
+        topOffset = $("nav.navbar-static-top").outerHeight();
+
+        // remove navigation height
+        height -= topOffset;
+
+        // remove footer height
+        height -= $("footer.page-footer").outerHeight();
+
+//$("h1.title").text(height + " / " + topOffset + " / " + $("footer.page-footer").outerHeight());
+
+        // adjust height to a valid minimum (i.e. 0px == ignore)
+        if(height < 0)
+        {
+            height = 0;
         }
+        $("#page-wrapper").css("min-height", height + "px");
     });
 
     var url = window.location;
@@ -52,3 +61,5 @@ $(function() {
         }
     }
 });
+
+// vim: ts=4 sw=4 et
