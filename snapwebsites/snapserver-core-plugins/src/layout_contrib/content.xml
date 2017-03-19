@@ -93,6 +93,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>text/css</mime-type>
       <dependency>bootstrap (&gt;= 3.3.7)</dependency>
     </attachment>
+    <attachment name="sb-admin-2" type="attachment/public">
+      <path>qrc:/css/layout_contrib/sb-admin-2.css</path>
+      <mime-type>text/css</mime-type>
+      <dependency>bootstrap (&gt;= 3.3.7)</dependency>
+    </attachment>
   </content>
   <content path="/js/snap">
     <attachment name="agency" type="attachment/public">
@@ -114,6 +119,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>qrc:/js/layout_contrib/jquery-easing.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>jquery (&gt;= 1.12)</dependency>
+    </attachment>
+    <attachment name="sb-admin-2" type="attachment/public">
+      <path>qrc:/js/layout_contrib/sb-admin-2.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>metis-menu (&gt;= 2.4.2)</dependency>
     </attachment>
   </content>
   <content path="/images/snap">

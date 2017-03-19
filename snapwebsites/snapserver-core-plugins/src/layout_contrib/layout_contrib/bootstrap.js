@@ -2,6 +2,7 @@
  * Name: bootstrap
  * Version: 3.3.7
  * Browsers: all
+ * Dependencies: jquery
  * Description: A responsive layout framework.
  *
  * Bootstrap v3.3.7 (http://getbootstrap.com)

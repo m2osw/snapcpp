@@ -3,6 +3,7 @@
  * Version: 2.4.2
  * Browsers: all
  * Description: A jQuery menu plugin
+ * Dependencies: jquery
  *
  * metismenu - v2.4.2
  * A jQuery menu plugin
