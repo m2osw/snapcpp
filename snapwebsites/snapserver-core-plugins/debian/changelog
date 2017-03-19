@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.84.0~xenial) xenial; urgency=high
+
+  * EX-79: Quick update so I can see the normal title.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 19 Mar 2017 15:46:19 -0800
+
 snapserver-core-plugins (1.0.83.0~xenial) xenial; urgency=high
 
   * EX-79: Actually fixed the position of the footer in the HTML document
