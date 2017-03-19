@@ -52,10 +52,12 @@ snap_validate_css( layout_contrib/bootstrap-social.css )
 snap_validate_css( layout_contrib/bootstrap-theme.css  )
 snap_validate_css( layout_contrib/font-awesome.css     )
 snap_validate_css( layout_contrib/metis-menu.css       )
+snap_validate_css( layout_contrib/sb-admin-2.css       )
 
-snap_validate_js( layout_contrib/agency.js    )
-#snap_validate_js( layout_contrib/bootstrap.js ) -- apparently the author does not believe in having ';' at the end of lines
+snap_validate_js( layout_contrib/agency.js     )
+#snap_validate_js( layout_contrib/bootstrap.js  ) -- apparently the author does not believe in having ';' at the end of lines
 snap_validate_js( layout_contrib/metis-menu.js )
+snap_validate_js( layout_contrib/sb-admin-2.js )
 
 
 
