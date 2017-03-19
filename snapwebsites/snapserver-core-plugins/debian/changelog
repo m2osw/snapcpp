@@ -2,6 +2,7 @@ snapserver-core-plugins (1.0.82.0~xenial) xenial; urgency=high
 
   * EX-79: Added the sb-admin-2 theme from bootstrap.
   * Added dependencies to a few JS/CSS files.
+  * Added the new JS/CSS files to the CMakeLists.txt file.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun, 19 Mar 2017 00:44:19 -0800
 
