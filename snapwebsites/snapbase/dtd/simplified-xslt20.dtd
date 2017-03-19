@@ -127,11 +127,12 @@ DTD of the XSLT 2.0.
 <!ATTLIST a class CDATA #IMPLIED
             field_type CDATA #IMPLIED
             href CDATA #IMPLIED
+            product-guid CDATA #IMPLIED
             rel CDATA #IMPLIED
+            style CDATA #IMPLIED
+            tabindex CDATA #IMPLIED
             target CDATA #IMPLIED
             title CDATA ""
-            product-guid CDATA #IMPLIED
-            tabindex CDATA #IMPLIED
             data-toggle CDATA #IMPLIED
             data-target CDATA #IMPLIED
             data-display-mode CDATA #IMPLIED>
@@ -195,6 +196,7 @@ DTD of the XSLT 2.0.
 <!ELEMENT nav ANY>
 <!ATTLIST nav class CDATA #IMPLIED
               id CDATA #IMPLIED
+              role CDATA #IMPLIED
               style CDATA #IMPLIED>
 
 <!ELEMENT form ANY>
@@ -206,29 +208,35 @@ DTD of the XSLT 2.0.
                method (get|post) "get">
 
 <!ELEMENT h1 ANY>
-<!ATTLIST h1 style CDATA #IMPLIED
-             id ID #IMPLIED>
+<!ATTLIST h1 class CDATA #IMPLIED
+             id ID #IMPLIED
+             style CDATA #IMPLIED>
 
 <!ELEMENT h2 ANY>
 <!ATTLIST h2 class CDATA #IMPLIED
              name CDATA #IMPLIED
-             id ID #IMPLIED>
+             id ID #IMPLIED
+             style CDATA #IMPLIED>
 
 <!ELEMENT h3 ANY>
 <!ATTLIST h3 class CDATA #IMPLIED
-             id ID #IMPLIED>
+             id ID #IMPLIED
+             style CDATA #IMPLIED>
 
 <!ELEMENT h4 ANY>
 <!ATTLIST h4 class CDATA #IMPLIED
-             id ID #IMPLIED>
+             id ID #IMPLIED
+             style CDATA #IMPLIED>
 
 <!ELEMENT h5 ANY>
 <!ATTLIST h5 class CDATA #IMPLIED
-             id ID #IMPLIED>
+             id ID #IMPLIED
+             style CDATA #IMPLIED>
 
 <!ELEMENT h6 ANY>
 <!ATTLIST h6 class CDATA #IMPLIED
-             id ID #IMPLIED>
+             id ID #IMPLIED
+             style CDATA #IMPLIED>
 
 <!ELEMENT head ANY>
 
@@ -243,8 +251,9 @@ DTD of the XSLT 2.0.
 <!ATTLIST b class CDATA #IMPLIED>
 
 <!ELEMENT i ANY>
-<!ATTLIST i class CDATA #IMPLIED
-            aria-hidden CDATA #IMPLIED>
+<!ATTLIST i aria-hidden CDATA #IMPLIED
+            class CDATA #IMPLIED
+            title CDATA #IMPLIED>
 
 <!ELEMENT input ANY>
 <!ATTLIST input disabled (disabled) #IMPLIED
