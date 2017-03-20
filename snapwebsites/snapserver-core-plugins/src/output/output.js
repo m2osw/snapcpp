@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.7.0
+ * Version: 0.1.7.1
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -847,7 +847,7 @@ snapwebsites.Output.prototype.handleMessages_ = function()
     jQuery("div.user-messages")
         .each(function()
             {
-                var z = jQuery("div.zordered").maxZIndex() + 1;
+                var z = jQuery(".zordered").maxZIndex() + 1;
                 jQuery(this).css("z-index", z);
             })
         .delay(250)
@@ -1113,7 +1113,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
                 var z;
 
                 jQuery(this).css("z-index", 0);
-                z = jQuery("div.zordered").maxZIndex() + 1;
+                z = jQuery(".zordered").maxZIndex() + 1;
                 jQuery(this).css("z-index", z);
             });
     }
