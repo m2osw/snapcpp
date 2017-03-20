@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output filter="token"> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div id="content" class="editor-form" form_name="blacklist">
+			<div class="editor-form" form_name="blacklist">
 				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 
 				<h3>Password Blacklist Manager</h3>

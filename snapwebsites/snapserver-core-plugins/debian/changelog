@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.85.0~xenial) xenial; urgency=high
+
+  * EX-79: Removed all the spurious `id="content"` from editor forms.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 19 Mar 2017 21:14:19 -0800
+
 snapserver-core-plugins (1.0.84.0~xenial) xenial; urgency=high
 
   * EX-79: Quick update so I can see the normal title.

@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output lang="{$lang}">
-			<div id="content" class="editor-form" form_name="unsubscribe" mode="save-all">
+			<div class="editor-form" form_name="unsubscribe" mode="save-all">
 				<xsl:attribute name="session"><xsl:value-of select="page/body/sendmail/form/unsubscribe/session/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 

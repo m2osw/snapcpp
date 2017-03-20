@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div id="content" class="editor-form" form_name="bookkeeping_add_client">
+			<div class="editor-form" form_name="bookkeeping_add_client">
 				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
