@@ -286,7 +286,7 @@ void layout::content_update(int64_t const last_updated)
 void layout::do_layout_updates()
 {
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+    //QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
 
     // the user may have asked to install a layout too
     //
