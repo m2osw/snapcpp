@@ -1,15 +1,16 @@
-snapserver-core-plugins (1.0.86.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.87.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-259: EX-169: Added an extra flag to allow the "Forgot password"
+    verification in a different browser.
 
- -- Build Server <build@m2osw.com>  Mon, 20 Mar 2017 02:01:01 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 20 Mar 2017 14:02:19 -0800
 
 snapserver-core-plugins (1.0.86.0~xenial) xenial; urgency=high
 
   * EX-79: Fixed the dropdown location problem.
   * There is still a size issue, though.
 
- -- Alexis Wilke <alexis@m2osw.com>  Sun, 20 Mar 2017 00:27:19 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 20 Mar 2017 00:27:19 -0800
 
 snapserver-core-plugins (1.0.85.0~xenial) xenial; urgency=high
 

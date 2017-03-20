@@ -326,6 +326,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT:
         return "users::verify_ignore_user_agent";
 
+    case name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT_FOR_PASSWORD:
+        return "users::verify_ignore_user_agent_for_password";
+
     case name_t::SNAP_NAME_USERS_WEBSITE_REFERENCE:
         return "users::website_reference";
 

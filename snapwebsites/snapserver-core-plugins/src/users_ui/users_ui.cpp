@@ -1189,14 +1189,21 @@ void users_ui::verify_password(content::path_info_t & ipath)
 
     QString const session_id(ipath.get_cpath().mid(13));
 
+    // TODO: add support for a forgotten password cookie as a second shield against
+    //       hackers would could end up seeing the email in transit.
+    //       see SNAP-259 for other details
+
     sessions::sessions::session_info info;
     sessions::sessions * session(sessions::sessions::instance());
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
+    QtCassandra::QCassandraValue verify_ignore_user_agent(f_snap->get_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_VERIFY_IGNORE_USER_AGENT_FOR_PASSWORD)));
     QString const path(info.get_object_path());
     if( info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-     || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
+     || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0
+                && verify_ignore_user_agent.safeSignedCharValue(0, 0) == 0
+                && info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
      || path.mid(0, 6) != users::users::user_info_t::get_full_anonymous_path() )
     {
         // it failed, the session could not be loaded properly
