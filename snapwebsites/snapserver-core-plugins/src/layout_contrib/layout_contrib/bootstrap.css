@@ -1,6 +1,6 @@
 /*!
  * Name: bootstrap
- * Version: 3.3.7
+ * Version: 3.3.7.1
  * Browsers: all
  *
  * Bootstrap v3.3.7 (http://getbootstrap.com)
@@ -141,11 +141,13 @@ button[disabled],
 html input[disabled] {
   cursor: default;
 }
+/* snap: we want to keep visual clues of what button is currently selected
 button::-moz-focus-inner,
 input::-moz-focus-inner {
   padding: 0;
   border: 0;
 }
+*/
 input {
   line-height: normal;
 }

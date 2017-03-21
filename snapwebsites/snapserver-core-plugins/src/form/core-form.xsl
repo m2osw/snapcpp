@@ -132,7 +132,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       </xsl:if>
       <xsl:if test="background-value != ''">
         <!-- jQuery expects "data-<name>" -->
-        <xsl:attribute name="data-background-value"><xsl:value-of select="background-value"/></xsl:attribute>
+        <xsl:attribute name="placeholder"><xsl:value-of select="background-value"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="help != ''">
         <!-- we use the help for the alternate because blind people will not see that text otherwise -->
@@ -204,7 +204,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       </xsl:if>
       <xsl:if test="background-value != ''">
         <!-- jQuery expects "data-<name>" -->
-        <xsl:attribute name="data-background-value"><xsl:value-of select="background-value"/></xsl:attribute>
+        <xsl:attribute name="placeholder"><xsl:value-of select="background-value"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="help != ''">
         <!-- we use the help for the alternate because blind people will not see that text otherwise -->
