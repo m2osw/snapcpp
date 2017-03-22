@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.89.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 22 Mar 2017 02:00:58 -0700
+
 snapserver-core-plugins (1.0.89.0~xenial) xenial; urgency=high
 
   * EX-79: Added a "focused" class to the snap-editor wrapper <div> tag.
