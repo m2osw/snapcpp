@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.936
+ * Version: 0.0.3.937
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -6084,6 +6084,8 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     // widget gets the focus, make it the active widget
     c.focus(function()
         {
+            w.addClass("focused");
+
             editor_widget.getEditorBase().setActiveElement(c);
 
             if(!jQuery(this).is(".no-toolbar")
@@ -6104,8 +6106,11 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     //
     c.blur(function()
         {
-            // don't blur the toolbar immediately because if the user just
+            w.removeClass("focused");
+
+            // do not blur the toolbar immediately because if the user just
             // clicked on it, it would break it
+            //
             editor_widget.getEditorBase().getToolbar().startToolbarHide();
         });
 
