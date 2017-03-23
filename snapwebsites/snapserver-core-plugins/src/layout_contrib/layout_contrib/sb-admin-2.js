@@ -1,6 +1,6 @@
 /*!
  * Name: sb-admin-2
- * Version: 2.1.0.18
+ * Version: 2.1.0.19
  * Browsers: all
  * Dependencies: metis-menu
  *
