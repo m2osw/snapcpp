@@ -470,13 +470,36 @@ void filter::on_xss_filter(QDomNode & node,
  * in bold. It does not support parameters although it ignores the fact
  * (i.e. parameters can be used, they will be ignored.)
  *
+ * You can write tokens with parameters in any order by specifying the
+ * name of the parameter followed by an equal sign and the value. This
+ * is also useful to skip optional parameters. For example, the copyright
+ * date range can be written as:
+ *
+ * \code
+ *      <!-- simple date range from 2012 to now -->
+ *      [copyright_date_range(2012)]
+ *
+ *      <!-- date range changing the separator to a tilde -->
+ *      [copyright_date_range(2012, separator = "~")]
+ *
+ *      <!-- date range with parameters reordered -->
+ *      [copyright_date_range(separator = "~", start_date = 2012)]
+ * \endcode
+ *
  * The default filter replace_token event supports the following
  * general tokens:
  *
  * \li [child("\<parent>", "\<child>")] -- concatenate parent with child paths
  *                           making sure there is only one "/" between both
+ * \li [copyright_date_range(\<start_year>, \<end_year>, \<separator>)] --
+ *                           convert \<start_year> and the current year or
+ *                           \<end_year> to a range like "2011-2017", if
+ *                           the start year is this year, then just output that;
+ *                           the separate can also be changed from the default
  * \li [date("\<format>", "\<unixdate>")] -- date with format as per strftime();
  *                           without format, the default depends on the locale
+ *                           \<unixdate> is optional, if specified use it
+ *                           instead of the current date and time
  * \li [gmdate("\<format>")] -- UTC date with format as per strftime();
  *                           without format, the default depends on the locale
  * \li [select("\<xpath>")] -- select content from the XML document using
@@ -527,6 +550,77 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
                         parent = parent + "/" + child;
                     }
                     token.f_replacement = parent;
+                }
+            }
+            return false;
+        }
+        else if(token.is_token("copyright_date_range"))
+        {
+            if(token.verify_args(1, 3))
+            {
+                // the start year is a required parametr
+                //
+                parameter_t const param_start_year(token.get_arg("start_year", 0));
+                bool ok(false);
+                int64_t start_year(param_start_year.f_value.toLongLong(&ok, 10));
+                if(!ok || start_year <= 0 || start_year > 10000)
+                {
+                    token.f_replacement = "<span style='background-color: #ffe0e0;'>error: Invalid start_year in copyright_date_range() token.</span>";
+                    return false;
+                }
+
+                // the end year is optional, we expect that most people want
+                // the copyright notice to move along the current time
+                //
+                int64_t end_year(0);
+                if(token.has_arg("end_year", 1))
+                {
+                    parameter_t const param_end_year(token.get_arg("end_year", 1));
+                    ok = false;
+                    end_year = param_end_year.f_value.toLongLong(&ok, 10);
+                    if(!ok || start_year <= 0 || start_year > 10000)
+                    {
+                        token.f_replacement = "<span style='background-color: #ffe0e0;'>error: Invalid optional end_year in copyright_date_range() token.</span>";
+                        return false;
+                    }
+                }
+
+                // the separator defaults to a standard dash
+                //
+                QString separator("-");
+                if(token.has_arg("separator", 2))
+                {
+                    parameter_t const param_separator(token.get_arg("separator", 2));
+                    separator = param_separator.f_value;
+                }
+                if(!token.f_error)
+                {
+                    if(end_year <= 0)
+                    {
+                        // TODO: this should use the locale of the website to
+                        //       determine whether we are on the next year or
+                        //       not, although frankly, who is going to notice
+                        //       that?! 8-)
+                        //
+                        time_t const now(time(nullptr));
+                        struct tm time_info;
+                        gmtime_r(&now, &time_info);
+                        end_year = time_info.tm_year + 1900;
+                    }
+                    if(start_year == end_year)
+                    {
+                        // separate does not get used in this case
+                        //
+                        token.f_replacement = QString("%1")
+                                        .arg(start_year);
+                    }
+                    else
+                    {
+                        token.f_replacement = QString("%1%2%3")
+                                        .arg(start_year)
+                                        .arg(separator)
+                                        .arg(end_year);
+                    }
                 }
             }
             return false;
@@ -1377,7 +1471,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                 return token_t::TOK_SEPARATOR;
 
             case '-':
-                // XXX: Should the be an error instead?
+                // XXX: Should this be an error instead?
                 //
                 //      IMPORTANT: Do not use a throw because we do not
                 //                 expect to lose control over a user

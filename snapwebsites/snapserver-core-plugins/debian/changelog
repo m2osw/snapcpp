@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.89.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.90.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Added the copyright_date_range() token so we can easily enter a
+    copyright notice with a date range which will change with time.
 
- -- Build Server <build@m2osw.com>  Wed, 22 Mar 2017 02:00:58 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 22 Mar 2017 21:09:19 -0800
 
 snapserver-core-plugins (1.0.89.0~xenial) xenial; urgency=high
 
