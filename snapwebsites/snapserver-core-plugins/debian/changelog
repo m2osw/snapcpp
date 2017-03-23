@@ -1,3 +1,12 @@
+snapserver-core-plugins (1.0.91.0~xenial) xenial; urgency=high
+
+  * EX-79: Fixed the hidden field under the fixed header with a scroll.
+  * Fixed the maximum width of a line-edit to 100% so it fits smart phones.
+  * Fixed the contact form save button so it is shown as an inline-block.
+  * Made the sb-admin-2 script depend on the editor so we can set the height.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Mar 2017 00:50:19 -0800
+
 snapserver-core-plugins (1.0.90.0~xenial) xenial; urgency=high
 
   * EX-79: Added the copyright_date_range() token so we can easily enter a

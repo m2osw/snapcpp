@@ -96,7 +96,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <attachment name="sb-admin-2" type="attachment/public">
       <path>qrc:/css/layout_contrib/sb-admin-2.css</path>
       <mime-type>text/css</mime-type>
-      <dependency>bootstrap (&gt;= 3.3.7)</dependency>
+      <dependency>bootstrap (&gt;= 3.3.7), editor (&gt;= 0.0.3)</dependency>
     </attachment>
   </content>
   <content path="/js/snap">

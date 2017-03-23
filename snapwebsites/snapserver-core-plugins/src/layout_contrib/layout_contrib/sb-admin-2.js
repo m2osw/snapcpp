@@ -1,6 +1,6 @@
 /*!
  * Name: sb-admin-2
- * Version: 2.1.0.15
+ * Version: 2.1.0.18
  * Browsers: all
  * Dependencies: metis-menu
  *
@@ -43,6 +43,11 @@ $(function() {
             height = 0;
         }
         $("#page-wrapper").css("min-height", height + "px");
+
+        // the header is fixed and fields get hidden unless the editor
+        // knows about it
+        //
+        snapwebsites.EditorInstance.setFixedHeaderHeight(topOffset);
     });
 
     var url = window.location;

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.937
+ * Version: 0.0.3.940
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -1050,6 +1050,22 @@ snapwebsites.EditorBase = function()
 snapwebsites.base(snapwebsites.EditorBase);
 
 
+/** \brief The height of your fixed header.
+ *
+ * When a theme has a fixed header, fields can end up hidden under that
+ * header. When the height of that fixed header is specified using this
+ * function (see setFixedHeaderHeight(),) then the editor can adjust the
+ * scroll position to make sure that the top of the field appears in view.
+ *
+ * Actually, you can even add the height of the label of that field to
+ * also show that label if it appears above the field.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.EditorBase.prototype.fixedHeaderHeight_ = 0;
+
+
 /** \brief The currently active element.
  *
  * The element considered active in the editor is the very element
@@ -1088,6 +1104,48 @@ snapwebsites.EditorBase.prototype.widgetTypes_; // = []; -- initialized in const
 snapwebsites.EditorBase.prototype.getToolbar = function() // virtual
 {
     throw new Error("getToolbar() cannot directly be called on the EditorBase class.");
+};
+
+
+/** \brief Set the fixed header height.
+ *
+ * If you have a theme with a fixed header, fields are going to be hidden
+ * by the header whether they gain focus or not. Setting this value to the
+ * height of your fixed header will adjust the position of the window
+ * scroll so the focused fields will appear in view.
+ *
+ * The height may include the fixed header height plus the height of the
+ * label if it appears on the previous line. That way both, the field and
+ * its label will appear on the screen.
+ *
+ * Setting the height to zero or a negative number cancels this feature.
+ *
+ * @param {number} new_height  The height of the fixed header.
+ */
+snapwebsites.EditorBase.prototype.setFixedHeaderHeight = function(new_height)
+{
+    this.fixedHeaderHeight_ = new_height;
+};
+
+
+/** \brief Retrieve the fixed header height.
+ *
+ * When a widget is given focus, it may be under the fixed header at the top
+ * of your screen. When that happens, the editor will scroll the widget
+ * into view.
+ *
+ * However, for that to happen, the editor needs to know the height of your
+ * headers. It is defined by the setFixedHeaderHeight() function and later
+ * retrieved using this getFixedHeaderHeight() function.
+ *
+ * Note that the height may include the height of your labels if you'd like
+ * to see your label appear in the screen.
+ *
+ * @return {number} The fixed header height.
+ */
+snapwebsites.EditorBase.prototype.getFixedHeaderHeight = function()
+{
+    return this.fixedHeaderHeight_;
 };
 
 
@@ -6084,9 +6142,22 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     // widget gets the focus, make it the active widget
     c.focus(function()
         {
+            var fixed_header_height;
+
             w.addClass("focused");
 
             editor_widget.getEditorBase().setActiveElement(c);
+
+            fixed_header_height = editor_widget.getEditorBase().getFixedHeaderHeight(c);
+            if(fixed_header_height > 0
+            && c.offset().top - jQuery(window).scrollTop() < fixed_header_height)
+            {
+                jQuery('html, body').animate(
+                    {
+                        scrollTop: c.offset().top - fixed_header_height
+                    },
+                    150);
+            }
 
             if(!jQuery(this).is(".no-toolbar")
             && !jQuery(this).parent().is(".read-only"))

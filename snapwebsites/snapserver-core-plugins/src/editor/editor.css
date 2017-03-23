@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.127
+ * Version: 0.0.1.129
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -346,6 +346,10 @@
 
 
 /** LINE EDIT **/
+.editable.line-edit
+{
+	max-width: 100%;
+}
 .editable.line-edit .editor-content
 {
 	padding: 3px;
