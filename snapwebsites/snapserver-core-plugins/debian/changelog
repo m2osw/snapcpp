@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.93.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 24 Mar 2017 02:01:01 -0700
+
 snapserver-core-plugins (1.0.93.0~xenial) xenial; urgency=high
 
   * EX-171: SNAP-173: Added a priority so a system revision may still be
