@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.7.9
+ * Version: 0.1.7.11
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -508,6 +508,10 @@ snapwebsites.castToNumber = function(n, e) // static
  *  numbers.sort(snapwebsites.compareNumbers);
  *  // [ 1, 3, 5, 10, 20 ]
  * \endcode
+ *
+ * \note
+ * The numbers get compared with the smallest possible epsilon available
+ * for them at the time they get compared.
  *
  * @param {number} a  The left hand side number.
  * @param {number} b  The right hand side number.
@@ -1096,7 +1100,8 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
     // TBD: the location and if() for this statement looks wrong
     //      the erroneous status should probably always be cleared
-    //      although maybe not?
+    //      although maybe not? (i.e. if we receive a new (set of)
+    //      error, does that mean the previous one is still in effect?)
     //
     if(warnings == 0 && errors == 0)
     {

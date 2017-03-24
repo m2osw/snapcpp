@@ -1,3 +1,13 @@
+snapserver-core-plugins (1.0.93.0~xenial) xenial; urgency=high
+
+  * EX-171: SNAP-173: Added a priority so a system revision may still be
+    ordered between various plugins.
+  * Removed the overwrite exception from revision since now we also need to
+    be able to overwrite revision fields.
+  * Made updates of output files for test purposes.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Mar 2017 23:36:19 -0800
+
 snapserver-core-plugins (1.0.92.0~xenial) xenial; urgency=high
 
   * EX-79: Fixed the error message box so it actually fits on a smartphone.

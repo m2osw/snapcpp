@@ -160,6 +160,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_DESTROYPAGE:
         return "destroypage";
 
+    case name_t::SNAP_NAME_CONTENT_FIELD_PRIORITY:
+        return "content::field_priority";
+
     case name_t::SNAP_NAME_CONTENT_FILES_COMPRESSOR: // NOT USED -- we actually may compress the file with many different compressors instead of just one so this is useless
         return "content::files::compressor";         // I keep the field because I have an update that deletes them in all files
 
@@ -2679,8 +2682,16 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
                     locale += country;
                 }
 
+                QString const priority_str(element.attribute("priority", "0"));
+                bool ok(false);
+                param_priority_t const priority(priority_str.toLongLong(&ok, 10));
+                if(!ok)
+                {
+                    throw content_exception_invalid_content_xml(QString("<param> attribute \"priority\" is not a valid number \"%1\".").arg(priority_str));
+                }
+
                 // add the resulting parameter
-                add_param(key, fullname, revision_type, locale, buffer);
+                add_param(key, fullname, revision_type, locale, buffer, priority);
 
                 // check whether we allow overwrites
                 if(element.attribute("overwrite") == "yes")
@@ -3049,7 +3060,10 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
         {
             // add the "content::prevent_delete" to 1 on all that do not
             // set it to another value (1 byte value)
-            add_param(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_revision_t::PARAM_REVISION_GLOBAL, "en", "1");
+            //
+            // TBD: should the priority be something else than PARAM_DEFAULT_PRIORITY (0)?
+            //
+            add_param(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_revision_t::PARAM_REVISION_GLOBAL, "en", "1", PARAM_DEFAULT_PRIORITY);
             set_param_overwrite(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), true); // always overwrite
             set_param_type(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_type_t::PARAM_TYPE_INT8);
         }
@@ -3160,12 +3174,19 @@ void content::add_content(QString const & path, QString const & moved_from_path,
  * \param[in] revision_type  The type of revision for this parameter (i.e. global, branch, revision)
  * \param[in] locale  The locale (\<language>_\<country>) for this data.
  * \param[in] data  The data of this parameter.
+ * \param[in] priority  The priority for this parameter.
  *
  * \sa add_param()
  * \sa add_link()
  * \sa on_save_content()
  */
-void content::add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data)
+void content::add_param(
+          QString const & path
+        , QString const & name
+        , param_revision_t revision_type
+        , QString const & locale
+        , QString const & data
+        , param_priority_t const priority)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -3180,6 +3201,7 @@ void content::add_param(QString const & path, QString const & name, param_revisi
         param.f_name = name;
         param.f_data[locale] = data;
         param.f_revision_type = revision_type;
+        param.f_priority = priority;
         b->f_params.insert(name, param);
     }
     else
@@ -3193,14 +3215,18 @@ void content::add_param(QString const & path, QString const & name, param_revisi
                         .arg(static_cast<snap_version::basic_version_number_t>(revision_type)));
         }
 
-        // replace the data
-        //
-        // TBD: should we generate an error because if defined by several
-        //      different plugins then we cannot ensure which one is going
-        //      to make it to the database! At the same time, we cannot
-        //      know whether we're overwriting a default value.
-        //
-        p->f_data[locale] = data;
+        if(priority >= p->f_priority)
+        {
+            // replace the data
+            //
+            // TBD: should we generate an error because if defined by several
+            //      different plugins then we cannot ensure which one is going
+            //      to make it to the database! At the same time, we cannot
+            //      know whether we are overwriting a default value.
+            //
+            p->f_data[locale] = data;
+            p->f_priority = priority; // in case it is larger, save every time
+        }
     }
 }
 
@@ -3560,6 +3586,36 @@ void content::on_save_content()
                 throw content_exception_invalid_content_xml("content::on_save_content() cannot accept a parameter named \"content::primary_owner\" as it is reserved");
             }
 
+            // in order to overwrite values (parameters) from a different
+            // plugin, one can give each field a priority
+            //
+            QString const priority_field_name(QString("%1::%2")
+                                .arg(get_name(name_t::SNAP_NAME_CONTENT_FIELD_PRIORITY))
+                                .arg(p->f_name));
+            param_priority_t const priority(content_table->row(d->f_path)->cell(priority_field_name)->value().safeUInt64Value());
+            if(p->f_priority < priority)
+            {
+                // ignore entries with smaller priorities, they were
+                // supplanted by another plugin
+                //
+                // IMPORTANT NOTE: this prevents translations to go through
+                //                 so the other plugin(s) must provide all
+                //                 the translations if necessary
+                //
+                continue;
+            }
+            if(p->f_priority > priority)
+            {
+                // the new priority is larger than the currently saved
+                // priority, save the largest one
+                //
+                // note: this means we never save 0, which would not be
+                //       useful and would really add tons of useless fields
+                //       to the database
+                //
+                content_table->row(d->f_path)->cell(priority_field_name)->setValue(p->f_priority);
+            }
+
             for(QMap<QString, QString>::const_iterator data(p->f_data.begin());
                     data != p->f_data.end(); ++data)
             {
@@ -3577,18 +3633,13 @@ void content::on_save_content()
                     break;
 
                 case param_revision_t::PARAM_REVISION_BRANCH:
-                    // path + "#0" in the data table
+                    // path + "#0" in the branch table
                     param_table = branch_table;
                     row_key = branch_key;
                     break;
 
                 case param_revision_t::PARAM_REVISION_REVISION:
-                    if(p->f_overwrite)
-                    {
-                        throw snap_logic_exception("the overwrite=\"yes\" flag cannot be used along revision=\"revision\"");
-                    }
-
-                    // path + "#xx/0.<revision>" in the data table
+                    // path + "#xx/0.<revision>" in the revision table
                     param_table = revision_table;
                     bool const create_revision(use_new_revision.find(locale) == use_new_revision.end());
                     if(!create_revision)
@@ -3599,7 +3650,7 @@ void content::on_save_content()
                     if(create_revision || row_key.isEmpty())
                     {
                         // the revision does not exist yet, create it
-                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false));
+                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, true));
                         set_current_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
                         set_current_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
                         set_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
@@ -3618,6 +3669,10 @@ void content::on_save_content()
 
                 // unless the developer said to overwrite the data, skip
                 // the save if the data alerady exists
+                //
+                // Note: we could also use exist() instead of nullValue()?
+                //       (which means that "" would not be viewed as a null)
+                //
                 if(p->f_overwrite
                 || param_table->row(row_key)->cell(p->f_name)->value().nullValue())
                 {

@@ -59,6 +59,7 @@ enum class name_t
     SNAP_NAME_CONTENT_DIRRESOURCES,
     SNAP_NAME_CONTENT_ERROR_FILES,
     SNAP_NAME_CONTENT_EXTRACTRESOURCE,
+    SNAP_NAME_CONTENT_FIELD_PRIORITY,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
@@ -632,6 +633,11 @@ public:
         PARAM_TYPE_INT64
     };
 
+    typedef uint64_t                param_priority_t;
+    static param_priority_t const   PARAM_DEFAULT_PRIORITY      = 0LL;
+    static param_priority_t const   PARAM_SYSTEM_PRIORITY       = 1LL;      // core plugins use PARAM_SYSTEM_PRIORITY + x (x between 0 and 9998)
+    static param_priority_t const   PARAM_THIRD_PARTY_PRIORITY  = 10000LL;  // 3rd party plugins use PARAM_THRID_PARTY_PRIORITY + x (x between 0 and a very large number)
+
     // WARNING: these are saved in the database which is why we directly
     //          assign values DO NOT CHANGE THE VALUES
     typedef signed char     secure_t;
@@ -776,7 +782,7 @@ public:
     void                add_xml(QString const & plugin_name);
     void                add_xml_document(QDomDocument & dom, QString const & plugin_name);
     void                add_content(QString const & path, QString const & moved_to_path, QString const & plugin_owner);
-    void                add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data);
+    void                add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data, param_priority_t const priority);
     void                set_param_overwrite(QString const & path, const QString& name, bool overwrite);
     void                set_param_type(QString const & path, const QString & name, param_type_t param_type);
     void                add_link(QString const & path, links::link_info const & source, links::link_info const & destination, snap_version::version_number_t branch_source, snap_version::version_number_t branch_destination, bool const remove);
@@ -796,6 +802,7 @@ private:
         QString                     f_name;
         QMap<QString, QString>      f_data; // [locale] = <html>
         param_revision_t            f_revision_type = param_revision_t::PARAM_REVISION_GLOBAL;
+        param_priority_t            f_priority = PARAM_DEFAULT_PRIORITY;
         bool                        f_overwrite = false;
         param_type_t                f_type = param_type_t::PARAM_TYPE_STRING;
     };
