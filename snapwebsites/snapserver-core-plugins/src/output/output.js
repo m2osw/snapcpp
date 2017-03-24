@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.7.1
+ * Version: 0.1.7.9
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -852,16 +852,17 @@ snapwebsites.Output.prototype.handleMessages_ = function()
             })
         .delay(250)
         .fadeIn(300)
-        .click(function(e)
-            {
-                // click to close, but do not react if the user clicked
-                // a link
-                //
-                if(!(jQuery(e.target).is("a")))
+        .children("div.user-message-box")
+            .click(function(e)
                 {
-                    that.hideMessages();
-                }
-            });
+                    // click to close, but do not react if the user clicked
+                    // a link
+                    //
+                    if(!(jQuery(e.target).is("a")))
+                    {
+                        that.hideMessages();
+                    }
+                });
 };
 
 
@@ -899,6 +900,7 @@ snapwebsites.Output.prototype.hideMessages = function()
 snapwebsites.Output.prototype.countMessages = function(opt_type)
 {
     var msg = jQuery("div.user-messages"),
+        msg_box,
         visible = false,
         errors = 0,
         warnings = 0,
@@ -926,16 +928,17 @@ snapwebsites.Output.prototype.countMessages = function(opt_type)
         opt_type = "error";
     }
 
+    msg_box = msg.children("div.user-message-box");
     if(opt_type == "total")
     {
         // count all messages
         //
-        return jQuery(msg).children("div.message").length;
+        return msg_box.children("div.message").length;
     }
 
     // only count messages of the specified type
     //
-    return jQuery(msg).children("div.message.message-" + opt_type).length;
+    return msg_box.children("div.message.message-" + opt_type).length;
 };
 
 
@@ -965,13 +968,16 @@ snapwebsites.Output.prototype.countMessages = function(opt_type)
 snapwebsites.Output.prototype.displayMessages = function(xml)
 {
     var msg = jQuery("div.user-messages"),
+        msg_box,
         visible = false,
         errors = 0,
         warnings = 0,
         call_handle = false,
-        width;
+        close_button = "<div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div>",
+        message_box = "<div class='user-message-box zordered'>" + close_button + "</div>";
 
     // if the list is empty, ignore
+    //
     if(!xml || xml.length == 0)
     {
         return;
@@ -980,28 +986,40 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
     if(!msg.exists())
     {
         // that <div class="user-messages"> does not exist yet so create it
-        jQuery("body").append("<div class='user-messages zordered'><div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div></div>");
+        //
+        // the main <div> (user-messages) is there to make sure we can get
+        // the correct dynamic size; the next <div> (user-message-box)
+        // defines the actual message box
+        //
+        jQuery("body").append("<div class='user-messages'>" + message_box + "</div>");
         msg = jQuery("div.user-messages");
+        msg_box = msg.children("user-message-box");
         call_handle = true;
     }
     else
     {
         // still visible?
+        //
         visible = msg.is(":visible");
         if(!visible)
         {
             // remove old errors
+            //
             msg.empty();
 
-            // TODO: we probably want to not delete the close button instead
-            //       of re-adding it each time...
-            msg.append("<div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div>");
+            // TODO: we should look into only deleting the messages and not
+            //       the close button?
+            //
+            msg.append(message_box);
+            msg_box = msg.children("user-message-box");
         }
         else
         {
             // make sure to keep a tag on the existing number of errors and warnings
-            errors = jQuery(msg).children("div.message.message-error").length;
-            warnings = jQuery(msg).children("div.message.message-warning").length;
+            //
+            msg_box = msg.children("user-message-box");
+            errors = msg_box.children("div.message.message-error").length;
+            warnings = msg_box.children("div.message.message-warning").length;
         }
     }
 
@@ -1009,19 +1027,6 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
     {
         // we are in an IFRAME, let CSS know that
         msg.addClass("in-iframe");
-
-        // we are in an IFRAME so we want to adjust the dimensions
-        //
-        // -55px because we want about 20px on the left, 10px on the right
-        // and there are 10px x 2 for the padding and a few more pixels for
-        // borders
-        //
-        width = jQuery(window.frameElement).innerWidth() - 55;
-        if(width > 550)
-        {
-            width = 550;
-        }
-        msg.css("width", width);
     }
 
     jQuery(xml).children("message").each(function()
@@ -1086,16 +1091,20 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
                 ++warnings;
             }
 
-            msg.append(txt);
+            msg_box.append(txt);
         });
 
+    // TBD: the location and if() for this statement looks wrong
+    //      the erroneous status should probably always be cleared
+    //      although maybe not?
+    //
     if(warnings == 0 && errors == 0)
     {
         jQuery("div[field_name!='']").removeClass("erroneous");
     }
 
-    msg.toggleClass("warning-messages", warnings > 0);
-    msg.toggleClass("error-messages", errors > 0);
+    msg_box.toggleClass("warning-messages", warnings > 0);
+    msg_box.toggleClass("error-messages", errors > 0);
 
     if(!visible)
     {
@@ -1108,6 +1117,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
     if(!call_handle)
     {
         // z-index may need updating
+        //
         msg.each(function()
             {
                 var z;

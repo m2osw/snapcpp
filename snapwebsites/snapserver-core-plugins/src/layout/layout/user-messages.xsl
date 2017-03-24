@@ -42,17 +42,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<!-- public template used to display all the user messages -->
 	<xsl:template name="snap:user-messages">
 		<xsl:if test="/snap/page/body/messages">
-			<div>
-				<xsl:attribute name="class">user-messages zordered<xsl:if test="/snap/page/body/messages[@error-count != '0']"> error-messages</xsl:if><xsl:if test="/snap/page/body/messages[@warning-count != '0']"> warning-messages</xsl:if></xsl:attribute>
-				<div class="close-button"><img src="/images/snap/close-button.png"/></div>
-				<xsl:for-each select="/snap/page/body/messages/message">
-					<xsl:call-template name="snap:message">
-						<xsl:with-param name="type" select="@type"/>
-						<xsl:with-param name="id" select="@id"/>
-						<xsl:with-param name="title" select="title/*"/>
-						<xsl:with-param name="body" select="body/*"/>
-					</xsl:call-template>
-				</xsl:for-each>
+			<div class="user-messages">
+				<!--div class="user-message-margin"></div-->
+				<div>
+					<xsl:attribute name="class">user-message-box zordered<xsl:if
+							test="/snap/page/body/messages[@error-count != '0']"> error-messages</xsl:if><xsl:if
+							test="/snap/page/body/messages[@warning-count != '0']"> warning-messages</xsl:if></xsl:attribute>
+					<div class="close-button"><img src="/images/snap/close-button.png"/></div>
+					<xsl:for-each select="/snap/page/body/messages/message">
+						<xsl:call-template name="snap:message">
+							<xsl:with-param name="type" select="@type"/>
+							<xsl:with-param name="id" select="@id"/>
+							<xsl:with-param name="title" select="title/*"/>
+							<xsl:with-param name="body" select="body/*"/>
+						</xsl:call-template>
+					</xsl:for-each>
+				</div>
 			</div>
 		</xsl:if>
 	</xsl:template>

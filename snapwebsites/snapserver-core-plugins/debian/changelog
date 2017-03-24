@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.92.0~xenial) xenial; urgency=high
+
+  * EX-79: Fixed the error message box so it actually fits on a smartphone.
+  * Removed the resize from the script since it is not required anymore.
+  * Fixed a few $(...) which should have been jQuery(...).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Mar 2017 18:04:19 -0800
+
 snapserver-core-plugins (1.0.91.0~xenial) xenial; urgency=high
 
   * EX-79: Fixed the hidden field under the fixed header with a scroll.

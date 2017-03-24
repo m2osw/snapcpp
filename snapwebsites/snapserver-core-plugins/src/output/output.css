@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.28
+ * Version: 0.0.39
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -9,38 +9,67 @@
 /** error messages popup **/
 div.user-messages
 {
-	position: fixed;
-	margin-left: 150px;
-	top: 50px;
-	width: 550px;
 	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 1px; /* we need some height to make sure it works on all browsers */
+	padding-top: 50px;
+}
+div.user-messages.in-iframe
+{
+	padding-top: 10px;
+}
+div.user-message-box
+{
+	display: block;
+	margin: 0 150px;
+	max-width: 550px;
+	width: 100%;
 	padding: 0 10px;
 	border: 2px solid #00ff00;
 	border-radius: 5px;
 	background-color: #e0ffe0;
 }
-div.user-messages.in-iframe
+/*
+ * The width is 550px + 150px on each side until the screen is too narrow
+ * which means under 850px, then the width of the margin changes with the
+ * width of the screen.
+ */
+@media (max-width: 849px) and (min-width: 570px)
 {
-	top: 10px;
-	margin-left: 20px;
+	div.user-message-box
+	{
+		margin: 0 calc((100% - 550px) / 2);
+	}
 }
-div.user-messages.warning-messages
+@media (max-width: 569px)
+{
+	div.user-message-box
+	{
+		margin: 0 10px;
+		/* in this case the width has to be reduced */
+		width: calc(100% - 20px);
+	}
+}
+div.user-message-box.warning-messages
 {
 	border: 2px solid #ff8030;
 	background-color: #ffce89;
 }
-div.user-messages.error-messages
+div.user-message-box.error-messages
 {
 	border: 2px solid red;
 	background-color: #ffe0e0;
 }
-div.user-messages .close-button
+div.user-message-box .close-button
 {
 	float: right;
 	padding: 10px 0 10px 10px;
 	cursor: pointer;
 }
-div.user-messages h3
+div.user-message-box h3
 {
 	margin-top: 10px;
 	font-size: 100%;

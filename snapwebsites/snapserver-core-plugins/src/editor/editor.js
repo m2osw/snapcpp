@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.940
+ * Version: 0.0.3.941
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -6712,7 +6712,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
     // a good way to do so in CSS without knowing the general document
     // font size...
     //
-    edit_button_popup.css("font-size", parseFloat($("html").css("font-size")));
+    edit_button_popup.css("font-size", parseFloat(jQuery("html").css("font-size")));
 
     // user has to click Edit to activate the editor
     edit_button_popup.children(".activate-editor").click(function(e)
@@ -7541,10 +7541,10 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         height,
         max_count,
         count,
-        screen_width = parseFloat($(window.top).innerWidth()),
-        screen_height = parseFloat($(window.top).innerHeight()),
-        scroll_top = parseFloat($(window.top).scrollTop()),
-        scroll_left = parseFloat($(window.top).scrollLeft()),
+        screen_width = parseFloat(jQuery(window.top).innerWidth()),
+        screen_height = parseFloat(jQuery(window.top).innerHeight()),
+        scroll_top = parseFloat(jQuery(window.top).scrollTop()),
+        scroll_left = parseFloat(jQuery(window.top).scrollLeft()),
         valid = false,
         new_class,
         equal_pos,
@@ -8504,7 +8504,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
                     // make sure to remove the algorithm class so that way we can
                     // avoid having two or more in the same dropdown
                     //
-                    c = $(this).attr("class");
+                    c = jQuery(this).attr("class");
                     if(c)
                     {
                         c = c.split(" ");
@@ -8514,7 +8514,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
                             {
                                 if(c[n].substr(0, 10) == "algorithm-")
                                 {
-                                    $(this).removeClass(c[n]);
+                                    jQuery(this).removeClass(c[n]);
                                 }
                             }
                         }
@@ -8522,7 +8522,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
                     // remove the column related CSS which we may add if we
                     // end up using vertical columns
                     //
-                    $(this)
+                    jQuery(this)
                         .css("width", "").css("height", "")
                         .find("ul").css("column-count", "").css("width", "").css("height", "").removeClass("scrollbar")
                         .find("li").css("width", "").css("float", "");
