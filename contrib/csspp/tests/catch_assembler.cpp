@@ -171,6 +171,76 @@ TEST_CASE("Assemble rules", "[assembler]")
         }
     }
 
+    SECTION("with a calc including a divide after parenthesis")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "#left-margin { width: calc((100% - 300px) / 2); }";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"#left-margin { width: calc( (100% - 300px)  / 2) }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"#left-margin{width:calc( (100% - 300px) / 2)}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"#left-margin\n"
+"{\n"
+"  width: calc( (100% - 300px)  / 2);\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"#left-margin{width:calc( (100% - 300px) / 2)}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
     SECTION("test multiple declarations in one rule")
     {
         for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -3626,7 +3696,6 @@ TEST_CASE("Inacceptable nodes", "[assembler] [invalid]")
         csspp::node_type_t::COLUMN,
         csspp::node_type_t::COMMA,
         csspp::node_type_t::CONDITIONAL,
-        csspp::node_type_t::DIVIDE,
         csspp::node_type_t::DOLLAR,
         csspp::node_type_t::EOF_TOKEN,
         csspp::node_type_t::EXCLAMATION,

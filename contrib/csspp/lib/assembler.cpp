@@ -434,10 +434,9 @@ void assembler::output(node::pointer_t n)
         }
         break;
 
-    // We should have FONT_METRICS for fonts... so we should not need this one
-    //case node_type_t::DIVIDE:
-    //    f_impl->output_operator("/", 0);
-    //    break;
+    case node_type_t::DIVIDE:
+        f_impl->output_operator("/", 0);
+        break;
 
     case node_type_t::EQUAL:
         f_impl->output_operator("=", g_flag_optional_spaces);
@@ -683,7 +682,6 @@ void assembler::output(node::pointer_t n)
     case node_type_t::COLUMN:
     case node_type_t::COMMA:
     case node_type_t::CONDITIONAL:
-    case node_type_t::DIVIDE:
     case node_type_t::DOLLAR:
     case node_type_t::EOF_TOKEN:
     case node_type_t::EXCLAMATION:
