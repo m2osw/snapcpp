@@ -724,7 +724,8 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     {
         return column_type_t::CT_int64_value;
     }
-    else if(n == "ecommerce::invoice_number"
+    else if(n.startsWith("content::field_priority::")
+         || n == "ecommerce::invoice_number"
          || n == "epayment_paypal::invoice_number"
          || n == "shorturl::identifier"
          || n == "users::identifier"

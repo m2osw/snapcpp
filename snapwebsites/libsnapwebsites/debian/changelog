@@ -1,8 +1,9 @@
-libsnapwebsites (1.1.90.5~xenial) xenial; urgency=high
+libsnapwebsites (1.1.91.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-171: SNAP-173: Added the "content::field_priority::" to dbutils.
+  * Removed the "\n" at the end of the trace() message for the logger.
 
- -- Build Server <build@m2osw.com>  Sun, 19 Mar 2017 02:00:57 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 23 Mar 2017 23:32:19 -0800
 
 libsnapwebsites (1.1.90.0~xenial) xenial; urgency=high
 

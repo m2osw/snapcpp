@@ -6595,7 +6595,14 @@ void snap_child::trace(std::string const & data)
     {
         // keep a copy in the server logs too
         //
-        SNAP_LOG_INFO("trace() from installation: ")(data);
+        if(data.back() == '\n')
+        {
+            SNAP_LOG_INFO("trace() from installation: ")(data.substr(0, data.length() - 1));
+        }
+        else
+        {
+            SNAP_LOG_INFO("trace() from installation: ")(data);
+        }
 
         write(data.c_str(), data.size());
     }
