@@ -36,7 +36,9 @@
 
 set -e
 
-if ! test -d ../sources-repo
+SOURCE_REPO=../../../sources-repo
+
+if ! test -d $SOURCE_REPO
 then
     echo "To use this script, we expect you to have a directory named"
     echo "sources-repo, which is a pristine copy of the git repository."
@@ -48,7 +50,7 @@ fi
 
 # Get both versions
 . dev/version
-DEBIAN_VERSION=`dpkg-parsechangelog --show-field Version | sed -e s/~.*//`
+DEBIAN_VERSION=`dpkg-parsechangelog --show-field Version | sed -e s/~.*// -e s/\.0$//`
 
 if test "$FULL_VERSION" != "$DEBIAN_VERSION"
 then
@@ -57,20 +59,23 @@ then
     exit 1;
 fi
 
-cd ../sources-repo
+cd $SOURCE_REPO
+mkdir -p ../packages
 git pull origin master
 rm -f snapcmakemodules_*.tar.gz advgetopt_*.tar.gz csspp_*.tar.gz
-dpkg-source -b snapCMakeModules
+dpkg-source -b cmake
+cp snapcmakemodules_*.tar.gz ../packages
+cd contrib
 dpkg-source -b advgetopt
 dpkg-source -b csspp
-cp snapcmakemodules_*.tar.gz advgetopt_*.tar.gz csspp_*.tar.gz ../packages
-cd ..
+cp advgetopt_*.tar.gz csspp_*.tar.gz ../../packages
+cd ../..
 rm -rf tmp/csspp
 mkdir -p tmp/csspp
 cd tmp/csspp
 tar xf ../../sources-repo/snapcmakemodules_*.tar.gz
-tar xf ../../sources-repo/advgetopt_*.tar.gz
-tar xf ../../sources-repo/csspp_*.tar.gz
+tar xf ../../sources-repo/contrib/advgetopt_*.tar.gz
+tar xf ../../sources-repo/contrib/csspp_*.tar.gz
 cp csspp/dev/MasterCMakeLists.txt CMakeLists.txt
 cp csspp/dev/INSTALL INSTALL
 cd csspp
