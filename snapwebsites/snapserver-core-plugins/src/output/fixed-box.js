@@ -1,6 +1,6 @@
 /** @preserve
  * Name: fixed-box
- * Version: 0.0.1
+ * Version: 0.1.0
  * Browsers: all
  * Copyright: Copyright 2015-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.70)
@@ -32,10 +32,10 @@
  *
  * \code
  *  <div class="fixed-box"
- *       fixed-box-name="ref"
- *       fixed-box-container="ref"
- *       fixed-box-orientation="vertical"
- *       fixed-box-margin="10">
+ *       data-fixed-box-name="ref"
+ *       data-fixed-box-container="ref"
+ *       data-fixed-box-orientation="vertical"
+ *       data-fixed-box-margin="10">
  *    <div>This is the fixed content</div>
  *  </div>
  * \endcode
@@ -43,7 +43,7 @@
  * If the height of the div.fixed-box may not be correct (i.e. a float
  * generally has the wrong height of 0px), then you can specify the
  * one div that will represent a valid height for this fixed-box in
- * the fixed-box-container attribute. The reference is a standard
+ * the data-fixed-box-container attribute. The reference is a standard
  * CSS selector (it can be an identifier, a class, tag types, etc.)
  *
  * The name is used to give the user a way to retrieve a FixedBox
@@ -59,10 +59,16 @@
  * A horizontal fixed box only gets its "left" CSS field modified.
  *
  * The fixed box margin is used to make sure that the fixed box does not
- * get glued to the edge of the browser.
+ * get glued to the edge of the browser. It defaults to zero.
  *
  * A fixed box is usually created automatically when loading a page.
  * You may dynamically create fixed boxes if you'd like.
+ *
+ * \note
+ * At some point, the "position: sticky" CSS value should be used
+ * instead of the fixed-box.js script. However, this only works in
+ * Chrome and Firefox at this point. It will probably never work
+ * in IE if it gets 100% replaced by Edge.
  *
  * \bug
  * If the boxes within a fixed box are somehow resized, then the
@@ -89,16 +95,24 @@
 snapwebsites.FixedBox = function(box)
 {
     var that = this,
-        container = box.attr("fixed-box-container");
+        container = box.data("fixed-box-container"),
+        m = box.data("fixed-box-margin");
 
     this.box_ = box;
 
     // retrieve the fixed box data once on creation
-    this.name_ = snapwebsites.castToString(box.attr("fixed-box-name"), "fixed-box-name is expected to be defined and to be a string");
-    this.orientation_ = box.attr("fixed-box-orientation") == "horizontal"
+    this.name_ = snapwebsites.castToString(box.data("fixed-box-name"), "data-fixed-box-name is expected to be defined and to be a string");
+    this.orientation_ = box.data("fixed-box-orientation") == "horizontal"
                         ? snapwebsites.FixedBox.ORIENTATION_HORIZONTAL
                         : snapwebsites.FixedBox.ORIENTATION_VERTICAL;
-    this.margin_ = snapwebsites.castToNumber(box.attr("fixed-box-margin"), "fixed-box-margin is expected to be a valid number, no dimension, it is always taken as pixels");
+    if(m != undefined)
+    {
+        this.margin_ = snapwebsites.castToNumber(m, "data-fixed-box-margin is expected to be a valid number, no dimension, it is always taken as pixels");
+    }
+    else
+    {
+        this.margin_ = 0;
+    }
 
     if(this.name_.length == 0
     && this.margin_ < 0)
@@ -109,10 +123,11 @@ snapwebsites.FixedBox = function(box)
     // transform the container string to a jQuery object immediately
     // (so that way we do it once) -- if empty or it fails, use box_
     // as the default container
+    //
     if(container)
     {
         this.container_ = jQuery(container);
-        if(!this.container_)
+        if(!this.container_.exists())
         {
             throw new Error("A FixedBox container selector must be valid (return at least one object) if specified.");
         }
@@ -274,7 +289,8 @@ snapwebsites.FixedBox.prototype.minPosition_ = 0;
 /** \brief Retrieve the name of this FixedBox object.
  *
  * The name of a FixedBox is mandatory and expected to be setup in
- * the tag representing a FixedBox using the name attribute.
+ * the tag representing a FixedBox using the name attribute. If not
+ * present, then the script throws an exception.
  *
  * @return {string}
  */
@@ -321,25 +337,42 @@ snapwebsites.FixedBox.prototype.adjustPosition = function()
  */
 snapwebsites.FixedBox.prototype.scrollVertically_ = function()
 {
-    var pos = $(window).scrollTop() + this.margin_,
-        max = this.minPosition_ + this.container_.height()
-                - this.box_.outerHeight() - this.margin_;
+    // the following works with the ExDox navigation menu;
+    // watchout if you want to modify the code!
+    //
+    var pos = $(window).scrollTop(),
+        screen_height = parseFloat(jQuery(window.top).innerHeight()),
+        max = this.minPosition_
+                + this.box_.outerHeight()
+                - screen_height;
 
-    if(pos <= this.minPosition_)
+    if(max < 0)
     {
-        this.box_.css("top", "0px");
-        this.box_.css("position", "static");
+        max = -this.margin_;
     }
-    else if(pos >= max)
+
+    //if(pos <= this.minPosition_)
+    //{
+    //    // I don't see why this would be required, the fixed box should be
+    //    // scrollable (static) by default...
+    //    //
+    //    this.box_.css("top", this.margin_ + "px");
+    //    this.box_.css("position", "fixed");
+    //}
+    //else
+    if(pos <= max + this.margin_)
     {
-        pos = max - this.minPosition_;
-        this.box_.css("top", pos + "px");
+        // in this case the item is allowed to scroll, so let the position be
+        // static (the supposed default -- TODO: make it work with relative too)
+        //
+        this.box_.css("top", "auto");
         this.box_.css("position", "static");
     }
     else
     {
         // in this case the position becomes fixed which
-        // glues the item at the top of the screen (+margin_)
+        // glues the item where it's at (once it reaches
+        // its maximum, to be precise)
         //
         // Note: we have to use a fixed position because of IE,
         //       which otherwise bounces the box up and down like crazy
@@ -349,7 +382,7 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
         //       In IE it still bounces a bit at the top and bottom
         //       when scrolling "too fast".
         //
-        this.box_.css("top", "0px");
+        this.box_.css("top", (-max) + "px");
         this.box_.css("position", "fixed");
     }
 };
@@ -369,6 +402,8 @@ snapwebsites.FixedBox.prototype.scrollHorizontally_ = function()
     var pos = $(window).scrollLeft() + this.margin_,
         max = this.minPosition_ + this.container_.width() - this.box_.outerWidth() - this.margin_;
 
+    // TODO: the following was not yet tested in our Snap! enviroment...
+    //
     if(pos < this.minPosition_)
     {
         pos = this.minPosition_;
@@ -484,10 +519,10 @@ snapwebsites.FixedBoxes.prototype.findFixedBox = function(name)
 
 // auto-initialize
 jQuery(document).ready(
-    function()
-    {
-        snapwebsites.FixedBoxesInstance = new snapwebsites.FixedBoxes();
-    }
-);
+        function()
+        {
+            snapwebsites.FixedBoxesInstance = new snapwebsites.FixedBoxes();
+        }
+    );
 
 // vim: ts=4 sw=4 et
