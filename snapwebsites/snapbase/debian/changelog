@@ -1,3 +1,9 @@
+snapbase (1.0.41.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 26 Mar 2017 02:00:57 -0700
+
 snapbase (1.0.41.0~xenial) xenial; urgency=high
 
   * EX-79: Added one more fixed-box attribute for smartphone support.
