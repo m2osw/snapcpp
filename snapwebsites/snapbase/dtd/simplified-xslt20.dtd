@@ -191,13 +191,21 @@ DTD of the XSLT 2.0.
               data-item-name CDATA #IMPLIED
               tabindex CDATA #IMPLIED
               role CDATA #IMPLIED
-              aria-labelledby CDATA #IMPLIED>
+              aria-labelledby CDATA #IMPLIED
+              data-fixed-box-name CDATA #IMPLIED
+              data-fixed-box-container CDATA #IMPLIED
+              data-fixed-box-orientation CDATA #IMPLIED
+              data-fixed-box-margin CDATA #IMPLIED>
 
 <!ELEMENT nav ANY>
 <!ATTLIST nav class CDATA #IMPLIED
               id CDATA #IMPLIED
               role CDATA #IMPLIED
-              style CDATA #IMPLIED>
+              style CDATA #IMPLIED
+              data-fixed-box-name CDATA #IMPLIED
+              data-fixed-box-container CDATA #IMPLIED
+              data-fixed-box-orientation CDATA #IMPLIED
+              data-fixed-box-margin CDATA #IMPLIED>
 
 <!ELEMENT form ANY>
 <!ATTLIST form accept-charset CDATA #IMPLIED
