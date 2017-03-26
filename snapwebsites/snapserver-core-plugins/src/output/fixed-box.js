@@ -1,6 +1,6 @@
 /** @preserve
  * Name: fixed-box
- * Version: 0.1.0
+ * Version: 0.1.14
  * Browsers: all
  * Copyright: Copyright 2015-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.70)
@@ -35,7 +35,8 @@
  *       data-fixed-box-name="ref"
  *       data-fixed-box-container="ref"
  *       data-fixed-box-orientation="vertical"
- *       data-fixed-box-margin="10">
+ *       data-fixed-box-margin="10"
+ *       data-fixed-box-min-width="768">
  *    <div>This is the fixed content</div>
  *  </div>
  * \endcode
@@ -70,12 +71,6 @@
  * Chrome and Firefox at this point. It will probably never work
  * in IE if it gets 100% replaced by Edge.
  *
- * \bug
- * If the boxes within a fixed box are somehow resized, then the
- * current position may be wrong. You may manually call the
- * adjustPosition() function if you know that the box changes
- * size.
- *
  * \todo
  * We need to add code to observe whether some of the widgets
  * concerned (container, this box, the child) change size. We
@@ -96,24 +91,42 @@ snapwebsites.FixedBox = function(box)
 {
     var that = this,
         container = box.data("fixed-box-container"),
-        m = box.data("fixed-box-margin");
+        m = box.data("fixed-box-margin"),
+        min_width = box.data("fixed-box-min-width");
 
     this.box_ = box;
 
     // retrieve the fixed box data once on creation
+    //
+
+    // box name, needs to be unique between all boxes on a page
+    //
     this.name_ = snapwebsites.castToString(box.data("fixed-box-name"), "data-fixed-box-name is expected to be defined and to be a string");
+
+    // orientation of the box: vertical or horizontal
+    //
     this.orientation_ = box.data("fixed-box-orientation") == "horizontal"
                         ? snapwebsites.FixedBox.ORIENTATION_HORIZONTAL
                         : snapwebsites.FixedBox.ORIENTATION_VERTICAL;
+
+    // margin
+    //
     if(m != undefined)
     {
         this.margin_ = snapwebsites.castToNumber(m, "data-fixed-box-margin is expected to be a valid number, no dimension, it is always taken as pixels");
     }
-    else
-    {
-        this.margin_ = 0;
-    }
+    //else -- keep default (0)
 
+    // min-width
+    //
+    if(min_width != undefined)
+    {
+        this.minWidth_ = snapwebsites.castToNumber(min_width, "data-fixed-box-min-width is expected to be a valid number, no dimension, it is always taken as pixels");
+    }
+    //else -- keep default (-1)
+
+    // verify some parameters
+    //
     if(this.name_.length == 0
     && this.margin_ < 0)
     {
@@ -139,6 +152,7 @@ snapwebsites.FixedBox = function(box)
 
     // we must save the minimum position on entry, otherwise we
     // cannot really know what it is since it changes all the time
+    //
     if(this.orientation_ == snapwebsites.FixedBox.ORIENTATION_VERTICAL)
     {
         this.minPosition_ = this.box_.offset().top;
@@ -148,16 +162,17 @@ snapwebsites.FixedBox = function(box)
         this.minPosition_ = this.box_.offset().left;
     }
 
-    // connect on the scroll event
-    $(window).scroll(
-        function()
+    // connect on the scroll and resize events
+    //
+    jQuery(window).bind("scroll resize",
+            function()
             {
                 that.adjustPosition();
             }
         );
 
-    // run a first adjustment, it should work unless your div elements
-    // are going to be resized.
+    // run a first adjustment
+    //
     this.adjustPosition();
 
     return this;
@@ -195,6 +210,56 @@ snapwebsites.FixedBox.ORIENTATION_HORIZONTAL = 1; // static const
  * @private
  */
 snapwebsites.FixedBox.ORIENTATION_VERTICAL = 0; // static const
+
+
+/** \brief The current setup is the original.
+ *
+ * This value is used with the currentMode_ field. If set to
+ * CURRENT_MODE_ORIGINAL then it is set to the default value
+ * (i.e. we did not change the value yet.)
+ *
+ * \sa snapwebsites.FixedBox.CURRENT_MODE_STATIC
+ * \sa snapwebsites.FixedBox.CURRENT_MODE_FIXED
+ *
+ * @type {number}
+ * @const
+ * @private
+ */
+snapwebsites.FixedBox.CURRENT_MODE_ORIGINAL = 0; // static const
+
+
+/** \brief The current setup is the static one.
+ *
+ * This value is used with the currentMode_ field. If set to
+ * CURRENT_MODE_STATIC then it is considered to be set to the
+ * default value and the object scrolls with the scrollbar.
+ *
+ * \sa snapwebsites.FixedBox.CURRENT_MODE_STATIC
+ * \sa snapwebsites.FixedBox.CURRENT_MODE_FIXED
+ *
+ * @type {number}
+ * @const
+ * @private
+ */
+snapwebsites.FixedBox.CURRENT_MODE_STATIC = 1; // static const
+
+
+/** \brief The current setup is the fixed one.
+ *
+ * This value is used with the currentMode_ field. If set to
+ * CURRENT_MODE_FIXED then it is considered to be set to the
+ * fixed value, meaning that the scrollbar is at a position
+ * which forces us to keep the object at a specific fixed
+ * position.
+ *
+ * \sa snapwebsites.FixedBox.CURRENT_MODE_ORIGINAL
+ * \sa snapwebsites.FixedBox.CURRENT_MODE_FIXED
+ *
+ * @type {number}
+ * @const
+ * @private
+ */
+snapwebsites.FixedBox.CURRENT_MODE_FIXED = 2; // static const
 
 
 /** \brief The jQuery object representing this fixed box.
@@ -275,6 +340,25 @@ snapwebsites.FixedBox.prototype.orientation_ = snapwebsites.FixedBox.ORIENTATION
 snapwebsites.FixedBox.prototype.margin_ = 0;
 
 
+/** \brief Ignore at that screen width or less.
+ *
+ * The FixedBox has to be compatible with SmartPhone JavaScripts. Those
+ * generally kick in whenever the screen becomes too narrow. When that
+ * happens, the FixedBox can be asked to stop doing anything. Since we
+ * allow for our windows to be resized (on desktops/laptops, at least),
+ * the size has to be specified and the code react dynamically whenever
+ * it happens.
+ *
+ * By default the value is set to -1, which means FixedBox will kick
+ * in whatever the width. It can be changed using the
+ * data-fixed-box-min-width attribute.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.FixedBox.prototype.minWidth_ = -1;
+
+
 /** \brief The position of the \<div> at the start.
  *
  * Before ever moving the object anywhere, we retrieve its startup
@@ -284,6 +368,16 @@ snapwebsites.FixedBox.prototype.margin_ = 0;
  * @private
  */
 snapwebsites.FixedBox.prototype.minPosition_ = 0;
+
+
+/** \brief The current setup.
+ *
+ * The current mode of the managed object.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.FixedBox.prototype.currentMode_ = snapwebsites.FixedBox.CURRENT_MODE_ORIGINAL;
 
 
 /** \brief Retrieve the name of this FixedBox object.
@@ -340,13 +434,29 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
     // the following works with the ExDox navigation menu;
     // watchout if you want to modify the code!
     //
-    var pos = $(window).scrollTop(),
+    var pos = jQuery(window).scrollTop(),
+        screen_width = parseFloat(jQuery(window.top).innerWidth()),
         screen_height = parseFloat(jQuery(window.top).innerHeight()),
         max = this.minPosition_
                 + this.box_.outerHeight()
                 - screen_height;
 
-    if(max < 0)
+    // on a narrow screen, the user may not want to have the FixedBox
+    // functionality (i.e. smartphones)
+    //
+    if(screen_width <= this.minWidth_)
+    {
+        if(this.currentMode_ == snapwebsites.FixedBox.CURRENT_MODE_FIXED)
+        {
+            this.currentMode_ = snapwebsites.FixedBox.CURRENT_MODE_STATIC;
+            this.box_.css("top", "auto");
+            this.box_.css("position", "static");
+        }
+        return;
+    }
+//console.log("pos = " + pos + ", max = " + max);
+
+    if(max < -this.margin_)
     {
         max = -this.margin_;
     }
@@ -365,8 +475,12 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
         // in this case the item is allowed to scroll, so let the position be
         // static (the supposed default -- TODO: make it work with relative too)
         //
-        this.box_.css("top", "auto");
-        this.box_.css("position", "static");
+        if(this.currentMode_ != snapwebsites.FixedBox.CURRENT_MODE_STATIC)
+        {
+            this.currentMode_ = snapwebsites.FixedBox.CURRENT_MODE_STATIC;
+            this.box_.css("top", "auto");
+            this.box_.css("position", "static");
+        }
     }
     else
     {
@@ -382,8 +496,15 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
         //       In IE it still bounces a bit at the top and bottom
         //       when scrolling "too fast".
         //
+        // We set the top value each time since it could change
+        // (i.e. the window got resized...)
+        //
         this.box_.css("top", (-max) + "px");
-        this.box_.css("position", "fixed");
+        if(this.currentMode_ != snapwebsites.FixedBox.CURRENT_MODE_FIXED)
+        {
+            this.currentMode_ = snapwebsites.FixedBox.CURRENT_MODE_FIXED;
+            this.box_.css("position", "fixed");
+        }
     }
 };
 
@@ -399,7 +520,7 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
  */
 snapwebsites.FixedBox.prototype.scrollHorizontally_ = function()
 {
-    var pos = $(window).scrollLeft() + this.margin_,
+    var pos = jQuery(window).scrollLeft() + this.margin_,
         max = this.minPosition_ + this.container_.width() - this.box_.outerWidth() - this.margin_;
 
     // TODO: the following was not yet tested in our Snap! enviroment...
@@ -496,7 +617,7 @@ snapwebsites.FixedBoxes.prototype.initFixedBoxes_ = function()
 {
     var that = this;
 
-    $(".fixed-box").each(function()
+    jQuery(".fixed-box").each(function()
         {
             var fixed_box = new snapwebsites.FixedBox(jQuery(this));
             that.fixedBoxes_[fixed_box.getName()] = fixed_box;
