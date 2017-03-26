@@ -194,8 +194,9 @@ DTD of the XSLT 2.0.
               aria-labelledby CDATA #IMPLIED
               data-fixed-box-name CDATA #IMPLIED
               data-fixed-box-container CDATA #IMPLIED
-              data-fixed-box-orientation CDATA #IMPLIED
-              data-fixed-box-margin CDATA #IMPLIED>
+              data-fixed-box-orientation (horizontal|vertical) "vertical"
+              data-fixed-box-margin CDATA "0"
+              data-fixed-box-min-width CDATA "-1">
 
 <!ELEMENT nav ANY>
 <!ATTLIST nav class CDATA #IMPLIED
@@ -204,8 +205,9 @@ DTD of the XSLT 2.0.
               style CDATA #IMPLIED
               data-fixed-box-name CDATA #IMPLIED
               data-fixed-box-container CDATA #IMPLIED
-              data-fixed-box-orientation CDATA #IMPLIED
-              data-fixed-box-margin CDATA #IMPLIED>
+              data-fixed-box-orientation CDATA "vertical"
+              data-fixed-box-margin CDATA "0"
+              data-fixed-box-min-width CDATA "-1">
 
 <!ELEMENT form ANY>
 <!ATTLIST form accept-charset CDATA #IMPLIED
