@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.96.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 28 Mar 2017 02:00:52 -0700
+
 snapserver-core-plugins (1.0.96.0~xenial) xenial; urgency=high
 
   * EX-79: Removed the "right-aligned" from the change-email form.
