@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.96.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.97.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-173: I noticed that an Edit button did not want to go away. The
+    test was missing the validation of the action for that page.
 
- -- Build Server <build@m2osw.com>  Tue, 28 Mar 2017 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 28 Mar 2017 21:39:19 -0700
 
 snapserver-core-plugins (1.0.96.0~xenial) xenial; urgency=high
 

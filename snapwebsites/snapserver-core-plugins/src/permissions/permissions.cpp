@@ -2398,6 +2398,7 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
     if(f_valid_actions.find(action) == f_valid_actions.end())
     {
         // check that the action is defined in the database (i.e. valid)
+        //
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         QString const site_key(f_snap->get_site_key_with_slash());
         QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
@@ -2415,6 +2416,7 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
     }
 
     // setup a 'sets' object
+    //
     sets_t sets(f_snap, user_path, ipath, action, login_status);
 
     // first we get the user rights for that action because in most cases
@@ -3172,6 +3174,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     //SNAP_LOG_WARNING("perms(\"")(path)("\", \"")(user_path)("\", \"")(action)("\", \"")(status)("\")");
 
     // setup the parameters to the access_allowed() signal
+    //
     content::path_info_t ipath;
     ipath.set_path(path);
     if(ipath.get_cpath() == "admin"
@@ -3186,6 +3189,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     char const * login_status(get_name(login_status_from_string(status)));
 
     // check whether that user is allowed that action with that path and given status
+    //
     content::permission_flag allowed;
     path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
 
@@ -3230,13 +3234,26 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
     }
 
     // check whether the user has edit rights
+    content::path_info_t sub_ipath;
+    sub_ipath.set_path(ipath.get_key());
+    sub_ipath.set_parameter("action", "edit");
+    quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
+    path::path::instance()->validate_action(sub_ipath, "edit", err_callback);
+
     content::permission_flag can_edit;
-    path::path::instance()->access_allowed(
-            users::users::instance()->get_user_info().get_user_path(false),
-            ipath,
-            "edit",
-            get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
-            can_edit);
+    if(err_callback.has_error())
+    {
+        can_edit.not_permitted();
+    }
+    else
+    {
+        path::path::instance()->access_allowed(
+                users::users::instance()->get_user_info().get_user_path(false),
+                sub_ipath,
+                "edit",
+                get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+                can_edit);
+    }
     QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
     FIELD_SEARCH
