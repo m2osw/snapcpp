@@ -28,10 +28,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<xsl:param name="id"/>
 		<xsl:param name="title"/>
 		<xsl:param name="body"/>
-		<div id="{$id}" class="message message-{$type}">
-			<xsl:if test="not($body)">
-				<xsl:attribute name="class">message message-<xsl:value-of select="$type"/> message-<xsl:value-of select="$type"/>-title-only</xsl:attribute>
-			</xsl:if>
+		<div id="{$id}">
+			<xsl:attribute name="class">message message-<xsl:value-of
+						select="$type"/><xsl:if test="not($body)"> message-<xsl:value-of
+						select="$type"/>-title-only</xsl:if></xsl:attribute>
 			<h3><xsl:copy-of select="$title"/></h3>
 			<xsl:if test="$body">
 				<p><xsl:copy-of select="$body"/></p>

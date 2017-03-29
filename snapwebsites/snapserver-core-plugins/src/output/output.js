@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.7.11
+ * Version: 0.1.7.12
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -977,7 +977,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
         errors = 0,
         warnings = 0,
         call_handle = false,
-        close_button = "<div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div>",
+        close_button = "<div class='close-button'><img src='/images/snap/close-button.png'/></div>",
         message_box = "<div class='user-message-box zordered'>" + close_button + "</div>";
 
     // if the list is empty, ignore
@@ -997,7 +997,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
         //
         jQuery("body").append("<div class='user-messages'>" + message_box + "</div>");
         msg = jQuery("div.user-messages");
-        msg_box = msg.children("user-message-box");
+        msg_box = msg.children(".user-message-box");
         call_handle = true;
     }
     else
@@ -1015,13 +1015,13 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
             //       the close button?
             //
             msg.append(message_box);
-            msg_box = msg.children("user-message-box");
+            msg_box = msg.children(".user-message-box");
         }
         else
         {
             // make sure to keep a tag on the existing number of errors and warnings
             //
-            msg_box = msg.children("user-message-box");
+            msg_box = msg.children(".user-message-box");
             errors = msg_box.children("div.message.message-error").length;
             warnings = msg_box.children("div.message.message-warning").length;
         }
