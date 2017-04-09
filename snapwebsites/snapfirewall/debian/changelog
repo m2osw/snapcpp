@@ -1,8 +1,8 @@
-snapfirewall (1.1.31.63~xenial) xenial; urgency=high
+snapfirewall (1.1.32.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-181: Commented out the Apache2 timeout handling in fail2ban.
 
- -- Build Server <build@m2osw.com>  Mon, 06 Feb 2017 02:00:46 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  9 Apr 2017 00:18:48 -0800
 
 snapfirewall (1.1.31.0~xenial) xenial; urgency=high
 
