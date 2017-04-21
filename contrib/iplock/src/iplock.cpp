@@ -139,7 +139,7 @@ advgetopt::getopt::option const g_iplock_options[] =
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
         "quiet",
         nullptr,
-        "Prevent iptables from printing messages in stdour or stderr.",
+        "Prevent iptables from printing messages in stdout or stderr.",
         advgetopt::getopt::argument_mode_t::no_argument
     },
     {
