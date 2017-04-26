@@ -512,6 +512,25 @@ void editor::on_check_for_redirect(content::path_info_t & ipath)
         {
             sessions::sessions::session_info info;
             sessions::sessions::instance()->load_session(session_data[0], info, false);
+
+            // verify that the path is correct
+            content::path_info_t main_ipath; // at this point main_ipath == ipath but that should get fixed one day
+            main_ipath.set_path(f_snap->get_uri().path());
+            if(info.get_page_path() != main_ipath.get_key()
+                    || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
+                    || info.get_plugin_owner() != get_plugin_name())
+            {
+                // the path was tempered with? the agent changes between hits?
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+                            "The POST request does not correspond to the editor it was defined for.",
+                            QString("User POSTed a request against \"%1\" with an incompatible page path (%2) or a different plugin (%3).")
+                            .arg(ipath.get_key())
+                            .arg(info.get_page_path())
+                            .arg(info.get_plugin_owner()));
+                NOTREACHED();
+            }
+
+SNAP_LOG_TRACE("**** setting ipath to ")(info.get_object_path());
             ipath.set_path( info.get_object_path() );
         }
     }
@@ -1037,6 +1056,8 @@ void editor::on_process_post(QString const & uri_path)
             NOTREACHED();
         }
 
+#if 0
+        // EX-175: moved this test to on_check_redirect() above.
         // verify that the path is correct
         content::path_info_t main_ipath; // at this point main_ipath == ipath but that should get fixed one day
         main_ipath.set_path(f_snap->get_uri().path());
@@ -1053,6 +1074,7 @@ void editor::on_process_post(QString const & uri_path)
                             .arg(info.get_plugin_owner()));
             NOTREACHED();
         }
+#endif
 
         // editing a draft?
         if(real_ipath.get_cpath().startsWith("admin/drafts/"))

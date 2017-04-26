@@ -414,7 +414,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
 {
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
 
-    // get the name of the plugin that owns this URL 
+    // get the name of the plugin that owns this URL
     plugins::plugin * owner_plugin(nullptr);
 
     QString const primary_owner(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER));
@@ -881,18 +881,6 @@ void path::on_execute(QString const & uri_path)
             ("]");
 #endif
 
-    // EX-175: moved to be called before `check_for_redirect()` call.
-    //
-    // if the user POSTed something, manage that content first, the
-    // effect is often to redirect the user in which case we want to
-    // emit an HTTP Location and return; also, with AJAX we may end
-    // up stopping early (i.e. not generate a full page but instead
-    // return the "form results".)
-    //
-    // TBD: Could we not also allow a post in case we did not find
-    //      a plugin to handle the page? (i.e. when pe is nullprt)
-    f_snap->process_post();
-
     // allow modules to redirect now, it has to be really early, note
     // that it will be BEFORE the path module verifies the permissions
     // AND before the POST data was managed
@@ -970,11 +958,6 @@ void path::on_execute(QString const & uri_path)
     {
         // execute the path for real
 
-#if 0
-        // Wed Apr 26 11:16:13 PDT 2017 (RDB, EX-175)
-        // NOTE: moved this ABOVE the call to `check_for_redirect()`.   
-        // If problems start happening, I'm leaving this here just in case.
-        //
         // if the user POSTed something, manage that content first, the
         // effect is often to redirect the user in which case we want to
         // emit an HTTP Location and return; also, with AJAX we may end
@@ -984,7 +967,6 @@ void path::on_execute(QString const & uri_path)
         // TBD: Could we not also allow a post in case we did not find
         //      a plugin to handle the page? (i.e. when pe is nullprt)
         f_snap->process_post();
-#endif
 
         // if the buffer is still empty, the post process did not generate
         // an AJAX response, so go on by executing the page
