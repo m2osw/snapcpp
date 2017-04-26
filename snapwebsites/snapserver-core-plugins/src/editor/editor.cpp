@@ -476,11 +476,43 @@ void editor::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(editor, "server", server, process_post, _1);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(editor, "server", server,         process_post,              _1);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content,   _1,  _2, _3);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content,     _1,  _2, _3);
     SNAP_LISTEN(editor, "layout", layout::layout, add_layout_from_resources, _1);
-    SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
+    SNAP_LISTEN(editor, "form",   form::form,     validate_post_for_widget,  _1,  _2, _3,  _4, _5, _6);
+    SNAP_LISTEN(editor, "path",   path::path,     check_for_redirect,        _1);
+}
+
+
+/** \brief Listen to the check_for_redirect() event, and do a soft redirect if applicable.
+ *
+ * When the path plugin fires, it will call this first, to see if we are doing a redirect.
+ * If so, then we take the target url and use it as the path. Think of this as a "soft redirect."
+ *
+ * \param[in,out] ipath  The referring path.
+ */
+void editor::on_check_for_redirect(content::path_info_t & ipath)
+{
+    if( f_snap->has_post() )
+    {
+        QString const editor_full_session(f_snap->postenv("_editor_session"));
+        if(editor_full_session.isEmpty())
+        {
+            // if the _editor_session variable does not exist, do not consider this
+            // POST as an Editor POST
+            SNAP_LOG_WARNING("***** POST is not for editor plugin");
+            return;
+        }
+
+        snap_string_list const session_data(editor_full_session.split("/"));
+        if(session_data.size() == 2)
+        {
+            sessions::sessions::session_info info;
+            sessions::sessions::instance()->load_session(session_data[0], info, false);
+            ipath.set_path( info.get_object_path() );
+        }
+    }
 }
 
 

@@ -350,6 +350,7 @@ private:
     QString             verify_html_validity(QString body);
     bool                widget_is_secret(QDomElement widget);
     void                retrieve_original_field(content::path_info_t & ipath);
+    void                on_check_for_redirect(content::path_info_t & ipath);
 
     snap_child *            f_snap = nullptr;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions
