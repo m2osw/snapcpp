@@ -490,6 +490,8 @@ void editor::bootstrap(snap_child * snap)
  * When the path plugin fires, it will call this first, to see if we are doing a redirect.
  * If so, then we take the target url and use it as the path. Think of this as a "soft redirect."
  *
+ * \note This addresses EX-175
+ *
  * \param[in,out] ipath  The referring path.
  */
 void editor::on_check_for_redirect(content::path_info_t & ipath)

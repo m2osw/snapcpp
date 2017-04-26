@@ -881,7 +881,7 @@ void path::on_execute(QString const & uri_path)
             ("]");
 #endif
 
-    // EX-170: moved to be called before `check_for_redirect()` call.
+    // EX-175: moved to be called before `check_for_redirect()` call.
     //
     // if the user POSTed something, manage that content first, the
     // effect is often to redirect the user in which case we want to
@@ -971,7 +971,7 @@ void path::on_execute(QString const & uri_path)
         // execute the path for real
 
 #if 0
-        // Wed Apr 26 11:16:13 PDT 2017 (RDB, EX-170)
+        // Wed Apr 26 11:16:13 PDT 2017 (RDB, EX-175)
         // NOTE: moved this ABOVE the call to `check_for_redirect()`.   
         // If problems start happening, I'm leaving this here just in case.
         //
