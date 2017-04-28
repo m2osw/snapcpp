@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.946
+ * Version: 0.0.3.947
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -5366,9 +5366,6 @@ snapwebsites.EditorForm.beforeHide = function(popupObject) // static
         title: "Confirm Closure",
         message: "You made changes to this form, are you sure you just want to close it?",
         buttons: [
-            /*{ name: 'discard', label: 'Yes, Discard' },
-            { name: 'save', label: 'No, Save' },
-            { name: 'cancel', label: 'Cancel' }*/
             // displayed right to left!
             { name: 'discard', label: 'Yes' },
             { name: 'cancel', label: 'No' }
@@ -5377,8 +5374,7 @@ snapwebsites.EditorForm.beforeHide = function(popupObject) // static
         height: 150,
         callback: function(name)
             {
-                //if(name == 'discard' || name == 'save' || name == 'no-save')
-                if(name === 'discard')
+                if(name === 'discard' || name === 'no-save')
                 {
                     popup.hideNow();
                 }
