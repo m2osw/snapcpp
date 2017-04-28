@@ -1,6 +1,6 @@
 /*!
  * Name: jquery
- * Version: 1.12.4
+ * Version: 1.12.4.4
  * Browsers: all
  * Description: jQuery JavaScript Library v1.12.4
  * http://jquery.com/
