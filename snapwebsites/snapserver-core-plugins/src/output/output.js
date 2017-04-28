@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.7.12
+ * Version: 0.1.7.13
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
