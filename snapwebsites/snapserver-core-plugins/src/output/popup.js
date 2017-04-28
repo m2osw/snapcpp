@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.59
+ * Version: 0.1.0.62
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.71)
@@ -76,7 +76,7 @@ snapwebsites.DarkenScreen = function(show, wait)
     // so we can compute the z-index as it stands right now...
     //
     snapwebsites.DarkenScreen.darkenScreenPopup_.css("z-index", 0);
-    this.zIndex_ = jQuery("body").children().maxZIndex() + 1;
+    this.zIndex_ = jQuery(".zordered").maxZIndex() + 1;
     snapwebsites.DarkenScreen.darkenScreenPopup_.css("z-index", this.zIndex_);
 
     // setup the 'wait' class appropriately
@@ -637,8 +637,8 @@ snapwebsites.Popup.prototype.show = function(popup)
             {
                 popup.darkenScreen_ = new snapwebsites.DarkenScreen(/** @type {number} */ (popup.darken), false);
             }
-            popup.widget.css("z-index", 1);
-            popup.widget.css("z-index", jQuery("body").children().maxZIndex() + 1);
+            popup.widget.css("z-index", 0);
+            popup.widget.css("z-index", jQuery(".zordered").maxZIndex() + 1);
 
             // user make have asked for one of the widget to get focus
             // in most cases this is used for anchors (forms have their

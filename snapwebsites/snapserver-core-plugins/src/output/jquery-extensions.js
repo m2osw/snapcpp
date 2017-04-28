@@ -66,6 +66,9 @@ jQuery.fn.extend({
      * maxz = $("<selector>").maxZIndex();
      * \endcode
      *
+     * \note
+     * In Snap! the `<selector>` is always set to `".zordered"`.
+     *
      * This function should be used to assign a z-index to your popup windows
      * instead of randomly assigning numbers and hoping everything appears in
      * the correct order.

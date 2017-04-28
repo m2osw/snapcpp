@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.39
+ * Version: 0.0.1.40
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -391,7 +391,7 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.openCalendar = function(editor_w
     // setup z-index each time we reopen the calendar
     // (reset itself first so we do not just +1 each time)
     calendar.css("z-index", 0);
-    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
+    z = window.top.jQuery(".zordered").maxZIndex() + 1;
     calendar.css("z-index", z);
 
     calendar.fadeIn(300);

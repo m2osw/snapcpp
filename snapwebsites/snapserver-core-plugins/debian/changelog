@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.102.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.103.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-79: Fixed the Z-Index computation for popups and date widgets.
 
- -- Build Server <build@m2osw.com>  Fri, 28 Apr 2017 02:00:53 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 28 Apr 2017 12:51:19 -0700
 
 snapserver-core-plugins (1.0.102.0~xenial) xenial; urgency=high
 
