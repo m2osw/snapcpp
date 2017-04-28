@@ -414,7 +414,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
 {
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
 
-    // get the name of the plugin that owns this URL 
+    // get the name of the plugin that owns this URL
     plugins::plugin * owner_plugin(nullptr);
 
     QString const primary_owner(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER));

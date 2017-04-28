@@ -102,12 +102,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </widget>
     <widget id="login" type="submit">
       <label>OK</label>
-      <tooltip>Well... we may want to rename this one if we use it as the alternate text of widgets...</tooltip>
+      <tooltip>Enter your credentials to log into the site.</tooltip>
       <classes>my-button-class</classes>
       <sizes>
         <width>25</width>
       </sizes>
-      <help>Long description that goes in the help box, for example.</help>
+      <help>Enter your user name and password, and then click the LOGIN button. This will log your user into the site.</help>
       <value>Log In</value>
     </widget>
   </widget>

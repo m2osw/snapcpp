@@ -443,7 +443,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2017, 3, 23, 0, 52, 57, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 4, 27, 10, 39, 10, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -476,11 +476,64 @@ void editor::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(editor, "server", server, process_post, _1);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(editor, "server", server,         process_post,              _1);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content,   _1,  _2, _3);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content,     _1,  _2, _3);
     SNAP_LISTEN(editor, "layout", layout::layout, add_layout_from_resources, _1);
-    SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
+    SNAP_LISTEN(editor, "form",   form::form,     validate_post_for_widget,  _1,  _2, _3,  _4, _5, _6);
+    SNAP_LISTEN(editor, "path",   path::path,     check_for_redirect,        _1);
+}
+
+
+/** \brief Listen to the check_for_redirect() event, and do a soft redirect if applicable.
+ *
+ * When the path plugin fires, it will call this first, to see if we are doing a redirect.
+ * If so, then we take the target url and use it as the path. Think of this as a "soft redirect."
+ *
+ * \note This addresses EX-175
+ *
+ * \param[in,out] ipath  The referring path.
+ */
+void editor::on_check_for_redirect(content::path_info_t & ipath)
+{
+    if( f_snap->has_post() )
+    {
+        QString const editor_full_session(f_snap->postenv("_editor_session"));
+        if(editor_full_session.isEmpty())
+        {
+            // if the _editor_session variable does not exist, do not consider this
+            // POST as an Editor POST
+            SNAP_LOG_WARNING("***** POST is not for editor plugin");
+            return;
+        }
+
+        snap_string_list const session_data(editor_full_session.split("/"));
+        if(session_data.size() == 2)
+        {
+            sessions::sessions::session_info info;
+            sessions::sessions::instance()->load_session(session_data[0], info, false);
+
+            // verify that the path is correct
+            content::path_info_t main_ipath; // at this point main_ipath == ipath but that should get fixed one day
+            main_ipath.set_path(f_snap->get_uri().path());
+            if(info.get_page_path() != main_ipath.get_key()
+                    || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
+                    || info.get_plugin_owner() != get_plugin_name())
+            {
+                // the path was tempered with? the agent changes between hits?
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+                            "The POST request does not correspond to the editor it was defined for.",
+                            QString("User POSTed a request against \"%1\" with an incompatible page path (%2) or a different plugin (%3).")
+                            .arg(ipath.get_key())
+                            .arg(info.get_page_path())
+                            .arg(info.get_plugin_owner()));
+                NOTREACHED();
+            }
+
+SNAP_LOG_TRACE("**** setting ipath to ")(info.get_object_path());
+            ipath.set_path( info.get_object_path() );
+        }
+    }
 }
 
 
@@ -1003,6 +1056,8 @@ void editor::on_process_post(QString const & uri_path)
             NOTREACHED();
         }
 
+#if 0
+        // EX-175: moved this test to on_check_redirect() above.
         // verify that the path is correct
         content::path_info_t main_ipath; // at this point main_ipath == ipath but that should get fixed one day
         main_ipath.set_path(f_snap->get_uri().path());
@@ -1019,6 +1074,7 @@ void editor::on_process_post(QString const & uri_path)
                             .arg(info.get_plugin_owner()));
             NOTREACHED();
         }
+#endif
 
         // editing a draft?
         if(real_ipath.get_cpath().startsWith("admin/drafts/"))
