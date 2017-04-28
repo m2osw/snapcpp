@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.102.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 28 Apr 2017 02:00:53 -0700
+
 snapserver-core-plugins (1.0.102.0~xenial) xenial; urgency=high
 
   * EX-79: No changes, was just testing why Cancel would not work on popups.
