@@ -1,3 +1,13 @@
+snapserver-core-plugins (1.0.101.0~xenial) xenial; urgency=high
+
+  * EX-79: Added a minimum "screen" height to be used by the sb-admin-2.js
+    so we do not get jumpy screens when scrolling down and a menu goes
+    from static to fixed.
+  * Fixed the fixed-box parameter validity test.
+  * Removed a space in the editor.js so it passes the JS compiler.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 27 Apr 2017 22:16:19 -0700
+
 snapserver-core-plugins (1.0.100.0~xenial) xenial; urgency=high
 
   * EX-1: Tested emitting an error in jQuery when accessing AJAX to see

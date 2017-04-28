@@ -1,6 +1,6 @@
 /*!
  * Name: sb-admin-2
- * Version: 2.1.0.21
+ * Version: 2.1.0.25
  * Browsers: all
  * Dependencies: metis-menu
  *
@@ -22,6 +22,17 @@ $(function() {
         var topOffset,
             width = this.window.innerWidth > 0 ? this.window.innerWidth : this.screen.width,
             height = (this.window.innerHeight > 0 ? this.window.innerHeight : this.screen.height) - 1;
+            min_height = 0;
+
+        jQuery(".screen-min-height").each(
+                    function()
+                    {
+                        var h = jQuery(this).outerHeight();
+                        if(min_height < h)
+                        {
+                            min_height = h;
+                        }
+                    });
 
         // are we on a narrow screen (i.e. smart phone)?
         $('div.navbar-collapse').toggleClass('collapse', width < 768);
@@ -38,9 +49,9 @@ $(function() {
 //$("h1.title").text(height + " / " + topOffset + " / " + $("footer.page-footer").outerHeight());
 
         // adjust height to a valid minimum (i.e. 0px == ignore)
-        if(height < 0)
+        if(height < min_height)
         {
-            height = 0;
+            height = min_height;
         }
         $("#page-wrapper").css("min-height", height + "px");
 
@@ -58,10 +69,14 @@ $(function() {
         return this.href == url;
     }).addClass('active').parent();
 
-    while (true) {
-        if (element.is('li')) {
+    while(true)
+    {
+        if(element.is('li'))
+        {
             element = element.parent().addClass('in').parent();
-        } else {
+        }
+        else
+        {
             break;
         }
     }

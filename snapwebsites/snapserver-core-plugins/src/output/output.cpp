@@ -166,7 +166,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2017, 4, 21, 16, 7, 50, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 4, 27, 21, 22, 50, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

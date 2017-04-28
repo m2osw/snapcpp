@@ -5378,7 +5378,7 @@ snapwebsites.EditorForm.beforeHide = function(popupObject) // static
         callback: function(name)
             {
                 //if(name == 'discard' || name == 'save' || name == 'no-save')
-                if(name === 'discard' )
+                if(name === 'discard')
                 {
                     popup.hideNow();
                 }

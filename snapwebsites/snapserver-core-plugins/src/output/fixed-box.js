@@ -1,6 +1,6 @@
 /** @preserve
  * Name: fixed-box
- * Version: 0.1.14
+ * Version: 0.1.19
  * Browsers: all
  * Copyright: Copyright 2015-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.70)
@@ -128,7 +128,7 @@ snapwebsites.FixedBox = function(box)
     // verify some parameters
     //
     if(this.name_.length == 0
-    && this.margin_ < 0)
+    || this.margin_ < 0)
     {
         throw new Error("A FixedBox must define a valid name attribute and a margin value which is not negative.");
     }
@@ -454,7 +454,7 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
         }
         return;
     }
-//console.log("pos = " + pos + ", max = " + max);
+//console.log("pos = " + pos + ", max = " + max + ", margin = " + this.margin_ + " (sum: " + (max + this.margin_) + "), height = " + screen_height);
 
     if(max < -this.margin_)
     {
