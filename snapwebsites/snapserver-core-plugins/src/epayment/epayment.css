@@ -1,6 +1,6 @@
 /*
  * Name: epayment
- * Version: 0.0.1.19
+ * Version: 0.0.1.20
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -31,6 +31,7 @@
 
 .epayment-facilities .epayment-facility
 {
+	box-sizing: content-box;
 	margin-right: 10px;
 	float: left;
 	border-top: 1px solid #cccccc;

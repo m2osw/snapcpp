@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.104.0~xenial) xenial; urgency=high
+
+  * EX-79: Fixed the box-sizing of the epayment buttons.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 28 Apr 2017 21:53:19 -0700
+
 snapserver-core-plugins (1.0.103.0~xenial) xenial; urgency=high
 
   * EX-79: Fixed the Z-Index computation for popups and date widgets.
