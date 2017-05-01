@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.104.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 29 Apr 2017 02:00:54 -0700
+
 snapserver-core-plugins (1.0.104.0~xenial) xenial; urgency=high
 
   * EX-79: Fixed the box-sizing of the epayment buttons.
