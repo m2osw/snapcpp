@@ -3,7 +3,7 @@
 # We moved the iptable LOG to iptables.log so we have to make sure it
 # gets rotated. This file is here for that purpose.
 #
-/var/log/iptables.log {
+/var/log/iptables/iptables.log {
     weekly
     maxsize 1M
     missingok
