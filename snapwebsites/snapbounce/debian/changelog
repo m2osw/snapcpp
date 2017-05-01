@@ -1,8 +1,13 @@
-snapbounce (1.0.13.47~xenial) xenial; urgency=high
+snapbounce (1.0.14.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-276: Added an rsyslog configuration file to force all postfix messages
+    to /var/log/mail/mail.log only (i.e. no syslog and no /var/log/mail.log*).
+  * Updated the fail2ban paths to point to the new location.
+  * Updated the debian/install file to add the rsyslog file.
+  * Updated the postinst script to move the log files in the sub-folder.
+  * Fixed the chown separator from '.' to ':'.
 
- -- Build Server <build@m2osw.com>  Mon, 13 Mar 2017 02:00:58 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 30 Apr 2017 20:35:48 -0700
 
 snapbounce (1.0.13.0~xenial) xenial; urgency=high
 
