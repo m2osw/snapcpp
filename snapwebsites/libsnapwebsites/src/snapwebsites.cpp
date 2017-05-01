@@ -2676,7 +2676,7 @@ void server::process_connection(tcp_client_server::bio_client::pointer_t client)
     {
         if(!f_snaplock)
         {
-            SNAP_LOG_DEBUG("snapserver contacted before cassandra and snaplock is ready.");
+            SNAP_LOG_DEBUG("snapserver contacted before cassandra and snaplock are ready.");
         }
         else
         {
