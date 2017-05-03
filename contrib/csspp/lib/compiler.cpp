@@ -3683,12 +3683,20 @@ bool compiler::parse_selector(node::pointer_t n)
                         << "found multiple #id entries, note that in most cases, assuming your HTML is proper (identifiers are not repeated) then only the last #id is necessary."
                         << error_mode_t::ERROR_INFO;
             }
-            else if(hash.size() == 1 && !arg->get_child(0)->is(node_type_t::HASH))
-            {
-                error::instance() << arg->get_position()
-                        << "found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
-                        << error_mode_t::ERROR_INFO;
-            }
+            // This is a valid case... as in:
+            //
+            //   .settings.active #id
+            //   .settings.inactive #id
+            //
+            // In most cases, though, people do it wrong, if you use #id by
+            // itself, it gives you direct access to exactly the right place.
+            //
+            //else if(hash.size() == 1 && !arg->get_child(0)->is(node_type_t::HASH))
+            //{
+            //    error::instance() << arg->get_position()
+            //            << "found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
+            //            << error_mode_t::ERROR_INFO;
+            //}
         }
     }
 

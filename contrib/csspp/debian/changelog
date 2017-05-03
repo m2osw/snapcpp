@@ -1,8 +1,8 @@
-csspp (1.0.16.40~xenial) xenial; urgency=high
+csspp (1.0.17.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-187: Removed the warning when finding a #id after other selectors.
 
- -- Build Server <build@m2osw.com>  Fri, 24 Mar 2017 02:01:01 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  2 May 2017 21:30:22 -0700
 
 csspp (1.0.16.0~xenial) xenial; urgency=high
 
