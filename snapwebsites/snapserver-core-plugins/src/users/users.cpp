@@ -2236,10 +2236,9 @@ QString users::login_user(QString const & email, QString const & password, bool 
             NOTREACHED();
         }
 
-        user_logged_info_t logged_info(f_snap);
+        user_logged_info_t logged_info( f_snap, user_info.get_user_path(false) );
         logged_info.set_password_policy(password_policy);
         logged_info.set_identifier(user_info.get_identifier());
-        logged_info.user_ipath().set_path(user_info.get_user_path(false));
 
         // although the user exists, as in, has an account on this Snap!
         // website, that account may not be attached to this website so

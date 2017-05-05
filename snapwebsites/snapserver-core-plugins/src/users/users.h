@@ -343,26 +343,26 @@ public:
     class user_logged_info_t
     {
     public:
-                                user_logged_info_t(snap_child * snap);
+                                        user_logged_info_t(snap_child * snap, QString const & user_ipath);
 
-        content::path_info_t &  user_ipath();
+        content::path_info_t const &    user_ipath() const;
 
-        void                    set_identifier(identifier_t identifier);
-        identifier_t            get_identifier() const;
+        void                            set_identifier(identifier_t identifier);
+        identifier_t                    get_identifier() const;
 
-        void                    set_password_policy(QString const & policy);
-        QString const &         get_password_policy() const;
+        void                            set_password_policy(QString const & policy);
+        QString const &                 get_password_policy() const;
 
-        void                    set_user_info(user_info_t const & user_info);
-        user_info_t const &     get_user_info() const;
+        void                            set_user_info(user_info_t const & user_info);
+        user_info_t const &             get_user_info() const;
 
-        void                    force_password_change();
-        void                    force_user_to_change_password();
-        bool                    is_password_change_required() const;
+        void                            force_password_change();
+        void                            force_user_to_change_password();
+        bool                            is_password_change_required() const;
 
         // f_uri is mutable so we can change it from anywhere
-        void                    set_uri(QString const & uri) const;
-        QString const &         get_uri() const;
+        void                            set_uri(QString const & uri) const;
+        QString const &                 get_uri() const;
 
     private:
         snap_child *                    f_snap = nullptr;

@@ -38,9 +38,10 @@ SNAP_PLUGIN_EXTENSION_START(users)
  *
  * \param[in] snap  A pointer to the snap_child object.
  */
-users::user_logged_info_t::user_logged_info_t(snap_child * snap)
+users::user_logged_info_t::user_logged_info_t(snap_child * snap, QString const & user_ipath)
     : f_snap(snap)
 {
+    f_user_ipath.set_path(user_ipath);
 }
 
 
@@ -52,7 +53,7 @@ users::user_logged_info_t::user_logged_info_t(snap_child * snap)
  *
  * \return A reference to the path_info_t object.
  */
-content::path_info_t & users::user_logged_info_t::user_ipath()
+content::path_info_t const & users::user_logged_info_t::user_ipath() const
 {
     return f_user_ipath;
 }
