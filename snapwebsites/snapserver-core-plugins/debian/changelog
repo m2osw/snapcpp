@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.105.0~xenial) xenial; urgency=high
+
+  * users::user_logged_info_t now has a slight interface change, which forces
+    the user to add a path to the constructor. The ipath call is now const,
+    and returns a const object.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 05 May 2017 12:13:12 -0700
+
 snapserver-core-plugins (1.0.104.7~xenial) xenial; urgency=high
 
   * Nightly build.
