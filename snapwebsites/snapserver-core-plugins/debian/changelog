@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.105.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.106.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-185: Use the "core::canonical_domain" variable as the canonical domain
+    name on test websites, so SEO works better.
 
- -- Doug Barbieri <doug@dooglio.net>  Fri, 05 May 2017 17:32:39 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat,  6 May 2017 14:27:19 -0800
 
 snapserver-core-plugins (1.0.105.0~xenial) xenial; urgency=high
 
@@ -11,12 +12,6 @@ snapserver-core-plugins (1.0.105.0~xenial) xenial; urgency=high
     and returns a const object.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 05 May 2017 12:13:12 -0700
-
-snapserver-core-plugins (1.0.104.7~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 29 Apr 2017 02:00:54 -0700
 
 snapserver-core-plugins (1.0.104.0~xenial) xenial; urgency=high
 
