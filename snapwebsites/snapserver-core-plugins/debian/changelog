@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.106.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 07 May 2017 02:00:52 -0700
+
 snapserver-core-plugins (1.0.106.0~xenial) xenial; urgency=high
 
   * SNAP-185: Use the "core::canonical_domain" variable as the canonical domain
