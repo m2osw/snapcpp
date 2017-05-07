@@ -2236,7 +2236,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
             NOTREACHED();
         }
 
-        user_logged_info_t logged_info( f_snap, user_info.get_user_path(false) );
+        user_logged_info_t logged_info( f_snap, user_info );
         logged_info.set_password_policy(password_policy);
         logged_info.set_identifier(user_info.get_identifier());
 
@@ -2244,14 +2244,15 @@ QString users::login_user(QString const & email, QString const & password, bool 
         // website, that account may not be attached to this website so
         // we need to verify that before moving further.
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-        if(!content_table->exists(logged_info.user_ipath().get_key()))
+        content::path_info_t ipath(logged_info.user_ipath());
+        if(!content_table->exists(ipath.get_key()))
         {
             return "it looks like you have an account on this Snap! system but not this specific website. Please register on this website and try again";
         }
 
         // before we actually log the user in we must make sure he is
         // not currently blocked or not yet active
-        links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, logged_info.user_ipath().get_key(), logged_info.user_ipath().get_branch());
+        links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
         links::link_info status_info;
         bool valid(true);
@@ -2388,6 +2389,9 @@ QString users::login_user(QString const & email, QString const & password, bool 
                 // you may specify a URI to where the user should be sent on
                 // log in, used in the redirect below, although we will go
                 // to user/password whatever the path is specified here
+                //
+                // Also, put a fresh copy of the user info into the logged_info object.
+                //
                 logged_info.set_user_info(user_info);
                 user_logged_in(logged_info);
 
