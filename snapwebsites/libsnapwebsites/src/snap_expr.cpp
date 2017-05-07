@@ -4131,24 +4131,20 @@ void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
  *
  * Functions we support:
  *
- * \li cell( \<path>, \<name> [, \<type>] )
+ * \li cell( \<table>, \<row>, \<cell> )
  *
- * Read the content of a cell named \<name>. If \<type> is not specified,
- * the cell content is viewed as binary. The program does NOT know what
- * type the cell is. You may cast the content at a later time as in:
- *
- * \code
- * int32(cell(path, "stats::counter"))
- * \endcode
- *
- * To specify the table name, use a qualified name as in:
+ * Read the content of a cell named \<cell> from table \<table>
+ * in row \<row>. The function always returns a binary piece of
+ * content (i.e. the raw data from the cell). It can be converted using
+ * a cast:
  *
  * \code
- * data::cell(path, "content::modified", int32_t)
+ * int32(cell("content", website_uri() + "path/to/data", "stats::counter"));
  * \endcode
  *
- * \<path> may represent a list of paths in which case only the first path
- * is used by default. The following paths are simply ignored.
+ * Note that a missing cell returns an empty buffer which represents zero or
+ * an empty string, although you may use `cell_exists()` first to know
+ * whether the cell exists or is just empty.
  *
  * \li cell_exists( \<table>, \<row>, \<cell> )
  *

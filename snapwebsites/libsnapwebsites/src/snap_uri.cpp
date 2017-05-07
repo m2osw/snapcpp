@@ -143,8 +143,7 @@ bool snap_uri::set_uri(QString const & uri)
     QChar const * colon1(nullptr);
     QChar const * colon2(nullptr);
     QChar const * at(nullptr);
-    s = u;
-    while(!u->isNull() && u->unicode() != '/')
+    for(s = u; !u->isNull() && u->unicode() != '/'; ++u)
     {
         if(u->unicode() == ':')
         {
@@ -177,7 +176,6 @@ bool snap_uri::set_uri(QString const & uri)
             }
             at = u;
         }
-        ++u;
     }
     // without an at (@) colon1 indicates a port
     if(at == nullptr && colon1 != nullptr)
@@ -208,7 +206,7 @@ bool snap_uri::set_uri(QString const & uri)
     if(colon2 != nullptr)
     {
         full_domain_name.insert(0, s, static_cast<int>(colon2 - s));
-        const QChar *p(colon2 + 1);
+        QChar const * p(colon2 + 1);
         if(p == u)
         {
             // empty port entries are considered invalid
@@ -273,8 +271,7 @@ bool snap_uri::set_uri(QString const & uri)
                     uri_path << urldecode(QString(s, static_cast<int>(u - s)));
                 }
                 // skip the '/'
-                ++u;
-                s = u;
+                s = u + 1;
             }
         }
         if(s != u)
@@ -382,8 +379,7 @@ bool snap_uri::set_uri(QString const & uri)
                         uri_path << urldecode(QString(s, static_cast<int>(u - s)));
                     }
                     // skip the '/'
-                    ++u;
-                    s = u;
+                    s = u + 1;
                 }
             }
             if(s != u)
@@ -1907,13 +1903,13 @@ QString snap_uri::urlencode(QString const & uri, char const * accepted)
  *
  * \return The decoded URI, it may be equal to the input.
  */
-QString snap_uri::urldecode(QString const& uri, bool relax)
+QString snap_uri::urldecode(QString const & uri, bool relax)
 {
     // Note that if the URI is properly encoded, then latin1 == UTF-8
     QByteArray input(uri.toUtf8());
 
     QByteArray utf8;
-    for(const char *u(input.data()); *u != '\0'; ++u)
+    for(char const * u(input.data()); *u != '\0'; ++u)
     {
         if(*u == '+')
         {

@@ -1,8 +1,12 @@
-libsnapwebsites (1.1.92.1~xenial) xenial; urgency=high
+libsnapwebsites (1.1.93.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-185: Using the "sites" variable made me discover a couple of problems
+    in snap_uri, there may still be one more that I have not yet caught.
+    The problem was a variable that could be incremented twice in a row.
+  * Started a test to verify that the snap_uri object works as expected.
+  * Fixed the cell() function documentation in snap_expr.
 
- -- Build Server <build@m2osw.com>  Sun, 07 May 2017 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  7 May 2017 10:22:29 -0800
 
 libsnapwebsites (1.1.92.0~xenial) xenial; urgency=high
 

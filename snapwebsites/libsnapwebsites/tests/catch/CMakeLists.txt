@@ -42,6 +42,7 @@ if(CATCH_FOUND)
         catch_tests.h
 
         # actual tests
+        catch_snapuri.cpp
         catch_weightedhttpstrings.cpp
     )
 
