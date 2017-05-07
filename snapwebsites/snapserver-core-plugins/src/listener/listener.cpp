@@ -126,7 +126,7 @@ int64_t listener::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 16, 21, 41, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 5, 6, 23, 30, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

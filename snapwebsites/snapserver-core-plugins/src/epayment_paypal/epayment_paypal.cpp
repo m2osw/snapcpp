@@ -326,7 +326,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 13, 16, 35, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 5, 6, 23, 32, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

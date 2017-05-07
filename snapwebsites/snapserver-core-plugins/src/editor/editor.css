@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.129
+ * Version: 0.0.1.130
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -34,6 +34,7 @@
 	height: 16px;
 	padding: 5px;
 	border: 1px solid white;
+	box-sizing: content-box;
 }
 #toolbar div.button:hover
 {

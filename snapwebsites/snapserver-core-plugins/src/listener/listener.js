@@ -1,6 +1,6 @@
 /** @preserve
  * Name: listener
- * Version: 0.0.1.16
+ * Version: 0.0.1.17
  * Browsers: all
  * Depends: server-access (>= 0.0.1.16)
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -966,8 +966,8 @@ snapwebsites.Listener.prototype.processRequests_ = function()
             {
                 this.serverAccess_ = new snapwebsites.ServerAccess(this);
                 this.serverAccess_.setURI(snapwebsites.castToString(
-                            jQuery("link[rel='canonical']").attr("href"),
-                            "casting href of the canonical link to a string in snapwebsites.Listener.processRequests_()"));
+                            jQuery("link[rel='page-uri']").attr("href"),
+                            "casting href of the page-uri link to a string in snapwebsites.Listener.processRequests_()"));
             }
 
             // the number of URI sent

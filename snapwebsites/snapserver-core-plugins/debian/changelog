@@ -1,8 +1,14 @@
-snapserver-core-plugins (1.0.106.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.107.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-185: Replaced the `jQuery()` accesses to "canonical" with "page-uri".
+  * Added the `<link rel="page-uri" ...>` tag to the header.
+  * EX-79: Fixed the box-sizing of the editor toolbar, it still appears at
+    the wrong position, though.
+  * Added the `expr()` function to the filter functionality.
+  * Fixed the filter `token_help()` function with missing entries.
+  * Fixed an error message in layout.cpp so it shows the correct filename.
 
- -- Build Server <build@m2osw.com>  Sun, 07 May 2017 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  7 May 2017 10:27:19 -0800
 
 snapserver-core-plugins (1.0.106.0~xenial) xenial; urgency=high
 

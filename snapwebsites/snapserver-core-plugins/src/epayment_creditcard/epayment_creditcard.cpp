@@ -204,7 +204,7 @@ int64_t epayment_creditcard::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 10, 22, 48, 16, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 5, 6, 23, 33, 16, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

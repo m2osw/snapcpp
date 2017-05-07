@@ -147,11 +147,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		</meta>
 		<meta name="application-name" content="snapwebsites"/>
 
-		<!-- canonical (must be complete so we do not try to snap:prepend-base()) -->
+		<!-- canonical -->
 		<xsl:variable name="canonical_uri" as="xs:string" select="/snap/head/metadata/desc[@type='canonical_uri']/data"/>
 		<xsl:if test="$canonical_uri != ''">
 			<link rel="canonical" type="text/html" title="Canonical URI (1)" href="{$canonical_uri}"/>
 			<meta property="og:url" content="{$canonical_uri}"/>
+		</xsl:if>
+
+		<!-- URI of this page -->
+		<xsl:if test="$page_uri != ''">
+			<link rel="page-uri" type="text/html" title="Site URI" href="{$page_uri}"/>
 		</xsl:if>
 
 		<!-- shortlink == this is where we could test having or not having a plugin could dynamically change the XSL templates -->

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment-credit-card
- * Version: 0.0.1.5
+ * Version: 0.0.1.6
  * Browsers: all
  * Depends: epayment (>= 0.0.1.33)
  * Copyright: Copyright 2016-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -69,7 +69,7 @@ snapwebsites.ePaymentCreditCard = function(gateway)
     this.popup_ = {
         id: "e-payment-credit-card",
         title: "Credit Card Details",
-        path: "/epayment/credit-card?gateway=" + this.gateway_ + "&from=" + jQuery("link[rel='canonical']").attr("href"),
+        path: "/epayment/credit-card?gateway=" + this.gateway_ + "&from=" + jQuery("link[rel='page-uri']").attr("href"),
         darken: 150,
         width: 500,
         height: 375
@@ -155,7 +155,7 @@ snapwebsites.ePaymentCreditCard.prototype.closeWindow = function()
 //        this.serverAccess_ = new snapwebsites.ServerAccess(this);
 //    }
 //
-//    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.ePaymentFacilityStripe.buttonClicked()") + "?a=view");
+//    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.ePaymentFacilityStripe.buttonClicked()") + "?a=view");
 //    this.serverAccess_.showWaitScreen(1);
 //    this.serverAccess_.setData(
 //        {

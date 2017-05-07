@@ -500,6 +500,7 @@ void filter::on_xss_filter(QDomNode & node,
  *                           without format, the default depends on the locale
  *                           \<unixdate> is optional, if specified use it
  *                           instead of the current date and time
+ * \li [expr("\<expression>")] -- run \<expression> and save result
  * \li [gmdate("\<format>")] -- UTC date with format as per strftime();
  *                           without format, the default depends on the locale
  * \li [select("\<xpath>")] -- select content from the XML document using
@@ -652,6 +653,43 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
         }
         break;
 
+    case 'e':
+        if(token.is_token("expr"))
+        {
+            if(token.verify_args(1, 1))
+            {
+                parameter_t const expr_param(token.get_arg("expression", 0, token_t::TOK_STRING));
+
+                snap_expr::expr e;
+                if(e.compile(expr_param.f_value))
+                {
+                    snap_expr::variable_t::variable_map_t variables;
+                    snap_expr::variable_t var_path("path");
+                    var_path.set_value(ipath.get_cpath());
+                    variables["path"] = var_path;
+                    snap_expr::variable_t var_page("page");
+                    var_page.set_value(ipath.get_key());
+                    variables["page"] = var_page;
+
+                    snap_expr::variable_t result;
+                    snap_expr::functions_t functions;
+                    e.execute(result, variables, functions);
+
+                    token.f_replacement = result.get_string("result");
+                }
+                else
+                {
+                    // let admins know there is a bug in their layout script
+                    //
+                    token.f_replacement = "<span style='background-color: #ffe0e0;'>error: Could not compile expression \""
+                                        + expr_param.f_value
+                                        + "\".</span>";
+                }
+            }
+            return false;
+        }
+        break;
+
     case 'g':
         if(token.is_token("gmdate"))
         {
@@ -683,14 +721,6 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
             token_help_t help;
             token_help(help);
             token.f_replacement = help.result();
-            return false;
-        }
-        break;
-
-    case 't':
-        if(token.is_token("test"))
-        {
-            token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
             return false;
         }
         break;
@@ -742,6 +772,14 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
         }
         break;
 
+    case 't':
+        if(token.is_token("test"))
+        {
+            token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
+            return false;
+        }
+        break;
+
     case 'v':
         if(token.is_token("version"))
         {
@@ -777,12 +815,21 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
  */
 bool filter::token_help_impl(token_help_t & help)
 {
+    help.add_token("child",
+        "Concatenate two paths with one '/' in between.");
+
+    help.add_token("copyright_date_range",
+        "Output a copyright date range (i.e. 2012-2017).");
+
     help.add_token("date",
         "Output the current date. You may enter a format (same as strftime"
         " format) otherwise the format depends on the current locale"
         " [format]. You may also specify a Unix time (0 represent Jan 1,"
         " 1970) as the second parameter [unixtime], in which case that"
         " time is converted to a date.");
+
+    help.add_token("expr",
+        "Compute and expression and return the result as the replacement.");
 
     help.add_token("gmdate",
         "Output the current UTC date. You may enter a format (same as"

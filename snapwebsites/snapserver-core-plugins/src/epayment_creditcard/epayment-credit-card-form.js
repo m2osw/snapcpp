@@ -429,7 +429,7 @@ snapwebsites.ePaymentCreditCardForm.prototype.sendForm_ = function()
         this.serverAccess_ = new snapwebsites.ServerAccess(this);
     }
 
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.ePaymentCreditCardForm.sendForm_()") + "?a=view");
+    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.ePaymentCreditCardForm.sendForm_()") + "?a=view");
     this.serverAccess_.showWaitScreen(1);
     this.serverAccess_.setData(
         {

@@ -798,7 +798,7 @@ QString layout::define_layout(
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Somehow no website layout was accessible, not even the internal default.",
-                    "layout::define_layout() could not open default-body-parser.xsl resource file.");
+                    "layout::define_layout() could not open \"" + default_filename + "\" resource file.");
             NOTREACHED();
         }
         QByteArray const data(file.readAll());
@@ -807,7 +807,7 @@ QString layout::define_layout(
             f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Somehow no website layout was accessible, not even the internal default.",
-                    "layout::define_layout() could not read the default-body-parser.xsl resource file.");
+                    "layout::define_layout() could not read the \"" + default_filename + "\" resource file.");
             NOTREACHED();
         }
         xsl = QString::fromUtf8(data.data(), data.size());

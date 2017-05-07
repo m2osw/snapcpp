@@ -1,6 +1,6 @@
 /** @preserve
  * Name: ecommerce
- * Version: 0.0.1.65
+ * Version: 0.0.1.66
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -3033,7 +3033,7 @@ snapwebsites.eCommerceCart.prototype.serverAccessTimerReady = function(request_n
     xml += "</cart>";
 
     // TODO: I have to append "...?a=view" to the Query String in a rather unsafe manner
-    server_access.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.eCommerceCart.serverAccessTimerReady()") + "?a=view");
+    server_access.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.eCommerceCart.serverAccessTimerReady()") + "?a=view");
     server_access.setData({ ecommerce__cart_products: xml });
 };
 

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.947
+ * Version: 0.0.3.948
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -4610,7 +4610,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
         {
             this.serverAccess_ = new snapwebsites.ServerAccess(this);
         }
-        this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorForm.saveData()"),
+        this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.EditorForm.saveData()"),
                                   opt_options);
         this.serverAccess_.setData(obj);
         this.serverAccess_.send();
@@ -5536,7 +5536,7 @@ snapwebsites.inherits(snapwebsites.Editor, snapwebsites.EditorBase);
  * This class is a singleton and as such it makes use of a static
  * reference to itself. It gets created on load.
  *
- * \@type {snapwebsites.Editor}
+ * @type {snapwebsites.Editor}
  */
 snapwebsites.EditorInstance = null; // static
 
@@ -6732,7 +6732,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
             {
                 that.serverAccess_ = new snapwebsites.ServerAccess(that);
             }
-            that.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeContentEditable.setupEditButton()"));
+            that.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.EditorWidgetTypeContentEditable.setupEditButton()"));
             that.serverAccess_.setData({
                             _editor_request_original_data: 1,
                             field_name: editor_widget.getName()
@@ -9563,7 +9563,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     {
         this.serverAccess_ = new snapwebsites.ServerAccess(this);
     }
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeDroppedFileWithPreview.droppedAttachment()"));
+    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.EditorWidgetTypeDroppedFileWithPreview.droppedAttachment()"));
     this.serverAccess_.setData(form_data);
     this.serverAccess_.send(e);
 };
@@ -10129,7 +10129,7 @@ snapwebsites.EditorWidgetTypeDroppedFile.prototype.droppedAttachment = function(
     {
         this.serverAccess_ = new snapwebsites.ServerAccess(this);
     }
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeDroppedFile.droppedAttachment()"));
+    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.EditorWidgetTypeDroppedFile.droppedAttachment()"));
     this.serverAccess_.setData(form_data);
     this.serverAccess_.send(e);
 };
