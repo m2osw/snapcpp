@@ -1984,8 +1984,29 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
     QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : ipath.get_cpath().left(p)));
 
     QString const qs_action(f_snap->get_server_parameter("qs_action"));
-    snap_uri const& uri(f_snap->get_uri());
+    snap_uri const & uri(f_snap->get_uri());
     QString const action(uri.query_option(qs_action));
+
+    // the canonical URI may point to another website (i.e. if we are on a
+    // test system, then all canonical URIs should point to the original)
+    //
+    // WARNING: we cannot use path_info_t to canonicalize this string
+    //          since the domain is not going to be the same
+    //
+    QString canonical_domain(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_CANONICAL_DOMAIN)).stringValue().trimmed());
+    if(canonical_domain.isEmpty())
+    {
+        // the port is tricky in this case, i.e. the destination may require
+        // a specific port but the port of the test website may be different
+        // in all likelyhood, though, we do not want a port
+        //
+        canonical_domain = uri.get_website_uri();
+    }
+    // snap_uri will canonicalize the URI for us
+    //
+    snap_uri const canonical_uri(canonical_domain
+                               + "/"
+                               + main_ipath.get_cpath());
 
     QString site_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue().trimmed());
     QString site_short_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)).stringValue().trimmed());
@@ -2026,6 +2047,10 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         // snap/head/metadata/desc[@type="page_uri"]/data
         (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=page_uri]/data")
+
+        // snap/head/metadata/desc[@type="canonical_uri"]/data
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, canonical_uri.get_uri())
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=canonical_uri]/data")
 
         // snap/head/metadata/desc[@type="real_uri"]/data
         (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())

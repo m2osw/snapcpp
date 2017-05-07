@@ -143,6 +143,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
 
+    case name_t::SNAP_NAME_CORE_CANONICAL_DOMAIN:  // this is only for test websites so search engines know to search on the real site instead
+        return "core::canonical_domain";
+
     case name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
         return "Content-Type";
 
