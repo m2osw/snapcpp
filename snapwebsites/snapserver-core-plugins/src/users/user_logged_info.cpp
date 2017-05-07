@@ -38,10 +38,10 @@ SNAP_PLUGIN_EXTENSION_START(users)
  *
  * \param[in] snap  A pointer to the snap_child object.
  */
-users::user_logged_info_t::user_logged_info_t(snap_child * snap, QString const & user_ipath)
+users::user_logged_info_t::user_logged_info_t(snap_child * snap, users::user_info_t const & user_info )
     : f_snap(snap)
+    , f_user_info(user_info)
 {
-    f_user_ipath.set_path(user_ipath);
 }
 
 
@@ -53,9 +53,11 @@ users::user_logged_info_t::user_logged_info_t(snap_child * snap, QString const &
  *
  * \return A reference to the path_info_t object.
  */
-content::path_info_t const & users::user_logged_info_t::user_ipath() const
+content::path_info_t users::user_logged_info_t::user_ipath() const
 {
-    return f_user_ipath;
+    content::path_info_t ipath;
+    ipath.set_path(f_user_info.get_user_path(false /*leading slash*/));
+    return ipath;
 }
 
 
@@ -128,7 +130,6 @@ QString const & users::user_logged_info_t::get_password_policy() const
 {
     return f_password_policy;
 }
-
 
 /** \brief Defines the user info object.
  *
@@ -212,8 +213,9 @@ void users::user_logged_info_t::force_user_to_change_password()
 
     // first check whether the link exists
     //
+    content::path_info_t ipath(user_ipath());
     QString const link_name(get_name(name_t::SNAP_NAME_USERS_STATUS));
-    links::link_info user_status_info(link_name, true, f_user_ipath.get_key(), f_user_ipath.get_branch());
+    links::link_info user_status_info(link_name, true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
     links::link_info status_info;
     if(!link_ctxt->next_link(status_info))
@@ -221,7 +223,7 @@ void users::user_logged_info_t::force_user_to_change_password()
         // no link, create one with "PASSWORD"
         //
         bool const source_unique(true);
-        links::link_info source(link_name, source_unique, f_user_ipath.get_key(), f_user_ipath.get_branch(true, "xx"));
+        links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch(true, "xx"));
 
         QString const link_to(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const destination_unique(false);

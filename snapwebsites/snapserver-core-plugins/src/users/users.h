@@ -343,9 +343,9 @@ public:
     class user_logged_info_t
     {
     public:
-                                        user_logged_info_t(snap_child * snap, QString const & user_ipath);
+                                        user_logged_info_t(snap_child * snap, user_info_t const & user_info );
 
-        content::path_info_t const &    user_ipath() const;
+        content::path_info_t            user_ipath() const;
 
         void                            set_identifier(identifier_t identifier);
         identifier_t                    get_identifier() const;
@@ -366,7 +366,6 @@ public:
 
     private:
         snap_child *                    f_snap = nullptr;
-        mutable content::path_info_t    f_user_ipath;
         QString                         f_password_policy;
         user_info_t                     f_user_info;
         identifier_t                    f_identifier = 0;
