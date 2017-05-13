@@ -1,8 +1,13 @@
-snapserver-core-plugins (1.0.107.6~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.108.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-180: Make sure that the expiration date is valid when processing a
+    credit card (if undefined, the string is empty and it would "Crash").
+  * Actually marked the card number, security code, and expiration date
+    fields of the editor as secret.
+  * Finally found the reason why error messages could not be closed after
+    you closed them once and fixed that problem.
 
- -- Doug Barbieri <doug@dooglio.net>  Sun, 07 May 2017 14:57:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 12 May 2017 23:30:19 -0800
 
 snapserver-core-plugins (1.0.107.0~xenial) xenial; urgency=high
 

@@ -72,7 +72,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <background-value>first and last name</background-value>
     <required>required</required>
   </widget>
-  <widget id="card_number" type="line-edit" path="epayment/card_number" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="card_number" type="line-edit" secret="secret" path="epayment/card_number" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter your card number.</tooltip>
     <help>Enter all the digits of your credit or debit card in this field. You may enter spaces to separate groups of digits.</help>
     <sizes>
@@ -82,7 +82,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <background-value>card number</background-value>
     <required>required</required>
   </widget>
-  <widget id="security_code" type="line-edit" path="epayment/security_code" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="security_code" type="line-edit" secret="secret" path="epayment/security_code" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter the security code.</tooltip>
     <help>
       Depending on your card, you have a security code on the front
@@ -96,7 +96,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <background-value>security code</background-value>
     <required>required</required>
   </widget>
-  <widget id="expiration_date" type="dropdown-date-edit" path="epayment/expiration_date" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="expiration_date" type="dropdown-date-edit" secret="secret" path="epayment/expiration_date" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter the Month and Year of your card expiration date.</tooltip>
     <help>This field must be set to the month and year on which your credit card will expire.</help>
     <required>required</required>

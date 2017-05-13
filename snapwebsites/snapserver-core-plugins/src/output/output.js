@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.7.13
+ * Version: 0.1.7.14
  * Browsers: all
  * Copyright: Copyright 2014-2017 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -1016,6 +1016,8 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
             //
             msg.append(message_box);
             msg_box = msg.children(".user-message-box");
+
+            call_handle = true;
         }
         else
         {
@@ -1113,10 +1115,13 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
     if(!visible)
     {
-        msg.fadeIn(500);
         if(call_handle)
         {
             this.handleMessages_();
+        }
+        else
+        {
+            msg.fadeIn(500);
         }
     }
     if(!call_handle)
