@@ -885,7 +885,7 @@ int manager_cgi::is_logged_in(std::string & request_method)
             return error(
                       "500 Internal Server Error"
                     , "Could not save user session information."
-                    , "The syste could not open the user session information file.");
+                    , "The system could not open the user session information file.");
         }
         for(auto f : user_info)
         {
