@@ -1,6 +1,6 @@
 /** @preserve
  * Name: locale-timezone
- * Version: 0.0.1.23
+ * Version: 0.0.1.28
  * Browsers: all
  * Depends: editor (>= 0.0.3.245)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.

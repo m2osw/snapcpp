@@ -90,7 +90,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:call-template name="snap:dropdown">
               <xsl:with-param name="path" select="$path"/>
               <xsl:with-param name="name" select="concat($name, '_continent')"/>
+              <!-- No need to do this at all, since we've already selected the value as default. The control can handle it.
               <xsl:with-param name="value" select="replace(substring-before(string($value), '/'), '_', ' ')"/>
+              -->
             </xsl:call-template>
           </xsl:for-each>
         </xsl:for-each>
@@ -117,7 +119,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:call-template name="snap:dropdown">
               <xsl:with-param name="path" select="$path"/>
               <xsl:with-param name="name" select="concat($name, '_city')"/>
+              <!-- No need to do this at all, since we've already selected the value as default. The control can handle it.
               <xsl:with-param name="value" select="replace(substring-after(string($value), '/'), '_', ' ')"/>
+              -->
             </xsl:call-template>
           </xsl:for-each>
         </xsl:for-each>

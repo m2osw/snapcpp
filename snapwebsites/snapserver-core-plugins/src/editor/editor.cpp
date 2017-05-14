@@ -530,7 +530,7 @@ void editor::on_check_for_redirect(content::path_info_t & ipath)
                 NOTREACHED();
             }
 
-SNAP_LOG_TRACE("**** setting ipath to ")(info.get_object_path());
+//SNAP_LOG_TRACE("**** setting ipath to ")(info.get_object_path());
             ipath.set_path( info.get_object_path() );
         }
     }
@@ -5151,7 +5151,7 @@ void editor::on_generate_page_content(
         QString const field_name(w.attribute("field"));
         QString const field_id(w.attribute("id"));
         QString const field_type(w.attribute("type"));
-        QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
+        //QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
 
         // note: the auto-save may not be turned on, we can still copy
         //       empty pointers around, it is fast enough
@@ -5291,8 +5291,9 @@ void editor::on_generate_page_content(
     QDomDocument doc_output("widgets");
     x.evaluate_to_document(doc_output);
 
-//SNAP_LOG_WARNING("Editor Focus [")(editor_widgets.toString(-1))("]");
-//SNAP_LOG_WARNING("Editor Output [")(doc_output.toString(-1))("]");
+//SNAP_LOG_DEBUG("Editor Form [")(f_editor_form.toString(-1))("]");
+//SNAP_LOG_DEBUG("Editor Focus [")(editor_widgets.toString(-1))("]");
+//SNAP_LOG_DEBUG("Editor Output [")(doc_output.toString(-1))("]");
 
     QDomNodeList result_widgets(doc_output.elementsByTagName("widget"));
     int const max_results(result_widgets.size());
