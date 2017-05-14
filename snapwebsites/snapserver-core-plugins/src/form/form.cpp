@@ -1385,7 +1385,7 @@ QString form::text_64max(QString const& text, bool const is_secret)
  *
  * \return The shorten HTML, although still 100% valid HTML.
  */
-QString form::html_64max(QString const& html, bool const is_secret)
+QString form::html_64max(QString const & html, bool const is_secret)
 {
     if(is_secret)
     {

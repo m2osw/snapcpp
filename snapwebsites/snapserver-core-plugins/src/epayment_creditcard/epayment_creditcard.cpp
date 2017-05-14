@@ -810,6 +810,22 @@ void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
     // small processing on the expiration date
     QString const expiration_date(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("expiration_date"))));
     snap_string_list const expiration_date_parts(expiration_date.split('/'));
+    if(expiration_date_parts.size() < 2)
+    {
+        SNAP_LOG_FATAL("could not save the epayment_creditcard data because the expiration date is invalid.");
+
+        messages::messages * messages(messages::messages::instance());
+        messages->set_error(
+            "Invalid Expiration Date",
+            // WARNING: DO NOT INCLUDE THE EXPIRATION DATE, it is not supposed
+            //          to be saved anywhere unless properly encrypted
+            "We could not process your payment, the expiration date is invalid.",
+            "The expiration date is expected to be 'MM/YY', the '/' is missing.",
+            false
+        );
+
+        return;
+    }
     creditcard_info.set_expiration_date_month(expiration_date_parts[1]);
     creditcard_info.set_expiration_date_year(expiration_date_parts[0]);
 
