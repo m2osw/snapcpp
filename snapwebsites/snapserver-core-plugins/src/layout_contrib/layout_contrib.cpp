@@ -141,7 +141,7 @@ QString layout_contrib::description() const
  */
 QString layout_contrib::dependencies() const
 {
-    return "|content|links|path|";
+    return "|content|links|output|path|";
 }
 
 
@@ -164,7 +164,7 @@ int64_t layout_contrib::do_update(int64_t last_updated)
 
     // first time, make sure the default theme is installed
     //
-    SNAP_PLUGIN_UPDATE(2017, 4, 27, 22, 4, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 5, 20, 0, 14, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
