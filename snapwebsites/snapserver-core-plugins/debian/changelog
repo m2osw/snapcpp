@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.109.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.110.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Added support for us to be able to change the loop timeouts.
 
- -- Build Server <build@m2osw.com>  Sun, 21 May 2017 02:00:53 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 21 May 2017 12:19:19 -0800
 
 snapserver-core-plugins (1.0.109.0~xenial) xenial; urgency=high
 

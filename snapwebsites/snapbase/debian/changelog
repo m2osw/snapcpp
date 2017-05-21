@@ -1,8 +1,8 @@
-snapbase (1.0.41.59~xenial) xenial; urgency=high
+snapbase (1.0.42.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Added documentation about the list loop timeouts.
 
- -- Build Server <build@m2osw.com>  Sun, 26 Mar 2017 02:00:57 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 21 May 2017 12:20:48 -0800
 
 snapbase (1.0.41.0~xenial) xenial; urgency=high
 

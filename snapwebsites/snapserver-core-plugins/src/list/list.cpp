@@ -2512,6 +2512,36 @@ int list::generate_all_lists(QString const & site_key)
     column_predicate->setCount(100);
     column_predicate->setIndex(); // behave like an index
 
+    auto get_timeout = [&](auto const & field_name, int64_t default_timeout)
+        {
+            QString const loop_timeout_str(f_snap->get_server_parameter(field_name));
+            if(!loop_timeout_str.isEmpty())
+            {
+                // time in seconds in .conf
+                //
+                bool ok(false);
+                int64_t const loop_timeout_sec(loop_timeout_str.toLongLong(&ok, 10) * 1000000LL);
+                if(ok && loop_timeout_sec >= 1000000LL) // valid and at least 1 second
+                {
+                    return loop_timeout_sec;
+                }
+                SNAP_LOG_WARNING("invalid number or timeout too small (under 1s) in list::looptimeout");
+            }
+            return default_timeout;
+        };
+
+    // timeout for the outter loop, this should remain small on systems
+    // that run 2 or more websites so the time share works as expected
+    // (default is 10 seconds)
+    //
+    int64_t const loop_timeout(get_timeout("list::looptimeout", 10LL * 1000000LL));
+
+    // timeout for the inner loop, this should remain small, but not too
+    // small as to make sure that many entries get worked on in a row, it
+    // would slow down things even further otherwise
+    //
+    int64_t const inner_loop_timeout(get_timeout("list::innerlooptimeout", 60LL * 1000000LL));
+
     int did_work(0);
     int64_t const loop_start_time(f_snap->get_current_date());
     bool continue_work(true);
@@ -2611,7 +2641,7 @@ int list::generate_all_lists(QString const & site_key)
             // limit the time on the 100 items to 1 minute
             //
             int64_t const loop_current_time(f_snap->get_current_date());
-            if(loop_current_time - loop_start_time > 60 * 1000000)
+            if(loop_current_time - loop_start_time > inner_loop_timeout)
             {
                 continue_work = false;
                 break;
@@ -2622,7 +2652,7 @@ int list::generate_all_lists(QString const & site_key)
         if(continue_work)
         {
             int64_t const loop_current_time(f_snap->get_current_date());
-            if(loop_current_time - loop_start_time > 10 * 1000000)
+            if(loop_current_time - loop_start_time > loop_timeout)
             {
                 //continue_work = false; -- no need to do this, we can just break
                 break;
