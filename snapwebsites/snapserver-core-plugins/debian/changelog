@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.109.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 21 May 2017 02:00:53 -0700
+
 snapserver-core-plugins (1.0.109.0~xenial) xenial; urgency=high
 
   * EX-79: Made the layout_contrib depend on output for the "/fonts".
