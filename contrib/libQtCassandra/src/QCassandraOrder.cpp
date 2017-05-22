@@ -196,6 +196,18 @@ void QCassandraOrder::setCursorIndex(int32_t const cursor_index)
 }
 
 
+int32_t QCassandraOrder::batchIndex() const
+{
+    return f_batch_index;
+}
+
+
+void QCassandraOrder::setBatchIndex(int32_t const batch_index)
+{
+    f_batch_index = batch_index;
+}
+
+
 bool QCassandraOrder::clearClusterDescription() const
 {
     return f_clear_cluster_description;
@@ -332,6 +344,7 @@ QByteArray QCassandraOrder::encodeOrder() const
                 | (f_paging_size != 0          ? 0x0100 : 0)
                 | (f_cursor_index != -1        ? 0x0200 : 0)
                 | (f_clear_cluster_description ? 0x0400 : 0)
+                | (f_batch_index != -1         ? 0x0800 : 0)
             );
     encoder.appendUInt16Value(flags);
 
@@ -377,6 +390,13 @@ QByteArray QCassandraOrder::encodeOrder() const
     if(f_cursor_index != -1)
     {
         encoder.appendUInt16Value(f_cursor_index);
+    }
+
+    // the batch index if not -1 (save as 2 bytes)
+    //
+    if(f_batch_index != -1)
+    {
+        encoder.appendUInt16Value(f_batch_index);
     }
 
     // parameters, if any
@@ -504,6 +524,18 @@ bool QCassandraOrder::decodeOrder(unsigned char const * encoded_order, size_t si
     {
         // not included means we do not need it, i.e. -1
         f_cursor_index = -1;
+    }
+
+    // if the batch index was included, read it
+    //
+    if((flags & 0x800) != 0)
+    {
+        f_batch_index = static_cast<int32_t>(decoder.uint16Value());
+    }
+    else
+    {
+        // not included means we do not need it, i.e. -1
+        f_batch_index = -1;
     }
 
     // read the number of parameters that were included

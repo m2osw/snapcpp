@@ -48,12 +48,15 @@ class QCassandraOrder
 public:
     enum type_of_result_t
     {
-        TYPE_OF_RESULT_CLOSE,       // i.e. close a cursor
-        TYPE_OF_RESULT_DECLARE,     // i.e. create a cursor (SELECT)
-        TYPE_OF_RESULT_DESCRIBE,    // i.e. just whether it worked or not
-        TYPE_OF_RESULT_FETCH,       // i.e. read next page from cursor (nextPage)
-        TYPE_OF_RESULT_ROWS,        // i.e. one SELECT
-        TYPE_OF_RESULT_SUCCESS      // i.e. just whether it worked or not
+        TYPE_OF_RESULT_CLOSE,           // i.e. close a cursor
+        TYPE_OF_RESULT_BATCH_ADD,       // i.e. add to an open batch
+        TYPE_OF_RESULT_BATCH_COMMIT,    // i.e. commit the accumulated batch to the database
+        TYPE_OF_RESULT_BATCH_DECLARE,   // i.e. create a batch
+        TYPE_OF_RESULT_DECLARE,         // i.e. create a cursor (SELECT)
+        TYPE_OF_RESULT_DESCRIBE,        // i.e. just whether it worked or not
+        TYPE_OF_RESULT_FETCH,           // i.e. read next page from cursor (nextPage)
+        TYPE_OF_RESULT_ROWS,            // i.e. one SELECT
+        TYPE_OF_RESULT_SUCCESS          // i.e. just whether it worked or not
     };
 
     type_of_result_t    get_type_of_result() const;
@@ -81,6 +84,9 @@ public:
     int32_t             cursorIndex() const;
     void                setCursorIndex(int32_t const cursor_index);
 
+    int32_t             batchIndex() const;
+    void                setBatchIndex(int32_t const batch_index);
+
     bool                clearClusterDescription() const;
     void                setClearClusterDescription(bool const clear = true);
 
@@ -106,6 +112,7 @@ private:
     int8_t                          f_column_count = 1;
     int32_t                         f_paging_size = 0;
     int32_t                         f_cursor_index = -1;
+    int32_t                         f_batch_index = -1;
     std::vector<QByteArray>         f_parameter;
 };
 

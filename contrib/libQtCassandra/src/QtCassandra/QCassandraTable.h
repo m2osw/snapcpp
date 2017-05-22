@@ -127,6 +127,9 @@ private:
     void        loadTables();
     void        addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
 
+    void        startBatch();
+    void        commitBatch();
+
     QString     getTableOptions() const;
 
     friend class QCassandraContext;
@@ -142,6 +145,7 @@ private:
 
     QCassandraProxy::pointer_t          f_proxy;
     int32_t                             f_cursor_index = -1;
+    int32_t                             f_batch_index  = -1;
 };
 
 // list of table definitions mapped against their name (see tableName())

@@ -186,6 +186,14 @@ SNAP_LOG_TRACE("got an order: ")
 #endif
                 switch(order.get_type_of_result())
                 {
+                case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_BATCH_COMMIT:
+                    commit_batch(order);
+                    break;
+
+                case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_BATCH_DECLARE:
+                    declare_batch(order);
+                    break;
+
                 case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_CLOSE:
                     close_cursor(order);
                     break;
@@ -206,6 +214,7 @@ SNAP_LOG_TRACE("got an order: ")
                     read_data(order);
                     break;
 
+                case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_BATCH_ADD:
                 case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_SUCCESS:
                     execute_command(order);
                     break;
@@ -556,8 +565,16 @@ void snapdbproxy_connection::send_order(casswrapper::Query::pointer_t q, QtCassa
         q->setPagingSize(paging_size);
     }
 
-    // run the CQL order
-    q->start();
+    if( order.batchIndex() == -1 )
+    {
+        // run the CQL order
+        q->start();
+    }
+    else
+    {
+        // add to the existing batch
+        q->addToBatch();
+    }
 }
 
 
@@ -586,6 +603,26 @@ void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const &
 
     f_cursors.push_back(cursor);
 
+    result.setSucceeded(true);
+    if(!f_proxy.sendResult(*this, result))
+    {
+        close();
+    }
+}
+
+
+void snapdbproxy_connection::declare_batch(QtCassandra::QCassandraOrder const & order)
+{
+    snap::NOTUSED(order);
+    batch_t batch;
+    batch.f_query = casswrapper::Query::create(f_session);
+    batch.f_query->startLoggedBatch();
+    f_batches.push_back(batch);
+
+    QtCassandra::QCassandraOrderResult result;
+    QByteArray batch_index;
+    QtCassandra::appendUInt32Value(batch_index, f_batches.size());
+    result.addResult(batch_index);
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
     {
@@ -708,6 +745,45 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
 }
 
 
+void snapdbproxy_connection::commit_batch(QtCassandra::QCassandraOrder const & order)
+{
+    // verify that the specified index is considered valid on this side
+    //
+    int const batch_index(order.batchIndex());
+    if(static_cast<size_t>(batch_index) >= f_batches.size())
+    {
+        throw snap::snapwebsites_exception_invalid_parameters("batch index is out of bounds.");
+    }
+
+    // End the batch, which causes everything to be committed to the database.
+    //
+    f_batches[batch_index].f_query->endBatch();
+
+    // send an empty, successful reply in this case
+    //
+    QtCassandra::QCassandraOrderResult result;
+    result.setSucceeded(true);
+    if(!f_proxy.sendResult(*this, result))
+    {
+        close();
+    }
+
+    // now actually do the clean up
+    // (we can do that after we sent the reply since we are one separate
+    // process, yet the process is fully synchronized on the TCP/IP socket)
+    //
+    f_batches[batch_index].f_query.reset();
+
+    // remove all the batches that were closed if possible so the
+    // vector does not grow indefinitly
+    //
+    while(!f_batches.empty() && !f_batches.rbegin()->f_query)
+    {
+        f_batches.pop_back();
+    }
+}
+
+
 void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & order)
 {
     auto q( casswrapper::Query::create( f_session ) );
@@ -739,6 +815,22 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
 
     if(order.timeout() > 0)
     {
+        if( order.batchIndex() != -1 )
+        {
+            SNAP_LOG_WARNING("batch timed out! index=")(order.batchIndex())(", cql=[")(order.cql())("]");
+
+            // Dump the batch, since our connection is no longer
+            // any good--we cannot recover from this!
+            //
+            f_batches[order.batchIndex()].f_query.reset();
+            while(!f_batches.empty() && !f_batches.rbegin()->f_query)
+            {
+                f_batches.pop_back();
+            }
+            //
+            throw snap::snapwebsites_exception_io_error("batch submission timed out!");
+        }
+
         // unfortunately, the request timeout cannot be changed in an
         // existing session (a connected session, to be precise); the
         // only way to get that to work is to change the timeout (in
@@ -761,7 +853,12 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
         order_session = f_session;
     }
 
-    auto q( casswrapper::Query::create( order_session ) );
+    // Create a new query afresh--unless it is a batch, then use that existing query.
+    //
+    auto q( order.batchIndex() == -1
+            ? casswrapper::Query::create( order_session )
+            : f_batches[order.batchIndex()].f_query
+            );
     send_order(q, order);
 
     // success

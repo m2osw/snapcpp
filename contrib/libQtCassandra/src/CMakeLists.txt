@@ -37,8 +37,8 @@
 project( QtCassandra )
 
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${AS2JS_INCLUDE_DIR}
-    #${CASSANDRACPPDRIVER_INCLUDE_DIR}
     ${CASSWRAPPER_INCLUDE_DIR}
 )
 
