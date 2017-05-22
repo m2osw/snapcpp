@@ -92,6 +92,13 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *                  --save-cell a.bin
  * \endcode
  *
+ * \note
+ * To completely blow away a page, use this following command:
+ *
+ * \code
+ *      snapbackend -a content::destroypage -p PAGE_URL=<URL to destroy>
+ * \endcode
+ *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
 void content::on_register_backend_action(server::backend_action_set & actions)
