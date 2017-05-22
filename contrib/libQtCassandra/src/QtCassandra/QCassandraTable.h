@@ -105,6 +105,9 @@ public:
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 
+    void        startBatch();
+    void        commitBatch();
+
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
@@ -126,9 +129,6 @@ private:
 
     void        loadTables();
     void        addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
-
-    void        startBatch();
-    void        commitBatch();
 
     QString     getTableOptions() const;
 
