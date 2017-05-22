@@ -1,3 +1,9 @@
+libqtcassandra (0.6.18.0~xenial) xenial; urgency=high
+
+  * EX-131: added batch support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 22 May 2017 16:54:26 -0700
+
 libqtcassandra (0.6.17.67~xenial) xenial; urgency=high
 
   * Nightly build.
