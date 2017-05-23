@@ -122,14 +122,14 @@ void QCassandraRowKeyPredicate::appendQuery( QString& query, int& bind_count )
 {
     query += " WHERE key=?";
     ++bind_count;
-    f_cellPred->appendQuery( query, bind_count );
+    f_cell_pred->appendQuery( query, bind_count );
 }
 
 
 void QCassandraRowKeyPredicate::bindOrder( QCassandraOrder& order)
 {
     order.addParameter( f_rowKey );
-    f_cellPred->bindOrder( order );
+    f_cell_pred->bindOrder( order );
 }
 
 
@@ -138,7 +138,7 @@ void QCassandraRowRangePredicate::appendQuery( QString& query, int& bind_count )
 {
     query += " WHERE token(key) >= token(?) AND token(key) <= token(?)";
     bind_count += 2;
-    f_cellPred->appendQuery( query, bind_count );
+    f_cell_pred->appendQuery( query, bind_count );
 }
 
 
@@ -146,7 +146,7 @@ void QCassandraRowRangePredicate::bindOrder( QCassandraOrder& order )
 {
     order.addParameter( f_startRowKey );
     order.addParameter( f_endRowKey );
-    f_cellPred->bindOrder( order );
+    f_cell_pred->bindOrder( order );
 }
 
 
