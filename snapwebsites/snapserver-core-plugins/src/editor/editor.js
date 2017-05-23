@@ -1898,14 +1898,16 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
         this.toolbar_
             .click(function(e)
                 {
-                    that.editorBase_.refocus();
                     e.preventDefault();
+
+                    that.editorBase_.refocus();
                 })
             .mousedown(function(e)
                 {
+                    e.preventDefault();
+
                     // XXX: this needs to be handled through a form of callback
                     that.cancelToolbarHide();
-                    e.preventDefault();
                 })
             .find(":any(.horizontal-separator .group)")
                 .click(function()
