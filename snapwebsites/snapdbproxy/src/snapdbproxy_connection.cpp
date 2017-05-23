@@ -194,6 +194,10 @@ SNAP_LOG_TRACE("got an order: ")
                     declare_batch(order);
                     break;
 
+                case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_BATCH_ROLLBACK:
+                    rollback_batch(order);
+                    break;
+
                 case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_CLOSE:
                     close_cursor(order);
                     break;
@@ -768,19 +772,7 @@ void snapdbproxy_connection::commit_batch(QtCassandra::QCassandraOrder const & o
         close();
     }
 
-    // now actually do the clean up
-    // (we can do that after we sent the reply since we are one separate
-    // process, yet the process is fully synchronized on the TCP/IP socket)
-    //
-    f_batches[batch_index].f_query.reset();
-
-    // remove all the batches that were closed if possible so the
-    // vector does not grow indefinitly
-    //
-    while(!f_batches.empty() && !f_batches.rbegin()->f_query)
-    {
-        f_batches.pop_back();
-    }
+    clear_batch( batch_index );
 }
 
 
@@ -809,6 +801,26 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
 }
 
 
+void snapdbproxy_connection::clear_batch( int32_t const batch_index )
+{
+    if( batch_index != -1 )
+    {
+        f_batches[batch_index].f_query.reset();
+    }
+    //
+    while(!f_batches.empty() && !f_batches.rbegin()->f_query)
+    {
+        f_batches.pop_back();
+    }
+}
+
+
+void snapdbproxy_connection::rollback_batch(QtCassandra::QCassandraOrder const & order)
+{
+    clear_batch( order.batchIndex() );
+}
+
+
 void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const & order)
 {
     casswrapper::Session::pointer_t order_session;
@@ -822,11 +834,7 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
             // Dump the batch, since our connection is no longer
             // any good--we cannot recover from this!
             //
-            f_batches[order.batchIndex()].f_query.reset();
-            while(!f_batches.empty() && !f_batches.rbegin()->f_query)
-            {
-                f_batches.pop_back();
-            }
+            clear_batch( order.batchIndex() );
             //
             throw snap::snapwebsites_exception_io_error("batch submission timed out!");
         }

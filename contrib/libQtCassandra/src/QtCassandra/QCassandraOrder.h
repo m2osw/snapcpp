@@ -52,6 +52,7 @@ public:
         TYPE_OF_RESULT_BATCH_ADD,       // i.e. add to an open batch
         TYPE_OF_RESULT_BATCH_COMMIT,    // i.e. commit the accumulated batch to the database
         TYPE_OF_RESULT_BATCH_DECLARE,   // i.e. create a batch
+        TYPE_OF_RESULT_BATCH_ROLLBACK,  // i.e. abort the current batch
         TYPE_OF_RESULT_DECLARE,         // i.e. create a cursor (SELECT)
         TYPE_OF_RESULT_DESCRIBE,        // i.e. just whether it worked or not
         TYPE_OF_RESULT_FETCH,           // i.e. read next page from cursor (nextPage)

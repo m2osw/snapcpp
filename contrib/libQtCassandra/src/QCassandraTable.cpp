@@ -648,6 +648,23 @@ void QCassandraTable::commitBatch()
 }
 
 
+void QCassandraTable::rollbackBatch()
+{
+    if(f_batch_index >= 0)
+    {
+        QCassandraOrder batch;
+        batch.setCql("ROLLBACK_BATCH", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_BATCH_ROLLBACK);
+        batch.setBatchIndex(f_batch_index);
+        f_batch_index = -1;
+        QCassandraOrderResult batch_result(f_proxy->sendOrder(batch));
+        if(!batch_result.succeeded())
+        {
+            throw QCassandraException("QCassandraTable::commitBatch(): batch submission failed.");
+        }
+    }
+}
+
+
 /** \brief Read a set of rows as defined by the row predicate.
  *
  * This function reads a set of rows as defined by the row predicate.

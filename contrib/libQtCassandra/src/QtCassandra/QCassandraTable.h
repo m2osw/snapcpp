@@ -107,6 +107,7 @@ public:
 
     void        startBatch();
     void        commitBatch();
+    void        rollbackBatch();
 
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);

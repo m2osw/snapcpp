@@ -225,8 +225,11 @@ private:
     void                        close_cursor(QtCassandra::QCassandraOrder const & order);
     void                        commit_batch(QtCassandra::QCassandraOrder const & order);
     void                        read_data(QtCassandra::QCassandraOrder const & order);
+    void                        rollback_batch(QtCassandra::QCassandraOrder const & order);
     void                        execute_command(QtCassandra::QCassandraOrder const & order);
     void                        close();
+
+    void                        clear_batch( int32_t const batch_index );
 
     // this is owned by a snapdbproxy function so no need for a smart pointer
     // (and it would create a loop)
