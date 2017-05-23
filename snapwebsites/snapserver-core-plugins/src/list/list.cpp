@@ -2511,6 +2511,7 @@ int list::generate_all_lists(QString const & site_key)
     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     column_predicate->setCount(100);
     column_predicate->setIndex(); // behave like an index
+    column_predicate->setAllowFiltering(false); // no "ALLOW FILTERING" in CQL
 
     auto get_timeout = [&](auto const & field_name, int64_t default_timeout)
         {

@@ -733,7 +733,7 @@ void snapdb::display_columns() const
         }
         std::cout.flags(old_flags);
     }
-    catch( std::exception const& e )
+    catch( std::exception const & e )
     {
         // in most cases we get here because of something invalid in
         // the database
@@ -768,7 +768,7 @@ void snapdb::display_cell() const
             du.set_column_name( col_key, f_cell );
             auto q( Query::create(f_session) );
             q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
-            q->query( QString("SELECT value FROM %1.%2 WHERE key = ? and column1 = ?;")
+            q->query( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?;")
                     .arg(f_context)
                     .arg(f_table)
                     );
@@ -850,7 +850,7 @@ void snapdb::set_cell() const
 
         auto q( Query::create(f_session) );
         q->setConsistencyLevel(Query::consistency_level_t::level_quorum);
-        q->query( QString("UPDATE %1.%2 SET value = ? WHERE key = ? and column1 = ?;")
+        q->query( QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?;")
                 .arg(f_context)
                 .arg(f_table)
                 );

@@ -348,7 +348,15 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
             row_predicate->setCellPredicate( column_predicate );
         }
         row_predicate->appendQuery( query_string, bind_count );
-        query_string += " ALLOW FILTERING";
+
+        // WARNING: the row_predicate we create right here, when the
+        //          allow filtering flag can only be set by the caller
+        //          in the column_predicate
+        //
+        if(column_predicate->allowFiltering())
+        {
+            query_string += " ALLOW FILTERING";
+        }
 
         //
 //std::cerr << "query=[" << query_string.toUtf8().data() << "]" << std::endl;

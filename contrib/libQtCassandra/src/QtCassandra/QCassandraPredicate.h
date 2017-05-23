@@ -55,21 +55,25 @@ class QCassandraPredicate
 public:
     typedef std::shared_ptr<QCassandraPredicate> pointer_t;
 
-    QCassandraPredicate() : f_count(100), f_consistencyLevel(CONSISTENCY_LEVEL_DEFAULT) {}
-    virtual ~QCassandraPredicate() {}
+                        QCassandraPredicate() : f_count(100), f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) {}
+    virtual             ~QCassandraPredicate() {}
 
-    int32_t count() const                       { return f_count; }
-    void    setCount( const int32_t val = 100 ) { f_count = val;  }
+    int32_t             count() const                       { return f_count; }
+    void                setCount( const int32_t val = 100 ) { f_count = val;  }
 
-    consistency_level_t	consistencyLevel() const							{ return f_consistencyLevel;  }
-    void                setConsistencyLevel( consistency_level_t level )	{ f_consistencyLevel = level; }
+    bool                allowFiltering() const                  { return f_allow_filtering; }
+    void                setAllowFiltering(bool allow_filtering) { f_allow_filtering = allow_filtering; }
+
+    consistency_level_t	consistencyLevel() const							{ return f_consistency_level;  }
+    void                setConsistencyLevel( consistency_level_t level )	{ f_consistency_level = level; }
 
 protected:
     cassandra_count_t   f_count = 100;
-    consistency_level_t	f_consistencyLevel;
+    consistency_level_t	f_consistency_level;
+    bool                f_allow_filtering = true; // this should probably be false by default, but at this point we do not have time to test which orders would need to set it to true...
 
-    virtual void appendQuery( QString& query, int& bind_count ) = 0;
-    virtual void bindOrder( QCassandraOrder& order ) = 0;
+    virtual void        appendQuery( QString& query, int& bind_count ) = 0;
+    virtual void        bindOrder( QCassandraOrder& order ) = 0;
 };
 
 
@@ -158,20 +162,20 @@ class QCassandraRowPredicate : public QCassandraPredicate
 public:
     typedef std::shared_ptr<QCassandraRowPredicate> pointer_t;
 
-    QCassandraRowPredicate() : f_cellPred( new QCassandraCellPredicate ) {}
-    virtual ~QCassandraRowPredicate() {}
+                    QCassandraRowPredicate() : f_cell_pred( new QCassandraCellPredicate ) {}
+    virtual         ~QCassandraRowPredicate() {}
 
-    QRegExp rowNameMatch() const { return f_row_name_match; }
-    void    setRowNameMatch(QRegExp const& re) { f_row_name_match = re; }
+    QRegExp         rowNameMatch() const { return f_row_name_match; }
+    void            setRowNameMatch(QRegExp const& re) { f_row_name_match = re; }
 
-    QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cellPred; }
-    void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cellPred = pred; }
+    QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cell_pred; }
+    void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cell_pred = pred; }
 
-    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
-    virtual void bindOrder( QCassandraOrder& /*order*/                              ) {}
+    virtual void    appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
+    virtual void    bindOrder( QCassandraOrder& /*order*/                              ) {}
 
 protected:
-    QCassandraCellPredicate::pointer_t      f_cellPred;
+    QCassandraCellPredicate::pointer_t      f_cell_pred;
     QRegExp                                 f_row_name_match;
 };
 

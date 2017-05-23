@@ -746,27 +746,24 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         //       but the appendQuery() function does the same thing
         //
         int bind_count = 0;
-        //if( row_predicate )
+        row_predicate->appendQuery( query_string, bind_count );
+        if(row_predicate->allowFiltering())
         {
-            row_predicate->appendQuery( query_string, bind_count );
+            query_string += " ALLOW FILTERING";
         }
-        query_string += " ALLOW FILTERING";
         //
 //std::cerr << "query=[" << query_string.toUtf8().data() << "]" << std::endl;
 
         // setup the consistency level
         consistency_level_t consistency_level( parentContext()->parentCassandra()->defaultConsistencyLevel() );
-        //if( row_predicate )
+        consistency_level_t const default_consistency_level(consistency_level);
+        consistency_level = row_predicate->consistencyLevel();
+        if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
         {
-            consistency_level_t const default_consistency_level(consistency_level);
-            consistency_level = row_predicate->consistencyLevel();
+            consistency_level = row_predicate->cellPredicate()->consistencyLevel();
             if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
             {
-                consistency_level = row_predicate->cellPredicate()->consistencyLevel();
-                if( consistency_level == CONSISTENCY_LEVEL_DEFAULT )
-                {
-                    consistency_level = default_consistency_level;
-                }
+                consistency_level = default_consistency_level;
             }
         }
 
@@ -777,11 +774,8 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         select_rows.setConsistencyLevel(consistency_level);
 
         //
-        //if( row_predicate )
-        {
-            row_predicate->bindOrder( select_rows );
-            select_rows.setPagingSize( row_predicate->count() );
-        }
+        row_predicate->bindOrder( select_rows );
+        select_rows.setPagingSize( row_predicate->count() );
 
         QCassandraOrderResult select_rows_result(f_proxy->sendOrder(select_rows));
         selected_rows_result.swap(select_rows_result);

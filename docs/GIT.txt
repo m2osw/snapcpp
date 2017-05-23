@@ -83,6 +83,7 @@ git log --stat ["path"]
 #
 git branch "branch-name"       # creates a new branch
 git checkout "branch-name"     # switch between branches
+git checkout -b "branch-name" [--track origin/branch-name]   # create the branch from remote and switch to it
 git merge "branch-name"        # merge <name> in current branch
 git branch -d "branch-name"    # delete a branch
 git fetch                      # fetch all (including remote) branches
