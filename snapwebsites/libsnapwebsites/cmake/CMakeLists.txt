@@ -39,6 +39,7 @@ set( INSTALL_FILES
     SnapWebsitesConfig.cmake
 )
 
-install( FILES ${INSTALL_FILES} DESTINATION share/cmake/SnapWebsites )
+install( FILES ${INSTALL_FILES}        DESTINATION share/cmake/SnapWebsites )
+install( FILES QtCassandraConfig.cmake DESTINATION share/cmake/QtCassandra  )
 
 # vim: ts=4 sw=4 et nocindent

@@ -11,6 +11,7 @@ Build-Depends: catch (>= 1.0),
     libas2js-dev (>= 0.1.15.23~xenial),
     libboost-dev,
     libcassvalue-dev,
+    libcasswrapper-dev,
     libcsspp-dev (>= 1.0.11.23~xenial),
     libexcept-dev,
     libicu-dev,
@@ -19,7 +20,6 @@ Build-Depends: catch (>= 1.0),
     libmagick++-dev (>= 6.7.7.10-6ubuntu3),
     libprocps4-dev,
     libqt5xmlpatterns5-dev,
-    libqtcassandra-dev (>= 0.6.7.2~xenial),
     libqtserialization-dev (>= 0.1.17.23~xenial),
     libqtwebkit-dev,
     libssl-dev (>= 1.0.1),
@@ -41,8 +41,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: libsnapwebsites-dev
 Section: libdevel
 Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), ${misc:Depends}, libboost-dev,
-    libqtcassandra-dev, libssl-dev
+Depends: libsnapwebsites (= ${binary:Version}), ${misc:Depends}, libboost-dev, libssl-dev
 Suggests: libsnapwebsites-doc (= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++ (development package).
  Snap! C++ runs your CMS using binary code written in C and C++.

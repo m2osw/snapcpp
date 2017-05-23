@@ -53,7 +53,6 @@ if(CATCH_FOUND)
         ${LOG4CPLUS_LIBRARIES}
         ${QT_LIBRARIES}
         ${AS2JS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${QTSERIALIZATION_LIBRARIES}
         ${MAGIC_LIBRARIES}
         ${LIBPROCPS_LIBRARIES}
@@ -62,6 +61,7 @@ if(CATCH_FOUND)
         pthread
         dl
         snapwebsites
+        QtCassandra
     )
 
     # You can use the --success command line option to see all the tests

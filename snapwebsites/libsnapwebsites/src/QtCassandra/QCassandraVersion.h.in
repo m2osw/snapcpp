@@ -1,12 +1,12 @@
 /*
- * Text:
- *      src/QObject.cpp
+ * Header:
+ *      src/QtCassandra/QCassandraVersion.h
  *
  * Description:
- *      Stub for the documentation to nicely show the QObject inheritance.
+ *      Stores the current version. This file is generated from QCassandraVersion.h.in.
  *
  * Documentation:
- *      This is a stub.
+ *      See the corresponding .cpp file.
  *
  * License:
  *      Copyright (c) 2011-2017 Made to Order Software Corp.
@@ -33,16 +33,30 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#pragma once
 
-
-/** \brief This declaration is a stub for the documentation.
- *
- * This declaration shows all the objects that derive from the
- * QObject class in the documentation (because we don't want to
- * include the full definition of the QObject since that's from
- * Qt and is documented by Qt and not us!)
- */
-class QObject
+namespace QtCassandra
 {
-};
 
+static const int   QT_CASSANDRA_LIBRARY_VERSION_MAJOR  = @LIBSNAPWEBSITES_VERSION_MAJOR@;
+static const int   QT_CASSANDRA_LIBRARY_VERSION_MINOR  = @LIBSNAPWEBSITES_VERSION_MINOR@;
+static const int   QT_CASSANDRA_LIBRARY_VERSION_PATCH  = @LIBSNAPWEBSITES_VERSION_PATCH@;
+
+/** \brief The library version as a string.
+ *
+ * This variable represents the full library version at the time
+ * you compile your program. To get the library you are linked
+ * to at runtime use QCassandra::version().
+ *
+ * \warning
+ * This variable uses an attribute supported by the GNU C++ compiler
+ * which prevents Doxygen from finding this help block if declared
+ * in the .cpp file. This is why it is in the header.
+ *
+ * \sa version()
+ */
+static const char *QT_CASSANDRA_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBSNAPWEBSITES_VERSION_MAJOR@.@LIBSNAPWEBSITES_VERSION_MINOR@.@LIBSNAPWEBSITES_VERSION_PATCH@";
+
+} // namespace QtCassandra
+
+// vim: ts=4 sw=4 et

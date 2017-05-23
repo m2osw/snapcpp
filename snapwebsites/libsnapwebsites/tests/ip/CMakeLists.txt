@@ -54,7 +54,6 @@ target_link_libraries( ${PROJECT_NAME}
     ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
     ${AS2JS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${MAGIC_LIBRARIES}
     ${LIBPROCPS_LIBRARIES}
@@ -63,6 +62,7 @@ target_link_libraries( ${PROJECT_NAME}
     pthread
     dl
     snapwebsites
+    QtCassandra
 )
 
 # vim: ts=4 sw=4 et nocindent

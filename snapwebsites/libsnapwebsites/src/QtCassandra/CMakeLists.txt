@@ -40,34 +40,34 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${AS2JS_INCLUDE_DIR}
     ${CASSWRAPPER_INCLUDE_DIR}
+    ${snapwebsites_src}
 )
 
 configure_file(
-		QtCassandra/QCassandraVersion.h.in
-		${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+		QCassandraVersion.h.in
+		${PROJECT_BINARY_DIR}/QCassandraVersion.h
 		)
 
 set( HEADER_FILES
-    QtCassandra/QCassandra.h
-    QtCassandra/QCassandraCell.h
-    QtCassandra/QCassandraConsistencyLevel.h
-    QtCassandra/QCassandraContext.h
-    QtCassandra/QCassandraException.h
-    QtCassandra/QCassandraOrder.h
-    QtCassandra/QCassandraOrderResult.h
-    QtCassandra/QCassandraPredicate.h
-    QtCassandra/QCassandraProxy.h
-    QtCassandra/QCassandraRow.h
-    QtCassandra/QCassandraTable.h
-    QtCassandra/QCassandraValue.h
-    QtCassandra/QCassandraVersion.h.in
-    QtCassandra/QStringStream.h
-    ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+    QCassandra.h
+    QCassandraCell.h
+    QCassandraConsistencyLevel.h
+    QCassandraContext.h
+    QCassandraException.h
+    QCassandraOrder.h
+    QCassandraOrderResult.h
+    QCassandraPredicate.h
+    QCassandraProxy.h
+    QCassandraRow.h
+    QCassandraTable.h
+    QCassandraValue.h
+    QCassandraVersion.h.in
+    QStringStream.h
+    ${PROJECT_BINARY_DIR}/QCassandraVersion.h
 )
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    NotUsed.h
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraContext.cpp
@@ -81,9 +81,8 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraValue.cpp
 )
 
-target_link_libraries(QtCassandra
+target_link_libraries(${PROJECT_NAME}
     ${AS2JS_LIBRARIES}
-    #${CASSANDRACPPDRIVER_LIBRARIES}
     ${CASSWRAPPER_LIBRARIES}
     ${CASSVALUE_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
@@ -91,23 +90,23 @@ target_link_libraries(QtCassandra
     Qt5::Xml
 )
 
-set_target_properties( QtCassandra PROPERTIES
-    VERSION ${LIBQTCASSANDRA_VERSION_MAJOR}.${LIBQTCASSANDRA_VERSION_MINOR}
-    SOVERSION ${LIBQTCASSANDRA_VERSION_MAJOR}
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+    VERSION ${LIBSNAPWEBSITES_VERSION_MAJOR}.${LIBSNAPWEBSITES_VERSION_MINOR}
+    SOVERSION ${LIBSNAPWEBSITES_VERSION_MAJOR}
 )
 
 install(
-    TARGETS QtCassandra LIBRARY DESTINATION lib
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
 )
 
 install(
 	FILES ${HEADER_FILES}
-	DESTINATION include/QtCassandra
+    DESTINATION include/QtCassandra
 )
 
 install(
-	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
-	DESTINATION include/QtCassandra/
+	FILES ${PROJECT_BINARY_DIR}/QCassandraVersion.h
+    DESTINATION include/QtCassandra
 )
 
 # vim: ts=4 sw=4 et

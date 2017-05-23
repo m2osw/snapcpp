@@ -65,6 +65,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 find_package( AdvGetOpt          REQUIRED )
 find_package( Boost              REQUIRED )
 find_package( CassValue          REQUIRED )
+find_package( CassWrapper        REQUIRED )
 find_package( CSSPP              REQUIRED )
 find_package( LibExcept          REQUIRED )
 find_package( LibTLD             REQUIRED )
@@ -81,7 +82,6 @@ find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
 find_package( As2Js              REQUIRED )
-find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( ZLIB               REQUIRED )
@@ -144,7 +144,7 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 ## Compiling
 ##
 add_subdirectory(cmake)         # SnapWebsites CMake Modules
-add_subdirectory(src)           # The snapwebsites library
+add_subdirectory(src)           # The snapwebsites libraries
 add_subdirectory(doc)           # API Documentation
 add_subdirectory(tests)         # Unit tests
 

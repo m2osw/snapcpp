@@ -16,8 +16,12 @@ find_library( QTCASSANDRA_LIBRARY QtCassandra
 		 )
 mark_as_advanced( QTCASSANDRA_INCLUDE_DIR QTCASSANDRA_LIBRARY )
 
-set( QTCASSANDRA_INCLUDE_DIRS ${QTCASSANDRA_INCLUDE_DIR} )
-set( QTCASSANDRA_LIBRARIES    ${QTCASSANDRA_LIBRARY}     )
+# We don't set these, but piggy back on SNAPWEBSITES_<BLAH> variables.
+# This is important because the linker requires QtCassandra *after*
+# the snap library.
+#
+#set( QTCASSANDRA_INCLUDE_DIRS ${QTCASSANDRA_INCLUDE_DIR} )
+#set( QTCASSANDRA_LIBRARIES    ${QTCASSANDRA_LIBRARY}     )
 
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set QTCASSANDRA_FOUND to TRUE

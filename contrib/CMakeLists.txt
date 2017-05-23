@@ -65,7 +65,6 @@ ConfigureMakeProject( PROJECT_NAME libaddr            COMPONENT contrib )
 ConfigureMakeProject( PROJECT_NAME libcassvalue       COMPONENT contrib )
 ConfigureMakeProject( PROJECT_NAME libcasswrapper     COMPONENT contrib )
 ConfigureMakeProject( PROJECT_NAME libexcept          COMPONENT contrib )
-ConfigureMakeProject( PROJECT_NAME libQtCassandra     COMPONENT contrib )
 ConfigureMakeProject( PROJECT_NAME libQtSerialization COMPONENT contrib )
 ConfigureMakeProject( PROJECT_NAME libtld             COMPONENT contrib )
 

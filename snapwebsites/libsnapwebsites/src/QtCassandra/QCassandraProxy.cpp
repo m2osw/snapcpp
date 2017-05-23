@@ -40,6 +40,8 @@
 #include "QtCassandra/QCassandraProxy.h"
 #include "QtCassandra/QCassandra.h"
 
+#include <snapwebsites/log.h>
+
 // 3rd party lib
 //
 #include <QtCore>
@@ -273,6 +275,7 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
 {
     if(!f_host.isEmpty())
     {
+        SNAP_LOG_DEBUG("++++ receiveOrder(): f_host is not empty!");
         throw QCassandraException("QCassandraProxy::receiveOrder() called from the client...");
     }
 
@@ -286,6 +289,7 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
     unsigned char buf[8];
     if(io.read(buf, 8) != 8)
     {
+        SNAP_LOG_DEBUG("++++ io.read() failed, not 8 bytes!");
         return order;
     }
 
@@ -296,8 +300,10 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
                 | (buf[7] <<  0));
 
     std::string const command(reinterpret_cast<char const *>(buf), 4);
+    SNAP_LOG_DEBUG("++++ command=")(command);
     if(command != "CQLP")
     {
+        SNAP_LOG_DEBUG("++++ wrong command!");
         return order;
     }
 
@@ -306,11 +312,13 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
     fast_buffer order_data(order_size);
     if(static_cast<uint32_t>(io.read(order_data.get(), order_size)) != order_size)
     {
+        SNAP_LOG_DEBUG("++++ io.read() error!");
         return order;
     }
 
     if(!order.decodeOrder(reinterpret_cast<unsigned char const *>(order_data.get()), order_size))
     {
+        SNAP_LOG_DEBUG("++++ decodeOrder() failed!");
         return order;
     }
 

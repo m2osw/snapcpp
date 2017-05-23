@@ -41,6 +41,16 @@
 ##          ready before the client gets started.
 ##
 
+set( LIBRARIES
+    ${CASSWRAPPER_LIBRARIES}
+    dl
+    ${LIBEXCEPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    snapwebsites
+    QtCassandra
+)
 
 ##
 ## Test a client/server via snap_communicator to make sure that the
@@ -50,30 +60,14 @@ project(test_ssl_server)
 add_executable( ${PROJECT_NAME}
     test_ssl_server.cpp
 )
-target_link_libraries(${PROJECT_NAME}
-    ${LIBEXCEPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    dl
-    snapwebsites
-)
+target_link_libraries( ${PROJECT_NAME} ${LIBRARIES} )
 
 
 project(test_ssl_client)
 add_executable( ${PROJECT_NAME}
     test_ssl_client.cpp
 )
-target_link_libraries(${PROJECT_NAME}
-    ${LIBEXCEPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    dl
-    snapwebsites
-)
+target_link_libraries( ${PROJECT_NAME} ${LIBRARIES} )
 
 
 
@@ -90,30 +84,14 @@ project(test_shutdown_server)
 add_executable( ${PROJECT_NAME}
     test_shutdown_server.cpp
 )
-target_link_libraries(${PROJECT_NAME}
-    ${LIBEXCEPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    dl
-    snapwebsites
-)
+target_link_libraries( ${PROJECT_NAME} ${LIBRARIES} )
 
 
 project(test_shutdown_client)
 add_executable( ${PROJECT_NAME}
     test_shutdown_client.cpp
 )
-target_link_libraries(${PROJECT_NAME}
-    ${LIBEXCEPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    dl
-    snapwebsites
-)
+target_link_libraries( ${PROJECT_NAME} ${LIBRARIES} )
 
 
 
