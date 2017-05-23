@@ -208,15 +208,22 @@ private:
     struct cursor_t
     {
         casswrapper::Query::pointer_t f_query;
-        int                                     f_column_count = 0;
+        int                           f_column_count = 0;
+    };
+
+    struct batch_t
+    {
+        casswrapper::Query::pointer_t f_query;
     };
 
     void                        send_order(casswrapper::Query::pointer_t q, QtCassandra::QCassandraOrder const & order);
     void                        declare_cursor(QtCassandra::QCassandraOrder const & order);
+    void                        declare_batch(QtCassandra::QCassandraOrder const & order);
     void                        describe_cluster(QtCassandra::QCassandraOrder const & order);
     void                        clear_cluster_description();
     void                        fetch_cursor(QtCassandra::QCassandraOrder const & order);
     void                        close_cursor(QtCassandra::QCassandraOrder const & order);
+    void                        commit_batch(QtCassandra::QCassandraOrder const & order);
     void                        read_data(QtCassandra::QCassandraOrder const & order);
     void                        execute_command(QtCassandra::QCassandraOrder const & order);
     void                        close();
@@ -226,8 +233,9 @@ private:
     snapdbproxy *                               f_snapdbproxy = nullptr;
 
     QtCassandra::QCassandraProxy                f_proxy;
-    casswrapper::Session::pointer_t   f_session;
+    casswrapper::Session::pointer_t             f_session;
     std::vector<cursor_t>                       f_cursors;
+    std::vector<batch_t>                        f_batches;
     tcp_client_server::bio_client::pointer_t    f_client;
     std::atomic<int>                            f_socket /* = -1*/;
     QString                                     f_cassandra_host_list = "localhost";

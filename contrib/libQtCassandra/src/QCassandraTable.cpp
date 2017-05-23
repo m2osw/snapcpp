@@ -350,7 +350,7 @@ void QCassandraTable::setFromCassandra()
 /** \brief This is an internal function used to parse a CfDef structure.
  *
  * This function is called internally to parse a CfDef object.
- * The data is saved in this QCassandraTabel.
+ * The data is saved in this QCassandraTable.
  *
  * \param[in] data  The pointer to the CfDef object.
  */
@@ -606,6 +606,45 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
     // Now add to the map.
     //
     f_rows[row_key] = new_row;
+}
+
+
+void QCassandraTable::startBatch()
+{
+    QCassandraOrder start_batch;
+    start_batch.setCql("START_BATCH", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_BATCH_DECLARE);
+
+    QCassandraOrderResult start_batch_result(f_proxy->sendOrder(start_batch));
+    start_batch_result.swap(start_batch_result);
+    if(!start_batch_result.succeeded())
+    {
+        throw QCassandraException("start batch failed");
+    }
+
+    f_batch_index = int32Value(start_batch_result.result(0));
+    if(f_batch_index < 0)
+    {
+        throw QCassandraLogicException("received a negative number as batch index!");
+    }
+}
+
+
+void QCassandraTable::commitBatch()
+{
+    if(f_batch_index >= 0)
+    {
+        // Note: the "CLOSE" CQL string is ignored
+        //
+        QCassandraOrder commit_batch;
+        commit_batch.setCql("COMMIT_BATCH", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_BATCH_COMMIT);
+        commit_batch.setBatchIndex(f_batch_index);
+        f_batch_index = -1;
+        QCassandraOrderResult commit_batch_result(f_proxy->sendOrder(commit_batch));
+        if(!commit_batch_result.succeeded())
+        {
+            throw QCassandraException("QCassandraTable::commitBatch(): batch submission failed.");
+        }
+    }
 }
 
 
@@ -1359,8 +1398,12 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     }
 
     QCassandraOrder insert_value;
-    insert_value.setCql( query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    insert_value.setCql( query_string, (f_batch_index == -1)
+                         ? QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS
+                         : QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_BATCH_ADD
+                       );
     insert_value.setConsistencyLevel( consistency_level );
+    insert_value.setBatchIndex(f_batch_index);
 
     insert_value.addParameter( row_key );
     insert_value.addParameter( column_key );
@@ -1508,7 +1551,11 @@ void QCassandraTable::remove
             );
 
     QCassandraOrder drop_cell;
-    drop_cell.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS);
+    drop_cell.setCql( query_string, (f_batch_index == -1)
+                         ? QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS
+                         : QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_BATCH_ADD
+                       );
+    drop_cell.setBatchIndex(f_batch_index);
     drop_cell.setConsistencyLevel(consistency_level);
     drop_cell.setTimestamp(QCassandra::timeofday()); // make sure it gets deleted no matter when it was created
     drop_cell.addParameter(row_key);
@@ -1541,7 +1588,11 @@ void QCassandraTable::remove( const QByteArray& row_key )
             );
 
     QCassandraOrder drop_cell;
-    drop_cell.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS);
+    drop_cell.setCql( query_string, (f_batch_index == -1)
+                         ? QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS
+                         : QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_BATCH_ADD
+                       );
+    drop_cell.setBatchIndex(f_batch_index);
     drop_cell.setConsistencyLevel(parentContext()->parentCassandra()->defaultConsistencyLevel());
     drop_cell.setTimestamp(QCassandra::timeofday()); // make sure it gets deleted no matter when it was created
     drop_cell.addParameter(row_key);

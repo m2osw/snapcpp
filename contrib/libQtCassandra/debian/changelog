@@ -1,8 +1,14 @@
-libqtcassandra (0.6.18.0~xenial) xenial; urgency=high
+libqtcassandra (0.6.19.0~xenial) xenial; urgency=high
 
   * EX-131: Added support so we can prevent the use of "ALLOW FILTERING".
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 22 May 2017 14:34:36 -0800
+
+libqtcassandra (0.6.18.0~xenial) xenial; urgency=high
+
+  * EX-131: added batch support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 22 May 2017 16:54:26 -0700
 
 libqtcassandra (0.6.17.0~xenial) xenial; urgency=high
 

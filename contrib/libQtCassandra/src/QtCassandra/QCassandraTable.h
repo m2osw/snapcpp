@@ -105,6 +105,9 @@ public:
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 
+    void        startBatch();
+    void        commitBatch();
+
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
@@ -142,6 +145,7 @@ private:
 
     QCassandraProxy::pointer_t          f_proxy;
     int32_t                             f_cursor_index = -1;
+    int32_t                             f_batch_index  = -1;
 };
 
 // list of table definitions mapped against their name (see tableName())
