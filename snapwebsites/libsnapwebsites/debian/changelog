@@ -1,3 +1,10 @@
+libsnapwebsites (1.2.0.0~xenial) xenial; urgency=high
+
+  * Now libQtCassandra no longer exists, and the library is provided by
+    this package.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 23 May 2017 16:20:52 -0700
+
 libsnapwebsites (1.1.93.16~xenial) xenial; urgency=high
 
   * Nightly build.
