@@ -6,7 +6,7 @@ Build-Depends: cmake,
     dh-systemd,
     doxygen,
     graphviz,
-    snapcmakemodules (>= 1.0.27.11~xenial)
+    snapcmakemodules (>= 1.0.34.89~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

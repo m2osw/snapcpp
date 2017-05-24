@@ -6,8 +6,8 @@ Build-Depends: catch (>= 1.0),
     debhelper,
     doxygen,
     graphviz,
-    libadvgetopt-dev (>= 1.1.3.11~xenial),
-    snapcmakemodules (>= 1.0.27.11~xenial)
+    libadvgetopt-dev (>= 1.1.10.139~xenial),
+    snapcmakemodules (>= 1.0.34.89~xenial)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
