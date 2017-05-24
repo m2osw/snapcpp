@@ -199,6 +199,7 @@ QCassandraOrderResult QCassandraProxy::sendOrder(QCassandraOrder const & order)
     //
     if(static_cast<int>(bio_write(encoded.data(), encoded.size())) != encoded.size())
     {
+        SNAP_LOG_DEBUG("++++ bio_write() failed!");
         return result;
     }
 
@@ -213,6 +214,7 @@ QCassandraOrderResult QCassandraProxy::sendOrder(QCassandraOrder const & order)
         unsigned char buf[8];
         if(bio_read(buf, 8) != 8) // 4 letters + 4 bytes for size
         {
+            SNAP_LOG_DEBUG("++++ bio_read() failed!");
             return result;
         }
 
@@ -229,6 +231,7 @@ QCassandraOrderResult QCassandraProxy::sendOrder(QCassandraOrder const & order)
         {
             if(static_cast<uint32_t>(bio_read(reply.get(), reply_size)) != reply_size)
             {
+                SNAP_LOG_DEBUG("++++ reply_size not read! size=")(reply_size);
                 return result;
             }
         }
@@ -300,7 +303,6 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
                 | (buf[7] <<  0));
 
     std::string const command(reinterpret_cast<char const *>(buf), 4);
-    SNAP_LOG_DEBUG("++++ command=")(command);
     if(command != "CQLP")
     {
         SNAP_LOG_DEBUG("++++ wrong command!");

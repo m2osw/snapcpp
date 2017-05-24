@@ -44,6 +44,8 @@
 #include "QtCassandra/QCassandraException.h"
 #include "QtCassandra/QCassandraValue.h"
 
+#include "snapwebsites/log.h"
+
 #include <QtCore>
 
 #include <iostream>
@@ -450,105 +452,118 @@ bool QCassandraOrder::decodeOrder(unsigned char const * encoded_order, size_t si
     QByteArray const encoded(QByteArray::fromRawData(reinterpret_cast<char const *>(encoded_order), size));
     QCassandraDecoder const decoder(encoded);
 
-    // get the flags
-    //
-    int const flags(decoder.uint16Value());
-
-    f_type_of_result = static_cast<type_of_result_t>(flags & 15);
-    f_blocking = (flags & 0x10) != 0;
-    f_clear_cluster_description = (flags & 0x400) != 0;
-
-    // get the consistency level
-    //
-    f_consistency_level = static_cast<consistency_level_t>(decoder.signedCharValue());
-
-    // get the CQL string (expected to be in UTF-8)
-    //
-    f_cql = decoder.p16StringValue();
-
-    // if the timestamp was included, read it
-    //
-    if((flags & 0x20) != 0)
+    try
     {
-        f_timestamp = decoder.int64Value();
-    }
-    else
-    {
-        // not included means we do not need it, i.e. zero
-        f_timestamp = 0;
-    }
-
-    // if the timeout was included, read it
-    //
-    if((flags & 0x40) != 0)
-    {
-        f_timeout_ms = decoder.int32Value();
-    }
-    else
-    {
-        // not included means we do not need it, i.e. zero
-        f_timeout_ms = 0;
-    }
-
-    // if the paging size was included, read it
-    //
-    if((flags & 0x80) != 0)
-    {
-        f_column_count = decoder.signedCharValue();
-    }
-    else
-    {
-        // not included means we do not need it, i.e. one
-        f_column_count = 1;
-    }
-
-    // if the paging size was included, read it
-    //
-    if((flags & 0x100) != 0)
-    {
-        f_paging_size = decoder.int32Value();
-    }
-    else
-    {
-        // not included means we do not need it, i.e. zero
-        f_paging_size = 0;
-    }
-
-    // if the cursor index was included, read it
-    //
-    if((flags & 0x200) != 0)
-    {
-        f_cursor_index = static_cast<int32_t>(decoder.uint16Value());
-    }
-    else
-    {
-        // not included means we do not need it, i.e. -1
-        f_cursor_index = -1;
-    }
-
-    // if the batch index was included, read it
-    //
-    if((flags & 0x800) != 0)
-    {
-        f_batch_index = static_cast<int32_t>(decoder.uint16Value());
-    }
-    else
-    {
-        // not included means we do not need it, i.e. -1
-        f_batch_index = -1;
-    }
-
-    // read the number of parameters that were included
-    // this may be zero
-    //
-    size_t const param_count(decoder.uint16Value());
-    for(size_t idx(0); idx < param_count; ++idx)
-    {
-        // read this parameter data and immediately push it in the
-        // list of parameters; the binaryValue() function knows
-        // to read the size first
+        // get the flags
         //
-        f_parameter.push_back(decoder.binaryValue());
+        int const flags(decoder.uint16Value());
+
+        f_type_of_result = static_cast<type_of_result_t>(flags & 15);
+        f_blocking = (flags & 0x10) != 0;
+        f_clear_cluster_description = (flags & 0x400) != 0;
+
+        // get the consistency level
+        //
+        f_consistency_level = static_cast<consistency_level_t>(decoder.signedCharValue());
+
+        // get the CQL string (expected to be in UTF-8)
+        //
+        f_cql = decoder.p16StringValue();
+
+        // if the timestamp was included, read it
+        //
+        if((flags & 0x20) != 0)
+        {
+            f_timestamp = decoder.int64Value();
+        }
+        else
+        {
+            // not included means we do not need it, i.e. zero
+            f_timestamp = 0;
+        }
+
+        // if the timeout was included, read it
+        //
+        if((flags & 0x40) != 0)
+        {
+            f_timeout_ms = decoder.int32Value();
+        }
+        else
+        {
+            // not included means we do not need it, i.e. zero
+            f_timeout_ms = 0;
+        }
+
+        // if the paging size was included, read it
+        //
+        if((flags & 0x80) != 0)
+        {
+            f_column_count = decoder.signedCharValue();
+        }
+        else
+        {
+            // not included means we do not need it, i.e. one
+            f_column_count = 1;
+        }
+
+        // if the paging size was included, read it
+        //
+        if((flags & 0x100) != 0)
+        {
+            f_paging_size = decoder.int32Value();
+        }
+        else
+        {
+            // not included means we do not need it, i.e. zero
+            f_paging_size = 0;
+        }
+
+        // if the cursor index was included, read it
+        //
+        if((flags & 0x200) != 0)
+        {
+            f_cursor_index = static_cast<int32_t>(decoder.uint16Value());
+        }
+        else
+        {
+            // not included means we do not need it, i.e. -1
+            f_cursor_index = -1;
+        }
+
+        // if the batch index was included, read it
+        //
+        if((flags & 0x800) != 0)
+        {
+            f_batch_index = static_cast<int32_t>(decoder.uint16Value());
+        }
+        else
+        {
+            // not included means we do not need it, i.e. -1
+            f_batch_index = -1;
+        }
+
+        // read the number of parameters that were included
+        // this may be zero
+        //
+        size_t const param_count(decoder.uint16Value());
+        for(size_t idx(0); idx < param_count; ++idx)
+        {
+            // read this parameter data and immediately push it in the
+            // list of parameters; the binaryValue() function knows
+            // to read the size first
+            //
+            f_parameter.push_back(decoder.binaryValue());
+        }
+    }
+    catch( std::exception const& x )
+    {
+        SNAP_LOG_ERROR("decodeOrder(): exception! what=")(x.what());
+        throw;
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("unknown exception caught!");
+        throw;
     }
 
     return true;

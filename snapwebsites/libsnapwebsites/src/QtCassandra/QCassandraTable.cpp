@@ -40,6 +40,8 @@
 
 #include <casswrapper/schema.h>
 
+#include <snapwebsites/log.h>
+
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -1429,6 +1431,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     QCassandraOrderResult const insert_value_result(f_proxy->sendOrder(insert_value));
     if(!insert_value_result.succeeded())
     {
+        SNAP_LOG_ERROR("unable to insert a value into the table for query: '")(query_string)("'");
         throw QCassandraException("inserting a value failed");
     }
 }

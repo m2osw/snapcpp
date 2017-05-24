@@ -166,11 +166,9 @@ void snapdbproxy_connection::run()
             // wait for an order
             //
             QtCassandra::QCassandraOrder order(f_proxy.receiveOrder(*this));
+
             if(order.validOrder()
-            && f_session->isConnected())
-            // && !thread->is_stopping()) -- we do not have access to the thread
-            //                               and the pthread_kill() should be more
-            //                               than enough at this point
+                && f_session->isConnected())
             {
                 // order can be executed now
                 //
@@ -625,7 +623,7 @@ void snapdbproxy_connection::declare_batch(QtCassandra::QCassandraOrder const & 
 
     QtCassandra::QCassandraOrderResult result;
     QByteArray batch_index;
-    QtCassandra::appendUInt32Value(batch_index, f_batches.size());
+    QtCassandra::appendUInt32Value(batch_index, f_batches.size()-1);
     result.addResult(batch_index);
     result.setSucceeded(true);
     if(!f_proxy.sendResult(*this, result))
@@ -863,9 +861,10 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
 
     // Create a new query afresh--unless it is a batch, then use that existing query.
     //
-    auto q( order.batchIndex() == -1
+    int32_t const batch_index(order.batchIndex());
+    auto q( batch_index == -1
             ? casswrapper::Query::create( order_session )
-            : f_batches[order.batchIndex()].f_query
+            : f_batches[batch_index].f_query
             );
     send_order(q, order);
 
