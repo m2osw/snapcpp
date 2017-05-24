@@ -43,6 +43,7 @@ Section: libdevel
 Architecture: any
 Depends: libsnapwebsites (= ${binary:Version}), ${misc:Depends}, libboost-dev, libssl-dev
 Suggests: libsnapwebsites-doc (= ${binary:Version})
+Replaces: libqtcassandra-dev
 Description: Fast Websites: powerful CMS for Apache written in C++ (development package).
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -72,6 +73,7 @@ Package: libsnapwebsites
 Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: libqtcassandra
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
