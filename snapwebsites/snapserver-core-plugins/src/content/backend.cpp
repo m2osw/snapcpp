@@ -505,6 +505,7 @@ void content::on_backend_process()
 {
     backend_process_status();
     backend_process_files();
+    backend_process_journal();
 }
 
 
@@ -818,6 +819,99 @@ void content::backend_process_files()
             if(drop_row)
             {
                 new_row->dropCell(new_cell->columnKey());
+            }
+        }
+    }
+}
+
+
+/** \brief Process journal entries for new pages and remove aged out entries
+ *
+ * When a new page group is created we want to make sure it completes "all the way".
+ * I say "page group" because we can have a complex page being created, which entails
+ * perhaps other dependency pages, plus any links and permissions.
+ *
+ * For example, imagine that you have a system that tracks a company for your user. The
+ * company itself has other pages of content which will be created on company page creation
+ * and linked to the company in the database (vendors, profit centers, location data,
+ * customers, etc). At any point in the creation, it's possible it can fail, and that would
+ * leave the page group partially created.
+ *
+ * We want to be able to treat this more atomically, so the journal table comes to the rescue.
+ * When you start to create a page, add an entry into the journal table using content::journal_create_page(url).
+ * Then when you finish, at the bottom of your creation procedure, call content::journal_finish_page().
+ *
+ * If your procedure fails, and throws an exception, that entry will sit with the starting date timestamp.
+ * This process will find any that have aged out, and will call the content::destroy_page() signal.
+ * Also, the entry will be removed.
+ *
+ * \sa journal_create_page(), journal_finish_page()
+ */
+
+void content::backend_process_journal()
+{
+    auto journal_table   ( f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_TABLE)) );
+    auto field_timestamp ( get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_TIMESTAMP)  );
+    auto field_url       ( get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_URL)        );
+
+    auto row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
+    row_predicate->setCount(100);
+
+    // five minutes in the past
+    //
+    int64_t const five_minute_date(f_snap->get_start_date() - 5 * 60 * 1000000);
+
+    // Clear the cache so we get a fresh read
+    //
+    journal_table->clearCache();
+
+    // Now go through and find all user rows and change them to ids. Add index entries.
+    //
+    for( ;; )
+    {
+        uint32_t const count(journal_table->readRows(row_predicate));
+        if( count == 0 )
+        {
+            // last page was processed, done.
+            break;
+        }
+
+        QStringList pages_to_destroy;
+        auto row_list(journal_table->rows());
+        for( QByteArray const & row_key : row_list.keys() )
+        {
+            auto row( row_list[row_key] );
+            QString const url       ( row->cell(field_url)->value().stringValue()      );
+            int64_t const timestamp ( row->cell(field_timestamp)->value().int64Value() );
+            if( timestamp < five_minute_date )
+            {
+                // Mark these pages for destruction
+                //
+                pages_to_destroy << url;
+
+                // Drop row since it's older than 5 minutes
+                //
+                journal_table->dropRow(row_key);
+            }
+        }
+
+        for( auto url : pages_to_destroy )
+        {
+            // Destroy the path since it didn't complete
+            //
+            try
+            {
+                path_info_t ipath;
+                ipath.set_path(url);
+                destroy_page(ipath);
+            }
+            catch( std::exception const & x )
+            {
+                SNAP_LOG_ERROR( "Exception caught while trying to destroy page [")(url)("], what=")(x.what());
+            }
+            catch( ... )
+            {
+                SNAP_LOG_ERROR( "Unknown exception caught while trying to destroy page [")(url)("]!");
             }
         }
     }

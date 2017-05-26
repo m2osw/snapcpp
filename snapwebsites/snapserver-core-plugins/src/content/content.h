@@ -20,6 +20,8 @@
 //
 #include "../links/links.h"
 
+#include <stack>
+
 
 namespace snap
 {
@@ -91,6 +93,13 @@ enum class name_t
     SNAP_NAME_CONTENT_FORCERESETSTATUS,
     SNAP_NAME_CONTENT_INDEX,
     SNAP_NAME_CONTENT_ISSUED,
+    //
+    // Journaling for new content, to make sure everything gets done properly or rolled back.
+    //
+    SNAP_NAME_CONTENT_JOURNAL_TABLE,
+    SNAP_NAME_CONTENT_JOURNAL_TIMESTAMP,
+    SNAP_NAME_CONTENT_JOURNAL_URL,
+    //
     SNAP_NAME_CONTENT_LONG_TITLE,
     SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME,
     SNAP_NAME_CONTENT_MODIFIED,
@@ -615,6 +624,27 @@ private:
 
 
 
+class journal_list
+{
+public:
+    ~journal_list();
+
+    void add_page_url( QString const& url );
+    void done();
+
+private:
+    journal_list( snap_child* snap );
+
+    snap_child*                             f_snap = nullptr;
+    QtCassandra::QCassandraTable::pointer_t f_journal_table;
+    QStringList                             f_url_list;
+    bool                                    f_finished_called = false;
+
+    void finish_pages();
+
+    friend class content;
+};
+
 
 
 
@@ -795,6 +825,9 @@ public:
 
     bool                is_final(QString const & key);
 
+    // journal support
+    journal_list*        get_journal_list();
+
 private:
     // from the <param> tags
     struct content_param
@@ -848,6 +881,7 @@ private:
     void        backend_action_reset_status(bool const force);
     void        backend_process_status();
     void        backend_process_files();
+    void        backend_process_journal();
     void        backend_action_dir_resources();
     void        backend_action_extract_resource();
     void        backend_action_destroy_page();
@@ -855,6 +889,9 @@ private:
     void        backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
     void        backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
     void        backend_action_rebuild_index();
+
+    void        journal_list_pop();
+    void        finish_all_journals();
 
     snap_child *                                    f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;
@@ -870,6 +907,13 @@ private:
     QMap<QString, bool>                             f_added_javascripts;
     javascript_ref_map_t                            f_javascripts;
     QMap<QString, bool>                             f_added_css;
+
+    friend class journal_list;
+
+    // Journaling support
+    //
+    std::stack<journal_list*>                       f_journal_list_stack;
+    std::vector<journal_list>                       f_to_process;
 };
 
 //class content_box_execute

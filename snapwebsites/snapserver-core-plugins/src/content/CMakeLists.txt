@@ -61,6 +61,9 @@ add_library(content SHARED
     permission_flag.cpp
     status.cpp
 
+    # xml and other content files
+    content-tables.xml
+
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
