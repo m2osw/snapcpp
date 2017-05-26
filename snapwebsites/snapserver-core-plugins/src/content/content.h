@@ -884,7 +884,7 @@ private:
     void        backend_action_reset_status(bool const force);
     void        backend_process_status();
     void        backend_process_files();
-    void        backend_process_journal();
+    void        backend_process_journal( int64_t const age_in_minutes );
     void        backend_action_dir_resources();
     void        backend_action_extract_resource();
     void        backend_action_destroy_page();

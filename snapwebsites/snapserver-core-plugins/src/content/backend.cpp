@@ -505,7 +505,7 @@ void content::on_backend_process()
 {
     backend_process_status();
     backend_process_files();
-    backend_process_journal();
+    backend_process_journal( 5 ); // Five minute age
 }
 
 
@@ -848,7 +848,7 @@ void content::backend_process_files()
  * \sa journal_create_page(), journal_finish_page()
  */
 
-void content::backend_process_journal()
+void content::backend_process_journal( int64_t const age_in_minutes )
 {
     auto journal_table   ( f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_TABLE)) );
     auto field_timestamp ( get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_TIMESTAMP)  );
@@ -859,7 +859,7 @@ void content::backend_process_journal()
 
     // five minutes in the past
     //
-    int64_t const five_minute_date(f_snap->get_start_date() - 5 * 60 * 1000000);
+    int64_t const aged_out_time(f_snap->get_start_date() - age_in_minutes * 60LL * 1000000LL);
 
     // Clear the cache so we get a fresh read
     //
@@ -883,7 +883,7 @@ void content::backend_process_journal()
             auto row( row_list[row_key] );
             QString const url       ( row->cell(field_url)->value().stringValue()      );
             int64_t const timestamp ( row->cell(field_timestamp)->value().int64Value() );
-            if( timestamp < five_minute_date )
+            if( timestamp < aged_out_time )
             {
                 // Mark these pages for destruction
                 //
