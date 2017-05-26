@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.112.0~xenial) xenial; urgency=high
+
+  * EX-181: added journaling support.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 25 May 2017 21:26:50 -0700
+
 snapserver-core-plugins (1.0.111.3~xenial) xenial; urgency=high
 
   * Nightly build.
