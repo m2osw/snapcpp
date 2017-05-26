@@ -638,6 +638,8 @@ void content::bootstrap(snap_child * snap)
     SNAP_LISTEN0(content, "server", server, backend_process);
     SNAP_LISTEN(content, "server", server, load_file, _1, _2);
     SNAP_LISTEN(content, "server", server, table_is_accessible, _1, _2);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(content);
 }
 
 
