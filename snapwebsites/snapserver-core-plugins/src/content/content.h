@@ -19,6 +19,7 @@
 // other plugins
 //
 #include "../links/links.h"
+#include "../test_plugin_suite/test_plugin_suite.h"
 
 #include <stack>
 
@@ -828,6 +829,8 @@ public:
     // journal support
     journal_list*        get_journal_list();
 
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+
 private:
     // from the <param> tags
     struct content_param
@@ -892,6 +895,9 @@ private:
 
     void        journal_list_pop();
     void        finish_all_journals();
+
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_journal_list)
 
     snap_child *                                    f_snap = nullptr;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;

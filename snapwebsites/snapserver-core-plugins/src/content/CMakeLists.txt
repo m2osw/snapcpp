@@ -61,6 +61,9 @@ add_library(content SHARED
     permission_flag.cpp
     status.cpp
 
+    # tests
+    tests.cpp
+
     # xml and other content files
     content-tables.xml
 
