@@ -505,6 +505,11 @@ void content::on_backend_process()
 {
     backend_process_status();
     backend_process_files();
+    //
+    // TODO: use "get_server_parameter()" function
+    // to read such parameters. You get a QString that you can change to a number
+    // with toInt() or toLong() or such.
+    //
     backend_process_journal( 5 ); // Five minute age
 }
 
@@ -906,6 +911,9 @@ void content::backend_process_journal( int64_t const age_in_minutes )
             //
             try
             {
+                //QString const & page_key( f_snap->get_site_key_with_slash() + url );
+                //if( content_table->exists(page_key) )
+                //
                 path_info_t ipath;
                 ipath.set_path(url);
                 if( content_table->exists(ipath.get_key()) )
