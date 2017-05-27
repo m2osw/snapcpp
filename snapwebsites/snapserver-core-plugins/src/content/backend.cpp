@@ -850,6 +850,8 @@ void content::backend_process_files()
 
 void content::backend_process_journal( int64_t const age_in_minutes )
 {
+    f_snap->get_context()->clearCache();
+
     auto journal_table   ( f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_TABLE)) );
     auto field_timestamp ( get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_TIMESTAMP)  );
     auto field_url       ( get_name(name_t::SNAP_NAME_CONTENT_JOURNAL_URL)        );
@@ -860,10 +862,6 @@ void content::backend_process_journal( int64_t const age_in_minutes )
     // five minutes in the past
     //
     int64_t const aged_out_time(f_snap->get_start_date() - (age_in_minutes * 60LL * 1000000LL));
-
-    // Clear the cache so we get a fresh read
-    //
-    journal_table->clearCache();
 
     // Now go through and find all user rows and change them to ids. Add index entries.
     //
@@ -900,6 +898,7 @@ void content::backend_process_journal( int64_t const age_in_minutes )
         }
 
         f_snap->get_context()->clearCache();
+        auto content_table( f_snap->get_table(get_name(name_t::SNAP_NAME_CONTENT_TABLE)) );
 
         for( auto url : pages_to_destroy )
         {
@@ -909,8 +908,11 @@ void content::backend_process_journal( int64_t const age_in_minutes )
             {
                 path_info_t ipath;
                 ipath.set_path(url);
-                SNAP_LOG_DEBUG("destroying page=")(ipath.get_key());
-                destroy_page(ipath);
+                if( content_table->exists(ipath.get_key()) )
+                {
+                    SNAP_LOG_DEBUG("destroying page=")(ipath.get_key());
+                    destroy_page( ipath );
+                }
             }
             catch( std::exception const & x )
             {
