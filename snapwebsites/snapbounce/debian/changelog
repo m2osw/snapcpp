@@ -1,8 +1,14 @@
-snapbounce (1.0.14.28~xenial) xenial; urgency=high
+snapbounce (1.0.15.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 01 May 2017 02:00:53 -0700
+ -- Build Server <build@m2osw.com>  Sat, 27 May 2017 02:00:51 -0700
+
+snapbounce (1.0.15.0~xenial) xenial; urgency=high
+
+  * SNAP-571: Added our own postfix filters for fail2ban.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 26 May 2017 21:47:48 -0700
 
 snapbounce (1.0.14.0~xenial) xenial; urgency=high
 
