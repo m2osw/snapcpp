@@ -36,6 +36,8 @@ journal_list* content::get_journal_list()
 {
     f_to_process.push_back( journal_list(f_snap) );
     f_journal_list_stack.push( &(f_to_process.back()) );
+    SNAP_LOG_DEBUG("content::get_journal_list(): f_to_process.size()=")(f_to_process.size())
+            (", f_journal_list_stack.size()=")(f_journal_list_stack.size());
     return f_journal_list_stack.top();
 }
 
@@ -43,6 +45,7 @@ journal_list* content::get_journal_list()
 void content::journal_list_pop()
 {
     f_journal_list_stack.pop();
+    SNAP_LOG_DEBUG("f_journal_list_stack.size()=")(f_journal_list_stack.size());
     //
     if( f_journal_list_stack.empty() )
     {
@@ -53,6 +56,7 @@ void content::journal_list_pop()
 
 void content::finish_all_journals()
 {
+    SNAP_LOG_DEBUG("++++ f_to_process.size()=")(f_to_process.size());
     for( auto & list : f_to_process )
     {
         list.finish_pages();
@@ -107,6 +111,7 @@ void journal_list::add_page_url( QString const & full_url )
  */
 void journal_list::done()
 {
+    SNAP_LOG_DEBUG("journal_list::done()");
     content::content::instance()->journal_list_pop();
 }
 
@@ -119,10 +124,12 @@ void journal_list::done()
  */
 void journal_list::finish_pages()
 {
+    SNAP_LOG_DEBUG("++++ f_url_list=")(f_url_list.size());
     for( auto url : f_url_list )
     {
         // Drop the row, since it is completed and we are done.
         //
+        SNAP_LOG_DEBUG("+++ dropping url=")(url);
         f_journal_table->dropRow(url);
     }
 

@@ -859,7 +859,7 @@ void content::backend_process_journal( int64_t const age_in_minutes )
 
     // five minutes in the past
     //
-    int64_t const aged_out_time(f_snap->get_start_date() - age_in_minutes * 60LL * 1000000LL);
+    int64_t const aged_out_time(f_snap->get_start_date() - (age_in_minutes * 60LL * 1000000LL));
 
     // Clear the cache so we get a fresh read
     //
@@ -883,8 +883,12 @@ void content::backend_process_journal( int64_t const age_in_minutes )
             auto row( row_list[row_key] );
             QString const url       ( row->cell(field_url)->value().stringValue()      );
             int64_t const timestamp ( row->cell(field_timestamp)->value().int64Value() );
+            SNAP_LOG_DEBUG("++++ row_key=")(row_key.data())(", url=")(url);
+            SNAP_LOG_DEBUG("++++++ timestamp = ")(timestamp)(", aged_out_time = ")(aged_out_time);
             if( timestamp < aged_out_time )
             {
+                SNAP_LOG_DEBUG("++++++++ DESTROYING URL=")(url);
+
                 // Mark these pages for destruction
                 //
                 pages_to_destroy << url;
@@ -895,6 +899,8 @@ void content::backend_process_journal( int64_t const age_in_minutes )
             }
         }
 
+        f_snap->get_context()->clearCache();
+
         for( auto url : pages_to_destroy )
         {
             // Destroy the path since it didn't complete
@@ -903,6 +909,7 @@ void content::backend_process_journal( int64_t const age_in_minutes )
             {
                 path_info_t ipath;
                 ipath.set_path(url);
+                SNAP_LOG_DEBUG("destroying page=")(ipath.get_key());
                 destroy_page(ipath);
             }
             catch( std::exception const & x )
@@ -914,6 +921,8 @@ void content::backend_process_journal( int64_t const age_in_minutes )
                 SNAP_LOG_ERROR( "Unknown exception caught while trying to destroy page [")(url)("]!");
             }
         }
+
+        f_snap->get_context()->clearCache();
     }
 }
 
