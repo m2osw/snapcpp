@@ -731,6 +731,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
          || n == "users::identifier"
          || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::unique_email" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "content::journal::timestamp"
          )
     {
         return column_type_t::CT_uint64_value;

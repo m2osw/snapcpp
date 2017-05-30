@@ -510,7 +510,15 @@ void content::on_backend_process()
     // to read such parameters. You get a QString that you can change to a number
     // with toInt() or toLong() or such.
     //
-    backend_process_journal( 5 ); // Five minute age
+    QString const age_in_minutes(f_snap->get_server_parameter("backend_journal_age"));
+    if( age_in_minutes.isEmpty() )
+    {
+        backend_process_journal( 5 ); // Five minute age default
+    }
+    else
+    {
+        backend_process_journal( age_in_minutes.toLongLong() );
+    }
 }
 
 
