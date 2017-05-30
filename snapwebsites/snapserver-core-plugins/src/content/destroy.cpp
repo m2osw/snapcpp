@@ -102,6 +102,7 @@ bool content::destroy_page_impl(path_info_t & ipath)
 
     // here we check whether we have children, because if we do
     // we have to delete the children first
+    try
     {
         links::link_info link_info(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links_plugin->new_link_context(link_info));
@@ -113,16 +114,33 @@ bool content::destroy_page_impl(path_info_t & ipath)
             destroy_page(child_ipath);
         }
     }
+    catch( std::exception const & x )
+    {
+        SNAP_LOG_ERROR("exception caught while attempting to destroy page [")(ipath.get_key())("], what=[")(x.what())("]!");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("unknown exception caught while attempting to destroy page [")(ipath.get_key())("]!");
+    }
 
     // the links plugin cannot include content.h (at least not the
     // header) so we have to implement the deletion of all the links
     // on this page here
+    try
     {
         links::link_info_pair::vector_t all_links(links_plugin->list_of_links(ipath.get_key()));
         for(auto const & l : all_links)
         {
             links_plugin->delete_this_link(l.source(), l.destination());
         }
+    }
+    catch( std::exception const & x )
+    {
+        SNAP_LOG_ERROR("exception caught while attempting to unlink page [")(ipath.get_key())("], what=[")(x.what())("]!");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("unknown exception caught while attempting to unlink page [")(ipath.get_key())("]!");
     }
 
     return true;

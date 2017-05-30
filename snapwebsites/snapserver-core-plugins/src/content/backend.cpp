@@ -916,11 +916,8 @@ void content::backend_process_journal( int64_t const age_in_minutes )
                 //
                 path_info_t ipath;
                 ipath.set_path(url);
-                if( content_table->exists(ipath.get_key()) )
-                {
-                    SNAP_LOG_DEBUG("destroying page=")(ipath.get_key());
-                    destroy_page( ipath );
-                }
+                SNAP_LOG_DEBUG("destroying page=")(ipath.get_key());
+                destroy_page( ipath );
             }
             catch( std::exception const & x )
             {
