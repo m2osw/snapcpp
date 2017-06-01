@@ -4,7 +4,7 @@ snapmanager (1.3.11.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 01 Jun 2017 11:01:16 -0700
 
-snapmanager (1.3.10.85~xenial) xenial; urgency=high
+snapmanager (1.3.10.86~xenial) xenial; urgency=high
 
   * Nightly build.
 

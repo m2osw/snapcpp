@@ -4,7 +4,7 @@ snapcgi (1.1.10.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 01 Jun 2017 10:51:19 -0700
 
-snapcgi (1.1.9.133~xenial) xenial; urgency=high
+snapcgi (1.1.9.134~xenial) xenial; urgency=high
 
   * Nightly build.
 
