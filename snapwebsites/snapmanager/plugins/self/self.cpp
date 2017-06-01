@@ -195,7 +195,9 @@ void self::bootstrap(snap_child * snap)
         throw snap_logic_exception("snap pointer does not represent a valid manager object.");
     }
 
-    SNAP_LISTEN(self, "server", snap_manager::manager, retrieve_status, _1);
+    SNAP_LISTEN  ( self, "server", snap_manager::manager, retrieve_status,          _1     );
+    SNAP_LISTEN  ( self, "server", snap_manager::manager, add_plugin_commands,      _1     );
+    SNAP_LISTEN  ( self, "server", snap_manager::manager, process_plugin_message,   _1, _2 );
 }
 
 
@@ -331,6 +333,16 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         struct stat st;
         if(stat("/run/reboot-required", &st) == 0)
         {
+            if( f_system_active )
+            {
+                snap_manager::status_t const maintenance_str(
+                            snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                            , get_plugin_name()
+                            , "maint_mode"
+                            , "Cluster is not in maintenance mode!");
+                server_status.set_field(maintenance_str);
+            }
+
             // TBD: should we put the content of that file as the message?
             //      (it could be tainted though...)
             //
@@ -870,6 +882,28 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         return true;
     }
 
+    if(s.get_field_name() == "maint_mode")
+    {
+        // the OS declared that a reboot was required, offer the option
+        //
+        snap_manager::form f(
+                  get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_NONE
+                );
+
+        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
+                          "Maintenance Mode Not On!"
+                        , s.get_field_name()
+                        , s.get_value() // the value is the description!
+                        ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     if(s.get_field_name() == "reboot_required")
     {
         // the OS declared that a reboot was required, offer the option
@@ -1223,6 +1257,23 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
 }
 
 
+void self::on_add_plugin_commands(snap::snap_string_list & understood_commands)
+{
+    understood_commands << "CGISTATUS";
+}
+
+
+void self::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
+{
+    QString const command(message.get_command());
+    SNAP_LOG_TRACE("self::on_process_plugin_message(), command=[")(command)("]");
+
+    if(command == "CGISTATUS")
+    {
+        f_system_active = (message.get_integer_parameter("status") == 0);
+        processed = true;
+    }
+}
 
 
 

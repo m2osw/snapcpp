@@ -201,7 +201,42 @@ void cgi::bootstrap(snap_child * snap)
         throw snap_logic_exception("snap pointer does not represent a valid manager object.");
     }
 
-    SNAP_LISTEN(cgi, "server", snap_manager::manager, retrieve_status, _1);
+    SNAP_LISTEN  ( cgi, "server", snap_manager::manager, retrieve_status,          _1     );
+    SNAP_LISTEN  ( cgi, "server", snap_manager::manager, add_plugin_commands,      _1     );
+    SNAP_LISTEN  ( cgi, "server", snap_manager::manager, process_plugin_message,   _1, _2 );
+    SNAP_LISTEN0 ( cgi, "server", snap_manager::manager, communication_ready              );
+}
+
+
+int get_retry_from_content( std::string const & content )
+{
+    int retry_after(0);
+    std::string::size_type const pos(content.find("##MAINTENANCE-START##"));
+    char const * s(content.c_str() + pos + 21);
+    while(isspace(*s))
+    {
+        ++s;
+    }
+    if(*s != '#')
+    {
+        std::string::size_type const ra_pos(content.find("Retry-After"));
+        char const * ra(content.c_str() + ra_pos + 11);
+        for(; *ra == '"' || isspace(*ra); ++ra);
+        for(; *ra >= '0' && *ra <= '9'; ++ra)
+        {
+            retry_after = retry_after * 10 + *ra - '0';
+            if(retry_after > 365 * 24 * 60 * 60) // more than 1 year?!?
+            {
+                retry_after = 365 * 24 * 60 * 60;
+                break;
+            }
+        }
+        if(retry_after < 60) // less than a minute?!?
+        {
+            retry_after = 60;
+        }
+    }
+    return retry_after;
 }
 
 
@@ -238,36 +273,8 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
         snap::file_content conf(g_configuration_apache2_maintenance);
         if(conf.exists())
         {
-            int retry_after(0);
-            if(conf.read_all())
-            {
-                std::string const content(conf.get_content());
-                std::string::size_type const pos(content.find("##MAINTENANCE-START##"));
-                char const * s(content.c_str() + pos + 21);
-                while(isspace(*s))
-                {
-                    ++s;
-                }
-                if(*s != '#')
-                {
-                    std::string::size_type const ra_pos(content.find("Retry-After"));
-                    char const * ra(content.c_str() + ra_pos + 11);
-                    for(; *ra == '"' || isspace(*ra); ++ra);
-                    for(; *ra >= '0' && *ra <= '9'; ++ra)
-                    {
-                        retry_after = retry_after * 10 + *ra - '0';
-                        if(retry_after > 365 * 24 * 60 * 60) // more than 1 year?!?
-                        {
-                            retry_after = 365 * 24 * 60 * 60;
-                            break;
-                        }
-                    }
-                    if(retry_after < 60) // less than a minute?!?
-                    {
-                        retry_after = 60;
-                    }
-                }
-            }
+            int const retry_after = conf.read_all()? get_retry_from_content(conf.get_content()) : 0;
+
             // TODO: display retry_after in minutes, hours, days...
             snap_manager::status_t const maintenance(
                           snap_manager::status_t::state_t::STATUS_STATE_INFO
@@ -287,6 +294,63 @@ void cgi::on_retrieve_status(snap_manager::server_status & server_status)
         }
     }
 
+}
+
+
+void cgi::send_status( snap::snap_communicator_message const* message )
+{
+    snap::snap_communicator_message cmd;
+    cmd.set_command("CGISTATUS");
+    //
+    if( message == nullptr )
+    {
+        cmd.set_service("*");
+    }
+    else
+    {
+        cmd.reply_to(*message);
+    }
+    //
+    snap::file_content conf(g_configuration_apache2_maintenance);
+    if(conf.exists())
+    {
+        int const retry_after = conf.read_all()? get_retry_from_content(conf.get_content()) : 0;
+        cmd.add_parameter( "status", retry_after );
+    }
+    else
+    {
+        cmd.add_parameter( "status", 0 );
+    }
+
+    //cmd.add_parameter( "cache" , "ttl=60"     );
+    f_snap->forward_message(cmd);
+
+    SNAP_LOG_DEBUG("CGISTATUS message sent!");
+}
+
+
+void cgi::on_communication_ready()
+{
+    send_status();
+}
+
+
+void cgi::on_add_plugin_commands(snap::snap_string_list & understood_commands)
+{
+    understood_commands << "CGISTATUS_REQUEST";
+}
+
+
+void cgi::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
+{
+    QString const command(message.get_command());
+    SNAP_LOG_TRACE("cgi::on_process_plugin_message(), command=[")(command)("]");
+
+    if(command == "CGISTATUS_REQUEST")
+    {
+        send_status( &message );
+        processed = true;
+    }
 }
 
 
@@ -499,6 +563,8 @@ bool cgi::apply_setting(QString const & button_name, QString const & field_name,
         // make sure apache2 gets reloaded too
         //
         affected_services.insert("apache2-reload");
+
+        send_status();
 
         return true;
     }

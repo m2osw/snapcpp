@@ -77,10 +77,14 @@ public:
 
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);
+    void                    on_communication_ready();
+    void                    on_add_plugin_commands(snap::snap_string_list & understood_commands);
+    void                    on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed);
 
 private:
     void                    retrieve_bundles_status(snap_manager::server_status & server_status);
     bool                    install_bundle(bool const install, QString const & bundle_name, std::set<QString> & services);
+    void                    send_status( snap::snap_communicator_message const* message = nullptr );
 
     snap_manager::manager * f_snap = nullptr;
 };

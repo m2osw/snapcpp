@@ -74,6 +74,8 @@ public:
     // manager overload
     virtual bool            display_value(QDomElement parent, snap_manager::status_t const & s, snap::snap_uri const & uri) override;
     virtual bool            apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_value, std::set<QString> & affected_services) override;
+    void                    on_add_plugin_commands(snap::snap_string_list & understood_commands);
+    void                    on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed);
 
     // server signal
     void                    on_retrieve_status(snap_manager::server_status & server_status);
@@ -82,7 +84,8 @@ private:
     void                    retrieve_bundles_status(snap_manager::server_status & server_status);
     bool                    install_bundle(bool const install, QString const & bundle_name, std::vector<QString> & services);
 
-    snap_manager::manager * f_snap = nullptr;
+    snap_manager::manager * f_snap          = nullptr;
+    bool                    f_system_active = false;    // false if in maintenance
 };
 
 } // namespace self
