@@ -316,11 +316,24 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         QString const updates(f_snap->count_packages_that_can_be_updated(true));
         if(!updates.isEmpty())
         {
+            QString msg;
+            if( f_system_active )
+            {
+                msg = "<b>CLUSTER IS NOT IN MAINTENANCE MODE!</b>"
+                      "<br/><i>It is highly recommended that your cluster be put in maintenance mode "
+                      "before upgrading to avoid data loss.</i><br/><br/>;"
+                      + updates;
+            }
+            else
+            {
+                msg = ";" + updates;
+            }
+
             snap_manager::status_t const upgrade_required(
                               snap_manager::status_t::state_t::STATUS_STATE_WARNING
                             , get_plugin_name()
                             , "upgrade_required"
-                            , updates);
+                            , msg);
             server_status.set_field(upgrade_required);
             no_installs = true;
         }
@@ -333,14 +346,12 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         struct stat st;
         if(stat("/run/reboot-required", &st) == 0)
         {
+            QString msg;
             if( f_system_active )
             {
-                snap_manager::status_t const maintenance_str(
-                            snap_manager::status_t::state_t::STATUS_STATE_WARNING
-                            , get_plugin_name()
-                            , "maint_mode"
-                            , "Cluster is not in maintenance mode!");
-                server_status.set_field(maintenance_str);
+                msg = "<b>CLUSTER IS NOT IN MAINTENANCE MODE!</b>"
+                      "<br/><i>It is highly recommended that your cluster be put in maintenance mode "
+                      "before rebooting to avoid data loss.</i><br/><br/>";
             }
 
             // TBD: should we put the content of that file as the message?
@@ -350,7 +361,9 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
                               snap_manager::status_t::state_t::STATUS_STATE_WARNING
                             , get_plugin_name()
                             , "reboot_required"
-                            , QString("Server \"%1\" requires a reboot.").arg(f_snap->get_server_name()));
+                            , QString("%1Server \"%2\" requires a reboot.")
+                                .arg(msg)
+                                .arg(f_snap->get_server_name()));
             server_status.set_field(reboot_required);
         }
     }
@@ -882,28 +895,6 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
         return true;
     }
 
-    if(s.get_field_name() == "maint_mode")
-    {
-        // the OS declared that a reboot was required, offer the option
-        //
-        snap_manager::form f(
-                  get_plugin_name()
-                , s.get_field_name()
-                , snap_manager::form::FORM_BUTTON_NONE
-                );
-
-        snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
-                          "Maintenance Mode Not On!"
-                        , s.get_field_name()
-                        , s.get_value() // the value is the description!
-                        ));
-        f.add_widget(field);
-
-        f.generate(parent, uri);
-
-        return true;
-    }
-
     if(s.get_field_name() == "reboot_required")
     {
         // the OS declared that a reboot was required, offer the option
@@ -969,16 +960,19 @@ bool self::display_value(QDomElement parent, snap_manager::status_t const & s, s
                 );
 
         snap::snap_string_list counts(s.get_value().split(";"));
-        if(counts.size() < 2)
+        if(counts.size() < 3)
         {
             // put some defaults to avoid crashes
             counts << "0";
             counts << "0";
+            counts << "0";
         }
 
-        QString const description(QString("%1 packages can be updated.<br/>%2 updates are security updates.")
+        QString const description(QString("%1%2 packages can be updated.<br/>%3 updates are security updates.")
                             .arg(counts[0])
-                            .arg(counts[1]));
+                            .arg(counts[1])
+                            .arg(counts[2])
+                            );
 
         snap_manager::widget_description::pointer_t field(std::make_shared<snap_manager::widget_description>(
                           "Upgrade Required"
@@ -1271,6 +1265,7 @@ void self::on_process_plugin_message(snap::snap_communicator_message const & mes
     if(command == "CGISTATUS")
     {
         f_system_active = (message.get_integer_parameter("status") == 0);
+        SNAP_LOG_DEBUG("CGISTATUS recieved! f_system_active=")(f_system_active);
         processed = true;
     }
 }
