@@ -42,10 +42,10 @@ See libsnapwebsites/src/core-tables.xml for documentation.
   <table name="files" model="data">
     <description>Website files table (one row per file version)</description>
   </table>
-  <table name="journal" model="data">
+  <table name="journal" model="queue">
     <description>
         Journal table, which keeps track of page creations.
-        If the table isn't created after a certain time, it is deleted
+        If a page isn't created after a certain time, it is deleted
         by the snapbackend.
     </description>
   </table>
