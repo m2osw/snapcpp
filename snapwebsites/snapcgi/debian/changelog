@@ -1,3 +1,9 @@
+snapcgi (1.1.10.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 01 Jun 2017 20:47:27 -0700
+
 snapcgi (1.1.10.1~xenial) xenial; urgency=high
 
   * Added maintenance broadcast.
