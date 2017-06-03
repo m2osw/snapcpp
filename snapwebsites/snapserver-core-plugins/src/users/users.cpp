@@ -3353,6 +3353,7 @@ bool users::check_user_security_impl(user_security_t & security)
         try
         {
             snap_child::verified_email_t const ve(f_snap->verify_email(email, 1, security.get_allow_example_domain()));
+            SNAP_LOG_DEBUG("++++ ve=")(static_cast<int>(ve));
             if(ve == snap_child::verified_email_t::VERIFIED_EMAIL_EXAMPLE)
             {
                 // Note: if not EXAMPLE then it is STANDARD because we only
@@ -3364,6 +3365,7 @@ bool users::check_user_security_impl(user_security_t & security)
         }
         catch(snap_child_exception_invalid_email const & e)
         {
+            SNAP_LOG_ERROR("Exception caught! what=")(e.what());
             security.get_secure().not_permitted(
                         QString("\"%1\" does not look like a valid email address. Reason='%2'")
                             .arg(email)

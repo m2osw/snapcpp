@@ -1,3 +1,9 @@
+libtld (1.5.7.0~xenial) xenial; urgency=high
+
+  * Removed space/lf/cr/tab case and now return invalid.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Jun 2017 13:41:40 -0700
+
 libtld (1.5.6.137~xenial) xenial; urgency=high
 
   * Nightly build.

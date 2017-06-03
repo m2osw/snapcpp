@@ -1186,6 +1186,10 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
         case '\n':
         case '\r':
         case '\t':
+#if 0
+            // EX-185: Spaces should not be allowed, and I doubt CRs, LFs and TABs
+            // should, either.
+            //
             // keep just one space
             if(!value.empty())
             {
@@ -1204,7 +1208,9 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                 }
             }
             --s;
-            break;
+#endif
+            return TLD_RESULT_INVALID;
+            //break;
 
         case '.':
             if(value.empty()                                // cannot start with a dot
