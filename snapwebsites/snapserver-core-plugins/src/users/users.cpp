@@ -3064,6 +3064,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     security.set_password(password);
     security.set_bypass_blacklist(true);
     check_user_security(security);
+    SNAP_LOG_DEBUG("security.get_secure().allowed()")(security.get_secure().allowed());
     if(!security.get_secure().allowed())
     {
         // well... someone said "do not save that user in there"!
@@ -3368,7 +3369,7 @@ bool users::check_user_security_impl(user_security_t & security)
                             .arg(email)
                             .arg(e.what())
                         );
-            security.set_status(status_t::STATUS_BLOCKED);
+            security.set_status(status_t::STATUS_INVALID_EMAIL);
             return false;
         }
 

@@ -227,7 +227,8 @@ public:
         STATUS_NEW,             // user is registered but not yet verified (maked as "NEW")
         STATUS_BLOCKED,         // user got blocked (marked as "BLOCKED")
         STATUS_AUTO,            // user did not register, account was auto-generated (marked as "AUTO"); possibly to block emails
-        STATUS_PASSWORD         // user has to enter a new password (marked as "PASSWORD")
+        STATUS_PASSWORD,        // user has to enter a new password (marked as "PASSWORD")
+        STATUS_INVALID_EMAIL    // user entered an invalid email
     };
 
     class user_info_t
