@@ -4,7 +4,7 @@ snapserver-core-plugins (1.0.114.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Jun 2017 08:38:56 -0700
 
-snapserver-core-plugins (1.0.113.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.113.2~xenial) xenial; urgency=high
 
   * Nightly build.
 
