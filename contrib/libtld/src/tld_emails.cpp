@@ -1023,7 +1023,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                 value += *s;
             }
             while( *(++s) == ' ' );
-            if( *s != '<' )
+            if( *s != '<' && *s != '@' )
             {
                 // A space afterwards is allowed, but '<' is expected
                 return TLD_RESULT_INVALID;

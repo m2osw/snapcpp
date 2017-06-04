@@ -102,6 +102,7 @@ const tld_email list_of_results[] =
       "", "a", "m2osw.com", "a@m2osw.com", "a@m2osw.com" },
     { "", "b@c.com",
       "", "b", "c.com", "b@c.com", "b@c.com" },
+#if 1
     { "", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
     { "", "\"Wilke, Alexis\" <alexis@m2osw.com>",
@@ -153,6 +154,7 @@ const tld_email list_of_results[] =
       "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@%3Aspecial%3A.m2osw.com>" },
     { "", "alexis@m2osw.com (Simple Comment)",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+#endif
 
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
@@ -163,6 +165,7 @@ const valid_email list_of_valid_emails[] =
     { "alexis@m2osw.com", 1 },
     { "a@m2osw.com", 1 },
     { "b@c.com", 1 },
+#if 1
     { " \t alexis@m2osw.com\n \t", 1 },
     { "\"Wilke, Alexis\" <alexis@m2osw.com>", 1 },
     { " (* Pascal Comments *) \t alexis@m2osw.com\n (Just (kidding) he! he!) \t", 1 },
@@ -178,6 +181,7 @@ const valid_email list_of_valid_emails[] =
     { "Group with (Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) some sub-comments \t : alexis@m2osw.com;", 2 },
     { "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>", 1 },
     { "alexis@m2osw.com (Simple Comment)", 1 },
+#endif
 
     // end of list
     { NULL, 0 }

@@ -29,7 +29,7 @@
 
 set(LIBTLD_VERSION_MAJOR 1)
 set(LIBTLD_VERSION_MINOR 5)
-set(LIBTLD_VERSION_PATCH 5)
+set(LIBTLD_VERSION_PATCH 7)
 
 cmake_minimum_required(VERSION 2.8.4)
 project(tld)
