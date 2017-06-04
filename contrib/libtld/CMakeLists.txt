@@ -31,6 +31,8 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(tld_library)
 
+enable_testing()
+
 #
 # Include support modules
 # (must be included in a project even though it is not made

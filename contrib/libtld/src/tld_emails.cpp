@@ -1022,6 +1022,13 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                 }
                 value += *s;
             }
+            while( *(++s) == ' ' );
+            if( *s != '<' )
+            {
+                // A space afterwards is allowed, but '<' is expected
+                return TLD_RESULT_INVALID;
+            }
+            --s;
             break;
 
         case '(':
@@ -1189,6 +1196,10 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
 #if 0
             // EX-185: Spaces should not be allowed, and I doubt CRs, LFs and TABs
             // should, either.
+            //
+            // TODO: We need to allow this to happen, but *only* if there is an
+            // angle bracket that appears last. For now, I'm keeping this case
+            // remarked off, even though it breaks a lot of the email address tests.
             //
             // keep just one space
             if(!value.empty())

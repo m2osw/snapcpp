@@ -265,7 +265,7 @@ void test_valid_emails()
             int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
-                fprintf(stderr, "return value is %d instead of %d with \"%s\"\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
+                fprintf(stderr, "return value is %d instead of %d with [%s]\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
                 error("error: unexpected return value.");
                 results += max;
             }
