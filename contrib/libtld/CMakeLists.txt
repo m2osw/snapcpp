@@ -31,7 +31,10 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(tld_library)
 
-enable_testing()
+option( RUN_TESTS "Enable tests to run via CTest" OFF )
+if( ${RUN_TESTS} )
+    enable_testing()
+endif()
 
 #
 # Include support modules
