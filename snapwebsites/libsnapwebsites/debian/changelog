@@ -1,8 +1,12 @@
-libsnapwebsites (1.2.1.13~xenial) xenial; urgency=high
+libsnapwebsites (1.2.2.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-529: actually found one case that would SEGV in snap_backend because
+    the connection to cassandra gets cleared up and then we still try to
+    access a table.
+  * Also cancel the reconnect timer if we receive another CASSANDRAREADY
+    message (no need to re-request, right?)
 
- -- Build Server <build@m2osw.com>  Thu, 25 May 2017 02:00:51 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  4 Jun 2017 23:34:29 -0800
 
 libsnapwebsites (1.2.1.0~xenial) xenial; urgency=high
 
@@ -10,24 +14,12 @@ libsnapwebsites (1.2.1.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 24 May 2017 11:31:28 -0700
 
-libsnapwebsites (1.2.0.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 24 May 2017 02:00:50 -0700
-
 libsnapwebsites (1.2.0.0~xenial) xenial; urgency=high
 
   * Now libQtCassandra no longer exists, and the library is provided by
     this package.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 23 May 2017 16:20:52 -0700
-
-libsnapwebsites (1.1.93.16~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Doug Barbieri <doug@dooglio.net>  Sun, 07 May 2017 14:57:52 -0700
 
 libsnapwebsites (1.1.93.0~xenial) xenial; urgency=high
 

@@ -1190,7 +1190,7 @@ void snap_backend::process_tick()
         {
             if(!f_cron_action)
             {
-                // one reason for is_ready() to return true is if snaplock
+                // one reason for is_ready() to not return true is if snaplock
                 // is not up yet
                 //
                 if(!f_snaplock)
@@ -1262,11 +1262,22 @@ void snap_backend::process_tick()
             f_sites_table->clearCache(); // just in case, make sure we do not have a query still laying around
             auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
             column_predicate->setCellKey(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
-            auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+            auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
             row_predicate->setCellPredicate(column_predicate);
             for(;;)
             {
-                if(f_sites_table->readRows(row_predicate) == 0)
+                // WARNING: at this point the f_sites_table may be NULL
+                //          because we call add_uri_for_processing()
+                //          and that may throw and call
+                //          request_cassandra_status() which clears
+                //          everything (notice that we have two for loops
+                //          and the inner loop breaks on error instead
+                //          of "goto exit" or something of the sort...
+                //          because the add_uri_for_processing() may
+                //          return false for other reasons than a throw.)
+                //
+                if(f_sites_table == nullptr
+                || f_sites_table->readRows(row_predicate) == 0)
                 {
                     // no more websites to process
                     break;
@@ -1558,11 +1569,27 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
     if(command == "CASSANDRAREADY")
     {
-        // cancel the timeout
+        // cancel timeouts
         //
-        if(!f_cron_action)
+        if(!f_cron_action
+        && g_cassandra_timer != nullptr)
         {
             g_cassandra_timer->set_enable(false);
+        }
+        if(g_reconnect_timer != nullptr)
+        {
+            // WARNING: this one we do not disable, instead we avoid the
+            //          timeout by setting the date to -1
+            //
+            //          because the CASSANDRAREADY message can happen
+            //          back to back, the timer can be started at this
+            //          point; this can happens on startup when
+            //          snapdbproxy broadcasts its CASSANDRAREADY message
+            //          and the snapbackend process already sent a
+            //          CASSANDRASTATUS message and the first CASSANDRAREADY
+            //          message processing ended up with an error
+            //
+            g_reconnect_timer->set_timeout_date(-1);
         }
 
         // connect to Cassandra

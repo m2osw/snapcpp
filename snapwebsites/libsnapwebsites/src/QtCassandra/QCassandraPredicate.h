@@ -140,11 +140,11 @@ public:
     void              setEndCellKey(const QString& cell_key)      { setEndCellKey(cell_key.toUtf8()); }
     void              setEndCellKey(const QByteArray& cell_key)   { f_endCellKey = cell_key;   }
 
-    bool reversed() const                                         { return f_reversed; }
-    void setReversed( bool val = true )                           { f_reversed = val;  }
+    bool              reversed() const                            { return f_reversed; }
+    void              setReversed( bool val = true )              { f_reversed = val;  }
 
-    bool index() const                                            { return f_index;    }
-    void setIndex( bool val = true )                              { f_index = val;     }
+    bool              index() const                               { return f_index;    }
+    void              setIndex( bool val = true )                 { f_index = val;     }
 
 protected:
     QByteArray                  f_startCellKey;
@@ -162,13 +162,13 @@ class QCassandraRowPredicate : public QCassandraPredicate
 public:
     typedef std::shared_ptr<QCassandraRowPredicate> pointer_t;
 
-                    QCassandraRowPredicate() : f_cell_pred( new QCassandraCellPredicate ) {}
-    virtual         ~QCassandraRowPredicate() {}
+                    QCassandraRowPredicate() : f_cell_pred( new QCassandraCellPredicate )   {}
+    virtual         ~QCassandraRowPredicate()                                               {}
 
-    QRegExp         rowNameMatch() const { return f_row_name_match; }
-    void            setRowNameMatch(QRegExp const& re) { f_row_name_match = re; }
+    QRegExp         rowNameMatch() const                { return f_row_name_match; }
+    void            setRowNameMatch(QRegExp const& re)  { f_row_name_match = re; }
 
-    QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cell_pred; }
+    QCassandraCellPredicate::pointer_t  cellPredicate() const                                       { return f_cell_pred; }
     void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cell_pred = pred; }
 
     virtual void    appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
@@ -185,16 +185,17 @@ class QCassandraRowKeyPredicate : public QCassandraRowPredicate
 public:
     typedef std::shared_ptr<QCassandraRowKeyPredicate> pointer_t;
 
-    QCassandraRowKeyPredicate() {}
+                        QCassandraRowKeyPredicate() {}
+    virtual             ~QCassandraRowKeyPredicate() {}
 
-    const QByteArray& rowKey() const                       { return f_rowKey;   }
-    void              setRowKey(const QByteArray& row_key) { f_rowKey= row_key; }
+    const QByteArray&   rowKey() const                       { return f_rowKey;   }
+    void                setRowKey(const QByteArray& row_key) { f_rowKey = row_key; }
 
-    virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindOrder( QCassandraOrder& order );
+    virtual void        appendQuery( QString& query, int& bind_count );
+    virtual void        bindOrder( QCassandraOrder& order );
 
 protected:
-    QByteArray  f_rowKey;
+    QByteArray          f_rowKey;
 };
 
 
