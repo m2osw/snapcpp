@@ -1,20 +1,20 @@
-snapserver-core-plugins (1.0.114.2~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.115.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sun, 04 Jun 2017 02:00:53 -0700
+ -- Build Server <build@m2osw.com>  Tue, 06 Jun 2017 02:00:50 -0700
+
+snapserver-core-plugins (1.0.115.0~xenial) xenial; urgency=high
+
+  * SNAP-185: changed the canonical title to the page title.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  6 Jun 2017 00:15:19 -0800
 
 snapserver-core-plugins (1.0.114.0~xenial) xenial; urgency=high
 
   * Add invalid email status.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 03 Jun 2017 08:38:56 -0700
-
-snapserver-core-plugins (1.0.113.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 02 Jun 2017 02:00:55 -0700
 
 snapserver-core-plugins (1.0.113.0~xenial) xenial; urgency=high
 
