@@ -321,19 +321,23 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
             {
                 msg = "<b>CLUSTER IS NOT IN MAINTENANCE MODE!</b>"
                       "<br/><i>It is highly recommended that your cluster be put in maintenance mode "
-                      "before upgrading to avoid data loss.</i><br/><br/>;"
-                      + updates;
+                      "before upgrading to avoid data loss.</i><br/><br/>";
             }
-            else
+            //
+            if( f_backends_active )
             {
-                msg = ";" + updates;
+                msg = QString("<b>%1 BACKENDS ARE RUNNING!</b>"
+                      "<br/><i>It is highly recommended that disable the all of the backends on your cluster "
+                      "before upgrading to avoid data loss.</i><br/><br/>")
+                    .arg(f_backends_active);
             }
-
+            //
             snap_manager::status_t const upgrade_required(
                               snap_manager::status_t::state_t::STATUS_STATE_WARNING
                             , get_plugin_name()
                             , "upgrade_required"
-                            , msg);
+                            , QString("%1;%2").arg(msg).arg(updates)
+                            );
             server_status.set_field(upgrade_required);
             no_installs = true;
         }
@@ -1253,6 +1257,7 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
 
 void self::on_add_plugin_commands(snap::snap_string_list & understood_commands)
 {
+    understood_commands << "BACKENDSTATUS";
     understood_commands << "CGISTATUS";
 }
 
@@ -1262,7 +1267,38 @@ void self::on_process_plugin_message(snap::snap_communicator_message const & mes
     QString const command(message.get_command());
     SNAP_LOG_TRACE("self::on_process_plugin_message(), command=[")(command)("]");
 
-    if(command == "CGISTATUS")
+    if(command == "BACKENDSTATUS")
+    {
+        f_backends_active = 0;
+
+        auto const & params( message.get_all_parameters() );
+        for( auto const & key : params.keys() )
+        {
+            if( !key.startsWith("backend::") )
+            {
+                continue;
+            }
+            //
+            snap_manager::service_status_t status( snap_manager::manager::string_to_service_status(params[key].toUtf8().data()) );
+            switch( status )
+            {
+                case snap_manager::service_status_t::SERVICE_STATUS_UNKNOWN       :
+                case snap_manager::service_status_t::SERVICE_STATUS_NOT_INSTALLED :
+                case snap_manager::service_status_t::SERVICE_STATUS_DISABLED      :
+                    break;
+
+                case snap_manager::service_status_t::SERVICE_STATUS_ENABLED       :
+                case snap_manager::service_status_t::SERVICE_STATUS_ACTIVE        :
+                case snap_manager::service_status_t::SERVICE_STATUS_FAILED        :
+                    ++f_backends_active;
+                    break;
+            }
+        }
+
+        SNAP_LOG_DEBUG("BACKENDSTATUS recieved! f_backends_active=")(f_backends_active);
+        processed = true;
+    }
+    else if( command == "CGISTATUS" )
     {
         f_system_active = (message.get_integer_parameter("status") == 0);
         SNAP_LOG_DEBUG("CGISTATUS recieved! f_system_active=")(f_system_active);

@@ -1,3 +1,9 @@
+snapbackend (1.0.19.0~xenial) xenial; urgency=high
+
+  * Added broadcast for backend status.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 06 Jun 2017 15:04:43 -0700
+
 snapbackend (1.0.18.139~xenial) xenial; urgency=high
 
   * Nightly build.

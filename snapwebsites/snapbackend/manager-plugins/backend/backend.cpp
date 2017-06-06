@@ -200,7 +200,10 @@ void backend::bootstrap(snap_child * snap)
         throw snap_logic_exception("snap pointer does not represent a valid manager object.");
     }
 
-    SNAP_LISTEN(backend, "server", snap_manager::manager, retrieve_status, _1);
+    SNAP_LISTEN  ( backend, "server", snap_manager::manager, retrieve_status,        _1     );
+    SNAP_LISTEN  ( backend, "server", snap_manager::manager, add_plugin_commands,    _1     );
+    SNAP_LISTEN  ( backend, "server", snap_manager::manager, process_plugin_message, _1, _2 );
+    SNAP_LISTEN0 ( backend, "server", snap_manager::manager, communication_ready            );
 }
 
 
@@ -280,6 +283,63 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
                 server_status.set_field(cron);
             }
         }
+    }
+}
+
+
+void backend::send_status( snap::snap_communicator_message const* message )
+{
+    snap::snap_communicator_message cmd;
+    cmd.set_command("BACKENDSTATUS");
+    //
+    if( message == nullptr )
+    {
+        cmd.set_service("*");
+    }
+    else
+    {
+        cmd.reply_to(*message);
+    }
+
+    for(auto const & service_info : g_services)
+    {
+        // get the backend service status
+        //
+        snap_manager::service_status_t status(f_snap->service_status(
+                        service_info.f_service_executable,
+                        std::string(service_info.f_service_name) + (service_info.f_recovery ? "" : ".timer")));
+        QString const status_string(QString::fromUtf8(snap_manager::manager::service_status_to_string(status)));
+        cmd.add_parameter( QString("backend::%1").arg(service_info.f_service_name), status_string );
+    }
+
+    //cmd.add_parameter( "cache" , "ttl=60"     );
+    f_snap->forward_message(cmd);
+
+    SNAP_LOG_DEBUG("BACKENDSTATUS message sent!");
+}
+
+
+void backend::on_communication_ready()
+{
+    send_status();
+}
+
+
+void backend::on_add_plugin_commands(snap::snap_string_list & understood_commands)
+{
+    understood_commands << "BACKENDSTATUS_REQUEST";
+}
+
+
+void backend::on_process_plugin_message(snap::snap_communicator_message const & message, bool & processed)
+{
+    QString const command(message.get_command());
+    SNAP_LOG_TRACE("backend::on_process_plugin_message(), command=[")(command)("]");
+
+    if(command == "BACKENDSTATUS_REQUEST")
+    {
+        send_status( &message );
+        processed = true;
     }
 }
 
@@ -571,6 +631,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
         }
         snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
         f_snap->service_apply_status(unit_name.toUtf8().data(), status);
+        send_status();
         return true;
     }
 

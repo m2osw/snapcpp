@@ -84,8 +84,9 @@ private:
     void                    retrieve_bundles_status(snap_manager::server_status & server_status);
     bool                    install_bundle(bool const install, QString const & bundle_name, std::vector<QString> & services);
 
-    snap_manager::manager * f_snap          = nullptr;
-    bool                    f_system_active = false;    // false if in maintenance
+    snap_manager::manager * f_snap            = nullptr;
+    bool                    f_system_active   = false;    // false if in maintenance
+    int                     f_backends_active = 0;        // count of all backends
 };
 
 } // namespace self
