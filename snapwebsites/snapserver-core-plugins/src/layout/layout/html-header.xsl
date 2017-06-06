@@ -150,7 +150,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<!-- canonical -->
 		<xsl:variable name="canonical_uri" as="xs:string" select="/snap/head/metadata/desc[@type='canonical_uri']/data"/>
 		<xsl:if test="$canonical_uri != ''">
-			<link rel="canonical" type="text/html" title="Canonical URI (1)" href="{$canonical_uri}"/>
+			<link rel="canonical" type="text/html" title="{$title}" href="{$canonical_uri}"/>
 			<meta property="og:url" content="{$canonical_uri}"/>
 		</xsl:if>
 
