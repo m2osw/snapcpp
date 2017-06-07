@@ -20,6 +20,7 @@
 //
 #include "snapwebsites/cache_control.h"
 #include "snapwebsites/http_cookie.h"
+#include "snapwebsites/http_link.h"
 #include "snapwebsites/snap_communicator.h"
 #include "snapwebsites/snap_signals.h"
 #include "snapwebsites/snap_thread.h"
@@ -376,6 +377,10 @@ public:
     cache_control_settings &    page_cache_control();
     bool                        no_caching() const;
     void                        set_header(QString const & name, QString const & value, header_mode_t modes = HEADER_MODE_NO_ERROR);
+    void                        add_http_link(http_link const & link);
+    bool                        http_link_is_defined(std::string const & name);
+    http_link const &           get_http_link(std::string const & name);
+    void                        output_http_links(header_mode_t modes);
     void                        set_cookie(http_cookie const & cookie);
     void                        set_ignore_cookies();
     bool                        has_header(QString const & name) const;
@@ -512,6 +517,7 @@ private:
     QString                                     f_site_key_with_slash;
     QBuffer                                     f_output;
     header_map_t                                f_header;
+    http_link::map_t                            f_http_links;
     cookie_map_t                                f_cookies;
     bool                                        f_ignore_cookies = false;
     bool                                        f_died = false; // die() was already called once

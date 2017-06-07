@@ -262,6 +262,10 @@ void feed::bootstrap(snap_child * snap)
  *
  * This function generates one alternate link per feed made available.
  *
+ * \todo
+ * In the generate_header_content(), we should add a link of type "self"
+ * which references the atom feed.
+ *
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.

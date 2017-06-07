@@ -90,9 +90,6 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_SHORTURL_DATE:
         return "shorturl::date";
 
-    case name_t::SNAP_NAME_SHORTURL_HTTP_LINK:
-        return "Link";
-
     case name_t::SNAP_NAME_SHORTURL_IDENTIFIER:
         return "shorturl::identifier";
 
@@ -338,12 +335,9 @@ void shorturl::on_check_for_redirect(content::path_info_t & ipath)
 
             // redirect the user
             //
-            // TODO: the HTTP link header should not use the set_header()
-            //       because we may have many links and they should all
-            //       appear in one "Link: ..." line
-            //
-            QString const http_link("<" + ipath.get_key() + ">; rel=shortlink");
-            f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
+            http_link link(f_snap, ipath.get_key().toUtf8().data(), "shortlink");
+            link.set_redirect();
+            f_snap->add_http_link(link);
 
             // SEO wise, using HTTP_CODE_FOUND (and probably HTTP_CODE_SEE_OTHER)
             // is not as good as HTTP_CODE_MOVED_PERMANENTLY...
@@ -481,8 +475,8 @@ void shorturl::on_generate_header_content(content::path_info_t & ipath, QDomElem
 
     if(!result.isEmpty())
     {
-        QString http_link("<" + result[0].stringValue() + ">; rel=shorturl");
-        f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link);
+        http_link link(f_snap, result[0].stringValue().toUtf8().data(), "shortlink");
+        f_snap->add_http_link(link);
     }
 }
 

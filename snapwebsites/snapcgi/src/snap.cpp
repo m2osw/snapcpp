@@ -438,7 +438,10 @@ bool snap_cgi::verify()
         if(*request_uri != '/')
         {
             // avoid proxy accesses
-            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot represent a proxy access.");
+            std::string msg("The REQUEST_URI cannot represent a proxy access (");
+            msg += request_uri;
+            msg += ").";
+            error("404 Page Not Found", nullptr, msg.c_str());
             snap::server::block_ip(remote_addr, "year");
             return false;
         }

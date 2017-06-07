@@ -71,6 +71,7 @@ set( HEADERS
     fuzzy_string_compare.h
     http_client_server.h
     http_cookie.h
+    http_link.h
     http_strings.h
     inet_helpers.h
     join_strings.h
@@ -140,6 +141,7 @@ add_library( ${PROJECT_NAME} SHARED
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
     http_client_server.cpp                      # implementation of the HTTP protocol
     http_cookie.cpp                             # HTTP cookie, server side
+    http_link.cpp                               # HTTP link, server side (HTTP header)
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
     inet_helpers.cpp                            # helper functions in link with the network
     loadavg.cpp                                 # handle the loadavg file

@@ -7140,6 +7140,11 @@ void snap_child::set_header(QString const & name, QString const & value, header_
  * which offers functions such as set_cookie(), cookie_is_defined(),
  * and cookie().
  *
+ * \warning
+ * Links are headers, but these are managed using the link manager
+ * which offers functions such as set_link(), link_is_defined(),
+ * and link().
+ *
  * \param[in] name  Name of the header to check for.
  *
  * \return false if the header was not defined yet, true otherwise.
@@ -7233,11 +7238,118 @@ void snap_child::output_headers(header_mode_t modes)
         }
     }
 
+    // Output the links
+    //
+    output_http_links(modes);
+
     // Finally output the cookies
+    //
     output_cookies();
 
     // Done with the headers
     write("\n");
+}
+
+
+/** \brief Add the HTTP link to this snap_child.
+ *
+ * This function saves the specified link to the snap_child object.
+ *
+ * If the link was already defined, then it gets overwritten by the
+ * new link. (i.e. the "rel" parameter is used to distinguish between
+ * each link and only one can exist with a given name.)
+ *
+ * \param[in] link  The link to be added to this snap_child.
+ */
+void snap_child::add_http_link(http_link const & link)
+{
+    f_http_links[link.get_name()] = link;
+}
+
+
+/** \brief Check whether a link is defined.
+ *
+ * This function searches the list of links defined in snap_child, if
+ * defined, the function returns true.
+ *
+ * \param[in] name  The name of the link (i.e. the "rel" parameter.)
+ *
+ * \return true if the snap_child is defined.
+ */
+bool snap_child::http_link_is_defined(std::string const & name)
+{
+    return f_http_links.find(name) != f_http_links.end();
+}
+
+
+/** \brief Get an HTTP link.
+ *
+ * This function returns a constant reference to the named HTTP link.
+ *
+ * If the link does not exist, then the function throws. To avoid the
+ * throw, use the http_link_is_defined() first and if false avoid
+ * calling this function.
+ *
+ * \param[in] name  The name of the link to retrieve a reference to.
+ *
+ * \return A reference to the named link.
+ */
+http_link const & snap_child::get_http_link(std::string const & name)
+{
+    auto const & l(f_http_links.find(name));
+    if(l == f_http_links.end())
+    {
+        throw snap_child_exception_invalid_header_field_name(QString("link \"%1\" is not defined, you could check first using http_link_is_defined()").arg(QString::fromUtf8(name.c_str())));
+    }
+    return l->second;
+}
+
+
+/** \brief Transform the HTTP links to a header.
+ *
+ * This function generates the "Link: ..." header from the various
+ * links plugins added to snap_child.
+ *
+ * The data is directly send to the output with the write() function.
+ *
+ * \param[in] modes  Print the headers for these modes.
+ */
+void snap_child::output_http_links(header_mode_t modes)
+{
+    // completely empty? avoid generating strings
+    //
+    if(f_http_links.empty())
+    {
+        return;
+    }
+
+    // geneteate the "Link: ..." string
+    //
+    std::string result(get_name(name_t::SNAP_NAME_CORE_HTTP_LINK_HEADER));
+    result += ": ";
+
+    char const * sep = "";
+    for(auto const & l : f_http_links)
+    {
+        if(modes == HEADER_MODE_EVERYWHERE          // allow anything
+        || (modes & ~HEADER_MODE_NO_ERROR) == 0     // normal circumstances
+        || (l.second.get_redirect() && (modes & HEADER_MODE_REDIRECT) != 0))       // allowed in redirects
+        {
+            result += sep;
+            result += l.second.to_http_header();
+
+            sep = ", ";
+        }
+    }
+
+    // got any links?
+    // if not, then don't emit the header
+    //
+    if(*sep != '\0')
+    {
+        result += "\n";
+        write(result.c_str());
+    }
 }
 
 

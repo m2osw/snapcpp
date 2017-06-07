@@ -1,8 +1,11 @@
-libsnapwebsites (1.2.2.2~xenial) xenial; urgency=high
+libsnapwebsites (1.2.3.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-235: Fixed the Link header so we can add many links if we want to.
+  * At this time we support "shorturl" (was already there) and "canonical".
+  * We now use a sub-class and the header generator, like for cookies, has
+    a special case for the "Link: ..." header.
 
- -- Build Server <build@m2osw.com>  Mon, 05 Jun 2017 09:14:30 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  6 Jun 2017 22:30:29 -0800
 
 libsnapwebsites (1.2.2.0~xenial) xenial; urgency=high
 

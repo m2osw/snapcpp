@@ -2008,6 +2008,9 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
                                + "/"
                                + main_ipath.get_cpath());
 
+    http_link canonical_link(f_snap, canonical_uri.get_uri().toUtf8().data(), "canonical");
+    f_snap->add_http_link(canonical_link);
+
     QString site_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue().trimmed());
     QString site_short_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)).stringValue().trimmed());
     QString site_long_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME)).stringValue().trimmed());
