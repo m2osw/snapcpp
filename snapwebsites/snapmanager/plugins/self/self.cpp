@@ -1274,7 +1274,7 @@ void self::on_process_plugin_message(snap::snap_communicator_message const & mes
         auto const & params( message.get_all_parameters() );
         for( auto const & key : params.keys() )
         {
-            if( !key.startsWith("backend::") )
+            if( !key.startsWith("backend_") )
             {
                 continue;
             }

@@ -309,7 +309,7 @@ void backend::send_status( snap::snap_communicator_message const* message )
                         service_info.f_service_executable,
                         std::string(service_info.f_service_name) + (service_info.f_recovery ? "" : ".timer")));
         QString const status_string(QString::fromUtf8(snap_manager::manager::service_status_to_string(status)));
-        cmd.add_parameter( QString("backend::%1").arg(service_info.f_service_name), status_string );
+        cmd.add_parameter( QString("backend_%1").arg(service_info.f_service_name), status_string );
     }
 
     //cmd.add_parameter( "cache" , "ttl=60"     );
