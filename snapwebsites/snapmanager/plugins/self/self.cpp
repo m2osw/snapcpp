@@ -316,27 +316,28 @@ void self::on_retrieve_status(snap_manager::server_status & server_status)
         QString const updates(f_snap->count_packages_that_can_be_updated(true));
         if(!updates.isEmpty())
         {
-            QString msg;
+            QStringList msg;
             if( f_system_active )
             {
-                msg = "<b>CLUSTER IS NOT IN MAINTENANCE MODE!</b>"
+                msg << "<b>CLUSTER IS NOT IN MAINTENANCE MODE!</b>"
                       "<br/><i>It is highly recommended that your cluster be put in maintenance mode "
                       "before upgrading to avoid data loss.</i><br/><br/>";
             }
             //
             if( f_backends_active )
             {
-                msg = QString("<b>%1 BACKENDS ARE RUNNING!</b>"
+                msg << QString("<b>%1 BACKENDS ARE RUNNING!</b>"
                       "<br/><i>It is highly recommended that disable the all of the backends on your cluster "
                       "before upgrading to avoid data loss.</i><br/><br/>")
                     .arg(f_backends_active);
             }
+            SNAP_LOG_DEBUG("f_system_active=")(f_system_active)(", f_backends_active=")(f_backends_active)(", msg=")(msg.join("\n"));
             //
             snap_manager::status_t const upgrade_required(
                               snap_manager::status_t::state_t::STATUS_STATE_WARNING
                             , get_plugin_name()
                             , "upgrade_required"
-                            , QString("%1;%2").arg(msg).arg(updates)
+                            , QString("%1;%2").arg(msg.join(" ")).arg(updates)
                             );
             server_status.set_field(upgrade_required);
             no_installs = true;
@@ -1104,18 +1105,42 @@ bool self::apply_setting(QString const & button_name, QString const & field_name
     //
     if(button_name == "refresh")
     {
-        // setup the message to send to other snapmanagerdaemons
-        //
-        snap::snap_communicator_message resend;
-        resend.set_service("*");
-        resend.set_command("MANAGERRESEND");
-        resend.add_parameter("kick", "now");
+        {
+            // setup the message to send to other snapmanagerdaemons
+            //
+            snap::snap_communicator_message resend;
+            resend.set_service("*");
+            resend.set_command("MANAGERRESEND");
+            resend.add_parameter("kick", "now");
 
-        // we just send a UDP message in this case, no acknowledgement
-        //
-        snap::snap_communicator::snap_udp_server_message_connection::send_message(f_snap->get_signal_address()
-                                                                                , f_snap->get_signal_port()
-                                                                                , resend);
+            // we just send a UDP message in this case, no acknowledgement
+            //
+            snap::snap_communicator::snap_udp_server_message_connection::send_message(f_snap->get_signal_address()
+                                                                                    , f_snap->get_signal_port()
+                                                                                    , resend);
+        }
+        {
+            snap::snap_communicator_message cgistatus;
+            cgistatus.set_service("*");
+            cgistatus.set_command("CGISTATUS_REQUEST");
+
+            // we just send a UDP message in this case, no acknowledgement
+            //
+            snap::snap_communicator::snap_udp_server_message_connection::send_message(f_snap->get_signal_address()
+                                                                                    , f_snap->get_signal_port()
+                                                                                    , cgistatus);
+        }
+        {
+            snap::snap_communicator_message backendstatus;
+            backendstatus.set_service("*");
+            backendstatus.set_command("BACKENDSTATUS_REQUEST");
+
+            // we just send a UDP message in this case, no acknowledgement
+            //
+            snap::snap_communicator::snap_udp_server_message_connection::send_message(f_snap->get_signal_address()
+                                                                                    , f_snap->get_signal_port()
+                                                                                    , backendstatus);
+        }
 
         // message sent...
         //
