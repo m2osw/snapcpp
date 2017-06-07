@@ -5,7 +5,7 @@ libsnapwebsites (1.2.3.0~xenial) xenial; urgency=high
   * We now use a sub-class and the header generator, like for cookies, has
     a special case for the "Link: ..." header.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  6 Jun 2017 22:30:29 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  7 Jun 2017 00:13:29 -0800
 
 libsnapwebsites (1.2.2.0~xenial) xenial; urgency=high
 

@@ -1,8 +1,13 @@
-snapserver-core-plugins (1.0.115.1~xenial) xenial; urgency=high
+libsnapwebsites (1.2.4.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-235: Fixed the Link header so we can add many links if we want to.
+  * At this time we support "shorturl" (was already there) and "canonical".
+  * We now use a sub-class and the header generator, like for cookies, has
+    a special case for the "Link: ..." header.
+  * Noticed that the contact page short URL would show up on the home page.
+    Applied a fix for that to the shorturl plugin.
 
- -- Build Server <build@m2osw.com>  Tue, 06 Jun 2017 02:00:50 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  7 Jun 2017 00:13:29 -0800
 
 snapserver-core-plugins (1.0.115.0~xenial) xenial; urgency=high
 

@@ -457,26 +457,32 @@ void shorturl::on_generate_header_content(content::path_info_t & ipath, QDomElem
 {
     NOTUSED(header);
 
-    content::field_search::search_result_t result;
-
-    FIELD_SEARCH
-        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
-        (content::field_search::command_t::COMMAND_ELEMENT, metadata)
-        (content::field_search::command_t::COMMAND_PATH_INFO_GLOBAL, ipath)
-
-        // /snap/head/metadata/desc[@type="shorturl"]/data
-        (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_SHORTURL_URL))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_RESULT, result)
-        (content::field_search::command_t::COMMAND_SAVE, "desc[type=shorturl]/data")
-
-        // generate!
-        ;
-
-    if(!result.isEmpty())
+    // only setup the shorturl if we are on the main page
+    //
+    snap_uri const & main_uri(f_snap->get_uri());
+    if(main_uri.path() == ipath.get_cpath())
     {
-        http_link link(f_snap, result[0].stringValue().toUtf8().data(), "shortlink");
-        f_snap->add_http_link(link);
+        content::field_search::search_result_t result;
+
+        FIELD_SEARCH
+            (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+            (content::field_search::command_t::COMMAND_ELEMENT, metadata)
+            (content::field_search::command_t::COMMAND_PATH_INFO_GLOBAL, ipath)
+
+            // /snap/head/metadata/desc[@type="shorturl"]/data
+            (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_SHORTURL_URL))
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_RESULT, result)
+            (content::field_search::command_t::COMMAND_SAVE, "desc[type=shorturl]/data")
+
+            // generate!
+            ;
+
+        if(!result.isEmpty())
+        {
+            http_link link(f_snap, result[0].stringValue().toUtf8().data(), "shortlink");
+            f_snap->add_http_link(link);
+        }
     }
 }
 
@@ -503,6 +509,7 @@ bool shorturl::allow_shorturl_impl(content::path_info_t & ipath, QString const &
     // do not ever create short URLs for admin pages
     QString const cpath(ipath.get_cpath());
     if(cpath.isEmpty()                  // also marked as "no_shorturl" in content.xml
+    || cpath == "s"                     // also marked as "no_shorturl" in content.xml
     || cpath == "admin"                 // also marked as "no_shorturl" in content.xml
     || cpath.startsWith("admin/")
     || cpath.endsWith(".css")
