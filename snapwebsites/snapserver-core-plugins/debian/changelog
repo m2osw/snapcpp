@@ -1,4 +1,4 @@
-libsnapwebsites (1.2.4.0~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.116.0~xenial) xenial; urgency=high
 
   * SNAP-235: Fixed the Link header so we can add many links if we want to.
   * At this time we support "shorturl" (was already there) and "canonical".
