@@ -242,9 +242,36 @@ bool load(QString const & plugin_paths, snap_child * snap, plugin_ptr_t server, 
     // although we check dependencies to properly reorder as expected
     // by what each plugin tells us what its dependencies are
     //
+    // TODO: refactor this embedded raw loop to take advantage of
+    // C++11's lambda functions. Specifically, we should use std::find_if(),
+    // and remove the goto + label. My suggested code is in the #if 0 block
+    // below.
+    //
+    // Alexis Wilke, [07.06.17 14:46]
+    // "If you can guarantee that the order won't be affected, we can do it
+    // either way. It's sorted alphabetically, then by priority. The priority
+    // has precedence over the alphabetical order. But we always end up with a
+    // strong order (i.e. if the priority and names do not change plugin A will
+    // always be before plugin B if it were before on the previous load)."
+    //
     for(auto const & p : g_plugins)
     {
         QString const column_name(QString("|%1|").arg(p->get_plugin_name()));
+#if 0
+        auto found_iter = std::find_if( std::begin(g_ordered_plugins), std::end(g_ordered_plugins),
+                [&column_name]( auto const & plugin )
+                {
+                    return plugin->dependencies().indexOf(column_name) >= 0;
+                });
+        if( found_iter != std::end(g_ordered_plugins) )
+        {
+            g_ordered_plugins.indexOf( found_iter, p );
+        }
+        else
+        {
+            g_ordered_plugins.push_back(p);
+        }
+#else
         for(plugin_vector_t::iterator sp(g_ordered_plugins.begin());
                                       sp != g_ordered_plugins.end();
                                       ++sp)
@@ -258,6 +285,7 @@ bool load(QString const & plugin_paths, snap_child * snap, plugin_ptr_t server, 
         // if not before another plugin, insert at the end by default
         g_ordered_plugins.push_back(p);
 inserted:;
+#endif
     }
 
     // bootstrap() functions have to be called in order to get all the
