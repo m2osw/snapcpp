@@ -1,7 +1,7 @@
 /*
  * Name: snapmanagercgi.js
  * Layout: default
- * Version: 0.1
+ * Version: 0.2
  * Browsers: all
  * Copyright: Copyright 2017 (c) Made to Order Software Inc.
  * License: GPLv2
@@ -56,15 +56,13 @@ function FieldDiv( the_form )
     this.form_post_data = jq_form.serialize();
     this.form_data      = {};
  
-    {
-        var that = this;
-        jQuery.each( jq_form.serializeArray(), function(i,element) {
-            that.form_data[element.name] = element.value;
-        });
+    var local_this = this;
+    jQuery.each( jq_form.serializeArray(), function(i,element) {
+        local_this.form_data[element.name] = element.value;
+    });
 
-        jQuery(this.parent_tr).addClass("modified");
-        spin_globe(true);
-    }
+    jQuery(this.parent_tr).addClass("modified");
+    spin_globe(true);
 
     // Replace the div which contiains the "modified" tr.
     // If you set save_form_data to 'true', it will first

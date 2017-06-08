@@ -1888,6 +1888,34 @@ void manager_cgi::get_status_map( QString const & host, status_map_t& map )
 }
 
 
+void add_state_class_name( QStringList& list, snap_manager::status_t::state_t const state )
+{
+    switch(state)
+    {
+    case snap_manager::status_t::state_t::STATUS_STATE_MODIFIED:
+        list << "modified";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_HIGHLIGHT:
+        list << "highlight";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_WARNING:
+        list << "warnings";
+        break;
+
+    case snap_manager::status_t::state_t::STATUS_STATE_ERROR:
+    case snap_manager::status_t::state_t::STATUS_STATE_FATAL_ERROR:
+        list << "errors";
+        break;
+
+    default:
+        // do nothing otherwise
+        break;
+    }
+}
+
+
 void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString const & host)
 {
     // Make a map of all of the status-to-plugins.
@@ -1924,6 +1952,18 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
         QDomText text(doc.createTextNode(plugin_name));
         a.appendChild(text);
         li.appendChild(a);
+
+        QStringList li_classes;
+        for( auto const& st : s )
+        {
+            add_state_class_name( li_classes, st.get_state() );
+        }
+        //
+        if( !li_classes.isEmpty() )
+        {
+            li_classes.removeDuplicates();
+            li.setAttribute( "class", li_classes.join(" ") );
+        }
     }
 
     // Now put in the table entries

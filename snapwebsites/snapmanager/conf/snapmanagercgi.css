@@ -1,7 +1,7 @@
 /*
  * Name: snapmanagercgi.css
  * Layout: default
- * Version: 0.1
+ * Version: 0.2
  * Browsers: all
  * Copyright: Copyright 2017 (c) Made to Order Software Inc.
  * License: GPLv2
@@ -45,29 +45,35 @@ table td
     padding: 3px;
     vertical-align: top;
 }
-table .errors td
+table .errors td,
+ul .errors li
 {
     border-bottom: 1px solid red;
     border-right: 1px solid red;
 }
-table tr.modified
+table tr.modified,
+ul li.modified
 {
     background-color: #d6b2ff;
 }
-table tr.highlight
+table tr.highlight,
+ul li.highlight
 {
     background-color: #fff881;
 }
 table tr.warnings
+ul li.warnings
 {
     background-color: #ffde9f;
 }
-table tr.down
+table tr.down,
+ul li.down
 {
     background-color: #ffdede;
     text-decoration: line-through;
 }
-table tr.errors
+table tr.errors,
+ul li.errors
 {
     background-color: #ffd8d8;
     border-left: 1px solid red;
