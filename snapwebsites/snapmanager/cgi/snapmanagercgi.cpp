@@ -1953,16 +1953,16 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
         a.appendChild(text);
         li.appendChild(a);
 
-        QStringList li_classes;
+        QStringList alert_classes;
         for( auto const& st : s )
         {
-            add_state_class_name( li_classes, st.get_state() );
+            add_state_class_name( alert_classes, st.get_state() );
         }
         //
-        if( !li_classes.isEmpty() )
+        if( !alert_classes.isEmpty() )
         {
-            li_classes.removeDuplicates();
-            li.setAttribute( "class", li_classes.join(" ") );
+            alert_classes.removeDuplicates();
+            a.setAttribute( "class", alert_classes.join(" ") );
         }
     }
 
