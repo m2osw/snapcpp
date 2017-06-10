@@ -69,6 +69,7 @@ set( HEADERS
     file_content.h
     floats.h
     fuzzy_string_compare.h
+    glob_dir.h
     http_client_server.h
     http_cookie.h
     http_link.h
@@ -139,6 +140,7 @@ add_library( ${PROJECT_NAME} SHARED
     file_content.cpp                            # load / save whole files in one go
     floats.cpp                                  # Floats helper functions
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
+    glob_dir.cpp                                # Enumerate the contents of a directory using a wildcard
     http_client_server.cpp                      # implementation of the HTTP protocol
     http_cookie.cpp                             # HTTP cookie, server side
     http_link.cpp                               # HTTP link, server side (HTTP header)

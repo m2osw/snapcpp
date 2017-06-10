@@ -39,6 +39,7 @@
 // snapwebsites lib
 //
 #include <snapwebsites/file_content.h>
+#include <snapwebsites/glob_dir.h>
 #include <snapwebsites/hexadecimal_string.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomhelpers.h>
@@ -62,7 +63,6 @@
 // C lib
 //
 #include <fcntl.h>
-#include <glob.h>
 #include <sys/file.h>
 
 // OpenSLL lib
@@ -85,19 +85,6 @@ namespace
 char const * g_session_path = "/var/lib/snapwebsites/sessions/snapmanager";
 
 
-int glob_err_callback(const char * epath, int eerrno)
-{
-    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-                  (epath)
-                  ("\". Got error: ")
-                  (eerrno)
-                  (", ")
-                  (strerror(eerrno))
-                  (".");
-
-    // do not abort on a directory read error...
-    return 0;
-}
 
 
 /** \brief Close a file descriptor.
@@ -1977,37 +1964,31 @@ void manager_cgi::get_host_status(QDomDocument doc, QDomElement output, QString 
 
 void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 {
-    // TODO: make use of the list_of_servers() function instead of having
-    //       our own copy of the glob() call
+    snap::glob_dir the_glob;
+
+    bool has_error(false);
     //
-    glob_t dir = glob_t();
-    int const r(glob(QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data(), GLOB_NOESCAPE, glob_err_callback, &dir));
-    if(r != 0)
+    QString err_msg;
+    try
     {
-        //globfree(&dir); -- needed on error?
-
-        // do nothing when errors occur
-        //
-        switch(r)
-        {
-        case GLOB_NOSPACE:
-            SNAP_LOG_ERROR("glob() did not have enough memory to alllocate its buffers.");
-            break;
-
-        case GLOB_ABORTED:
-            SNAP_LOG_ERROR("glob() was aborted after a read error.");
-            break;
-
-        case GLOB_NOMATCH:
-            SNAP_LOG_ERROR("glob() could not find any status information.");
-            break;
-
-        default:
-            SNAP_LOG_ERROR("unknown glob() error code: ")(r)(".");
-            break;
-
-        }
-        QDomText text(doc.createTextNode("An error occurred while reading status data. Please check your snapmanagercgi.log file for more information."));
+        the_glob.set_path( QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data() );
+    }
+    catch( std::exception const & x )
+    {
+        err_msg = QString("An error [%1] occurred while reading status data. "
+                          "Please check your snapmanagercgi.log file for more information.").arg(x.what());
+        SNAP_LOG_ERROR("Exception caught! what=[")(x.what())("]");
+    }
+    catch( ... )
+    {
+        err_msg = "An error occurred while reading status data. "
+                  "Please check your snapmanagercgi.log file for more information.";
+        SNAP_LOG_ERROR("Caught unknown exception!");
+    }
+    //
+    if( has_error )
+    {
+        QDomText text( doc.createTextNode(err_msg) );
         output.appendChild(text);
         return;
     }
@@ -2026,41 +2007,40 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
     QDomElement th(doc.createElement("th"));
     tr.appendChild(th);
 
-        QDomText text(doc.createTextNode("Host"));
-        th.appendChild(text);
+    QDomText text(doc.createTextNode("Host"));
+    th.appendChild(text);
 
     // output/table/tr/th[2]
     th = doc.createElement("th");
     tr.appendChild(th);
 
-        text = doc.createTextNode("IP");
-        th.appendChild(text);
+    text = doc.createTextNode("IP");
+    th.appendChild(text);
 
     // output/table/tr/th[3]
     th = doc.createElement("th");
     tr.appendChild(th);
 
-        text = doc.createTextNode("Status");
-        th.appendChild(text);
+    text = doc.createTextNode("Status");
+    th.appendChild(text);
 
     // output/table/tr/th[4]
     th = doc.createElement("th");
     tr.appendChild(th);
 
-        text = doc.createTextNode("Err/War");
-        th.appendChild(text);
+    text = doc.createTextNode("Err/War");
+    th.appendChild(text);
 
     // output/table/tr/th[5]
     th = doc.createElement("th");
     tr.appendChild(th);
 
-        text = doc.createTextNode("Last Updated");
-        th.appendChild(text);
+    text = doc.createTextNode("Last Updated");
+    th.appendChild(text);
 
-    bool has_error(false);
-    for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+    auto handle_path = [&]( QString path )
     {
-        server_status file(dir.gl_pathv[idx]);
+        server_status file(path);
         if(file.read_header())
         {
             // we got what looks like a valid status file
@@ -2113,59 +2093,58 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
                 QDomElement td(doc.createElement("td"));
                 tr.appendChild(td);
 
-                    // output/table/tr/td[1]/a
-                    QDomElement anchor(doc.createElement("a"));
-                    td.appendChild(anchor);
+                // output/table/tr/td[1]/a
+                QDomElement anchor(doc.createElement("a"));
+                td.appendChild(anchor);
 
-                    QString const path(dir.gl_pathv[idx]);
-                    int basename_pos(path.lastIndexOf('/'));
-                    // basename_pos will be -1 which is what you would
-                    // expect to get for the mid() call below!
-                    //if(basename_pos < 0)
-                    //{
-                    //    // this should not happen, although it is perfectly
-                    //    // possible that the administrator used "" as the
-                    //    // path where statuses should be saved.
-                    //    //
-                    //    basename_pos = 0;
-                    //}
-                    QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
+                int basename_pos(path.lastIndexOf('/'));
+                // basename_pos will be -1 which is what you would
+                // expect to get for the mid() call below!
+                //if(basename_pos < 0)
+                //{
+                //    // this should not happen, although it is perfectly
+                //    // possible that the administrator used "" as the
+                //    // path where statuses should be saved.
+                //    //
+                //    basename_pos = 0;
+                //}
+                QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
 
-                    anchor.setAttribute("href", QString("?host=%1").arg(host));
+                anchor.setAttribute("href", QString("?host=%1").arg(host));
 
-                        // output/table/tr/td[1]/<text>
-                        text = doc.createTextNode(host);
-                        anchor.appendChild(text);
+                // output/table/tr/td[1]/<text>
+                text = doc.createTextNode(host);
+                anchor.appendChild(text);
 
                 // output/table/tr/td[2]
                 td = doc.createElement("td");
                 tr.appendChild(td);
 
-                    // output/table/tr/td[2]/<text>
-                    text = doc.createTextNode(file.get_field("header", "ip"));
-                    td.appendChild(text);
+                // output/table/tr/td[2]/<text>
+                text = doc.createTextNode(file.get_field("header", "ip"));
+                td.appendChild(text);
 
                 // output/table/tr/td[3]
                 td = doc.createElement("td");
                 tr.appendChild(td);
 
-                    // output/table/tr/td[3]/<text>
-                    text = doc.createTextNode(status);
-                    td.appendChild(text);
+                // output/table/tr/td[3]/<text>
+                text = doc.createTextNode(status);
+                td.appendChild(text);
 
                 // output/table/tr/td[4]
                 td = doc.createElement("td");
                 tr.appendChild(td);
 
-                    // output/table/tr/td[4]/<text>
-                    text = doc.createTextNode(QString("%1/%2").arg(error_count).arg(warning_count));
-                    td.appendChild(text);
+                // output/table/tr/td[4]/<text>
+                text = doc.createTextNode(QString("%1/%2").arg(error_count).arg(warning_count));
+                td.appendChild(text);
 
                 // get the date when it was last modified
                 //
                 time_t last_modification(0);
                 struct stat s;
-                if(stat(dir.gl_pathv[idx], &s) == 0)
+                if(stat(path.toUtf8().data(), &s) == 0)
                 {
                     last_modification = s.st_mtim.tv_sec;
                 }
@@ -2177,10 +2156,9 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
                 td = doc.createElement("td");
                 tr.appendChild(td);
 
-                    // output/table/tr/td[4]/<text>
-                    text = doc.createTextNode(QString::fromUtf8(last_mod));
-                    td.appendChild(text);
-
+                // output/table/tr/td[4]/<text>
+                text = doc.createTextNode(QString::fromUtf8(last_mod));
+                td.appendChild(text);
             }
 
             if(file.has_error())
@@ -2192,9 +2170,11 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
         {
             has_error = true;
         }
-    }
+    };
 
-    if(has_error)
+    the_glob.enumerate_glob( handle_path );
+
+    if( has_error )
     {
         // output/p/<text>
         QDomElement p(doc.createElement("p"));
@@ -2202,12 +2182,9 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
 
         p.setAttribute("class", "error");
 
-            text = doc.createTextNode("Errors occurred while reading the status. Please check your snapmanagercgi.log file for details.");
-            p.appendChild(text);
+        text = doc.createTextNode("Errors occurred while reading the status. Please check your snapmanagercgi.log file for details.");
+        p.appendChild(text);
     }
-
-    // free that memory (not useful in a CGI script though)
-    globfree(&dir);
 }
 
 
