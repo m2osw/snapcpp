@@ -3252,7 +3252,7 @@ int list::generate_all_lists(QString const & site_key)
     //
     QString const qstatus_str(
                 "UPDATE snaplist.journal"
-                    " SET status = :now"
+                    " SET status = :status"
                     " WHERE id = :id"
             );
 
@@ -3296,13 +3296,12 @@ int list::generate_all_lists(QString const & site_key)
         {
             int64_t const start_date(f_snap->get_start_date());
             int64_t const loop_start_time(f_snap->get_current_date());
-            int64_t const status_limit(loop_start_time - 86400LL * 1000000LL);
 
             QSqlQuery query;
             query.setForwardOnly(true);
             query.prepare(query_string);
             query.bindValue(":domain",          site_key                                );
-            query.bindValue(":status_limit",    static_cast<qlonglong>(status_limit)    );
+            query.bindValue(":status_limit",    static_cast<qlonglong>(loop_start_time) );
             query.bindValue(":now",             static_cast<qlonglong>(start_date)      );
             query.bindValue(":slow_priority",   LIST_PRIORITY_SLOW                      );
 
@@ -3357,14 +3356,14 @@ int list::generate_all_lists(QString const & site_key)
                 // make sure only one of us is working on this row
                 // (TODO: make this actually atomic!)
                 //
-                qstatus.bindValue(":now", static_cast<qlonglong>(f_snap->get_current_date()));
+                qstatus.bindValue(":status", static_cast<qlonglong>(f_snap->get_current_date() + 86400LL * 1000000LL));
                 qstatus.bindValue(":id", id);
                 if(!qstatus.exec())
                 {
                     // the query failed
                     // (is this a fatal error?)
                     //
-                    SNAP_LOG_WARNING("Updating of the status to 'now' failed. lastError=[")
+                    SNAP_LOG_WARNING("Updating of the status to 'now + 1d' failed. lastError=[")
                                     (qstatus.lastError().text())
                                     ("], lastQuery=[")
                                     (qstatus.lastQuery())
@@ -3447,9 +3446,11 @@ int list::generate_all_lists(QString const & site_key)
     // now determine when is a good time to wake up again
     {
         QString const qnext_str(
-                    "SELECT key_start_date, status"
+                    "SELECT next_processing"
                         " FROM snaplist.journal"
                         " WHERE domain = :domain"
+                        " ORDER BY next_processing"
+                        " LIMIT 1"
                 );
 
         QSqlQuery qnext;
@@ -3470,44 +3471,23 @@ int list::generate_all_lists(QString const & site_key)
         }
         else
         {
-            // in case field order changes on us, get the exact index from
-            // the record instead of guessing later
-            //
-            int const key_start_date_field_no(qnext.record().indexOf("key_start_date"));
-            int const status_field_no(qnext.record().indexOf("status"));
-
-            // it would certainly be possible to implement the following
-            // in SQL, but would it be faster?
-            //
-            while(qnext.next())
+            if(qnext.next())
             {
-                // handle one page at a time
+                // in case field order changes on us, get the exact index from
+                // the record instead of guessing later
                 //
-                QVariant status_field(qnext.value(status_field_no));
-                if(status_field.isNull())
+                int const next_processing_field_no(qnext.record().indexOf("next_processing"));
+                int64_t const next_processing(qnext.value(next_processing_field_no).toLongLong());
+                if(next_processing < f_date_limit)
                 {
-                    // if no status, no work was done on that page yet
-                    // so we can use the key_start_date field
+                    // next wake up is early (less than 5 min.) so use
+                    // that date
                     //
-                    int64_t const key_start_date(qnext.value(key_start_date_field_no).toLongLong());
-                    if(key_start_date < f_date_limit)
-                    {
-                        f_date_limit = key_start_date;
-                    }
-                }
-                else
-                {
-                    // work was at least attempted on this page and it
-                    // failed, it has a 1 day delay and we have to use
-                    // the date in the status field instead
-                    //
-                    int64_t const status(status_field.toLongLong() + 86400LL * 1000000LL);
-                    if(status < f_date_limit)
-                    {
-                        f_date_limit = status;
-                    }
+                    f_date_limit = next_processing;
                 }
             }
+            //else -- nothing more, will sleep for 5 min. and try again
+            //        or wake up on a PING
         }
     }
 

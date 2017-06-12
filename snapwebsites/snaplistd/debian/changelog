@@ -1,3 +1,11 @@
+snaplistd (0.1.1.0) xenial; urgency=high
+
+  * EX-131: Put a virtual column of the status or key_start_date so we can
+    get one row to know what comes next. MySQL will do the work of computing
+    the next row using a BTREE index.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 23:04:36 -0700
+
 snaplistd (0.1.0.0) xenial; urgency=high
 
   * Initial release of packaging.

@@ -1,3 +1,12 @@
+snapserver-core-plugins (1.0.118.0~xenial) xenial; urgency=high
+
+  * EX-131: Make use of the new column and index to find when the next wake
+    up call should hit.
+  * Directly put now + 1 day in the status column, that way we can eliminate
+    that computation from everywhere else.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 23:05:29 -0800
+
 snapserver-core-plugins (1.0.117.0~xenial) xenial; urgency=high
 
   * EX-131: Updated the list plugin to make use of MySQL for the list
@@ -17,7 +26,7 @@ snapserver-core-plugins (1.0.117.0~xenial) xenial; urgency=high
     SELECT of all the data. (1) get high priority, (2) if no high priority,
     get low priority, (3) get date and time for next wakeup.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue,  7 Jun 2017 00:13:29 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 17:29:29 -0800
 
 snapserver-core-plugins (1.0.116.0~xenial) xenial; urgency=high
 
