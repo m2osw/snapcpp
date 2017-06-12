@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!--
+  see /usr/share/snapwebsites/xsd/bundles.xsd for details
+  to verify your changes (change the == with two dashes):
+    xmllint ==noout ==schema /usr/share/snapwebsites/xsd/bundles.xsd /etc/snapwebsites/services.d/bundle-snaplistd.xml
+-->
+<bundle>
+  <name>snaplistd</name>
+  <description>
+    <p>This bundle installs the 'snaplistd' package, which includes a MySQL database.</p>
+  </description>
+  <fields>
+    <field name="host" type="input">
+      <label>MySQL Host Address</label>
+      <description>Enter the host IP address (or DNS name) of the MySQL server.</description>
+    </field>
+  </fields>
+  <packages>mysql-server,snaplistd</packages>
+  <preinst>
+    if ! dpkg -l pwgen 2> /dev/null
+    then
+      apt install pwgen
+    fi
+
+    # Next, create a private dir that is read/writable only by root,
+    # and squirrel these passwords away
+    #
+    PRIVATE_DIR=/var/lib/snapwebsites/private
+    mkdir -p ${PRIVATE_DIR}
+    chown root.root ${PRIVATE_DIR}
+    chmod 0700 ${PRIVATE_DIR}
+
+    if test ! -f ${PRIVATE_DIR}/snaplistd_password.sh
+    then
+      # Create the passwords we will use
+      #
+      ROOT_PASSWORD=`pwgen -cns 20`
+
+      echo "ROOT_PASSWORD=${ROOT_PASSWORD}" &gt; ${PRIVATE_DIR}/snaplistd_password.sh
+
+      # Lastly, set the root password in debconf, so it won't ask for it when
+      # creating the database first time
+      #
+      debconf-set-selections &lt;&lt;&lt; \
+        "mysql-server mysql-server/root_password password ${ROOT_PASSWORD}"
+      debconf-set-selections &lt;&lt;&lt; \
+        "mysql-server mysql-server/root_password_again password ${ROOT_PASSWORD}"
+    fi
+  </preinst>
+  <postinst>
+    # Create the snaplist user and snaplist database
+    #
+    PRIVATE_DIR=/var/lib/snapwebsites/private
+    source ${PRIVATE_DIR}/snaplistd_password.sh
+    mysql --user=root --password="${ROOT_PASSWORD}" &lt;&lt;EOF
+CREATE USER 'snaplist'@'localhost' IDENTIFIED BY 'snaplist';
+GRANT SELECT, INSERT, UPDATE, DELETE ON snaplist.* TO 'snaplist'@'localhost';
+FLUSH PRIVILEGES;
+CREATE DATABASE snaplist;
+CREATE TABLE snaplist.journal
+  ( id             INT NOT NULL PRIMARY KEY AUTO_INCREMENT
+  , domain         TEXT NOT NULL          -- will change to the domain ID once SNAP-381 is done
+  , priority       SMALLINT NOT NULL      -- WARNING: don't use TINYINT because this is a number from 0 to 255 and TINYINT is -128 to +127
+  , key_start_date BIGINT NOT NULL        -- Unix timestamp in microseconds
+  , uri            TEXT NOT NULL          -- will change to the page ID once SNAP-381 is done
+  , status         BIGINT DEFAULT NULL    -- new if NULL, working if set, if set for more than 24h, consider work failed, Unix timestamp in microseconds
+  , INDEX journal_index USING BTREE (domain(64), priority, key_start_date) COMMENT 'used to read the next page(s) to work on'
+  , INDEX journal_uri USING BTREE (uri(256)) COMMENT 'used to delete duplicates (we keep only the latest entry for each URI)'
+  )
+  COMMENT 'journal of pages that were created or modified and thus have to be (re)checked for against Snap! lists'
+  COMPRESSION 'NONE'
+  ENCRYPTION 'N';
+EOF
+
+    # Now put the HOST ip address into /etc/default/snaplistd
+    # and restart the snaplistd server
+    #
+    sed -i.bak -e "s/HOST=.*/HOST=${BUNDLE_INSTALLATION_HOST}/" /etc/default/snaplistd
+    systemctl restart snaplistd
+  </postinst>
+  <postrm>
+    #apt purge -y "mysql-server-*"
+    #rm -rf /var/lib/mysql
+    PRIVATE_DIR=/var/lib/snapwebsites/private
+    rm ${PRIVATE_DIR}/snaplistd_password.sh
+  </postrm>
+</bundle>
+<!--
+  vim: ts=2 sw=2 et
+-->

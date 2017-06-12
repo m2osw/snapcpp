@@ -1,6 +1,6 @@
 #
 # File:
-#      src/snaplock/CMakeLists.txt
+#      snapwebsites/snaplock/tests/CMakeLists.txt
 #
 # Description:
 #      A daemon to synchronize processes between any number of computers
@@ -51,7 +51,10 @@ if(CATCH_FOUND)
         ${SNAPWEBSITES_LIBRARIES}
         dl
     )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --cassandra ${CASSANDRA_HOST_IP} )
+    add_test(
+        NAME ${PROJECT_NAME}
+        COMMAND ${PROJECT_NAME} --cassandra ${CASSANDRA_HOST_IP}
+    )
 endif(CATCH_FOUND)
 
 

@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplock_interrupt.cpp
+ *      snapwebsites/snaplock/src/snaplock_interrupt.cpp
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers

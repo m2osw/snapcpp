@@ -21,7 +21,7 @@
 #include "../layout/layout.h"
 #include "../filter/filter.h"
 
-#include "../test_plugin_suite/test_plugin_suite.h"
+//#include "../test_plugin_suite/test_plugin_suite.h"
 
 // snapwebsites lib
 //
@@ -40,6 +40,7 @@ enum class name_t
     SNAP_NAME_LIST_ITEM_KEY_SCRIPT,
     SNAP_NAME_LIST_KEY,
     SNAP_NAME_LIST_LAST_UPDATED,
+    SNAP_NAME_LIST_LISTJOURNAL,
     SNAP_NAME_LIST_LINK,
     SNAP_NAME_LIST_NAME,
     SNAP_NAME_LIST_NAMESPACE,
@@ -96,6 +97,14 @@ public:
     explicit list_exception_invalid_parameter_type(char const *        what_msg) : list_exception(what_msg) {}
     explicit list_exception_invalid_parameter_type(std::string const & what_msg) : list_exception(what_msg) {}
     explicit list_exception_invalid_parameter_type(QString const &     what_msg) : list_exception(what_msg) {}
+};
+
+class list_exception_mysql : public list_exception
+{
+public:
+    explicit list_exception_mysql(char const *        what_msg) : list_exception(what_msg) {}
+    explicit list_exception_mysql(std::string const & what_msg) : list_exception(what_msg) {}
+    explicit list_exception_mysql(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 
@@ -191,6 +200,8 @@ public:
     static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds
     static int const LIST_MAXIMUM_ITEMS = 10000; // maximum number of items returned by read_list()
 
+    typedef int64_t             timeout_t;
+
     // pages given a smaller priority are processed earlier
     typedef unsigned char       priority_t;
 
@@ -253,9 +264,6 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
     virtual void        bootstrap(snap_child * snap);
 
-    QtCassandra::QCassandraTable::pointer_t get_list_table();
-    QtCassandra::QCassandraTable::pointer_t get_listref_table();
-
     // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
 
@@ -296,7 +304,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(list_modified, (content::path_info_t & ipath), (ipath), NEITHER);
 
     // links test suite
-    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+    //SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
     void                content_update(int64_t variables_timestamp);
@@ -313,14 +321,13 @@ private:
     int                 generate_new_list_for_hand_picked_pages(QString const & site_key, content::path_info_t & list_ipath, QString const & hand_picked_pages);
     bool                run_list_check(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
     QString             run_list_item_key(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
+    int                 send_data_to_journal();
 
     // tests
-    SNAP_TEST_PLUGIN_TEST_DECL(test_add_page_twice)
+    //SNAP_TEST_PLUGIN_TEST_DECL(test_add_page_twice)
 
     snap_child *                            f_snap = nullptr;
     snap_backend *                          f_backend = nullptr;
-    QtCassandra::QCassandraTable::pointer_t f_list_table;
-    QtCassandra::QCassandraTable::pointer_t f_listref_table;
     snap_expr::expr::expr_map_t             f_check_expressions;
     snap_expr::expr::expr_map_t             f_item_key_expressions;
     bool                                    f_ping_backend = false;

@@ -1,6 +1,6 @@
 #
 # File:
-#      CMakeLists.txt
+#      snapwebsites/snapdbproxy/doc/CMakeLists.txt
 #
 # Description:
 #      Create the documentation of this package.

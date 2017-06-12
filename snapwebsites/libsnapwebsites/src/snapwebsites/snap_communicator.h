@@ -100,8 +100,13 @@ public:
     void                    reply_to(snap_communicator_message const & message);
     QString const &         get_command() const;
     void                    set_command(QString const & command);
+    void                    add_parameter(QString const & name, char const * value);
+    void                    add_parameter(QString const & name, std::string const & value);
     void                    add_parameter(QString const & name, QString const & value);
+    void                    add_parameter(QString const & name, int32_t value);
+    void                    add_parameter(QString const & name, uint32_t value);
     void                    add_parameter(QString const & name, int64_t value);
+    void                    add_parameter(QString const & name, uint64_t value);
     bool                    has_parameter(QString const & name) const;
     QString const           get_parameter(QString const & name) const;
     int64_t                 get_integer_parameter(QString const & name) const;

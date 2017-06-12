@@ -1,21 +1,5 @@
 #!/bin/sh
 
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapcommunicator/STOP
-#exit 0
-
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snaplock/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapdbproxy/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapfirewall/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapserver/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal images/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal pagelist/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal sendmail/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapmanagerdaemon/STOP
-#BUILD/snapwebsites/snapcommunicator/src/snapsignal snapwatchdog/STOP
-
-
-# The following would require us to have PID files which we do not have yet
-
 # Daemons can now be stopped in any order and to prove it we randomize
 # the stopping of them...
 #

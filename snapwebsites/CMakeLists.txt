@@ -60,6 +60,7 @@ ConfigureMakeProject( PROJECT_NAME snapfirewall
     COMPONENT main
 )
 ConfigureMakeProject( PROJECT_NAME snaplayout       COMPONENT main )
+ConfigureMakeProject( PROJECT_NAME snaplistd        COMPONENT main )
 ConfigureMakeProject( PROJECT_NAME snaplock         COMPONENT main )
 ConfigureMakeProject( PROJECT_NAME snaplog          COMPONENT main )
 ConfigureMakeProject( PROJECT_NAME snapmanager

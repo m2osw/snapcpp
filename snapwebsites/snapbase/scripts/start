@@ -34,12 +34,14 @@ DAEMON4="BUILD/snapwebsites/snapdbproxy/src/snapdbproxy"
 DAEMON5="BUILD/snapwebsites/snapfirewall/src/snapfirewall"
 DAEMON6="BUILD/snapwebsites/snapserver/src/snapserver"
 DAEMON7="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action images::images"
-DAEMON8="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action list::pagelist"
-DAEMON9="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action sendmail::sendmail --param GLOBAL_LOCK=1"
-DAEMON10="BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon"
-DAEMON11="BUILD/snapwebsites/snapwatchdog/src/snapwatchdogserver"
+DAEMON8="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action list::listjournal"
+DAEMON9="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action list::pagelist"
+DAEMON10="BUILD/snapwebsites/snapbackend/src/snapbackend --cron-action sendmail::sendmail --param GLOBAL_LOCK=1"
+DAEMON11="BUILD/snapwebsites/snapmanagercgi/daemon/snapmanagerdaemon"
+DAEMON12="BUILD/snapwebsites/snapwatchdog/src/snapwatchdogserver"
+DAEMON13="BUILD/snapwebsites/snaplistd/src/snaplistd"
 
-ORDER=`seq 1 11 | shuf`
+ORDER=`seq 1 13 | shuf`
 PAUSE=`seq 1 20 | shuf | awk 'NR==1 {print; exit}'`
 
 for idx in $ORDER

@@ -15,12 +15,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// self
+//
 #include "list.h"
 
+// other plugins
+//
 #include "../links/links.h"
 #include "../path/path.h"
 #include "../output/output.h"
 
+// snapwebsites lib
+//
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
@@ -29,13 +35,29 @@
 #include <snapwebsites/snap_backend.h>
 #include <snapwebsites/snap_expr.h>
 #include <snapwebsites/snap_lock.h>
+#include <snapwebsites/tokenize_string.h>
 
+// csspp lib
+//
 #include <csspp/csspp.h>
 
+// Qt lib
+//
+#include <QtCore>
+#include <QtSql>
+
+// C++ lib
+//
 #include <iostream>
 
+// C lib
+//
+#include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 
+// last entry
+//
 #include <snapwebsites/poison.h>
 
 
@@ -64,6 +86,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_LAST_UPDATED:
         return "list::last_updated";
 
+    case name_t::SNAP_NAME_LIST_LISTJOURNAL: // --action listjournal (and corresponding PING)
+        return "listjournal";
+
     case name_t::SNAP_NAME_LIST_LINK: // standard link between list and list items
         return "list::link";
 
@@ -88,7 +113,7 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_PAGE: // query string name "...?page=..."
         return "page";
 
-    case name_t::SNAP_NAME_LIST_PAGELIST: // --action pagelist
+    case name_t::SNAP_NAME_LIST_PAGELIST: // --action pagelist (and corresponding PING)
         return "pagelist";
 
     case name_t::SNAP_NAME_LIST_PAGE_SIZE:
@@ -136,6 +161,681 @@ char const * get_name(name_t name)
 
     }
     NOTREACHED();
+}
+
+
+
+
+
+namespace
+{
+
+
+/** \brief Timeout for our list journal data message in seconds.
+ *
+ * Whenever we send a message to the "pagelist" backend processing our
+ * "LISTDATA" message, we expect a reply to be sent back to us very
+ * quickly. This timeout defines the maximum amount of time we are
+ * willing to wait for the message acknowledgement.
+ *
+ * At this time we wait up to 1 minute, which is probably way more
+ * than necessary.
+ */
+list::timeout_t g_listdata_timeout = 60LL;      // seconds
+
+
+/** \brief The default snapcommunicator address.
+ *
+ * This variable holds the snapcommunicator IP address used to send
+ * our "LISTDATA" messages.
+ *
+ * \todo
+ * It cannot currently be changed.
+ */
+std::string g_snapcommunicator_address = "127.0.0.1";
+
+
+/** \brief The default snapcommunicator port.
+ *
+ * This variable holds the snapcommunicator port used to send
+ * our "LISTDATA" messages.
+ *
+ * \todo
+ * It cannot currently be changed.
+ */
+int g_snapcommunicator_port = 4040;
+
+
+/** \brief The default snapcommunicator mode.
+ *
+ * This variable holds the snapcommunicator mode used to send
+ * our "LISTDATA" messages.
+ *
+ * \todo
+ * It cannot currently be changed.
+ */
+tcp_client_server::bio_client::mode_t g_snapcommunicator_mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN;
+
+
+/** \brief A unique number used to name each service.
+ *
+ * Each time we connect to snapcommunicator we need to have a different
+ * name otherwise we would take the risk of getting shutdown from a
+ * previous UNREGISTER message.
+ *
+ * This unique number is used for that purpose.
+ */
+int g_unique_service = 0;
+
+
+/** \brief A unique number used to serialize each message.
+ *
+ * Each time we send a "LISTDATA" message, we give that message an identifier
+ * which we expected to be returned in the acknowledgement. To acknowledge,
+ * the "pagelist" backend will send us that identifier back.
+ */
+int g_unique_id = 0;
+
+
+}
+// no name namespace
+
+
+
+/** \brief The implementation of a message handler for the LISTDATA messages.
+ *
+ * For us to handle the "LISTDATA" messages sent to "pagelist" and
+ * acknowledged by it, we need a connection. We use a blocking
+ * connection which is used to send one "LISTDATA", wait for the
+ * acknowledgement, and then request for the next piece of data.
+ *
+ * The class handles the parsing of the local journal file in order
+ * to be able to reuse the same connection for all the entries found
+ * in the journal. Otherwise it would have to reconnect each time
+ * which would slow down the entire cluster quite a bit.
+ */
+class listdata_connection
+        : public snap_communicator::snap_tcp_blocking_client_message_connection
+{
+public:
+                            listdata_connection(QString const & list_data_path);
+                            ~listdata_connection();
+
+    int                     did_work();
+
+    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
+    void                    process_timeout();
+    void                    process_message(snap_communicator_message const & message);
+
+private:
+    void                    process_data(QString const & acknowledgement_id);
+    void                    mark_done();
+
+    std::string             f_data;
+    std::string::size_type  f_start = std::string::npos;
+    std::string::size_type  f_pos = std::string::npos;
+    QString                 f_service_name;
+    bool                    f_success = false;
+    bool                    f_done = false;
+    QString const           f_path;
+    int64_t                 f_hour = 0;
+    int64_t                 f_end_hour = 0;
+    int64_t                 f_keep_hour1 = -1;
+    int64_t                 f_keep_hour2 = -1;
+    int                     f_fd = -1;
+    std::string             f_filename;
+    int                     f_did_work = 0;
+};
+
+
+
+
+
+/** \brief Initialize the LISTDATA handler.
+ *
+ * To handle the data we use the timeout set to "now". This calls the
+ * `process_timeout()` immediately which allows us to read one more line
+ * of data. If such a line exists, we send the message and setup the
+ * timer for now + the "LISTDATA" message timeout.
+ *
+ * Once we receive the acknowledgement, we again set the timeout to "now"
+ * so we can process the next message.
+ *
+ * \param[in] list_data_path  The path to the journal files.
+ */
+listdata_connection::listdata_connection(QString const & list_data_path)
+    : snap_tcp_blocking_client_message_connection(g_snapcommunicator_address, g_snapcommunicator_port, g_snapcommunicator_mode)
+    , f_path(list_data_path + "/" + snap::get_name(snap::name_t::SNAP_NAME_CORE_LIST_JOURNAL_PATH))
+{
+    f_service_name = QString("listdata_%1").arg(++g_unique_service);
+
+    // make sure that path exists and is a directory
+    //
+    struct stat st;
+    if(stat(f_path.toUtf8().data(), &st) != 0
+    || !S_ISDIR(st.st_mode))
+    {
+        SNAP_LOG_ERROR("could not access list journal directory \"")(f_path)("\"");
+        return;
+    }
+
+    // compute the hour from "now"
+    //
+    // this gives us a number between 0 and 23
+    // the division removes microseconds, seconds, and minutes
+    //
+    // the keep hour 1 and 2 are used to prevent the deletion of
+    // those files once done with them because we cannot be sure
+    // whether an append is going to happen on them and if it does
+    // and we delete, we would break the write
+    //
+    int64_t const now(snap_child::get_current_date());
+    f_end_hour   = (now / (60LL * 60LL * 1000000LL)) % 24;
+    f_keep_hour1 = (f_end_hour + 23) % 24;      // +23 is like -1 except it works correctly with the %24 (i.e. (f_end_hour - 1) % 24 == -1 when f_end_hour is 0, with +23, it becomes 23 as expected.)
+    f_keep_hour2 = f_end_hour;
+    f_hour       = (f_end_hour + 1) % 24;
+
+    // we want to always timeout so that way we can process the next
+    //
+    set_timeout_date(now + g_listdata_timeout * 1000000LL);
+
+    // need to register with snap communicator
+    //
+    snap::snap_communicator_message register_message;
+    register_message.set_command("REGISTER");
+    register_message.add_parameter("service", f_service_name);
+    register_message.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_message);
+
+    // now wait for the READY and HELP replies, send LISTDATA, and
+    // either timeout or get the GOTLISTDATA message (or on failure
+    // get a LISTDATAFAILED)
+    //
+    run();
+}
+
+
+/** \brief Make sure the last journal handle is closed.
+ *
+ * The destructor makes sure that the file description last used gets closed.
+ */
+listdata_connection::~listdata_connection()
+{
+    if(f_fd >= 0)
+    {
+        ::close(f_fd);
+        f_fd = -1;
+    }
+}
+
+
+/** \brief Check whether work was done.
+ *
+ * In general, a backend is asked to tell the main loop whether it did work
+ * or not. If it did work, when it should return a non-zero value.
+ *
+ * The listdata_connection object is considered to have done work if the
+ * object sends at least one LISTDATA message.
+ *
+ * \return 0 if no work was done, 1 if some work was done.
+ */
+int listdata_connection::did_work()
+{
+    return f_did_work;
+}
+
+
+/** \brief The "LISTDATA" was not acknowledge in time.
+ *
+ * This function gets called whenever the "LISTDATA" was sent and the
+ * "GOTLISTDATA" was not received with the 'listdata_timeout' amount.
+ *
+ * Here we tell the system we are done with the that file so that way
+ * the run() function returns silently (instead of throwing an error.)
+ *
+ * Whatever we already sent will be marked as processed in the input
+ * file. The rest will still be in the file so we can process that
+ * later.
+ */
+void listdata_connection::process_timeout()
+{
+    mark_done();
+}
+
+
+/** \brief Process messages as we receive them.
+ *
+ * This function is called whenever a complete message is read from
+ * the snapcommunicator.
+ *
+ * In a perfect world, the following shows what happens message wise.
+ *
+ * \note
+ * The REGISTER message is sent from the constructor to initiate the
+ * whole process. This function starts by receiving the READY message
+ * and call the process_data() function as a result.
+ *
+ * \msc
+ *    list,snapcommunicator,pagelist;
+ *
+ *    list->snapcommunicator [label="REGISTER"];
+ *    snapcommunicator->list [label="READY"];
+ *    snapcommunicator->list [label="HELP"];
+ *    list->snapcommunicator [label="COMMANDS"];
+ *    list->snapcommunicator [label="LISTDATA"];
+ *    snapcommunicator->pagelist [label="LISTDATA"];
+ *    pagelist->snapcommunicator [label="GOTLISTDATA"];
+ *    snapcommunicator->list [label="GOTLISTDATA"];
+ *    ...;
+ *    list->snapcommunicator [label="UNREGISTER"];
+ * \endmsc
+ *
+ * If the LISTDATA message fails, we either timeout or receive a
+ * LISTDATAFAILED message back from pagelist.
+ *
+ * \param[in] message  The message we just received.
+ */
+void listdata_connection::process_message(snap_communicator_message const & message)
+{
+    // This adds way too many messages! Use only to debug.
+    //SNAP_LOG_TRACE("received messenger message [")(message.to_message())("]");
+
+    QString const command(message.get_command());
+
+    switch(command[0].unicode())
+    {
+    case 'G':
+        if(command == "GOTLISTDATA")
+        {
+            // our last 'LISTDATA' worked, so we did some work!
+            //
+            f_did_work |= 1;
+
+            process_data(message.get_parameter("listdata_id"));
+
+            return;
+        }
+        break;
+
+    case 'H':
+        if(command == "HELP")
+        {
+            // snapcommunicator wants us to tell it what commands
+            // we accept
+            //
+            snap_communicator_message commands_message;
+            commands_message.set_command("COMMANDS");
+            commands_message.add_parameter("list", "GOTLISTDATA,HELP,LISTDATAFAILED,QUITTING,READY,STOP,UNKNOWN");
+            send_message(commands_message);
+
+            // process one message and send it to "pagelist"
+            //
+            // processing one message is pretty lengthy so it has its
+            // own function
+            //
+            process_data(QString());
+
+            return;
+        }
+        break;
+
+    case 'L':
+        if(command == "LISTDATAFAILED")
+        {
+            // this is an error on the other end
+            // here it's not really a bad error, other than the fact that
+            // we'll have to try again later
+            //
+            SNAP_LOG_WARNING("we received the LISTDATAFAILED command while waiting for a GOTLISTDATA.");
+
+            mark_done();
+            return;
+        }
+        break;
+
+    case 'Q':
+        if(command == "QUITTING")
+        {
+            SNAP_LOG_WARNING("we received the QUITTING command while waiting for a GOTLISTDATA.");
+
+            mark_done();
+            return;
+        }
+        break;
+
+    case 'R':
+        if(command == "READY")
+        {
+            // the REGISTER worked, wait for the HELP message
+            return;
+        }
+        break;
+
+    case 'S':
+        if(command == "STOP")
+        {
+            SNAP_LOG_WARNING("we received the STOP command while waiting for a GOTLISTDATA.");
+
+            mark_done();
+            return;
+        }
+        break;
+
+    case 'U':
+        if(command == "UNKNOWN")
+        {
+            // we sent a command that Snap! Communicator did not understand
+            //
+            SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            return;
+        }
+        break;
+
+    }
+
+    // unknown command is reported and process goes on
+    //
+    {
+        SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received by listdata on the connection with Snap! Communicator.");
+
+        snap::snap_communicator_message unknown_message;
+        unknown_message.set_command("UNKNOWN");
+        unknown_message.add_parameter("command", command);
+        send_message(unknown_message);
+    }
+}
+
+
+/** \brief Process the next line of data.
+ *
+ * This function is called once after snapcommunicator acknowledge
+ * our registration and then once each time a new acknowledgement
+ * of our LISTDATA is received.
+ *
+ * The function will send the next message to the "pagelist" process.
+ *
+ * \param[in] acknowledgement_id  The identifier returned by GOTDATALIST.
+ */
+void listdata_connection::process_data(QString const & acknowledgement_id)
+{
+    // if f_start is not `npos` then we have to have received an
+    // acknowledgement (i.e. if f_start is `npos` it is the first
+    // time we are calling this function.)
+    //
+    // note that internally we reset the f_start variable back to
+    // std::string::npos whenever we are done with one file, but
+    // we never return with such
+    //
+    if(f_start != std::string::npos)
+    {
+        // make sure the acknowledgement is correct
+        //
+        if(acknowledgement_id.isEmpty())
+        {
+            SNAP_LOG_ERROR("acknowledgement_id is empty when we call process_data() again.");
+            mark_done();
+            return;
+        }
+        bool ok(false);
+        if(g_unique_id != acknowledgement_id.toInt(&ok, 10)
+        || !ok)
+        {
+            SNAP_LOG_ERROR("acknowledgement_id does not match the expected id. (")(acknowledgement_id)(" <> ")(g_unique_id)(")");
+            mark_done();
+            return;
+        }
+
+        std::string empty(f_pos - f_start, '\n');
+        if(lseek(f_fd, f_start, SEEK_SET) != static_cast<off_t>(f_start))
+        {
+            SNAP_LOG_ERROR("could not seek to overwrite message.");
+            mark_done();
+            return;
+        }
+        if(::write(f_fd, empty.c_str(), empty.length()) != static_cast<ssize_t>(empty.length()))
+        {
+            SNAP_LOG_ERROR("could not overwrite message properly.");
+            mark_done();
+            return;
+        }
+    }
+    else
+    {
+        if(!acknowledgement_id.isEmpty())
+        {
+            SNAP_LOG_ERROR("acknowledgement_id is not empty when we call process_data() for the first time.");
+            mark_done();
+            return;
+        }
+    }
+
+    // find the next message, if there is one, and send it to the
+    // "pagelist" process
+    //
+    // this can be really slow but since we unlocked the file while
+    // we work on this data, we do not have too much to worry about
+    //
+    // note that each time we receive an acknowledgement message that
+    // a message was properly processed by the "pagelist" process,
+    // we overwrite it with '\n' characters in the original file
+    //
+    for(;; f_hour = (f_hour + 1) % 24)
+    {
+        // go around the clock for 1 whole day, if a file is empty, ignore
+        // quickly, otherwise read the next message that was not yet managed
+        // and send it to pagelist
+        //
+        // TODO: optimize by looking into a way to remember how much of the
+        //       file we already sent to the pagelist backend; right now
+        //       we re-read the whole file and reparse it (the parsing is
+        //       very fast, the re-reading could be slow if the computer
+        //       start swapping!)
+        //
+        if(f_start == std::string::npos)
+        {
+            if(f_fd >= 0)
+            {
+                ::close(f_fd);
+                f_fd = -1;
+            }
+
+            if(f_done)
+            {
+                mark_done();
+                f_success = true;
+                return;
+            }
+
+            if(f_hour == f_end_hour)
+            {
+                // this is the last file, mark ourselves done
+                //
+                f_done = true;
+            }
+
+            f_filename = std::string(f_path.toUtf8().data()) + "/" + std::to_string(f_hour) + ".msg";
+            f_fd = open(f_filename.c_str(), O_RDWR);
+            if(f_fd < 0)
+            {
+                // the ENOENT is an expected error here, totally ignore it
+                //
+                if(errno != ENOENT)
+                {
+                    SNAP_LOG_DEBUG("could not open file \"")(f_filename)("\" for reading");
+                }
+                continue;
+            }
+
+            if(flock(f_fd, LOCK_EX) != 0)
+            {
+                SNAP_LOG_WARNING("could not lock file \"")(f_filename)("\" before appending message");
+                continue;
+            }
+
+            ssize_t const l(lseek(f_fd, 0, SEEK_END));
+            if(l == -1)
+            {
+                SNAP_LOG_WARNING("could not seek to the end of the file \"")(f_filename)("\"");
+                continue;
+            }
+
+            // we can lose the lock because the other processes just do an append
+            // so we do not need any more protection here (we needed it to
+            // determine the file size, that's all!)
+            //
+            // i.e. unlocking as quickly as possible is best because that way we
+            //      can very quickly let other processes write to this file
+            //      again
+            //
+            if(flock(f_fd, LOCK_UN) != 0)
+            {
+                SNAP_LOG_INFO("could not unlock file \"")(f_filename)("\" after reading message");
+            }
+
+            if(lseek(f_fd, 0, SEEK_SET) == -1)
+            {
+                SNAP_LOG_WARNING("could not seek back the beginning of the file \"")(f_filename)("\"");
+                continue;
+            }
+
+            // read as much as the size was while the file was locked
+            //
+            f_data.resize(l);
+            if(::read(f_fd, &f_data[0], l) != static_cast<ssize_t>(l))
+            {
+                SNAP_LOG_ERROR("could not read file \"")(f_filename)("\"");
+                continue;
+            }
+
+            // find the first character which is not a '\n'
+            // (i.e. the start of a message)
+            //
+            f_pos = f_data.find_first_not_of('\n');
+        }
+
+        for(;;)
+        {
+            f_start = f_pos;
+
+            // f_pos points to the start of the next message
+            //
+            f_pos = f_data.find_first_of('\n', f_start);
+            if(f_pos == std::string::npos)
+            {
+                // no more '\n' found, so we assume we are done with this
+                // file
+                //
+                f_start = std::string::npos;
+
+                // done with the file so close it
+                //
+                ::close(f_fd);
+                f_fd = -1;
+
+                // if not a file we are supposed to keep around, unlink
+                //
+                if(f_hour != f_keep_hour1
+                && f_hour != f_keep_hour2)
+                {
+                    unlink(f_filename.c_str());
+                }
+                break;
+            }
+
+            std::string uri;
+            std::string priority;
+            std::string key_start_date;
+
+            // retrieve a copy of the message without the '\n'
+            //
+            std::string const message(f_data.substr(f_start, f_pos - f_start));
+            std::vector<std::string> variables;
+            tokenize_string(variables, message, ";", true, " ");
+            for(size_t idx(0); idx < variables.size(); ++idx)
+            {
+                auto const equal(variables[idx].find_first_of('='));
+                auto const varname(variables[idx].substr(0, equal));
+                auto const value(variables[idx].substr(equal + 1));
+                if(varname == "uri")
+                {
+                    uri = value;
+                }
+                else if(varname == "priority")
+                {
+                    priority = value;
+                }
+                else if(varname == "key_start_date")
+                {
+                    key_start_date = value;
+                }
+            }
+
+            // skip the '\n'
+            //
+            ++f_pos;
+
+            if(uri.empty()
+            || priority.empty()
+            || key_start_date.empty())
+            {
+                SNAP_LOG_WARNING("required message parameter is missing");
+
+                // at this time we ignore such messages and go on
+                // which means we go and read the next message and
+                // try to process it as normal
+                f_start = std::string::npos;
+            }
+            else
+            {
+                // message is valid, send it
+                //
+                // do not let snapcommunicator cache those messages, we will
+                // resend them as required (to be sure they get there, because
+                // snapcommunicator caches are in memory only!)
+                //
+                snap::snap_communicator_message listdata_message;
+                listdata_message.set_command("LISTDATA");
+                listdata_message.set_service("snaplistd");
+                listdata_message.add_parameter("service", f_service_name);
+                listdata_message.add_parameter("version", snap::snap_communicator::VERSION);
+                listdata_message.add_parameter("uri", uri);
+                listdata_message.add_parameter("priority", priority);
+                listdata_message.add_parameter("key_start_date", key_start_date);
+                listdata_message.add_parameter("listdata_id", ++g_unique_id);
+                listdata_message.add_parameter("cache", "no");
+                send_message(listdata_message);
+
+                // next message timeout date
+                // (i.e. we give each message the same amount of time to timeout)
+                //
+                set_timeout_date(snap_child::get_current_date() + g_listdata_timeout * 1000000LL);
+
+                // we sent a message, return and wait until we get the
+                // acknowledgement
+                //
+                return;
+            }
+        }
+    }
+}
+
+
+/** \brief Mark that we are done.
+ *
+ * This function marks this connection as done. This means it will
+ * exit the run() loop on return from one of the callback functions.
+ *
+ * The function also sends the UNREGISTER message to the other side
+ * so that way we cleanly disconnect from the snapcommunicator.
+ */
+void listdata_connection::mark_done()
+{
+    snap_communicator_message unregister_message;
+    unregister_message.set_command("UNREGISTER");
+    unregister_message.add_parameter("service", f_service_name);
+    send_message(unregister_message);
+
+    snap_tcp_blocking_client_message_connection::mark_done();
 }
 
 
@@ -1296,76 +1996,7 @@ void list::bootstrap(snap_child * snap)
     SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(list, "filter", filter::filter, token_help, _1);
 
-    SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
-}
-
-
-/** \brief Initialize the list table.
- *
- * This function creates the list table if it doesn't exist yet. Otherwise
- * it simple initializes the f_list_table variable member.
- *
- * If the function is not able to create the table an exception is raised.
- *
- * The list table is used to record all the pages of a website so they can
- * get sorted. As time passes older pages get removed as they are expected
- * to already be part of the list as required. Pages that are created or
- * modified are re-added to the list table so lists that include them can
- * be updated on the next run of the backend.
- *
- * New lists are created using a different scheme which is to find pages
- * using the list definitions to find said pages (i.e. all the pages link
- * under a given type, all the children of a given page, etc.)
- *
- * The table is defined as one row per website. The site_key_with_path()
- * is used as the row key. Within each row, you have one column per page
- * that was created or updated in the last little bit (until the backend
- * receives the time to work on all the lists concerned by such data.)
- * However, we need to time those entries so the column key is defined as
- * a 64 bit number representing the start date (as the
- * f_snap->get_start_date() returns) and the full key of the page that
- * was modified. This means the exact same page may appear multiple times
- * in the table. The backend is capable of ignoring duplicates.
- *
- * The content of the row is simple a boolean (signed char) set to 1.
- *
- * \return The pointer to the list table.
- */
-QtCassandra::QCassandraTable::pointer_t list::get_list_table()
-{
-    if(!f_list_table)
-    {
-        f_list_table = f_snap->get_table(get_name(name_t::SNAP_NAME_LIST_TABLE));
-    }
-    return f_list_table;
-}
-
-
-/** \brief Initialize the list reference table.
- *
- * This function creates the list reference table if it doesn't exist yet.
- * Otherwise it simple initializes the f_listref_table variable member.
- *
- * This table is used to reference existing rows in the list table. It is
- * separate for two reasons: (1) that way we can continue to go through
- * all the rows of a list, we do not have to skip each other row; (2) we
- * can us different attributes (because we do not need the reference
- * table to survive loss of data--that said right now it is just the same
- * as the other tables)
- *
- * \todo
- * Look into changing the table parameters to make it as effective as
- * possible for what it is used for.
- *
- * \return The pointer to the list table.
- */
-QtCassandra::QCassandraTable::pointer_t list::get_listref_table()
-{
-    if(!f_listref_table)
-    {
-        f_listref_table = f_snap->get_table(get_name(name_t::SNAP_NAME_LIST_TABLE_REF));
-    }
-    return f_listref_table;
+    //SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
 }
 
 
@@ -1474,19 +2105,46 @@ void list::on_modified_link(links::link_info const & link, bool const created)
  * This function is called whenever a plugin modified a page and then called
  * the modified_content() signal of the content plugin.
  *
- * This function saves the full key to the page that was just modified so
- * lists that include this page can be updated by the backend as required.
+ * The function needs to save the information so the pagelist backend has
+ * a chance to process that modified page.
  *
- * \todo
- * When a page is modified multiple times in the same request, as mentioned,
- * only the last request sticks (i.e. because all requests will use the
- * same start date). However, since the key used in the list table includes
- * start_date as the first 8 bytes, we do not detect the fact that we
- * end up with a duplicate when updating the same page in different requests.
- * I am thinking that we should be able to know the column to be deleted by
- * saving the key of the last entry in the page (ipath->get_key(), save
- * list::key or something of the sort.) One potential problem, though, is
- * that a page that is constantly modified may never get listed.
+ * The key used to handle this information includes the following 4 parameters:
+ *
+ * \li The protocol + website complete domain name
+ *
+ * The "protocol + website complete domain name"
+ * (such as "http://snapwebsites.org/") is used to aggregate the data changes
+ * on a per website basis. This is important for the backend processing which
+ * happens on one website at a time.
+ *
+ * \li The current priority
+ *
+ * The priority is used to handle entries with a lower priority first.
+ *
+ * The backend is responsible for the final sorting and removal of duplicates.
+ * Here we just append data to a journal and let a backend process send the
+ * data to the pagelist process. We want to lists to work so we want the
+ * pagelist to acknowledge the fact that it received our requests (and save
+ * them in its own journals) so we use a backend. If the pagelist is down
+ * a the time we process many lists, it will cummulate on a computer or
+ * another but the data won't be lost.
+ *
+ * \li The start date + start date offset
+ *
+ * The time defined by "start date + start date offset" is used to make sure
+ * that this page is handled on or after that time (too soon and the page
+ * may not yet be ready!)
+ *
+ * This date is also used by the sorting algorithm.
+ *
+ * \li The ipath URL
+ *
+ * The ipath URL represents the page to be updated.
+ *
+ * This parameter is also used in the sorting algorithm, but in a different
+ * way: if two requests are made with the same URL, then only the one with
+ * the largest date (start date + start date offset) is kept. The others
+ * are dropped.
  *
  * \param[in,out] ipath  The path to the page being modified.
  */
@@ -1500,9 +2158,6 @@ void list::on_modified_content(content::path_info_t & ipath)
     // if the same page is modified multiple times then we overwrite the
     // same entry multiple times
     content::content * content_plugin(content::content::instance());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
-    QtCassandra::QCassandraTable::pointer_t listref_table(get_listref_table());
 
     QByteArray key;
 
@@ -1521,78 +2176,69 @@ void list::on_modified_content(content::path_info_t & ipath)
         priority = LIST_PRIORITY_UPDATES;
     }
 
+    // get a copy of the path to the list journal
+    //
+    std::string const path((f_snap->get_list_data_path() + "/" + snap::get_name(snap::name_t::SNAP_NAME_CORE_LIST_JOURNAL_PATH)).toUtf8().data());
+
+    // make sure that path exists and is a directory
+    //
+    struct stat st;
+    if(stat(path.c_str(), &st) != 0
+    || !S_ISDIR(st.st_mode))
     {
-        // we need to have this run by a single process at a time
-        // otherwise we will miss some dropCell() calls
-        snap_lock lock(QString("%1#list-reference").arg(ipath.get_key()));
-
-        // handle a reference so it is possible to delete the old key for that
-        // very page later (i.e. if the page changes multiple times before the
-        // list processes have time to catch up)
-        QtCassandra::QCassandraValue existing_entry(listref_table->row(site_key)->cell(ipath.get_key())->value());
-        if(!existing_entry.nullValue())
-        {
-            QByteArray const old_key(existing_entry.binaryValue());
-
-            // get the smallest of the two priorities
-            //
-            priority_t const old_priority(QtCassandra::safeUnsignedCharValue(old_key, 0));
-            priority = std::min(priority, old_priority);
-
-            // get the largest of the two dates
-            //
-            int64_t const old_key_start_date(QtCassandra::safeInt64Value(old_key, 1));
-            key_start_date = std::max(key_start_date, old_key_start_date);
-
-            // create the key with the new or old priority, whichever is
-            // smaller
-            //
-            QtCassandra::appendUnsignedCharValue(key, priority);
-            QtCassandra::appendInt64Value(key, key_start_date);
-            QtCassandra::appendStringValue(key, ipath.get_key());
-
-            if(old_key != key)
-            {
-                // drop only if the key changed (i.e. if the code modifies the
-                // same page over and over again within the same child process,
-                // then the key will not change.)
-                //
-                list_table->row(site_key)->dropCell(old_key);
-            }
-        }
-        else
-        {
-            QtCassandra::appendUnsignedCharValue(key, priority);
-            QtCassandra::appendInt64Value(key, key_start_date);
-            QtCassandra::appendStringValue(key, ipath.get_key());
-        }
-
-        //
-        // TBD: should we really time these rows? at this point we cannot
-        //      safely delete them so the best is certainly to do that
-        //      (unless we use the start_date time to create/delete these
-        //      entries safely) -- the result if these row disappear too
-        //      soon is that duplicates will appear in the main content
-        //      which is not a big deal (XXX I really think we can delete
-        //      those using the start_date saved in the cells to sort them!)
-        //
-        QtCassandra::QCassandraValue timed_key;
-        timed_key.setBinaryValue(key);
-        timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
-
-        listref_table->row(site_key)->cell(ipath.get_key())->setValue(timed_key);
+        SNAP_LOG_ERROR("could not access list journal directory \"")(path)("\"");
+        return;
     }
 
-    // we insert after because the old key may have had a smaller
-    // priority and we need to keep that smaller priority
+    // compute the hour from start date
+    // this gives us a number between 0 and 23
+    // the division removes microseconds, seconds, and minutes
     //
-    bool const modified(true);
-    list_table->row(site_key)->cell(key)->setValue(modified);
-//SNAP_LOG_WARNING("adding new page \"")(ipath.get_key())("\" to list table (priority: ")(priority)(", offset: ")((key_start_date - start_date) / 1000000);
+    int64_t const hour(start_date / (60LL * 60LL * 1000000LL) % 24);
 
+    // build the string we'll send to the pagelist backend
+    // (i.e. the backend running on each system reads that string and
+    // sends it in a message using snapcommunicator)
+    //
+    // the order is not important, although we put the URI last in case
+    // it were to include a semicolon (;).
+    //
+    QString canonicalized_key(ipath.get_key());
+    canonicalized_key.replace(";", "%3A");
+    std::string const list_item(
+                  "priority=" + std::to_string(static_cast<int>(priority))
+                + ";key_start_date=" + std::to_string(key_start_date)
+                + ";uri=" + canonicalized_key.toUtf8().data()
+                + "\n");
+
+    std::string journal_filename(std::string(path.c_str()) + "/" + std::to_string(hour) + ".msg");
+    int fd(open(journal_filename.c_str(), O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR));
+    if(fd < 0)
+    {
+        SNAP_LOG_ERROR("could not open file \"")(journal_filename)("\" for writing");
+        return;
+    }
+
+    if(flock(fd, LOCK_EX) != 0)
+    {
+        SNAP_LOG_ERROR("could not lock file \"")(journal_filename)("\" before appending message");
+        return;
+    }
+
+    if(write(fd, list_item.c_str(), list_item.length()) != static_cast<ssize_t>(list_item.length()))
+    {
+        SNAP_LOG_FATAL("could not write to file \"")(journal_filename)("\", list manager may be hosed now");
+        return;
+    }
+
+    close(fd);
+
+    // move that to the backend!
+    //
     // just in case the row changed, we delete the pre-compiled (cached)
     // scripts (this could certainly be optimized but really the scripts
     // are compiled so quickly that it won't matter.)
+    //
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
     branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
@@ -1624,8 +2270,9 @@ void list::on_attach_to_session()
 {
     if(f_ping_backend)
     {
-        // send a PING to the backend
-        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
+        // send a PING to the journal backend
+        //
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_LISTJOURNAL));
     }
 }
 
@@ -1874,6 +2521,19 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  *
  * This function registers this plugin CRON action named pagelist.
  *
+ * \li listjournal
+ *
+ * The "listjournal" is used by the backend system to continuously
+ * manage the list journal on front end computers (at least computers
+ * that end up running the list plugin--it could be middle end computers,
+ * wherever snapserver runs and starts snap_child processes.)
+ *
+ * \warning
+ * This backend works against all the domains accessed on this computer.
+ * It won't returned until done, also.
+ *
+ * \li pagelist
+ *
  * The "pagelist" is used by the backend to continuously and as fast as
  * possible build and update lists of pages.
  *
@@ -1881,6 +2541,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  */
 void list::on_register_backend_cron(server::backend_action_set & actions)
 {
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_LISTJOURNAL), this);
     actions.add_action(get_name(name_t::SNAP_NAME_LIST_PAGELIST), this);
 }
 
@@ -1968,12 +2629,32 @@ void list::on_register_backend_action(server::backend_action_set & actions)
  */
 void list::on_backend_action(QString const & action)
 {
-    if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
+    if(action == get_name(name_t::SNAP_NAME_LIST_LISTJOURNAL))
     {
         f_backend = dynamic_cast<snap_backend *>(f_snap);
         if(!f_backend)
         {
-            throw list_exception_no_backend("list::on_backend_action(): could not determine the snap_backend pointer");
+            throw list_exception_no_backend("list::on_backend_action(): could not determine the snap_backend pointer for the listjournal action");
+        }
+
+        // if we did some work, we want to restart our process again
+        // as soon as possible (although we give other websites a chance
+        // to also get their lists up to date)
+        //
+        int const did_work(send_data_to_journal());
+        if(did_work != 0)
+        {
+            // now it's the PAGELIST's turn, wake it up ASAP since we did some work
+            //
+            f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
+        }
+    }
+    else if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
+    {
+        f_backend = dynamic_cast<snap_backend *>(f_snap);
+        if(!f_backend)
+        {
+            throw list_exception_no_backend("list::on_backend_action(): could not determine the snap_backend pointer for the pagelist action");
         }
 
         // by default the date limit is 'now + 5 minutes'
@@ -1997,7 +2678,7 @@ void list::on_backend_action(QString const & action)
         {
             date_limit = f_snap->get_start_date();
         }
-        else if(date_limit > 5LL * 60LL * 1000000LL)
+        else if(date_limit > f_snap->get_start_date() + 5LL * 60LL * 1000000LL)
         {
             // wait at most 5 min. from the start date
             //
@@ -2016,7 +2697,7 @@ void list::on_backend_action(QString const & action)
         content::path_info_t ipath;
         ipath.set_path(url);
         on_modified_content(ipath);
-        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_LISTJOURNAL));
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS))
     {
@@ -2025,7 +2706,7 @@ void list::on_backend_action(QString const & action)
         // we "process" all the pages that may go in those lists
         //
         add_all_pages_to_list_table(f_snap->get_site_key_with_slash());
-        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_LISTJOURNAL));
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_RESETLISTS))
     {
@@ -2172,7 +2853,7 @@ void list::add_all_pages_to_list_table(QString const & site_key)
  */
 void list::on_backend_process()
 {
-    SNAP_LOG_TRACE() << "backend_process: update specialized lists.";
+    SNAP_LOG_TRACE("backend_process: update specialized lists.");
 
     // only process if the user clearly specified that we should do so;
     // we should never run in parallel with a background backend, hence
@@ -2187,6 +2868,37 @@ void list::on_backend_process()
         generate_new_lists(f_snap->get_site_key_with_slash());
         generate_all_lists(f_snap->get_site_key_with_slash());
     }
+}
+
+
+/** \brief Send data to the pagelist backend for later processing.
+ *
+ * This function check for some data in the list journal, if any is
+ * found, it sends a message to the pagelist backend via
+ * snapcommunicator and wait for a reply. A valid reply means
+ * that the backend received the data and it is safe to delete
+ * it from this computer.
+ *
+ * \todo
+ * If you are running "pagelist" on more than one backend, then we
+ * need to find a way where the data is sent to only one of these
+ * and not each one of them so we do not process every list item
+ * that many times! At some point we could look into having a
+ * load balancer and send data to a specific computer because its
+ * load is pretty low. (or at least foreseeable load since it may
+ * not yet be working but may already have 100 entries in its
+ * database.) So... the current version is going to work with a
+ * single pagelist backend for now.
+ */
+int list::send_data_to_journal()
+{
+    // because we want to connect to snapcommunicator only once, the
+    // whole loop going through all the data files is done in the
+    // listdata_connection object
+    //
+    listdata_connection connection(f_snap->get_list_data_path());
+
+    return connection.did_work();
 }
 
 
@@ -2478,11 +3190,6 @@ int list::generate_new_list_for_hand_picked_pages(QString const & site_key, cont
  */
 int list::generate_all_lists(QString const & site_key)
 {
-    QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
-
-    QtCassandra::QCassandraRow::pointer_t list_row(list_table->row(site_key));
-    list_row->clearCache();
-
     // the algorithm makes use of multiple limits to keep the time as
     // low as possible and give other websites a chance to update their
     // own lists:
@@ -2508,11 +3215,62 @@ int list::generate_all_lists(QString const & site_key)
     // Note: because it is sorted by timestamp,
     //       the oldest entries are automatically worked on first
     //
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
-    column_predicate->setCount(100);
-    column_predicate->setIndex(); // behave like an index
-    column_predicate->setAllowFiltering(false); // no "ALLOW FILTERING" in CQL
+    SNAP_LOG_TRACE("Attempting to connect to MySQL database");
 
+    QSqlDatabase db(QSqlDatabase::addDatabase("QMYSQL"));
+    if(!db.isValid())
+    {
+        std::string const error( "QMYSQL database is not valid for some reason in list.cpp" );
+        SNAP_LOG_FATAL(error);
+        throw list_exception_mysql(error.c_str());
+    }
+
+    // still open from a previous run?
+    //
+    if(QSqlDatabase::database().isOpen())
+    {
+        QSqlDatabase::database().close();
+    }
+
+    db.setHostName     ( "localhost" );   // TODO: make use of the .conf definition
+    db.setUserName     ( "snaplist" );
+    db.setPassword     ( "snaplist" );
+    db.setDatabaseName ( "snaplist" );
+    if(!db.open())
+    {
+        std::string const error( "Cannot open MySQL database snaplist in list.cpp" );
+        SNAP_LOG_FATAL( error );
+        throw list_exception_mysql(error.c_str());
+    }
+
+    // whether the process did some work on lists so far
+    //
+    int did_work(0);
+
+    // we set the date when we start working on that specific item
+    // Having a date in the
+    //
+    QString const qstatus_str(
+                "UPDATE snaplist.journal"
+                    " SET status = :now"
+                    " WHERE id = :id"
+            );
+
+    QSqlQuery qstatus;
+    qstatus.prepare(qstatus_str);
+
+    // then we delete that entry once we are done with it
+    //
+    QString const qdelete_str(
+                "DELETE FROM snaplist.journal"
+                    " WHERE id = :id"
+            );
+
+    QSqlQuery qdelete;
+    qdelete.prepare(qdelete_str);
+
+    // the amount of time one process can take to process all its lists
+    //
     auto get_timeout = [&](auto const & field_name, int64_t default_timeout)
         {
             QString const loop_timeout_str(f_snap->get_server_parameter(field_name));
@@ -2530,137 +3288,228 @@ int list::generate_all_lists(QString const & site_key)
             }
             return default_timeout;
         };
+    int64_t const loop_timeout(get_timeout("list::looptimeout", 60LL * 1000000LL));
 
-    // timeout for the outter loop, this should remain small on systems
-    // that run 2 or more websites so the time share works as expected
-    // (default is 10 seconds)
+    // function to handle a row, whether it is a high priority or not
     //
-    int64_t const loop_timeout(get_timeout("list::looptimeout", 10LL * 1000000LL));
-
-    // timeout for the inner loop, this should remain small, but not too
-    // small as to make sure that many entries get worked on in a row, it
-    // would slow down things even further otherwise
-    //
-    int64_t const inner_loop_timeout(get_timeout("list::innerlooptimeout", 60LL * 1000000LL));
-
-    int did_work(0);
-    int64_t const loop_start_time(f_snap->get_current_date());
-    bool continue_work(true);
-    do
-    {
-        list_row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const cells(list_row->cells());
-        if(cells.isEmpty())
-        {
-            // we reached the end of the list
-            //continue_work = false;
-            break;
-        }
-
-        // handle one batch
-        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
-                c != cells.end();
-                ++c)
+    auto handle_rows = [&](QString const & query_string)
         {
             int64_t const start_date(f_snap->get_start_date());
+            int64_t const loop_start_time(f_snap->get_current_date());
+            int64_t const status_limit(loop_start_time - 86400LL * 1000000LL);
 
-            // the cell
-            QtCassandra::QCassandraCell::pointer_t cell(*c);
-            // the key starts with the "start date" and it is followed by a
-            // string representing the row key in the content table
-            QByteArray const & key(cell->columnKey());
-            if(static_cast<size_t>(key.size()) < sizeof(unsigned char) + sizeof(int64_t))
+            QSqlQuery query;
+            query.setForwardOnly(true);
+            query.prepare(query_string);
+            query.bindValue(":domain",          site_key                                );
+            query.bindValue(":status_limit",    static_cast<qlonglong>(status_limit)    );
+            query.bindValue(":now",             static_cast<qlonglong>(start_date)      );
+            query.bindValue(":slow_priority",   LIST_PRIORITY_SLOW                      );
+
+            if(!query.exec())
             {
-                // drop any invalid entries, no need to keep them here
-                list_row->dropCell(key);
-                continue;
+                // the query failed
+                // (is this a fatal error?)
+                //
+                SNAP_LOG_WARNING("The MySQL SELECT query to retrieve journal entries failed. lastError=[")
+                                (query.lastError().text())
+                                ("], lastQuery=[")
+                                (query.lastQuery())
+                                ("]");
+                did_work |= 1;
+                return;
             }
 
-            priority_t const priority(QtCassandra::safeUnsignedCharValue(key, 0));
-
-            // Note: we now include the latency in the key so we do not
-            //       test it here anymore
+            // in case field order changes on us, get the exact index from
+            // the record instead of guessing later
             //
-            int64_t const update_request_time(QtCassandra::safeInt64Value(key, sizeof(unsigned char)));
-            if(update_request_time > start_date)
+            int const id_field_no(query.record().indexOf("id"));
+            int const priority_field_no(query.record().indexOf("priority"));
+            int const key_start_date_field_no(query.record().indexOf("key_start_date"));
+            int const uri_field_no(query.record().indexOf("uri"));
+
+            while(query.next())
             {
-                if(update_request_time < f_date_limit)
+                // handle one page
+                //
+                priority_t const priority(query.value(priority_field_no).toInt());
+                int64_t const update_request_time(query.value(key_start_date_field_no).toLongLong());
+                QString const row_key(query.value(uri_field_no).toString());
+                QVariant const id(query.value(id_field_no));
+
+                // print out the row being worked on
+                // (if it crashes it is really good to know where)
                 {
-                    f_date_limit = update_request_time;
+                    char buf[64];
+                    struct tm t;
+                    time_t const seconds(update_request_time / 1000000LL);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    QString const name(QString("[%1] %2.%3 (%4) %5")
+                                .arg(static_cast<int>(priority))
+                                .arg(buf)
+                                .arg(update_request_time % 1000000LL, 6, 10, QChar('0'))
+                                .arg(update_request_time)
+                                .arg(row_key));
+                    SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
                 }
 
-                // since the columns are sorted, anything after that will be
-                // inaccessible date wise
+                // make sure only one of us is working on this row
+                // (TODO: make this actually atomic!)
                 //
-                // since we added a priority we cannot just have
-                //
-                //    continue_workd = false;
-                //
-                // as is...
-                //
-                if(priority >= LIST_PRIORITY_SLOW && did_work != 0)
+                qstatus.bindValue(":now", static_cast<qlonglong>(f_snap->get_current_date()));
+                qstatus.bindValue(":id", id);
+                if(!qstatus.exec())
                 {
-                    // stop the loop if the only thing left are slow pokes
-                    // and some work was already done
+                    // the query failed
+                    // (is this a fatal error?)
                     //
-                    continue_work = false;
-                    break;
+                    SNAP_LOG_WARNING("Updating of the status to 'now' failed. lastError=[")
+                                    (qstatus.lastError().text())
+                                    ("], lastQuery=[")
+                                    (qstatus.lastQuery())
+                                    ("]");
                 }
 
-                // otherwise try with the next entry
-                continue;
+                did_work |= generate_all_lists_for_page(site_key, row_key, update_request_time);
+
+                // we handled that page for all the lists that we have on
+                // this website, so delete it now
+                //
+                qdelete.bindValue(":id", id);
+                if(!qdelete.exec())
+                {
+                    // the query failed
+                    // (is this a fatal error?)
+                    //
+                    SNAP_LOG_WARNING("Delete of entry ")
+                                    (id.toString())
+                                    (" failed. lastError=[")
+                                    (qdelete.lastError().text())
+                                    ("], lastQuery=[")
+                                    (qdelete.lastQuery())
+                                    ("]");
+                }
+
+                did_work |= 1; // since we delete an entry, we did something and we have to return did_work != 0
+
+                SNAP_LOG_TRACE("list is done working on this column.");
+
+                // were we asked to stop?
+                // (i.e. snap_backend received a Ctrl-C)
+                //
+                if(f_backend->stop_received())
+                {
+                    return;
+                }
+
+                // limit the time we work
+                //
+                int64_t const loop_time_spent(f_snap->get_current_date() - loop_start_time);
+                if(loop_time_spent > loop_timeout)
+                {
+                    return;
+                }
             }
+        };
 
-            QString const row_key(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(int64_t)));
+    // although we could limit the query so it only returns entries that
+    // are expected to be valid time wise, we need to know when the next
+    // entry is expected to be worked on and return that to the caller
+    // (through f_date_limit) so we instead read all
+    //
+    handle_rows(
+            "SELECT id, priority, key_start_date, uri"
+                " FROM snaplist.journal"
+                " WHERE domain = :domain"
+                    " AND (status IS NULL OR status < :status_limit)"
+                    " AND key_start_date <= :now"
+                    " AND priority < :slow_priority"
+                " ORDER BY priority, key_start_date"
+        );
 
-            // print out the row being worked on
-            // (if it crashes it is really good to know where)
-            {
-                char buf[64];
-                struct tm t;
-                time_t const seconds(update_request_time / 1000000);
-                gmtime_r(&seconds, &t);
-                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                QString const name(QString("[%1] %2.%3 (%4) %5")
-                            .arg(static_cast<int>(priority))
-                            .arg(buf)
-                            .arg(update_request_time % 1000000, 6, 10, QChar('0'))
-                            .arg(update_request_time)
-                            .arg(row_key));
-                SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
-            }
+    // any work done so far?
+    // if not, then also handle entries with a slow priority
+    //
+    if(did_work == 0)
+    {
+        handle_rows(
+                "SELECT id, priority, key_start_date, uri"
+                    " FROM snaplist.journal"
+                    " WHERE domain = :domain"
+                        " AND (status IS NULL OR status < :status_limit)"
+                        " AND key_start_date <= :now"
+                        " AND priority >= :slow_priority"
+                    " ORDER BY priority, key_start_date"
+            );
+    }
 
-            did_work |= generate_all_lists_for_page(site_key, row_key, update_request_time);
+    // now determine when is a good time to wake up again
+    {
+        QString const qnext_str(
+                    "SELECT key_start_date, status"
+                        " FROM snaplist.journal"
+                        " WHERE domain = :domain"
+                );
 
-            // we handled that page for all the lists that we have on
-            // this website, so drop it now
-            list_row->dropCell(key);
-            did_work |= 1; // since we delete an entry, we did something and we have to return did_work != 0
+        QSqlQuery qnext;
+        qnext.setForwardOnly(true);
+        qnext.prepare(qnext_str);
+        qnext.bindValue(":domain", site_key);
 
-            SNAP_LOG_TRACE("list is done working on this column.");
-
-            // limit the time on the 100 items to 1 minute
-            //
-            int64_t const loop_current_time(f_snap->get_current_date());
-            if(loop_current_time - loop_start_time > inner_loop_timeout)
-            {
-                continue_work = false;
-                break;
-            }
-        }
-
-        // run for a max. of 10 seconds
-        if(continue_work)
+        if(!qnext.exec())
         {
-            int64_t const loop_current_time(f_snap->get_current_date());
-            if(loop_current_time - loop_start_time > loop_timeout)
+            // the query failed
+            // (is this a fatal error?)
+            //
+            SNAP_LOG_WARNING("The MySQL SELECT query to retrieve journal entries failed. lastError=[")
+                            (qnext.lastError().text())
+                            ("], lastQuery=[")
+                            (qnext.lastQuery())
+                            ("]");
+        }
+        else
+        {
+            // in case field order changes on us, get the exact index from
+            // the record instead of guessing later
+            //
+            int const key_start_date_field_no(qnext.record().indexOf("key_start_date"));
+            int const status_field_no(qnext.record().indexOf("status"));
+
+            // it would certainly be possible to implement the following
+            // in SQL, but would it be faster?
+            //
+            while(qnext.next())
             {
-                //continue_work = false; -- no need to do this, we can just break
-                break;
+                // handle one page at a time
+                //
+                QVariant status_field(qnext.value(status_field_no));
+                if(status_field.isNull())
+                {
+                    // if no status, no work was done on that page yet
+                    // so we can use the key_start_date field
+                    //
+                    int64_t const key_start_date(qnext.value(key_start_date_field_no).toLongLong());
+                    if(key_start_date < f_date_limit)
+                    {
+                        f_date_limit = key_start_date;
+                    }
+                }
+                else
+                {
+                    // work was at least attempted on this page and it
+                    // failed, it has a 1 day delay and we have to use
+                    // the date in the status field instead
+                    //
+                    int64_t const status(status_field.toLongLong() + 86400LL * 1000000LL);
+                    if(status < f_date_limit)
+                    {
+                        f_date_limit = status;
+                    }
+                }
             }
         }
     }
-    while(continue_work);
 
     // clear our cache
     f_check_expressions.clear();

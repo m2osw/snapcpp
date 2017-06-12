@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplog_timer.h
+ *      snapwebsites/snaplog/src/snaplog_timer.h
  *
  * Description:
  *      Logger for the Snap! system. This service uses snapcommunicator to listen

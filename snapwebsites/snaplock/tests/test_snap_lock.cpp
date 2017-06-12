@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snap_lock.cpp
+ *      snapwebsites/snaplock/tests/snap_lock.cpp
  *
  * Description:
  *      Test the snap_lock class to make sure that the lock works

@@ -24,6 +24,27 @@ then
     chown snapwebsites:snapwebsites ${SECURELOGFILE}
     chmod 640 ${SECURELOGFILE}
 
+    # Create the directories used by the list plugin and backend
+    # The path should be read from the snapserver.conf file, but
+    # that's not too practical and it would probably not be changed
+    # by the administrator at the time the core plugins get installed
+    #
+    # Notice that the db is not accessible in writing mode by www-data
+    # because only the pagelist backend accesses that part of the data
+    #
+    SNAPLISTPATH=/var/lib/snapwebsites/list
+    mkdir -p ${SNAPLISTPATH}
+    chown snapwebsites:www-data ${SNAPLISTPATH}
+    chmod 775 ${SNAPLISTPATH}
+
+    mkdir -p ${SNAPLISTPATH}/journal
+    chown snapwebsites:www-data ${SNAPLISTPATH}/journal
+    chmod 775 ${SNAPLISTPATH}/journal
+
+    mkdir -p ${SNAPLISTPATH}/db
+    chown snapwebsites:snapwebsites ${SNAPLISTPATH}/db
+    chmod 755 ${SNAPLISTPATH}/db
+
     # Signal snapdbproxy since we just added new tables
     #
     # Note: test whether snapsignal is installed, it is not mandatory

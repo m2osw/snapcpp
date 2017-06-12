@@ -836,6 +836,52 @@ void snap_communicator_message::set_command(QString const & command)
  *
  * \sa verify_name()
  */
+void snap_communicator_message::add_parameter(QString const & name, char const * value)
+{
+    verify_name(name);
+
+    f_parameters[name] = QString::fromUtf8(value);
+    f_cached_message.clear();
+}
+
+
+/** \brief Add a string parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
+void snap_communicator_message::add_parameter(QString const & name, std::string const & value)
+{
+    verify_name(name);
+
+    f_parameters[name] = QString::fromUtf8(value.c_str());
+    f_cached_message.clear();
+}
+
+
+/** \brief Add a string parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
 void snap_communicator_message::add_parameter(QString const & name, QString const & value)
 {
     verify_name(name);
@@ -859,7 +905,76 @@ void snap_communicator_message::add_parameter(QString const & name, QString cons
  *
  * \sa verify_name()
  */
+void snap_communicator_message::add_parameter(QString const & name, int32_t value)
+{
+    verify_name(name);
+
+    f_parameters[name] = QString("%1").arg(value);
+    f_cached_message.clear();
+}
+
+
+/** \brief Add an integer parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
+void snap_communicator_message::add_parameter(QString const & name, uint32_t value)
+{
+    verify_name(name);
+
+    f_parameters[name] = QString("%1").arg(value);
+    f_cached_message.clear();
+}
+
+
+/** \brief Add an integer parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
 void snap_communicator_message::add_parameter(QString const & name, int64_t value)
+{
+    verify_name(name);
+
+    f_parameters[name] = QString("%1").arg(value);
+    f_cached_message.clear();
+}
+
+
+/** \brief Add an integer parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
+void snap_communicator_message::add_parameter(QString const & name, uint64_t value)
 {
     verify_name(name);
 

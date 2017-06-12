@@ -1,6 +1,6 @@
 #
 # File:
-#      plugins/list/CMakeLists.txt
+#      snapserver-core-plugins/src/list/CMakeLists.txt
 #
 # Description:
 #      Manage lists of pages. This plugin is used to generate lists of
@@ -54,7 +54,7 @@ snap_validate_js( list/list.js )
 
 add_library(list SHARED
     list.cpp
-    tests.cpp
+    #tests.cpp -- the test was exclusively to make sure the "list" and "listref" tables were fine, at this point it's useless
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     list/content.xml
@@ -65,14 +65,13 @@ add_library(list SHARED
     list/default-item-theme.xsl
 )
 
-target_link_libraries( list Qt5::Core )
+target_link_libraries(list
+    Qt5::Core
+    Qt5::Sql
+)
 
 install(
     TARGETS list LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
-)
-install(
-    FILES "list-tables.xml"
-    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/

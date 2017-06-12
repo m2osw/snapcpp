@@ -1,10 +1,10 @@
 /*
  * Text:
- *      snapwebsites/snaplog/snaplog.cpp
+ *      snaplog/src/snaplog.cpp
  *
  * Description:
  *      Logger for the Snap! system. This service uses snapcommunicator to
- *      listen to all "LOG" messages. It records each message into a MySQL
+ *      listen to all "SNAPLOG" messages. It records each message into a MySQL
  *      database for later retrieval, making reporting a lot easier for
  *      the admin.
  *
@@ -466,9 +466,9 @@ void snaplog::process_timeout()
 
         mysql_ready();
     }
-    catch(std::runtime_error const &)
+    catch(std::runtime_error const & e)
     {
-        SNAP_LOG_WARNING("Cannot connect to MySQL database: retrying...");
+        SNAP_LOG_WARNING("Cannot connect to MySQL database: retrying... (")(e.what())(")");
 
         // the connection failed, keep the timeout enabled and try again
         // on the next tick
@@ -490,7 +490,7 @@ void snaplog::mysql_ready()
     SNAP_LOG_INFO("MySQL database is ready to receive requests.");
 
     // TODO: We need something to do. Set a flag? We don't need to send anything
-    // across snapcomm like snapdbproxy does.
+    //       across snapcommunicator like snapdbproxy does.
 }
 
 
@@ -498,8 +498,11 @@ void snaplog::no_mysql()
 {
     SNAP_LOG_TRACE("no_mysql() called.");
 
-    f_timer->set_enable( true );
-    f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) * 1000000LL);
+    if(f_timer != nullptr)
+    {
+        f_timer->set_enable( true );
+        f_timer->set_timeout_delay(static_cast<int64_t>(f_mysql_connect_timer_index) * 1000000LL);
+    }
 }
 
 
@@ -521,7 +524,7 @@ void snaplog::add_message_to_db( snap::snap_communicator_message const & message
         SNAP_LOG_TRACE("parm {")(key)("} = [")(all_parms[key])("]");
     }
 #endif
-    const QString q_str("INSERT INTO snaplog.log "
+    QString const q_str("INSERT INTO snaplog.log "
             "(server, service, level, msgid, ipaddr, file, line, func, message ) "
             "VALUES "
             "(:server, :service, :level, :msgid, :ipaddr, :file, :line, :func, :message );");

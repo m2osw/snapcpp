@@ -1,0 +1,5 @@
+snaplistd (0.1.0.0) xenial; urgency=high
+
+  * Initial release of packaging.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 10 Jun 2017 13:02:36 -0700

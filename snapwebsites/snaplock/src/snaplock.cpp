@@ -221,7 +221,7 @@ namespace
 /** \brief Initializes a snaplock object.
  *
  * This function parses the command line arguments, reads configuration
- * files, setup the logger.
+ * files, setups the logger.
  *
  * It also immediately executes a --help or a --version command line
  * option and exits the process if these are present.
@@ -325,7 +325,7 @@ snaplock::snaplock(int argc, char * argv[])
     // make sure there are no standalone parameters
     if( f_opt.is_defined( "--" ) )
     {
-        std::cerr << "error: unexpected parameter found on daemon command line." << std::endl;
+        std::cerr << "error: unexpected parameter found on snaplock daemon command line." << std::endl;
         usage(advgetopt::getopt::status_t::error);
     }
 }
@@ -393,7 +393,7 @@ void snaplock::run()
     f_communicator->add_connection(f_interrupt);
 
     // create a messenger to communicate with the Snap Communicator process
-    // and snapinit as required
+    // and other services as required
     //
     if(f_opt.is_defined("list"))
     {
@@ -792,7 +792,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
         }
         else if(command == "STOP")
         {
-            // Someone is asking us to leave (probably snapinit)
+            // Someone is asking us to leave
             //
             stop(false);
             return;
@@ -1872,7 +1872,7 @@ void snaplock::tool_message(snap::snap_communicator_message const & message)
     case 'S':
         if(command == "STOP")
         {
-            // Someone is asking us to leave (probably snapinit)
+            // Someone is asking us to leave
             //
             stop(false);
             return;

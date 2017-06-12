@@ -1,8 +1,23 @@
-snapserver-core-plugins (1.0.116.5~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.117.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Updated the list plugin to make use of MySQL for the list
+    journaling (instead of Cassandra which blocks very quickly).
+  * Install the /var/lib/snapwebsites/list folders.
+  * Removed the tests for now, since these were 100% relying on the list
+    and listref tables, which are now gone.
+  * Added the listdata_connection so the listjournal backend can run use
+    that class to send all the journal data to the pagelist backend.
+  * Changed the on_modified_content() to save new entries to the local
+    journal instead of the Cassandra.
+  * The list plugin run by a client now pings the listjournal backend
+    whenever the journal gets updated.
+  * Changed the generate_all_lists() to use the MySQL table instead of
+    the Cassandra list and listref tables.
+  * Changed the logic to make use of 3 simple SELECT and not one large
+    SELECT of all the data. (1) get high priority, (2) if no high priority,
+    get low priority, (3) get date and time for next wakeup.
 
- -- Build Server <build@m2osw.com>  Wed, 07 Jun 2017 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue,  7 Jun 2017 00:13:29 -0800
 
 snapserver-core-plugins (1.0.116.0~xenial) xenial; urgency=high
 

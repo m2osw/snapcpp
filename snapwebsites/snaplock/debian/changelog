@@ -1,8 +1,8 @@
-snaplock (1.0.15.121~xenial) xenial; urgency=high
+snaplock (1.0.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Various cleanups.
 
- -- Build Server <build@m2osw.com>  Wed, 15 Feb 2017 02:00:57 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 17:27:50 -0800
 
 snaplock (1.0.15.0~xenial) xenial; urgency=high
 

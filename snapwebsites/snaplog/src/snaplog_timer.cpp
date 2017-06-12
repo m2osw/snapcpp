@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplog_timer.cpp
+ *      snapwebsites/snaplog/src/snaplog_timer.cpp
  *
  * Description:
  *
@@ -43,9 +43,9 @@
  * \brief Create and handle timers
  */
 
-snaplog_timer::snaplog_timer(snaplog * proxy)
+snaplog_timer::snaplog_timer(snaplog * sl)
     : snap_timer(0)  // run immediately
-    , f_snaplog(proxy)
+    , f_snaplog(sl)
 {
     set_name("snaplog timer");
 }

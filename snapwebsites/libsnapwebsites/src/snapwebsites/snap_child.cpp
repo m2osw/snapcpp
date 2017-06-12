@@ -2485,7 +2485,7 @@ snap_child::~snap_child()
  * "exact" current date instead of the start date. This function
  * can be used in those rare cases.
  *
- * This function does not modified the start date of the current process.
+ * This function does not modify the start date of the current process.
  *
  * \sa init_start_date()
  * \sa get_start_date()
@@ -6344,12 +6344,38 @@ bool snap_child::is_core_plugin(QString const & name) const
  */
 QString snap_child::get_server_parameter(QString const & name)
 {
+#ifdef DEBUG
+    if(name.isEmpty())
+    {
+        throw snap_logic_exception("get_server_parameter() called with an empty string as the name of the parameter to be retrieved");
+    }
+#endif
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
     return server->get_parameter(name);
+}
+
+
+/** \brief Retrieve the path to the list data.
+ *
+ * This function retrieve the path to the data used by the list environment.
+ * The list plugin and backends make use of this path to handle the
+ * journal and database that they manage.
+ *
+ * By default the path is `"/var/lib/snapwebsites/list"`.
+ *
+ * \return The path to the list data directory.
+ */
+QString snap_child::get_list_data_path()
+{
+    QString const path(get_server_parameter(get_name(name_t::SNAP_NAME_CORE_LIST_DATA_PATH)));
+
+    // not defined by end user, return the default value
+    //
+    return path.isEmpty() ? "/var/lib/snapwebsites/list" : path;
 }
 
 

@@ -96,7 +96,7 @@ private:
     bool                                    f_force_restart             = false;
     bool                                    f_stop_received             = false;
     bool                                    f_debug                     = false;
-    float                                   f_mysql_connect_timer_index = 1.25f;
+    float                                   f_mysql_connect_timer_index = 1.625f;
 };
 
 

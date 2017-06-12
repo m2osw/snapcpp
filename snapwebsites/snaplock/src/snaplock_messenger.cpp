@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snaplock_messenger.cpp
+ *      snapwebsites/snaplock/src/snaplock_messenger.cpp
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers
@@ -102,10 +102,6 @@ void snaplock_messenger::process_message(snap::snap_communicator_message const &
  * connect to the snapcommunicator server. This could be
  * because snapcommunicator is not running or because the
  * configuration information for the snaplock is wrong...
- *
- * With snapinit the snapcommunicator should always already
- * be running so this error should not happen once everything
- * is properly setup.
  *
  * \param[in] error_message  An error message.
  */
