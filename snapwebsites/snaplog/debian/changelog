@@ -1,3 +1,9 @@
+snaplog (1.0.12.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 12 Jun 2017 02:00:52 -0700
+
 snaplog (1.0.12.0~xenial) xenial; urgency=high
 
   * EX-131: Removed the purging of MySQL on a purge of snaplog because the
