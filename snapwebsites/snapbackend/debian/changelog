@@ -1,20 +1,14 @@
-snapbackend (1.0.19.8~xenial) xenial; urgency=high
+snapbackend (1.0.20.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Adding the new `listjournal` backend.
 
- -- Build Server <build@m2osw.com>  Wed, 07 Jun 2017 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2016 11:25:37 -0800
 
 snapbackend (1.0.19.1~xenial) xenial; urgency=high
 
   * Added broadcast for backend status.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 06 Jun 2017 15:04:43 -0700
-
-snapbackend (1.0.18.140~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sat, 21 Jan 2017 17:55:05 -0800
 
 snapbackend (1.0.18.0~xenial) xenial; urgency=high
 

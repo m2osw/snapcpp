@@ -63,11 +63,12 @@ struct backend_services
     int                 f_nice = 0;
 };
 
-backend_services g_services[4] = {
-        { "snapbackend",  "/usr/bin/snapbackend", false,  5 },
-        { "snapimages",   "/usr/bin/snapbackend", true,  10 },
-        { "snappagelist", "/usr/bin/snapbackend", true,   3 },
-        { "snapsendmail", "/usr/bin/snapbackend", true,   7 }
+backend_services g_services[5] = {
+        { "snapbackend",        "/usr/bin/snapbackend", false,  5 },
+        { "snapimages",         "/usr/bin/snapbackend", true,  10 },
+        { "snaplistjournal",    "/usr/bin/snapbackend", true,   3 },
+        { "snappagelist",       "/usr/bin/snapbackend", true,   3 },
+        { "snapsendmail",       "/usr/bin/snapbackend", true,   7 }
     };
 
 
