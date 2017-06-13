@@ -1,3 +1,9 @@
+snapbackend (1.0.21.0~xenial) xenial; urgency=high
+
+  * EX-131: Fixed the name from snaplistd to snaplistjournal in .install file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2016 11:25:37 -0800
+
 snapbackend (1.0.20.0~xenial) xenial; urgency=high
 
   * EX-131: Adding the new `listjournal` backend.
