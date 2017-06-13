@@ -1,8 +1,8 @@
-snaplog (1.0.12.2~xenial) xenial; urgency=high
+snaplog (1.0.13.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Fixed the root password filename.
 
- -- Build Server <build@m2osw.com>  Mon, 12 Jun 2017 02:00:52 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2017 09:24:36 -0700
 
 snaplog (1.0.12.0~xenial) xenial; urgency=high
 

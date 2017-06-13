@@ -1,8 +1,8 @@
-snaplistd (0.1.1.1~xenial) xenial; urgency=high
+snaplistd (0.1.2.0) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Fixed the root password filename.
 
- -- Build Server <build@m2osw.com>  Tue, 13 Jun 2017 02:00:54 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2017 09:24:36 -0700
 
 snaplistd (0.1.1.0) xenial; urgency=high
 

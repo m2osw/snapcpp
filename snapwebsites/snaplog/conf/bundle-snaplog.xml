@@ -30,13 +30,13 @@
     chown root.root ${PRIVATE_DIR}
     chmod 0700 ${PRIVATE_DIR}
 
-    if test ! -f ${PRIVATE_DIR}/snaplog_password.sh
+    if test ! -f ${PRIVATE_DIR}/root_password.sh
     then
       # Create the passwords we will use
       #
       ROOT_PASSWORD=`pwgen -cns 20`
 
-      echo "ROOT_PASSWORD=${ROOT_PASSWORD}" &gt; ${PRIVATE_DIR}/snaplog_password.sh
+      echo "ROOT_PASSWORD=${ROOT_PASSWORD}" &gt; ${PRIVATE_DIR}/root_password.sh
 
       # Lastly, set the root password in debconf, so it won't ask for it when
       # creating the database first time
@@ -51,7 +51,7 @@
     # Create the snaplog user and snaplog database
     #
     PRIVATE_DIR=/var/lib/snapwebsites/private
-    source ${PRIVATE_DIR}/snaplog_password.sh
+    source ${PRIVATE_DIR}/root_password.sh
     mysql --user=root --password="${ROOT_PASSWORD}" &lt;&lt;EOF
 CREATE USER 'snaplog'@'localhost' IDENTIFIED BY 'snaplog';
 GRANT SELECT, INSERT, UPDATE, DELETE ON snaplog.* TO 'snaplog'@'localhost';
@@ -81,8 +81,8 @@ EOF
   <postrm>
     #apt purge -y "mysql-server-*"
     #rm -rf /var/lib/mysql
-    PRIVATE_DIR=/var/lib/snapwebsites/private
-    rm ${PRIVATE_DIR}/snaplog_password.sh
+    #PRIVATE_DIR=/var/lib/snapwebsites/private
+    #rm ${PRIVATE_DIR}/root_password.sh
   </postrm>
 </bundle>
 <!--
