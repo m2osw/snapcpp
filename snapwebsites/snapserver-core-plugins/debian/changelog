@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.118.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 13 Jun 2017 02:00:54 -0700
+
 snapserver-core-plugins (1.0.118.0~xenial) xenial; urgency=high
 
   * EX-131: Make use of the new column and index to find when the next wake
