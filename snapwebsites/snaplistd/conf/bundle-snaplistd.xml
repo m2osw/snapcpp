@@ -7,7 +7,14 @@
 <bundle>
   <name>snaplistd</name>
   <description>
-    <p>This bundle installs the 'snaplistd' package, which includes a MySQL database.</p>
+    <p>
+      This bundle installs the 'snaplistd' package, which includes a
+      MySQL database. This bundle is expected to be installed on the
+      backend along the 'pagelist' backend. (Most often, also along
+      the 'snaplog' daemon which also makes use of MySQL.)<br/>
+      The MySQL Host Address is 127.0.0.1 by default. If you place
+      MySQL on a separate computer, then use that computer IP address.
+    </p>
   </description>
   <fields>
     <field name="host" type="input">
