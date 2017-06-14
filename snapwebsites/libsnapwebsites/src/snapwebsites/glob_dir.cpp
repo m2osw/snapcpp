@@ -33,17 +33,17 @@ glob_dir::glob_dir()
 }
 
 
-glob_dir::glob_dir( QString const & path )
+glob_dir::glob_dir( QString const & path, int const flags )
 {
-    set_path( path );
+    set_path( path, flags );
 }
 
 
-void glob_dir::set_path( QString const& path )
+void glob_dir::set_path( QString const& path, int const flags )
 {
     f_dir = glob_pointer_t( new glob_t );
     *f_dir = glob_t();
-    int const r(glob(path.toUtf8().data(), GLOB_NOESCAPE, glob_err_callback, f_dir.get()));
+    int const r(glob(path.toUtf8().data(), flags, glob_err_callback, f_dir.get()));
     if(r != 0)
     {
         // do nothing when errors occur
@@ -67,7 +67,7 @@ void glob_dir::set_path( QString const& path )
                 err_msg = QString("unknown glob() error code: %1.").arg(r);
                 break;
         }
-        throw snap_io_exception( err_msg );
+        throw glob_dir_exception( r, err_msg );
     }
 }
 

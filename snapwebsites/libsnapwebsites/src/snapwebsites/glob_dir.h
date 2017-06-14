@@ -17,6 +17,8 @@
 //
 #pragma once
 
+#include <snapwebsites/snap_exception.h>
+
 #include <QString>
 
 #include <functional>
@@ -27,14 +29,29 @@
 namespace snap
 {
 
+class glob_dir_exception : public snap_exception
+{
+public:
+    // no sub-name
+    explicit glob_dir_exception(int const error_num, char const *        what_msg) : snap_exception(what_msg), f_error_num(error_num) {}
+    explicit glob_dir_exception(int const error_num, std::string const & what_msg) : snap_exception(what_msg), f_error_num(error_num) {}
+    explicit glob_dir_exception(int const error_num, QString const &     what_msg) : snap_exception(what_msg), f_error_num(error_num) {}
+
+    int get_error_num() const { return f_error_num; }
+
+private:
+    int f_error_num = -1;
+};
+
+
 class glob_dir
 {
 public:
     glob_dir();
 
-    glob_dir( QString const & path );
+    glob_dir( QString const & path, int const flags = 0 );
 
-    void set_path( QString const& path );
+    void set_path( QString const& path, int const flags = 0 );
 
     void enumerate_glob( std::function<void (QString path)> func );
 

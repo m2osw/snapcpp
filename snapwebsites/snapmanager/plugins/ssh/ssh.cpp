@@ -26,6 +26,7 @@
 // snapwebsites lib
 //
 #include <snapwebsites/chownnm.h>
+#include <snapwebsites/glob_dir.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/mkdir_p.h>
 #include <snapwebsites/not_reached.h>
@@ -34,10 +35,6 @@
 // C++ lib
 //
 #include <fstream>
-
-// C lib
-//
-#include <glob.h>
 
 // QtCore
 //
@@ -347,56 +344,35 @@ void ssh::on_retrieve_status(snap_manager::server_status & server_status)
             );
     server_status.set_field(password_auth);
 
-
     // we want one field per user on the system, at this point we
     // assume that the system does not have hundreds of users since
     // only a few admins should be permitted on those computers
     // anyway...
     //
-    glob_t dir = glob_t();
-    int const r(glob(
-                  "/home/*"
-                , GLOB_NOESCAPE
-                , glob_error_callback
-                , &dir));
-    std::shared_ptr<glob_t> ai(&dir, glob_deleter);
-
-    if(r != 0)
+    glob_dir    dir;
+    try
     {
-        // do nothing when errors occur
-        //
-        switch(r)
-        {
-        case GLOB_NOSPACE:
-            SNAP_LOG_ERROR("ssh.cpp: glob() did not have enough memory to alllocate its buffers.");
-            break;
-
-        case GLOB_ABORTED:
-            SNAP_LOG_ERROR("ssh.cpp: glob() was aborted after a read error.");
-            break;
-
-        case GLOB_NOMATCH:
-            SNAP_LOG_ERROR("ssh.cpp: glob() could not find any users on this computer.");
-            break;
-
-        default:
-            SNAP_LOG_ERROR("ssh.cpp: unknown glob() error code: ")(r)(".");
-            break;
-
-        }
-
-        // do not create any fields on error
+        dir.set_path( "/home/*", GLOB_NOESCAPE );
+    }
+    catch( std::exception const & x )
+    {
+        SNAP_LOG_ERROR("Exception caught! what=")(x.what());
+        return;
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("Unknown exception caught!");
         return;
     }
 
     // check each user
     // (TBD: how to "blacklist" some users so they do not appear here?)
     //
-    for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+    dir.enumerate_glob( [&]( QString path )
     {
         // TODO: replace the direct handling of the file with a file_content object
         //
-        std::string const home_path(dir.gl_pathv[idx]);
+        std::string const home_path(path.toUtf8().data());
         std::string const user_name(home_path.substr(6));
         std::string const authorized_keys_path(home_path + "/.ssh/authorized_keys");
         std::ifstream authorized_keys_in;
@@ -446,7 +422,7 @@ void ssh::on_retrieve_status(snap_manager::server_status & server_status)
                             , QString());
             server_status.set_field(rsa_key);
         }
-    }
+    });
 }
 
 

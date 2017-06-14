@@ -17,13 +17,12 @@
 
 #include "snapwebsites/snap_tables.h"
 
+#include "snapwebsites/glob_dir.h"
 #include "snapwebsites/log.h"
 #include "snapwebsites/not_used.h"
 
 #include <QFile>
 #include <QDomDocument>
-
-#include <glob.h>
 
 #include "snapwebsites/poison.h"
 
@@ -34,12 +33,6 @@ namespace snap
 
 namespace
 {
-
-
-void glob_deleter(glob_t * g)
-{
-    globfree(g);
-}
 
 
 struct model_name_value_t
@@ -126,25 +119,29 @@ bool snap_tables::load(QString const & path)
     // create the pattern
     //
     QString const pattern(QString("%1/*.xml").arg(path));
-    QByteArray pattern_utf8(pattern.toUtf8());
 
     // read the list of files
     //
-    glob_t files;
-    memset(&files, 0, sizeof(glob_t));
-    int const r(glob(pattern_utf8.data(), GLOB_ERR | GLOB_NOSORT | GLOB_NOESCAPE, NULL, &files));
-    std::shared_ptr<glob_t> ai(&files, glob_deleter);
-    if(r != 0)
-    {
-        // TODO: write an actual message instead of 'r'
-        SNAP_LOG_ERROR("could not read \"")(pattern)("\" (glob() returned ")(r)(")");
-        return false;
-    }
-
     bool success(true);
-    for(size_t idx(0); idx < files.gl_pathc; ++idx)
+
+    try
     {
-        success = success && load_xml(files.gl_pathv[idx]);
+        glob_dir files;
+        files.set_path( pattern, GLOB_ERR | GLOB_NOSORT | GLOB_NOESCAPE );
+        files.enumerate_glob( [&]( QString the_path )
+        {
+            success = success && load_xml(the_path);
+        });
+    }
+    catch( std::exception const & x)
+    {
+        SNAP_LOG_ERROR("could not read \"")(pattern)("\" (what=")(x.what())(")!");
+        success = false;
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("could not read \"")(pattern)("\"!");
+        success = false;
     }
 
     return success;
