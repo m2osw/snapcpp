@@ -66,7 +66,7 @@ add_library(list SHARED
     list/default-item-theme.xsl
 
     # xml and other content files
-    content-tables.xml
+    list-tables.xml
 
     # Qt resources
     ${SNAP_MANAGER_MOC_CXX}
