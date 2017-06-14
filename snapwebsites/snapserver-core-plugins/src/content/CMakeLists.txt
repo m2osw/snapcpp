@@ -78,7 +78,8 @@ target_link_libraries(content
 )
 
 install(
-    TARGETS content LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS content
+    LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     FILES "content-tables.xml"

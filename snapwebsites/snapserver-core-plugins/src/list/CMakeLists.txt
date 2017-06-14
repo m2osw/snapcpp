@@ -54,15 +54,23 @@ snap_validate_js( list/list.js )
 
 add_library(list SHARED
     list.cpp
+
     #tests.cpp -- the test was exclusively to make sure the "list" and "listref" tables were fine, at this point it's useless
-    ${SNAP_MANAGER_MOC_CXX}
-    ${SNAP_MANAGER_RESOURCES_RCC}
+
+    # data files
     list/content.xml
     list/list.js
     list/default-list-body.xsl
     list/default-list-theme.xsl
     list/default-item-body.xsl
     list/default-item-theme.xsl
+
+    # xml and other content files
+    content-tables.xml
+
+    # Qt resources
+    ${SNAP_MANAGER_MOC_CXX}
+    ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
 target_link_libraries(list
@@ -71,7 +79,12 @@ target_link_libraries(list
 )
 
 install(
-    TARGETS list LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS list
+    LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+)
+install(
+    FILES "list-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
