@@ -197,7 +197,8 @@ void snap_cassandra::create_table_list()
 
         // does table exist?
         QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-        if(!table)
+        if(!table
+        && !s.second.get_drop())
         {
             SNAP_LOG_INFO("creating table \"")(table_name)("\"");
 
@@ -464,6 +465,14 @@ void snap_cassandra::create_table_list()
                 SNAP_LOG_TRACE("Marking a pause while schema gets synchronized after a CREATE TABLE.");
                 sleep(10);
             }
+        }
+        else if(table
+             && s.second.get_drop())
+        {
+            SNAP_LOG_INFO("droping table \"")(table_name)("\"");
+
+            table.reset(); // lose that reference
+            context->dropTable(table_name);
         }
     }
 

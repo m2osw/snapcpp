@@ -1,14 +1,9 @@
-libsnapwebsites (1.2.4.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Mon, 12 Jun 2017 02:00:51 -0700
-
 libsnapwebsites (1.2.4.0~xenial) xenial; urgency=high
 
   * EX-131: added get_list_data_path() to support snaplistd.
   * Added various names to support snaplistd.
   * Added several add_parameter() to the message class to support std::string.
+  * Fixed 3 bugs in the QtCassandra library, tests were inverted.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 17:22:29 -0800
 

@@ -669,7 +669,7 @@ void QCassandraContext::update()
     alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     alter_keyspace.setClearClusterDescription(true);
     QCassandraOrderResult const alter_keyspace_result(parentCassandra()->proxy()->sendOrder(alter_keyspace));
-    if(alter_keyspace_result.succeeded())
+    if(!alter_keyspace_result.succeeded())
     {
         throw QCassandraException("keyspace creation failed");
     }
@@ -708,7 +708,7 @@ void QCassandraContext::drop()
     drop_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     drop_keyspace.setClearClusterDescription(true);
     QCassandraOrderResult const drop_keyspace_result(parentCassandra()->proxy()->sendOrder(drop_keyspace));
-    if(drop_keyspace_result.succeeded())
+    if(!drop_keyspace_result.succeeded())
     {
         throw QCassandraException("drop keyspace failed");
     }
@@ -752,7 +752,7 @@ void QCassandraContext::dropTable(const QString& table_name)
     drop_table.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     drop_table.setClearClusterDescription(true);
     QCassandraOrderResult const drop_table_result(parentCassandra()->proxy()->sendOrder(drop_table));
-    if(drop_table_result.succeeded())
+    if(!drop_table_result.succeeded())
     {
         throw QCassandraException("drop table failed");
     }
