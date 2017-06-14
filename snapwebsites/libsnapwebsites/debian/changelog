@@ -1,3 +1,12 @@
+libsnapwebsites (1.2.5.0~xenial) xenial; urgency=high
+
+  * EX-131: dropping the "list" table is not unlikely to timeout, we added
+    a try/catch to ignore the problem since 99% of the time it won't be
+    a problem at all (i.e. the table is dropped, the cluster is just a
+    bit slow in letting us know and the client times out.)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 14 Jun 2017 12:00:41 -0800
+
 libsnapwebsites (1.2.4.0~xenial) xenial; urgency=high
 
   * EX-131: added get_list_data_path() to support snaplistd.

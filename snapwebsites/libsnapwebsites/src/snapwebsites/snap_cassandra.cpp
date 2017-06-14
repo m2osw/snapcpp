@@ -472,7 +472,18 @@ void snap_cassandra::create_table_list()
             SNAP_LOG_INFO("droping table \"")(table_name)("\"");
 
             table.reset(); // lose that reference
-            context->dropTable(table_name);
+            try
+            {
+                // this can take forever and it will work just fine, but
+                // the Cassandra cluster is likely to timeout on us
+                // and throw an error so we use a try/catch
+                //
+                context->dropTable(table_name);
+            }
+            catch(QtCassandra::QCassandraException const & e)
+            {
+                SNAP_LOG_WARNING("an exception was raised with \"")(e.what())("\"");
+            }
         }
     }
 
