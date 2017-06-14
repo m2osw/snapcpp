@@ -29,7 +29,8 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snaplistd
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, snapcommunicator
+Depends: ${shlibs:Depends}, ${misc:Depends},
+    snapcommunicator, libqt5sql5, libqt5sql5-mysql
 Suggests: snaplistd-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
