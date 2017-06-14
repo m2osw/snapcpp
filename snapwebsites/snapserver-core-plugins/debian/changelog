@@ -1,8 +1,8 @@
-snapserver-core-plugins (1.0.118.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.119.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Added the missing dependencies on qt5sql5[-mysql].
 
- -- Build Server <build@m2osw.com>  Tue, 13 Jun 2017 02:00:54 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 23:05:29 -0800
 
 snapserver-core-plugins (1.0.118.0~xenial) xenial; urgency=high
 
