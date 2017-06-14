@@ -483,6 +483,7 @@ void snap_cassandra::create_table_list()
             catch(QtCassandra::QCassandraException const & e)
             {
                 SNAP_LOG_WARNING("an exception was raised with \"")(e.what())("\"");
+                sleep(10);
             }
         }
     }

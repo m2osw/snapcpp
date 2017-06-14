@@ -750,6 +750,7 @@ void QCassandraContext::dropTable(const QString& table_name)
 
     QCassandraOrder drop_table;
     drop_table.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    drop_table.setTimeout(5 * 60 * 1000);
     drop_table.setClearClusterDescription(true);
     QCassandraOrderResult const drop_table_result(parentCassandra()->proxy()->sendOrder(drop_table));
     if(!drop_table_result.succeeded())

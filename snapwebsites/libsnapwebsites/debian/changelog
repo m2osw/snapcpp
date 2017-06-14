@@ -1,3 +1,9 @@
+libsnapwebsites (1.2.6.0~xenial) xenial; urgency=high
+
+  * EX-131: DROP TABLE should have had a timeout of 5min. like the CREATE TABLE.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 14 Jun 2017 14:00:14 -0800
+
 libsnapwebsites (1.2.5.0~xenial) xenial; urgency=high
 
   * EX-131: dropping the "list" table is not unlikely to timeout, we added
