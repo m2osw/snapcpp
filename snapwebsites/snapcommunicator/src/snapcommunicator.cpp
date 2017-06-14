@@ -23,6 +23,7 @@
 //
 #include <snapwebsites/addr.h>
 #include <snapwebsites/chownnm.h>
+#include <snapwebsites/glob_dir.h>
 #include <snapwebsites/loadavg.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/mkdir_p.h>
@@ -44,7 +45,6 @@
 
 // C lib
 //
-#include <glob.h>
 #include <grp.h>
 #include <pwd.h>
 #include <sys/resource.h>
@@ -272,40 +272,6 @@ QString canonicalize_neighbors(QString const & neighbors)
     }
 
     return list.join(",");
-}
-
-
-
-/** \brief Capture the glob pointer in a shared pointer, this deletes it.
- *
- * This function is used to RAII the pointer returned by glob.
- *
- * \param[in] g  The glob pointer.
- */
-void glob_deleter(glob_t * g)
-{
-    globfree(g);
-}
-
-
-/** \brief Capture errors happening while glob() is running.
- *
- * This function gets called whenever glob() encounters an I/O error.
- *
- * \return 0 asking for glob() to stop ASAP.
- */
-int glob_error_callback(const char * epath, int eerrno)
-{
-    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-                  (epath)
-                  ("\". Got error: ")
-                  (eerrno)
-                  (", ")
-                  (strerror(eerrno))
-                  (".");
-
-    // do not abort on a directory read error...
-    return 0;
 }
 
 
@@ -1960,6 +1926,7 @@ void snap_communicator_server::init()
             path_to_services = "/usr/share/snapwebsites/services";
         }
         path_to_services += "/*.service";
+#if 0
         QByteArray pattern(path_to_services.toUtf8());
         glob_t dir = glob_t();
         int const r(glob(
@@ -2026,6 +1993,77 @@ void snap_communicator_server::init()
             //
             f_local_services = f_local_services_list.keys().join(",");
         }
+#else
+        try
+        {
+            snap::glob_dir dir( path_to_services, GLOB_NOESCAPE );
+
+            // we have some local services (note that snapcommunicator is
+            // not added as a local service)
+            //
+            dir.enumerate_glob( [&]( QString path )
+            {
+                // TODO: change away from C-lib stuff and use QString methods.
+                //
+                char const * p_path( path.toUtf8().data() );
+                char const * basename(strrchr(p_path, '/'));
+                if( basename == nullptr )
+                {
+                    basename = p_path;
+                }
+                else
+                {
+                    ++basename;
+                }
+                char const * end(strstr(basename, ".service"));
+                if(end == nullptr)
+                {
+                    end = basename + strlen(basename);
+                }
+                QString const key(QString::fromUtf8(basename, end - basename));
+                f_local_services_list[key] = true;
+            });
+
+            // the list of local services cannot (currently) change while
+            // snapcommunicator is running so generate the corresponding
+            // string once
+            //
+            f_local_services = f_local_services_list.keys().join(",");
+        }
+        catch( snap::glob_dir_exception const & x )
+        {
+            switch( int const r = x.get_error_num() )
+            {
+            case GLOB_NOSPACE:
+                SNAP_LOG_FATAL("glob_dir did not have enough memory to alllocate its buffers.");
+                throw snap::snap_exception("glob_dir did not have enough memory to alllocate its buffers.");
+
+            case GLOB_ABORTED:
+                SNAP_LOG_FATAL("glob_dir was aborted after a read error.");
+                throw snap::snap_exception("glob_dir was aborted after a read error.");
+
+            case GLOB_NOMATCH:
+                // this is a legal case, absolutely no local services...
+                //
+                SNAP_LOG_DEBUG("glob_dir could not find any status information.");
+                break;
+
+            default:
+                SNAP_LOG_FATAL(QString("unknown glob_dir error code: %1.").arg(r));
+                throw snap::snap_exception(QString("unknown glob_dir error code: %1.").arg(r));
+            }
+        }
+        catch( std::exception const & x )
+        {
+            SNAP_LOG_FATAL( QString("Exception caught! what=[%1].").arg(x.what()) );
+            throw;
+        }
+        catch( ... )
+        {
+            SNAP_LOG_FATAL("Unknown exception caught!");
+            throw snap::snap_exception("Unknown exception caught!");
+        }
+#endif
     }
 
     f_communicator = snap::snap_communicator::instance();

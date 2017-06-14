@@ -22,6 +22,7 @@
 // snapwebsites lib
 //
 #include <snapwebsites/addr.h>
+#include <snapwebsites/glob_dir.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/mkdir_p.h>
 #include <snapwebsites/not_reached.h>
@@ -30,7 +31,6 @@
 
 // C lib
 //
-#include <glob.h>
 #include <signal.h>
 
 // C++ lib
@@ -71,25 +71,6 @@ namespace
 
 manager::pointer_t g_instance;
 
-
-void glob_deleter(glob_t * g)
-{
-    globfree(g);
-}
-
-int glob_error_callback(const char * epath, int eerrno)
-{
-    SNAP_LOG_ERROR("an error occurred while reading directory under \"")
-                  (epath)
-                  ("\". Got error: ")
-                  (eerrno)
-                  (", ")
-                  (strerror(eerrno))
-                  (".");
-
-    // do not abort on a directory read error...
-    return 0;
-}
 
 /** \brief List of configuration files one can create to define parameters.
  *
@@ -517,46 +498,22 @@ std::vector<std::string> manager::read_filenames(std::string const & pattern) co
 {
     std::vector<std::string> result;
 
-    glob_t dir = glob_t();
-    int const r(glob(
-                  pattern.c_str()
-                , GLOB_NOESCAPE
-                , glob_error_callback
-                , &dir));
-    std::shared_ptr<glob_t> ai(&dir, glob_deleter);
-
-    if(r != 0)
+    try
     {
-        // do nothing when errors occur
-        //
-        switch(r)
+        snap::glob_dir files;
+        files.set_path( pattern.c_str(), GLOB_NOESCAPE );
+        files.enumerate_glob( [&]( QString the_path )
         {
-        case GLOB_NOSPACE:
-            SNAP_LOG_ERROR("glob() did not have enough memory to alllocate its buffers.");
-            break;
-
-        case GLOB_ABORTED:
-            SNAP_LOG_ERROR("glob() was aborted after a read error.");
-            break;
-
-        case GLOB_NOMATCH:
-            SNAP_LOG_ERROR("glob() could not find any status information.");
-            break;
-
-        default:
-            SNAP_LOG_ERROR("unknown glob() error code: ")(r)(".");
-            break;
-
-        }
+            result.push_back(the_path.toUtf8().data());
+        });
     }
-    else
+    catch( std::exception const & x)
     {
-        // copy the list from the output of glob()
-        //
-        for(size_t idx(0); idx < dir.gl_pathc; ++idx)
-        {
-            result.push_back(dir.gl_pathv[idx]);
-        }
+        SNAP_LOG_ERROR("could not read \"")(pattern)("\" (what=")(x.what())(")!");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_ERROR("could not read \"")(pattern)("\"!");
     }
 
     return result;

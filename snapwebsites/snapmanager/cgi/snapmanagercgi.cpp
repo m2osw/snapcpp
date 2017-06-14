@@ -1971,7 +1971,7 @@ void manager_cgi::get_cluster_status(QDomDocument doc, QDomElement output)
     QString err_msg;
     try
     {
-        the_glob.set_path( QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data() );
+        the_glob.set_path( QString("%1/*.db").arg(f_cluster_status_path).toUtf8().data(), GLOB_NOESCAPE );
     }
     catch( std::exception const & x )
     {
