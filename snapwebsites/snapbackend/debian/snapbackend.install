@@ -1,4 +1,4 @@
 usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
-conf/snapbackend.timer conf/snapimages.service conf/snappagelist.service conf/snapsendmail.service lib/systemd/system/
+conf/snapbackend.timer conf/snapimages.service conf/snaplistjournal.service conf/snappagelist.service conf/snapsendmail.service lib/systemd/system/

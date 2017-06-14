@@ -22,7 +22,7 @@ then
 
     systemctl daemon-reload
 
-    for pkg in snapsendmail snapimages snappagelist
+    for pkg in snapimages snaplistjournal snappagelist snapsendmail
     do
         if systemctl -q is-enabled ${pkg}
         then

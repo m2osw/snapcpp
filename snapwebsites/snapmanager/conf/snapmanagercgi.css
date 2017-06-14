@@ -1,7 +1,7 @@
 /*
  * Name: snapmanagercgi.css
  * Layout: default
- * Version: 0.3
+ * Version: 0.4
  * Browsers: all
  * Copyright: Copyright 2017 (c) Made to Order Software Inc.
  * License: GPLv2
@@ -89,6 +89,15 @@ input[type="input"]
 button
 {
     margin: 5px 10px;
+}
+.ui-state-active a,
+.ui-state-active a:link,
+.ui-state-active a:visited
+{
+    /* jquery-ui.css set this one to white, which on bright yellow does not
+     * work well.
+     */
+    color: black;
 }
 
 /* vim: ts=4 sw=4 et

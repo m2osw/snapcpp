@@ -1,8 +1,22 @@
-snaplistd (0.1.0.1~xenial) xenial; urgency=high
+snaplistd (0.1.3.0) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Added the missing SQL dependencies to the binary.
 
- -- Build Server <build@m2osw.com>  Mon, 12 Jun 2017 02:00:51 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2017 17:12:36 -0700
+
+snaplistd (0.1.2.0) xenial; urgency=high
+
+  * EX-131: Fixed the root password filename.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2017 09:24:36 -0700
+
+snaplistd (0.1.1.0) xenial; urgency=high
+
+  * EX-131: Put a virtual column of the status or key_start_date so we can
+    get one row to know what comes next. MySQL will do the work of computing
+    the next row using a BTREE index.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 23:04:36 -0700
 
 snaplistd (0.1.0.0) xenial; urgency=high
 

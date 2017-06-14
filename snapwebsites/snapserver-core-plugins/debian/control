@@ -51,7 +51,7 @@ Architecture: any
 # bundle for more details; we suggest it in case a programmer installs the
 # package on his machine without using bundles...
 Depends: ${shlibs:Depends}, ${misc:Depends}, html2text,
-    libqrencode3 (>= 3.4), snapbase
+    libqrencode3 (>= 3.4), snapbase, libqt5sql5, libqt5sql5-mysql
 Recommends: snapserver
 Suggests: clamav
 Description: Fast Websites: powerful CMS for Apache written in C++.

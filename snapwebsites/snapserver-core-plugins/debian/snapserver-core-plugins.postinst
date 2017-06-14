@@ -29,18 +29,16 @@ then
     # that's not too practical and it would probably not be changed
     # by the administrator at the time the core plugins get installed
     #
-    # Notice that the db is not accessible in writing mode by www-data
-    # because only the pagelist backend accesses that part of the data
-    #
     SNAPLISTPATH=/var/lib/snapwebsites/list
     mkdir -p ${SNAPLISTPATH}
-    chown snapwebsites:www-data ${SNAPLISTPATH}
+    chown snapwebsites:snapwebsites ${SNAPLISTPATH}
     chmod 775 ${SNAPLISTPATH}
 
     mkdir -p ${SNAPLISTPATH}/journal
-    chown snapwebsites:www-data ${SNAPLISTPATH}/journal
+    chown snapwebsites:snapwebsites ${SNAPLISTPATH}/journal
     chmod 775 ${SNAPLISTPATH}/journal
 
+    # we are not using .../db yet, instead we are using MySQL
     mkdir -p ${SNAPLISTPATH}/db
     chown snapwebsites:snapwebsites ${SNAPLISTPATH}/db
     chmod 755 ${SNAPLISTPATH}/db
