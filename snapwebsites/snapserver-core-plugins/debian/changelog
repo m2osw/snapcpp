@@ -1,8 +1,15 @@
+snapserver-core-plugins (1.0.120.0~xenial) xenial; urgency=high
+
+  * EX-131: it is not necessary to have the db and journal folders accessible
+    by the www-data user.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 13 Jun 2017 20:33:37 -0800
+
 snapserver-core-plugins (1.0.119.0~xenial) xenial; urgency=high
 
   * EX-131: Added the missing dependencies on qt5sql5[-mysql].
 
- -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 23:05:29 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 13 Jun 2017 20:30:57 -0800
 
 snapserver-core-plugins (1.0.118.0~xenial) xenial; urgency=high
 
