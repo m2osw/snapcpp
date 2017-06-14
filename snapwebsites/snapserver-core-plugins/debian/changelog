@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.121.0~xenial) xenial; urgency=high
+
+  * EX-131: make sure that the files used by the journal are owned by
+    snapwebsites:snapwebsites (it may get run by root when run from the
+    command line!)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 13 Jun 2017 20:35:00 -0800
+
 snapserver-core-plugins (1.0.120.0~xenial) xenial; urgency=high
 
   * EX-131: it is not necessary to have the db and journal folders accessible

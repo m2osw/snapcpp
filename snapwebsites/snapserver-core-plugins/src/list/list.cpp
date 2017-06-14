@@ -27,6 +27,7 @@
 
 // snapwebsites lib
 //
+#include <snapwebsites/chownnm.h>
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
@@ -664,6 +665,12 @@ void listdata_connection::process_data(QString const & acknowledgement_id)
                     SNAP_LOG_DEBUG("could not open file \"")(f_filename)("\" for reading");
                 }
                 continue;
+            }
+            // just in case, do a chown()/chgrp()
+            //
+            if(chownnm(QString::fromUtf8(f_filename.c_str()), "snapwebsites", "snapwebsites") != 0)
+            {
+                SNAP_LOG_WARNING("could not properly change the ownership to snapwebsites:snapwebsites");
             }
 
             if(flock(f_fd, LOCK_EX) != 0)
