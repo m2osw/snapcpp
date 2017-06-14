@@ -1,3 +1,10 @@
+snapbackend (1.0.22.0~xenial) xenial; urgency=high
+
+  * EX-131: Added the snaplistjournal to the list of services to start in the
+    snapbackend.postinst script.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 13 Jun 2016 17:14:25 -0800
+
 snapbackend (1.0.21.0~xenial) xenial; urgency=high
 
   * EX-131: Fixed the name from snaplistd to snaplistjournal in .install file.
