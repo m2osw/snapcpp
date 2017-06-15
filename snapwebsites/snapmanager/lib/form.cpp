@@ -218,12 +218,12 @@ void widget_select::generate(QDomElement parent)
     }
 
     QDomElement select(doc.createElement("select"));
-    select.setAttribute("id", "widget_select");
-    int id = 0;
+    select.setAttribute( "name", f_name                 );
+    select.setAttribute( "form", parent.attribute("id") );
     for( QString const& item : f_valueList )
     {
         QDomElement option ( doc.createElement("option")  );
-        option.setAttribute( "value", QString("%1").arg(++id) );
+        option.setAttribute( "value", item );
         if( item == f_defaultValue )
         {
             option.setAttribute( "selected", "selected" );
@@ -269,6 +269,7 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
     form_tag.setAttribute("accept-charset", "UTF-8");
     form_tag.setAttribute("action", "?" + uri.query_string());
     form_tag.setAttribute("method", "POST");
+    form_tag.setAttribute("id", QString("%1::%2").arg(f_plugin_name).arg(f_field_name) );
     parent.appendChild(form_tag);
 
     // add the host, plugin name, and field name as hidden fields
@@ -293,7 +294,8 @@ void form::generate(QDomElement parent, snap::snap_uri const & uri)
 
     // add the widgets defined by the caller
     //
-    std::for_each(f_widgets.begin(), f_widgets.end(), [&form_tag](auto const & w) { w->generate(form_tag); });
+    std::for_each(f_widgets.begin(), f_widgets.end(),
+            [&form_tag](auto const & w) { w->generate(form_tag); });
 
     // add reset and save buttons
     //
