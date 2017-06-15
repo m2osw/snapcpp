@@ -371,7 +371,7 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
 
         case 3:
             // this time, he asked for it, block the IP for a whole day
-            snap::server::block_ip(ip, "day");
+            snap::server::block_ip(ip, "day", "the anti-hammering plugin prevented a 3rd offense");
             next_pause = 24LL * 60LL * 60LL; // 1 day
             break;
 

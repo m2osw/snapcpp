@@ -418,7 +418,7 @@ bool manager_cgi::verify()
                         << "X-Powered-By: snapmanager.cgi"  << std::endl
                         << std::endl
                         ;
-            snap::server::block_ip(remote_addr, "week");
+            snap::server::block_ip(remote_addr, "week", "user accessed snapmanager.cgi with a bare IPv4 address");
             return false;
         }
         if(tcp_client_server::is_ipv6(http_host))
@@ -429,7 +429,7 @@ bool manager_cgi::verify()
                         << "X-Powered-By: snapmanager.cgi"  << std::endl
                         << std::endl
                         ;
-            snap::server::block_ip(remote_addr, "week");
+            snap::server::block_ip(remote_addr, "week", "user accessed snapmanager.cgi with a bare IPv6 address");
             return false;
         }
 #endif
@@ -461,7 +461,7 @@ bool manager_cgi::verify()
                 "404 Page Not Found",
                 "We could not find the page you were looking for.",
                 (std::string("The REQUEST_URI must start with \"/snapmanager\", it cannot include \"/cgi-bin/\" as in \"") + request_uri + "\".").c_str());
-            snap::server::block_ip(remote_addr);
+            snap::server::block_ip(remote_addr, QString(), "user tried to access snapmanager.cgi with \"/cgi-bin/...\" which is not allowed");
             return false;
         }
 
@@ -501,7 +501,7 @@ bool manager_cgi::verify()
                 "404 Page Not Found",
                 "We could not find the page you were looking for.",
                 (std::string("The REQUEST_URI must be \"/snapmanager\", not \"") + request_uri + "\".").c_str());
-            snap::server::block_ip(remote_addr);
+            snap::server::block_ip(remote_addr, QString(), "user tried to access \"/snapmanager\" through snapmanager.cgi");
             return false;
         }
 
@@ -516,7 +516,7 @@ bool manager_cgi::verify()
         {
             // avoid proxy accesses
             error("404 Page Not Found", nullptr, "The REQUEST_URI cannot represent a proxy access.");
-            snap::server::block_ip(remote_addr, "year");
+            snap::server::block_ip(remote_addr, "year", "user tried to access snapmanager.cgi with a proxy");
             return false;
         }
 
@@ -525,7 +525,7 @@ bool manager_cgi::verify()
         {
             // block myPhpAdmin accessors
             error("410 Gone", "MySQL left.", nullptr);
-            snap::server::block_ip(remote_addr, "year");
+            snap::server::block_ip(remote_addr, "year", "user tried to access phpmyadmin through snapmanager.cgi");
             return false;
         }
     }
@@ -539,7 +539,7 @@ bool manager_cgi::verify()
             // we request an agent specification
             //
             error("400 Bad Request", "The accessing agent must be specified.", nullptr);
-            snap::server::block_ip(remote_addr, "month");
+            snap::server::block_ip(remote_addr, "month", "User-Agent header is missing");
             return false;
         }
 #ifdef _DEBUG
@@ -562,7 +562,7 @@ bool manager_cgi::verify()
         {
             // note that we consider "-" as empty for this test
             error("400 Bad Request", nullptr, "The agent string cannot be empty.");
-            snap::server::block_ip(remote_addr, "month");
+            snap::server::block_ip(remote_addr, "month", "this is ZmEu, we immediately block such requests");
             return false;
         }
     }

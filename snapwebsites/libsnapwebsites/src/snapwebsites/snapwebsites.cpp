@@ -1740,8 +1740,9 @@ void server::udp_rusage(QString const & process_name)
  *
  * \param[in] uri  The IP address of to ban.
  * \param[in] period  The duration for which the ban applies.
+ * \param[in] reason  A description for why the block is being requested.
  */
-void server::block_ip( QString const & uri, QString const & period )
+void server::block_ip( QString const & uri, QString const & period, QString const & reason )
 {
     // create a server object (we are a static function!)
     //
@@ -1759,12 +1760,19 @@ void server::block_ip( QString const & uri, QString const & period )
     snap::snap_communicator_message message;
     message.set_command("BLOCK");
     message.set_service("*");           // broadcast to all snapfirewall anywhere in our mesh
+
     message.add_parameter("uri", uri);
+
     if(!period.isEmpty())
     {
         message.add_parameter("period", period);
     }
     //else -- snapfirewall will use "day" by default
+
+    if(!reason.isEmpty())
+    {
+        message.add_parameter("reason", reason);
+    }
 
     // send the message using a UDP signal
     //

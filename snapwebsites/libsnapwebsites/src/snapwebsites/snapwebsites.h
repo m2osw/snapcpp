@@ -290,7 +290,7 @@ public:
 
     void                udp_ping_server( QString const & service, QString const & uri );
     void                udp_rusage(QString const & process_name);
-    static void         block_ip( QString const & uri, QString const & period = "" );
+    static void         block_ip( QString const & uri, QString const & period = QString(), QString const & reason = QString() );
 
     const snap_config&  get_parameters() const;
 

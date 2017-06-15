@@ -381,7 +381,7 @@ bool snap_cgi::verify()
                         << "X-Powered-By: snap.cgi" << std::endl
                         << std::endl
                         ;
-            snap::server::block_ip(remote_addr, "week");
+            snap::server::block_ip(remote_addr, "week", "user tried to access snap.cgi with a bare IPv4 adress");
             return false;
         }
         if(tcp_client_server::is_ipv6(http_host))
@@ -392,7 +392,7 @@ bool snap_cgi::verify()
                         << "X-Powered-By: snap.cgi" << std::endl
                         << std::endl
                         ;
-            snap::server::block_ip(remote_addr, "week");
+            snap::server::block_ip(remote_addr, "week", "user tried to access snap.cgi with a bare IPv6 adress");
             return false;
         }
     }
@@ -419,7 +419,7 @@ bool snap_cgi::verify()
         if(strncasecmp(request_uri, "/cgi-bin/", 9) == 0)
         {
             error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
-            snap::server::block_ip(remote_addr);
+            snap::server::block_ip(remote_addr, QString(), "user tried to access \"/cgi-bin/\" through snap.cgi");
             return false;
         }
 
@@ -429,7 +429,7 @@ bool snap_cgi::verify()
         if(strncasecmp(request_uri, "/xmlrpc.php", 11) == 0)
         {
             error("404 Page Not Found", "We could not find the page you were looking for.", "Our XMLRPC is not under /xmlrpc.php, wrong REQUEST_URI.");
-            snap::server::block_ip(remote_addr, "year");
+            snap::server::block_ip(remote_addr, "year", "user tried to access \"/xmlrpc.php\" through snap.cgi");
             return false;
         }
 
@@ -442,7 +442,7 @@ bool snap_cgi::verify()
             msg += request_uri;
             msg += ").";
             error("404 Page Not Found", nullptr, msg.c_str());
-            snap::server::block_ip(remote_addr, "year");
+            snap::server::block_ip(remote_addr, "year", "user tried to access snap.cgi with a proxy access");
             return false;
         }
 
@@ -451,7 +451,7 @@ bool snap_cgi::verify()
         {
             // block myPhpAdmin accessors
             error("410 Gone", "MySQL left.", nullptr);
-            snap::server::block_ip(remote_addr, "year");
+            snap::server::block_ip(remote_addr, "year", "user is trying to access phpmyadmin through snap.cgi");
             return false;
         }
     }
@@ -465,7 +465,7 @@ bool snap_cgi::verify()
             // the Agent: ... field is required
             //
             error("400 Bad Request", "The accessing agent must be specified.", nullptr);
-            snap::server::block_ip(remote_addr, "month");
+            snap::server::block_ip(remote_addr, "month", "the User-Agent header is mandatory");
             return false;
         }
 #ifdef _DEBUG
@@ -488,7 +488,7 @@ bool snap_cgi::verify()
         {
             // note that we consider "-" as empty for this test
             error("400 Bad Request", nullptr, "The agent string cannot be empty.");
-            snap::server::block_ip(remote_addr, "month");
+            snap::server::block_ip(remote_addr, "month", "the User-Agent header is empty or \"-\", represents ZmEu or libwww-perl, which are all not allowed");
             return false;
         }
     }
