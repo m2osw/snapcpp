@@ -422,9 +422,16 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
                         , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                         );
 
-                snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+                QStringList service_list;
+                service_list << "disabled";
+                service_list << "enabled";
+                service_list << "active";
+                service_list << "failed";   // Not sure about this...
+
+                snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
                                   QString("Enabled/Disabled/Activate %1").arg(service_info.f_service_name)
                                 , s.get_field_name()
+                                , service_list
                                 , s.get_value()
                                 , QString("<p>Enter the new state of the %1"
                                   " service as one of:</p>"
@@ -633,6 +640,7 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
         snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
         f_snap->service_apply_status(unit_name.toUtf8().data(), status);
         send_status();
+SNAP_LOG_DEBUG("field=")(field)(", new_value=")(new_value)(", unit_name=")(unit_name);
         return true;
     }
 

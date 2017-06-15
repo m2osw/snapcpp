@@ -94,6 +94,28 @@ private:
 };
 
 
+class widget_select
+        : public widget
+{
+public:
+    typedef std::shared_ptr<widget_select> pointer_t;
+
+                        widget_select(QString const & label
+                                   , QString const & name
+                                   , QStringList const & initial_value
+                                   , QString const & default_value
+                                   , QString const & description);
+
+    virtual void        generate(QDomElement parent) override;
+
+private:
+    QString             f_label;
+    QStringList         f_valueList;
+    QString             f_defaultValue;
+    QString             f_description;
+};
+
+
 class form
 {
 public:

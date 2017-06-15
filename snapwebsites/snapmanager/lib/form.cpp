@@ -190,6 +190,60 @@ void widget_text::generate(QDomElement parent)
 }
 
 
+widget_select::widget_select(QString const & label
+                        , QString const & name
+                        , QStringList const & initial_value
+                        , QString const & default_value
+                        , QString const & description)
+    : widget(name)
+    , f_label(label)
+    , f_valueList(initial_value)
+    , f_defaultValue(default_value)
+    , f_description(description)
+{
+}
+
+
+void widget_select::generate(QDomElement parent)
+{
+    QDomDocument doc(parent.ownerDocument());
+
+    if(!f_label.isEmpty())
+    {
+        QDomElement label(doc.createElement("label"));
+        label.setAttribute("for", f_name);
+        parent.appendChild(label);
+
+        snap::snap_dom::insert_html_string_to_xml_doc(label, f_label);
+    }
+
+    QDomElement select(doc.createElement("select"));
+    select.setAttribute("id", "widget_select");
+    int id = 0;
+    for( QString const& item : f_valueList )
+    {
+        QDomElement option ( doc.createElement("option")  );
+        option.setAttribute( "value", QString("%1").arg(++id) );
+        if( item == f_defaultValue )
+        {
+            option.setAttribute( "selected", "selected" );
+        }
+        snap::snap_dom::insert_html_string_to_xml_doc( option, item );
+        select.appendChild(option);
+    }
+    parent.appendChild(select);
+
+    if(!f_description.isEmpty())
+    {
+        QDomElement p(doc.createElement("p"));
+        p.setAttribute("class", "description");
+        parent.appendChild(p);
+        snap::snap_dom::insert_html_string_to_xml_doc(p, f_description);
+    }
+
+}
+
+
 form::form(QString const & plugin_name, QString const & field_name, button_t buttons)
     : f_plugin_name(plugin_name)
     , f_field_name(field_name)
