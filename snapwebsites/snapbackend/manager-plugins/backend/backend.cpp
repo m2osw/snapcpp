@@ -1,6 +1,7 @@
 // Snap Websites Server -- manage the snapbackend settings
 // Copyright (C) 2016-2017  Made to Order Software Corp.
 //
+
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -38,6 +39,7 @@
 // Qt lib
 //
 #include <QFile>
+#include <QTextStream>
 
 // C lib
 //
@@ -57,10 +59,10 @@ namespace
 // TODO: offer the user a way to change this path?
 struct backend_services
 {
-    char const *        f_service_name = nullptr;
+    char const *        f_service_name       = nullptr;
     char const *        f_service_executable = nullptr;
-    bool                f_recovery = true;
-    int                 f_nice = 0;
+    bool                f_recovery           = true;
+    int                 f_nice               = 0;
 };
 
 backend_services g_services[5] = {
@@ -71,11 +73,8 @@ backend_services g_services[5] = {
         { "snapsendmail",       "/usr/bin/snapbackend", true,   7 }
     };
 
-
-
-
-
-} // no name namespace
+}
+// unnamed namespace
 
 
 
@@ -208,6 +207,74 @@ void backend::bootstrap(snap_child * snap)
 }
 
 
+class status_file
+{
+public:
+    status_file()
+    {
+        load_file();
+    }
+
+    ~status_file()
+    {
+        save_file();
+    }
+
+    QString &       operator[]( QString const& name )       { return f_map[name];    }
+    QString const & operator[]( QString const& name ) const { return f_map.at(name); }
+
+    bool is_empty() const { return f_map.empty(); }
+    void clear()          { f_map.clear();        }
+
+private:
+    std::map<QString,QString>   f_map;
+    QString const               f_filename = "/var/cache/snapwebsites/backend-status.txt";
+
+    void load_file()
+    {
+        QFile the_file( f_filename );
+        if( !the_file.exists() )
+        {
+            // Doesn't yet exist, so don't load anything
+            return;
+        }
+
+        if( !the_file.open(QFile::ReadOnly) )
+        {
+            SNAP_LOG_ERROR("Cannot read backend status file!");
+            return;
+        }
+
+        QTextStream in(&the_file);
+        QString line;
+        while( in.readLineInto(&line) )
+        {
+            line = line.trimmed();
+            if( line[0] == '#' ) continue; // ignore comments
+            QStringList values( line.split('=') );
+            f_map[values[0]] = values[1];
+        }
+    }
+
+    void save_file()
+    {
+        QFile the_file( f_filename );
+        if( !the_file.open(QFile::WriteOnly | QFile::Truncate) )
+        {
+            SNAP_LOG_ERROR("Cannot open backend status file for write!");
+            return;
+        }
+
+        QTextStream out(&the_file);
+        out << "# Auto-generated file by `snapbackend`.\n";
+        for( auto const& pair : f_map )
+        {
+            out << pair.first << "=" << pair.second << "\n";
+        }
+    }
+};
+
+
 /** \brief Determine this plugin status data.
  *
  * This function builds a tree of statuses.
@@ -219,6 +286,22 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
     if(f_snap->stop_now_prima())
     {
         return;
+    }
+
+    // Add the enable/disable ALL backends pulldown:
+    //
+    status_file sf;
+    if( !sf.is_empty() )
+    {
+        bool disabled_mode = false;
+        snap_manager::status_t const all_status_widget(
+                            disabled_mode
+                                ? snap_manager::status_t::state_t::STATUS_STATE_WARNING
+                                : snap_manager::status_t::state_t::STATUS_STATE_INFO,
+                        get_plugin_name(),
+                        "all_services",
+                        sf["disabled"] == "true"? "disabled" : "enabled");
+        server_status.set_field(all_status_widget);
     }
 
     // TODO: add support so the user can edit the recovery delay, the nice
@@ -371,6 +454,34 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
         return false;
     }
 
+    if(s.get_field_name() == "all_services")
+    {
+        snap_manager::form f(
+                get_plugin_name()
+                , s.get_field_name()
+                , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
+                );
+
+        QStringList service_list;
+        service_list << "disabled";
+        service_list << "enabled";
+
+        snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
+                    "Enable or disable ALL backend services"
+                    , s.get_field_name()
+                    , service_list
+                    , s.get_value()
+                    , "<p>Enable or disable all backend services either on this system or cluster-wide.</p>"
+                        "<p>Use the 'SAVE' button for the local system only, or hit 'SAVE EVERYWHERE' for cluster-wide effect."
+                        " When you disable the current configuration, it will be remembered on enable-all.</p>"
+                    ));
+        f.add_widget(field);
+
+        f.generate(parent, uri);
+
+        return true;
+    }
+
     QString const service_name(s.get_field_name().mid(0, pos));
     QString const field_name(s.get_field_name().mid(pos + 2));
 
@@ -440,7 +551,7 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
                                   "  <li>enabled -- enable the service, deactivate if it was activated</li>"
                                   "  <li>active -- enable and activate the service</li>"
                                   "</ul>"
-                                  "<p>You cannot request to go to the \"failed\" status."
+                                  "<p>You cannot request to go to the \"failed\" status. It appears in the list for status purposes only."
                                   " To uninstall search for the corresponding bundle and"
                                   " click the <strong>Uninstall</strong> button.</p>"
                                   "<p><strong>WARNING:</strong> The current snapmanagercgi"
@@ -582,7 +693,12 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
  *
  * \return true if the new_value was applied successfully.
  */
-bool backend::apply_setting(QString const & button_name, QString const & field_name, QString const & new_value, QString const & old_or_installation_value, std::set<QString> & affected_services)
+bool backend::apply_setting( QString const     & button_name
+                           , QString const     & field_name
+                           , QString const     & new_value
+                           , QString const     & old_or_installation_value
+                           , std::set<QString> & affected_services
+                           )
 {
     NOTUSED(button_name);
     NOTUSED(old_or_installation_value);
@@ -591,6 +707,35 @@ bool backend::apply_setting(QString const & button_name, QString const & field_n
     // restore defaults?
     //
     //bool const use_default_value(button_name == "restore_default");
+
+    if( field_name == "all_services" )
+    {
+        status_file sf;
+
+        for(auto const & service_info : g_services)
+        {
+            // get the backend service status
+            //
+            QString const unit_name(QString("%1%2").arg(service_info.f_service_name).arg(service_info.f_recovery ? "" : ".timer"));
+            f_snap->service_apply_status
+                ( unit_name.toUtf8().data()
+                , new_value == "disabled"
+                    ? snap_manager::service_status_t::SERVICE_STATUS_DISABLED
+                    : snap_manager::manager::string_to_service_status(sf[unit_name].toUtf8().data())
+                );
+        }
+
+        if( new_value == "disabled" )
+        {
+            sf["disabled"] = "true";
+        }
+        else
+        {
+            sf["disabled"] = "false";
+        }
+
+        return true;
+    }
 
     int const pos(field_name.indexOf("::"));
     if(pos <= 0)
@@ -640,7 +785,13 @@ SNAP_LOG_WARNING("Got field \"")(field)("\" to change for \"")(service_name)("\"
         snap_manager::service_status_t const status(snap_manager::manager::string_to_service_status(new_value.toUtf8().data()));
         f_snap->service_apply_status(unit_name.toUtf8().data(), status);
         send_status();
-SNAP_LOG_DEBUG("field=")(field)(", new_value=")(new_value)(", unit_name=")(unit_name);
+
+        // Save new configuration in file
+        //
+        status_file sf;
+        QString const status_string( QString::fromUtf8(snap_manager::manager::service_status_to_string(status)) );
+        sf[unit_name] = status_string;
+
         return true;
     }
 
