@@ -1,6 +1,6 @@
 /*
  * Text:
- *      src/casswrapper/session.h
+ *      libcasswrapper/src/casswrapper/session.h
  *
  * Description:
  *      Handling of the connection to the Cassandra database via the
