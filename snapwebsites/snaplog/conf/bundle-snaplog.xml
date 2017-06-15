@@ -30,6 +30,11 @@
     chown root.root ${PRIVATE_DIR}
     chmod 0700 ${PRIVATE_DIR}
 
+    if test -f ${PRIVATE_DIR}/snaplog_password.sh
+    then
+      mv ${PRIVATE_DIR}/snaplog_password.sh ${PRIVATE_DIR}/root_password.sh
+    fi
+
     if test ! -f ${PRIVATE_DIR}/root_password.sh
     then
       # Create the passwords we will use
