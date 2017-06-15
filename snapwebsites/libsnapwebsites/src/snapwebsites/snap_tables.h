@@ -72,10 +72,14 @@ public:
         void                    set_model(model_t model);
         model_t                 get_model() const;
 
+        void                    set_drop(bool drop = true);
+        bool                    get_drop() const;
+
     private:
         QString                 f_name;
         QString                 f_description;
         model_t                 f_model = model_t::MODEL_CONTENT;
+        bool                    f_drop = false;
     };
 
     bool                            load(QString const & path);

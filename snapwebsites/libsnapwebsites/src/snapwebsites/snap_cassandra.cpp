@@ -197,7 +197,8 @@ void snap_cassandra::create_table_list()
 
         // does table exist?
         QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
-        if(!table)
+        if(!table
+        && !s.second.get_drop())
         {
             SNAP_LOG_INFO("creating table \"")(table_name)("\"");
 
@@ -462,6 +463,26 @@ void snap_cassandra::create_table_list()
                 //
                 // See https://issues.apache.org/jira/browse/CASSANDRA-5025
                 SNAP_LOG_TRACE("Marking a pause while schema gets synchronized after a CREATE TABLE.");
+                sleep(10);
+            }
+        }
+        else if(table
+             && s.second.get_drop())
+        {
+            SNAP_LOG_INFO("droping table \"")(table_name)("\"");
+
+            table.reset(); // lose that reference
+            try
+            {
+                // this can take forever and it will work just fine, but
+                // the Cassandra cluster is likely to timeout on us
+                // and throw an error so we use a try/catch
+                //
+                context->dropTable(table_name);
+            }
+            catch(QtCassandra::QCassandraException const & e)
+            {
+                SNAP_LOG_WARNING("an exception was raised with \"")(e.what())("\"");
                 sleep(10);
             }
         }

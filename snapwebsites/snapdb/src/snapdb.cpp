@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snapdb.cpp
+ *      snapwebsites/snapdb/src/snapdb.cpp
  *
  * Description:
  *      Reads and describes a Snap database. This ease checking out the
@@ -210,6 +210,14 @@ namespace
         {
             '\0',
             0,
+            "timeout",
+            nullptr,
+            "Define the timeout in milliseconds (i.e. 60000 represents 1 minute).",
+            advgetopt::getopt::argument_mode_t::required_argument
+        },
+        {
+            '\0',
+            0,
             "save-cell",
             nullptr,
             "save the specified cell (specify table, row, and cell)",
@@ -346,6 +354,16 @@ snapdb::snapdb(int argc, char * argv[])
     {
         std::cerr << "Unknown error connecting to the cassandra server!" << std::endl;
         exit( 1 );
+    }
+
+    if( f_opt->is_defined( "timeout" ) )
+    {
+        // by creating this object we allow changing the timeout without
+        // having to do anything else, however, we must make sure that
+        // the object remains around at least until the session gets
+        // created so we allocate it
+        //
+        f_request_timeout = std::make_shared<request_timeout>(f_session, f_opt->get_long( "timeout" ));
     }
 
     // finally check for parameters

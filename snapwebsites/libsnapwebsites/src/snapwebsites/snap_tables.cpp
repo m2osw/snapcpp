@@ -94,6 +94,18 @@ snap_tables::model_t snap_tables::table_schema_t::get_model() const
 }
 
 
+void snap_tables::table_schema_t::set_drop(bool drop)
+{
+    f_drop = drop;
+}
+
+
+bool snap_tables::table_schema_t::get_drop() const
+{
+    return f_drop;
+}
+
+
 
 
 
@@ -199,6 +211,7 @@ bool snap_tables::load_xml(QString const & filename)
         schema.set_name(table.attribute("name"));
 
         // make sure we are not loading a duplicate
+        // if so we cannot be sure what to do so we throw
         //
         auto const it(f_schemas.find(schema.get_name()));
         if(it != f_schemas.end())
@@ -206,11 +219,16 @@ bool snap_tables::load_xml(QString const & filename)
             // TODO: we do not currently save where we found the first
             //       instance so the error is rather poor at this point...
             //
-            SNAP_LOG_FATAL("tables::load_xml() ignore second definition of \"")(schema.get_name())("\", found in \"")(filename)("\".");
+            SNAP_LOG_FATAL("tables::load_xml() found second definition of \"")(schema.get_name())("\" in \"")(filename)("\".");
             throw snap_table_invalid_xml_exception("table names loaded in snap::tables must all be unique");
         }
 
         schema.set_model(string_to_model(table.attribute("model")));
+
+        if(table.hasAttribute("drop"))
+        {
+            schema.set_drop();
+        }
 
         QDomElement description(table.firstChildElement("description"));
         if(!description.isNull())
@@ -235,13 +253,22 @@ bool snap_tables::load_xml(QString const & filename)
  * This function can be used to check whether the definition of a
  * specific table is defined.
  *
+ * \note
+ * The function returns false for tables that are described and have
+ * the drop="drop" attribute set.
+ *
  * \param[in] name  The name of the table to search for.
  *
  * \return true if the table is defined in the list of schemas.
  */
 bool snap_tables::has_table(QString const & name) const
 {
-    return f_schemas.find(name) != f_schemas.end();
+    auto const it(f_schemas.find(name));
+    if(it == f_schemas.end())
+    {
+        return false;
+    }
+    return !it->second.get_drop();
 }
 
 

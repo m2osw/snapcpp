@@ -1,14 +1,30 @@
-libsnapwebsites (1.2.4.2~xenial) xenial; urgency=high
+libsnapwebsites (1.2.6.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Mon, 12 Jun 2017 02:00:51 -0700
+ -- Build Server <build@m2osw.com>  Thu, 15 Jun 2017 02:00:52 -0700
+
+libsnapwebsites (1.2.6.0~xenial) xenial; urgency=high
+
+  * EX-131: DROP TABLE should have had a timeout of 5min. like the CREATE TABLE.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 14 Jun 2017 14:00:14 -0800
+
+libsnapwebsites (1.2.5.0~xenial) xenial; urgency=high
+
+  * EX-131: dropping the "list" table is not unlikely to timeout, we added
+    a try/catch to ignore the problem since 99% of the time it won't be
+    a problem at all (i.e. the table is dropped, the cluster is just a
+    bit slow in letting us know and the client times out.)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 14 Jun 2017 12:00:41 -0800
 
 libsnapwebsites (1.2.4.0~xenial) xenial; urgency=high
 
   * EX-131: added get_list_data_path() to support snaplistd.
   * Added various names to support snaplistd.
   * Added several add_parameter() to the message class to support std::string.
+  * Fixed 3 bugs in the QtCassandra library, tests were inverted.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun, 11 Jun 2017 17:22:29 -0800
 
