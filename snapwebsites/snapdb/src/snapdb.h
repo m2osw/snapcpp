@@ -81,7 +81,8 @@ private:
     void display_cell()          const;
     void set_cell()              const;
 
-    casswrapper::Session::pointer_t   f_session;
+    casswrapper::Session::pointer_t             f_session;
+    casswrapper::request_timeout::pointer_t     f_request_timeout;
     QString                                     f_host      = "localhost";
     int32_t                                     f_port      = 9042;
     bool                                        f_use_ssl   = false;
