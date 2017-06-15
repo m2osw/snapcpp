@@ -1,4 +1,4 @@
-snapbackend (1.0.23.0~xenial) xenial; urgency=high
+snapbackend (1.0.23.1~xenial) xenial; urgency=high
 
   * EX-131: Now uses the new `widget_select` UI in snapmanager.
 
