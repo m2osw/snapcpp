@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.123.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 15 Jun 2017 02:00:53 -0700
+
 snapserver-core-plugins (1.0.123.0~xenial) xenial; urgency=high
 
   * EX-131: Fixed the name of the file in the list of source files.
