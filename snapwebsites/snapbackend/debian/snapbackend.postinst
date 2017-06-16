@@ -15,6 +15,7 @@ then
     touch $SERVICES_DIR/images.service
     touch $SERVICES_DIR/pagelist.service
     touch $SERVICES_DIR/sendmail.service
+    touch $SERVICES_DIR/listjournal.service
 
     # Signal snapdbproxy since we just added new tables
     #
@@ -22,12 +23,12 @@ then
 
     systemctl daemon-reload
 
-    for pkg in snapimages snaplistjournal snappagelist snapsendmail
+    for pkg in snapbackend snapimages snaplistjournal snappagelist snapsendmail
     do
-        if systemctl -q is-enabled ${pkg}
-        then
-            systemctl start ${pkg}
-        fi
+        # Start with everything disabled. `snapmanager` will allow the user to
+        # enable as needed.
+        #
+        systemctl disable ${pkg}
     done
 fi
 

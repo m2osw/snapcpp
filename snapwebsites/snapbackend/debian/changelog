@@ -1,6 +1,7 @@
-snapbackend (1.0.23.1~xenial) xenial; urgency=high
+snapbackend (1.0.23.2~xenial) xenial; urgency=high
 
   * EX-131: Now uses the new `widget_select` UI in snapmanager.
+  * EX-131: Now keeps backends disabled after an upgrade (or first install).
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 14 Jun 2017 18:43:39 -0700
 
