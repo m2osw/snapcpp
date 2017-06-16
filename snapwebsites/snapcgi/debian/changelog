@@ -1,3 +1,9 @@
+snapcgi (1.1.11.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 16 Jun 2017 02:00:54 -0700
+
 snapcgi (1.1.11.0~xenial) xenial; urgency=high
 
   * EX-131: Added a reason for each call to block_ip().
