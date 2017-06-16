@@ -375,15 +375,14 @@ void backend::on_retrieve_status(snap_manager::server_status & server_status)
 
 void backend::update_all_services( QString const & new_value )
 {
+    SNAP_LOG_DEBUG("backend::update_all_services(), new_value=")(new_value);
     status_file sf;
-    SNAP_LOG_DEBUG("++++ backend::update_all_services(), new_value=")(new_value);
 
     for(auto const & service_info : g_services)
     {
         // get the backend service status
         //
         QString const unit_name(QString("%1%2").arg(service_info.f_service_name).arg(service_info.f_recovery ? "" : ".timer"));
-        SNAP_LOG_DEBUG("unit_name=")(unit_name)(", new_value=")(new_value);
         if( sf[unit_name].isEmpty() )
         {
             sf[unit_name] = "disabled";
@@ -395,7 +394,6 @@ void backend::update_all_services( QString const & new_value )
               ? snap_manager::service_status_t::SERVICE_STATUS_DISABLED
               : snap_manager::manager::string_to_service_status(sf[unit_name].toUtf8().data())
             );
-        SNAP_LOG_DEBUG("DONE unit_name=")(unit_name)(", new_value=")(new_value);
     }
 
     if( new_value == "disabled" )
@@ -407,10 +405,9 @@ void backend::update_all_services( QString const & new_value )
         sf["disabled"] = "false";
     }
 
-    SNAP_LOG_DEBUG("++++ Writing status_file from update_all_services()!");
     sf.save();
 
-    SNAP_LOG_DEBUG("sf[\"disabled\"]=")(sf["disabled"]);
+    send_status();
 }
 
 
