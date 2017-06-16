@@ -1349,7 +1349,7 @@ void password::on_blocked_user(users::users::user_info_t & user_info, QString co
         //value.setTtl(pp.get_blocked_user_firewall_duration() * 24LL * 60LL * 60LL);
         //row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED))->setValue(value);
         QString const remote_addr(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
-        server::block_ip(remote_addr, pp.get_blocked_user_firewall_duration());
+        server::block_ip(remote_addr, pp.get_blocked_user_firewall_duration(), "password plugin blocking user on too many login attempts");
     }
 }
 

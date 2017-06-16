@@ -1,8 +1,9 @@
-snaplog (1.0.13.2~xenial) xenial; urgency=high
+snaplog (1.0.14.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: If the snaplog_password.sh file exists, it needs to be renamed
+    root_password.sh before we check whether the root password exists.
 
- -- Build Server <build@m2osw.com>  Wed, 14 Jun 2017 02:00:53 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 15 Jun 2017 13:07:29 -0700
 
 snaplog (1.0.13.0~xenial) xenial; urgency=high
 

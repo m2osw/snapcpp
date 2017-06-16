@@ -1,8 +1,9 @@
-snapserver-core-plugins (1.0.123.1~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.124.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * EX-131: Added a reason to the block_ip() call in the password and
+  * anti-hammering plugins.
 
- -- Build Server <build@m2osw.com>  Thu, 15 Jun 2017 02:00:53 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 15 Jun 2017 13:11:46 -0800
 
 snapserver-core-plugins (1.0.123.0~xenial) xenial; urgency=high
 
