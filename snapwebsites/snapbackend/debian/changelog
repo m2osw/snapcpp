@@ -1,6 +1,7 @@
-snapbackend (1.0.23.3~xenial) xenial; urgency=high
+snapbackend (1.0.23.4~xenial) xenial; urgency=high
 
   * Nightly build.
+  * EX-131: broadcast status after local update-all change.
 
  -- Build Server <build@m2osw.com>  Fri, 16 Jun 2017 02:00:53 -0700
 
