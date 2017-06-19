@@ -909,8 +909,8 @@ QString path_info_t::get_revision_key() const
                 QString const msg(QString("path_info_t::get_revision_key() request failed for \"%1\", revision for \"%2\" not defined for %3 \"%4\".")
                     .arg(f_cpath)
                     .arg(f_key)
-                    .arg(field.isEmpty() ? " revision key "
-                                         : " field ")
+                    .arg(field.isEmpty() ? "revision key"
+                                         : "field")
                     .arg(field.isEmpty() ? f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale)
                                          : field));
                 SNAP_LOG_FATAL(msg);

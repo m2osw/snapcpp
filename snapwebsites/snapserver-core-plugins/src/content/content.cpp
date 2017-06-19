@@ -2689,6 +2689,9 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
                 f_snap->verify_locale(locale, country, true);
                 if(!country.isEmpty())
                 {
+                    // stick the country back in the locale if defined
+                    // (but this way it is canonicalized)
+                    //
                     locale += '_';
                     locale += country;
                 }
@@ -2711,7 +2714,7 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
                 }
 
                 // check whether a data type was defined
-                QString type(element.attribute("type"));
+                QString const type(element.attribute("type"));
                 if(!type.isEmpty())
                 {
                     param_type_t param_type;

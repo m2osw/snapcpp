@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.948
+ * Version: 0.0.3.949
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2017 (c) Made to Order Software Corporation  All rights reverved.
@@ -6737,6 +6737,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
             that.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='page-uri']").attr("href"), "casting href of the page-uri link to a string in snapwebsites.EditorWidgetTypeContentEditable.setupEditButton()"));
             that.serverAccess_.setData({
                             _editor_request_original_data: 1,
+                            page_language: jQuery("html").attr("lang"),
                             field_name: editor_widget.getName()
                         });
             that.serverAccess_.send(e);

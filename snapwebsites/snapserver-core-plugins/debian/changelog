@@ -1,3 +1,11 @@
+snapserver-core-plugins (1.0.126.0~xenial) xenial; urgency=high
+
+  * SNAP-161: The saving now makes use of the language to retrieve the correct
+    revision key (without it, it would try to read a non-existant revision.)
+  * A couple of clean ups.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 18 Jun 2017 17:11:26 -0800
+
 snapserver-core-plugins (1.0.125.0~xenial) xenial; urgency=high
 
   * SNAP-235: Fixed the meta tag of the generator, correct version now.

@@ -443,7 +443,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2017, 5, 6, 23, 34, 50, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 6, 18, 18, 58, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1177,6 +1177,11 @@ void editor::retrieve_original_field(content::path_info_t & ipath)
     }
     else
     {
+        if(f_snap->postenv_exists("page_language"))
+        {
+            ipath.force_locale(f_snap->postenv("page_language"));
+        }
+
         QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
         int const max_widgets(widgets.size());
         for(int i(0); i < max_widgets; ++i)
