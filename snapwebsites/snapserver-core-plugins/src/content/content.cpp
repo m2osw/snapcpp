@@ -2598,7 +2598,9 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
 
             // <param name=... overwrite=... force-namespace=...> data </param>
             QString const tag_name(element.tagName());
-            if(tag_name == "param")
+            bool const remove_param(tag_name == "remove-param");
+            if(tag_name == "param"
+            || remove_param)
             {
                 QString const param_name(element.attribute("name"));
                 if(param_name.isEmpty())
@@ -2705,50 +2707,58 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
                 }
 
                 // add the resulting parameter
-                add_param(key, fullname, revision_type, locale, buffer, priority);
+                add_param(key, fullname, revision_type, locale, buffer, priority, remove_param);
 
-                // check whether we allow overwrites
-                if(element.attribute("overwrite") == "yes")
+                // if we are to remove that parameter, we do not need the
+                // overwrite and type info
+                //
+                if(!remove_param)
                 {
-                    set_param_overwrite(key, fullname, true);
-                }
+                    // check whether we allow overwrites
+                    //
+                    if(element.attribute("overwrite") == "yes")
+                    {
+                        set_param_overwrite(key, fullname, true);
+                    }
 
-                // check whether a data type was defined
-                QString const type(element.attribute("type"));
-                if(!type.isEmpty())
-                {
-                    param_type_t param_type;
-                    if(type == "string")
+                    // check whether a data type was defined
+                    //
+                    QString const type(element.attribute("type"));
+                    if(!type.isEmpty())
                     {
-                        param_type = param_type_t::PARAM_TYPE_STRING;
+                        param_type_t param_type;
+                        if(type == "string")
+                        {
+                            param_type = param_type_t::PARAM_TYPE_STRING;
+                        }
+                        else if(type == "float"
+                             || type == "float32")
+                        {
+                            param_type = param_type_t::PARAM_TYPE_FLOAT32;
+                        }
+                        else if(type == "double"
+                             || type == "float64")
+                        {
+                            param_type = param_type_t::PARAM_TYPE_FLOAT64;
+                        }
+                        else if(type == "int8")
+                        {
+                            param_type = param_type_t::PARAM_TYPE_INT8;
+                        }
+                        else if(type == "int32")
+                        {
+                            param_type = param_type_t::PARAM_TYPE_INT32;
+                        }
+                        else if(type == "int64")
+                        {
+                            param_type = param_type_t::PARAM_TYPE_INT64;
+                        }
+                        else
+                        {
+                            throw content_exception_invalid_content_xml(QString("unknown type in <param type=\"%1\"> tags").arg(type));
+                        }
+                        set_param_type(key, fullname, param_type);
                     }
-                    else if(type == "float"
-                         || type == "float32")
-                    {
-                        param_type = param_type_t::PARAM_TYPE_FLOAT32;
-                    }
-                    else if(type == "double"
-                         || type == "float64")
-                    {
-                        param_type = param_type_t::PARAM_TYPE_FLOAT64;
-                    }
-                    else if(type == "int8")
-                    {
-                        param_type = param_type_t::PARAM_TYPE_INT8;
-                    }
-                    else if(type == "int32")
-                    {
-                        param_type = param_type_t::PARAM_TYPE_INT32;
-                    }
-                    else if(type == "int64")
-                    {
-                        param_type = param_type_t::PARAM_TYPE_INT64;
-                    }
-                    else
-                    {
-                        throw content_exception_invalid_content_xml(QString("unknown type in <param type=\"%1\"> tags").arg(type));
-                    }
-                    set_param_type(key, fullname, param_type);
                 }
             }
             // <link name=... to=... [mode="1/*:1/*"]> destination path </link>
@@ -3077,7 +3087,7 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
             //
             // TBD: should the priority be something else than PARAM_DEFAULT_PRIORITY (0)?
             //
-            add_param(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_revision_t::PARAM_REVISION_GLOBAL, "en", "1", PARAM_DEFAULT_PRIORITY);
+            add_param(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_revision_t::PARAM_REVISION_GLOBAL, "en", "1", PARAM_DEFAULT_PRIORITY, false);
             set_param_overwrite(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), true); // always overwrite
             set_param_type(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_type_t::PARAM_TYPE_INT8);
         }
@@ -3200,7 +3210,8 @@ void content::add_param(
         , param_revision_t revision_type
         , QString const & locale
         , QString const & data
-        , param_priority_t const priority)
+        , param_priority_t const priority
+        , bool remove)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -3216,6 +3227,7 @@ void content::add_param(
         param.f_data[locale] = data;
         param.f_revision_type = revision_type;
         param.f_priority = priority;
+        param.f_remove = remove;
         b->f_params.insert(name, param);
     }
     else
@@ -3240,6 +3252,7 @@ void content::add_param(
             //
             p->f_data[locale] = data;
             p->f_priority = priority; // in case it is larger, save every time
+            p->f_remove = remove;
         }
     }
 }
@@ -3672,7 +3685,11 @@ void content::on_save_content()
                         use_new_revision[locale] = false;
 
                         // mark when the row was created
-                        revision_table->row(row_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+                        //
+                        if(!p->f_remove)
+                        {
+                            revision_table->row(row_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+                        }
                     }
                     break;
 
@@ -3687,7 +3704,17 @@ void content::on_save_content()
                 // Note: we could also use exist() instead of nullValue()?
                 //       (which means that "" would not be viewed as a null)
                 //
-                if(p->f_overwrite
+                if(p->f_remove)
+                {
+                    // make sure the cell does not exist
+                    //
+                    param_table->row(row_key)->dropCell(p->f_name);
+
+                    // TBD: if this was the last cell, the "content::created"
+                    //      should also be removed... that would also include
+                    //      the "content::prevent_delete"
+                }
+                else if(p->f_overwrite
                 || param_table->row(row_key)->cell(p->f_name)->value().nullValue())
                 {
                     bool ok(true);

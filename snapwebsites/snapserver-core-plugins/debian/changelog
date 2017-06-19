@@ -1,3 +1,10 @@
+snapserver-core-plugins (1.0.127.0~xenial) xenial; urgency=high
+
+  * SNAP-173: Added support for removing system fields in "content", "branch"
+    and "revision" tables. Similar to removing links.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 18 Jun 2017 23:56:56 -0800
+
 snapserver-core-plugins (1.0.126.0~xenial) xenial; urgency=high
 
   * SNAP-161: The saving now makes use of the language to retrieve the correct
