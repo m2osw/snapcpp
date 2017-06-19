@@ -1,13 +1,13 @@
-snapserver-core-plugins (1.0.124.3~xenial) xenial; urgency=high
+snapserver-core-plugins (1.0.125.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-235: Fixed the meta tag of the generator, correct version now.
 
- -- Build Server <build@m2osw.com>  Fri, 16 Jun 2017 02:00:53 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 18 Jun 2017 17:11:26 -0800
 
 snapserver-core-plugins (1.0.124.0~xenial) xenial; urgency=high
 
   * EX-131: Added a reason to the block_ip() call in the password and
-  * anti-hammering plugins.
+    anti-hammering plugins.
 
  -- Alexis Wilke <alexis@m2osw.com>  Thu, 15 Jun 2017 13:11:46 -0800
 

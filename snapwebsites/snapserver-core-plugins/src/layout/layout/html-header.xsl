@@ -143,7 +143,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<!-- generator -->
 		<link rel="bookmark" type="text/html" title="Generator" href="http://snapwebsites.org/"/>
 		<meta name="generator">
-			<xsl:attribute name="content">Snap! Websites v<xsl:value-of select="head/metadata/desc[@type='version']/version"/></xsl:attribute>
+			<xsl:attribute name="content">Snap! Websites v<xsl:value-of select="head/metadata/desc[@type='version']/data"/></xsl:attribute>
 		</meta>
 		<meta name="application-name" content="snapwebsites"/>
 
