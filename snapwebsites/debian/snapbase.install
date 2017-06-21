@@ -1,0 +1,17 @@
+debian/tmp/usr/bin/snapbootinit \
+debian/tmp/usr/bin/swap-usage 												usr/bin/
+debian/tmp/usr/lib/snapwebsites/scripts/snapapacheinit						usr/lib/snapapacheinit/scripts/
+debian/tmp/usr/share/snapwebsites/conf/snapserver.conf						usr/share/snapwebsites/conf/
+debian/tmp/usr/share/snapwebsites/logger/snapserver.properties				usr/share/snapwebsites/logger/snapserver.properties
+debian/tmp/conf/snapserver.conf												etc/snapwebsites/
+debian/tmp/conf/loggingserver.properties \
+debian/tmp/conf/log.properties \
+debian/tmp/conf/logserver.properties 										etc/snapwebsites/logger/
+debian/tmp/conf/README.md													etc/snapwebsites/snapwebsites.d/
+debian/tmp/conf/snap-acceptfilter.conf \
+debian/tmp/conf/snap-apache2-extra-options.conf \
+debian/tmp/conf/snap-apache2-security.conf \
+debian/tmp/conf/snap-httpoxy.conf \
+debian/tmp/conf/snap-apache2-ssl-log.conf 									etc/apache2/conf-available/
+debian/tmp/conf/snap-apache2-ssl.conf \
+debian/tmp/conf/ssl-README.md												etc/apache2/ssl-snap/

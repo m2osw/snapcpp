@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/libsnapmanager.so.* usr/lib/
+libsnapmanager/conf/snapmanager.conf   etc/snapwebsites/

@@ -1,0 +1,9 @@
+debian/snapbounce/usr/bin/*
+debian/snapbounce/usr/include/*
+debian/snapbounce/usr/lib/*
+debian/snapbounce/usr/share/*
+conf/snap-postfix.conf                      etc/fail2ban/filter.d/
+conf/snap-postfix-rbl.conf                  etc/fail2ban/filter.d/
+conf/snap-postfix-sasl.conf                 etc/fail2ban/filter.d/
+conf/snap-postfix-jail.conf                 etc/fail2ban/jail.d/
+conf/02-mail.conf                           etc/rsyslog.d/

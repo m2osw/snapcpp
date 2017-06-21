@@ -1,2 +1,4 @@
-usr/lib/x86_64-linux-gnu/*.so.*
-usr/bin
+debian/tmp/usr/lib/x86_64-linux-gnu/*.so.*  usr/lib/
+debian/tmp/usr/bin/dostime \
+debian/tmp/usr/bin/zipios \
+debian/tmp/usr/bin/appendzip                usr/bin

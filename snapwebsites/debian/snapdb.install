@@ -1,0 +1,3 @@
+debian/snapdb/usr/bin/*
+debian/snapdb/usr/share/snapwebsites/*
+debian/snapdb/usr/share/snapwebsites/conf/snapdb.conf etc/snapwebsites

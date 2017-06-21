@@ -44,7 +44,7 @@ project( snapwebsites_contrib )
 ConfigureMakeProject( PROJECT_NAME zipios
     CONFIG_ARGS
         -DBUILD_ZIPIOS_TESTS:BOOL=OFF
-    COMPONENT main
+    COMPONENT contrib
 )
 
 ConfigureMakeProject( PROJECT_NAME log4cplus
@@ -54,7 +54,7 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
         -DLOG4CPLUS_SINGLE_THREADED=OFF
         -DLOG4CPLUS_QT4=OFF
         -DLOG4CPLUS_QT5=OFF
-    COMPONENT main
+    COMPONENT contrib
 )
 
 ConfigureMakeProject( PROJECT_NAME advgetopt          COMPONENT contrib )
