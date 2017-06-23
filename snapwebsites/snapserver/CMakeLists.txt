@@ -82,10 +82,12 @@ set( QT_LIBRARIES
     Qt5::XmlPatterns
 )
 
-#SnapGetVersion( SNAPSERVER ${CMAKE_CURRENT_SOURCE_DIR} )
-
 include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
+    ${QTSERIALIZATION_INCLUDE_DIRS}
 )
 
 find_library( UUID uuid )
