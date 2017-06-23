@@ -55,26 +55,6 @@ set( CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
 )
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( As2Js 0.1.0      REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Network       REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-find_package( Qt5XmlPatterns   REQUIRED )
-#find_package( QtCassandra      REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-#find_package( SnapWebsites     REQUIRED )
-
-#SnapGetVersion( SNAPWATCHDOG ${CMAKE_CURRENT_SOURCE_DIR} )
-
-if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
-    message("Debug is in effect for snapwatchdog!")
-else()
-    message("Debug is turned OFF")
-endif()
 # A few extra warnings specifically for snapwatchdog libraries and tools
 # You can also play with -Weffc++ although we are definitively not compliant
 # (especially we do not define all the auto-initialized variables!)
@@ -93,7 +73,11 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/lib
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
+    ${QTSERIALIZATION_INCLUDE_DIRS}
 )
 
 set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )

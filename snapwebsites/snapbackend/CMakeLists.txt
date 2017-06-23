@@ -39,16 +39,6 @@ project(snapbackend_project)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-find_package( As2Js            REQUIRED )
-find_package( SnapDoxygen )
-
 include_directories(
     SYSTEM
         ${Qt5Core_INCLUDE_DIRS}
@@ -61,6 +51,8 @@ set( QT_LIBRARIES
 include_directories(
     ${libsnapwebsites_project_SOURCE_DIR}/src
     ${libsnapwebsites_project_BINARY_DIR}/src
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
     ${QTSERIALIZATION_INCLUDE_DIRS}
 )
 

@@ -51,16 +51,10 @@ add_library(watchdog SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(watchdog
-    #${AS2JS_LIBRARIES}
-    #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
-    #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    #${LOG4CPLUS_LIBRARY}
-    #${SNAPWEBSITES_LIBRARIES}
-    #${LIBTLD_LIBRARIES}
 )
 
 install(

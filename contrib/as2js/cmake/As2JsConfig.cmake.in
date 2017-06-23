@@ -13,14 +13,14 @@ find_path( AS2JS_INCLUDE_DIR as2js/as2js.h
     PATHS $ENV{AS2JS_INCLUDE_DIR}
     PATH_SUFFIXES asj2s
 )
-message( "Include Dir" )
-message( ${AS2JS_INCLUDE_DIR} )
+#message( "Include Dir" )
+#message( ${AS2JS_INCLUDE_DIR} )
 
 find_library( AS2JS_LIBRARY as2js
     PATHS $ENV{AS2JS_LIBRARY}
 )
-message( "Library Dir" )
-message( ${AS2JS_LIBRARY} )
+#message( "Library Dir" )
+#message( ${AS2JS_LIBRARY} )
 
 mark_as_advanced( AS2JS_INCLUDE_DIR AS2JS_LIBRARY )
 

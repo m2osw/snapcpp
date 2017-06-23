@@ -42,18 +42,6 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( CassWrapper	   REQUIRED )
-find_package( LibExcept        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-#find_package( QtCassandra      REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-#find_package( SnapWebsites     REQUIRED )
-find_package( SnapDoxygen )
-
-#SnapGetVersion( SNAPDBPROXY ${CMAKE_CURRENT_SOURCE_DIR} )
-
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
@@ -63,10 +51,12 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 include_directories(
-    ${CASSWRAPPER_INCLUDE_DIRS}
-    ${QTCASSANDRA_INCLUDE_DIRS}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
     ${CMAKE_CURRENT_BINARY_DIR}/src
+    ${CASSWRAPPER_INCLUDE_DIRS}
 )
 
 #snap_clear_xml_targets()

@@ -56,11 +56,11 @@ add_executable(${PROJECT_NAME}
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwatchdog
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     ${AS2JS_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     #dl

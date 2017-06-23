@@ -61,14 +61,14 @@ add_executable( ${PROJECT_NAME}
 
 target_link_libraries( ${PROJECT_NAME}
     snapmanager
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     ${AS2JS_LIBRARIES}
     ${QT_LIBRARIES}
-    QtCassandra
     ${QTSERIALIZATION_LIBRARIES}
     ${LIBTLD_LIBRARIES}
-    snapwebsites
     dl
 )
 

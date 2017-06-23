@@ -39,16 +39,6 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( CassValue        REQUIRED )
-find_package( LibExcept        REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-
 include_directories(
     ${libsnapwebsites_project_SOURCE_DIR}/src
     ${libsnapwebsites_project_BINARY_DIR}/src

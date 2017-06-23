@@ -45,15 +45,15 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${CASSVALUE_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${AS2JS_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
 
@@ -88,13 +88,13 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${AS2JS_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
 

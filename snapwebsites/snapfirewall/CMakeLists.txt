@@ -45,30 +45,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 
-find_package( As2Js            REQUIRED )
-find_package( AdvGetOpt        REQUIRED )
-find_package( CassValue        REQUIRED )
-find_package( CassWrapper      REQUIRED )
-find_package( LibExcept        REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Sql           REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-#find_package( QtCassandra      REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-find_package( SnapDoxygen               )
-#find_package( SnapManager      REQUIRED )
-#find_package( SnapWebsites     REQUIRED )
-
 #SnapGetVersion( SNAPFIREWALL ${CMAKE_CURRENT_SOURCE_DIR} )
 
-include_directories(
-    ${QTCASSANDRA_INCLUDE_DIRS}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${SNAPMANAGERCGI_INCLUDE_DIR}
-)
 include_directories(
     SYSTEM
         ${Qt5Core_INCLUDE_DIRS}
@@ -79,6 +57,13 @@ set( QT_LIBRARIES
     Qt5::Core
     Qt5::Sql
     Qt5::Xml
+)
+include_directories(
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
+    ${QTSERIALIZATION_INCLUDE_DIRS}
 )
 
 snap_clear_xml_targets()

@@ -51,7 +51,7 @@ add_library(backend SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(backend
     ${QT_LIBRARIES}

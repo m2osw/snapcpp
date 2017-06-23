@@ -54,21 +54,6 @@ set( CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
 )
 
-##
-## Find required packages
-##
-find_package( AdvGetOpt         REQUIRED )
-find_package( As2Js 0.1.0       REQUIRED )
-find_package( LibTLD            REQUIRED )
-find_package( log4cplus         REQUIRED )
-find_package( OpenSSL           REQUIRED )
-find_package( Qt5Core           REQUIRED )
-find_package( Qt5Network        REQUIRED )
-find_package( Qt5Xml            REQUIRED )
-find_package( QtSerialization   REQUIRED )
-find_package( SnapCMakeModules  REQUIRED )
-find_package( SnapDoxygen )
-
 set( QT_LIBRARIES
     Qt5::Core
     Qt5::Network

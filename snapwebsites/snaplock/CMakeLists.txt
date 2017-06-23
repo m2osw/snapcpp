@@ -36,19 +36,6 @@ project( snaplock_project )
 # Find includes in corresponding build directories
 set( CMAKE_INCLUDE_CURRENT_DIR ON )
 
-# Find required packaging
-find_package( AdvGetOpt          REQUIRED )
-find_package( CassValue          REQUIRED )
-find_package( CassWrapper        REQUIRED )
-find_package( LibExcept          REQUIRED )
-find_package( log4cplus          REQUIRED )
-find_package( LibTLD             REQUIRED )
-find_package( Qt5Core            REQUIRED )
-find_package( Qt5Xml             REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-#find_package( SnapWebsites       REQUIRED )
-find_package( SnapDoxygen )
-
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
@@ -58,9 +45,10 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${QTSERIALIZATION_INCLUDE_DIRS}
 )
-#SnapGetVersion( SNAPLOCK ${CMAKE_CURRENT_SOURCE_DIR} )
 
 option( RUN_TESTS "Enable tests to run via CTest" OFF )
 if( ${RUN_TESTS} )

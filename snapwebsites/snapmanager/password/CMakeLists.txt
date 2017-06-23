@@ -35,8 +35,6 @@ include_directories(
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-    #${snapmanager_SOURCE_DIR}
 )
 
 
@@ -46,13 +44,13 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     #snapmanager
-    ${SNAPWEBSITES_LIBRARIES}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${AS2JS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
 

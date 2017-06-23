@@ -43,23 +43,16 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     firewall.qrc
 )
 
-
-
 add_library(firewall SHARED
     firewall.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(firewall
-    #${AS2JS_LIBRARIES}
-    #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    #${LOG4CPLUS_LIBRARY}
-    #${SNAPWEBSITES_LIBRARIES}
-    #${LIBTLD_LIBRARIES}
 )
 
 install(

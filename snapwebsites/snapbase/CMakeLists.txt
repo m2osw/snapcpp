@@ -35,9 +35,6 @@ cmake_minimum_required( VERSION 3.5 )
 
 project(snapbase_project)
 
-find_package( SnapCMakeModules  REQUIRED )
-find_package( SnapDoxygen )
-
 ##
 ## Version
 ##

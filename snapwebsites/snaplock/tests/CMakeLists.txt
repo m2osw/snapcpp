@@ -42,13 +42,14 @@ if(CATCH_FOUND)
         test_snap_lock.cpp
     )
     target_link_libraries(${PROJECT_NAME}
+        snapwebsites
+        QtCassandra
         ${CASSVALUE_LIBRARIES}
         ${CASSWRAPPER_LIBRARIES}
         ${LIBEXCEPT_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
         ${QT_LIBRARIES}
-        ${SNAPWEBSITES_LIBRARIES}
         dl
     )
     add_test(

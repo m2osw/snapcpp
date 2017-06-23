@@ -51,7 +51,7 @@ add_library(snapserver_manager SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(snapserver_manager
     #${AS2JS_LIBRARIES}

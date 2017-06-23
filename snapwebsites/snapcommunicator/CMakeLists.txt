@@ -39,15 +39,6 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set( CMAKE_INCLUDE_CURRENT_DIR ON )
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-find_package( SnapDoxygen )
-
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}

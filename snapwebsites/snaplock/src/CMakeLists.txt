@@ -46,14 +46,14 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries( ${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${CASSWRAPPER_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(

@@ -49,16 +49,6 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv"                       )
 
-find_package( AdvGetOpt          REQUIRED )
-find_package( CassWrapper        REQUIRED )
-find_package( Qt5Core            REQUIRED )
-find_package( Qt5Network         REQUIRED )
-find_package( Qt5Sql             REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-#find_package( SnapWebsites       REQUIRED )
-
-#SnapGetVersion( SNAPBACKUP ${CMAKE_CURRENT_SOURCE_DIR} )
-
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
@@ -71,6 +61,10 @@ set( QT_LIBRARIES
 )
 
 include_directories(
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
     ${ADVGETOPT_INCLUDE_DIRS}
     ${CASSWRAPPER_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}

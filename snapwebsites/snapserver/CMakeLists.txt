@@ -64,31 +64,6 @@ endif()
 ##
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
-find_package( AdvGetOpt          REQUIRED )
-find_package( As2Js 0.1.0       REQUIRED )
-find_package( Boost              REQUIRED )
-find_package( CassValue		     REQUIRED )
-find_package( CSSPP              REQUIRED )
-find_package( LibTLD             REQUIRED )
-find_package( LibXml2            REQUIRED )
-find_package( log4cplus          REQUIRED )
-find_package( OpenSSL            REQUIRED )
-find_package( ProcPS             REQUIRED )
-find_package( Qt5Core            REQUIRED )
-find_package( Qt5Network         REQUIRED )
-find_package( Qt5Script          REQUIRED )
-find_package( Qt5Sql             REQUIRED )
-find_package( Qt5Widgets         REQUIRED )
-find_package( Qt5Xml             REQUIRED )
-find_package( Qt5XmlPatterns     REQUIRED )
-#find_package( QtCassandra        REQUIRED )
-find_package( QtSerialization    REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-#find_package( SnapWebsites       REQUIRED )
-find_package( ZLIB               REQUIRED )
-find_package( ZipIos             REQUIRED 2.1 )
-find_package( SnapDoxygen )
-
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
@@ -125,11 +100,6 @@ if( "${XMLLINT_EXECUTABLE}" STREQUAL "XMLLINT_EXECUTABLE-NOTFOUND" )
     message( FATAL_ERROR "xmllint was not found, you need to install libxml2-utils" )
 endif()
 
-if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
-    message("Debug is in effect for snapwebsites!")
-else()
-    message("Debug is turned OFF")
-endif()
 # A few extra warnings specifically for snapwebsites libraries and tools
 # You can also play with -Weffc++ although we are definitively not compliant
 # (especially we do not define all the auto-initialized variables!)

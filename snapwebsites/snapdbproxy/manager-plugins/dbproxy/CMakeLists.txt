@@ -51,7 +51,7 @@ add_library(dbproxy SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(dbproxy
     #${AS2JS_LIBRARIES}
