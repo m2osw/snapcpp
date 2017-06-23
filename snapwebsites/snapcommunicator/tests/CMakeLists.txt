@@ -43,30 +43,31 @@ set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassand
 find_package( Catch )
 
 if(CATCH_FOUND)
+    ##
+    ## Code from snapbase
+    ##
+    set( SNAP_TESTS
+        ${snapbase_project_SOURCE_DIR}/src/snap_tests.h
+        ${snapbase_project_SOURCE_DIR}/src/snap_tests.cpp
+    )
+    include_directories( ${snapbase_project_SOURCE_DIR}/src )
 
     project(test_snap_communicator)
-
-    include_directories(
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src
-    )
     add_executable(${PROJECT_NAME}
         # Main
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
+        ${SNAP_TESTS}
         catch_tests.cpp
-
         # Test suites
         catch_snap_communicator.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
+        snapwebsites
+        QtCassandra
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl
     )
-
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
 
     ##
@@ -75,14 +76,13 @@ if(CATCH_FOUND)
     project(test_snap_communicator_client)
     add_executable(${PROJECT_NAME}
         # Main
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
+        ${SNAP_TESTS}
         test_snap_communicator_client.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
+        snapwebsites
+        QtCassandra
         ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
         dl

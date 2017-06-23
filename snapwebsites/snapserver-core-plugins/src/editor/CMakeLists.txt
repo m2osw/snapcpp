@@ -48,7 +48,7 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_css( editor.css )
 # Form dependency to be removed.
-snap_validate_xml( new-draft.xml          form/snap-form.dtd                                         )
+snap_validate_xml( new-draft.xml          ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd  )
 snap_validate_xml( content.xml            ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd )
 snap_validate_xml( default-page.xml       editor-form.dtd                                            )
 snap_validate_xml( editor-test-page.xml   editor-form.dtd                                            )

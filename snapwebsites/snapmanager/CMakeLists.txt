@@ -65,16 +65,9 @@ find_package( OpenSSL           REQUIRED )
 find_package( Qt5Core           REQUIRED )
 find_package( Qt5Network        REQUIRED )
 find_package( Qt5Xml            REQUIRED )
-#find_package( QtCassandra       REQUIRED )
 find_package( QtSerialization   REQUIRED )
 find_package( SnapCMakeModules  REQUIRED )
-#find_package( SnapWebsites      REQUIRED )
 find_package( SnapDoxygen )
-
-##
-## Version
-##
-#SnapGetVersion( SNAPMANAGERCGI ${CMAKE_CURRENT_SOURCE_DIR} )
 
 set( QT_LIBRARIES
     Qt5::Core
@@ -87,9 +80,12 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/lib
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
+    ${QTSERIALIZATION_INCLUDE_DIRS}
 )
 
+snap_clear_xml_targets()
 
 ##
 ## Add sub-projects

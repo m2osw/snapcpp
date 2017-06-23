@@ -51,11 +51,17 @@ if(CATCH_FOUND)
     # TODO: turn this into a static library, because it takes a lot
     # longer to compile each test.
     set( SNAP_TESTS
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
-        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
+        ${snapbase_project_SOURCE_DIR}/src/snap_tests.h
+        ${snapbase_project_SOURCE_DIR}/src/snap_tests.cpp
     )
-
-    include_directories( ${CMAKE_PREFIX_PATH}/share/snapwebsites/src )
+    set( TEST_LIBRARIES
+        snapwebsites
+        QtCassandra
+        ${LOG4CPLUS_LIBRARIES}
+        ${LIBTLD_LIBRARIES}
+        ${QT_LIBRARIES}
+        dl
+    )
 
     project(test_snap_parser)
     add_executable(${PROJECT_NAME}
@@ -63,12 +69,7 @@ if(CATCH_FOUND)
         test_snap_parser.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
@@ -90,12 +91,7 @@ if(CATCH_FOUND)
         test_entity_filter.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
@@ -106,27 +102,9 @@ if(CATCH_FOUND)
         test_ip_strings.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
-
-    # This one is retired because we now use snap_communicator
-    ##add_executable(test_snap_udp_message
-    ##    test_snap_udp_message.cpp
-    ##)
-    ##target_link_libraries(test_snap_udp_message
-    ##    ${SNAPWEBSITES_LIBRARIES}
-    ##    ${QTCASSANDRA_LIBRARIES}
-    ##    ${LIBTLD_LIBRARIES}
-    ##    ${QT_LIBRARIES}
-    ##    dl
-    ##)
 
     project(test_quoted_printable)
     add_executable(${PROJECT_NAME}
@@ -134,12 +112,7 @@ if(CATCH_FOUND)
         test_quoted_printable.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
@@ -150,12 +123,7 @@ if(CATCH_FOUND)
         test_snap_child_date_parser.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
@@ -166,12 +134,7 @@ if(CATCH_FOUND)
         test_snap_version.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
@@ -187,12 +150,7 @@ if(CATCH_FOUND)
         test_snap_exception.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+        ${TEST_LIBRARIES}
     )
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 

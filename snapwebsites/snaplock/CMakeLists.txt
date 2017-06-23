@@ -67,6 +67,8 @@ if( ${RUN_TESTS} )
     enable_testing()
 endif()
 
+#snap_clear_xml_targets()
+
 add_subdirectory( conf  )
 add_subdirectory( src   )
 add_subdirectory( doc   )

@@ -59,7 +59,7 @@ find_package( Qt5Xml           REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen               )
-find_package( SnapManager      REQUIRED )
+#find_package( SnapManager      REQUIRED )
 #find_package( SnapWebsites     REQUIRED )
 
 #SnapGetVersion( SNAPFIREWALL ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -80,6 +80,8 @@ set( QT_LIBRARIES
     Qt5::Sql
     Qt5::Xml
 )
+
+snap_clear_xml_targets()
 
 add_subdirectory( conf            )
 add_subdirectory( src             )

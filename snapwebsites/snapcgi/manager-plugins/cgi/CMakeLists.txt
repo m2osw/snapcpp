@@ -44,7 +44,6 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 )
 
 
-
 add_library(cgi SHARED
     cgi.cpp
     ${SNAP_MANAGER_MOC_CXX}
@@ -54,13 +53,7 @@ add_library(cgi SHARED
 message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(cgi
-    #${AS2JS_LIBRARIES}
-    #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
-    #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    #${LOG4CPLUS_LIBRARY}
-    #${SNAPWEBSITES_LIBRARIES}
-    #${LIBTLD_LIBRARIES}
 )
 
 install(

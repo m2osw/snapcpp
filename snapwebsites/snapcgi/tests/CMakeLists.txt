@@ -52,14 +52,14 @@ if(CATCH_FOUND)
         test_snap_cgi.cpp
     )
     # while developing you may need to set LD_LIBRARY_PATH
-    target_link_libraries(test_snap_cgi
-        #${SNAPWEBSITES_LIBRARIES}
-        #QtCassandra
-        #QtCore
-        #QtXml
-        #QtNetwork
-        #tld
-    )
+    #target_link_libraries(test_snap_cgi
+    #    #${SNAPWEBSITES_LIBRARIES}
+    #    #QtCassandra
+    #    #QtCore
+    #    #QtXml
+    #    #QtNetwork
+    #    #tld
+    #)
     add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 else(CATCH_FOUND)

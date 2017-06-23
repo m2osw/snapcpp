@@ -33,7 +33,6 @@
 project(snapcgi)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
-
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_executable(${PROJECT_NAME}
@@ -43,10 +42,12 @@ add_executable(${PROJECT_NAME}
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
+    ${CASSWRAPPER_LIBRARIES}
     ${QT_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(

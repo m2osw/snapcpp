@@ -73,8 +73,10 @@ set( QT_LIBRARIES
 include_directories(
     ${ADVGETOPT_INCLUDE_DIRS}
     ${CASSWRAPPER_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+snap_clear_xml_targets()
 
 add_subdirectory( conf            )
 add_subdirectory( src             )

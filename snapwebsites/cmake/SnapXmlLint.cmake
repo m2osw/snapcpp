@@ -78,6 +78,10 @@ function( snap_validate_xml XML_FILE DTD_FILE )
     set_property( GLOBAL APPEND PROPERTY XML_FILE_LIST "${FULL_XML_PATH}" "${DTD_PATH}" "${CMAKE_CURRENT_BINARY_DIR}" )
 endfunction()
 
+function( snap_clear_xml_targets )
+    set_property( GLOBAL PROPERTY XML_FILE_LIST "" )
+endfunction()
+
 
 ################################################################################
 # Make sure all lint targets get built properly...

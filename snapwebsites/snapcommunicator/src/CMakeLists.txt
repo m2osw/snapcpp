@@ -38,7 +38,6 @@
 project(snapcommunicator)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
-
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_executable(${PROJECT_NAME}
@@ -46,12 +45,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${LIBTLD_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -73,12 +72,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${LIBTLD_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -99,13 +98,13 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(

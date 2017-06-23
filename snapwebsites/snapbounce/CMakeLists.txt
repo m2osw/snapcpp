@@ -46,13 +46,12 @@ find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-#find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-#find_package( SnapWebsites     REQUIRED )
 
 include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
 )
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
@@ -69,6 +68,8 @@ find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )
     message( FATAL_ERROR "Cannot find uuid library!" )
 endif()
+
+snap_clear_xml_targets()
 
 add_subdirectory( conf            )
 add_subdirectory( src             )

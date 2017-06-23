@@ -34,7 +34,7 @@ project(snapmanager)
 set( CMAKE_AUTOMOC TRUE )
 
 # Put the version in the header file
-file( MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/snapmanager )
+file( MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/snapmanager )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapmanager/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapmanager/version.h )
 
 #find_package( log4cplus REQUIRED )
@@ -43,9 +43,8 @@ find_package( Qt5Xml         REQUIRED )
 find_package( Qt5XmlPatterns REQUIRED )
 
 include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
-        ${QT_INCLUDES}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${QT_INCLUDES}
 )
 
 set( HEADERS

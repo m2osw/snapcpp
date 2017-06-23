@@ -43,6 +43,10 @@ function( snap_validate_js JS_FILE )
     set_property( GLOBAL APPEND PROPERTY JS_FILE_LIST "${FULL_JS_PATH}" "${CMAKE_CURRENT_BINARY_DIR}" )
 endfunction()
 
+function( snap_clear_js_targets )
+    set_property( GLOBAL PROPERTY JS_FILE_LIST "" )
+endfunction()
+
 
 ################################################################################
 # Make sure all lint targets get built properly...

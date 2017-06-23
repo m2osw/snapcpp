@@ -37,13 +37,12 @@ find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${snapwebsites_top_dir_SOURCE_DIR}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     communicator.qrc
 )
-
-
 
 add_library(communicator SHARED
     communicator.cpp
@@ -51,16 +50,10 @@ add_library(communicator SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(communicator
-    #${AS2JS_LIBRARIES}
-    #/home/snapwebsites/BUILD/dist/lib/libsnapmanager.so
-    #${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    #${LOG4CPLUS_LIBRARY}
-    #${SNAPWEBSITES_LIBRARIES}
-    #${LIBTLD_LIBRARIES}
 )
 
 install(

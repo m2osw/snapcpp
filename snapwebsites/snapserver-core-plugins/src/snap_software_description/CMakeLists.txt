@@ -86,5 +86,12 @@ install(
 	DESTINATION
 		share/snapwebsites/dtd
 )
+#
+file(
+    INSTALL
+        snap-software-description-xslt20.dtd
+    DESTINATION
+        ${SNAP_DIST_DIR}/share/snapwebsites/xsd
+)
 
 # vim: ts=4 sw=4 et

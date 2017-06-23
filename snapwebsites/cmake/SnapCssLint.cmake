@@ -38,6 +38,10 @@ function( snap_validate_css CSS_FILE )
     set_property( GLOBAL APPEND PROPERTY CSS_FILE_LIST "${FULL_CSS_PATH}" "${CMAKE_CURRENT_BINARY_DIR}" )
 endfunction()
 
+function( snap_clear_css_targets )
+    set_property( GLOBAL PROPERTY CSS_FILE_LIST "" )
+endfunction()
+
 
 ################################################################################
 # Make sure all lint targets get built properly...

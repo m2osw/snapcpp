@@ -98,6 +98,8 @@ include_directories(
 
 set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 
+snap_clear_xml_targets()
+
 ##
 ## Compiling
 ##

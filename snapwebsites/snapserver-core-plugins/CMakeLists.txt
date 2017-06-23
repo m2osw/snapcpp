@@ -81,7 +81,8 @@ include_directories( SYSTEM
     ${Qt5XmlPatterns_INCLUDE_DIRS}
 )
 include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
+	${libsnapwebsites_project_SOURCE_DIR}/src
+	${libsnapwebsites_project_BINARY_DIR}/src
 )
 set( QT_LIBRARIES
     Qt5::Core
@@ -125,16 +126,23 @@ include_directories(
     ${ADVGETOPT_INCLUDE_DIRS}
     ${QTCASSANDRA_INCLUDE_DIRS}
     ${QTSERIALIZATION_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
     ${LIBTLD_INCLUDE_DIRS}
 )
+
+##
+## Clear these targets for linting
+##
+snap_clear_css_targets()
+snap_clear_js_targets()
+snap_clear_xml_targets()
 
 add_subdirectory( conf  )
 add_subdirectory( src   )
 add_subdirectory( doc   )
 
 ##
-## Analyse xml and javascript
+## Analyse css, xml and javascript
 ##
 snap_build_css_targets()
 snap_build_js_targets()

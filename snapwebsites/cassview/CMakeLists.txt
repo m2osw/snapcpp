@@ -86,9 +86,10 @@ include_directories( SYSTEM
 )
 
 include_directories(
+    ${libsnapwebsites_project_SOURCE_DIR}/src
+    ${libsnapwebsites_project_BINARY_DIR}/src
     ${CASSWRAPPER_INCLUDE_DIRS}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 add_subdirectory(src)

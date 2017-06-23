@@ -67,6 +67,8 @@ set( QT_LIBRARIES
 
 #SnapGetVersion( SNAPDB ${CMAKE_CURRENT_SOURCE_DIR} )
 
+snap_clear_xml_targets()
+
 add_subdirectory( conf  )
 add_subdirectory( src   )
 #add_subdirectory( tests )

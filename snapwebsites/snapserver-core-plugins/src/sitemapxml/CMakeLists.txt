@@ -43,10 +43,9 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     sitemapxml.qrc
 )
 
-snap_validate_xml( content.xml              content/content.dtd )
-
-snap_validate_xml( sitemapxml-to-text.xsl   simplified-xslt20.dtd )
-snap_validate_xml( sitemapxml-to-html.xsl   simplified-xslt20.dtd )
+snap_validate_xml( content.xml            ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd )
+snap_validate_xml( sitemapxml-to-text.xsl simplified-xslt20.dtd                                      )
+snap_validate_xml( sitemapxml-to-html.xsl simplified-xslt20.dtd                                      )
 
 add_library(sitemapxml SHARED
     sitemapxml.cpp
@@ -69,13 +68,23 @@ install(
 ################################################################################
 # Install XSD files.
 #
-install(
-	FILES
+set( DIST_FILES
 		siteindex.xsd
 		sitemap.xsd
-
+)
+#
+install(
+	FILES
+        ${DIST_FILES}
 	DESTINATION
 		share/snapwebsites/xsd
+)
+#
+file(
+    INSTALL
+        ${DIST_FILES}
+    DESTINATION
+        ${SNAP_DIST_DIR}/share/snapwebsites/xsd
 )
 
 # vim: ts=4 sw=4 et

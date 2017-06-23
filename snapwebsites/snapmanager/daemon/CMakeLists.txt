@@ -46,8 +46,6 @@ include_directories(
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/lib
 )
 
 add_executable( ${PROJECT_NAME}
@@ -67,10 +65,10 @@ target_link_libraries( ${PROJECT_NAME}
     ${LOG4CPLUS_LIBRARY}
     ${AS2JS_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
+    QtCassandra
     ${QTSERIALIZATION_LIBRARIES}
     ${LIBTLD_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
+    snapwebsites
     dl
 )
 

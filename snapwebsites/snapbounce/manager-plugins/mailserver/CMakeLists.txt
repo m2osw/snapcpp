@@ -37,6 +37,9 @@ find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${snapmanagercgi_project_BINARY_DIR}/lib
+    ${snapmanagercgi_project_SOURCE_DIR}/lib
+    ${QTSERIALIZATION_INCLUDE_DIRS}
 )
 
 qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
@@ -49,7 +52,7 @@ add_library(mailserver SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
+#message("AS2JS_LIBRARIES = " ${AS2JS_LIBRARIES})
 
 target_link_libraries(mailserver
     ${QT_LIBRARIES}

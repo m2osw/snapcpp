@@ -38,22 +38,26 @@ project(snapbounce)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
 
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+include_directories(
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CASSVALUE_INCLUDE_DIRS}
+    ${QTSERIALIZATION_INCLUDE_DIRS}
+)
 
 add_executable(${PROJECT_NAME}
     snapbounce.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${CASSVALUE_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
     ${UUID}
 )
 

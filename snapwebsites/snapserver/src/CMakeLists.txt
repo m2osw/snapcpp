@@ -38,9 +38,8 @@ project(snapserver)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h )
 
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-
 include_directories(
+    ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -49,12 +48,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${AS2JS_LIBRARIES}
     ${CASSVALUE_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -80,14 +79,14 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${AS2JS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -109,14 +108,14 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${AS2JS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -134,15 +133,15 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${AS2JS_LIBRARIES}
     ${CASSVALUE_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(

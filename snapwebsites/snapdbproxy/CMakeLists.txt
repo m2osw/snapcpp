@@ -69,6 +69,8 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
+#snap_clear_xml_targets()
+
 add_subdirectory( conf            )
 add_subdirectory( src             )
 add_subdirectory( manager-plugins )

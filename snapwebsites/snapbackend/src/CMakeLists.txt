@@ -38,11 +38,11 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    QtCassandra
     ${ADVGETOPT_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${AS2JS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
