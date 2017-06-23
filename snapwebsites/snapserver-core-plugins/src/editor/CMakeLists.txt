@@ -48,12 +48,12 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_css( editor.css )
 # Form dependency to be removed.
-snap_validate_xml( new-draft.xml form/snap-form.dtd )
-snap_validate_xml( content.xml              content/content.dtd )
-snap_validate_xml( default-page.xml         editor/editor-form.dtd )
-snap_validate_xml( editor-test-page.xml     editor/editor-form.dtd )
-snap_validate_xml( editor-test-parser.xsl   simplified-xslt20.dtd )
-snap_validate_xml( editor-form.xsl          simplified-xslt20.dtd )
+snap_validate_xml( new-draft.xml          form/snap-form.dtd                                         )
+snap_validate_xml( content.xml            ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd )
+snap_validate_xml( default-page.xml       editor-form.dtd                                            )
+snap_validate_xml( editor-test-page.xml   editor-form.dtd                                            )
+snap_validate_xml( editor-test-parser.xsl simplified-xslt20.dtd                                      )
+snap_validate_xml( editor-form.xsl        simplified-xslt20.dtd                                      )
 
 # Unfortunate, but at this time this doesn't work too well...
 # (i.e. xmllint [as in libxml2] does not support this complex XSD schema)
@@ -101,6 +101,13 @@ install(
 		editor-form.dtd
 	DESTINATION
 		share/snapwebsites/dtd
+)
+#
+file(
+    INSTALL
+        editor-form.dtd
+    DESTINATION
+        ${SNAP_DIST_DIR}/share/snapwebsites/dtd
 )
 
 install(

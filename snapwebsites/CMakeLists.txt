@@ -34,65 +34,50 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+cmake_minimum_required( VERSION 3.5 )
 
-cmake_minimum_required(VERSION 3.5)
+project( snapwebsites_top_dir )
 
-ConfigureMakeProject( PROJECT_NAME libsnapwebsites
-    CONFIG_ARGS
-        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
-        -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    COMPONENT main
+## Include support modules
+##
+set( CMAKE_MODULE_PATH
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+    ${CMAKE_MODULE_PATH}
 )
 
-ConfigureMakeProject( PROJECT_NAME cassview         COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapbackend      COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapbackup       COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapbase         COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapbounce       COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapcgi          COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapcommunicator COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapdb           COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapdbproxy      COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapfirewall
-    CONFIG_ARGS
-        -DSNAPMANAGERCGI_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    COMPONENT main
-)
-ConfigureMakeProject( PROJECT_NAME snaplayout       COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snaplistd        COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snaplock         COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snaplog          COMPONENT main )
-ConfigureMakeProject( PROJECT_NAME snapmanager
-    CONFIG_ARGS
-        -DADVGETOPT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    COMPONENT main
-)
+find_package( SnapCMakeModules REQUIRED )
+#
+SnapGetVersion( SNAPWEBSITES ${CMAKE_CURRENT_SOURCE_DIR} )
 
-ConfigureMakeProject( PROJECT_NAME snapserver
-    CONFIG_ARGS
-        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    COMPONENT main
-)
+################################################################################
+# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
+set( DTD_SOURCE_PATH "${CMAKE_BINARY_DIR}/dist/share/snapwebsites/dtd" CACHE PATH "Location of the default DTD files" )
+set( XSD_SOURCE_PATH "${CMAKE_BINARY_DIR}/dist/share/snapwebsites/xsd" CACHE PATH "Default XSD source files."         )
 
-ConfigureMakeProject( PROJECT_NAME snapserver-core-plugins
-    CONFIG_ARGS
-        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    COMPONENT main
-)
+include( SnapCssLint   )
+include( SnapJsLint    )
+include( SnapXmlLint   )
+include( SnapZipLayout )
 
-ConfigureMakeProject( PROJECT_NAME snapwatchdog
-    CONFIG_ARGS
-        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    COMPONENT main
-)
-
-BuildRepro   ( "main" )
-CreateTargets( "main" )
+add_subdirectory( cmake                   )
+add_subdirectory( libsnapwebsites         )
+add_subdirectory( cassview                )
+add_subdirectory( snapbase                )
+add_subdirectory( snapmanager             )
+add_subdirectory( snapserver              )
+add_subdirectory( snapserver-core-plugins )
+add_subdirectory( snapbackend             )
+add_subdirectory( snapbackup              )
+add_subdirectory( snapbounce              )
+add_subdirectory( snapcgi                 )
+add_subdirectory( snapcommunicator        )
+add_subdirectory( snapdb                  )
+add_subdirectory( snapdbproxy             )
+add_subdirectory( snapfirewall            )
+add_subdirectory( snaplayout              )
+add_subdirectory( snaplistd               )
+add_subdirectory( snaplock                )
+add_subdirectory( snaplog                 )
+add_subdirectory( snapwatchdog            )
 
 # vim: ts=4 sw=4 et nocindent

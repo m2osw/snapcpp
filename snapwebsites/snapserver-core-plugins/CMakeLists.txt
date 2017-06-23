@@ -46,10 +46,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Automatically run the moc compiler on qt files
 set( CMAKE_AUTOMOC TRUE )
 
-################################################################################
-# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
-set( DTD_SOURCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src" CACHE PATH "Location of the default DTD files" )
-
 ## Include support modules
 ##
 find_package( AdvGetOpt          REQUIRED )
@@ -67,10 +63,10 @@ find_package( Qt5Sql             REQUIRED )
 find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
-find_package( QtCassandra        REQUIRED )
+#find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapWebsites       REQUIRED )
+#find_package( SnapWebsites       REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1 )
 find_package( SnapDoxygen )
@@ -96,7 +92,7 @@ set( QT_LIBRARIES
     Qt5::XmlPatterns
 )
 
-SnapGetVersion( COREPLUGINS ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( COREPLUGINS ${CMAKE_CURRENT_SOURCE_DIR} )
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )

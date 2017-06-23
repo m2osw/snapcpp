@@ -65,16 +65,16 @@ find_package( OpenSSL           REQUIRED )
 find_package( Qt5Core           REQUIRED )
 find_package( Qt5Network        REQUIRED )
 find_package( Qt5Xml            REQUIRED )
-find_package( QtCassandra       REQUIRED )
+#find_package( QtCassandra       REQUIRED )
 find_package( QtSerialization   REQUIRED )
 find_package( SnapCMakeModules  REQUIRED )
-find_package( SnapWebsites      REQUIRED )
+#find_package( SnapWebsites      REQUIRED )
 find_package( SnapDoxygen )
 
 ##
 ## Version
 ##
-SnapGetVersion( SNAPMANAGERCGI ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPMANAGERCGI ${CMAKE_CURRENT_SOURCE_DIR} )
 
 set( QT_LIBRARIES
     Qt5::Core
@@ -95,7 +95,6 @@ include_directories(
 ## Add sub-projects
 ##
 add_subdirectory( conf     )          # Configuration files and samples
-add_subdirectory( cmake    )          # CMake helper files
 add_subdirectory( lib      )          # Common code to CGI, daemon, plugins
 add_subdirectory( cgi      )          # The snapmanager.cgi application
 add_subdirectory( daemon   )          # The snapmanagerdaemon to apply commands on any computer

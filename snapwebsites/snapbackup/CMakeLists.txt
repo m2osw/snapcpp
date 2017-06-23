@@ -55,9 +55,9 @@ find_package( Qt5Core            REQUIRED )
 find_package( Qt5Network         REQUIRED )
 find_package( Qt5Sql             REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapWebsites       REQUIRED )
+#find_package( SnapWebsites       REQUIRED )
 
-SnapGetVersion( SNAPBACKUP ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPBACKUP ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}

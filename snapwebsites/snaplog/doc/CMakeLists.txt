@@ -35,9 +35,9 @@
 ##
 AddDoxygenTarget(
     snaplog
-    ${SNAPLOG_VERSION_MAJOR}
-    ${SNAPLOG_VERSION_MINOR}
-    ${SNAPLOG_VERSION_PATCH}
+    ${SNAPWEBSITES_VERSION_MAJOR}
+    ${SNAPWEBSITES_VERSION_MINOR}
+    ${SNAPWEBSITES_VERSION_PATCH}
 )
 
 # vim: ts=4 sw=4 et nocindent

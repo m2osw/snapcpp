@@ -41,10 +41,9 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     cookie_consent_silktide.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
-
-snap_validate_xml( cookie-consent-silktide-page.xml   editor/editor-form.dtd )
-snap_validate_xml( cookie-consent-silktide-parser.xsl simplified-xslt20.dtd  )
+snap_validate_xml( content.xml                        ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd    )
+snap_validate_xml( cookie-consent-silktide-page.xml   ${snapwebsites_plugins_src_SOURCE_DIR}/editor/editor-form.dtd )
+snap_validate_xml( cookie-consent-silktide-parser.xsl simplified-xslt20.dtd                                         )
 
 # One day...
 #snap_validate_js( cookie-consent-silktide.js )
@@ -66,7 +65,7 @@ add_library(cookie_consent_silktide SHARED
     light-top.png
     light-floating.png
     light-bottom.png
-)
+    )
 
 target_link_libraries( cookie_consent_silktide
     Qt5::Core

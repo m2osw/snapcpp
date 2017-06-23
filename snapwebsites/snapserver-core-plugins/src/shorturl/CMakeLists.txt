@@ -43,8 +43,8 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     shorturl.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( settings-form.xml form/snap-form.dtd )
+snap_validate_xml( content.xml       ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd )
+snap_validate_xml( settings-form.xml ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd  )
 
 add_library(shorturl SHARED
     shorturl.cpp

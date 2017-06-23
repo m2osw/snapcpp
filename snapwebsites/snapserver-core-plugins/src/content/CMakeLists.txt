@@ -100,5 +100,11 @@ install(
 	DESTINATION
 		share/snapwebsites/dtd
 )
+file(
+    INSTALL
+        content.dtd
+    DESTINATION
+        ${SNAP_DIST_DIR}/share/snapwebsites/dtd
+)
 
 # vim: ts=4 sw=4 et

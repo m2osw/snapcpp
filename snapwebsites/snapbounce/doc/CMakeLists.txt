@@ -35,9 +35,9 @@
 ##
 AddDoxygenTarget(
     snapbounce
-    ${SNAPBOUNCE_VERSION_MAJOR}
-    ${SNAPBOUNCE_VERSION_MINOR}
-    ${SNAPBOUNCE_VERSION_PATCH}
+    ${SNAPWEBSITES_VERSION_MAJOR}
+    ${SNAPWEBSITES_VERSION_MINOR}
+    ${SNAPWEBSITES_VERSION_PATCH}
 )
 
 # TBD: move this file to the conf directory?

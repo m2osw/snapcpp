@@ -63,6 +63,13 @@ install(
         share/snapwebsites/conf
 )
 #
+file(
+    INSTALL
+        bundles.xsd
+    DESTINATION
+        ${CMAKE_BINARY_DIR}/dist/share/snapwebsites/xsd
+)
+#
 install(
     FILES
         jquery/jquery.js

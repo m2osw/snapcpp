@@ -45,15 +45,12 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 )
 
 
-snap_validate_xml( content.xml              content/content.dtd )
-
-snap_validate_xml( feed-settings-page.xml   editor/editor-form.dtd )
-
-snap_validate_xml( feed-parser.xsl          simplified-xslt20.dtd )
-snap_validate_xml( feed-settings-parser.xsl simplified-xslt20.dtd )
-
-snap_validate_xml( atom.xsl                 feed/atom-xslt20.dtd )
-snap_validate_xml( rss.xsl                  feed/rss-xslt20.dtd )
+snap_validate_xml( content.xml              ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd    )
+snap_validate_xml( feed-settings-page.xml   ${snapwebsites_plugins_src_SOURCE_DIR}/editor/editor-form.dtd )
+snap_validate_xml( feed-parser.xsl          simplified-xslt20.dtd                                         )
+snap_validate_xml( feed-settings-parser.xsl simplified-xslt20.dtd                                         )
+snap_validate_xml( atom.xsl                 atom-xslt20.dtd                                               )
+snap_validate_xml( rss.xsl                  rss-xslt20.dtd                                                )
 
 
 add_library(feed SHARED
@@ -85,13 +82,22 @@ install(
 ################################################################################
 # Install DTD files.
 #
-install(
-	FILES
+set( DTD_FILES
 		atom-xslt20.dtd
 		rss-xslt20.dtd
-
+)
+install(
+	FILES
+        ${DTD_FILES}
 	DESTINATION
 		share/snapwebsites/dtd
+)
+#
+file(
+    INSTALL
+        ${DTD_FILES}
+    DESTINATION
+        ${SNAP_DIST_DIR}/share/snapwebsites/dtd
 )
 
 # vim: ts=4 sw=4 et

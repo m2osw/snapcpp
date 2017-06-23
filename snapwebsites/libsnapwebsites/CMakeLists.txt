@@ -62,31 +62,31 @@ enable_language( C )
 ##
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
-find_package( AdvGetOpt          REQUIRED )
-find_package( Boost              REQUIRED )
-find_package( CassValue          REQUIRED )
-find_package( CassWrapper        REQUIRED )
-find_package( CSSPP              REQUIRED )
-find_package( LibExcept          REQUIRED )
-find_package( LibTLD             REQUIRED )
-find_package( LibXml2            REQUIRED )
-find_package( log4cplus          REQUIRED )
-find_package( Magic              REQUIRED )
-find_package( OpenSSL            REQUIRED )
-find_package( ProcPS             REQUIRED )
-find_package( Qt5Core            REQUIRED )
-find_package( Qt5Network         REQUIRED )
-find_package( Qt5Script          REQUIRED )
-find_package( Qt5Sql             REQUIRED )
-find_package( Qt5Widgets         REQUIRED )
-find_package( Qt5Xml             REQUIRED )
-find_package( Qt5XmlPatterns     REQUIRED )
-find_package( As2Js              REQUIRED )
-find_package( QtSerialization    REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-find_package( ZLIB               REQUIRED )
+find_package( AdvGetOpt          REQUIRED     )
+find_package( Boost              REQUIRED     )
+find_package( CassValue          REQUIRED     )
+find_package( CassWrapper        REQUIRED     )
+find_package( CSSPP              REQUIRED     )
+find_package( LibExcept          REQUIRED     )
+find_package( LibTLD             REQUIRED     )
+find_package( LibXml2            REQUIRED     )
+find_package( log4cplus          REQUIRED     )
+find_package( Magic              REQUIRED     )
+find_package( OpenSSL            REQUIRED     )
+find_package( ProcPS             REQUIRED     )
+find_package( Qt5Core            REQUIRED     )
+find_package( Qt5Network         REQUIRED     )
+find_package( Qt5Script          REQUIRED     )
+find_package( Qt5Sql             REQUIRED     )
+find_package( Qt5Widgets         REQUIRED     )
+find_package( Qt5Xml             REQUIRED     )
+find_package( Qt5XmlPatterns     REQUIRED     )
+find_package( As2Js              REQUIRED     )
+find_package( QtSerialization    REQUIRED     )
+find_package( SnapCMakeModules   REQUIRED     )
+find_package( ZLIB               REQUIRED     )
 find_package( ZipIos             REQUIRED 2.1 )
-find_package( SnapDoxygen )
+find_package( SnapDoxygen                     )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
@@ -106,7 +106,7 @@ set( QT_LIBRARIES
     Qt5::XmlPatterns
 )
 
-SnapGetVersion( LIBSNAPWEBSITES ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( LIBSNAPWEBSITES ${CMAKE_CURRENT_SOURCE_DIR} )
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )
@@ -143,7 +143,6 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 ##
 ## Compiling
 ##
-add_subdirectory(cmake)         # SnapWebsites CMake Modules
 add_subdirectory(src)           # The snapwebsites libraries
 add_subdirectory(doc)           # API Documentation
 add_subdirectory(tests)         # Unit tests
@@ -155,7 +154,7 @@ add_subdirectory(tests)         # Unit tests
 ## Look into a way to compile everything using the -Weffc++ flag because that
 ## gives us many interesting warnings;
 ##
-add_custom_target(snap_code_analysis
+add_custom_target(libwebsites_snap_code_analysis
     COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
     # Count things and report potential problems with different classes
     COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"

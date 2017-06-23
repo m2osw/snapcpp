@@ -46,10 +46,10 @@ find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
+#find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+#find_package( SnapWebsites     REQUIRED )
 
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
@@ -63,7 +63,7 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-SnapGetVersion( SNAPBOUNCE ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPBOUNCE ${CMAKE_CURRENT_SOURCE_DIR} )
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )

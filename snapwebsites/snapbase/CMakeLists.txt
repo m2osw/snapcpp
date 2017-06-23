@@ -41,7 +41,7 @@ find_package( SnapDoxygen )
 ##
 ## Version
 ##
-SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_subdirectory( conf    )
 add_subdirectory( doc     )

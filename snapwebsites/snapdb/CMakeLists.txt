@@ -46,10 +46,10 @@ find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Sql           REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
+#find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+#find_package( SnapWebsites     REQUIRED )
 
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
@@ -65,7 +65,7 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-SnapGetVersion( SNAPDB ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPDB ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_subdirectory( conf  )
 add_subdirectory( src   )

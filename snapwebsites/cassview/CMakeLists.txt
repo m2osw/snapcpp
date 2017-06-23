@@ -62,14 +62,14 @@ find_package( Qt5Network       REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( Qt5Widgets       REQUIRED )
 find_package( QtSerialization  REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+#find_package( SnapWebsites     REQUIRED )
 #find_package( SnapDoxygen )
 
 ##
 ## Version
 ##
-SnapGetVersion( CASSVIEW ${CMAKE_CURRENT_SOURCE_DIR} )
-add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}\" )
+#SnapGetVersion( CASSVIEW ${CMAKE_CURRENT_SOURCE_DIR} )
+add_definitions( -DCASSVIEW_VERSION=\"${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR}.${SNAPWEBSITES_VERSION_PATCH}\" )
 
 set( QT_LIBRARIES
     Qt5::Core

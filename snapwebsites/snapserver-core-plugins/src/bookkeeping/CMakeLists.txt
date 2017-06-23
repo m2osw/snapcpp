@@ -43,11 +43,9 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 
 ## Validate content
 ##
-snap_validate_css( bookkeeping.css )
-snap_validate_xml( content.xml                          content/content.dtd )
-#snap_validate_xml( editor/bookkeeping-settings-page.xml        editor/editor-form.dtd )
-#snap_validate_xml( layout/bookkeeping-settings-parser.xsl      simplified-xslt20.dtd )
-snap_validate_js( bookkeeping-client.js )
+snap_validate_css ( bookkeeping.css       )
+snap_validate_xml ( content.xml           ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd )
+snap_validate_js  ( bookkeeping-client.js )
 
 
 add_library(bookkeeping SHARED

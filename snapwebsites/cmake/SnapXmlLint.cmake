@@ -44,9 +44,11 @@ file( APPEND ${lint_script} "fi\n" )
 
 #
 function( snap_validate_xml XML_FILE DTD_FILE )
-    get_filename_component( FULL_XML_PATH ${XML_FILE} ABSOLUTE )
-    if( EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DTD_FILE}" )
-        set( DTD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${DTD_FILE}" )
+    get_filename_component( DTD_BASEFILE  ${DTD_FILE} NAME     )
+    if( EXISTS "${DTD_FILE}" )
+        set( DTD_PATH "${DTD_FILE}" )
+    elseif( EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DTD_BASEFILE}" )
+        set( DTD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${DTD_BASEFILE}" )
     else()
 		if( NOT DEFINED DTD_SOURCE_PATH )
 			message( FATAL_ERROR "DTD_SOURCE_PATH must be set!" )
@@ -54,16 +56,17 @@ function( snap_validate_xml XML_FILE DTD_FILE )
 		if( NOT DEFINED XSD_SOURCE_PATH )
 			message( FATAL_ERROR "XSD_SOURCE_PATH must be set!" )
 		endif()
-        if( EXISTS "${DTD_SOURCE_PATH}/${DTD_FILE}" )
-    		set( DTD_PATH "${DTD_SOURCE_PATH}/${DTD_FILE}" )
+        if( EXISTS "${DTD_SOURCE_PATH}/${DTD_BASEFILE}" )
+            set( DTD_PATH "${DTD_SOURCE_PATH}/${DTD_BASEFILE}" )
         else()
-            if( EXISTS "${XTD_SOURCE_PATH}/${DTD_FILE}" )
-                set( DTD_PATH "${XTD_SOURCE_PATH}/${DTD_FILE}" )
+            message( "XSD_SOURCE_PATH=${XSD_SOURCE_PATH}, DTD_BASEFILE=${DTD_BASEFILE}" )
+            if( EXISTS "${XSD_SOURCE_PATH}/${DTD_BASEFILE}" )
+                set( DTD_PATH "${XSD_SOURCE_PATH}/${DTD_BASEFILE}" )
             else()
-                if( EXISTS "${CMAKE_INSTALL_PREFIX}/share/snapwebsites/xsd/${DTD_FILE}" )
-                    set( DTD_PATH "${CMAKE_INSTALL_PREFIX}/share/snapwebsites/xsd/${DTD_FILE}" )
+                if( EXISTS "${CMAKE_INSTALL_PREFIX}/share/snapwebsites/xsd/${DTD_BASEFILE}" )
+                    set( DTD_PATH "${CMAKE_INSTALL_PREFIX}/share/snapwebsites/xsd/${DTD_BASEFILE}" )
                 else()
-                    set( DTD_PATH "${CMAKE_INSTALL_PREFIX}/share/snapwebsites/dtd/${DTD_FILE}" )
+                    set( DTD_PATH "${CMAKE_INSTALL_PREFIX}/share/snapwebsites/dtd/${DTD_BASEFILE}" )
                 endif()
             endif()
         endif()
@@ -71,6 +74,7 @@ function( snap_validate_xml XML_FILE DTD_FILE )
     if( NOT EXISTS ${DTD_PATH} )
         message( FATAL_ERROR "DTD_PATH: '${DTD_PATH}' was not found on the system! Please install and try again." )
     endif()
+    get_filename_component( FULL_XML_PATH ${XML_FILE} ABSOLUTE )
     set_property( GLOBAL APPEND PROPERTY XML_FILE_LIST "${FULL_XML_PATH}" "${DTD_PATH}" "${CMAKE_CURRENT_BINARY_DIR}" )
 endfunction()
 
@@ -117,14 +121,14 @@ macro( snap_build_xml_targets )
     # Make each lint file.
     #
     add_custom_target(
-        build_lint ALL
+        ${PROJECT_NAME}_build_lint ALL
         DEPENDS ${lint_file_list}
     )
     #
     # Handy target for wiping out all lint files and forcing a recheck!
     #
     add_custom_target(
-        clean_lint
+        ${PROJECT_NAME}_clean_lint
         COMMAND rm -rf ${lint_file_list}
         DEPENDS ${lint_file_list}
     )

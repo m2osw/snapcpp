@@ -63,12 +63,12 @@ find_package( Qt5Core          REQUIRED )
 find_package( Qt5Network       REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( Qt5XmlPatterns   REQUIRED )
-find_package( QtCassandra      REQUIRED )
+#find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+#find_package( SnapWebsites     REQUIRED )
 
-SnapGetVersion( SNAPWATCHDOG ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPWATCHDOG ${CMAKE_CURRENT_SOURCE_DIR} )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwatchdog!")
@@ -101,7 +101,6 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 ##
 ## Compiling
 ##
-add_subdirectory(cmake)             # SnapWebsites CMake Modules
 add_subdirectory(conf)              # Configuration files and samples
 add_subdirectory(lib)               # Common code which is too specialized to create a separate library
 add_subdirectory(plugins)           # Plug-ins (i.e. modular functionality)

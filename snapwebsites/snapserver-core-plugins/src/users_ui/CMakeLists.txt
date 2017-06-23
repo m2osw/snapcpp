@@ -43,26 +43,26 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     users_ui.qrc
 )
 
-snap_validate_xml( content.xml                           content/content.dtd )
+snap_validate_xml( content.xml                          ${snapwebsites_plugins_src_SOURCE_DIR}/content/content.dtd    )
 
 # TODO: snap-form is deprecated
-snap_validate_xml( users_ui/forgot-password-form.xml     form/snap-form.dtd )
-snap_validate_xml( users_ui/login-box-form.xml           form/snap-form.dtd )
-snap_validate_xml( users_ui/login-form.xml               form/snap-form.dtd )
-snap_validate_xml( users_ui/new-password-form.xml        form/snap-form.dtd )
-snap_validate_xml( users_ui/password-form.xml            form/snap-form.dtd )
-snap_validate_xml( users_ui/register-box-form.xml        form/snap-form.dtd )
-snap_validate_xml( users_ui/register-form.xml            form/snap-form.dtd )
-snap_validate_xml( users_ui/replace-password-form.xml    form/snap-form.dtd )
-snap_validate_xml( users_ui/resend-email-form.xml        form/snap-form.dtd )
-snap_validate_xml( users_ui/verify-credentials-form.xml  form/snap-form.dtd )
-snap_validate_xml( users_ui/verify-form.xml              form/snap-form.dtd )
+snap_validate_xml( users_ui/forgot-password-form.xml    ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/login-box-form.xml          ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/login-form.xml              ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/new-password-form.xml       ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/password-form.xml           ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/register-box-form.xml       ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/register-form.xml           ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/replace-password-form.xml   ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/resend-email-form.xml       ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/verify-credentials-form.xml ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
+snap_validate_xml( users_ui/verify-form.xml             ${snapwebsites_plugins_src_SOURCE_DIR}/form/snap-form.dtd     )
 
 # editor-form
-snap_validate_xml( editor/change-email-page.xml          editor/editor-form.dtd )
-snap_validate_xml( layout/change-email-parser.xsl        simplified-xslt20.dtd )
-snap_validate_xml( editor/users-settings-page.xml        editor/editor-form.dtd )
-snap_validate_xml( layout/users-settings-parser.xsl      simplified-xslt20.dtd )
+snap_validate_xml( editor/change-email-page.xml         ${snapwebsites_plugins_src_SOURCE_DIR}/editor/editor-form.dtd )
+snap_validate_xml( layout/change-email-parser.xsl       simplified-xslt20.dtd                                         )
+snap_validate_xml( editor/users-settings-page.xml       ${snapwebsites_plugins_src_SOURCE_DIR}/editor/editor-form.dtd )
+snap_validate_xml( layout/users-settings-parser.xsl     simplified-xslt20.dtd                                         )
 
 add_library(users_ui SHARED
     users_ui.cpp

@@ -58,9 +58,10 @@ ConfigureMakeProject( PROJECT_NAME cmake COMPONENT contrib )
 # Include snapwebsites projects next
 #
 add_subdirectory( contrib      )
-add_subdirectory( snapwebsites )
 
+ConfigureMakeProject( PROJECT_NAME snapwebsites COMPONENT main )
 
-CreateTargets( "top" )
+BuildRepro    ( "main" )
+CreateTargets ( "top"  )
 
 # vim: ts=4 sw=4 et nocindent

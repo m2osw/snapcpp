@@ -40,6 +40,13 @@ install(
     DESTINATION
         share/snapwebsites/dtd
 )
+#
+file(
+    INSTALL
+        simplified-xslt20.dtd
+    DESTINATION
+        ${CMAKE_BINARY_DIR}/dist/share/snapwebsites/dtd
+)
 
 
 # vim: ts=4 sw=4 et

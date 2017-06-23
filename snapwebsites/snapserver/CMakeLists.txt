@@ -81,10 +81,10 @@ find_package( Qt5Sql             REQUIRED )
 find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
-find_package( QtCassandra        REQUIRED )
+#find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapWebsites       REQUIRED )
+#find_package( SnapWebsites       REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1 )
 find_package( SnapDoxygen )
@@ -107,7 +107,7 @@ set( QT_LIBRARIES
     Qt5::XmlPatterns
 )
 
-SnapGetVersion( SNAPSERVER ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPSERVER ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
@@ -178,7 +178,7 @@ install(
 ## Look into a way to compile everything using the -Weffc++ flag because that
 ## gives us many interesting warnings;
 ##
-add_custom_target(snap_code_analysis
+add_custom_target(snapwebsites_snap_code_analysis
     COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
     # Count things and report potential problems with different classes
     COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"

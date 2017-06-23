@@ -47,10 +47,10 @@ find_package( Qt5Core          REQUIRED )
 find_package( Qt5Sql           REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+#find_package( SnapWebsites     REQUIRED )
 find_package( SnapDoxygen )
 
-SnapGetVersion( SNAPLOG ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPLOG ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}

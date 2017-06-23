@@ -46,13 +46,13 @@ find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
-find_package( QtCassandra      REQUIRED )
+#find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+#find_package( SnapWebsites     REQUIRED )
 find_package( ZipIos           REQUIRED )
 
-SnapGetVersion( SNAPLAYOUT ${CMAKE_CURRENT_SOURCE_DIR} )
+#SnapGetVersion( SNAPLAYOUT ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
