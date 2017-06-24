@@ -1,4 +1,4 @@
-debian/tmp/usr/bin/snapbootinit                         \
+debian/tmp/usr/bin/snapbootinit                         usr/bin/
 debian/tmp/usr/bin/swap-usage                           usr/bin/
 debian/tmp/usr/lib/snapwebsites/scripts/snapapacheinit  usr/lib/snapapacheinit/scripts/
 debian/tmp/usr/share/snapwebsites/conf/snapserver.conf  usr/share/snapwebsites/conf/
@@ -6,10 +6,10 @@ debian/tmp/usr/share/snapwebsites/logger/log.properties usr/share/snapwebsites/l
 snapbase/conf/snapserver.conf                           etc/snapwebsites/
 snapbase/conf/log.properties                            etc/snapwebsites/logger/
 snapbase/conf/README.md                                 etc/snapwebsites/snapwebsites.d/
-snapbase/conf/snap-acceptfilter.conf                    \
-snapbase/conf/snap-apache2-extra-options.conf           \
-snapbase/conf/snap-apache2-security.conf                \
-snapbase/conf/snap-httpoxy.conf                         \
+snapbase/conf/snap-acceptfilter.conf                    etc/apache2/conf-available/
+snapbase/conf/snap-apache2-extra-options.conf           etc/apache2/conf-available/
+snapbase/conf/snap-apache2-security.conf                etc/apache2/conf-available/
+snapbase/conf/snap-httpoxy.conf                         etc/apache2/conf-available/
 snapbase/conf/snap-apache2-ssl-log.conf                 etc/apache2/conf-available/
-snapbase/conf/snap-apache2-ssl.conf                     \
+snapbase/conf/snap-apache2-ssl.conf                     etc/apache2/ssl-snap/
 snapbase/conf/ssl-README.md                             etc/apache2/ssl-snap/

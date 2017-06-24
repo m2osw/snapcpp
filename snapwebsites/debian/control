@@ -715,6 +715,21 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  Cassandra server.
  iplock require for snapfirewall.
 
+Package: snapserver-dev
+Section: web
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapserver (>= ${binary:Version})
+Recommends: snapdb
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to
+ use to create their own extensions.
+ .
+ This package installs the snapmanager development files.
+
 Package: snapserver-doc
 Section: admin
 Architecture: all
