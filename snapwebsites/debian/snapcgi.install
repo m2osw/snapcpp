@@ -1,5 +1,5 @@
 debian/tmp/usr/lib/cgi-bin/snap.cgi                                              var/www/snap/cgi-bin/
-debian/tmp/usr/lib/snapwebsites/manager_plugins/libcgi.so                        usr/lib/snapwebsites/
+debian/tmp/usr/lib/snapwebsites/manager_plugins/libcgi.so                        usr/lib/snapwebsites/manager_plugins/
 debian/tmp/usr/share/snapwebsites/apache2/000-snap-apache2-default-443.conf      usr/share/snapwebsites/apache2/
 debian/tmp/usr/share/snapwebsites/apache2/000-snap-apache2-default-80.conf       usr/share/snapwebsites/apache2/
 debian/tmp/usr/share/snapwebsites/apache2/000-snap-apache2-default-any.conf      usr/share/snapwebsites/apache2/
