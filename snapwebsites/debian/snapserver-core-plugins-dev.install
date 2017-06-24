@@ -3,11 +3,9 @@ debian/tmp/usr/include/snapwebsites/plugins/antivirus/*                 usr/incl
 debian/tmp/usr/include/snapwebsites/plugins/attachment/*                usr/include/snapwebsites/plugins/attachment/
 debian/tmp/usr/include/snapwebsites/plugins/avatar/*                    usr/include/snapwebsites/plugins/avatar/
 debian/tmp/usr/include/snapwebsites/plugins/bookkeeping/*               usr/include/snapwebsites/plugins/bookkeeping/
-debian/tmp/usr/include/snapwebsites/plugins/carousel/*                  usr/include/snapwebsites/plugins/carousel/
 debian/tmp/usr/include/snapwebsites/plugins/char_chart/*                usr/include/snapwebsites/plugins/char_chart/
 debian/tmp/usr/include/snapwebsites/plugins/content/*                   usr/include/snapwebsites/plugins/content/
 debian/tmp/usr/include/snapwebsites/plugins/cookie_consent_silktide/*   usr/include/snapwebsites/plugins/cookie_consent_silktide/
-debian/tmp/usr/include/snapwebsites/plugins/core.txt/*                  usr/include/snapwebsites/plugins/core.txt/
 debian/tmp/usr/include/snapwebsites/plugins/date_widgets/*              usr/include/snapwebsites/plugins/date_widgets/
 debian/tmp/usr/include/snapwebsites/plugins/detectadblocker/*           usr/include/snapwebsites/plugins/detectadblocker/
 debian/tmp/usr/include/snapwebsites/plugins/ecommerce/*                 usr/include/snapwebsites/plugins/ecommerce/
@@ -52,7 +50,6 @@ debian/tmp/usr/include/snapwebsites/plugins/server_access/*             usr/incl
 debian/tmp/usr/include/snapwebsites/plugins/sessions/*                  usr/include/snapwebsites/plugins/sessions/
 debian/tmp/usr/include/snapwebsites/plugins/shorturl/*                  usr/include/snapwebsites/plugins/shorturl/
 debian/tmp/usr/include/snapwebsites/plugins/sitemapxml/*                usr/include/snapwebsites/plugins/sitemapxml/
-debian/tmp/usr/include/snapwebsites/plugins/slick/*                     usr/include/snapwebsites/plugins/slick/
 debian/tmp/usr/include/snapwebsites/plugins/snap_software_description/* usr/include/snapwebsites/plugins/snap_software_description/
 debian/tmp/usr/include/snapwebsites/plugins/sortable/*                  usr/include/snapwebsites/plugins/sortable/
 debian/tmp/usr/include/snapwebsites/plugins/taxonomy/*                  usr/include/snapwebsites/plugins/taxonomy/
@@ -64,4 +61,3 @@ debian/tmp/usr/include/snapwebsites/plugins/users/*                     usr/incl
 debian/tmp/usr/include/snapwebsites/plugins/users_ui/*                  usr/include/snapwebsites/plugins/users_ui/
 debian/tmp/usr/include/snapwebsites/plugins/versions/*                  usr/include/snapwebsites/plugins/versions/
 debian/tmp/usr/include/snapwebsites/plugins/webform/*                   usr/include/snapwebsites/plugins/webform/
-debian/tmp/usr/include/snapwebsites/plugins/zoom/*                      usr/include/snapwebsites/plugins/zoom/

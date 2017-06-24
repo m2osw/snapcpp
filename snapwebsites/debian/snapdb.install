@@ -1,3 +1,3 @@
-debian/snapdb/usr/bin/*
-debian/snapdb/usr/share/snapwebsites/*
-debian/snapdb/usr/share/snapwebsites/conf/snapdb.conf etc/snapwebsites
+debian/tmp/usr/bin/snapdb                          usr/bin/
+debian/tmp/usr/share/snapwebsites/snapdb/*         usr/share/snapwebsites/snapdb/
+debian/tmp/usr/share/snapwebsites/conf/snapdb.conf etc/snapwebsites

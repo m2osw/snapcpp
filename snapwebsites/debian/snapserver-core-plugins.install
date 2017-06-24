@@ -5,7 +5,6 @@ debian/tmp/usr/lib/snapwebsites/plugins/libantivirus.so                    \
 debian/tmp/usr/lib/snapwebsites/plugins/libattachment.so                   \
 debian/tmp/usr/lib/snapwebsites/plugins/libavatar.so                       \
 debian/tmp/usr/lib/snapwebsites/plugins/libbookkeeping.so                  \
-debian/tmp/usr/lib/snapwebsites/plugins/libcarousel.so                     \
 debian/tmp/usr/lib/snapwebsites/plugins/libchar_chart.so                   \
 debian/tmp/usr/lib/snapwebsites/plugins/libcontent.so                      \
 debian/tmp/usr/lib/snapwebsites/plugins/libcookie_consent_silktide.so      \
@@ -53,7 +52,6 @@ debian/tmp/usr/lib/snapwebsites/plugins/libserver_access.so                \
 debian/tmp/usr/lib/snapwebsites/plugins/libsessions.so                     \
 debian/tmp/usr/lib/snapwebsites/plugins/libshorturl.so                     \
 debian/tmp/usr/lib/snapwebsites/plugins/libsitemapxml.so                   \
-debian/tmp/usr/lib/snapwebsites/plugins/libslick.so                        \
 debian/tmp/usr/lib/snapwebsites/plugins/libsnap_software_description.so    \
 debian/tmp/usr/lib/snapwebsites/plugins/libsortable.so                     \
 debian/tmp/usr/lib/snapwebsites/plugins/libtaxonomy.so                     \
@@ -64,8 +62,7 @@ debian/tmp/usr/lib/snapwebsites/plugins/libtracker.so                      \
 debian/tmp/usr/lib/snapwebsites/plugins/libusers.so                        \
 debian/tmp/usr/lib/snapwebsites/plugins/libusers_ui.so                     \
 debian/tmp/usr/lib/snapwebsites/plugins/libversions.so                     \
-debian/tmp/usr/lib/snapwebsites/plugins/libwebform.so                      \
-debian/tmp/usr/lib/snapwebsites/plugins/libzoom                            /usr/lib/snapwebsites/plugins/
+debian/tmp/usr/lib/snapwebsites/plugins/libwebform.so                      /usr/lib/snapwebsites/plugins/
 debian/tmp/usr/lib/snapwebsites/tables/content-tables.xml                  \
 debian/tmp/usr/lib/snapwebsites/tables/mailinglist-tables.xml              \
 debian/tmp/usr/lib/snapwebsites/tables/epayment_paypal-tables.xml          \
