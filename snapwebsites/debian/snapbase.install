@@ -1,6 +1,6 @@
 debian/tmp/usr/bin/snapbootinit                         usr/bin/
 debian/tmp/usr/bin/swap-usage                           usr/bin/
-debian/tmp/usr/lib/snapwebsites/scripts/snapapacheinit  usr/lib/snapapacheinit/scripts/
+debian/tmp/usr/lib/snapwebsites/scripts/snapapacheinit  usr/lib/snapwebsites/scripts/
 debian/tmp/usr/share/snapwebsites/conf/snapserver.conf  usr/share/snapwebsites/conf/
 debian/tmp/usr/share/snapwebsites/logger/log.properties usr/share/snapwebsites/logger/snapserver.properties
 snapbase/conf/snapserver.conf                           etc/snapwebsites/
