@@ -24,6 +24,8 @@
 # See SNAP-444
 #
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release \
-			-DCMAKE_PREFIX_PATH=/usr
+	dh_auto_configure -- \
+		-DCMAKE_BUILD_TYPE=Release    \
+		-DCMAKE_PREFIX_PATH:PATH=/usr \
+		-DSNAP_DIST_DIR:PATH=/usr
 
