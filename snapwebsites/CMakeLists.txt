@@ -83,6 +83,7 @@ SnapGetVersion( SNAPWEBSITES ${CMAKE_CURRENT_SOURCE_DIR} )
 # Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
 set( DTD_SOURCE_PATH "${CMAKE_BINARY_DIR}/dist/share/snapwebsites/dtd" CACHE PATH "Location of the default DTD files" )
 set( XSD_SOURCE_PATH "${CMAKE_BINARY_DIR}/dist/share/snapwebsites/xsd" CACHE PATH "Default XSD source files."         )
+set( SNAP_DIST_DIR   "${CMAKE_CURRENT_BINARY_DIR}/dist"                CACHE PATH "Local install dir."                )
 
 include( SnapCssLint   )
 include( SnapJsLint    )
