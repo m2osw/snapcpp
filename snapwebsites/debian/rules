@@ -28,3 +28,24 @@ override_dh_auto_configure:
 		-DCMAKE_BUILD_TYPE=Release    \
 		-DCMAKE_PREFIX_PATH:PATH=/usr
 
+# Remove the 'rwx' flags from the password directory so only root has access
+#
+# Add the 's' flag to the snappassword to make sure we can run as root with
+# the --check command line (otherwise we cannot log in users from
+# snapmanager.cgi...) Note: also we do NOT want to send a password in clear
+# through snapcommunicator.
+#
+# Add the 's' flag to the daemon to make sure we can run as root
+#
+# TODO: This is probably not required anymore since we start the
+#       `snapmanagerdaemon` from a .service and we can start it
+#       as root, automatically.
+#
+override_dh_fixperms:
+	dh_fixperms
+	chmod go-rwx debian/snapmanagercgi/etc/snapwebsites/passwords
+	chmod u+s    debian/snapmanagercgi/usr/bin/snappassword
+	chmod u+s    debian/snapmanagerdaemon/usr/bin/snapmanagerdaemon
+	chmod go-rwx debian/snapbase/etc/apache2/ssl-snap
+	chmod go-rwx debian/snapcommunicator/etc/snapwebsites/ssl
+
