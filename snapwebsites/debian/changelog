@@ -1,4 +1,4 @@
-snapwebsites (1.5.0.1) xenial; urgency=high
+snapwebsites (1.5.0.2) xenial; urgency=high
 
   * Initial release of packaging for the snapwebsites project, which brings in
     all packaging into one debian source package.
