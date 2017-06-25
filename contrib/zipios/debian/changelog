@@ -4,7 +4,7 @@ zipios (2.1.7.0~xenial) xenial; urgency=high
 
  -- Doug Barbieri <doug@dooglio.net>  Fri, 23 Jun 2017 18:18:09 -0700
 
-zipios (2.1.6.97~xenial) xenial; urgency=high
+zipios (2.1.6.102~xenial) xenial; urgency=high
 
   * Nightly build.
 
