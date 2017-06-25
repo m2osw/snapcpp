@@ -1,3 +1,9 @@
+snapwebsites (1.5.0.4~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 25 Jun 2017 02:00:46 -0700
+
 snapwebsites (1.5.0.3) xenial; urgency=high
 
   * Initial release of packaging for the snapwebsites project, which brings in
