@@ -1,7 +1,8 @@
-snapwebsites (1.5.1.0~xenial) xenial; urgency=high
+snapwebsites (1.5.1.1~xenial) xenial; urgency=high
 
   * Fixed issue with install spec for `libsnapwebsites-dev`. It no longer
     installs the plugin headers.
+  * Removed qtcassandra call in from cmake.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Jun 2017 11:45:42 -0700
 

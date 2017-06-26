@@ -20,12 +20,10 @@ find_library( SNAPWEBSITES_LIBRARY snapwebsites
 # Mark as important
 mark_as_advanced( SNAPWEBSITES_INCLUDE_DIR SNAPWEBSITES_LIBRARY )
 
-find_package( QtCassandra REQUIRED )
-
 # This is important because the linker requires QtCassandra *after*
 # the snap library.
-set( SNAPWEBSITES_INCLUDE_DIRS ${SNAPWEBSITES_INCLUDE_DIR} ${QTCASSANDRA_INCLUDE_DIR} )
-set( SNAPWEBSITES_LIBRARIES    ${SNAPWEBSITES_LIBRARY}     ${QTCASSANDRA_LIBRARY}     )
+set( SNAPWEBSITES_INCLUDE_DIRS ${SNAPWEBSITES_INCLUDE_DIR} )
+set( SNAPWEBSITES_LIBRARIES    ${SNAPWEBSITES_LIBRARY}     )
 
 include( FindPackageHandleStandardArgs )
 # handle the QUIETLY and REQUIRED arguments and set SNAPWEBSITES_FOUND to TRUE
