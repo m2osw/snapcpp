@@ -1,5 +1,0 @@
-debian/tmp/usr/lib/lib*.so.* usr/lib/
-debian/tmp/usr/lib/snapwebsites/manager_plugins/* usr/lib/snapwebsites/manager_plugins/
-debian/tmp/usr/share/snapwebsites/xsd/* usr/share/snapwebsites/xsd/
-conf/snapmanager.conf usr/share/snapwebsites/conf/
-conf/snapmanager.conf etc/snapwebsites/

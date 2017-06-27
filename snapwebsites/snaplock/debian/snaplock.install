@@ -1,4 +1,0 @@
-usr/bin/*
-usr/share/snapwebsites/*
-conf/snaplock.conf etc/snapwebsites/
-conf/snaplock.properties etc/snapwebsites/logger/

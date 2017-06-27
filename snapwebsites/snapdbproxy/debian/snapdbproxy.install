@@ -1,5 +1,0 @@
-usr/bin/*
-usr/lib/*
-usr/share/snapwebsites/*
-conf/snapdbproxy.conf etc/snapwebsites/
-conf/snapdbproxy.properties etc/snapwebsites/logger/
