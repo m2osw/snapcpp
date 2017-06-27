@@ -1,3 +1,11 @@
+snapwebsites (1.5.1.4~xenial) xenial; urgency=high
+
+  * SNAP-574: Removed all debian subfolders but kept all of the changelogs.
+  * Added "NUM_DAYS" to `/etc/default/snaplog` so the admin may tune the
+    threshold for vacuuming.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 27 Jun 2017 14:26:51 -0700
+
 snapwebsites (1.5.1.3~xenial) xenial; urgency=high
 
   * Nightly build.
@@ -6,9 +14,9 @@ snapwebsites (1.5.1.3~xenial) xenial; urgency=high
 
 snapwebsites (1.5.1.1~xenial) xenial; urgency=high
 
-  * Fixed issue with install spec for `libsnapwebsites-dev`. It no longer
+  * SNAP-547: Fixed issue with install spec for `libsnapwebsites-dev`. It no longer
     installs the plugin headers.
-  * Removed qtcassandra call in from cmake.
+  * SNAP-547: Removed qtcassandra call in from cmake.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Jun 2017 11:45:42 -0700
 
@@ -20,7 +28,7 @@ snapwebsites (1.5.0.5~xenial) xenial; urgency=high
 
 snapwebsites (1.5.0.3) xenial; urgency=high
 
-  * Initial release of packaging for the snapwebsites project, which brings in
+  * SNAP-547: Initial release of packaging for the snapwebsites project, which brings in
     all packaging into one debian source package.
   * Bumping up to 1.5 so that way the older packing is sure to upgrade to
     this version.
