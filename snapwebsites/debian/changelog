@@ -1,3 +1,9 @@
+snapwebsites (1.5.1.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 26 Jun 2017 16:25:37 -0700
+
 snapwebsites (1.5.1.1~xenial) xenial; urgency=high
 
   * Fixed issue with install spec for `libsnapwebsites-dev`. It no longer
