@@ -8,7 +8,7 @@ test -x /usr/bin/mysql || exit 0
 #
 . /etc/default/snaplog
 
-if test "${DAY_COUNT}" == ""
+if [ "${DAY_COUNT}" = "" ]
 then
     echo "WARNING! DAY_COUNT is not set in /etc/default/snaplog! Defaulting to 90 days."
     DAY_COUNT=90

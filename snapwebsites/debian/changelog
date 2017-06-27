@@ -1,4 +1,4 @@
-snapwebsites (1.5.1.4~xenial) xenial; urgency=high
+snapwebsites (1.5.1.5~xenial) xenial; urgency=high
 
   * SNAP-574: Removed all debian subfolders but kept all of the changelogs.
   * Added "NUM_DAYS" to `/etc/default/snaplog` so the admin may tune the
