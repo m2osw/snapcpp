@@ -1,4 +1,12 @@
-snapwebsites (1.5.3.1~xenial) xenial; urgency=high
+snapwebsites (1.5.4.0~xenial) xenial; urgency=high
+
+  * SNAP-584: Send all output to $BACKUP_LOG now.
+  * Fixed the path, we were still using a hard coded path in two places.
+  * Prevent the backup process if the mkdir fails.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 Jun 2017 14:36:42 -0700
+
+snapwebsites (1.5.3.0~xenial) xenial; urgency=high
 
   * SNAP-584: Moved the rotation of /var/mail/root to snapbase.
 

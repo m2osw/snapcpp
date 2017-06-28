@@ -1,6 +1,6 @@
 /*
  * Text:
- *      main.cpp
+ *      snapbackup/src/main.cpp
  *
  * Description:
  *      Reads and describes a Snap database. This ease checking out the

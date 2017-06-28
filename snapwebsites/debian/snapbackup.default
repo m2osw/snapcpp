@@ -32,3 +32,11 @@ BACKUP_HOST=127.0.0.1
 # Default: /var/backups/snapwebsites/cassandra-backups
 #
 BACKUP_PATH=/var/backups/snapwebsites/cassandra-backups
+
+# BACKUP_LOG=<path to log file>
+#
+# The path to the log file used to save the output of snapbackup.
+#
+# Default: /var/log/snapwebsites/snapbackup.log
+#
+BACKUP_LOG=/var/log/snapwebsites/snapbackup.log

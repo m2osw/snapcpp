@@ -17,25 +17,40 @@ test -x /usr/bin/snapbackup || exit 0
 #
 . /etc/default/snapbackup
 
+# write one line in logs so we get the date when this run started
+#
+echo "`date +%Y/%m/%d %H:%M:%S` $HOSTNAME $0[$$]: info: starting backup." >> ${BACKUP_LOG}
+
 # make sure the output folder exists
 #
 # TODO: should change the ownership? Right now this will all be root which
 #       should be just fine.
 #
-mkdir -p ${BACKUP_PATH}
+if ! mkdir -p ${BACKUP_PATH} >> ${BACKUP_LOG} 2>&1
+then
+	echo "error: could not create output path \"$BACKUP_PATH\"." >> ${BACKUP_LOG}
+	exit 1
+fi
 
-# one backup per day of the week
+# define filename, we want one backup per day of the week
 #
 DAY=`date +%w`
+BACKUP_FILENAME="${BACKUP_PATH}/backup-${DAY}.sqlite3"
 
 # create the backup
 #
-snapbackup ${BACKUP_OPTIONS} --host ${BACKUP_HOST} --dump-context ${BACKUP_PATH}/backup-${DAY}.sqlite3
+if ! snapbackup ${BACKUP_OPTIONS} --host ${BACKUP_HOST} --dump-context ${BACKUP_FILENAME} >> ${BACKUP_LOG} 2>&1
+then
+	echo "warning: snapbackup returned with error code $? while creating backup ${BACKUP_FILENAME}" >> ${BACKUP_LOG}
+fi
 
 # make sure only root can read it (it includes all the secure data from the
 # database!)
 #
-chmod 600 /var/backups/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
+if ! chmod 600 ${BACKUP_FILENAME} >> ${BACKUP_LOG} 2>&1
+then
+	echo "warning: chmod 600 of backup file \"\" failed" >> ${BACKUP_LOG}
+fi
 
 # compress the result so it takes less space
 #
@@ -43,5 +58,8 @@ chmod 600 /var/backups/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
 #       may not be a good choice. It will use a large amount of memory
 #       which could slowdown the database for a little while.
 #
-xz --compress --force -9 /var/backups/snapwebsites/cassandra-backups/backup-${DAY}.sqlite3
+if ! xz --compress --force -9 ${BACKUP_FILENAME} >> ${BACKUP_LOG} 2>&1
+then
+	echo "warning: xz compression of backup file \"${BACKUP_FILENAME}\" failed" >> ${BACKUP_LOG}
+fi
 
