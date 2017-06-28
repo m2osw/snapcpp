@@ -16,21 +16,5 @@
     endscript
 }
 
-# These are very much like logs and if you do not redirect root
-# emails this file will continue to grow forever, so we rotate
-# it to make sure that does not happen
-#
-/var/mail/root {
-    weekly
-    maxsize 1M
-    su root mail
-    missingok
-    rotate 2
-    compress
-    delaycompress
-    notifempty
-    create 600 root mail
-}
-
 # vim: ts=4 sw=4 et
 

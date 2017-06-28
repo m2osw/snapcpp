@@ -1,8 +1,8 @@
-snapwebsites (1.5.0.5~xenial) xenial; urgency=high
+snapwebsites (1.5.1.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-584: Moved the rotation of /var/mail/root to snapbase.
 
- -- Build Server <build@m2osw.com>  Sun, 25 Jun 2017 02:00:46 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 Jun 2017 11:56:59 -0700
 
 snapwebsites (1.5.0.3) xenial; urgency=high
 
