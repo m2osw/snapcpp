@@ -7,57 +7,24 @@
 <bundle>
   <name>snaplog</name>
   <description>
-    <p>This bundle installs the 'snaplog' package, which includes a MySQL database.</p>
+    <p>
+      This bundle installs the 'snaplog' package. It expects the mysql
+      bundle to be installed already. Since `snapmanager` does not have a
+      prereq-managment system, you have to make sure the MySQL bundle is already
+      installed on this system.
+    </p>
+    <p>
+      <b>NOTE:</b> The MySQL Host Address is fixed to 127.0.0.1. Therefore, you must
+      install the snaplistd bundle on the same machine.
+    </p>
   </description>
-  <fields>
-    <field name="host" type="input">
-      <label>MySQL Host Address</label>
-      <description>Enter the host IP address (or DNS name) of the MySQL server.</description>
-    </field>
-  </fields>
-  <packages>mysql-server,snaplog</packages>
-  <preinst>
-    if ! dpkg -l pwgen 2> /dev/null
-    then
-      apt install pwgen
-    fi
-
-    # Next, create a private dir that is read/writable only by root,
-    # and squirrel these passwords away
-    #
-    PRIVATE_DIR=/var/lib/snapwebsites/private
-    mkdir -p ${PRIVATE_DIR}
-    chown root.root ${PRIVATE_DIR}
-    chmod 0700 ${PRIVATE_DIR}
-
-    if test -f ${PRIVATE_DIR}/snaplog_password.sh
-    then
-      mv ${PRIVATE_DIR}/snaplog_password.sh ${PRIVATE_DIR}/root_password.sh
-    fi
-
-    if test ! -f ${PRIVATE_DIR}/root_password.sh
-    then
-      # Create the passwords we will use
-      #
-      ROOT_PASSWORD=`pwgen -cns 20`
-
-      echo "ROOT_PASSWORD=${ROOT_PASSWORD}" &gt; ${PRIVATE_DIR}/root_password.sh
-
-      # Lastly, set the root password in debconf, so it won't ask for it when
-      # creating the database first time
-      #
-      debconf-set-selections &lt;&lt;&lt; \
-        "mysql-server mysql-server/root_password password ${ROOT_PASSWORD}"
-      debconf-set-selections &lt;&lt;&lt; \
-        "mysql-server mysql-server/root_password_again password ${ROOT_PASSWORD}"
-    fi
-  </preinst>
+  <packages>snaplog</packages>
   <postinst>
     # Create the snaplog user and snaplog database
     #
     PRIVATE_DIR=/var/lib/snapwebsites/private
     source ${PRIVATE_DIR}/root_password.sh
-    mysql --user=root --password="${ROOT_PASSWORD}" &lt;&lt;EOF
+    MYSQL_PWD="${ROOT_PASSWORD}" mysql --user=root --password &lt;&lt;EOF
 CREATE USER 'snaplog'@'localhost' IDENTIFIED BY 'snaplog';
 GRANT SELECT, INSERT, UPDATE, DELETE ON snaplog.* TO 'snaplog'@'localhost';
 FLUSH PRIVILEGES;
@@ -76,18 +43,16 @@ CREATE TABLE snaplog.log
   , message     LONGTEXT
   );
 EOF
-
-    # Now put the HOST ip address into /etc/default/snaplog
-    # and restart the snaplog server.
-    #
-    sed -i.bak -e "s/HOST=.*/HOST=${BUNDLE_INSTALLATION_HOST}/" /etc/default/snaplog
     systemctl restart snaplog
   </postinst>
   <postrm>
-    #apt purge -y "mysql-server-*"
-    #rm -rf /var/lib/mysql
-    #PRIVATE_DIR=/var/lib/snapwebsites/private
-    #rm ${PRIVATE_DIR}/root_password.sh
+    PRIVATE_DIR=/var/lib/snapwebsites/private
+    source ${PRIVATE_DIR}/root_password.sh
+    MYSQL_PWD="${ROOT_PASSWORD}" mysql --user=root --password &lt;&lt;EOF
+DROP USER 'snaplog'@'localhost';
+FLUSH PRIVILEGES;
+DROP DATABASE snaplog;
+EOF
   </postrm>
 </bundle>
 <!--

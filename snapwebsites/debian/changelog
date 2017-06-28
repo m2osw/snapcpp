@@ -1,3 +1,11 @@
+snapwebsites (1.5.2.0~xenial) xenial; urgency=high
+
+  * SNAP-579: Split snaplistd/snaplog into a new bundle: mysql. These bundles
+    both rely on the mysql bundle to be installed. And both bundles will
+    manage their respective users and tables, removing them when purged.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Jun 2017 11:26:49 -0700
+
 snapwebsites (1.5.1.5~xenial) xenial; urgency=high
 
   * SNAP-574: Removed all debian subfolders but kept all of the changelogs.
