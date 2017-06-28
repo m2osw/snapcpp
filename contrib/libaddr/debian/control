@@ -11,7 +11,8 @@ Build-Depends: catch,
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libaddr
-Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/snapcpp
 
 Package: libaddr
 Architecture: any

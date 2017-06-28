@@ -15,7 +15,8 @@ Build-Depends: cmake,
     snapcmakemodules (>= 1.0.34.89~xenial)
 Standards-Version: 3.9.4
 Homepage: http://www.snapwebsites.org/
-Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/snapcpp
 
 Package: iplock
 Architecture: any

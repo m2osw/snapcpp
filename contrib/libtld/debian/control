@@ -12,8 +12,8 @@ Build-Depends: cmake,
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libtld
-Vcs-Git: git://git.code.sf.net/p/snapcpp/code
-Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libtld
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/snapcpp
 
 Package: libtld
 Architecture: any
