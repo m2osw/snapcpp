@@ -1,3 +1,0 @@
-debian/tmp/usr/include/* usr/include/
-debian/tmp/usr/lib/lib*.so usr/lib/
-debian/tmp/usr/share/cmake/* usr/share/cmake/

@@ -19,8 +19,8 @@ Build-Depends: cassandra-cpp-driver-dev (>= 2.5),
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libqtcassandra
-Vcs-Git: git://git.code.sf.net/p/snapcpp/code
-Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libQtCassandra
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/snapcpp
 
 Package: libcasswrapper-dev
 Section: libdevel

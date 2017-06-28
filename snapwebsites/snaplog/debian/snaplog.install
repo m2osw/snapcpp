@@ -1,5 +1,0 @@
-usr/bin/*
-usr/share/snapwebsites/*
-conf/snaplog.conf etc/snapwebsites/
-conf/snaplog.properties etc/snapwebsites/logger/
-conf/snap-mysql-jail.conf etc/fail2ban/jail.d/

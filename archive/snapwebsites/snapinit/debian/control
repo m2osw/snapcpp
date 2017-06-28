@@ -22,8 +22,8 @@ Build-Depends: cmake,
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
-Vcs-Git: git://git.code.sf.net/p/snapcpp/code
-Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/snapcpp
 
 Package: snapinit
 Section: admin

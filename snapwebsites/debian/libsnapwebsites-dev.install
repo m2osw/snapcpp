@@ -1,3 +1,4 @@
+debian/tmp/usr/include/QtCassandra/*.h    usr/include/QtCassandra/
 debian/tmp/usr/include/snapwebsites/*.h   usr/include/snapwebsites/
 debian/tmp/usr/lib/libsnapwebsites.so     usr/lib/
 debian/tmp/usr/lib/libQtCassandra.so      usr/lib/

@@ -39,7 +39,6 @@ set( INSTALL_FILES
     SnapWebsitesConfig.cmake
 )
 
-install( FILES QtCassandraConfig.cmake  DESTINATION share/cmake/QtCassandra  )
 install( FILES SnapManagerConfig.cmake  DESTINATION share/cmake/SnapManager  )
 install( FILES SnapWatchdogConfig.cmake DESTINATION share/cmake/SnapWatchdog )
 install( FILES ${INSTALL_FILES}         DESTINATION share/cmake/SnapWebsites )

@@ -1,12 +1,36 @@
-snapwebsites (1.5.1.0~xenial) xenial; urgency=high
+snapwebsites (1.5.3.0~xenial) xenial; urgency=high
 
   * SNAP-584: Moved the rotation of /var/mail/root to snapbase.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 Jun 2017 11:56:59 -0700
 
+snapwebsites (1.5.2.0~xenial) xenial; urgency=high
+
+  * SNAP-579: Split snaplistd/snaplog into a new bundle: mysql. These bundles
+    both rely on the mysql bundle to be installed. And both bundles will
+    manage their respective users and tables, removing them when purged.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 28 Jun 2017 11:26:49 -0700
+
+snapwebsites (1.5.1.5~xenial) xenial; urgency=high
+
+  * SNAP-574: Removed all debian subfolders but kept all of the changelogs.
+  * Added "NUM_DAYS" to `/etc/default/snaplog` so the admin may tune the
+    threshold for vacuuming.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 27 Jun 2017 14:26:51 -0700
+
+snapwebsites (1.5.1.1~xenial) xenial; urgency=high
+
+  * SNAP-547: Fixed issue with install spec for `libsnapwebsites-dev`. It no longer
+    installs the plugin headers.
+  * SNAP-547: Removed qtcassandra call in from cmake.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 26 Jun 2017 11:45:42 -0700
+
 snapwebsites (1.5.0.3) xenial; urgency=high
 
-  * Initial release of packaging for the snapwebsites project, which brings in
+  * SNAP-547: Initial release of packaging for the snapwebsites project, which brings in
     all packaging into one debian source package.
   * Bumping up to 1.5 so that way the older packing is sure to upgrade to
     this version.
