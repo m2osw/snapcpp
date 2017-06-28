@@ -24,7 +24,7 @@
     #
     PRIVATE_DIR=/var/lib/snapwebsites/private
     source ${PRIVATE_DIR}/root_password.sh
-    MYSQL_PWD="${ROOT_PASSWORD}" mysql --user=root --password &lt;&lt;EOF
+    MYSQL_PWD="${ROOT_PASSWORD}" mysql --user=root &lt;&lt;EOF
 CREATE USER 'snaplog'@'localhost' IDENTIFIED BY 'snaplog';
 GRANT SELECT, INSERT, UPDATE, DELETE ON snaplog.* TO 'snaplog'@'localhost';
 FLUSH PRIVILEGES;
@@ -48,7 +48,7 @@ EOF
   <postrm>
     PRIVATE_DIR=/var/lib/snapwebsites/private
     source ${PRIVATE_DIR}/root_password.sh
-    MYSQL_PWD="${ROOT_PASSWORD}" mysql --user=root --password &lt;&lt;EOF
+    MYSQL_PWD="${ROOT_PASSWORD}" mysql --user=root &lt;&lt;EOF
 DROP USER 'snaplog'@'localhost';
 FLUSH PRIVILEGES;
 DROP DATABASE snaplog;

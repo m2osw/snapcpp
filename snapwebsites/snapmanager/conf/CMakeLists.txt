@@ -147,6 +147,7 @@ install(
     FILES
         bundle-cassandra.xml
         bundle-dns.xml
+        bundle-mysql.xml
         bundle-rkhunter.xml
         bundle-ssh.xml
         bundle-swap.xml
