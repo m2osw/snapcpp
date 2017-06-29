@@ -1,8 +1,9 @@
-snapwebsites (1.5.4.1~xenial) xenial; urgency=high
+snapwebsites (1.5.5.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-574: Fixed the snapcgi.install so we get the HTML for maintenance and
+    first install under /usr/share/snapwebsites/html.
 
- -- Build Server <build@m2osw.com>  Thu, 29 Jun 2017 02:00:44 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 29 Jun 2017 11:49:42 -0700
 
 snapwebsites (1.5.4.0~xenial) xenial; urgency=high
 
