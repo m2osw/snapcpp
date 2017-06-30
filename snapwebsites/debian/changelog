@@ -1,3 +1,9 @@
+snapwebsites (1.5.6.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 30 Jun 2017 02:00:44 -0700
+
 snapwebsites (1.5.6.0~xenial) xenial; urgency=high
 
   * SNAP-222: Checking whether a file was properly added required to test
