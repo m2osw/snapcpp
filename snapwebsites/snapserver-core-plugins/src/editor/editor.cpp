@@ -3125,14 +3125,23 @@ bool editor::validate_editor_post_for_widget_impl(
                     if(widget_type == "dropped-file"
                     || widget_type == "dropped-file-with-preview")
                     {
-                        if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
+                        content::path_info_t file_ipath;
+                        file_ipath.set_path(f_snap->postenv(widget_name));
+                        content::path_info_t attachment_ipath;
+                        file_ipath.get_parent(attachment_ipath);
+                        //if(!f_snap->postfile_exists(widget_name)) // the field is just a string (path) -- the editor sends files at the time they get dropped
                         {
-                            QDomElement root(widget.ownerDocument().documentElement());
                             QString const name(QString("%1::%2::%3")
                                     .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                                     .arg(widget_name)
                                     .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
-                            QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::param_revision_t::PARAM_REVISION_GLOBAL));
+                            QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(attachment_ipath, name, content::content::param_revision_t::PARAM_REVISION_GLOBAL));
+//SNAP_LOG_WARNING("widget_name -- [")(widget_name)
+//                ("] -> [")(f_snap->postenv(widget_name))
+//                ("] for [")(attachment_ipath.get_key())
+//                ("] / name = [")(name)
+//                ("] and result [")(cassandra_value.stringValue())
+//                ("]");
                             if(cassandra_value.nullValue())
                             {
                                 // not defined!
@@ -3144,6 +3153,9 @@ bool editor::validate_editor_post_for_widget_impl(
                                     ).set_widget_name(widget_name);
                                 info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                             }
+                            // TBD: should we verify that the URI is exactly the same?
+                            //      (i.e. I am thinking it should be)
+                            //if(cassandra_value.stringValue() != f_snap->postenv(widget_name))
                         }
                     }
                     else if(widget_type == "image-box"

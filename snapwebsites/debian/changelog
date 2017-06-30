@@ -1,3 +1,12 @@
+snapwebsites (1.5.6.0~xenial) xenial; urgency=high
+
+  * SNAP-222: Checking whether a file was properly added required to test
+    with the correct path and not whether a file is attached to the field
+    (because on Save we get a string, not the file which was already sent
+    to use using AJAX.)
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 29 Jun 2017 11:49:42 -0700
+
 snapwebsites (1.5.5.0~xenial) xenial; urgency=high
 
   * SNAP-574: Fixed the snapcgi.install so we get the HTML for maintenance and

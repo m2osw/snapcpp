@@ -2407,7 +2407,7 @@ bool content::modified_content_impl(path_info_t & ipath)
  *
  * \return The content of the row as a Cassandra value.
  */
-QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, QString const& param_name, param_revision_t revision)
+QtCassandra::QCassandraValue content::get_content_parameter(path_info_t & ipath, QString const & param_name, param_revision_t revision)
 {
     switch(revision)
     {

@@ -6120,6 +6120,7 @@ void snap_child::replace_postenv(QString const & name, QString const & value)
 bool snap_child::postfile_exists(QString const & name) const
 {
     // the QMap only returns a reference if this is not constant
+    //
     return f_files.contains(name) && f_files[name].get_size() != 0;
 }
 
