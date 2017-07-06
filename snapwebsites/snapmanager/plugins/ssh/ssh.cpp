@@ -471,9 +471,13 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>
+        QStringList switch_list;
+        switch_list << "true";
+        switch_list << "false";
+        snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>
                        ( "Password authentication for ssh"
                        , s.get_field_name()
+                       , switch_list
                        , s.get_value()
                        , "Enter either 'yes' or 'no' in this field and click Save, or Save Everywhere."
                          " If this is in yellow, then you need to take action. This feature should be set to"

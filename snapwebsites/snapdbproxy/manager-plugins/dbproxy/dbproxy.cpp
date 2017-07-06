@@ -380,9 +380,15 @@ bool dbproxy::display_value(QDomElement parent, snap_manager::status_t const & s
                 , snap_manager::form::FORM_BUTTON_SAVE
                 );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+
+        QStringList switch_list;
+        switch_list << "true";
+        switch_list << "false";
+        //
+        snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
                           "Cassandra connections should use SSL:"
                         , s.get_field_name()
+                        , switch_list
                         , s.get_value()
                         , "Specify 'true' or 'false."
                          " If 'true' is specified, then snapdbproxy will expect SSL certs to be delivered via"
