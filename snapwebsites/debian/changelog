@@ -4,7 +4,7 @@ snapwebsites (1.5.7.0~xenial) xenial; urgency=high
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 06 Jul 2017 14:23:18 -0700
 
-snapwebsites (1.5.6.7~xenial) xenial; urgency=high
+snapwebsites (1.5.6.8~xenial) xenial; urgency=high
 
   * Nightly build.
 

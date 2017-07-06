@@ -1930,7 +1930,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
             if(parent_row->exists(name))
             {
                 // get the filename (attachment key)
-                QString old_attachment_key(parent_row->cell(name)->value().stringValue());
+                QString const old_attachment_key(parent_row->cell(name)->value().stringValue());
                 if(!old_attachment_key.isEmpty() && old_attachment_key != attachment_ipath.get_key())
                 {
                     // that is not the same filename, trash the old one
