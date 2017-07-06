@@ -258,6 +258,7 @@ bool load(QString const & plugin_paths, snap_child * snap, plugin_ptr_t server, 
     {
         QString const column_name(QString("|%1|").arg(p->get_plugin_name()));
 #if 0
+        // TODO: test this new code out to remove the raw loop below...
         auto found_iter = std::find_if( std::begin(g_ordered_plugins), std::end(g_ordered_plugins),
                 [&column_name]( auto const & plugin )
                 {
@@ -265,7 +266,7 @@ bool load(QString const & plugin_paths, snap_child * snap, plugin_ptr_t server, 
                 });
         if( found_iter != std::end(g_ordered_plugins) )
         {
-            g_ordered_plugins.indexOf( found_iter, p );
+            g_ordered_plugins.insert( found_iter, p );
         }
         else
         {
