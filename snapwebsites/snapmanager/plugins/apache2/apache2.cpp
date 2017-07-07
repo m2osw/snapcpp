@@ -378,9 +378,13 @@ bool apache2::display_value(QDomElement parent, snap_manager::status_t const & s
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+        QStringList statuses;
+        statuses << "new";
+        statuses << "installed";
+        snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
                           "Website Status"
                         , s.get_field_name()
+                        , statuses
                         , s.get_value()
                         , "Enter the status of the website. Either \"new\" or \"installed\"."
                          " When set to \"new\", the end users can see the index.html help page"
