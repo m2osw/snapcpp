@@ -472,8 +472,8 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                 );
 
         QStringList switch_list;
-        switch_list << "true";
-        switch_list << "false";
+        switch_list << "yes";
+        switch_list << "no";
         snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>
                        ( "Password authentication for ssh"
                        , s.get_field_name()
