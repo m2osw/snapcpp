@@ -1,3 +1,13 @@
+snapwebsites (1.5.8.0~xenial) xenial; urgency=high
+
+  * Fixed an error in snapfirewall where the manager plugin was not being
+    installed, and where the fail2ban action file was being put into the wrong
+    directory.
+  * Updated some manager-plugins to use the new `widget_select` for drop
+    downs.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 07 Jul 2017 11:38:24 -0700
+
 snapwebsites (1.5.7.1~xenial) xenial; urgency=high
 
   * Nightly build.

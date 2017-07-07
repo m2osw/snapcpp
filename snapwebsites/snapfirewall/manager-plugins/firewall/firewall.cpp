@@ -384,9 +384,16 @@ bool firewall::display_value(QDomElement parent, snap_manager::status_t const & 
                     , snap_manager::form::FORM_BUTTON_RESET | snap_manager::form::FORM_BUTTON_SAVE
                     );
 
-            snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+            QStringList service_list;
+            service_list << "disabled";
+            service_list << "enabled";
+            service_list << "active";
+            service_list << "failed";
+
+            snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
                               "Enabled/Disabled/Activate Firewall"
                             , s.get_field_name()
+                            , service_list
                             , s.get_value()
                             , "<p>Enter the new state of the snapfirewall"
                               " service as one of:</p>"
