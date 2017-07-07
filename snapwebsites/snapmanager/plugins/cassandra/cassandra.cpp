@@ -752,9 +752,13 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+        QStringList options;
+        options << "false";
+        options << "true";
+        snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
                           "Cassandra Auto-Snapshot"
                         , s.get_field_name()
+                        , options
                         , s.get_value()
                         , "Cassandra says that you should set this parameter to \"true\"."
                          " However, when set to true, the DROP TABLE and TRUNCATE commands"
@@ -853,7 +857,7 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                 );
 
         snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
-                          "Turn on server-to-server encryption (none, all, dc:<name>, rack:<name>):"
+                          "Turn on server-to-server encryption (none, all, dc:&lt;<i>name</i>&gt;, rack:&lt;<i>name</i>&gt;):"
                         , s.get_field_name()
                         , s.get_value()
                         , "<p>By default, Cassandra communicates in the clear on the listening address."
@@ -878,9 +882,13 @@ bool cassandra::display_value(QDomElement parent, snap_manager::status_t const &
                   | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
-        snap_manager::widget_input::pointer_t field(std::make_shared<snap_manager::widget_input>(
+        QStringList options;
+        options << "false";
+        options << "true";
+        snap_manager::widget_select::pointer_t field(std::make_shared<snap_manager::widget_select>(
                           "Turn on client-to-server encryption (true or false):"
                         , s.get_field_name()
+                        , options
                         , s.get_value()
                         , "<p>By default, Cassandra communicates in the clear on the listening address."
                           " When you turn on this flag, client to server encryption will be turned on between"
