@@ -3447,11 +3447,13 @@ void snap_child::read_environment()
             {
                 // make sure the filename is unique otherwise we'd overwrite
                 // the previous file with the same name...
+                //
                 QString filename(params["filename"]);
 
                 // this is a file so we want to save it in the f_file and
                 // not in the f_post although we do create an f_post entry
                 // with the filename
+                //
                 if(f_post.contains(f_name))
                 {
                     die(QString("multipart post variable \"%1\" defined twice")
@@ -3463,6 +3465,7 @@ void snap_child::read_environment()
                 // an empty filename means no file was uploaded (which
                 // is fine for optional fields or fields that are already
                 // attached to a file anyway.)
+                //
                 if(!filename.isEmpty())
                 {
                     post_file_t & file(f_files[f_name]);
@@ -3503,7 +3506,7 @@ void snap_child::read_environment()
                         }
                     }
 #ifdef DEBUG
-SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
+SNAP_LOG_TRACE() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << filename
     << "\" MIME: " << file.get_mime_type() << ", size: " << f_post_content.size() << ")";
 #endif
                 }
@@ -3540,7 +3543,9 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 }
                 // make sure to view the input as UTF-8 characters
                 f_post[f_name] = QString::fromUtf8(f_post_content.data(), f_post_content.size() - 1); //snap_uri::urldecode(f_post_content, true);?
-//std::cerr << " f_post[\"" << f_name << "\"] = \"" << f_post_content << "\"\n";
+#ifdef DEBUG
+//SNAP_LOG_TRACE() << " f_post[\"" << f_name << "\"] = \"" << f_post_content.data() << "\"\n";
+#endif
             }
         }
 
@@ -3607,7 +3612,9 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
 
                 // we got a header (Blah: value)
                 QString const line(f_post_line);
-//printf(" ++ header line [\n%s\n] %d\n", line.trimmed().toUtf8().data(), line.size());
+#ifdef DEBUG
+//SNAP_LOG_TRACE(" ++ header line [\n")(line.trimmed())("\n] ")(line.size());
+#endif
                 if(isspace(line.at(0).unicode()))
                 {
                     // continuation of the previous header, concatenate
@@ -3745,7 +3752,9 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
             if(f_has_post)
             {
                 f_post[f_name] = snap_uri::urldecode(f_value, true);
-//std::cerr << "(simple) f_post[\"" << f_name << "\"] = \"" << f_value << "\" (\"" << f_post[f_name] << "\");\n";
+#ifdef DEBUG
+//SNAP_LOG_TRACE("(simple) f_post[\"")(f_name)("\"] = \"")(f_value)("\" (\"")(f_post[f_name])("\");");
+#endif
             }
             else
             {
@@ -3753,7 +3762,9 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 {
                     // special case for cookies
                     snap_string_list cookies(f_value.split(';', QString::SkipEmptyParts));
-//std::cerr << " HTTP_COOKIE = [\"" << f_value << "\"]\n";
+#ifdef DEBUG
+//SNAP_LOG_TRACE(" HTTP_COOKIE = [\"")(f_value)("\"]");
+#endif
                     int const max_strings(cookies.size());
                     for(int i(0); i < max_strings; ++i)
                     {
@@ -3791,7 +3802,9 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 {
                     // TODO: verify that f_name is a valid header name
                     f_env[f_name] = f_value;
-//std::cerr << " f_env[\"" << f_name << "\"] = \"" << f_value << "\"\n";
+#ifdef DEBUG
+//SNAP_LOG_TRACE(" f_env[\"")(f_name)("\"] = \"")(f_value)("\"");
+#endif
                 }
             }
         }
@@ -3809,7 +3822,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 else if(c == '\n')
                 {
 #ifdef DEBUG
-                    //SNAP_LOG_DEBUG("f_name=")(f_name)(", f_value=\"")(f_value)("\"");
+//SNAP_LOG_TRACE("f_name=")(f_name)(", f_value=\"")(f_value)("\" when reading the \\n");
 #endif
                     process_line();
 
@@ -3890,12 +3903,20 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
     f_post.clear();
     f_files.clear();
 
+#ifdef DEBUG
+    SNAP_LOG_TRACE("Read environment variables including POST data.");
+#endif
+
     read_env r(this, f_client, f_env, f_browser_cookies, f_post, f_files);
 #ifdef DEBUG
     r.output_debug_log();
 #endif
     r.run();
     f_has_post = r.has_post();
+
+#ifdef DEBUG
+    SNAP_LOG_TRACE("Done reading environment variables.")(f_has_post ? " (This request includes a POST)" : "");
+#endif
 
     trace("#START\n");
 }

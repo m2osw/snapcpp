@@ -6283,15 +6283,18 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 
                 // remove the dragging-over class on a drop because we
                 // do not always get the dragleave event in that case
+                //
                 w.removeClass("dragging-over");
                 that.dragCounter_ = 0;
 
                 // always prevent the default dropping mechanism
                 // we handle the file manually all the way
+                //
                 e.preventDefault();
                 e.stopPropagation();
 
                 // anything transferred on widget that accepts files?
+                //
                 if(e.originalEvent.dataTransfer
                 && e.originalEvent.dataTransfer.files.length)
                 {
@@ -6371,6 +6374,8 @@ snapwebsites.EditorWidgetType.prototype.droppedFiles_ = function(editor_widget, 
     }
 
     // we need 'that' so the function has to be dynamically created
+    // create it once and re-use any number of times in the loop below
+    //
     file_loaded = function(e)
         {
             that.droppedFileLoaded_(e);
@@ -6440,6 +6445,7 @@ snapwebsites.EditorWidgetType.prototype.droppedFileLoaded_ = function(e)
         // It is an image, now convert the data to URI encoding
         // (i.e. base64 encoding) before saving the result in the
         // target element
+        //
         r = new FileReader();
         r.snapEditorWidget = e.target.snapEditorWidget;
         r.snapEditorFile = e.target.snapEditorFile;
@@ -6460,6 +6466,7 @@ snapwebsites.EditorWidgetType.prototype.droppedFileLoaded_ = function(e)
     else if(e.target.snapEditorAcceptFiles && e.target.snapEditorMIME)
     {
         // Dropped a file managed as an attachment
+        //
         this.droppedAttachment(e);
     }
     else
@@ -6591,6 +6598,7 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
     //
     // a fix for browsers that do not call onload() if the image is
     // already considered loaded by now
+    //
     if(img.complete || img.readyState == 4)
     {
         img.onload();
@@ -9412,6 +9420,7 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
     jQuery(img).appendTo(e.target.snapEditorWidget.getWidgetContent());
 
     // now make sure the editor detects the change
+    //
     editor = snapwebsites.EditorInstance;
     saved_active_element = editor.getActiveElement();
     editor.setActiveElement(e.target.snapEditorWidget.getWidgetContent());

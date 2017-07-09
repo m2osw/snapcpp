@@ -2131,6 +2131,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
 
                     // okay, it looks like that revision still exists so
                     // get rid of it
+                    //
                     destroy_revision(revision_key);
                 }
             }

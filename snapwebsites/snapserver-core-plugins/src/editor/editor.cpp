@@ -2090,6 +2090,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
 
         // now we switch to a new revision in the event the data was not
         // considered erroneous
+        //
         if(!save_info.has_errors() && auto_save)
         {
             // create the new revision and make it current
@@ -2100,13 +2101,16 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
             //
 
             // make this newer revision the current one
+            //
             if(switch_branch)
             {
                 // TODO: test whether that branch already exists (it should not!)
+                //
                 content_plugin->copy_branch(key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, branch_number);
 
                 // working branch cannot really stay as the system branch
                 // so force both branches in this case
+                //
                 content_plugin->set_branch(key, branch_number, false);
                 content_plugin->set_branch(key, branch_number, true);
                 content_plugin->set_branch_key(key, branch_number, true);
@@ -2114,8 +2118,10 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
             }
 
             // get the revision number only AFTER the branch was created
+            //
             // TODO: once we have a "save branch" the old_branch parameter needs
             //       to be corrected (another function anyway?)
+            //
             snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, branch_number, locale, true, switch_branch ? static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH) : branch_number));
 
 // TODO: add revision manager
@@ -4839,10 +4845,12 @@ bool editor::save_inline_image(
     }
 
     // this is an inline image
+    //
     QByteArray const base64(src.mid(p + 8).toUtf8());
     QByteArray const data(QByteArray::fromBase64(base64));
 
     // verify the image magic
+    //
     snap_image image;
     if(!image.get_info(data))
     {
@@ -4853,6 +4861,7 @@ bool editor::save_inline_image(
     if(max_frames == 0)
     {
         // a "valid" image file without actual frames?!
+        //
         SNAP_LOG_WARNING("image.get_info() returned an image with 0 frames, image type \"")(type)("\".");
         return false;
     }
@@ -4862,6 +4871,7 @@ bool editor::save_inline_image(
         if(ibuf->get_mime_type().mid(6) != type)
         {
             // mime types do not match!?
+            //
             SNAP_LOG_WARNING("image defined MIME type returned by sever is \"")
                             (ibuf->get_mime_type().mid(6))
                             ("\" an image with 0 frames, image type \"")
@@ -4874,6 +4884,7 @@ bool editor::save_inline_image(
     if(!filter::filter::filter_filename(filename, ext))
     {
         // user supplied filename is not considered valid, use a default name
+        //
         filename = QString("image.%1").arg(ext);
     }
 
@@ -4883,6 +4894,7 @@ bool editor::save_inline_image(
 
     // NOTE: This max_attachments test is already done in the
     //       parse_out_inline_img() function
+    //
     if(max_attachments >= 2)
     {
         throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
@@ -4905,8 +4917,14 @@ bool editor::save_inline_image(
         identification = "attachment/public";
     }
 
+    QString field_name("image");
+    if(widget.hasAttribute("field"))
+    {
+        field_name = widget.attribute("field");
+    }
+
     snap_child::post_file_t postfile;
-    postfile.set_name("image");
+    postfile.set_name(field_name);
     postfile.set_filename(filename);
     postfile.set_original_mime_type(type);
     postfile.set_creation_time(f_snap->get_start_time());
@@ -4920,7 +4938,7 @@ bool editor::save_inline_image(
     content::attachment_file the_attachment(f_snap, postfile);
     the_attachment.set_multiple(false);
     the_attachment.set_parent_cpath(ipath.get_cpath());
-    the_attachment.set_field_name("image");
+    the_attachment.set_field_name(field_name);
     the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
     // TODO: determine the correct attachment permission (public by default is probably wrong!)
     the_attachment.set_attachment_type(identification);
