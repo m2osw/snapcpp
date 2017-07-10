@@ -62,6 +62,7 @@ void snapTableList::initList()
         addEntry( "firewall"      );
         addEntry( "list"          );
         addEntry( "serverstats"   );
+        addEntry( "sessions"      );
         addEntry( "test_results"  );
         addEntry( "tracker"       );
     }
