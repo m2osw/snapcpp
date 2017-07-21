@@ -507,6 +507,7 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                 ,   snap_manager::form::FORM_BUTTON_RESET
                   | snap_manager::form::FORM_BUTTON_RESTORE_DEFAULT
                   | snap_manager::form::FORM_BUTTON_SAVE
+                  | snap_manager::form::FORM_BUTTON_SAVE_EVERYWHERE
                 );
 
         QString const user_name(s.get_field_name().mid(17));
@@ -514,9 +515,11 @@ bool ssh::display_value(QDomElement parent, snap_manager::status_t const & s, sn
                           "Authorized keys for \"" + user_name + "\""
                         , s.get_field_name()
                         , s.get_value()
-                        , "Enter your authorized_keys file in this field and click Save."
+                        , "<p>Enter your authorized_keys file in this field and click Save (or Save Everywhere, but see warning below)."
                           " Then you will have access to this server via ssh. Use the"
-                          " \"Restore Default\" button to remove the file from this server."
+                          " \"Restore Default\" button to remove the file from this server.</p>"
+                          "<p><b>WARNING:</b> This could prove to be a security risk if you send public keys"
+                          " over a hostile network--make sure you have adequate firewall protection before proceeding!</p>"
                         ));
         f.add_widget(field);
         f.generate(parent, uri);
