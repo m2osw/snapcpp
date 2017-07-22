@@ -614,7 +614,7 @@ bool ssh::apply_setting
             }
         }
 
-        if(button_name == "save")
+        if( button_name == "save" || button_name == "save_everywhere" )
         {
             // TODO: replace the direct handling of the file with a file_content object
             //
