@@ -1,3 +1,9 @@
+snapwebsites (1.5.10.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 22 Jul 2017 02:00:44 -0700
+
 snapwebsites (1.5.10.1~xenial) xenial; urgency=high
 
   * Added "Save Everywhere" for ssh public keys (in ssh plugin).
