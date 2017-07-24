@@ -545,6 +545,7 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
 void oauth2::application_login()
 {
     // prevent login in with the "wrong" methods
+    //
     QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
     if(method == "HEAD"
     || method == "TRACE")

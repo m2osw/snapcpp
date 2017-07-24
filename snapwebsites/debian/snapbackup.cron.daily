@@ -19,7 +19,7 @@ test -x /usr/bin/snapbackup || exit 0
 
 # write one line in logs so we get the date when this run started
 #
-echo "`date +%Y/%m/%d %H:%M:%S` $HOSTNAME $0[$$]: info: starting backup." >> ${BACKUP_LOG}
+echo "`date +%Y/%m/%d\ %H:%M:%S` $HOSTNAME $0[$$]: info: starting backup." >> ${BACKUP_LOG}
 
 # make sure the output folder exists
 #
