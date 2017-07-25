@@ -1,20 +1,14 @@
-snapwebsites (1.5.10.4~xenial) xenial; urgency=high
+snapwebsites (1.5.11.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the snapbackup CRON script, the date requires a backslash.
 
- -- Build Server <build@m2osw.com>  Sat, 22 Jul 2017 02:00:44 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 Jul 2017 19:58:15 -0700
 
 snapwebsites (1.5.10.1~xenial) xenial; urgency=high
 
   * Added "Save Everywhere" for ssh public keys (in ssh plugin).
 
  -- Doug Barbieri <doug@garibaldi>  Fri, 21 Jul 2017 14:01:46 -0700
-
-snapwebsites (1.5.9.13~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 09 Jul 2017 02:00:45 -0700
 
 snapwebsites (1.5.9.0~xenial) xenial; urgency=high
 
