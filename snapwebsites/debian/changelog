@@ -1,3 +1,9 @@
+snapwebsites (1.5.12.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 27 Jul 2017 02:00:50 -0700
+
 snapwebsites (1.5.12.0~xenial) xenial; urgency=high
 
   * Added INFO suffix in log for when snap_child finishes.
