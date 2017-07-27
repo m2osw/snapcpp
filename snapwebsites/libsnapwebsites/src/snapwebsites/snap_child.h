@@ -504,6 +504,7 @@ private:
     void                        set_cache_control();
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
+    void                        output_session_log( QString const& what );
 
     QtCassandra::QCassandraTable::pointer_t     f_sites_table;
     bool                                        f_new_content = false;

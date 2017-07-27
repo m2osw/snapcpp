@@ -2917,6 +2917,16 @@ pid_t snap_child::fork_child()
 }
 
 
+void snap_child::output_session_log( QString const& what )
+{
+    QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
+    QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
+    QString const ip(snapenv(get_name(name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
+    SNAP_LOG_INFO("------------------------------------ ")(ip)
+            (" ")(what)(" snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
+}
+
+
 /** \brief Process a request from the Snap CGI tool.
  *
  * The process function accepts a socket that was just connected.
@@ -2996,12 +3006,7 @@ bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
 
         // keep that one in release so we can at least know of all
         // the hits to the server
-        {
-            QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
-            QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-            QString const ip(snapenv(get_name(name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
-            SNAP_LOG_INFO("------------------------------------ ")(ip)(" new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
-        }
+        output_session_log( "new" );
 
         // now we connect to the DB
         // move all possible work that does not required the DB before
@@ -3067,6 +3072,7 @@ bool snap_child::process(tcp_client_server::bio_client::pointer_t client)
         // object that needs to get cleaned up properly and it is done
         // in the exit() function.
         //delete this;
+        output_session_log("done");
         exit(0);
         NOTREACHED();
     }
