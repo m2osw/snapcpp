@@ -1,6 +1,7 @@
 snapwebsites (1.5.12.0~xenial) xenial; urgency=high
 
   * Added INFO suffix in log for when snap_child finishes.
+  * Also fixed snapbackend with regard to the manager plugin.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Jul 2017 17:52:50 -0700
 
