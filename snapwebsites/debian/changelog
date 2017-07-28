@@ -1,3 +1,10 @@
+snapwebsites (1.5.13.0~xenial) xenial; urgency=high
+
+  * Added default for the snapbackup variables in case the default script
+    does not (yet) include those values.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 27 Jul 2017 17:01:34 -0700
+
 snapwebsites (1.5.12.0~xenial) xenial; urgency=high
 
   * Added INFO suffix in log for when snap_child finishes.

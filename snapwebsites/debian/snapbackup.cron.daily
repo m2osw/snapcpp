@@ -13,6 +13,13 @@ set -e
 #
 test -x /usr/bin/snapbackup || exit 0
 
+# define defaults for our parameters
+#
+BACKUP_OPTIONS=
+BACKUP_HOST=127.0.0.1
+BACKUP_PATH=/var/backups/snapwebsites/cassandra-backups
+BACKUP_LOG=/var/log/snapwebsites/snapbackup.log
+
 # get one of the hosts running Cassandra
 #
 . /etc/default/snapbackup
