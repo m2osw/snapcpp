@@ -21,6 +21,9 @@
 #include "../links/links.h"
 #include "../test_plugin_suite/test_plugin_suite.h"
 
+#include <QtCassandra/QCassandraTable.h>
+#include <QtCassandra/QCassandraValue.h>
+
 #include <stack>
 
 
@@ -385,6 +388,19 @@ public:
     QString                         get_draft_key(int64_t user_identifier) const;
     QString                         get_suggestion_key(int64_t suggestion) const;
 
+    // Methods which allow direct access to the data values in the database
+    //
+    bool                            content_key_exists()  const;
+    bool                            branch_key_exists()   const;
+    bool                            revision_key_exists() const;
+    //
+    const QtCassandra::QCassandraValue& get_content_value ( char const * name ) const;
+    const QtCassandra::QCassandraValue& get_branch_value  ( char const * name ) const;
+    const QtCassandra::QCassandraValue& get_revision_value( char const * name ) const;
+    void                                set_content_value ( char const * name, const QtCassandra::QCassandraValue& val );
+    void                                set_branch_value  ( char const * name, const QtCassandra::QCassandraValue& val );
+    void                                set_revision_value( char const * name, const QtCassandra::QCassandraValue& val );
+
 private:
     typedef QMap<QString, QString>  parameters_t;
 
@@ -413,6 +429,9 @@ private:
     mutable QString                         f_revision_key;
     mutable QString                         f_draft_key;
     mutable QString                         f_suggestion_key;
+    QtCassandra::QCassandraTable::pointer_t f_content_table;
+    QtCassandra::QCassandraTable::pointer_t f_branch_table;
+    QtCassandra::QCassandraTable::pointer_t f_revision_table;
 };
 
 

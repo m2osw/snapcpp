@@ -26,6 +26,8 @@
 
 #include <snapwebsites/log.h>
 
+#include <QtCassandra/QCassandraTable.h>
+
 #include <snapwebsites/poison.h>
 
 
@@ -64,6 +66,9 @@ path_info_t::path_info_t()
     //, f_branch_key("") -- auto-init
     //, f_revision_key("") -- auto-init
     //, f_locale("") -- auto-init
+    , f_content_table(f_content_plugin->get_content_table())
+    , f_branch_table(f_content_plugin->get_branch_table())
+    , f_revision_table(f_content_plugin->get_revision_table())
 {
 }
 
@@ -476,8 +481,7 @@ path_info_t::status_t path_info_t::get_status() const
 
     // verify that the page (row) exists, if not it was eradicated or
     // not yet created...
-    QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
-    if(!content_table->exists(f_key))
+    if(!f_content_table->exists(f_key))
     {
         // the page does not exist
         result.set_error(status_t::error_t::UNDEFINED);
@@ -486,14 +490,14 @@ path_info_t::status_t path_info_t::get_status() const
 
     // we set the consistency of the cell to QUORUM to make sure
     // we read the last written value
-    QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS)));
+    QtCassandra::QCassandraCell::pointer_t cell(f_content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS)));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue const & value(cell->value());
     if(value.size() != sizeof(uint32_t))
     {
         // this case can be legal, it happens when creating a new page
         //
-        QString const primary_owner(content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        QString const primary_owner(f_content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
         if(primary_owner.isEmpty())
         {
             // page not being created yet
@@ -577,7 +581,6 @@ void path_info_t::set_status(status_t const & status)
     //    signed char const one_byte(1);
     //    processing_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(one_byte);
     //}
-    QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
 
     // we use QUORUM in the consistency level to make sure that information
     // is available on all Cassandra nodes all at once (although this is
@@ -597,12 +600,12 @@ void path_info_t::set_status(status_t const & status)
     int64_t const start_date(f_snap->get_start_date());
     changed.setInt64Value(start_date);
     changed.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
+    f_content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
 
     QtCassandra::QCassandraValue value;
     value.setUInt32Value(status.get_status());
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(value);
+    f_content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(value);
 }
 
 
@@ -710,12 +713,11 @@ snap_version::version_number_t path_info_t::get_revision() const
                 // for a revision, we check whether a revision exists with
                 // the possible locales
                 //
-                QtCassandra::QCassandraTable::pointer_t revision_table(f_content_plugin->get_revision_table());
                 for(auto const & l: locales)
                 {
                     QString const locale(l.get_composed());
                     QString const revision_key(f_content_plugin->generate_revision_key(key, f_branch, f_revision, locale));
-                    if(revision_table->exists(revision_key))
+                    if(f_revision_table->exists(revision_key))
                     {
                         // it exists, we select that language!
                         //
@@ -870,11 +872,10 @@ QString path_info_t::get_revision_key() const
                     field += "::" + f_locale;
                 }
 
-                QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
-                if(content_table->exists(f_key)
-                && content_table->row(f_key)->exists(field))
+                if(f_content_table->exists(f_key)
+                && f_content_table->row(f_key)->exists(field))
                 {
-                    QtCassandra::QCassandraValue value(content_table->row(f_key)->cell(field)->value());
+                    QtCassandra::QCassandraValue value(f_content_table->row(f_key)->cell(field)->value());
                     f_revision_key = value.stringValue();
                 }
                 // else -- no default revision...
@@ -890,14 +891,6 @@ QString path_info_t::get_revision_key() const
                 //       for a new page.
                 //
                 f_revision_key = f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale);
-
-                //QString revision_key(f_content_plugin->generate_revision_key(f_key, f_branch, f_revision, f_locale));
-                //QtCassandra::QCassandraTable::pointer_t revision_table(f_content_plugin->get_revision_table());
-                //if(revision_table->exists(revision_key))
-                //{
-                //    f_revision_key = revision_key;
-                //}
-                // else -- no specific revision...
             }
 
             if(f_revision_key.isEmpty())
@@ -991,6 +984,18 @@ QString path_info_t::get_suggestion_key(int64_t suggestion) const
 
     return f_suggestion_key;
 }
+
+
+bool path_info_t::content_key_exists()  const   { return f_content_table ->exists(get_key()); }
+bool path_info_t::branch_key_exists()   const   { return f_branch_table  ->exists(get_key()); }
+bool path_info_t::revision_key_exists() const   { return f_revision_table->exists(get_key()); }
+
+const QtCassandra::QCassandraValue& path_info_t::get_content_value ( char const * name ) const                                      { return f_content_table->row(f_key)->cell(name)->value();                }
+const QtCassandra::QCassandraValue& path_info_t::get_branch_value  ( char const * name ) const                                      { return f_branch_table->row(get_branch_key())->cell(name)->value();      }
+const QtCassandra::QCassandraValue& path_info_t::get_revision_value( char const * name ) const                                      { return f_revision_table->row(get_revision_key())->cell(name)->value();  }
+void                                path_info_t::set_content_value ( char const * name, const QtCassandra::QCassandraValue& val )   { f_content_table->row(f_key)->cell(name)->setValue( val );               }
+void                                path_info_t::set_branch_value  ( char const * name, const QtCassandra::QCassandraValue& val )   { f_branch_table->row(get_branch_key())->cell(name)->setValue( val );     }
+void                                path_info_t::set_revision_value( char const * name, const QtCassandra::QCassandraValue& val )   { f_revision_table->row(get_revision_key())->cell(name)->setValue( val ); }
 
 
 void path_info_t::clear(bool keep_parameters)
