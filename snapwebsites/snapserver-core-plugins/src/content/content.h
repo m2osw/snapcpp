@@ -390,9 +390,13 @@ public:
 
     // Methods which allow direct access to the data values in the database
     //
-    bool                            content_key_exists()  const;
-    bool                            branch_key_exists()   const;
-    bool                            revision_key_exists() const;
+    bool                                content_key_exists()  const;
+    bool                                branch_key_exists()   const;
+    bool                                revision_key_exists() const;
+    //
+    bool                                content_value_exists ( QString const& name ) const;
+    bool                                branch_value_exists  ( QString const& name ) const;
+    bool                                revision_value_exists( QString const& name ) const;
     //
     const QtCassandra::QCassandraValue& get_content_value ( QString const& name ) const;
     const QtCassandra::QCassandraValue& get_branch_value  ( QString const& name ) const;
@@ -400,6 +404,10 @@ public:
     void                                set_content_value ( QString const& name, const QtCassandra::QCassandraValue& val );
     void                                set_branch_value  ( QString const& name, const QtCassandra::QCassandraValue& val );
     void                                set_revision_value( QString const& name, const QtCassandra::QCassandraValue& val );
+    //
+    void                                drop_content_cell ( QString const& name );
+    void                                drop_branch_cell  ( QString const& name );
+    void                                drop_revision_cell( QString const& name );
 
 private:
     typedef QMap<QString, QString>  parameters_t;
