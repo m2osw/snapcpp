@@ -990,12 +990,12 @@ bool path_info_t::content_key_exists()  const   { return f_content_table ->exist
 bool path_info_t::branch_key_exists()   const   { return f_branch_table  ->exists(get_key()); }
 bool path_info_t::revision_key_exists() const   { return f_revision_table->exists(get_key()); }
 
-const QtCassandra::QCassandraValue& path_info_t::get_content_value ( char const * name ) const                                      { return f_content_table->row(f_key)->cell(name)->value();                }
-const QtCassandra::QCassandraValue& path_info_t::get_branch_value  ( char const * name ) const                                      { return f_branch_table->row(get_branch_key())->cell(name)->value();      }
-const QtCassandra::QCassandraValue& path_info_t::get_revision_value( char const * name ) const                                      { return f_revision_table->row(get_revision_key())->cell(name)->value();  }
-void                                path_info_t::set_content_value ( char const * name, const QtCassandra::QCassandraValue& val )   { f_content_table->row(f_key)->cell(name)->setValue( val );               }
-void                                path_info_t::set_branch_value  ( char const * name, const QtCassandra::QCassandraValue& val )   { f_branch_table->row(get_branch_key())->cell(name)->setValue( val );     }
-void                                path_info_t::set_revision_value( char const * name, const QtCassandra::QCassandraValue& val )   { f_revision_table->row(get_revision_key())->cell(name)->setValue( val ); }
+const QtCassandra::QCassandraValue& path_info_t::get_content_value ( QString const& name ) const                                      { return f_content_table->row(f_key)->cell(name)->value();                }
+const QtCassandra::QCassandraValue& path_info_t::get_branch_value  ( QString const& name ) const                                      { return f_branch_table->row(get_branch_key())->cell(name)->value();      }
+const QtCassandra::QCassandraValue& path_info_t::get_revision_value( QString const& name ) const                                      { return f_revision_table->row(get_revision_key())->cell(name)->value();  }
+void                                path_info_t::set_content_value ( QString const& name, const QtCassandra::QCassandraValue& val )   { f_content_table->row(f_key)->cell(name)->setValue( val );               }
+void                                path_info_t::set_branch_value  ( QString const& name, const QtCassandra::QCassandraValue& val )   { f_branch_table->row(get_branch_key())->cell(name)->setValue( val );     }
+void                                path_info_t::set_revision_value( QString const& name, const QtCassandra::QCassandraValue& val )   { f_revision_table->row(get_revision_key())->cell(name)->setValue( val ); }
 
 
 void path_info_t::clear(bool keep_parameters)

@@ -394,12 +394,12 @@ public:
     bool                            branch_key_exists()   const;
     bool                            revision_key_exists() const;
     //
-    const QtCassandra::QCassandraValue& get_content_value ( char const * name ) const;
-    const QtCassandra::QCassandraValue& get_branch_value  ( char const * name ) const;
-    const QtCassandra::QCassandraValue& get_revision_value( char const * name ) const;
-    void                                set_content_value ( char const * name, const QtCassandra::QCassandraValue& val );
-    void                                set_branch_value  ( char const * name, const QtCassandra::QCassandraValue& val );
-    void                                set_revision_value( char const * name, const QtCassandra::QCassandraValue& val );
+    const QtCassandra::QCassandraValue& get_content_value ( QString const& name ) const;
+    const QtCassandra::QCassandraValue& get_branch_value  ( QString const& name ) const;
+    const QtCassandra::QCassandraValue& get_revision_value( QString const& name ) const;
+    void                                set_content_value ( QString const& name, const QtCassandra::QCassandraValue& val );
+    void                                set_branch_value  ( QString const& name, const QtCassandra::QCassandraValue& val );
+    void                                set_revision_value( QString const& name, const QtCassandra::QCassandraValue& val );
 
 private:
     typedef QMap<QString, QString>  parameters_t;
