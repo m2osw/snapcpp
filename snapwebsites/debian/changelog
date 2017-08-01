@@ -1,3 +1,10 @@
+snapwebsites (1.5.14.0~xenial) xenial; urgency=high
+
+  * Added new API to content::path_info_t such that access to the database
+    can be hidden and encapsulated.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 31 Jul 2017 22:20:27 -0700
+
 snapwebsites (1.5.13.4~xenial) xenial; urgency=high
 
   * Nightly build.
