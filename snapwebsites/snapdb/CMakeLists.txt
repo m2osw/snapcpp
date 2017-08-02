@@ -63,7 +63,12 @@ add_subdirectory( conf  )
 add_subdirectory( src   )
 #add_subdirectory( tests )
 
-install( FILES scripts/clear-cache.sh DESTINATION share/snapwebsites/snapdb )
+install(
+    PROGRAMS
+        scripts/snapclearcache
+    DESTINATION
+        bin
+)
 
 snap_build_xml_targets()
 
