@@ -351,7 +351,7 @@ permissions::sets_t::sets_t(snap_child * snap, QString const & user_path, conten
 /** \brief Clean up sets_t objects.
  *
  * This function cleans up the sets_t object. Mainly, it determines whether
- * the user and page permissions should be saved to the cache table.
+ * the user and page (plugin) permissions should be saved to the cache table.
  */
 permissions::sets_t::~sets_t()
 {
@@ -525,6 +525,24 @@ QString const & permissions::sets_t::get_user_cache_key()
 }
 
 
+/** \brief Mark that the user permissions were modified.
+ *
+ * This function is called internally to know whether the user
+ * permissions were re-generated. If so, we will update the
+ * corresponding cache information.
+ *
+ * By default this is false. It gets set whenever the
+ * permissions::get_user_rights() signal gets called and the
+ * permissions are not already cached (i.e. there is no point
+ * in reading the permissions from the cache and then writing
+ * them back to the cache.)
+ */
+void permissions::sets_t::modified_user_permissions()
+{
+    f_modified_user_permissions = true;
+}
+
+
 /** \brief Check whether that user has his rights cached.
  *
  * The user rights are cached in the cache table. The cached data is
@@ -551,6 +569,7 @@ bool permissions::sets_t::read_from_user_cache()
 //return false;
 
     // already read that cacne data?
+    //
     if(f_using_user_cache)
     {
         return true;
@@ -575,9 +594,11 @@ bool permissions::sets_t::read_from_user_cache()
     }
 
     // cache entry exists, read it
+    //
     QtCassandra::QCassandraValue cache_value(details::g_cache_table->row(cache_ipath.get_key())->cell(cache_key)->value());
 
     // check the timestamp
+    //
     int64_t const timestamp(cache_value.safeInt64Value());
     QtCassandra::QCassandraValue const last_updated_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED)));
     int64_t const last_updated(last_updated_value.safeInt64Value());
@@ -619,6 +640,7 @@ bool permissions::sets_t::read_from_user_cache()
     }
 
     // convert the cached value in what the caller expects
+    //
     QString const all_user_rights(cache_value.stringValue(sizeof(int64_t)));
     int start(0);
     int pos(all_user_rights.indexOf('\n'));
@@ -652,7 +674,16 @@ bool permissions::sets_t::read_from_user_cache()
 void permissions::sets_t::save_to_user_cache()
 {
     // if we are using the cache, no need to save anything
-    if(f_using_user_cache)
+    // if we never got the chance the calculate the permissions, then
+    // also do not save anything (it would be empty and be WRONG.)
+    //
+    // the permissions of the user are pretty much always calculated,
+    // but someone who creates the sets_t early and may exit their
+    // function before calling the permissions::get_user_rights()
+    // signal would get that problem.
+    //
+    if(f_using_user_cache
+    || !f_modified_user_permissions)
     {
         return;
     }
@@ -716,6 +747,24 @@ QString const & permissions::sets_t::get_plugin_cache_key()
     }
 
     return f_plugin_cache_key;
+}
+
+
+/** \brief Mark that the permissions were modified.
+ *
+ * This function is called internally to know whether the plugin
+ * permissions were re-generated. If so, we will update the
+ * corresponding cache information.
+ *
+ * By default this is false. It gets set whenever the
+ * permissions::get_plugin_permissions() gets called and the
+ * permissions are not already cached (i.e. there is no point
+ * in reading the permissions from the cache and then writing
+ * them back to the cache.)
+ */
+void permissions::sets_t::modified_plugin_permissions()
+{
+    f_modified_plugin_permissions = true;
 }
 
 
@@ -857,7 +906,16 @@ bool permissions::sets_t::read_from_plugin_cache()
 void permissions::sets_t::save_to_plugin_cache()
 {
     // if we are using the cache, no need to save anything
-    if(f_using_plugin_cache)
+    // if we never got the chance the calculate the permissions, then
+    // also do not save anything (it would be empty and be WRONG.)
+    //
+    // the determination of the plugin permissions is often not done
+    // because the user has no permissions (rare) or because the user
+    // is the root user (any page the root user visits would get in
+    // trouble!)
+    //
+    if(f_using_plugin_cache
+    || !f_modified_plugin_permissions)
     {
         return;
     }
@@ -1394,7 +1452,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2017, 8, 1, 19, 20, 58, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 8, 2, 12, 32, 57, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1489,6 +1547,12 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
         //
         return false;
     }
+
+    // the destructor would smash the permissions of a user if we did not
+    // know whether it got modified or not (i.e. this function may never
+    // get called)
+    //
+    sets.modified_user_permissions();
 
     QString const & login_status(sets.get_login_status());
 
@@ -1672,6 +1736,12 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
     {
         return false;
     }
+
+    // the destructor would smash the permissions of a page if we did not
+    // know whether it got modified or not (i.e. this function may never
+    // get called)
+    //
+    sets.modified_plugin_permissions();
 
     // the user plugin cannot include the permissions plugin (since the
     // permissions plugin includes the user plugin) so we implement this

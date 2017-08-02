@@ -276,6 +276,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The very first user created in Snap! is assigned to the root group. This user can do anything in the entire set of websites.</p>]]>
     </param>
+    <!-- keeping this permission for now, just in case, but it should be useless since the following ones are less restrictive -->
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights</link>
     <link name="permissions::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights</link>
     <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights</link>

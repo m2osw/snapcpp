@@ -1,8 +1,13 @@
-snapwebsites (1.5.15.1~xenial) xenial; urgency=high
+snapwebsites (1.5.16.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * The fix to the root user permissions actually exposed another bug: the
+    updating of the cache could end up using an empty version of the list
+    of permissions when we shortcut the calculation of the permissions to
+    know whether the user is allowed (i.e. the default list is the empty
+    list and we would save that even if we did not call the function used
+    to generate the list of permissions of a page.)
 
- -- Build Server <build@m2osw.com>  Wed, 02 Aug 2017 02:00:43 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 02 Aug 2017 13:54:07 -0700
 
 snapwebsites (1.5.15.0~xenial) xenial; urgency=high
 

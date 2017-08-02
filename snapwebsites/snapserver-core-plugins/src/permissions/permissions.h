@@ -124,6 +124,7 @@ public:
         void                    set_login_status(QString const & status);
         QString const &         get_login_status() const;
                        
+        void                    modified_user_permissions();
         bool                    read_from_user_cache();
         void                    save_to_user_cache();
         QString const &         get_user_cache_key();
@@ -135,6 +136,7 @@ public:
         int                     get_user_rights_count() const;
         set_t const &           get_user_rights() const;
 
+        void                    modified_plugin_permissions();
         bool                    read_from_plugin_cache();
         void                    save_to_plugin_cache();
         QString const &         get_plugin_cache_key();
@@ -164,6 +166,8 @@ public:
         bool                            f_user_cache_reset = false;
         bool                            f_using_plugin_cache = false;
         bool                            f_plugin_cache_reset = false;
+        bool                            f_modified_user_permissions = false;
+        bool                            f_modified_plugin_permissions = false;
     };
 
     enum secure_mode_t
