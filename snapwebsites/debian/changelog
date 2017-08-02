@@ -1,8 +1,9 @@
-snapwebsites (1.5.14.2~xenial) xenial; urgency=high
+snapwebsites (1.5.15.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the root user permissions so the root can really access ALL pages
+    as it was first intended.
 
- -- Build Server <build@m2osw.com>  Tue, 01 Aug 2017 02:00:44 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 01 Aug 2017 20:31:10 -0700
 
 snapwebsites (1.5.14.0~xenial) xenial; urgency=high
 
@@ -10,12 +11,6 @@ snapwebsites (1.5.14.0~xenial) xenial; urgency=high
     can be hidden and encapsulated.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 31 Jul 2017 22:20:27 -0700
-
-snapwebsites (1.5.13.4~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 28 Jul 2017 02:00:43 -0700
 
 snapwebsites (1.5.13.0~xenial) xenial; urgency=high
 
@@ -30,12 +25,6 @@ snapwebsites (1.5.12.0~xenial) xenial; urgency=high
   * Also fixed snapbackend with regard to the manager plugin.
 
  -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 Jul 2017 17:52:50 -0700
-
-snapwebsites (1.5.11.2~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Tue, 25 Jul 2017 02:00:45 -0700
 
 snapwebsites (1.5.11.0~xenial) xenial; urgency=high
 

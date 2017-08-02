@@ -1200,7 +1200,19 @@ void permissions::sets_t::add_plugin_permission(QString const & plugin, QString 
 bool permissions::sets_t::is_root() const
 {
     // the top rights type represents the full root user (i.e. all rights)
-    return f_user_rights.contains(get_name(name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH));
+    //
+    content::path_info_t ipath;
+    ipath.set_path(get_name(name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH));
+    QString key(ipath.get_key());
+    if(!key.endsWith("/"))
+    {
+        // for permissions, we add a "/" (to make sure we property
+        // distinguish between path such as "/a/b" and "/a/bb")
+        //
+        key += "/";
+    }
+
+    return f_user_rights.contains(key);
 }
 
 
@@ -1382,7 +1394,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2017, 1, 18, 15, 10, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2017, 8, 1, 19, 20, 58, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -2430,6 +2442,7 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
 #endif
 #endif
     // get all of user's rights
+    //
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
@@ -2890,6 +2903,7 @@ void permissions::check_permissions(QString const & email, QString const & page,
     get_user_rights(this, sets);
 
     // present user rights to administrator
+    bool user_is_root(false);
     int const user_right_count(sets.get_user_rights_count());
     if(user_right_count == 0)
     {
@@ -2902,10 +2916,11 @@ void permissions::check_permissions(QString const & email, QString const & page,
     }
     else
     {
+        user_is_root = sets.is_root();
         std::cout << "user \""
                   << email
                   << "\""
-                  << (sets.is_root() ? " is considered a root user and" : "")
+                  << (user_is_root ? " is considered a root user and" : "")
                   << " has "
                   << user_right_count
                   << " rights:"
@@ -2988,11 +3003,11 @@ void permissions::check_permissions(QString const & email, QString const & page,
 #endif
 
     std::cout << "The result is that "
-              << (sets.is_root() ? "root " : "")
+              << (user_is_root ? "root " : "")
               << "user \""
               << email
               << "\" "
-              << (sets.allowed() ? "can" : "CANNOT")
+              << (user_is_root || sets.allowed() ? "can" : "CANNOT")
               << " access page \""
               << page
               << "\" with action \""
