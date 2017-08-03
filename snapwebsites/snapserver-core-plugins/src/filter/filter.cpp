@@ -1621,7 +1621,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
         bool                        f_support_edit = true;
     };
 
-#ifdef _DEBUG
+#if 0
     SNAP_LOG_DEBUG("filter::filter_text_impl(): ipath=")
             (txt_filt.get_ipath().get_key())
             (", text=")(txt_filt.get_text());

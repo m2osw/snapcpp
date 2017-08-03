@@ -5006,7 +5006,7 @@ void editor::on_generate_page_content(
         , QDomElement & body)
 {
 #ifdef _DEBUG
-    SNAP_LOG_DEBUG("editor::on_generate_page_content()");
+    //SNAP_LOG_DEBUG("editor::on_generate_page_content()");
 #endif
     enum class added_form_file_support_t
     {
@@ -5330,9 +5330,9 @@ void editor::on_generate_page_content(
     x.evaluate_to_document(doc_output);
 
 #ifdef _DEBUG
-    SNAP_LOG_DEBUG("Editor Form [")(f_editor_form.toString(-1))("]");
-    SNAP_LOG_DEBUG("Editor Focus [")(editor_widgets.toString(-1))("]");
-    SNAP_LOG_DEBUG("Editor Output [")(doc_output.toString(-1))("]");
+    //SNAP_LOG_DEBUG("Editor Form [")(f_editor_form.toString(-1))("]");
+    //SNAP_LOG_DEBUG("Editor Focus [")(editor_widgets.toString(-1))("]");
+    //SNAP_LOG_DEBUG("Editor Output [")(doc_output.toString(-1))("]");
 #endif
 
     QDomNodeList result_widgets(doc_output.elementsByTagName("widget"));

@@ -971,7 +971,7 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
     //       tagging capability)
     //
 #ifdef _DEBUG
-    SNAP_LOG_DEBUG("*** Filter all of that...: [")(doc.toString())("]");
+    //SNAP_LOG_DEBUG("*** Filter all of that...: [")(doc.toString())("]");
 #endif
     filter::filter * filter_plugin(filter::filter::instance());
     filter_plugin->on_token_filter(ipath, doc);
@@ -1036,8 +1036,8 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
     }
 
 #ifdef _DEBUG
-SNAP_LOG_DEBUG("==== Generated XML is [")(doc.toString(-1))("]");
-SNAP_LOG_DEBUG("++++ fitered_xsl=")(filtered_xsl);
+//SNAP_LOG_DEBUG("==== Generated XML is [")(doc.toString(-1))("]");
+//SNAP_LOG_DEBUG("++++ fitered_xsl=")(filtered_xsl);
 //std::cout << "Generated XSL is [" << xsl            << "]\n";
 #endif
 
@@ -1784,10 +1784,10 @@ void layout::install_layout(QString const & layout_name)
     // installing a layout can be complex so knowing which one breaks an
     // update can be really useful
     //
-    SNAP_LOG_DEBUG("layout::install_layout(): layout name \"")
+    /*SNAP_LOG_DEBUG("layout::install_layout(): layout name \"")
                   (layout_name)
                   ("\" last updated on ")
-                  (last_updated_value.safeInt64Value());
+                  (last_updated_value.safeInt64Value());*/
 
     // determine the path to this layout
     //
