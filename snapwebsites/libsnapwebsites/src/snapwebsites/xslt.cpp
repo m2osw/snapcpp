@@ -282,6 +282,11 @@ void xslt::evaluate(QString * output_string, QDomDocument * output_document)
         msg.set_xsl(f_xsl);
         msg.set_doc(doc_str);
 
+#ifdef _DEBUG
+        SNAP_LOG_DEBUG("!!!! f_xsl="  )(f_xsl);
+        SNAP_LOG_DEBUG("!!!! doc_str=")(doc_str);
+#endif
+
         // setup the XML query object
         q.setMessageHandler(&msg);
         q.setFocus(doc_str);

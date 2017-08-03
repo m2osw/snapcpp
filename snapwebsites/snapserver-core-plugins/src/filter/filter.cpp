@@ -1621,6 +1621,11 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
         bool                        f_support_edit = true;
     };
 
+#ifdef _DEBUG
+    SNAP_LOG_DEBUG("filter::filter_text_impl(): ipath=")
+            (txt_filt.get_ipath().get_key())
+            (", text=")(txt_filt.get_text());
+#endif
     text_t t(f_snap, this, txt_filt.get_ipath(), txt_filt.get_xml_document(), txt_filt.get_text(), txt_filt.get_support_edit());
     if(t.parse())
     {

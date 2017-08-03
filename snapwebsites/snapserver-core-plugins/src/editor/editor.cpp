@@ -5005,6 +5005,9 @@ void editor::on_generate_page_content(
         , QDomElement & page
         , QDomElement & body)
 {
+#ifdef _DEBUG
+    SNAP_LOG_DEBUG("editor::on_generate_page_content()");
+#endif
     enum class added_form_file_support_t
     {
         ADDED_FORM_FILE_NONE,
@@ -5326,9 +5329,11 @@ void editor::on_generate_page_content(
     QDomDocument doc_output("widgets");
     x.evaluate_to_document(doc_output);
 
-//SNAP_LOG_DEBUG("Editor Form [")(f_editor_form.toString(-1))("]");
-//SNAP_LOG_DEBUG("Editor Focus [")(editor_widgets.toString(-1))("]");
-//SNAP_LOG_DEBUG("Editor Output [")(doc_output.toString(-1))("]");
+#ifdef _DEBUG
+    SNAP_LOG_DEBUG("Editor Form [")(f_editor_form.toString(-1))("]");
+    SNAP_LOG_DEBUG("Editor Focus [")(editor_widgets.toString(-1))("]");
+    SNAP_LOG_DEBUG("Editor Output [")(doc_output.toString(-1))("]");
+#endif
 
     QDomNodeList result_widgets(doc_output.elementsByTagName("widget"));
     int const max_results(result_widgets.size());
