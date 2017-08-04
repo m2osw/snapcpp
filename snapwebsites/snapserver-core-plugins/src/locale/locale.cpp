@@ -790,6 +790,7 @@ QString locale::format_time(time_t d)
 QString locale::format_date(time_t d, QString const & date_format, bool use_local)
 {
     // prepare outselves if not yet ready...
+    //
     set_timezone();
 
     if(date_format.isEmpty())
@@ -800,6 +801,7 @@ QString locale::format_date(time_t d, QString const & date_format, bool use_loca
 
     // TODO: I think we can use a format string with the ICU library
     //       but right now I am copy/paste-ing some code...
+    //
     struct tm t;
     if(use_local)
     {
@@ -1243,6 +1245,7 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
         // TODO: should we round the number up to one second?
         //       (we do not really expect dates with such precision
         //       at this point?)
+        //
         return static_cast<time_t>(result / 1000.0);
     }
 }
@@ -1569,7 +1572,7 @@ time_t locale::parse_time(QString const & time_str, parse_error_t & errcode)
 
             if(!s->isNull())
             {
-                // AM/PM followed something
+                // AM/PM followed by something
                 errcode = parse_error_t::PARSE_ERROR_DATE;
                 return static_cast<time_t>(-1);
             }
