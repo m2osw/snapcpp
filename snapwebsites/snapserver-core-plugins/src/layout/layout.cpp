@@ -1022,19 +1022,6 @@ SNAP_LOG_TRACE("layout::create_body() ... cpath = [")
 //std::cerr << "*** Filtered content...\n";
     filtered_content(ipath, doc, filtered_xsl);
 
-    // Filter the output so we can catch any `[...]` in the text and replace it on the spot.
-    // Otherwise, our "filter" square bracket clauses cause errors in XSLT translation.
-    {
-        filter::filter::filter_text_t txt_filt( ipath, doc, filtered_xsl );
-        txt_filt.set_support_edit(false);
-        filter::filter::instance()->filter_text(txt_filt);
-        if(txt_filt.has_changed())
-        {
-            doc          = txt_filt.get_xml_document();
-            filtered_xsl = txt_filt.get_text();
-        }
-    }
-
 #ifdef _DEBUG
 //SNAP_LOG_DEBUG("==== Generated XML is [")(doc.toString(-1))("]");
 //SNAP_LOG_DEBUG("++++ fitered_xsl=")(filtered_xsl);
