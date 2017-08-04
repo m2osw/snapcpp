@@ -5,8 +5,8 @@
 
 if test -z "$1" -o "$1" = "-h" -o "$1" = "--help"
 then
-	echo "Usage: clear-cache <domain name>"
-	echo "  Note: that the domain name must include a slash at the"
+	echo "Usage: $0 <domain name>"
+	echo "  Note: the domain name must include a slash at the"
 	echo "        end as in:  http://snap.website/"
 	exit 0;
 fi

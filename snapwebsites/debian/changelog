@@ -1,8 +1,8 @@
-snapwebsites (1.5.17.2~xenial) xenial; urgency=high
+snapwebsites (1.5.18.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed the help of the "snapclearcache".
 
- -- Build Server <build@m2osw.com>  Wed, 02 Aug 2017 15:02:19 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 03 Aug 2017 20:31:45 -0700
 
 snapwebsites (1.5.17.0~xenial) xenial; urgency=high
 
