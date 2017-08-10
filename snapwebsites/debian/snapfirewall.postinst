@@ -52,25 +52,6 @@ then
     #
     invoke-rc.d rsyslog restart
 
-    # By default fail2ban compresses its log files which is great, only
-    # the filter that checks whether someone is trying to hit the site
-    # again and again fails with a 100% CPU usage if we allow compression
-    # (this is a workaround for a bug in fail2ban 0.9.x)
-    #
-    if ! cmp /usr/share/snapwebsites/fail2ban/fail2ban.logrotate /etc/logrotate.d/fail2ban
-    then
-        # Place our version that does not compress
-        #
-        cp /usr/share/snapwebsites/fail2ban/fail2ban.logrotate /etc/logrotate.d/fail2ban
-
-        # Uncompress files if there are some compressed
-        #
-        for f in /var/log/fail2ban.log.*.gz
-        do
-            gunzip $f
-        done
-    fi
-
     # We install some files for fail2ban, so we need to restart it
     #
     if systemctl -q is-active fail2ban

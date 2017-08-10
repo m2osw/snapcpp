@@ -5,7 +5,6 @@ debian/tmp/usr/bin/snapresetfail2ban                           usr/bin/
 debian/tmp/usr/bin/count-unwanted                              usr/bin/
 debian/tmp/usr/lib/snapwebsites/tables/snapfirewall-tables.xml usr/lib/snapwebsites/tables/
 debian/tmp/usr/lib/snapwebsites/manager_plugins/libfirewall.so usr/lib/snapwebsites/manager_plugins/
-debian/tmp/usr/share/snapwebsites/fail2ban/fail2ban.logrotate  usr/share/snapwebsites/fail2ban/fail2ban.logrotate
 snapfirewall/conf/snapfirewall.conf                            etc/snapwebsites/
 snapfirewall/conf/snapfirewall.properties                      etc/snapwebsites/logger/
 snapfirewall/conf/snapinitfirewall.service                     lib/systemd/system/

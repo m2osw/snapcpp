@@ -4,19 +4,6 @@ snapwebsites (1.5.20.0~xenial) xenial; urgency=high
 
  -- Doug Barbieri <doug@garibaldi>  Thu, 10 Aug 2017 09:04:52 -0700
 
-snapwebsites (1.5.19.1~xenial) xenial; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 10 Aug 2017 02:00:45 -0700
-
-snapwebsites (1.5.19.0~xenial) xenial; urgency=high
-
-  * EX-192: install a new fail2ban.logrotate file.
-  * Uncompress any compressed log file.
-
- -- Alexis Wilke <alexis@m2osw.com>  Wed, 09 Aug 2017 22:54:56 -0700
-
 snapwebsites (1.5.18.0~xenial) xenial; urgency=high
 
   * Fixed the help of the "snapclearcache".

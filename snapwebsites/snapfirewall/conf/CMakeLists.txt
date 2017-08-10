@@ -47,19 +47,6 @@ install(
 
 
 #################################################################################
-## To replace the fail2ban.logrotate file so it does not compress older files
-##
-install(
-    FILES 
-        # logrotate configuration
-        fail2ban.logrotate
-
-    DESTINATION
-        share/snapwebsites/fail2ban
-)
-
-
-#################################################################################
 ## Logger files
 ##
 install(
