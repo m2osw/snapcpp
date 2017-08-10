@@ -1,3 +1,9 @@
+snapwebsites (1.5.19.0~xenial) xenial; urgency=high
+
+  * EX-193: Added Reply-To header support.
+
+ -- Doug Barbieri <doug@garibaldi>  Thu, 10 Aug 2017 09:04:52 -0700
+
 snapwebsites (1.5.18.6~xenial) xenial; urgency=high
 
   * Nightly build.
