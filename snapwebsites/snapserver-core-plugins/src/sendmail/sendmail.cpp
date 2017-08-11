@@ -191,6 +191,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL_PRECEDENCE:
         return "Precedence";
 
+    case name_t::SNAP_NAME_SENDMAIL_REPLY_TO:
+        return "Reply-To";
+
     case name_t::SNAP_NAME_SENDMAIL_SENDING_STATUS:
         return "sendmail::sending_status";
 

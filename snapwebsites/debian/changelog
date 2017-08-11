@@ -1,8 +1,14 @@
-snapwebsites (1.5.18.5~xenial) xenial; urgency=high
+snapwebsites (1.5.20.1~xenial) xenial; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Fri, 04 Aug 2017 02:00:37 -0700
+ -- Build Server <build@m2osw.com>  Thu, 10 Aug 2017 16:12:07 -0700
+
+snapwebsites (1.5.20.0~xenial) xenial; urgency=high
+
+  * EX-193: Added Reply-To header support.
+
+ -- Doug Barbieri <doug@garibaldi>  Thu, 10 Aug 2017 09:04:52 -0700
 
 snapwebsites (1.5.18.0~xenial) xenial; urgency=high
 
