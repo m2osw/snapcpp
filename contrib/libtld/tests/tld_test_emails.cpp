@@ -96,13 +96,15 @@ struct valid_email
 /// List of results to verify all the fields of the parser output. There is one entry per group and email.
 const tld_email list_of_results[] =
 {
+    { "", "MAILER-DAEMON@mail.exdox.com (Mail Delivery System)",
+      "", "MAILER-DAEMON", "mail.exdox.com", "MAILER-DAEMON@mail.exdox.com", "MAILER-DAEMON@mail.exdox.com" },
+#if 1
     { "", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
     { "", "a@m2osw.com",
       "", "a", "m2osw.com", "a@m2osw.com", "a@m2osw.com" },
     { "", "b@c.com",
       "", "b", "c.com", "b@c.com", "b@c.com" },
-#if 1
     { "", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
     { "", "\"Wilke, Alexis\" <alexis@m2osw.com>",
@@ -162,10 +164,11 @@ const tld_email list_of_results[] =
 /// The list of valid emails used to check the parser out.
 const valid_email list_of_valid_emails[] =
 {
+    { "MAILER-DAEMON@mail.exdox.com (Mail Delivery System)", 1},
+#if 1
     { "alexis@m2osw.com", 1 },
     { "a@m2osw.com", 1 },
     { "b@c.com", 1 },
-#if 1
     { " \t alexis@m2osw.com\n \t", 1 },
     { "\"Wilke, Alexis\" <alexis@m2osw.com>", 1 },
     { " (* Pascal Comments *) \t alexis@m2osw.com\n (Just (kidding) he! he!) \t", 1 },
@@ -661,6 +664,9 @@ struct invalid_email
 const invalid_email list_of_invalid_emails[] =
 {
     { TLD_RESULT_NULL, "alexism2osw.com (missing @)" },
+    { TLD_RESULT_INVALID, "doug barbieri@m2osw.com\n \t (space in email address)" },
+    { TLD_RESULT_INVALID, "doug_barbieri@m2osw com\n \t (space in email domain)" },
+    { TLD_RESULT_INVALID, "doug_barbieri@m2osw.com  org    (space in email domain after dot)" },
     { TLD_RESULT_INVALID, " \v alexis@m2osw.com\n \t (bad control)" },
     { TLD_RESULT_INVALID, " (* Pascal Comments *) \t alexis@m2osw.com\n (missing closing parenthesis\\)" },
     { TLD_RESULT_INVALID, "(Start-Comment)alexis@ \t [ \t m2osw.com \t ] \n (extra after domain done) \"more\tdata\" \r\n\t" },

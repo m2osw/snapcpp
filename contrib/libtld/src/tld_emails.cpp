@@ -31,6 +31,7 @@
 //
 #include <memory>
 #include <iostream>
+#include <algorithm>
 
 
 /** \file
@@ -1193,16 +1194,10 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
         case '\n':
         case '\r':
         case '\t':
-#if 0
-            // EX-185: Spaces should not be allowed, and I doubt CRs, LFs and TABs
-            // should, either.
-            //
-            // TODO: We need to allow this to happen, but *only* if there is an
-            // angle bracket that appears last. For now, I'm keeping this case
-            // remarked off, even though it breaks a lot of the email address tests.
             //
             // keep just one space
-            if(!value.empty())
+            //
+            if( !value.empty() )
             {
                 value += ' ';
             }
@@ -1219,9 +1214,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                 }
             }
             --s;
-#endif
-            return TLD_RESULT_INVALID;
-            //break;
+            break;
 
         case '.':
             if(value.empty()                                // cannot start with a dot
@@ -1295,11 +1288,27 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
         return result;
     }
 
+    // EX-193 and EX-185: email must not have whitespace in it!
+    //
+    auto has_whitespace = [&]( char c )
+        {
+            return (c == ' ' || c == '\n' || c == '\r' || c == '\t');
+        };
+    if( std::find_if( std::begin(username), std::end(username), has_whitespace ) != std::end(username) )
+    {
+        return TLD_RESULT_INVALID;
+    }
+    //
+    if( std::find_if( std::begin(domain), std::end(domain), has_whitespace ) != std::end(domain) )
+    {
+        return TLD_RESULT_INVALID;
+    }
+
     f_original_email = email;
-    f_fullname = fullname;
-    f_username = username;
-    f_domain = domain;
-    f_email_only = quote_string(username, '\'') + "@" + quote_string(domain, '[');  // TODO protect characters...
+    f_fullname       = fullname;
+    f_username       = username;
+    f_domain         = domain;
+    f_email_only     = quote_string(username, '\'') + "@" + quote_string(domain, '[');  // TODO protect characters...
 
     // the canonicalized version uses the domain name in lowercase
     std::string canonicalized_email(quote_string(username, '\'') + "@" + quote_string(lowercase_domain.get(), '['));  // TODO protect characters...
