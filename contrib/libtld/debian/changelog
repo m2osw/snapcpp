@@ -1,3 +1,9 @@
+libtld (1.5.8.0~xenial) xenial; urgency=high
+
+  * EX-185 and EX-193: fixed spaces issues in email address names.
+
+ -- Doug Barbieri <doug@garibaldi>  Fri, 11 Aug 2017 12:59:52 -0700
+
 libtld (1.5.7.74~xenial) xenial; urgency=high
 
   * Nightly build.
