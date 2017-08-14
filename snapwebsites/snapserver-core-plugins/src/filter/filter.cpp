@@ -1083,33 +1083,43 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         else if(n.isElement())
         {
             QDomElement e(n.toElement());
+            QString const tag_name(e.tagName());
 
-            // apply the replacement to all the attributes of each tag
-            QDomNamedNodeMap attrs(e.attributes());
-            int const max_attrs(attrs.size());
-            for(int i(0); i < max_attrs; ++i)
+            // XSL tags use [ and ] for all sorts of things in their
+            // attributes, some of which could cause conflicts with
+            // our tokens so we skip those attributes
+            //
+            if(!tag_name.startsWith("xsl:"))
             {
-                QDomAttr a(attrs.item(i).toAttr());
-                filter_text_t txt_filt(state.ipath(), xml, a.value());
-                txt_filt.set_support_edit(false);
-                filter_text(txt_filt);
-                if(txt_filt.has_changed())
+                // apply the replacement to all the attributes of each tag
+                //
+                QDomNamedNodeMap attrs(e.attributes());
+                int const max_attrs(attrs.size());
+                for(int i(0); i < max_attrs; ++i)
                 {
-                    // TBD: should we warn the user that some of his
-                    //      tokens and other generated data included
-                    //      a tag or two...
-                    //
-                    a.setValue(snap_dom::remove_tags(txt_filt.get_text()));
+                    QDomAttr a(attrs.item(i).toAttr());
+                    filter_text_t txt_filt(state.ipath(), xml, a.value());
+                    txt_filt.set_support_edit(false);
+                    filter_text(txt_filt);
+                    if(txt_filt.has_changed())
+                    {
+                        // TBD: should we warn the user that some of his
+                        //      tokens and other generated data included
+                        //      a tag or two...
+                        //
+                        a.setValue(snap_dom::remove_tags(txt_filt.get_text()));
+                    }
                 }
             }
 
-            QString const tag_name(e.tagName());
             // TBD -- is it a problem to have hard coded tag names here?
+            //
             if(tag_name == "snap" || tag_name == "filter")
             {
                 // if the element has no children then we do
                 // not want to push anything because it will
                 // not get popped properly otherwise
+                //
                 QDomNode child = n.firstChild();
                 if(!child.isNull())
                 {
@@ -1121,6 +1131,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         // we need to pop this one after handling or we get the
         // wrong information in the tag before exiting a tag
         // (also must be popped in order, i.e. FIFO)
+        //
         int const pop_max(to_pop.size());
         for(int i(0); i < pop_max; ++i)
         {
@@ -1524,7 +1535,8 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                 //                 expect to lose control over a user
                 //                 entered piece of text.
                 //
-                SNAP_LOG_WARNING("tokens found in on_token_filter() cannot use dash ('-') in their name; use underscore (_) instead.");
+                SNAP_LOG_WARNING("tokens found in on_token_filter() cannot use dash ('-') in their name; use underscore (_) instead. (")(f_ipath.get_key())(")");
+                //SNAP_LOG_WARNING("raw input text: [")(f_text)("]");
                 return token_t::TOK_INVALID;
 
             default:
