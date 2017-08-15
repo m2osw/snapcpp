@@ -1,6 +1,8 @@
-snapwebsites (1.5.21.1~xenial) xenial; urgency=high
+snapwebsites (1.5.22.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * SNAP-591: Existing links may need to be deleted before we create new ones.
+  * Added a couple of tests to verify that this is done properly for unique
+    links (we want to check the same with multiple links too at some point).
 
  -- Build Server <build@m2osw.com>  Mon, 14 Aug 2017 02:00:43 -0700
 

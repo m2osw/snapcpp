@@ -34,6 +34,8 @@ SNAP_PLUGIN_EXTENSION_START(links)
 
 SNAP_TEST_PLUGIN_SUITE(links)
     SNAP_TEST_PLUGIN_TEST(links, test_unique_unique_create_delete)
+    SNAP_TEST_PLUGIN_TEST(links, test_unique_unique_create_replace_delete)
+    SNAP_TEST_PLUGIN_TEST(links, test_unique_unique_create2_replace2_delete2)
     SNAP_TEST_PLUGIN_TEST(links, test_multiple_multiple_create_delete)
 SNAP_TEST_PLUGIN_SUITE_END()
 
@@ -70,7 +72,7 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_delete)
     SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(source.get_key()))
     SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(destination.get_key()))
 
-    // second, check whether the already link exists, if so delete it
+    // second, check whether the link already exists, if so delete it
     if(branch_table->row(source.get_branch_key())->exists(source_field_name))
     {
         branch_table->row(source.get_branch_key())->dropCell(source_field_name);
@@ -106,6 +108,336 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_delete)
     // got deleted, it must be gone now
     SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(source.get_branch_key())->exists(source_field_name))
     SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(destination.get_branch_key())->exists(destination_field_name))
+}
+
+
+SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_replace_delete)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+
+    // test a unique link as follow:
+    //
+    //      page1 <-> page2
+    //      page1 <-> page3
+    //
+    // when we create the link from page1 to page3, we did not delete
+    // the link between page1 and page2, yet page2 should get unlinked
+    // automatically
+    //
+    content::path_info_t page1;
+    content::path_info_t page2;
+    content::path_info_t page3;
+
+    bool const page1_unique(true);
+    bool const page2_unique(true);
+    bool const page3_unique(true);
+
+    QString const page1_name("test_plugin_suite::test_unique_link");
+    QString const page2_name("test_plugin_suite::test_unique_link");
+    QString const page3_name("test_plugin_suite::test_unique_link");
+
+    page1.set_path("js");
+    page2.set_path("admin");
+    page3.set_path("css");
+
+    snap_version::version_number_t page1_branch(page1.get_branch());
+    snap_version::version_number_t page2_branch(page2.get_branch());
+    snap_version::version_number_t page3_branch(page3.get_branch());
+
+    QString const page1_field_name(QString("links::%1#%2").arg(page1_name).arg(page1_branch));
+    QString const page2_field_name(QString("links::%1#%2").arg(page2_name).arg(page2_branch));
+    QString const page3_field_name(QString("links::%1#%2").arg(page3_name).arg(page3_branch));
+
+    QString const page1_multilink_name(QString("%1/%2").arg(page1.get_branch_key()).arg(page1_field_name));
+    QString const page2_multilink_name(QString("%1/%2").arg(page2.get_branch_key()).arg(page2_field_name));
+    QString const page3_multilink_name(QString("%1/%2").arg(page3.get_branch_key()).arg(page3_field_name));
+
+    // first verify that those three pages exist
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page1.get_key()))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page2.get_key()))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page3.get_key()))
+
+    // second, check whether the link already exists, if so delete it
+    //
+    if(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    {
+        branch_table->row(page1.get_branch_key())->dropCell(page1_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    }
+    if(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    {
+        branch_table->row(page2.get_branch_key())->dropCell(page2_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    }
+    if(branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    {
+        branch_table->row(page3.get_branch_key())->dropCell(page3_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    }
+
+    // third, check that there are no multi-link definitions either
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+
+    // now get ready to create the links
+    //
+    link_info page1_info(page1_name, page1_unique, page1.get_key(), page1.get_branch());
+    link_info page2_info(page2_name, page2_unique, page2.get_key(), page2.get_branch());
+    link_info page3_info(page3_name, page3_unique, page3.get_key(), page3.get_branch());
+
+    // first page1 <-> page2
+    //
+    create_link(page1_info, page2_info);
+
+    // now those two fields must exist or we have a problem
+    // and "obviously" the 3rd field cannot exist
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+
+    // but the multi-link must still not have been created
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+
+    // now switch with page1 <-> page3 instead
+    //
+    create_link(page1_info, page3_info);
+
+    // now those two fields must exist or we have a problem
+    // and "obviously" the 3rd field cannot exist anymore
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+
+    // and the multi-link must still not have been created
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+
+    // finally, delete the link
+    //
+    delete_link(page1_info);
+
+    // got deleted, it must all be gone now
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+}
+
+
+SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create2_replace2_delete2)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+
+    // test a double unique link as follow:
+    //
+    //      page1 <-> page2
+    //      page3 <-> page4
+    //
+    // then switch the links around a couple of times:
+    //
+    //      page1 <-> page3
+    //      page2 <-> page4
+    //
+    // and finally:
+    //
+    //      page1 <-> page4
+    //      page2 <-> page3
+    //
+    // just as with the previous test, the pages should get unlinked as
+    // required and automatically (when we link page1 with page3, for
+    // example, page2 and page4 need both unlinked)
+    //
+    content::path_info_t page1;
+    content::path_info_t page2;
+    content::path_info_t page3;
+    content::path_info_t page4;
+
+    bool const page1_unique(true);
+    bool const page2_unique(true);
+    bool const page3_unique(true);
+    bool const page4_unique(true);
+
+    QString const page1_name("test_plugin_suite::test_unique_link");
+    QString const page2_name("test_plugin_suite::test_unique_link");
+    QString const page3_name("test_plugin_suite::test_unique_link");
+    QString const page4_name("test_plugin_suite::test_unique_link");
+
+    page1.set_path("js");
+    page2.set_path("admin");
+    page3.set_path("css");
+    page4.set_path("types");
+
+    snap_version::version_number_t page1_branch(page1.get_branch());
+    snap_version::version_number_t page2_branch(page2.get_branch());
+    snap_version::version_number_t page3_branch(page3.get_branch());
+    snap_version::version_number_t page4_branch(page4.get_branch());
+
+    QString const page1_field_name(QString("links::%1#%2").arg(page1_name).arg(page1_branch));
+    QString const page2_field_name(QString("links::%1#%2").arg(page2_name).arg(page2_branch));
+    QString const page3_field_name(QString("links::%1#%2").arg(page3_name).arg(page3_branch));
+    QString const page4_field_name(QString("links::%1#%2").arg(page4_name).arg(page4_branch));
+
+    QString const page1_multilink_name(QString("%1/%2").arg(page1.get_branch_key()).arg(page1_field_name));
+    QString const page2_multilink_name(QString("%1/%2").arg(page2.get_branch_key()).arg(page2_field_name));
+    QString const page3_multilink_name(QString("%1/%2").arg(page3.get_branch_key()).arg(page3_field_name));
+    QString const page4_multilink_name(QString("%1/%2").arg(page4.get_branch_key()).arg(page4_field_name));
+
+    // first verify that those three pages exist
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page1.get_key()))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page2.get_key()))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page3.get_key()))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(content_table->exists(page4.get_key()))
+
+    // second, check whether the link already exists, if so delete it
+    //
+    if(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    {
+        branch_table->row(page1.get_branch_key())->dropCell(page1_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    }
+    if(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    {
+        branch_table->row(page2.get_branch_key())->dropCell(page2_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    }
+    if(branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    {
+        branch_table->row(page3.get_branch_key())->dropCell(page3_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    }
+    if(branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+    {
+        branch_table->row(page4.get_branch_key())->dropCell(page4_field_name);
+        SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+    }
+
+    // third, check that there are no multi-link definitions either
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page4_multilink_name))
+
+    // now get ready to create the links
+    //
+    link_info page1_info(page1_name, page1_unique, page1.get_key(), page1.get_branch());
+    link_info page2_info(page2_name, page2_unique, page2.get_key(), page2.get_branch());
+    link_info page3_info(page3_name, page3_unique, page3.get_key(), page3.get_branch());
+    link_info page4_info(page4_name, page4_unique, page4.get_key(), page4.get_branch());
+
+    // first page1 <-> page2
+    //
+    create_link(page1_info, page2_info);
+
+    // now those two fields must exist or we have a problem
+    // and "obviously" the 3rd field cannot exist
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+
+    // and no multi-link
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page4_multilink_name))
+
+    // now link page3 <-> page4
+    //
+    create_link(page3_info, page4_info);
+
+    // all links exist
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+
+    // and the multi-link must still not have been created
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page4_multilink_name))
+
+    // now do the first switch, it will delete all the other links first
+    //
+    create_link(page1_info, page3_info);
+
+    // both page1 <-> page2 and page3 <-> page4 links should be deleted
+    // then page1 and page3 get linked
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+
+    // and no multi-link
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page4_multilink_name))
+
+    // ready for the second switch, although if the first worked, 2 and 4
+    // have no links at all, so it's a very standard linking
+    //
+    create_link(page2_info, page4_info);
+
+    // all linked again
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+
+    // and no multi-link
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page1_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page2_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page3_multilink_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!links_table->exists(page4_multilink_name))
+
+    // finally, delete one of the links
+    //
+    delete_link(page1_info);
+
+    // all linked again
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(branch_table->row(page4.get_branch_key())->exists(page4_field_name))
+
+    // and delete the other link
+    //
+    delete_link(page2_info);
+
+    // all links gone
+    //
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page1.get_branch_key())->exists(page1_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page2.get_branch_key())->exists(page2_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page3.get_branch_key())->exists(page3_field_name))
+    SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(page4.get_branch_key())->exists(page4_field_name))
 }
 
 

@@ -1690,6 +1690,50 @@ void links::create_link(link_info const & src, link_info const & dst)
         }
     }
 
+    // if the source and destination are unique, then we need to delete
+    // the existing link unless we are re-creating the very same link
+    //
+    if(src.is_unique())
+    {
+        if(f_branch_table->row(src.row_key())->exists(src_col))
+        {
+            link_info existing_dst;
+            existing_dst.from_data(f_branch_table->row(src.row_key())->cell(src_col)->value().stringValue());
+            if(existing_dst.key() == dst.key()
+            && existing_dst.is_unique() == dst.is_unique()
+            && existing_dst.name() == dst.name())
+            {
+                // already exists, nothing to do here
+                //
+                return;
+            }
+
+            // a link exists but needs to be deleted
+            //
+            delete_this_link(src, existing_dst);
+        }
+    }
+    if(dst.is_unique())
+    {
+        if(f_branch_table->row(dst.row_key())->exists(dst_col))
+        {
+            link_info existing_src;
+            existing_src.from_data(f_branch_table->row(dst.row_key())->cell(dst_col)->value().stringValue());
+            if(existing_src.key() == src.key()
+            && existing_src.is_unique() == src.is_unique()
+            && existing_src.name() == src.name())
+            {
+                // already exists, nothing to do here
+                //
+                return;
+            }
+
+            // a link exists but needs to be deleted
+            //
+            delete_this_link(dst, existing_src);
+        }
+    }
+
     // save the links in the rows (branches)
     // note that these two lines may just overwrite an already existing link
     (*f_branch_table)[src.row_key()][src_col] = dst.data(); // save dst in src

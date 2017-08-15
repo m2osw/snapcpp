@@ -310,6 +310,8 @@ private:
 
     // tests
     SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_delete)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_replace_delete)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create2_replace2_delete2)
     SNAP_TEST_PLUGIN_TEST_DECL(test_multiple_multiple_create_delete)
 
     snap_child *                                    f_snap = nullptr;
