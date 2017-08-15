@@ -1,8 +1,9 @@
 snapwebsites (1.5.23.1~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Removed the warning notice on backends since we now have a dropdown we
+    cannot misspell the word.
 
- -- Build Server <build@m2osw.com>  Tue, 15 Aug 2017 02:00:45 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 15 Aug 2017 13:48:40 -0700
 
 snapwebsites (1.5.23.0~xenial) xenial; urgency=high
 

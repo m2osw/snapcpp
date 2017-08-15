@@ -639,11 +639,7 @@ bool backend::display_value(QDomElement parent, snap_manager::status_t const & s
                               "</ul>"
                               "<p>You cannot request to go to the \"failed\" status. It appears in the list for status purposes only."
                               " To uninstall search for the corresponding bundle and"
-                              " click the <strong>Uninstall</strong> button.</p>"
-                              "<p><strong>WARNING:</strong> The current snapmanagercgi"
-                              " implementation does not clearly give you feedback if"
-                              " you mispell the new status. We suggest you copy and"
-                              " paste from this description to avoid mistakes.</p>")
+                              " click the <strong>Uninstall</strong> button.</p>")
                                     .arg(service_info.f_service_name)
                             ));
             f.add_widget(field);
