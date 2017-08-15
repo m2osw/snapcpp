@@ -24,6 +24,7 @@
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_reached.h>
 #include <snapwebsites/not_used.h>
+#include <snapwebsites/qdomhelpers.h>
 
 #include <iostream>
 
@@ -941,9 +942,11 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
             }
         }
 
-        // ol/li/a/span//text
-        QDomText text(doc.createTextNode(label));
-        span.appendChild(text);
+        // ol/li/a/span/text
+        // Text may include HTML in which case we cannot use a QDomText
+        //QDomText text(doc.createTextNode(label));
+        //span.appendChild(text);
+        snap::snap_dom::insert_html_string_to_xml_doc(span, label);
 
         // ol/li/meta
         QDomElement position(doc.createElement("meta"));
