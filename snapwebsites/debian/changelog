@@ -1,3 +1,9 @@
+snapwebsites (1.5.24.0~xenial) xenial; urgency=high
+
+  * EX-194: Fixed the call to snapstop with the --service command line option.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 15 Aug 2017 19:19:33 -0700
+
 snapwebsites (1.5.23.1~xenial) xenial; urgency=high
 
   * Removed the warning notice on backends since we now have a dropdown we
