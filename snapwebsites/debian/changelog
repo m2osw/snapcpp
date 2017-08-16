@@ -1,3 +1,9 @@
+snapwebsites (1.5.24.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 16 Aug 2017 02:00:45 -0700
+
 snapwebsites (1.5.24.0~xenial) xenial; urgency=high
 
   * EX-194: Fixed the call to snapstop with the --service command line option.
