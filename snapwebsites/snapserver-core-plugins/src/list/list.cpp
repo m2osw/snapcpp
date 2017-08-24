@@ -172,6 +172,22 @@ namespace
 {
 
 
+namespace
+{
+
+void file_descriptor_deleter(int * fd)
+{
+    if(close(*fd) != 0)
+    {
+        int const e(errno);
+        SNAP_LOG_WARNING("closing file descriptor failed (errno: ")(e)(", ")(strerror(e))(")");
+    }
+}
+
+} // no name namespace
+
+
+
 /** \brief Timeout for our list journal data message in seconds.
  *
  * Whenever we send a message to the "pagelist" backend processing our
@@ -2226,19 +2242,23 @@ void list::on_modified_content(content::path_info_t & ipath)
         return;
     }
 
-    if(flock(fd, LOCK_EX) != 0)
+    // create a block so fd gets closed ASAP (since we have a lock on it,
+    // it is best this way)
     {
-        SNAP_LOG_ERROR("could not lock file \"")(journal_filename)("\" before appending message");
-        return;
-    }
+        std::shared_ptr<int> safe_fd(&fd, file_descriptor_deleter);
 
-    if(write(fd, list_item.c_str(), list_item.length()) != static_cast<ssize_t>(list_item.length()))
-    {
-        SNAP_LOG_FATAL("could not write to file \"")(journal_filename)("\", list manager may be hosed now");
-        return;
-    }
+        if(flock(fd, LOCK_EX) != 0)
+        {
+            SNAP_LOG_ERROR("could not lock file \"")(journal_filename)("\" before appending message");
+            return;
+        }
 
-    close(fd);
+        if(write(fd, list_item.c_str(), list_item.length()) != static_cast<ssize_t>(list_item.length()))
+        {
+            SNAP_LOG_FATAL("could not write to file \"")(journal_filename)("\", list manager may be hosed now");
+            return;
+        }
+    }
 
     // move that to the backend!
     //
