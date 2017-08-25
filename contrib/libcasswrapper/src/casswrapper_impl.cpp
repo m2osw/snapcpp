@@ -39,6 +39,77 @@
 
 #include <sstream>
 
+/** \mainpage
+ * \brief libcasswrapper C++ Documentation
+ *
+ * \section introduction Introduction
+ *
+ * The libcasswrapper library provides a light wrapper around the Cassandra CPP
+ * Driver API. 
+ *
+ * Datastax's library is sadly NOT really C++, but consistent straight C, in
+ * terms of design. All of the resources handles returned are not managed
+ * with constructors/destructors to deal with object lifetime. The developer is
+ * responsible to make sure resources are properly destroyed once he/she is
+ * finished with them. This opens up the door to memory and resource leaks.
+ *
+ * In order to avoid those pitfalls, we've written a thin C++ "wrapper" around
+ * the driver API itself. The resource handles are preserved in std smart
+ * pointers, which automatically manage the lifetimes and prevent resource
+ * leaks.  This makes the library a lot easier to use in an object oriented
+ * situation, consistent with the tried and true design principle of RAII.
+ *
+ * \section core Core Classes
+ *
+ * At the core of this library is the Query class. Since Cassandra migrated to
+ * CQL and away from their traditional binary driver (which required Thrift), a
+ * method is needed to deal with sending CQL queries to the database server.
+ * Also, the unique design of this distributed database means that you should
+ * not code your app to sit around and wait for a response. One needs to think
+ * in a distributed, threaded way. You can "block" until the operation
+ * completes, but a more effective way is to use the non-block switch and take
+ * advantage of the callback. For example, here is a traditional "blocking" way
+ * to make a database query:
+ *
+ * \code
+ *    Query::pointer_t my_query( Query::create(session) );
+ *    my_query->query( "SELECT foo,bar FROM my_database.foobar" );
+ *    my_query->setPagingSize( 100 );     // listen for 100 records at a time
+ *    my_query->start();                  // defaults to blocking
+ *    //
+ *    do
+ *    {
+ *        while( q->nextRow() )
+ *        {
+ *            const int32_t foo(my_query->getInt32Column("foo"));
+ *            const QString bar(my_query->getStringColumn("bar"));
+ *            // Do stuff
+ *        }
+ *    }
+ *    while( q->nextPage() );
+ * \endcode
+ *
+ * However, if you attach to the Qt5 signal queryFinished(), then instead of
+ * calling, you can return processing to other critical areas of your code and
+ * process the returned rows when they are ready.
+ *
+ * \section whats_next What's Next?
+ *
+ * There are certain elements of Datastax's API which we have not yet
+ * implemented, however we have captured the most critical aspects. You can
+ * peruse the database schema without having to directly query the system tables
+ * (which are subject to change between versions of the database), you can take
+ * advantage of batch processing, all data types are supported, and you even can
+ * create an SSL connection to your database.
+ *
+ * And the huge advantage is that we put all resources into smart pointer
+ * containers, so this will help you keep resource and memory leaks to a minimum
+ * in your software.
+ *
+ * \sa casswrapper::Query::queryFinished(), casswrapper::Query, casswrapper::Session
+ */
+
+
 namespace casswrapper
 {
 
