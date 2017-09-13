@@ -593,6 +593,7 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
     || n == "content::breadcrumbs_show_home"
     || n == "content::prevent_delete"
     || n == "core::mx_result"
+    || n == "core::test_site"
     || n == "epayment_creditcard::show_address2"
     || n == "epayment_creditcard::show_country"
     || n == "epayment_creditcard::show_phone"

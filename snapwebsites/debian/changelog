@@ -1,8 +1,11 @@
-snapwebsites (1.5.25.21~xenial) xenial; urgency=high
+snapwebsites (1.5.26.0~xenial) xenial; urgency=high
 
-  * Nightly build.
+  * Fixed test websites: the canonical is not enough, we need to prevent
+    search engines from indexing such sites by telling them NOINDEX.
+  * Fixed reference to snapwebsites.org with HTTPS.
+  * Fixed the tag name: X-Robots-Tag -- we were missing "-Tag".
 
- -- Build Server <build@m2osw.com>  Thu, 24 Aug 2017 02:00:45 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 13 Sep 2017 15:28:14 -0700
 
 snapwebsites (1.5.25.0~xenial) xenial; urgency=high
 

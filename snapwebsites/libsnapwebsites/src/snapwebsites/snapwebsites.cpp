@@ -248,6 +248,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_STATUS_HEADER:
         return "Status";
 
+    case name_t::SNAP_NAME_CORE_TEST_SITE:
+        return "core::test_site";
+
     case name_t::SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";
 
