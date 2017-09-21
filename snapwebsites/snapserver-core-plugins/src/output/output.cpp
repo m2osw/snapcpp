@@ -306,7 +306,7 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
     NOTUSED(page);
 
     content::content * content(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content->get_content_table());
+    libdbproxy::table::pointer_t content_table(content->get_content_table());
     QString const language(ipath.get_locale());
 
     // if the content is the main page then define the titles and body here
@@ -369,7 +369,7 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
     //       so it can be cached and retrieved quickly
     //
     {
-        QtCassandra::QCassandraRow::pointer_t page_row(content_table->row(ipath.get_key()));
+        libdbproxy::row::pointer_t page_row(content_table->row(ipath.get_key()));
         page_row->clearCache();
         snap_version::version_number_t const branch(ipath.get_branch());
         QString const revision_key(QString("%1::%2::%3::")
@@ -377,7 +377,7 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
                 .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
                 .arg(branch));
         int const revision_key_length(revision_key.length());
-        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+        auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
         column_predicate->setCount(100);
         column_predicate->setIndex(); // behave like an index
         column_predicate->setStartCellKey(revision_key + "@");
@@ -386,17 +386,17 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
         for(;;)
         {
             page_row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(page_row->cells());
+            libdbproxy::QCassandraCells const cells(page_row->cells());
             if(cells.isEmpty())
             {
                 // no script found, error appears at the end of the function
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator dc(cells.begin());
+            for(libdbproxy::QCassandraCells::const_iterator dc(cells.begin());
                     dc != cells.end();
                     ++dc)
             {
-                QtCassandra::QCassandraCell::pointer_t c(*dc);
+                libdbproxy::cell::pointer_t c(*dc);
 
                 QString const key(c->columnName());
                 QString const lang(key.mid(revision_key_length));
@@ -713,7 +713,7 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
         if(token.verify_args(0, 1))
         {
             content::content * content(content::content::instance());
-            QtCassandra::QCassandraTable::pointer_t content_table(content->get_content_table());
+            libdbproxy::table::pointer_t content_table(content->get_content_table());
             int64_t const created_date(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds
             QString date_format;
@@ -733,7 +733,7 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
         {
             // last updated is the date when the last revision was created
             content::content * content(content::content::instance());
-            QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
+            libdbproxy::table::pointer_t revision_table(content->get_revision_table());
             int64_t const created_date(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds
             QString date_format;
@@ -814,7 +814,7 @@ void output::on_token_help(filter::filter::token_help_t & help)
 void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
 {
     content::content * content(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content->get_revision_table());
 
     QDomDocument doc(parent.ownerDocument());
 
@@ -826,7 +826,7 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
     content::path_info_t info_ipath;
     info_ipath.set_path("admin/settings/info");
 
-    QtCassandra::QCassandraRow::pointer_t info_row(revision_table->row(info_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t info_row(revision_table->row(info_ipath.get_revision_key()));
 
     QString home_label(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL))->value().stringValue());
     if(home_label.isEmpty())
@@ -838,7 +838,7 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         home_label = "Home";
     }
 
-    QtCassandra::QCassandraValue value(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME))->value());
+    libdbproxy::value value(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME))->value());
     bool const show_home(value.nullValue() || value.safeSignedCharValue() != 0);
 
     value = info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_CURRENT_PAGE))->value();

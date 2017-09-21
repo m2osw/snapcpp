@@ -332,7 +332,7 @@ void epayment_stripe::bootstrap(snap_child * snap)
  *
  * \return The pointer to the epayment_stripe table.
  */
-QtCassandra::QCassandraTable::pointer_t epayment_stripe::get_epayment_stripe_table()
+libdbproxy::table::pointer_t epayment_stripe::get_epayment_stripe_table()
 {
     if(!f_epayment_stripe_table)
     {
@@ -411,8 +411,8 @@ void epayment_stripe::on_generate_header_content(content::path_info_t & ipath, Q
     settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_SETTINGS_PATH));
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
+    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+    libdbproxy::row::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
 
     bool const debug(get_debug());
 
@@ -470,7 +470,7 @@ void epayment_stripe::on_generate_main_content(content::path_info_t & ipath, QDo
 //    if(cpath == get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CANCEL_URL)
 //    || cpath == get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CANCEL_PLAN_URL))
 //    {
-//        QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+//        libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 //
 //        // the user canceled that invoice...
 //        //
@@ -500,7 +500,7 @@ void epayment_stripe::on_generate_main_content(content::path_info_t & ipath, QDo
 //    }
 //    else if(cpath == get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_RETURN_URL))
 //    {
-//        QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+//        libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 //
 //        for(;;)
 //        {
@@ -588,9 +588,9 @@ void epayment_stripe::on_generate_main_content(content::path_info_t & ipath, QDo
 //            QString const payer_id(main_uri.query_option("PayerID"));
 //
 //            content::content *content_plugin(content::content::instance());
-//            QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-//            QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-//            QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
+//            libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+//            libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+//            libdbproxy::row::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
 //
 //            // save the PayerID value
 //            secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_PAYER_ID))->setValue(payer_id);
@@ -872,7 +872,7 @@ void epayment_stripe::on_generate_main_content(content::path_info_t & ipath, QDo
 //                break;
 //            }
 //
-//            QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+//            libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 //
 //            QString const token(main_uri.query_option("token"));
 //SNAP_LOG_WARNING("*** token is [")(token)("] [")(main_uri.full_domain())("]");
@@ -928,9 +928,9 @@ void epayment_stripe::on_generate_main_content(content::path_info_t & ipath, QDo
 //            }
 //
 //            content::content * content_plugin(content::content::instance());
-//            QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-//            QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-//            QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
+//            libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+//            libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+//            libdbproxy::row::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
 //
 //            // No saved ID for agreements...
 //            //
@@ -1153,7 +1153,7 @@ void epayment_stripe::on_generate_main_content(content::path_info_t & ipath, QDo
 
 void epayment_stripe::cancel_invoice(QString const & token)
 {
-    QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+    libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
     snap_uri const main_uri(f_snap->get_uri());
     QString const invoice(epayment_stripe_table->row(main_uri.full_domain())->cell("token/" + token)->value().stringValue());
     content::path_info_t invoice_ipath;
@@ -1204,13 +1204,13 @@ bool epayment_stripe::get_debug()
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_SETTINGS_PATH));
 
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
 
         // TODO: if backends require it, we want to add a reset of the
         //       revision_row before re-reading the debug flag here
 
-        QtCassandra::QCassandraValue debug_value(revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_DEBUG))->value());
+        libdbproxy::value debug_value(revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_DEBUG))->value());
         f_debug = !debug_value.nullValue() && debug_value.signedCharValue();
 
         f_debug_defined = true;
@@ -1239,8 +1239,8 @@ QString epayment_stripe::get_stripe_key(bool const debug)
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_SETTINGS_PATH));
 
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-        QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
+        libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+        libdbproxy::row::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
 
         // TODO: if backends require it, we want to add a reset of the
         //       revision_row before re-reading the debug flag here
@@ -1345,10 +1345,10 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_SETTINGS_PATH));
 
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
 
-        QtCassandra::QCassandraValue maximum_repeat_failures_value(revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_MAXIMUM_REPEAT_FAILURES))->value());
+        libdbproxy::value maximum_repeat_failures_value(revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_MAXIMUM_REPEAT_FAILURES))->value());
         if(maximum_repeat_failures_value.size() == sizeof(int8_t))
         {
             f_maximum_repeat_failures = maximum_repeat_failures_value.signedCharValue();
@@ -1398,10 +1398,10 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
 //    settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_SETTINGS_PATH));
 //
 //    content::content *content_plugin(content::content::instance());
-//    //QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-//    //QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-//    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-//    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
+//    //libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+//    //libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+//    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+//    libdbproxy::row::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
 //
 //    bool const debug(get_debug());
 //
@@ -1412,11 +1412,11 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
 //    snap_lock lock(f_snap->get_context(), settings_ipath.get_key());
 //
 //    // If there is a saved OAuth2 which is not out of date, use that
-//    QtCassandra::QCassandraValue secret_debug_value(secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_DEBUG))->value());
+//    libdbproxy::value secret_debug_value(secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_DEBUG))->value());
 //    if(!secret_debug_value.nullValue()
 //    && (secret_debug_value.signedCharValue() != 0) == debug) // if debug flag changed, it's toasted
 //    {
-//        QtCassandra::QCassandraValue expires_value(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_EXPIRES))->value());
+//        libdbproxy::value expires_value(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_EXPIRES))->value());
 //        int64_t const current_date(f_snap->get_current_date());
 //        if(expires_value.size() == sizeof(int64_t)
 //        && expires_value.int64Value() > current_date) // we do not use 'start date' here because it could be wrong if the process was really slow
@@ -1615,10 +1615,10 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
 //    product_ipath.set_path(guid);
 //
 //    content::content *content_plugin(content::content::instance());
-//    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-//    QtCassandra::QCassandraRow::pointer_t row(revision_table->row(product_ipath.get_revision_key()));
-//    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-//    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(product_ipath.get_key()));
+//    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+//    libdbproxy::row::pointer_t row(revision_table->row(product_ipath.get_revision_key()));
+//    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+//    libdbproxy::row::pointer_t secret_row(secret_table->row(product_ipath.get_key()));
 //
 //    // This entire job may be used by any user of the system so it has to
 //    // be done while locked; it should not add much downtime to the end
@@ -2023,7 +2023,7 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
 //    secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_PLAN_ID))->setValue(plan_id);
 //
 //    // save a back reference in the epayment_stripe table
-//    QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+//    libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 //    snap_uri const main_uri(f_snap->get_uri());
 //    epayment_stripe_table->row(main_uri.full_domain())->cell("plan/" + plan_id)->setValue(product_ipath.get_key());
 //
@@ -2180,7 +2180,7 @@ void epayment_stripe::on_replace_token(content::path_info_t & ipath, QDomDocumen
         snap_uri const main_uri(f_snap->get_uri());
         if(main_uri.has_query_option("paymentId"))
         {
-            QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+            libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
             QString const id(main_uri.query_option("paymentId"));
             QString const invoice(epayment_stripe_table->row(main_uri.full_domain())->cell("id/" + id)->value().stringValue());
             content::path_info_t invoice_ipath;
@@ -2250,12 +2250,12 @@ void epayment_stripe::on_repeat_payment(content::path_info_t & first_invoice_ipa
 
     content::content * content_plugin(content::content::instance());
 
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-    QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+    libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 
-    QtCassandra::QCassandraRow::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
-    QtCassandra::QCassandraValue customer_key(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY))->value());
+    libdbproxy::row::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
+    libdbproxy::value customer_key(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY))->value());
     if(customer_key.nullValue())
     {
         // no Stripe customer, we cannot repeat this payment in this
@@ -2263,7 +2263,7 @@ void epayment_stripe::on_repeat_payment(content::path_info_t & first_invoice_ipa
         return;
     }
 
-    QtCassandra::QCassandraRow::pointer_t customer_row(epayment_stripe_table->row(customer_key.binaryValue()));
+    libdbproxy::row::pointer_t customer_row(epayment_stripe_table->row(customer_key.binaryValue()));
 
     int64_t const start_date(f_snap->get_start_date());
 
@@ -2272,8 +2272,8 @@ void epayment_stripe::on_repeat_payment(content::path_info_t & first_invoice_ipa
     {
         // Now actually charge the customer card
         //
-        QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(new_invoice_ipath.get_key()));
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
+        libdbproxy::row::pointer_t secret_row(secret_table->row(new_invoice_ipath.get_key()));
+        libdbproxy::row::pointer_t revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
 
         secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CREATED))->setValue(start_date);
 
@@ -2338,7 +2338,7 @@ void epayment_stripe::on_repeat_payment(content::path_info_t & first_invoice_ipa
         //
         content::path_info_t epayment_settings;
         epayment_settings.set_path("admin/settings/epayment/store");
-        QtCassandra::QCassandraRow::pointer_t epayment_settings_row(revision_table->row(epayment_settings.get_revision_key()));
+        libdbproxy::row::pointer_t epayment_settings_row(revision_table->row(epayment_settings.get_revision_key()));
         QString const store_name(epayment_settings_row->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_STORE_NAME))->value().stringValue());
         QString const invoice_number(revision_row->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_NUMBER))->value().stringValue());
         QString const statement(QString("%1 #%2").arg(store_name).arg(invoice_number));
@@ -2348,7 +2348,7 @@ void epayment_stripe::on_repeat_payment(content::path_info_t & first_invoice_ipa
 
         // we can save the reply header as is
         //
-        QtCassandra::QCassandraValue value;
+        libdbproxy::value value;
         value.setStringValue(QString::fromUtf8(charge_response->get_original_header().c_str()));
         value.setTtl(365 * 86400); // keep for about 1 year
         secret_row->cell(QString("%1::%2")
@@ -2496,7 +2496,7 @@ void epayment_stripe::gateway_features(epayment_creditcard::epayment_gateway_fea
  *
  * \param[in] response  The HTTP response with the error.
  */
-void epayment_stripe::log_error(http_client_server::http_response::pointer_t response, QtCassandra::QCassandraRow::pointer_t row)
+void epayment_stripe::log_error(http_client_server::http_response::pointer_t response, libdbproxy::row::pointer_t row)
 {
     // make sure we are not called with an invalid response
     //
@@ -2510,7 +2510,7 @@ void epayment_stripe::log_error(http_client_server::http_response::pointer_t res
 
     // log the response in the database
     //
-    QtCassandra::QCassandraValue value;
+    libdbproxy::value value;
     value.setStringValue(QString::fromUtf8(response->get_response().c_str()));
     value.setTtl(365 * 86400); // keep for about 1 year
     row->cell(QString("%1::%2")
@@ -2616,11 +2616,11 @@ bool epayment_stripe::process_creditcard(epayment_creditcard::epayment_creditcar
     epayment::epayment * epayment_plugin(epayment::epayment::instance());
     messages::messages * messages_plugin(messages::messages::instance());
 
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-    QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
+    libdbproxy::table::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 
-    QtCassandra::QCassandraValue value;
+    libdbproxy::value value;
 
     bool const debug(get_debug());
     int64_t const start_date(f_snap->get_start_date());
@@ -2659,7 +2659,7 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
 
     content::path_info_t epayment_settings;
     epayment_settings.set_path("admin/settings/epayment/store");
-    QtCassandra::QCassandraRow::pointer_t epayment_settings_row(revision_table->row(epayment_settings.get_revision_key()));
+    libdbproxy::row::pointer_t epayment_settings_row(revision_table->row(epayment_settings.get_revision_key()));
 
     QString const stripe_key(get_stripe_key(debug));
     if(stripe_key.isEmpty())
@@ -2716,7 +2716,7 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
             catch(boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::bad_function_call> > const &)
             {
             }
-            catch(QtCassandra::QCassandraException const &)
+            catch(libdbproxy::exception const &)
             {
             }
         }
@@ -2759,7 +2759,7 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
 
     if(create_customer_account)
     {
-        QtCassandra::QCassandraRow::pointer_t customer_row(epayment_stripe_table->row(customer_key));
+        libdbproxy::row::pointer_t customer_row(epayment_stripe_table->row(customer_key));
 
         QString customer_stripe_key;
 
@@ -3068,8 +3068,8 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
         {
             // Now actually charge the customer card
             //
-            QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
-            QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
+            libdbproxy::row::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
+            libdbproxy::row::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
 
             secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CREATED))->setValue(start_date);
 
@@ -3229,8 +3229,8 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
         // Charge the customer card directly
         // We do not create a customer object in this case
         //
-        QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
+        libdbproxy::row::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
+        libdbproxy::row::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
 
         secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CREATED))
                   ->setValue(start_date);

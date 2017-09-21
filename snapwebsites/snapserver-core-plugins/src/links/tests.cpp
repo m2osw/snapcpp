@@ -43,9 +43,9 @@ SNAP_TEST_PLUGIN_SUITE_END()
 SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_delete)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t links_table(get_links_table());
 
     content::path_info_t source;
     content::path_info_t destination;
@@ -114,9 +114,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_delete)
 SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_replace_delete)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t links_table(get_links_table());
 
     // test a unique link as follow:
     //
@@ -240,9 +240,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_replace_delete)
 SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create2_replace2_delete2)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t links_table(get_links_table());
 
     // test a double unique link as follow:
     //
@@ -444,9 +444,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create2_replace2_delete2)
 SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
 {
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t links_table(get_links_table());
 
     content::path_info_t source;
     content::path_info_t destination;
@@ -499,9 +499,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // 2.2 check with multiple field names
     // 2.2.1 check the source
     {
-        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(source.get_branch_key()));
+        libdbproxy::row::pointer_t row(branch_table->row(source.get_branch_key()));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1-").arg(source_field_multiname_start));
         column_predicate->setEndCellKey(QString("%1.").arg(source_field_multiname_start));
         column_predicate->setCount(100);
@@ -510,13 +510,13 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 QString const key(QString::fromUtf8(cell_iterator.key()));
                 row->dropCell(key);
@@ -527,9 +527,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
 
     // 2.2.2 check the destination
     {
-        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(destination.get_branch_key()));
+        libdbproxy::row::pointer_t row(branch_table->row(destination.get_branch_key()));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1-").arg(destination_field_multiname_start));
         column_predicate->setEndCellKey(QString("%1.").arg(destination_field_multiname_start));
         column_predicate->setCount(100);
@@ -538,13 +538,13 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 QString const key(QString::fromUtf8(cell_iterator.key()));
                 row->dropCell(key);
@@ -576,9 +576,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // however, we have got ONE multi-link now
     // search for it, and then verify it exists in the links table as expected
     {
-        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(source.get_branch_key()));
+        libdbproxy::row::pointer_t row(branch_table->row(source.get_branch_key()));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1-").arg(source_field_multiname_start));
         column_predicate->setEndCellKey(QString("%1.").arg(source_field_multiname_start));
         column_predicate->setCount(100);
@@ -587,13 +587,13 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 // we have to make sure it is the right branch
                 QString const key(QString::fromUtf8(cell_iterator.key()));
@@ -614,9 +614,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         SNAP_TEST_PLUGIN_SUITE_ASSERT(!source_multilink_unique_name.isEmpty())
     }
     {
-        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(destination.get_branch_key()));
+        libdbproxy::row::pointer_t row(branch_table->row(destination.get_branch_key()));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1-").arg(destination_field_multiname_start));
         column_predicate->setEndCellKey(QString("%1.").arg(destination_field_multiname_start));
         column_predicate->setCount(100);
@@ -625,13 +625,13 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 // we have to make sure it is the right branch
                 QString const key(QString::fromUtf8(cell_iterator.key()));
@@ -661,22 +661,22 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // value is the field name as we just read from the branch table
     {
         bool found(false);
-        QtCassandra::QCassandraRow::pointer_t row(links_table->row(source_multilink_name));
+        libdbproxy::row::pointer_t row(links_table->row(source_multilink_name));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setCount(100);
         column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 SNAP_TEST_PLUGIN_SUITE_ASSERT(!found)
                 found = true;
@@ -690,22 +690,22 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     }
     {
         bool found(false);
-        QtCassandra::QCassandraRow::pointer_t row(links_table->row(destination_multilink_name));
+        libdbproxy::row::pointer_t row(links_table->row(destination_multilink_name));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setCount(100);
         column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 SNAP_TEST_PLUGIN_SUITE_ASSERT(!found)
                 found = true;
@@ -727,9 +727,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
 
     // now check that all the multi-link data was indeed removed as expected
     {
-        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(source.get_branch_key()));
+        libdbproxy::row::pointer_t row(branch_table->row(source.get_branch_key()));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1-").arg(source_field_multiname_start));
         column_predicate->setEndCellKey(QString("%1.").arg(source_field_multiname_start));
         column_predicate->setCount(3);
@@ -738,13 +738,13 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 // we have to make sure it is the right branch
                 QString const key(QString::fromUtf8(cell_iterator.key()));
@@ -757,9 +757,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         }
     }
     {
-        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(destination.get_branch_key()));
+        libdbproxy::row::pointer_t row(branch_table->row(destination.get_branch_key()));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1-").arg(destination_field_multiname_start));
         column_predicate->setEndCellKey(QString("%1.").arg(destination_field_multiname_start));
         column_predicate->setCount(3);
@@ -768,13 +768,13 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 // we have to make sure it is the right branch
                 QString const key(QString::fromUtf8(cell_iterator.key()));
@@ -797,44 +797,44 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // there must be only one, the key of the cell is the URI and the
     // value is the field name as we just read from the branch table
     {
-        QtCassandra::QCassandraRow::pointer_t row(links_table->row(source_multilink_name));
+        libdbproxy::row::pointer_t row(links_table->row(source_multilink_name));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setCount(3);
         column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 SNAP_TEST_PLUGIN_SUITE_ASSERT(false)
             }
         }
     }
     {
-        QtCassandra::QCassandraRow::pointer_t row(links_table->row(destination_multilink_name));
+        libdbproxy::row::pointer_t row(links_table->row(destination_multilink_name));
         row->clearCache();
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setCount(3);
         column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.empty())
             {
                 // all columns read
                 break;
             }
-            for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+            for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 SNAP_TEST_PLUGIN_SUITE_ASSERT(false)
             }

@@ -285,8 +285,8 @@ void layout::content_update(int64_t const last_updated)
  */
 void layout::do_layout_updates()
 {
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    //QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+    libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
+    //libdbproxy::table::pointer_t layout_table(get_layout_table());
 
     // the user may have asked to install a layout too
     //
@@ -365,7 +365,7 @@ void layout::do_layout_updates()
  *
  * \return The shared pointer to the layout table.
  */
-QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
+libdbproxy::table::pointer_t layout::get_layout_table()
 {
     return f_snap->get_table(get_name(name_t::SNAP_NAME_LAYOUT_TABLE));
 }
@@ -417,7 +417,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
     if(layout_name.isEmpty())
     {
         // try the content itself since the user did not define a theme
-        QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
+        libdbproxy::value layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
         if(layout_value.nullValue())
         {
             // that very content does not define a layout, check its type(s)
@@ -745,8 +745,8 @@ QString layout::define_layout(
         // we will try the Qt resources and if that fails too
         // switch to the default layout instead
         //
-        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        QtCassandra::QCassandraValue const layout_value(layout_table->row(layout_name)->cell(cell_name)->value());
+        libdbproxy::table::pointer_t layout_table(get_layout_table());
+        libdbproxy::value const layout_value(layout_table->row(layout_name)->cell(cell_name)->value());
         if(layout_value.nullValue())
         {
             // no data found in the layout database
@@ -1719,11 +1719,11 @@ void layout::replace_includes(QString & xsl)
 void layout::install_layout(QString const & layout_name)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t layout_table(get_layout_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
-    QtCassandra::QCassandraValue last_updated_value;
+    libdbproxy::value last_updated_value;
     if(layout_name == "default")
     {
         // the default theme does not get a new date and time without us
@@ -1914,8 +1914,8 @@ void layout::install_layout(QString const & layout_name)
 void layout::finish_install_layout()
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t layout_table(get_layout_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
     for(auto const & layout_name : f_initialized_layout)
     {
@@ -1940,7 +1940,7 @@ void layout::finish_install_layout()
         //
         QString const reference(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_REFERENCE)).arg(layout_ipath.get_key()));
         int64_t const start_date(f_snap->get_start_date());
-        QtCassandra::QCassandraValue value;
+        libdbproxy::value value;
         value.setInt64Value(start_date);
         layout_table->row(layout_name)->cell(reference)->setValue(value);
     }
@@ -2165,12 +2165,12 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
                 SNAP_LOG_ERROR("layout load_file() called with an invalid path: \"")(filename)("\"");
                 return;
             }
-            QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+            libdbproxy::table::pointer_t layout_table(get_layout_table());
             QString column_name(parts[1]);
             if(layout_table->exists(parts[0])
             && layout_table->row(parts[0])->exists(QString(column_name)))
             {
-                QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(column_name))->value());
+                libdbproxy::value layout_value(layout_table->row(parts[0])->cell(QString(column_name))->value());
 
                 file.set_filename(filename);
                 file.set_data(layout_value.binaryValue());
@@ -2189,7 +2189,7 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
                 if(layout_table->exists(parts[0])
                 && layout_table->row(parts[0])->exists(QString(column_name)))
                 {
-                    QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(column_name))->value());
+                    libdbproxy::value layout_value(layout_table->row(parts[0])->cell(QString(column_name))->value());
 
                     file.set_filename(filename);
                     file.set_data(layout_value.binaryValue());
@@ -2224,7 +2224,7 @@ void layout::on_load_file(snap_child::post_file_t & file, bool & found)
  */
 bool layout::add_layout_from_resources_impl(QString const & name)
 {
-    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+    libdbproxy::table::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
     {
         QString const body(QString(":/xsl/layout/%1-body-parser.xsl").arg(name));
@@ -2288,7 +2288,7 @@ bool layout::add_layout_from_resources_impl(QString const & name)
  */
 void layout::add_layout_from_resources_done(QString const & layout_name)
 {
-    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+    libdbproxy::table::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
     // simulate a "last updated" date?
     //
@@ -2305,7 +2305,7 @@ void layout::add_layout_from_resources_done(QString const & layout_name)
 }
 
 
-void layout::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void layout::on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 

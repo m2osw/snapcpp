@@ -249,7 +249,7 @@ private:
 
         bool                is_valid() const;
 
-        void                save(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name);
+        void                save(libdbproxy::table::pointer_t firewall_table, QString const & server_name);
 
         void                set_uri(QString const & uri);
         void                set_scheme(QString scheme);
@@ -259,7 +259,7 @@ private:
 
         void                set_ban_count(int64_t count);
         int64_t             get_ban_count() const;
-        int64_t             get_total_ban_count(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name) const;
+        int64_t             get_total_ban_count(libdbproxy::table::pointer_t firewall_table, QString const & server_name) const;
         void                set_packet_count(int64_t count);
         int64_t             get_packet_count() const;
         void                set_byte_count(int64_t count);
@@ -307,7 +307,7 @@ private:
     snap_firewall_interrupt::pointer_t          f_interrupt;
     snap::snap_communicator::pointer_t          f_communicator;
     snap::snap_cassandra                        f_cassandra;
-    QtCassandra::QCassandraTable::pointer_t     f_firewall_table;
+    libdbproxy::table::pointer_t                f_firewall_table;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     bool                                        f_firewall_up = false;
@@ -605,7 +605,7 @@ bool snap_firewall::block_info_t::is_valid() const
 }
 
 
-void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name)
+void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_table, QString const & server_name)
 {
     if(!is_valid())
     {
@@ -624,7 +624,7 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
     // because we have to remove it! (otherwise the block would stop
     // at the time the old entry was entered instead of the new time!)
     //
-    QtCassandra::QCassandraRow::pointer_t info_row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    libdbproxy::row::pointer_t info_row(firewall_table->row(QString("ip::%1").arg(f_ip)));
     QString const block_limit_key(QString("%1::block_limit").arg(server_name));
 
     // here we create a row if the item is banned
@@ -634,7 +634,7 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
     //       it gets unbanned; we need to delete the old one
     //
     {
-        QtCassandra::QCassandraRow::pointer_t ban_row(firewall_table->row(server_name));
+        libdbproxy::row::pointer_t ban_row(firewall_table->row(server_name));
 
         // for a block, if the existing limit is further in the past,
         // then it accept the new block, if the existing limit is in
@@ -663,7 +663,7 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
         //
         if(info_row->exists(block_limit_key))
         {
-            QtCassandra::QCassandraValue old_limit_value(info_row->cell(block_limit_key)->value());
+            libdbproxy::value old_limit_value(info_row->cell(block_limit_key)->value());
             int64_t const old_limit(old_limit_value.safeInt64Value());
 
             if(f_status == status_t::BLOCK_INFO_BANNED
@@ -686,7 +686,7 @@ void snap_firewall::block_info_t::save(QtCassandra::QCassandraTable::pointer_t f
         }
 
         QByteArray limit_value;
-        QtCassandra::setInt64Value(limit_value, f_block_limit);
+        libdbproxy::setInt64Value(limit_value, f_block_limit);
         if(f_status == status_t::BLOCK_INFO_BANNED)
         {
             ban_row->cell(limit_value)->setValue(canonicalized_uri());
@@ -1059,12 +1059,12 @@ int64_t snap_firewall::block_info_t::get_ban_count() const
  * value that may be in the running snapfirewalls. also the grand
  * total would include all the computers and not just the one running.
  */
-int64_t snap_firewall::block_info_t::get_total_ban_count(QtCassandra::QCassandraTable::pointer_t firewall_table, QString const & server_name) const
+int64_t snap_firewall::block_info_t::get_total_ban_count(libdbproxy::table::pointer_t firewall_table, QString const & server_name) const
 {
     // the total number of bans is the current counter plus the saved
     // counter so we have to retrieve the saved counter first
     //
-    QtCassandra::QCassandraRow::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    libdbproxy::row::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
     QString const ban_count_key(QString("%1::ban_count").arg(server_name));
     int64_t const saved_ban_count(row->cell(ban_count_key)->value().safeInt64Value());
 
@@ -1519,7 +1519,7 @@ void snap_firewall::setup_firewall()
     int64_t const now(snap::snap_communicator::get_current_date());
     int64_t const limit(now + 60LL * 1000000LL); // "lose" 1 min. precision
 
-    QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+    libdbproxy::row::pointer_t row(f_firewall_table->row(f_server_name));
     row->clearCache();
 
     // the first row we keep has a date we use to know when to wake up
@@ -1531,24 +1531,24 @@ void snap_firewall::setup_firewall()
 
     // run through the entire table
     //
-    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+    auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
     column_predicate->setCount(100);
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const cells(row->cells());
+        libdbproxy::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
         {
             // it looks like we are done
             break;
         }
 
-        for(QtCassandra::QCassandraCells::const_iterator it(cells.begin());
+        for(libdbproxy::QCassandraCells::const_iterator it(cells.begin());
                                                          it != cells.end();
                                                          ++it)
         {
-            QtCassandra::QCassandraCell::pointer_t cell(*it);
+            libdbproxy::cell::pointer_t cell(*it);
 
             // first we want to unblock that IP address
             //
@@ -1562,7 +1562,7 @@ void snap_firewall::setup_firewall()
                 block_info_t info(uri);
 
                 QByteArray const key(it.key());
-                int64_t const drop_date(QtCassandra::safeInt64Value(key, 0, -1));
+                int64_t const drop_date(libdbproxy::safeInt64Value(key, 0, -1));
                 if(drop_date < limit)
                 {
                     // unblock the IP, just in case
@@ -1802,23 +1802,23 @@ void snap_firewall::process_timeout()
         //      <server-name> '/' <date with leading zeroes in minutes (10 digits)>
         //
 
-        QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+        libdbproxy::row::pointer_t row(f_firewall_table->row(f_server_name));
         row->clearCache();
 
         // unblock IP addresses which have a timeout in the past
         //
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         QByteArray limit;
-        QtCassandra::setInt64Value(limit, 0);  // whatever the first column is
+        libdbproxy::setInt64Value(limit, 0);  // whatever the first column is
         column_predicate->setStartCellKey(limit);
-        QtCassandra::setInt64Value(limit, now + 60LL * 1000000LL);  // until now within 1 minute
+        libdbproxy::setInt64Value(limit, now + 60LL * 1000000LL);  // until now within 1 minute
         column_predicate->setEndCellKey(limit);
         column_predicate->setCount(100);
         column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(row->cells());
+            libdbproxy::QCassandraCells const cells(row->cells());
             if(cells.isEmpty())
             {
                 // it looks like we are done
@@ -1827,11 +1827,11 @@ void snap_firewall::process_timeout()
 
             // any entries we grab here, we drop right now
             //
-            for(QtCassandra::QCassandraCells::const_iterator it(cells.begin());
+            for(libdbproxy::QCassandraCells::const_iterator it(cells.begin());
                                                              it != cells.end();
                                                              ++it)
             {
-                QtCassandra::QCassandraCell::pointer_t cell(*it);
+                libdbproxy::cell::pointer_t cell(*it);
 
                 // first we want to unblock that IP address
                 //
@@ -1920,21 +1920,21 @@ void snap_firewall::next_wakeup()
     int64_t limit(0LL);
     if(f_firewall_table)
     {
-        QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+        libdbproxy::row::pointer_t row(f_firewall_table->row(f_server_name));
 
         // determine whether there is another IP in the table and if so at
         // what time we need to wake up to remove it from the firewall
         //
-        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+        auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
         column_predicate->setCount(1);
         column_predicate->setIndex(); // behave like an index
         row->clearCache();
         row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const cells(row->cells());
+        libdbproxy::QCassandraCells const cells(row->cells());
         if(!cells.isEmpty())
         {
             QByteArray const key(cells.begin().key());
-            limit = QtCassandra::safeInt64Value(key, 0, -1);
+            limit = libdbproxy::safeInt64Value(key, 0, -1);
         }
         else
         {

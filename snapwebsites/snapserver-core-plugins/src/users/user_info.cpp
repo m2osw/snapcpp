@@ -231,7 +231,7 @@ void users::user_info_t::change_user_email( QString const & new_user_email )
     //
     auto index_row( f_users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)) );
     index_row->dropCell( old_user_key );
-    QtCassandra::QCassandraValue id_value( f_identifier );
+    libdbproxy::value id_value( f_identifier );
     index_row->cell(get_user_key())->setValue( id_value.binaryValue() );
 
     SNAP_LOG_TRACE("user_info_t::change_user_email(): old_user_key=")(old_user_key)(", f_user_email=")(f_user_email)(", f_user_key=")(get_user_key());
@@ -687,7 +687,7 @@ QString users::user_info_t::get_user_key(QString const & user_email) const
 
     //if(force_lowercase == force_lowercase_t::UNDEFINED) -- not currently required, it will always be true
     {
-        QtCassandra::QCassandraValue const force_lowercase_parameter(get_snap()->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_FORCE_LOWERCASE)));
+        libdbproxy::value const force_lowercase_parameter(get_snap()->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_FORCE_LOWERCASE)));
         if(force_lowercase_parameter.nullValue()
         || force_lowercase_parameter.safeSignedCharValue())
         {
@@ -885,7 +885,7 @@ bool users::user_info_t::exists() const
     }
 
     init_tables();
-    return f_users_table->exists(QtCassandra::QCassandraValue(f_identifier).binaryValue());
+    return f_users_table->exists(libdbproxy::value(f_identifier).binaryValue());
 }
 
 
@@ -954,7 +954,7 @@ void users::user_info_t::init_tables() const
  *
  * \sa load_user_parameter()
  */
-void users::user_info_t::save_user_parameter(QString const & field_name, QtCassandra::QCassandraValue const & value)
+void users::user_info_t::save_user_parameter(QString const & field_name, libdbproxy::value const & value)
 {
     int64_t const start_date(get_snap()->get_start_date());
 
@@ -974,14 +974,14 @@ void users::user_info_t::save_user_parameter(QString const & field_name, QtCassa
 
 void users::user_info_t::save_user_parameter(QString const & field_name, QString const & value)
 {
-    QtCassandra::QCassandraValue v(value);
+    libdbproxy::value v(value);
     save_user_parameter(field_name, v);
 }
 
 
 void users::user_info_t::save_user_parameter(QString const & field_name, int64_t const & value)
 {
-    QtCassandra::QCassandraValue v(value);
+    libdbproxy::value v(value);
     save_user_parameter(field_name, v);
 }
 
@@ -1004,7 +1004,7 @@ void users::user_info_t::save_user_parameter(QString const & field_name, int64_t
  *
  * \sa save_user_parameter()
  */
-bool users::user_info_t::load_user_parameter(QString const & field_name, QtCassandra::QCassandraValue & value) const
+bool users::user_info_t::load_user_parameter(QString const & field_name, libdbproxy::value & value) const
 {
     // reset the input value by default
     value.setNullValue();
@@ -1030,7 +1030,7 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, QtCassa
 
 bool users::user_info_t::load_user_parameter(QString const & field_name, QString & value) const
 {
-    QtCassandra::QCassandraValue v;
+    libdbproxy::value v;
     if(load_user_parameter(field_name, v))
     {
         value = v.stringValue();
@@ -1042,7 +1042,7 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, QString
 
 bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t & value) const
 {
-    QtCassandra::QCassandraValue v;
+    libdbproxy::value v;
     if(load_user_parameter(field_name, v))
     {
         value = v.safeInt64Value();
@@ -1091,10 +1091,10 @@ void users::user_info_t::get_user_id_by_email()
  * and then retrieves the row corresponding to the current user
  * (which is defined by the f_identifier of the user.)
  */
-QtCassandra::QCassandraRow::pointer_t users::user_info_t::get_user_row() const
+libdbproxy::row::pointer_t users::user_info_t::get_user_row() const
 {
     init_tables();
-    return f_users_table->row(QtCassandra::QCassandraValue(f_identifier).binaryValue());
+    return f_users_table->row(libdbproxy::value(f_identifier).binaryValue());
 }
 
 

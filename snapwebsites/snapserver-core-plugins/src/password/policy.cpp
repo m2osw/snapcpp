@@ -45,12 +45,12 @@ policy_t::policy_t(QString const & policy_name)
     && policy_name != "blacklist")
     {
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
         // load the policy from the database
         content::path_info_t settings_ipath;
         settings_ipath.set_path(QString("admin/settings/password/%1").arg(policy_name));
-        QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::row::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
 
         f_limit_duration                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION))->value().safeSignedCharValue(0, 0) != 0;
         f_maximum_duration                   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MAXIMUM_DURATION))->value().safeInt64Value(0, 92);
@@ -802,7 +802,7 @@ QString policy_t::is_blacklisted(QString const & user_password) const
         // forbidden (password1,) "mostly" forbidden (complex enough
         // for the current policy,) etc.
         //
-        QtCassandra::QCassandraTable::pointer_t table(password::password::instance()->get_password_table());
+        libdbproxy::table::pointer_t table(password::password::instance()->get_password_table());
         if(table->exists(user_password.toLower()))
         {
             return "this password is blacklisted and cannot be used";

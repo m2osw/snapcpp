@@ -412,7 +412,7 @@ void path::bootstrap(::snap::snap_child * snap)
  */
 plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_error_callback & err_callback)
 {
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
 
     // get the name of the plugin that owns this URL
     plugins::plugin * owner_plugin(nullptr);
@@ -488,7 +488,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
 
         // get the modified date so we can setup the Last-Modified HTTP header field
         // it is also another way to determine that a path is valid
-        QtCassandra::QCassandraValue const value(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+        libdbproxy::value const value(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
         QString const owner(content_table->row(ipath.get_key())->cell(primary_owner)->value().stringValue());
         if(value.nullValue() || owner.isEmpty())
         {

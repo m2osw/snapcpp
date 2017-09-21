@@ -330,8 +330,8 @@ void epayment_creditcard::setup_form(
     // read the settings
     //
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     content::path_info_t epayment_creditcard_settings_ipath;
     epayment_creditcard_settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH));
     if(!content_table->exists(epayment_creditcard_settings_ipath.get_key())
@@ -340,7 +340,7 @@ void epayment_creditcard::setup_form(
         // the form by default is what we want if no settings were defined
         return;
     }
-    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
 
     // remove unwanted widgets if the administrator required so...
     //
@@ -779,8 +779,8 @@ void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
     // get the settings ready
     //
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     content::path_info_t epayment_creditcard_settings_ipath;
     epayment_creditcard_settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH));
     if(!content_table->exists(epayment_creditcard_settings_ipath.get_key())
@@ -789,7 +789,7 @@ void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
         // the form by default is what we want if no settings were defined
         return;
     }
-    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
 
     // retrieve the data and save it in a epayment_creditcard_info_t object
     //

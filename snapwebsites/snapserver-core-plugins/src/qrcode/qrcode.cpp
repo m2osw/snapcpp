@@ -325,8 +325,8 @@ bool qrcode::on_path_execute(content::path_info_t & ipath)
         content::content * content_plugin(content::content::instance());
         content::path_info_t settings_ipath;
         settings_ipath.set_path("admin/settings/qrcode");
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::row::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
 
         // verify that at least this user has permission to that page
         //
@@ -338,7 +338,7 @@ bool qrcode::on_path_execute(content::path_info_t & ipath)
         path::path::instance()->access_allowed(user_path, page_ipath, "view", login_status, allowed);
         if(allowed.allowed())
         {
-            QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+            libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
             if(content_table->exists(page_ipath.get_key()))
             {
                 // by default we expect the normal page URL to be used,

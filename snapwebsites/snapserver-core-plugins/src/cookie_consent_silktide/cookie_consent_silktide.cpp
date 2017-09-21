@@ -288,7 +288,7 @@ void cookie_consent_silktide::on_generate_header_content(content::path_info_t & 
     //
     bool has_options(false);
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
     content::path_info_t options_ipath;
     options_ipath.set_path(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_OPTIONS));
     if(content_table->exists(options_ipath.get_key()))

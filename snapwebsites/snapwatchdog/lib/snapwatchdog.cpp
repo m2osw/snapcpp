@@ -1189,13 +1189,13 @@ void watchdog_child::run_watchdog_plugins()
             //
             // retrieve server statistics table
             QString const table_name(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
-            QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
+            libdbproxy::table::pointer_t table(f_context->table(table_name));
 
-            QtCassandra::QCassandraValue value;
+            libdbproxy::value value;
             value.setStringValue(result);
             value.setTtl(server->get_statistics_ttl());
             QByteArray cell_key;
-            QtCassandra::setInt64Value(cell_key, date);
+            libdbproxy::setInt64Value(cell_key, date);
             table->row(QString::fromUtf8(server->get_server_name().c_str()) + "/system-statistics")->cell(cell_key)->setValue(value);
         }
 
@@ -1287,9 +1287,9 @@ void watchdog_child::record_usage(snap::snap_communicator_message const & messag
         int64_t const start_date(get_start_date());
 
         QString const table_name(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
+        libdbproxy::table::pointer_t table(f_context->table(table_name));
 
-        QtCassandra::QCassandraValue value;
+        libdbproxy::value value;
         value.setStringValue(doc.toString(-1));
         value.setTtl(server->get_statistics_ttl());
         QString const cell_key(QString("%1::%2").arg(process_name).arg(start_date));

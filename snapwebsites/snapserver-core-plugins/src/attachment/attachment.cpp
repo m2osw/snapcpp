@@ -286,7 +286,7 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
     attachment_ipath.set_path(cpath);
 
     // file exists?
-    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
     if(!revision_table->exists(attachment_ipath.get_revision_key())
     || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
@@ -294,13 +294,13 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
     }
 
     // load the MD5 key for that attachment
-    QtCassandra::QCassandraValue const attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value const attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.size() != 16)
     {
         return false;
     }
 
-    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue()))
     {
         // TODO: also offer a dynamic version which compress the
@@ -514,7 +514,7 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
 
     content::content * content_plugin(content::content::instance());
 
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     QString const revision_key(attachment_ipath.get_revision_key());
     if(!revision_table->exists(revision_key)
     || !revision_table->row(revision_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
@@ -523,14 +523,14 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
     }
 
     // retrieve the md5 which has to be exactly 16 bytes
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value attachment_key(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.size() != 16)
     {
         return false;
     }
 
     // check that this file exists in the "files" table
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue()))
     {
         return false;
@@ -561,7 +561,7 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
             //f_snap->set_header("ETag", version);
 
             // get the last modification time of this very version
-            QtCassandra::QCassandraValue revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+            libdbproxy::value revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
             QDateTime expires(QDateTime().toUTC());
             expires.setTime_t(revision_modification.safeInt64Value() / 1000000);
             QLocale us_locale(QLocale::English, QLocale::UnitedStates);
@@ -711,8 +711,8 @@ SNAP_LOG_TRACE("renamed=")(renamed)(", field_name=")(field_name);
 
     // get the file MD5 which must be exactly 16 bytes
 SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath=")(ipath.get_cpath());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue const attachment_key(
+    libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
+    libdbproxy::value const attachment_key(
             revision_table
                 ->row(attachment_ipath.get_revision_key())
                     ->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
@@ -732,7 +732,7 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
     }
 
     // make sure that the data field exists
-    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
@@ -746,10 +746,10 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
         NOTREACHED();
     }
 
-    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+    libdbproxy::row::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
 
     // get the attachment MIME type and tweak it if it is a known text format
-    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    libdbproxy::value attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
     QString content_type(attachment_mime_type.stringValue());
     if(content_type == "text/javascript"
     || content_type == "text/css")
@@ -838,7 +838,7 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
     }
 
     // the actual file data now
-    QtCassandra::QCassandraValue data(file_row->cell(field_name)->value());
+    libdbproxy::value data(file_row->cell(field_name)->value());
     f_snap->output(data.binaryValue());
 
     return true;
@@ -857,8 +857,8 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
 void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
 
     char const * attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     QString const content_attachment_reference(QString("%1::").arg(attachment_reference));
@@ -873,10 +873,10 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
             content::path_info_t page_ipath(page.f_destination);
             page_ipath.force_branch(b);
 
-            QtCassandra::QCassandraRow::pointer_t branch_row(branch_table->row(page_ipath.get_branch_key()));
+            libdbproxy::row::pointer_t branch_row(branch_table->row(page_ipath.get_branch_key()));
             branch_row->clearCache();
 
-            auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+            auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
             column_predicate->setStartCellKey(content_attachment_reference);
             column_predicate->setEndCellKey(QString("%1;").arg(attachment_reference));
             column_predicate->setCount(100);
@@ -884,18 +884,18 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
             for(;;)
             {
                 branch_row->readCells(column_predicate);
-                QtCassandra::QCassandraCells const branch_cells(branch_row->cells());
+                libdbproxy::QCassandraCells const branch_cells(branch_row->cells());
                 if(branch_cells.isEmpty())
                 {
                     // done
                     break;
                 }
                 // handle one batch
-                for(QtCassandra::QCassandraCells::const_iterator nc(branch_cells.begin());
+                for(libdbproxy::QCassandraCells::const_iterator nc(branch_cells.begin());
                                                                  nc != branch_cells.end();
                                                                  ++nc)
                 {
-                    QtCassandra::QCassandraCell::pointer_t branch_cell(*nc);
+                    libdbproxy::cell::pointer_t branch_cell(*nc);
                     QByteArray cell_key(branch_cell->columnKey());
 
                     // this key starts with SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE + "::"
@@ -912,23 +912,23 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 }
 
 
-void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void attachment::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 
-    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
 
     std::string content_attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     content_attachment_reference += "::";
 
-    QtCassandra::QCassandraCells left_cells;
+    libdbproxy::QCassandraCells left_cells;
 
     // handle one batch
-    for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+    for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
     {
-        QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+        libdbproxy::cell::pointer_t source_cell(*nc);
         QByteArray cell_key(source_cell->columnKey());
 
         if(cell_key.startsWith(content_attachment_reference.c_str()))
@@ -1032,8 +1032,8 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //    field_name = ipath.get_parameter("attachment_field");
     //}
 
-    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(
+    libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
+    libdbproxy::value attachment_key(
             revision_table
                 ->row(attachment_ipath.get_revision_key())
                     ->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
@@ -1049,7 +1049,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         return;
     }
 
-    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
@@ -1061,7 +1061,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         return;
     }
 
-    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+    libdbproxy::row::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
 
     // TODO: If the user is loading the file as an attachment,
     //       we need those headers (TBD--would we reaaly want to do that
@@ -1075,7 +1075,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     // get the attachment MIME type and tweak it if it is a known text format
-    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    libdbproxy::value attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
     QString const content_type(attachment_mime_type.stringValue());
     if(content_type == "text/html")
     {
@@ -1141,7 +1141,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 
     // obviously, since the file is not authorized we cannot send the
     // actual file data which we could access with the following line:
-    //QtCassandra::QCassandraValue data(file_row->cell(field_name)->value());
+    //libdbproxy::value data(file_row->cell(field_name)->value());
 
     // the actual file data now; this is defined using the MIME type
     // (and the error code?)
@@ -1162,7 +1162,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //    3. Short name in the database
     //    5. Short name in resources
     //
-    QtCassandra::QCassandraValue data;
+    libdbproxy::value data;
     QString const long_name(QString("%1::%2::%3")
                 .arg(major_mime_type)
                 .arg(minor_mime_type)
@@ -1218,7 +1218,7 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
     // specific to a plugin derived from a certain class so not specific
     // to the attachment.)
     //
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
     && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
@@ -1250,8 +1250,8 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
 int attachment::delete_all_attachments(content::path_info_t & ipath)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     // page exists at all?
     if(!content_table->exists(ipath.get_key())
@@ -1303,7 +1303,7 @@ int attachment::delete_all_attachments(content::path_info_t & ipath)
         //      2. the page is marked as being final (content::final == 1)
         //      3. branch includes one or more back references
         //
-        QtCassandra::QCassandraValue const attachment_key(revision_table->row(child_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+        libdbproxy::value const attachment_key(revision_table->row(child_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
         if(attachment_key.nullValue())
         {
             // not considered an attachment, leave this one alone

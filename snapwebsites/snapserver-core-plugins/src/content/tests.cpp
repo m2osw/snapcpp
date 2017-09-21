@@ -139,7 +139,7 @@ SNAP_TEST_PLUGIN_TEST_IMPL(content, test_journal_list)
     {
         journal_table->clearCache();
 
-        auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+        auto row_predicate = std::make_shared<libdbproxy::row_predicate>();
         row_predicate->setCount(100);
 
         uint32_t total_count = 0;

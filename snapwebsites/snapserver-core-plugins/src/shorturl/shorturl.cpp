@@ -264,7 +264,7 @@ void shorturl::bootstrap(snap_child * snap)
  *
  * \return The pointer to the shorturl table.
  */
-QtCassandra::QCassandraTable::pointer_t shorturl::get_shorturl_table()
+libdbproxy::table::pointer_t shorturl::get_shorturl_table()
 {
     if(!f_shorturl_table)
     {
@@ -429,11 +429,11 @@ QString shorturl::get_shorturl(uint64_t identifier)
 {
     if(identifier != 0)
     {
-        QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
+        libdbproxy::table::pointer_t shorturl_table(get_shorturl_table());
         QString const index(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW));
-        QtCassandra::QCassandraValue identifier_value;
+        libdbproxy::value identifier_value;
         identifier_value.setUInt64Value(identifier);
-        QtCassandra::QCassandraValue url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
+        libdbproxy::value url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
         if(!url.nullValue())
         {
             return url.stringValue();
@@ -557,14 +557,14 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
 
     // TODO change to support a per content type short URL scheme
 
-    QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
+    libdbproxy::table::pointer_t shorturl_table(get_shorturl_table());
 
     // first generate a site wide unique identifier for that page
     uint64_t identifier(0);
     QString const id_key(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(name_t::SNAP_NAME_SHORTURL_ID_ROW)));
     QString const identifier_key(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER));
-    QtCassandra::QCassandraValue new_identifier;
-    new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+    libdbproxy::value new_identifier;
+    new_identifier.setConsistencyLevel(libdbproxy::CONSISTENCY_LEVEL_QUORUM);
 
     {
         // the lock only needs to be unique on a per website basis
@@ -576,10 +576,10 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
         // lock we can safely do a read-increment-write cycle.
         if(shorturl_table->exists(id_key))
         {
-            QtCassandra::QCassandraRow::pointer_t id_row(shorturl_table->row(id_key));
-            QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
-            id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-            QtCassandra::QCassandraValue current_identifier(id_cell->value());
+            libdbproxy::row::pointer_t id_row(shorturl_table->row(id_key));
+            libdbproxy::cell::pointer_t id_cell(id_row->cell(identifier_key));
+            id_cell->setConsistencyLevel(libdbproxy::CONSISTENCY_LEVEL_QUORUM);
+            libdbproxy::value current_identifier(id_cell->value());
             if(current_identifier.nullValue())
             {
                 // this means no user can register until this value gets
@@ -612,8 +612,8 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
 
     QString const key(ipath.get_key());
 
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
+    libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
+    libdbproxy::row::pointer_t row(content_table->row(key));
 
     row->cell(identifier_key)->setValue(new_identifier);
 
@@ -626,7 +626,7 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
     // TODO allow the user to change the "%1" number parameters
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const shorturl_url(site_key + QString("s/%1").arg(identifier, 0, 36, QChar('0')));
-    QtCassandra::QCassandraValue shorturl_value(shorturl_url);
+    libdbproxy::value shorturl_value(shorturl_url);
     row->cell(get_name(name_t::SNAP_NAME_SHORTURL_URL))->setValue(shorturl_value);
 
     // create an index entry so we can find the entry and redirect the user
@@ -660,14 +660,14 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
     // need to do anything about the branches and revisions in this function
 
     // got a short URL in the source?
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
 
     content::path_info_t::status_t::state_t const source_done_state(tree.f_source.f_done_state.get_state());
     size_t const max_pages(tree.f_pages.size());
     for(size_t idx(0); idx < max_pages; ++idx)
     {
         content::path_info_t source(tree.f_pages[idx].f_source);
-        QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(source.get_key()));
+        libdbproxy::row::pointer_t content_row(content_table->row(source.get_key()));
         if(content_row->exists(get_name(name_t::SNAP_NAME_SHORTURL_URL)))
         {
             // need a change?
@@ -716,8 +716,8 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
                 {
                     content::path_info_t destination(tree.f_pages[idx].f_destination);
 
-                    QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
-                    QtCassandra::QCassandraValue identifier_value(content_table->row(destination.get_key())->cell(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER))->value());
+                    libdbproxy::table::pointer_t shorturl_table(get_shorturl_table());
+                    libdbproxy::value identifier_value(content_table->row(destination.get_key())->cell(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER))->value());
                     
                     // make sure we have a valid identifier
                     if(!identifier_value.nullValue())

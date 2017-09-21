@@ -300,8 +300,8 @@ bool bookkeeping::create_new_client(content::path_info_t & ipath)
     server_access::server_access * server_access_plugin(server_access::server_access::instance());
     output::output * output_plugin(output::output::instance());
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     // assign a new number to this customer
     // 
@@ -310,7 +310,7 @@ bool bookkeeping::create_new_client(content::path_info_t & ipath)
     int64_t counter(0);
     content::path_info_t add_client_ipath;
     add_client_ipath.set_path("bookkeeping/client/add-client");
-    QtCassandra::QCassandraRow::pointer_t add_client_row(content_table->row(add_client_ipath.get_key()));
+    libdbproxy::row::pointer_t add_client_row(content_table->row(add_client_ipath.get_key()));
     {
         // lock this page while we increase the counter
         //
@@ -332,11 +332,11 @@ bool bookkeeping::create_new_client(content::path_info_t & ipath)
     client_ipath.force_locale(locale);
     content_plugin->create_content(client_ipath, output_plugin->get_plugin_name(), "bookkeeping/client");
 
-    QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(client_ipath.get_key()));
+    libdbproxy::row::pointer_t content_row(content_table->row(client_ipath.get_key()));
     content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT))->setValue(QString("\"bookkeeping-client-parser\";"));
     content_row->cell(editor::get_name(editor::name_t::SNAP_NAME_EDITOR_LAYOUT))->setValue(QString("\"bookkeeping-client-page\";"));
 
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(client_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t revision_row(revision_table->row(client_ipath.get_revision_key()));
     int64_t const start_date(f_snap->get_start_date());
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 

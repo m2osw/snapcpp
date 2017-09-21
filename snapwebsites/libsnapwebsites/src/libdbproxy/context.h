@@ -1,6 +1,6 @@
 /*
  * Header:
- *      src/QtCassandra/QCassandraContext.h
+ *      src/libdbproxy/QCassandraContext.h
  *
  * Description:
  *      Handling of Cassandra contexts.
@@ -35,16 +35,16 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraTable.h"
+#include "libdbproxy/table.h"
 
 #include <casswrapper/schema.h>
 
 #include <memory>
 
-namespace QtCassandra
+namespace libdbproxy
 {
 
-class QCassandra;
+class libdbproxy;
 
 class QCassandraContext
     : public QObject
@@ -63,12 +63,12 @@ public:
     casswrapper::schema::Value::map_t&       fields();
 
     // tables
-    QCassandraTable::pointer_t table(const QString& table_name);
+    table::pointer_t table(const QString& table_name);
     const QCassandraTables& tables();
 
-    QCassandraTable::pointer_t findTable(const QString& table_name);
-    QCassandraTable& operator[] (const QString& table_name);
-    const QCassandraTable& operator[] (const QString& table_name) const;
+    table::pointer_t findTable(const QString& table_name);
+    table& operator[] (const QString& table_name);
+    const table& operator[] (const QString& table_name) const;
 
     // Context maintenance
     void create();
@@ -78,11 +78,11 @@ public:
     void clearCache();
     void loadTables();
 
-    std::shared_ptr<QCassandra> parentCassandra() const;
+    std::shared_ptr<libdbproxy> parentCassandra() const;
 
 private:
     void makeCurrent();
-    QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
+    QCassandraContext(std::shared_ptr<libdbproxy> cassandra, const QString& context_name);
     QCassandraContext(QCassandraContext const &) = delete;
     QCassandraContext & operator = (QCassandraContext const &) = delete;
 
@@ -90,7 +90,7 @@ private:
     void parseContextDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
     QString getKeyspaceOptions();
 
-    friend class QCassandra;
+    friend class libdbproxy;
 
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
@@ -100,7 +100,7 @@ private:
     // std::enabled_shared_from_this<>.
     casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t f_schema;
     //
-    std::weak_ptr<QCassandra>                   f_cassandra;
+    std::weak_ptr<libdbproxy>                   f_cassandra;
     QString                                     f_context_name;
     QCassandraTables                            f_tables;
 };
@@ -108,6 +108,6 @@ private:
 typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;
 
 
-} // namespace QtCassandra
+} // namespace libdbproxy
 
 // vim: ts=4 sw=4 et

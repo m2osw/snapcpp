@@ -281,7 +281,7 @@ void feed::on_generate_page_content(content::path_info_t & ipath, QDomElement & 
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     content::path_info_t attachment_type_ipath;
     attachment_type_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_ATTACHMENT_TYPE));
@@ -293,7 +293,7 @@ void feed::on_generate_page_content(content::path_info_t & ipath, QDomElement & 
         content::path_info_t attachment_ipath;
         attachment_ipath.set_path(feed_child_info.key());
 
-        QtCassandra::QCassandraRow::pointer_t row(revision_table->row(attachment_ipath.get_revision_key()));
+        libdbproxy::row::pointer_t row(revision_table->row(attachment_ipath.get_revision_key()));
         QString const mimetype(row->cell(get_name(name_t::SNAP_NAME_FEED_MIMETYPE))->value().stringValue());
 
         FIELD_SEARCH
@@ -329,10 +329,10 @@ void feed::on_finish_editor_form_processing(content::path_info_t & ipath, bool &
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::row::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
 
-    QtCassandra::QCassandraValue value;
+    libdbproxy::value value;
 
     if(!settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_RSS_XML))->value().safeSignedCharValue(0, 0))
     {
@@ -385,8 +385,8 @@ void feed::generate_feeds()
     content::content * content_plugin(content::content::instance());
     layout::layout * layout_plugin(layout::layout::instance());
     path::path * path_plugin(path::path::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     // the children of this location are the XSLT 2.0 files to convert the
     // data to an actual feed file
@@ -398,7 +398,7 @@ void feed::generate_feeds()
 
     content::path_info_t feed_settings_ipath;
     feed_settings_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_SETTINGS_PATH));
-    QtCassandra::QCassandraRow::pointer_t feed_settings_row(revision_table->row(feed_settings_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t feed_settings_row(revision_table->row(feed_settings_ipath.get_revision_key()));
 
     // TODO: if a feed has its own definitions for the Teaser Words, Tags,
     //       End Marker, then use the per feed definitions...
@@ -430,7 +430,7 @@ void feed::generate_feeds()
         content::path_info_t child_ipath;
         child_ipath.set_path(child_info.key());
 
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(child_ipath.get_revision_key()));
+        libdbproxy::row::pointer_t revision_row(revision_table->row(child_ipath.get_revision_key()));
 
         // TODO: is the page layout directly a feed XSL file or is it
         //       the name to an attachment? (or maybe we should just check
@@ -698,7 +698,7 @@ void feed::generate_feeds()
             }
 
             {
-                QtCassandra::QCassandraValue const ttl(revision_row->cell(get_name(name_t::SNAP_NAME_FEED_TTL))->value());
+                libdbproxy::value const ttl(revision_row->cell(get_name(name_t::SNAP_NAME_FEED_TTL))->value());
                 if(ttl.size() == sizeof(int64_t))
                 {
                     int64_t const ttl_us(ttl.int64Value());
@@ -908,7 +908,7 @@ void feed::generate_feeds()
                         content::path_info_t attachment_ipath;
                         attachment_ipath.set_path(attachment.get_attachment_cpath());
 
-                        QtCassandra::QCassandraRow::pointer_t attachment_row(revision_table->row(attachment_ipath.get_revision_key()));
+                        libdbproxy::row::pointer_t attachment_row(revision_table->row(attachment_ipath.get_revision_key()));
 
                         attachment_row->cell(get_name(name_t::SNAP_NAME_FEED_TITLE))->setValue(title);
                         attachment_row->cell(get_name(name_t::SNAP_NAME_FEED_EXTENSION))->setValue(extension);

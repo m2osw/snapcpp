@@ -126,7 +126,7 @@ char const * get_name(name_t name)
 }
 
 
-editor::value_to_string_info_t::value_to_string_info_t(content::path_info_t & ipath, QDomElement widget, QtCassandra::QCassandraValue const & value)
+editor::value_to_string_info_t::value_to_string_info_t(content::path_info_t & ipath, QDomElement widget, libdbproxy::value const & value)
     : f_ipath(ipath)
     , f_widget(widget)
     , f_value(value)
@@ -164,7 +164,7 @@ QDomElement editor::value_to_string_info_t::get_widget() const
 }
 
 
-QtCassandra::QCassandraValue const & editor::value_to_string_info_t::get_value() const
+libdbproxy::value const & editor::value_to_string_info_t::get_value() const
 {
     return f_value;
 }
@@ -328,7 +328,7 @@ void editor::string_to_value_info_t::set_type_name(QString const & new_type_name
 }
 
 
-QtCassandra::QCassandraValue & editor::string_to_value_info_t::result()
+libdbproxy::value & editor::string_to_value_info_t::result()
 {
     return f_result;
 }
@@ -713,7 +713,7 @@ void editor::on_validate_post_for_widget(
             // get the value
             QString const type(f_snap->postenv(widget_name));
 
-            QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+            libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
             QString const site_key(f_snap->get_site_key_with_slash());
             QString const type_key(site_key + "types/taxonomy/system/content-types/" + type);
             if(!content_table->exists(type_key))
@@ -778,7 +778,7 @@ void editor::on_process_form_post(content::path_info_t & ipath, sessions::sessio
 void editor::process_new_draft()
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
 
     // get the 3 parameters entered by the user to get the new page started
     QString const type(f_snap->postenv("type"));
@@ -845,8 +845,8 @@ void editor::process_new_draft()
     content_plugin->create_content(draft_ipath, owner, "page/draft");
 
     // save the title, description, and link to the type as a "draft type"
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(draft_ipath.get_revision_key()));
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::row::pointer_t revision_row(revision_table->row(draft_ipath.get_revision_key()));
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_DESCRIPTION))->setValue(page_description);
@@ -1194,9 +1194,9 @@ void editor::retrieve_original_field(content::path_info_t & ipath)
                 QString const database_field_name(widget.attribute("field"));
 
                 content::content * content_plugin(content::content::instance());
-                QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+                libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
                 dbutils du("revision", database_field_name);
-                QtCassandra::QCassandraCell::pointer_t c(revision_table->row(ipath.get_revision_key())->cell(database_field_name));
+                libdbproxy::cell::pointer_t c(revision_table->row(ipath.get_revision_key())->cell(database_field_name));
                 dbutils::column_type_t const ct( du.get_column_type( c ) );
                 QString field_data;
                 if(ct == dbutils::column_type_t::CT_string_value)
@@ -1406,10 +1406,10 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 }
 
 
-/** \brief Transform data to a QCassandraValue.
+/** \brief Transform data to a value.
  *
  * This function transforms a value received from a POST into a
- * QCassandraValue to be saved in the database.
+ * value to be saved in the database.
  *
  * \param[in] value_info  Information about the widget to be checked.
  *
@@ -1701,8 +1701,8 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
 
     content::content * content_plugin(content::content::instance());
     messages::messages * messages(messages::messages::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
 
     snap_version::version_number_t branch_number(ipath.get_branch());
     bool const switch_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch_number);
@@ -1726,12 +1726,12 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
     // these pointers are used to load existing data
     // and save new data
     // it is also shared with various signals
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
-    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(ipath.get_key())); // same key as the content table
-    QtCassandra::QCassandraRow::pointer_t draft_row(revision_table->row(draft_key));
+    libdbproxy::row::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::row::pointer_t secret_row(secret_table->row(ipath.get_key())); // same key as the content table
+    libdbproxy::row::pointer_t draft_row(revision_table->row(draft_key));
 
     // the data_row will get initialized as required
-    QtCassandra::QCassandraRow::pointer_t data_row;
+    libdbproxy::row::pointer_t data_row;
 
     save_info_t save_info(ipath, editor_widgets, revision_row, secret_row, draft_row);
 
@@ -2247,7 +2247,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
 
 void editor::on_add_layout_from_resources(QString const & name)
 {
-    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+    libdbproxy::table::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
     {
         QString const body(QString(":/xml/layout/%1-page.xml").arg(name));
@@ -2569,7 +2569,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool const
                 {
                     // always test for the data in the layout table first
                     //
-                    QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
+                    libdbproxy::table::pointer_t layout_table(layout_plugin->get_layout_table());
                     widgets_xml = layout_table->row(theme_name)->cell(script + ".xml")->value().stringValue();
                 }
 
@@ -3141,7 +3141,7 @@ bool editor::validate_editor_post_for_widget_impl(
                                     .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                                     .arg(widget_name)
                                     .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
-                            QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(attachment_ipath, name, content::content::param_revision_t::PARAM_REVISION_GLOBAL));
+                            libdbproxy::value cassandra_value(content::content::instance()->get_content_parameter(attachment_ipath, name, content::content::param_revision_t::PARAM_REVISION_GLOBAL));
 //SNAP_LOG_WARNING("widget_name -- [")(widget_name)
 //                ("] -> [")(f_snap->postenv(widget_name))
 //                ("] for [")(attachment_ipath.get_key())
@@ -3995,9 +3995,9 @@ void editor::editor_create_new_branch(content::path_info_t & ipath)
 {
     messages::messages * messages(messages::messages::instance());
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // although we expect the URI sent by the editor to be safe, we filter it
@@ -4317,8 +4317,8 @@ bool editor::replace_uri_token_impl(editor_uri_token & token_info)
         return false;
     }
 
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+    libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content::content::instance()->get_branch_table());
 
     //
     // TIME / DATE
@@ -5132,13 +5132,13 @@ void editor::on_generate_page_content(
 
     // now go through all the widgets checking out their path, if the
     // path exists in doc then copy the data somewhere in the doc
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t secret_table(content_plugin->get_secret_table());
 
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
-    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(ipath.get_key()));
-    QtCassandra::QCassandraRow::pointer_t draft_row(revision_table->row(draft_key));
-    QtCassandra::QCassandraRow::pointer_t data_row;
+    libdbproxy::row::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::row::pointer_t secret_row(secret_table->row(ipath.get_key()));
+    libdbproxy::row::pointer_t draft_row(revision_table->row(draft_key));
+    libdbproxy::row::pointer_t data_row;
 
     revision_row->clearCache();
     secret_row->clearCache();
@@ -5227,7 +5227,7 @@ void editor::on_generate_page_content(
         if(!field_name.isEmpty()
         && (is_editor_session_field || is_editor_timeout || is_editor_auto_reset || draft_value || data_row->exists(field_name)))
         {
-            QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
+            libdbproxy::value const value(data_row->cell(field_name)->value());
             QString current_value;
             bool set_value(true);
             if(is_editor_session_field)
@@ -5639,7 +5639,7 @@ bool editor::has_value( QString const & name ) const
 }
 
 
-QtCassandra::QCassandraValue editor::get_value( QString const & name ) const
+libdbproxy::value editor::get_value( QString const & name ) const
 {
     if( !f_converted_values.contains(name) )
     {

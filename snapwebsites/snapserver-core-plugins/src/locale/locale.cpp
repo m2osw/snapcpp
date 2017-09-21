@@ -628,8 +628,8 @@ void locale::set_locale_done()
         content::path_info_t settings_ipath;
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
         QString const locale_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE))->value().stringValue());
         set_current_locale(locale_name);
     }
@@ -683,8 +683,8 @@ void locale::set_timezone_done()
         content::path_info_t settings_ipath;
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
         QString const timezone_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_TIMEZONE))->value().stringValue());
         set_current_timezone(timezone_name);
     }

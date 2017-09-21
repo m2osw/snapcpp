@@ -255,11 +255,11 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     content::path_info_t settings_ipath;
     settings_ipath.set_path(get_name(name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH));
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-    QtCassandra::QCassandraValue const enable_value(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_ENABLE))->value());
+    libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+    libdbproxy::value const enable_value(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_ENABLE))->value());
     int8_t const enable(enable_value.nullValue() || enable_value.safeSignedCharValue());
     if(!enable)
     {
@@ -413,11 +413,11 @@ void antivirus::on_versions_tools(filter::filter::token_info_t & token)
         // the database
         //
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
         content::path_info_t settings_ipath;
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH));
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-        QtCassandra::QCassandraValue const clamav_version(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_VERSION))->value());
+        libdbproxy::row::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        libdbproxy::value const clamav_version(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_VERSION))->value());
         if(!clamav_version.nullValue())
         {
             output = clamav_version.stringValue();

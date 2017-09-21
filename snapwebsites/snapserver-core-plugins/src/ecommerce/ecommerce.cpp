@@ -1208,7 +1208,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     // TODO: loop through all the products to allow for other plugins to
     //       "interfere" (verify) that everything in the cart is fine;
@@ -1364,13 +1364,13 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
     // create a lock to generate the next unique invoice number
     content::path_info_t invoices_ipath;
     invoices_ipath.set_path(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICES_PATH));
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(invoices_ipath.get_key()));
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::row::pointer_t content_row(content_table->row(invoices_ipath.get_key()));
     {
         snap_lock lock(invoices_ipath.get_key());
 
         // retrieve the current invoice number and increment by one
-        QtCassandra::QCassandraValue invoice_number_value(content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());
+        libdbproxy::value invoice_number_value(content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());
         if(invoice_number_value.size() == sizeof(uint64_t))
         {
             invoice_number = invoice_number_value.uint64Value();
@@ -1391,7 +1391,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     // TODO: as expected in a future version, we will create an object to send
     //       along the create_content() instead of having this separate.
     int64_t const start_date(f_snap->get_start_date());
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     QString const title(QString("Invoice #%1").arg(invoice_number));
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
@@ -1579,7 +1579,7 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t &
     // verify that there is a price, without a price it is not a valid
     // product either...
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     if(revision_table->row(product_ipath.get_revision_key())->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))->value().size() != sizeof(double))
     {
         // no price?!
@@ -1643,7 +1643,7 @@ void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xm
         //   "<number>" -- an invoice number
         users::users * users_plugin(users::users::instance());
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+        libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
         bool has_invoice(false);
         content::path_info_t invoice_ipath;
         token.verify_args(1, 1);

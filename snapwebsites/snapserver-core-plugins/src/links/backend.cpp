@@ -167,7 +167,7 @@ void links::on_backend_action(QString const & action)
 void links::on_backend_action_create_link()
 {
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
 
     // create a link
     QString const mode(f_snap->get_server_parameter("LINK_MODE"));
@@ -216,7 +216,7 @@ void links::on_backend_action_create_link()
 void links::on_backend_action_delete_link()
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
 
     // delete a link
     QString const mode(f_snap->get_server_parameter("LINK_MODE"));
@@ -304,9 +304,9 @@ void links::cleanup_links()
 {
     content::content * content_plugin(content::content::instance());
 
-    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    libdbproxy::table::pointer_t links_table(get_links_table());
 
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
     branch_table->clearCache();
 
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -323,7 +323,7 @@ void links::cleanup_links()
     //      the following algorithm to avoid reading all the branches
     //      of all the websites...
     //
-    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+    auto row_predicate(std::make_shared<libdbproxy::row_predicate>());
     row_predicate->setCount(100);
     for(;;)
     {
@@ -334,8 +334,8 @@ void links::cleanup_links()
             //
             break;
         }
-        QtCassandra::QCassandraRows const rows(branch_table->rows());
-        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+        libdbproxy::QCassandraRows const rows(branch_table->rows());
+        for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
             QString const key(QString::fromUtf8(o.key().data()));
@@ -348,10 +348,10 @@ void links::cleanup_links()
 
             // within each row, check all the columns
             //
-            QtCassandra::QCassandraRow::pointer_t row(*o);
+            libdbproxy::row::pointer_t row(*o);
             row->clearCache();
 
-            auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
             column_predicate->setCount(100);
             column_predicate->setIndex(); // behave like an index
             column_predicate->setStartCellKey(links_namespace_start); // limit the loading to links at least
@@ -362,7 +362,7 @@ void links::cleanup_links()
             for(;;)
             {
                 row->readCells(column_predicate);
-                QtCassandra::QCassandraCells const cells(row->cells());
+                libdbproxy::QCassandraCells const cells(row->cells());
                 if(cells.isEmpty())
                 {
                     // no more rows here
@@ -372,11 +372,11 @@ void links::cleanup_links()
 
                 // handle one batch
                 //
-                for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
                         c != cells.end();
                         ++c)
                 {
-                    QtCassandra::QCassandraCell::pointer_t cell(*c);
+                    libdbproxy::cell::pointer_t cell(*c);
 
                     QString const cell_name(cell->columnName());
                     int const pos(cell_name.indexOf('-'));
@@ -397,7 +397,7 @@ void links::cleanup_links()
                         {
                             // the row exists, is there an entry for this link?
                             //
-                            QtCassandra::QCassandraRow::pointer_t link_row(links_table->row(link_key));
+                            libdbproxy::row::pointer_t link_row(links_table->row(link_key));
 
                             // the column name in that row is the value of 'k'
                             // in the current cell value
@@ -455,10 +455,10 @@ void links::on_backend_action_snap547_fix_link_branches()
     //
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
-    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    libdbproxy::table::pointer_t links_table(get_links_table());
 
     // Take care of the "links" table (i.e. column names are missing the
     // branch number reference)
@@ -473,7 +473,7 @@ void links::on_backend_action_snap547_fix_link_branches()
         int invalid_field_name(0);
         int already_done(0);
 
-        auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+        auto row_predicate(std::make_shared<libdbproxy::row_predicate>());
         row_predicate->setCount(100);
         for(;;)
         {
@@ -485,18 +485,18 @@ void links::on_backend_action_snap547_fix_link_branches()
                 break;
             }
 
-            QtCassandra::QCassandraRows const rows(links_table->rows());
-            for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+            libdbproxy::QCassandraRows const rows(links_table->rows());
+            for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
                     o != rows.end(); ++o)
             {
                 QString const key(QString::fromUtf8(o.key().data()));
 
                 // within each row, check all the columns
                 //
-                QtCassandra::QCassandraRow::pointer_t row(*o);
+                libdbproxy::row::pointer_t row(*o);
                 row->clearCache();
 
-                auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+                auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
                 column_predicate->setCount(100);
                 column_predicate->setIndex(); // behave like an index
 
@@ -505,7 +505,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                 for(;;)
                 {
                     row->readCells(column_predicate);
-                    QtCassandra::QCassandraCells const cells(row->cells());
+                    libdbproxy::QCassandraCells const cells(row->cells());
                     if(cells.isEmpty())
                     {
                         // no more rows here
@@ -515,11 +515,11 @@ void links::on_backend_action_snap547_fix_link_branches()
 
                     // handle one batch
                     //
-                    for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                    for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
                             c != cells.end();
                             ++c)
                     {
-                        QtCassandra::QCassandraCell::pointer_t cell(*c);
+                        libdbproxy::cell::pointer_t cell(*c);
 
                         // check whether the column was already fixed
                         //
@@ -529,7 +529,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                         {
                             // okay, this looks like an old link, fix it
                             //
-                            QtCassandra::QCassandraValue const value(cell->value());
+                            libdbproxy::value const value(cell->value());
                             QString const field_name(value.stringValue());
                             pos = field_name.indexOf('#');
                             if(pos != -1)
@@ -608,7 +608,7 @@ void links::on_backend_action_snap547_fix_link_branches()
         //      the following algorithm to avoid reading all the branches
         //      of all the websites...
         //
-        auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+        auto row_predicate(std::make_shared<libdbproxy::row_predicate>());
         row_predicate->setCount(100);
         for(;;)
         {
@@ -620,8 +620,8 @@ void links::on_backend_action_snap547_fix_link_branches()
                 break;
             }
 
-            QtCassandra::QCassandraRows const rows(branch_table->rows());
-            for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+            libdbproxy::QCassandraRows const rows(branch_table->rows());
+            for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
                     o != rows.end(); ++o)
             {
                 QString const key(QString::fromUtf8(o.key().data()));
@@ -630,10 +630,10 @@ void links::on_backend_action_snap547_fix_link_branches()
 
                 // within each row, check all the columns
                 //
-                QtCassandra::QCassandraRow::pointer_t row(*o);
+                libdbproxy::row::pointer_t row(*o);
                 row->clearCache();
 
-                auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+                auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
                 column_predicate->setCount(100);
                 column_predicate->setIndex(); // behave like an index
                 column_predicate->setStartCellKey(links_namespace_start); // limit the loading to links at least
@@ -644,7 +644,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                 for(;;)
                 {
                     row->readCells(column_predicate);
-                    QtCassandra::QCassandraCells const cells(row->cells());
+                    libdbproxy::QCassandraCells const cells(row->cells());
                     if(cells.isEmpty())
                     {
                         // no more rows here
@@ -654,14 +654,14 @@ void links::on_backend_action_snap547_fix_link_branches()
 
                     // handle one batch
                     //
-                    for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                    for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
                             c != cells.end();
                             ++c)
                     {
-                        QtCassandra::QCassandraCell::pointer_t cell(*c);
+                        libdbproxy::cell::pointer_t cell(*c);
 
                         QString const cell_name(cell->columnName());
-                        QtCassandra::QCassandraValue value(cell->value());
+                        libdbproxy::value value(cell->value());
 
                         // parse the value as a link info
                         //

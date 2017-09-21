@@ -232,7 +232,7 @@ void antihammering::bootstrap(snap_child * snap)
  *
  * \return The pointer to the antihammering table.
  */
-QtCassandra::QCassandraTable::pointer_t antihammering::get_antihammering_table()
+libdbproxy::table::pointer_t antihammering::get_antihammering_table()
 {
     if(!f_antihammering_table)
     {
@@ -295,7 +295,7 @@ void antihammering::on_output_result(QString const & uri_path, QByteArray & outp
     content::path_info_t ipath;
     ipath.set_path(uri_path);
 
-    QtCassandra::QCassandraValue value;
+    libdbproxy::value value;
     value.setStringValue(ipath.get_key());
     value.setTtl(10 * 60); // 10 min. -- change to use settings?
 
@@ -318,7 +318,7 @@ void antihammering::on_output_result(QString const & uri_path, QByteArray & outp
 
     QString const ip(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
 
-    QtCassandra::QCassandraTable::pointer_t antihammering_table(get_antihammering_table());
+    libdbproxy::table::pointer_t antihammering_table(get_antihammering_table());
     antihammering_table->row(ip)->cell(key)->setValue(value);
 }
 
@@ -341,17 +341,17 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
     content::path_info_t antihammering_settings;
     antihammering_settings.set_path("admin/settings/antihammering");
     content::content * content(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
-    QtCassandra::QCassandraRow::pointer_t row(revision_table->row(antihammering_settings.get_revision_key()));
+    libdbproxy::table::pointer_t revision_table(content->get_revision_table());
+    libdbproxy::row::pointer_t row(revision_table->row(antihammering_settings.get_revision_key()));
 
     QString const ip(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
 
     // get the total number of hits in the last little bit from this one
     // user IP address
-    QtCassandra::QCassandraTable::pointer_t antihammering_table(get_antihammering_table());
+    libdbproxy::table::pointer_t antihammering_table(get_antihammering_table());
 
     // already and still blocked?
-    QtCassandra::QCassandraValue const blocked_value(antihammering_table->row(ip)->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_BLOCKED))->value());
+    libdbproxy::value const blocked_value(antihammering_table->row(ip)->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_BLOCKED))->value());
     int64_t const blocked_time_limit(blocked_value.safeInt64Value(0, 0));
     if(blocked_time_limit > start_date)
     {
@@ -377,12 +377,12 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
 
         }
 
-        QtCassandra::QCassandraValue blocked;
+        libdbproxy::value blocked;
         QByteArray value;
         // the block is extended from what it was about plus the next limit
         int64_t const new_time_limit(blocked_time_limit + next_pause * 1000000LL);
-        QtCassandra::setInt64Value(value, new_time_limit);
-        QtCassandra::appendSignedCharValue(value, stage);
+        libdbproxy::setInt64Value(value, new_time_limit);
+        libdbproxy::appendSignedCharValue(value, stage);
         blocked.setBinaryValue(value);
         int64_t const pause_ttl((new_time_limit - start_date) / 1000000LL);
         blocked.setTtl(static_cast<int>(pause_ttl) + 20); // to make sure we do not lose the information too soon, add 20 seconds to the TTL
@@ -396,13 +396,13 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
     }
 
     // count the number of 200 which are HTML pages (result starts with "200 html-page")
-    //QtCassandra::QCassandraColumnRangePredicate html_page_predicate;
+    //libdbproxy::QCassandraColumnRangePredicate html_page_predicate;
     //html_page_predicate.setStartCellKey("200 html-page 0");
     //html_page_predicate.setEndCellKey("200 html-page 9");
     //int const page_count(antihammering_table->row(ip)->cellCount(html_page_predicate));
 
     int64_t const hit_limit_duration(row->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_HIT_LIMIT_DURATION))->value().safeInt64Value(0, 1LL));
-    auto html_page_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    auto html_page_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
     html_page_predicate->setStartCellKey(QString("200 html-page %1").arg(start_date - hit_limit_duration * 1000000LL, 19, 10, QChar('0')));
     html_page_predicate->setEndCellKey("200 html-page 9"); // up to the end
     int const page_count(antihammering_table->row(ip)->cellCount(html_page_predicate));
@@ -410,10 +410,10 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
     if(page_count >= hit_limit)
     {
         int64_t const first_pause(row->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_FIRST_PAUSE))->value().safeInt64Value(0, 60LL));
-        QtCassandra::QCassandraValue blocked;
+        libdbproxy::value blocked;
         QByteArray value;
-        QtCassandra::setInt64Value(value, start_date + first_pause * 1000000LL);
-        QtCassandra::appendSignedCharValue(value, 1);
+        libdbproxy::setInt64Value(value, start_date + first_pause * 1000000LL);
+        libdbproxy::appendSignedCharValue(value, 1);
         blocked.setBinaryValue(value);
         blocked.setTtl(static_cast<int>(first_pause) + 20); // to make sure we do not lose the information too soon, add 20 seconds to the TTL
         antihammering_table->row(ip)->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_BLOCKED))->setValue(blocked);
@@ -426,7 +426,7 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
     }
 
     // then count the number of errors (result over 399)
-    //auto error_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    //auto error_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
     //error_predicate.setStartCellKey("400");
     //error_predicate.setEndCellKey(":");
     //int const error_count(antihammering_table->row(ip)->cellCount(error_predicate));

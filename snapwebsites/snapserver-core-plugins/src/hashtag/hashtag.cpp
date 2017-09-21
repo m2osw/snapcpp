@@ -217,8 +217,8 @@ void hashtag::on_filter_text(filter::filter::filter_text_t & txt_filt)
 {
     // initialized only if needed
     content::content * content_plugin(nullptr);
-    QtCassandra::QCassandraTable::pointer_t content_table;
-    QtCassandra::QCassandraTable::pointer_t revision_table;
+    libdbproxy::table::pointer_t content_table;
+    libdbproxy::table::pointer_t revision_table;
     QString link_settings;
 
     bool first(true);

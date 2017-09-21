@@ -361,8 +361,8 @@ void timetracker::add_calendar(int64_t const identifier)
     // basic setup
     output::output * output_plugin(output::output::instance());
     content::content * content_plugin(content::content::instance());
-    //QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    //libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     // setup locale
     QString const locale("xx"); // TODO: use the user defined locale by default, instead of "xx"
@@ -382,7 +382,7 @@ void timetracker::add_calendar(int64_t const identifier)
     //
     content_plugin->create_content(calendar_ipath, output_plugin->get_plugin_name(), "timetracker/calendar");
 
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(calendar_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t revision_row(revision_table->row(calendar_ipath.get_revision_key()));
     int64_t const start_date(f_snap->get_start_date());
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker Calendar"));
@@ -465,7 +465,7 @@ void timetracker::on_check_for_redirect(content::path_info_t & ipath)
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
 
     bool ok(false);
     int const user_identifier(segments[1].toInt(&ok, 10));
@@ -531,13 +531,13 @@ void timetracker::on_check_for_redirect(content::path_info_t & ipath)
     output::output * output_plugin(output::output::instance());
     content_plugin->create_content(ipath, output_plugin->get_plugin_name(), "timetracker/day");
 
-    QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(ipath.get_key()));
+    libdbproxy::row::pointer_t content_row(content_table->row(ipath.get_key()));
     content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT))->setValue(QString("\"timetracker-parser\";"));
     //content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_THEME))->setValue("\"...\";");
     content_row->cell(editor::get_name(editor::name_t::SNAP_NAME_EDITOR_LAYOUT))->setValue(QString("\"timetracker-page\";"));
 
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::row::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
     int64_t const start_date(f_snap->get_start_date());
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     // Note: we can hard code the date in the title since that specific page
@@ -663,7 +663,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
     permissions::permissions * permissions_plugin(permissions::permissions::instance());
     list::list * list_plugin(list::list::instance());
 
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
     users::users::user_info_t user_info(users_plugin->get_user_info());
 
     QString result;
@@ -765,8 +765,8 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
     locale::locale * locale_plugin(locale::locale::instance());
     users::users * users_plugin(users::users::instance());
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
     bool ok(false);
 
@@ -956,7 +956,7 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
                 if(content_table->exists(day_ipath.get_key())
                 && content_table->row(day_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
                 {
-                    QtCassandra::QCassandraRow::pointer_t row(revision_table->row(day_ipath.get_revision_key()));
+                    libdbproxy::row::pointer_t row(revision_table->row(day_ipath.get_revision_key()));
 
                     // billing duration
                     QString const duration(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_BILLING_DURATION))->value().stringValue());
@@ -994,7 +994,7 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
  * This function gets called any time a field is initialized for use
  * in the editor.
  */
-void timetracker::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
+void timetracker::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, libdbproxy::row::pointer_t row)
 {
     NOTUSED(field_type);
     NOTUSED(row);
@@ -1021,7 +1021,7 @@ void timetracker::init_day_editor_widgets(QString const & field_id, QDomElement 
         //
         list::list * list_plugin(list::list::instance());
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
 
         QDomDocument doc(widget.ownerDocument());
         QDomElement preset(snap_dom::create_element(widget, "preset"));

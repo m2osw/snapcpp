@@ -41,7 +41,7 @@
 
 #include <advgetopt/advgetopt.h>
 
-#include <QtCassandra/QCassandraValue.h>
+#include <libdbproxy/value.h>
 
 #include <casswrapper/schema.h>
 #include <casswrapper/session.h>
@@ -66,7 +66,7 @@
 #include <snapwebsites/poison.h>
 
 using namespace casswrapper;
-using namespace QtCassandra;
+using namespace libdbproxy;
 
 namespace
 {
@@ -999,8 +999,8 @@ void snap_layout::add_files()
             if( rowExists("layout", row_name.toUtf8()) )
             {
                 // the row already exists, try getting the area
-                //QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
-                QCassandraValue existing;
+                //value existing(table->row(row_name)->cell(cell_name)->value());
+                value existing;
                 try
                 {
                     auto q( Query::create(f_session) );
@@ -1096,7 +1096,7 @@ void snap_layout::add_files()
     {
         // mtimes holds times in seconds, convert to microseconds
         const int64_t last_updated(i.value() * 1000000);
-        QCassandraValue existing_last_updated;
+        value existing_last_updated;
         try
         {
             auto q( Query::create(f_session) );
@@ -1139,7 +1139,7 @@ void snap_layout::add_files()
             snap::NOTREACHED();
         }
 #if 0
-        QCassandraValue existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value());
+        value existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value());
         if(existing_last_updated.nullValue()
         || existing_last_updated.int64Value() < last_updated)
         {
@@ -1379,7 +1379,7 @@ void snap_layout::extract_file()
     }
 
     // TODO: if we reach here, the cell may have been dropped earlier...
-    //QCassandraValue value(row->cell(basename)->value());
+    //value value(row->cell(basename)->value());
 
     try
     {

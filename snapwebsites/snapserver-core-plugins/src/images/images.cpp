@@ -505,7 +505,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
     if(content_table->exists(ipath.get_key()))
     {
         // if it exists, it is not dynamic so ignore it (this should
@@ -551,7 +551,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     }
 
     // verify that the attachment key exists
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     if(!revision_table->exists(parent_ipath.get_revision_key())
     || !revision_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
@@ -568,7 +568,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     }
 
     // get the key of that attachment, it should be a file md5
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.size() != 16)
     {
         // no or invalid key?!
@@ -588,7 +588,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     QString field_name(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(filename));
 
     // Does the file exist at this point?
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
@@ -700,8 +700,8 @@ bool images::on_path_execute(content::path_info_t & ipath)
         field_name = ipath.get_parameter("attachment_field");
     }
 
-    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
+    libdbproxy::value attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
@@ -714,7 +714,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
         NOTREACHED();
     }
 
-    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
@@ -727,7 +727,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
         NOTREACHED();
     }
 
-    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+    libdbproxy::row::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
 
     // TODO: If the user is loading the file as an attachment,
     //       we need those headers
@@ -742,7 +742,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
     QByteArray data(file_row->cell(field_name)->value().binaryValue());
 
     // get the attachment MIME type and tweak it if it is a known text format
-    //QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    //libdbproxy::value attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
     //QString content_type(attachment_mime_type.stringValue());
     //if(content_type == "text/javascript"
     //|| content_type == "text/css"
@@ -837,8 +837,8 @@ void images::on_modified_content(content::path_info_t & ipath)
         // here we do not need to loop, if we find at least one link then
         // request the backend to regenerate these different views
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+        libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
+        libdbproxy::table::pointer_t branch_table(content::content::instance()->get_branch_table());
 
         // TODO: Delay this add to the end of the process so we can avoid
         //       adding delays to our data processing
@@ -849,7 +849,7 @@ void images::on_modified_content(content::path_info_t & ipath)
 
         // check whether we already had an entry for this image in the files
         // table, images row.
-        QtCassandra::QCassandraValue old_date_value(branch_table->row(ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->value());
+        libdbproxy::value old_date_value(branch_table->row(ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->value());
         if(!old_date_value.nullValue())
         {
             // not null, there is an old date
@@ -864,8 +864,8 @@ void images::on_modified_content(content::path_info_t & ipath)
             // delete a previous entry so we avoid transforming the
             // same image with the same transformation twice
             QByteArray old_key;
-            QtCassandra::appendInt64Value(old_key, old_date);
-            QtCassandra::appendStringValue(old_key, ipath.get_key());
+            libdbproxy::appendInt64Value(old_key, old_date);
+            libdbproxy::appendStringValue(old_key, ipath.get_key());
             files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->dropCell(old_key);
         }
 
@@ -875,8 +875,8 @@ void images::on_modified_content(content::path_info_t & ipath)
         // and if necessary make use of multiple threads to work on the
         // actual transformations (not here)
         QByteArray key;
-        QtCassandra::appendInt64Value(key, start_date);
-        QtCassandra::appendStringValue(key, ipath.get_key());
+        libdbproxy::appendInt64Value(key, start_date);
+        libdbproxy::appendStringValue(key, ipath.get_key());
         bool const modified(true);
         files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->cell(key)->setValue(modified);
 
@@ -1016,7 +1016,7 @@ void images::on_versions_libraries(filter::filter::token_info_t & token)
 void images::on_backend_action(QString const & action)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
 
     if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
@@ -1055,16 +1055,16 @@ void images::on_backend_action(QString const & action)
 int64_t images::transform_images()
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
     files_table->clearCache();
-    QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW)));
+    libdbproxy::row::pointer_t images_row(files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW)));
     images_row->clearCache();
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // we use a smaller number (100) instead of a larger number (1000)
     // in case the user makes changes we are more likely to catch the
     // latest version instead of using an older cached version
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
     column_predicate->setCount(100);
     column_predicate->setIndex(); // behave like an index
 
@@ -1074,7 +1074,7 @@ int64_t images::transform_images()
         // Note: because it is sorted, the oldest entries are worked on first
         //
         images_row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const cells(images_row->cells());
+        libdbproxy::QCassandraCells const cells(images_row->cells());
         if(cells.isEmpty())
         {
             // no more transformation, we can sleep for 5 min.
@@ -1083,7 +1083,7 @@ int64_t images::transform_images()
         }
 
         // handle one batch
-        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+        for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
                 c != cells.end();
                 ++c)
         {
@@ -1094,12 +1094,12 @@ int64_t images::transform_images()
             int64_t const start_date(f_snap->get_start_date());
 
             // the cell
-            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            libdbproxy::cell::pointer_t cell(*c);
             // the key starts with the "start date" and it is followed by a
             // string representing the row key in the content table
             QByteArray const & key(cell->columnKey());
 
-            int64_t const page_start_date(QtCassandra::int64Value(key, 0));
+            int64_t const page_start_date(libdbproxy::int64Value(key, 0));
             if(page_start_date > start_date)
             {
                 // since the columns are sorted, anything after that will be
@@ -1109,7 +1109,7 @@ int64_t images::transform_images()
                 return page_start_date - start_date;
             }
 
-            QString const image_key(QtCassandra::stringValue(key, sizeof(int64_t)));
+            QString const image_key(libdbproxy::stringValue(key, sizeof(int64_t)));
             if(!image_key.startsWith(site_key))
             {
                 // "wrong" site, ignore this entry on this run
@@ -1120,7 +1120,7 @@ int64_t images::transform_images()
             // (if it crashes it is really good to know where)
             {
                 QString name;
-                uint64_t time(QtCassandra::uint64Value(key, 0));
+                uint64_t time(libdbproxy::uint64Value(key, 0));
                 char buf[64];
                 struct tm t;
                 time_t const seconds(time / 1000000);
@@ -1165,11 +1165,11 @@ int64_t images::transform_images()
 bool images::do_image_transformations(QString const & image_key)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
     content_table->clearCache();
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
     branch_table->clearCache();
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     revision_table->clearCache();
     content::path_info_t image_ipath;
     image_ipath.set_path(image_key);
@@ -2102,8 +2102,8 @@ bool images::func_read(parameters_t & params)
     // param 3 is the image number, zero by default (optional -- currently unused)
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
@@ -2413,8 +2413,8 @@ bool images::func_write(parameters_t & params)
     // param 2 is the name used to save the file in the files table
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
+    libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);

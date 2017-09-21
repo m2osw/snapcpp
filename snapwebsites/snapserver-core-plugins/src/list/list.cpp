@@ -937,7 +937,7 @@ QString paging_t::get_list_name() const
         f_retrieved_list_name = true;
 
         content::content *content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
         f_list_name = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NAME))->value().stringValue();
     }
     return f_list_name;
@@ -1019,7 +1019,7 @@ int32_t paging_t::get_number_of_items() const
         // if the number of items is not (yet) defined in the database
         // then it will be set to zero
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
         f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
     }
 
@@ -1761,7 +1761,7 @@ int32_t paging_t::get_page_size() const
     if(f_default_page_size < 1)
     {
         content::content *content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
         f_default_page_size = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_PAGE_SIZE))->value().safeInt32Value();
         if(f_default_page_size < 1)
         {
@@ -2066,7 +2066,7 @@ void list::on_create_content(content::path_info_t & ipath, QString const & owner
     NOTUSED(type);
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
     // if a list is defined in this content, make sure to mark the
     // row as having a list with the last updated data set to zero
@@ -2266,7 +2266,7 @@ void list::on_modified_content(content::path_info_t & ipath)
     // scripts (this could certainly be optimized but really the scripts
     // are compiled so quickly that it won't matter.)
     //
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
     branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
     branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
@@ -2494,16 +2494,16 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     }
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
     QString const branch_key(ipath.get_branch_key());
-    QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(branch_key));
+    libdbproxy::row::pointer_t list_row(branch_table->row(branch_key));
     list_row->clearCache();
 
     char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
     int const len(static_cast<int>(strlen(ordered_pages) + 2));
 
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
     column_predicate->setStartCellKey(QString("%1::").arg(ordered_pages));
     column_predicate->setEndCellKey(QString("%1;").arg(ordered_pages));
     column_predicate->setCount(std::min(100, count)); // optimize the number of cells transferred
@@ -2512,13 +2512,13 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     {
         // clear the cache before reading the next load
         list_row->readCells(column_predicate);
-        QtCassandra::QCassandraCells const cells(list_row->cells());
+        libdbproxy::QCassandraCells const cells(list_row->cells());
         if(cells.empty())
         {
             // all columns read
             break;
         }
-        for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+        for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
         {
             if(start > 0)
             {
@@ -2743,7 +2743,7 @@ void list::on_backend_action(QString const & action)
         // that the current lists may not be 100% correct as they are
         //
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
         content::path_info_t ipath;
         QString const site_key(f_snap->get_site_key_with_slash());
@@ -2784,14 +2784,14 @@ void list::on_backend_action(QString const & action)
 void list::add_all_pages_to_list_table(QString const & site_key)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
     content_table->clearCache();
 
     safe_priority_t safe_priority(LIST_PRIORITY_REVIEW);
 
     // TODO: use the '*index*' row which is sorted
 
-    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+    auto row_predicate = std::make_shared<libdbproxy::row_predicate>();
     row_predicate->setCount(1000);
     for(;;)
     {
@@ -2801,8 +2801,8 @@ void list::add_all_pages_to_list_table(QString const & site_key)
             // no more pages to process
             break;
         }
-        QtCassandra::QCassandraRows const rows(content_table->rows());
-        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+        libdbproxy::QCassandraRows const rows(content_table->rows());
+        for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
             QString key(QString::fromUtf8(o.key().data()));
@@ -2964,7 +2964,7 @@ int list::send_data_to_journal()
 int list::generate_new_lists(QString const & site_key)
 {
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
     int did_work(0);
 
@@ -2980,7 +2980,7 @@ int list::generate_new_lists(QString const & site_key)
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        QtCassandra::QCassandraValue last_updated(branch_table->row(list_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value());
+        libdbproxy::value last_updated(branch_table->row(list_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value());
         if(last_updated.nullValue()
         || last_updated.int64Value() == 0)
         {
@@ -3001,7 +3001,7 @@ int list::generate_new_lists(QString const & site_key)
         //
         SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
 
-        QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
+        libdbproxy::row::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
         QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
 
         int did_work_on_list(0);
@@ -3631,8 +3631,8 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     int did_work(0);
 
     content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
+    libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+    libdbproxy::row::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
 
     // check whether we already updated that page
     // (because the same page may be listed many times in the list table)
@@ -3654,7 +3654,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
 
     try
     {
-        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+        libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
         if(!content_table->exists(page_ipath.get_key())
         || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
@@ -3678,7 +3678,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             //
             return 0;
         }
-        QtCassandra::QCassandraRow::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));
+        libdbproxy::row::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));
 
         QString const link_name(get_name(name_t::SNAP_NAME_LIST_LINK));
 
@@ -3701,7 +3701,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 // the drop + create (that happens when there is a change that
                 // affects the key and you get a duplicate which is corrected
                 // later--but we probably need to fix duplicates at some point)
-                QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                libdbproxy::value current_item_key(page_branch_row->cell(list_key_in_page)->value());
                 QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
                 if(current_item_key_full != new_item_key_full
                 || !page_branch_row->exists(new_item_key_full))
@@ -3747,7 +3747,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             // make sure it gets removed if still there
             if(page_branch_row->exists(list_key_in_page))
             {
-                QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                libdbproxy::value current_item_key(page_branch_row->cell(list_key_in_page)->value());
                 QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
 
                 list_row->dropCell(current_item_key_full);
@@ -3808,7 +3808,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
 
         // count the new total number of ordered pages
         int32_t count(0);
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
         column_predicate->setStartCellKey(QString("%1::").arg(ordered_pages));
         column_predicate->setEndCellKey(QString("%1;").arg(ordered_pages));
         column_predicate->setCount(100);
@@ -3817,7 +3817,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
         {
             // clear the cache before reading the next load
             list_row->readCells(column_predicate);
-            QtCassandra::QCassandraCells const cells(list_row->cells());
+            libdbproxy::QCassandraCells const cells(list_row->cells());
             if(cells.empty())
             {
                 // all columns read
@@ -3860,11 +3860,11 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->value());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::value compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->value());
         if(compiled_script.nullValue())
         {
-            QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+            libdbproxy::value script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
             if(script.nullValue())
             {
                 // no list here?!
@@ -3919,8 +3919,8 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
 #ifdef DEBUG
     {
         content::content *content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::value script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
         SNAP_LOG_TRACE() << "script [" << script.stringValue() << "] result [" << (result.is_true() ? "true" : "false") << "]";
     }
 #endif
@@ -3950,11 +3950,11 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
+        libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
+        libdbproxy::value compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
         if(compiled_script.nullValue())
         {
-            QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT))->value());
+            libdbproxy::value script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT))->value());
             if(script.nullValue())
             {
                 // no list here?!
@@ -4396,19 +4396,19 @@ void list::on_generate_boxes_content(content::path_info_t & page_cpath, content:
 }
 
 
-void list::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void list::on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 
-    QtCassandra::QCassandraCells left_cells;
+    libdbproxy::QCassandraCells left_cells;
 
     // handle one batch
     bool has_list(false);
-    for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+    for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
     {
-        QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+        libdbproxy::cell::pointer_t source_cell(*nc);
         QByteArray cell_key(source_cell->columnKey());
 
         if(cell_key == get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT)
