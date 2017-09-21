@@ -433,7 +433,7 @@ QString shorturl::get_shorturl(uint64_t identifier)
         QString const index(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW));
         libdbproxy::value identifier_value;
         identifier_value.setUInt64Value(identifier);
-        libdbproxy::value url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
+        libdbproxy::value url(shorturl_table->getRow(index)->getCell(identifier_value.binaryValue())->getValue());
         if(!url.nullValue())
         {
             return url.stringValue();
@@ -576,10 +576,10 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
         // lock we can safely do a read-increment-write cycle.
         if(shorturl_table->exists(id_key))
         {
-            libdbproxy::row::pointer_t id_row(shorturl_table->row(id_key));
-            libdbproxy::cell::pointer_t id_cell(id_row->cell(identifier_key));
+            libdbproxy::row::pointer_t id_row(shorturl_table->getRow(id_key));
+            libdbproxy::cell::pointer_t id_cell(id_row->getCell(identifier_key));
             id_cell->setConsistencyLevel(libdbproxy::CONSISTENCY_LEVEL_QUORUM);
-            libdbproxy::value current_identifier(id_cell->value());
+            libdbproxy::value current_identifier(id_cell->getValue());
             if(current_identifier.nullValue())
             {
                 // this means no user can register until this value gets
@@ -605,7 +605,7 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
         ++identifier;
 
         new_identifier.setUInt64Value(identifier);
-        shorturl_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
+        shorturl_table->getRow(id_key)->getCell(identifier_key)->setValue(new_identifier);
 
         // the lock automatically goes away here
     }
@@ -613,26 +613,26 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
     QString const key(ipath.get_key());
 
     libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
-    libdbproxy::row::pointer_t row(content_table->row(key));
+    libdbproxy::row::pointer_t row(content_table->getRow(key));
 
-    row->cell(identifier_key)->setValue(new_identifier);
+    row->getCell(identifier_key)->setValue(new_identifier);
 
     // save the date when the Short URL is generated so if the user changes
     // the parameters we can regenerate only those that were generated before
     // the date of the change
     uint64_t const start_date(f_snap->get_start_date());
-    row->cell(get_name(name_t::SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
+    row->getCell(get_name(name_t::SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
 
     // TODO allow the user to change the "%1" number parameters
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const shorturl_url(site_key + QString("s/%1").arg(identifier, 0, 36, QChar('0')));
     libdbproxy::value shorturl_value(shorturl_url);
-    row->cell(get_name(name_t::SNAP_NAME_SHORTURL_URL))->setValue(shorturl_value);
+    row->getCell(get_name(name_t::SNAP_NAME_SHORTURL_URL))->setValue(shorturl_value);
 
     // create an index entry so we can find the entry and redirect the user
     // as required
     QString const index(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW));
-    shorturl_table->row(index)->cell(new_identifier.binaryValue())->setValue(key);
+    shorturl_table->getRow(index)->getCell(new_identifier.binaryValue())->setValue(key);
 }
 
 
@@ -667,7 +667,7 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
     for(size_t idx(0); idx < max_pages; ++idx)
     {
         content::path_info_t source(tree.f_pages[idx].f_source);
-        libdbproxy::row::pointer_t content_row(content_table->row(source.get_key()));
+        libdbproxy::row::pointer_t content_row(content_table->getRow(source.get_key()));
         if(content_row->exists(get_name(name_t::SNAP_NAME_SHORTURL_URL)))
         {
             // need a change?
@@ -687,7 +687,7 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
                     content::path_info_t destination(tree.f_pages[idx].f_destination);
 
                     // get destination owner
-                    QString const owner(content_table->row(destination.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+                    QString const owner(content_table->getRow(destination.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->getValue().stringValue());
 
                     // get destination type
                     // TODO: this requires the link to have been updated already...
@@ -717,13 +717,13 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
                     content::path_info_t destination(tree.f_pages[idx].f_destination);
 
                     libdbproxy::table::pointer_t shorturl_table(get_shorturl_table());
-                    libdbproxy::value identifier_value(content_table->row(destination.get_key())->cell(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER))->value());
+                    libdbproxy::value identifier_value(content_table->getRow(destination.get_key())->getCell(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER))->getValue());
                     
                     // make sure we have a valid identifier
                     if(!identifier_value.nullValue())
                     {
                         QString const index(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW)));
-                        shorturl_table->row(index)->cell(identifier_value.binaryValue())->setValue(destination.get_key());
+                        shorturl_table->getRow(index)->getCell(identifier_value.binaryValue())->setValue(destination.get_key());
                     }
                 }
                 break;

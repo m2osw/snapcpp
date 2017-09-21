@@ -63,7 +63,7 @@ public:
     QString columnName() const;
     const QByteArray& columnKey() const;
 
-    const value& value() const;
+    const value& getValue() const;
     void setValue(const value& value);
 
     cell& operator = (const value& value);
@@ -99,7 +99,7 @@ private:
 };
 
 // array of rows
-typedef QMap<QByteArray, cell::pointer_t> QCassandraCells;
+typedef QMap<QByteArray, cell::pointer_t> cells;
 
 
 

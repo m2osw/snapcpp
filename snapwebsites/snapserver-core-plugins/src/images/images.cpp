@@ -542,7 +542,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     }
 
     // is the parent an attachment?
-    QString const owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+    QString const owner(content_table->getRow(parent_ipath.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->getValue().stringValue());
     if(owner != content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
     {
         // something is dearly wrong if empty... and if not the attachment
@@ -553,7 +553,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     // verify that the attachment key exists
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     if(!revision_table->exists(parent_ipath.get_revision_key())
-    || !revision_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
+    || !revision_table->getRow(parent_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         // again, check whether we have an attachment...
         return virtual_path_t::VIRTUAL_PATH_INVALID;
@@ -568,7 +568,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     }
 
     // get the key of that attachment, it should be a file md5
-    libdbproxy::value attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value attachment_key(revision_table->getRow(parent_ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue());
     if(attachment_key.size() != 16)
     {
         // no or invalid key?!
@@ -590,7 +590,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     // Does the file exist at this point?
     libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+    || !files_table->getRow(attachment_key.binaryValue())->exists(field_name))
     {
         // often, the original image can be used as is because the
         // sub-image is just an "optimization"; this has to be asked
@@ -607,7 +607,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
         // field; check the default attachment key
         field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
         if(!files_table->exists(attachment_key.binaryValue())
-        || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+        || !files_table->getRow(attachment_key.binaryValue())->exists(field_name))
         {
             return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
         }
@@ -701,7 +701,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
     }
 
     libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
-    libdbproxy::value attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value attachment_key(revision_table->getRow(attachment_ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
@@ -716,7 +716,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
 
     libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+    || !files_table->getRow(attachment_key.binaryValue())->exists(field_name))
     {
         // somehow the file data is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
@@ -727,7 +727,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
         NOTREACHED();
     }
 
-    libdbproxy::row::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+    libdbproxy::row::pointer_t file_row(files_table->getRow(attachment_key.binaryValue()));
 
     // TODO: If the user is loading the file as an attachment,
     //       we need those headers
@@ -739,10 +739,10 @@ bool images::on_path_execute(content::path_info_t & ipath)
     //f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     // get the file data
-    QByteArray data(file_row->cell(field_name)->value().binaryValue());
+    QByteArray data(file_row->getCell(field_name)->getValue().binaryValue());
 
     // get the attachment MIME type and tweak it if it is a known text format
-    //libdbproxy::value attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    //libdbproxy::value attachment_mime_type(file_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->getValue());
     //QString content_type(attachment_mime_type.stringValue());
     //if(content_type == "text/javascript"
     //|| content_type == "text/css"
@@ -849,7 +849,7 @@ void images::on_modified_content(content::path_info_t & ipath)
 
         // check whether we already had an entry for this image in the files
         // table, images row.
-        libdbproxy::value old_date_value(branch_table->row(ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->value());
+        libdbproxy::value old_date_value(branch_table->getRow(ipath.get_branch_key())->getCell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->getValue());
         if(!old_date_value.nullValue())
         {
             // not null, there is an old date
@@ -866,7 +866,7 @@ void images::on_modified_content(content::path_info_t & ipath)
             QByteArray old_key;
             libdbproxy::appendInt64Value(old_key, old_date);
             libdbproxy::appendStringValue(old_key, ipath.get_key());
-            files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->dropCell(old_key);
+            files_table->getRow(get_name(name_t::SNAP_NAME_IMAGES_ROW))->dropCell(old_key);
         }
 
         // we include the date in the key so that way older things get
@@ -878,13 +878,13 @@ void images::on_modified_content(content::path_info_t & ipath)
         libdbproxy::appendInt64Value(key, start_date);
         libdbproxy::appendStringValue(key, ipath.get_key());
         bool const modified(true);
-        files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->cell(key)->setValue(modified);
+        files_table->getRow(get_name(name_t::SNAP_NAME_IMAGES_ROW))->getCell(key)->setValue(modified);
 
         // save a reference back to the new entry in the files_table
         // (this we keep so we can see when the image modifications were
         // requested and then once done how long it took the system to
         // do the work.)
-        branch_table->row(ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->setValue(start_date);
+        branch_table->getRow(ipath.get_branch_key())->getCell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->setValue(start_date);
 
         f_ping_backend = true;
     }
@@ -1057,7 +1057,7 @@ int64_t images::transform_images()
     content::content * content_plugin(content::content::instance());
     libdbproxy::table::pointer_t files_table(content_plugin->get_files_table());
     files_table->clearCache();
-    libdbproxy::row::pointer_t images_row(files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW)));
+    libdbproxy::row::pointer_t images_row(files_table->getRow(get_name(name_t::SNAP_NAME_IMAGES_ROW)));
     images_row->clearCache();
     QString const site_key(f_snap->get_site_key_with_slash());
 
@@ -1074,7 +1074,7 @@ int64_t images::transform_images()
         // Note: because it is sorted, the oldest entries are worked on first
         //
         images_row->readCells(column_predicate);
-        libdbproxy::QCassandraCells const cells(images_row->cells());
+        libdbproxy::cells const cells(images_row->getCells());
         if(cells.isEmpty())
         {
             // no more transformation, we can sleep for 5 min.
@@ -1083,7 +1083,7 @@ int64_t images::transform_images()
         }
 
         // handle one batch
-        for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
+        for(libdbproxy::cells::const_iterator c(cells.begin());
                 c != cells.end();
                 ++c)
         {
@@ -1213,7 +1213,7 @@ bool images::do_image_transformations(QString const & image_key)
         QString const script_key(script_info.key());
         content::path_info_t script_ipath;
         script_ipath.set_path(script_key);
-        QString script(revision_table->row(script_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT))->value().stringValue());
+        QString script(revision_table->getRow(script_ipath.get_revision_key())->getCell(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT))->getValue().stringValue());
         if(script.isEmpty())
         {
             // We have a problem here! This is a waste of time.
@@ -2107,7 +2107,7 @@ bool images::func_read(parameters_t & params)
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
-    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    QByteArray md5(revision_table->getRow(ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue().binaryValue());
     if(md5.size() != 16)
     {
         // there is no file in this page so we have to skip it
@@ -2128,7 +2128,7 @@ bool images::func_read(parameters_t & params)
     {
         field_name = QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name);
     }
-    QByteArray image_data(files_table->row(md5)->cell(field_name)->value().binaryValue());
+    QByteArray image_data(files_table->getRow(md5)->getCell(field_name)->getValue().binaryValue());
     if(image_data.isEmpty())
     {
         // there is no file in this page so we have to skip it
@@ -2418,7 +2418,7 @@ bool images::func_write(parameters_t & params)
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
-    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    QByteArray md5(revision_table->getRow(ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue().binaryValue());
 
     QString const output_name(params.f_params[1]);
     if(output_name == "data")
@@ -2451,7 +2451,7 @@ bool images::func_write(parameters_t & params)
     QString field_name(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name));
     QByteArray array(static_cast<char const *>(blob.data()), static_cast<int>(blob.length()));
 
-    files_table->row(md5)->cell(field_name)->setValue(array);
+    files_table->getRow(md5)->getCell(field_name)->setValue(array);
 
     return true;
 }

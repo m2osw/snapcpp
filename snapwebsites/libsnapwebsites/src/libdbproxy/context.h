@@ -1,6 +1,6 @@
 /*
  * Header:
- *      src/libdbproxy/QCassandraContext.h
+ *      src/libdbproxy/context.h
  *
  * Description:
  *      Handling of Cassandra contexts.
@@ -46,14 +46,14 @@ namespace libdbproxy
 
 class libdbproxy;
 
-class QCassandraContext
+class context
     : public QObject
-    , public std::enable_shared_from_this<QCassandraContext>
+    , public std::enable_shared_from_this<context>
 {
 public:
-    typedef std::shared_ptr<QCassandraContext>  pointer_t;
+    typedef std::shared_ptr<context>  pointer_t;
 
-    virtual ~QCassandraContext();
+    virtual ~context();
 
     const QString& contextName() const;
 
@@ -63,8 +63,8 @@ public:
     casswrapper::schema::Value::map_t&       fields();
 
     // tables
-    table::pointer_t table(const QString& table_name);
-    const QCassandraTables& tables();
+    table::pointer_t getTable(const QString& table_name);
+    const tables& getTables();
 
     table::pointer_t findTable(const QString& table_name);
     table& operator[] (const QString& table_name);
@@ -82,9 +82,9 @@ public:
 
 private:
     void makeCurrent();
-    QCassandraContext(std::shared_ptr<libdbproxy> cassandra, const QString& context_name);
-    QCassandraContext(QCassandraContext const &) = delete;
-    QCassandraContext & operator = (QCassandraContext const &) = delete;
+    context(std::shared_ptr<libdbproxy> cassandra, const QString& context_name);
+    context(context const &) = delete;
+    context & operator = (context const &) = delete;
 
     void resetSchema();
     void parseContextDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
@@ -102,10 +102,10 @@ private:
     //
     std::weak_ptr<libdbproxy>                   f_cassandra;
     QString                                     f_context_name;
-    QCassandraTables                            f_tables;
+    tables                            f_tables;
 };
 
-typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;
+typedef QMap<QString, context::pointer_t> contexts;
 
 
 } // namespace libdbproxy

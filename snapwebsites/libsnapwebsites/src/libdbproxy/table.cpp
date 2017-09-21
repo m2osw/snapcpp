@@ -257,7 +257,7 @@ table::table(context::pointer_t context, const QString& table_name)
     {
         f_table_name = table_name;
     }
-    f_proxy = context->parentCassandra()->proxy();
+    f_proxy = context->parentCassandra()->getProxy();
 }
 
 
@@ -524,9 +524,9 @@ void table::create()
  * the Cassandra server.
  *
  * If you want to keep a copy of the cache, you will have to retrieve a
- * copy of the rows map using the rows() function.
+ * copy of the rows map using the getRows() function.
  *
- * \sa rows()
+ * \sa getRows()
  * \sa clearCache()
  */
 void table::truncate()
@@ -602,7 +602,7 @@ void table::closeCursor()
 void table::addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data )
 {
     row::pointer_t  new_row  ( new row( shared_from_this(), row_key ) );
-    cell::pointer_t new_cell ( new_row->cell( column_key ) );
+    cell::pointer_t new_cell ( new_row->getCell( column_key ) );
     new_cell->assignValue( value(data) );
 
     // Now add to the map.
@@ -837,9 +837,9 @@ uint32_t table::readRows( row_predicate::pointer_t row_predicate )
 }
 
 
-row::pointer_t table::row(const char* row_name)
+row::pointer_t table::getRow(const char* row_name)
 {
-    return row( QByteArray(row_name,qstrlen(row_name)) );
+    return getRow( QByteArray(row_name,qstrlen(row_name)) );
 }
 
 
@@ -857,9 +857,9 @@ row::pointer_t table::row(const char* row_name)
  *
  * \return A shared pointer to the matching row or a null pointer.
  */
-row::pointer_t table::row(const QString& row_name)
+row::pointer_t table::getRow(const QString& row_name)
 {
-    return row(row_name.toUtf8());
+    return getRow(row_name.toUtf8());
 }
 
 /** \brief Search for a row or create a new one.
@@ -878,10 +878,10 @@ row::pointer_t table::row(const QString& row_name)
  *
  * \sa readRows()
  */
-row::pointer_t table::row(const QByteArray& row_key)
+row::pointer_t table::getRow(const QByteArray& row_key)
 {
     // row already exists?
-    QCassandraRows::iterator ri(f_rows.find(row_key));
+    rows::iterator ri(f_rows.find(row_key));
     if(ri != f_rows.end())
     {
         return ri.value();
@@ -904,7 +904,7 @@ row::pointer_t table::row(const QByteArray& row_key)
  *
  * \return A constant reference to a map of rows. Throws if readRows() has not first been called.
  */
-const QCassandraRows& table::rows()
+const rows& table::getRows()
 {
     return f_rows;
 }
@@ -930,7 +930,7 @@ const QCassandraRows& table::rows()
  * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
- * \sa row()
+ * \sa getRow()
  */
 row::pointer_t table::findRow(const char* row_name) const
 {
@@ -958,7 +958,7 @@ row::pointer_t table::findRow(const char* row_name) const
  * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
- * \sa row()
+ * \sa getRow()
  */
 row::pointer_t table::findRow(const QString& row_name) const
 {
@@ -986,7 +986,7 @@ row::pointer_t table::findRow(const QString& row_name) const
  * \return A shared pointer to the row, may be NULL (operator bool() returning true)
  *
  * \sa exists()
- * \sa row()
+ * \sa getRow()
  */
 row::pointer_t table::findRow(const QByteArray& row_key) const
 {
@@ -1075,9 +1075,9 @@ bool table::exists(const QByteArray& row_key) const
         return true;
     }
 
-    auto row_predicate( std::make_shared<row_key_predicate>() );
-    row_predicate->setRowKey(row_key);
-    row_predicate->setCount(1); // read as little as possible (TBD verify that works even with many tombstones)
+    auto pred( std::make_shared<row_key_predicate>() );
+    pred->setRowKey(row_key);
+    pred->setCount(1); // read as little as possible (TBD verify that works even with many tombstones)
 
     class save_current_cursor_index_t
     {
@@ -1123,7 +1123,7 @@ bool table::exists(const QByteArray& row_key) const
     //       "save_current_cursor_index_t" problem
     //
     return const_cast<table *>(this)
-            ->readRows( std::static_pointer_cast<row_predicate>(row_predicate) ) != 0;
+            ->readRows( std::static_pointer_cast<row_predicate>(pred) ) != 0;
 }
 
 /** \brief Retrieve a table row.
@@ -1142,7 +1142,7 @@ bool table::exists(const QByteArray& row_key) const
 row& table::operator [] (const char *row_name)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_name);
+    return *getRow(row_name);
 }
 
 /** \brief Retrieve a table row.
@@ -1161,7 +1161,7 @@ row& table::operator [] (const char *row_name)
 row& table::operator [] (const QString& row_name)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_name);
+    return *getRow(row_name);
 }
 
 /** \brief Retrieve a table row.
@@ -1180,7 +1180,7 @@ row& table::operator [] (const QString& row_name)
 row& table::operator[] (const QByteArray& row_key)
 {
     // in this case we may create the row and that's fine!
-    return *row(row_key);
+    return *getRow(row_key);
 }
 
 /** \brief Retrieve a table row.
@@ -1305,7 +1305,7 @@ void table::dropRow(const QString& row_name)
  * \code
  * ...
  * {
- *     QWeakPointer<libdbproxy::row> row(table.row(row_key)));
+ *     QWeakPointer<libdbproxy::row> getRow(table.getRow(row_key)));
  *     ...
  *     table.dropRow(row_key);
  * }
@@ -1541,7 +1541,7 @@ int32_t table::getCellCount
     }
 
     // return the count from the memory cache
-    return f_rows[row_key]->cells().size();
+    return f_rows[row_key]->getCells().size();
 }
 
 /** \brief Delete a Cell from a table row.

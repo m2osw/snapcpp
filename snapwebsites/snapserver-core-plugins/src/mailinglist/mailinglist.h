@@ -66,8 +66,8 @@ public:
         libdbproxy::table::pointer_t                 f_table;
         libdbproxy::row::pointer_t                   f_row;
         libdbproxy::cell_range_predicate::pointer_t    f_column_predicate;
-        libdbproxy::QCassandraCells                            f_cells;
-        libdbproxy::QCassandraCells::const_iterator            f_c;
+        libdbproxy::cells                            f_cells;
+        libdbproxy::cells::const_iterator            f_c;
         bool                                                    f_done = false;
     };
 

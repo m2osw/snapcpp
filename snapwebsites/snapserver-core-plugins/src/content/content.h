@@ -803,7 +803,7 @@ public:
     snap_version::version_number_t get_new_branch(QString const & key, QString const & locale);
     snap_version::version_number_t get_new_revision(QString const & key, snap_version::version_number_t const branch, QString const & locale, bool repeat, snap_version::version_number_t const old_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
     void                copy_branch(QString const & key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch);
-    static void         copy_branch_cells_as_is(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, QString const & plugin_namespace);
+    static void         copy_branch_cells_as_is(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, QString const & plugin_namespace);
     QString             get_branch_key(QString const & key, bool working_branch);
     void                initialize_branch(QString const & key);
     QString             generate_branch_key(QString const & key, snap_version::version_number_t branch);
@@ -832,7 +832,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const & file, permission_flag & secure, bool const fast), (file, secure, fast), NEITHER);
     SNAP_SIGNAL(process_attachment, (libdbproxy::row::pointer_t file_row, attachment_file const & file), (file_row, file));
     SNAP_SIGNAL(page_cloned, (cloned_tree_t const & tree), (tree));
-    SNAP_SIGNAL(copy_branch_cells, (libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
+    SNAP_SIGNAL(copy_branch_cells, (libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
     SNAP_SIGNAL_WITH_MODE(destroy_page, (path_info_t & ipath), (ipath), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(destroy_revision, (QString const & revision_key), (revision_key), START_AND_DONE);
 

@@ -51,7 +51,7 @@ public:
     virtual void        bootstrap(snap_child * snap);
 
     // content signals implementation
-    void                on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    void                on_copy_branch_cells(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     libdbproxy::value    find_type_with(content::path_info_t & cpath, const QString & taxonomy, const QString & col_name, const QString & limit_name);
 

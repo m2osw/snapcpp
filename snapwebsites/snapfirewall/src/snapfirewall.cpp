@@ -624,7 +624,7 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
     // because we have to remove it! (otherwise the block would stop
     // at the time the old entry was entered instead of the new time!)
     //
-    libdbproxy::row::pointer_t info_row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    libdbproxy::row::pointer_t info_row(firewall_table->getRow(QString("ip::%1").arg(f_ip)));
     QString const block_limit_key(QString("%1::block_limit").arg(server_name));
 
     // here we create a row if the item is banned
@@ -634,7 +634,7 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
     //       it gets unbanned; we need to delete the old one
     //
     {
-        libdbproxy::row::pointer_t ban_row(firewall_table->row(server_name));
+        libdbproxy::row::pointer_t ban_row(firewall_table->getRow(server_name));
 
         // for a block, if the existing limit is further in the past,
         // then it accept the new block, if the existing limit is in
@@ -663,7 +663,7 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
         //
         if(info_row->exists(block_limit_key))
         {
-            libdbproxy::value old_limit_value(info_row->cell(block_limit_key)->value());
+            libdbproxy::value old_limit_value(info_row->getCell(block_limit_key)->getValue());
             int64_t const old_limit(old_limit_value.safeInt64Value());
 
             if(f_status == status_t::BLOCK_INFO_BANNED
@@ -689,7 +689,7 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
         libdbproxy::setInt64Value(limit_value, f_block_limit);
         if(f_status == status_t::BLOCK_INFO_BANNED)
         {
-            ban_row->cell(limit_value)->setValue(canonicalized_uri());
+            ban_row->getCell(limit_value)->setValue(canonicalized_uri());
         }
         else
         {
@@ -702,31 +702,31 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
     }
 
     {
-        info_row->cell(block_limit_key)->setValue(f_block_limit);
-        info_row->cell(QString("%1::status").arg(server_name))->setValue(QString(f_status == status_t::BLOCK_INFO_BANNED ? "banned" : "unbanned"));
+        info_row->getCell(block_limit_key)->setValue(f_block_limit);
+        info_row->getCell(QString("%1::status").arg(server_name))->setValue(QString(f_status == status_t::BLOCK_INFO_BANNED ? "banned" : "unbanned"));
 
         if(!f_reason.isEmpty())
         {
             QString const reason_key(QString("%1::reason").arg(server_name));
             if(info_row->exists(reason_key))
             {
-                QString const old_reasons(info_row->cell(reason_key)->value().stringValue());
+                QString const old_reasons(info_row->getCell(reason_key)->getValue().stringValue());
                 if(old_reasons != f_reason) // avoid an update (i.e. a tombstone) if same
                 {
                     if(old_reasons.indexOf(f_reason) == -1)
                     {
                         // separate reasons with a "\n"
-                        info_row->cell(reason_key)->setValue(old_reasons + "\n" + f_reason);
+                        info_row->getCell(reason_key)->setValue(old_reasons + "\n" + f_reason);
                     }
                     else
                     {
-                        info_row->cell(reason_key)->setValue(f_reason);
+                        info_row->getCell(reason_key)->setValue(f_reason);
                     }
                 }
             }
             else
             {
-                info_row->cell(reason_key)->setValue(f_reason);
+                info_row->getCell(reason_key)->setValue(f_reason);
             }
         }
 
@@ -744,8 +744,8 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
             QString const ban_count_key(QString("%1::ban_count").arg(server_name));
             // add the existing value first
             //
-            f_ban_count += info_row->cell(ban_count_key)->value().safeInt64Value();
-            info_row->cell(ban_count_key)->setValue(f_ban_count);
+            f_ban_count += info_row->getCell(ban_count_key)->getValue().safeInt64Value();
+            info_row->getCell(ban_count_key)->setValue(f_ban_count);
 
             // since this counter is cumulative, we have to reset it to zero
             // each time otherwise we would double it each time we save
@@ -754,11 +754,11 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
         }
         if(f_packet_count > 0)
         {
-            info_row->cell(QString("%1::packet_count").arg(server_name))->setValue(f_packet_count);
+            info_row->getCell(QString("%1::packet_count").arg(server_name))->setValue(f_packet_count);
         }
         if(f_byte_count > 0)
         {
-            info_row->cell(QString("%1::byte_count").arg(server_name))->setValue(f_byte_count);
+            info_row->getCell(QString("%1::byte_count").arg(server_name))->setValue(f_byte_count);
         }
 
         // save when it was created / modified
@@ -767,9 +767,9 @@ void snap_firewall::block_info_t::save(libdbproxy::table::pointer_t firewall_tab
         QString const created_key(QString("%1::created").arg(server_name));
         if(!info_row->exists(created_key))
         {
-            info_row->cell(created_key)->setValue(now);
+            info_row->getCell(created_key)->setValue(now);
         }
-        info_row->cell(QString("%1::modified").arg(server_name))->setValue(now);
+        info_row->getCell(QString("%1::modified").arg(server_name))->setValue(now);
     }
 }
 
@@ -1064,9 +1064,9 @@ int64_t snap_firewall::block_info_t::get_total_ban_count(libdbproxy::table::poin
     // the total number of bans is the current counter plus the saved
     // counter so we have to retrieve the saved counter first
     //
-    libdbproxy::row::pointer_t row(firewall_table->row(QString("ip::%1").arg(f_ip)));
+    libdbproxy::row::pointer_t row(firewall_table->getRow(QString("ip::%1").arg(f_ip)));
     QString const ban_count_key(QString("%1::ban_count").arg(server_name));
-    int64_t const saved_ban_count(row->cell(ban_count_key)->value().safeInt64Value());
+    int64_t const saved_ban_count(row->getCell(ban_count_key)->getValue().safeInt64Value());
 
     return f_ban_count + saved_ban_count;
 }
@@ -1519,7 +1519,7 @@ void snap_firewall::setup_firewall()
     int64_t const now(snap::snap_communicator::get_current_date());
     int64_t const limit(now + 60LL * 1000000LL); // "lose" 1 min. precision
 
-    libdbproxy::row::pointer_t row(f_firewall_table->row(f_server_name));
+    libdbproxy::row::pointer_t row(f_firewall_table->getRow(f_server_name));
     row->clearCache();
 
     // the first row we keep has a date we use to know when to wake up
@@ -1537,14 +1537,14 @@ void snap_firewall::setup_firewall()
     for(;;)
     {
         row->readCells(column_predicate);
-        libdbproxy::QCassandraCells const cells(row->cells());
+        libdbproxy::cells const cells(row->getCells());
         if(cells.isEmpty())
         {
             // it looks like we are done
             break;
         }
 
-        for(libdbproxy::QCassandraCells::const_iterator it(cells.begin());
+        for(libdbproxy::cells::const_iterator it(cells.begin());
                                                          it != cells.end();
                                                          ++it)
         {
@@ -1552,7 +1552,7 @@ void snap_firewall::setup_firewall()
 
             // first we want to unblock that IP address
             //
-            QString const uri(cell->value().stringValue());
+            QString const uri(cell->getValue().stringValue());
 
             try
             {
@@ -1802,7 +1802,7 @@ void snap_firewall::process_timeout()
         //      <server-name> '/' <date with leading zeroes in minutes (10 digits)>
         //
 
-        libdbproxy::row::pointer_t row(f_firewall_table->row(f_server_name));
+        libdbproxy::row::pointer_t row(f_firewall_table->getRow(f_server_name));
         row->clearCache();
 
         // unblock IP addresses which have a timeout in the past
@@ -1818,7 +1818,7 @@ void snap_firewall::process_timeout()
         for(;;)
         {
             row->readCells(column_predicate);
-            libdbproxy::QCassandraCells const cells(row->cells());
+            libdbproxy::cells const cells(row->getCells());
             if(cells.isEmpty())
             {
                 // it looks like we are done
@@ -1827,7 +1827,7 @@ void snap_firewall::process_timeout()
 
             // any entries we grab here, we drop right now
             //
-            for(libdbproxy::QCassandraCells::const_iterator it(cells.begin());
+            for(libdbproxy::cells::const_iterator it(cells.begin());
                                                              it != cells.end();
                                                              ++it)
             {
@@ -1835,7 +1835,7 @@ void snap_firewall::process_timeout()
 
                 // first we want to unblock that IP address
                 //
-                QString const uri(cell->value().stringValue());
+                QString const uri(cell->getValue().stringValue());
 
                 try
                 {
@@ -1920,7 +1920,7 @@ void snap_firewall::next_wakeup()
     int64_t limit(0LL);
     if(f_firewall_table)
     {
-        libdbproxy::row::pointer_t row(f_firewall_table->row(f_server_name));
+        libdbproxy::row::pointer_t row(f_firewall_table->getRow(f_server_name));
 
         // determine whether there is another IP in the table and if so at
         // what time we need to wake up to remove it from the firewall
@@ -1930,7 +1930,7 @@ void snap_firewall::next_wakeup()
         column_predicate->setIndex(); // behave like an index
         row->clearCache();
         row->readCells(column_predicate);
-        libdbproxy::QCassandraCells const cells(row->cells());
+        libdbproxy::cells const cells(row->getCells());
         if(!cells.isEmpty())
         {
             QByteArray const key(cells.begin().key());

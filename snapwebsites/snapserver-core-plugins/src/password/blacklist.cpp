@@ -55,7 +55,7 @@ void blacklist_t::add_passwords(QString const & passwords)
             // add a new entry
             //
             ++f_count;
-            table->row(user_password)->cell(exists_in_blacklist)->setValue(value);
+            table->getRow(user_password)->getCell(exists_in_blacklist)->setValue(value);
         }
     }
 }

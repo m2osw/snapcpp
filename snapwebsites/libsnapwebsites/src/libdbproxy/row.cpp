@@ -214,7 +214,7 @@ const QByteArray& row::rowKey() const
  *
  * This counts the number of cells available in the Cassandra database. It
  * may be different from the number of cells in the memory cache. (i.e. the
- * value returned by cells().size())
+ * value returned by getCells().size())
  *
  * \param[in] column_predicate  The predicate used to select which columns to count.
  *
@@ -222,7 +222,7 @@ const QByteArray& row::rowKey() const
  *
  * \note This method no longer changes the row set from the query!
  *
- * \sa cells(), table::readRows()
+ * \sa getCells(), table::readRows()
  */
 int row::cellCount( const cell_predicate::pointer_t column_predicate )
 {
@@ -243,7 +243,7 @@ int row::cellCount( const cell_predicate::pointer_t column_predicate )
  * other readCells() version.
  *
  * To know how many cells were read, save the returned value. When you
- * use the count() function on the map returned by the cells() function,
+ * use the count() function on the map returned by the getCells() function,
  * you actually get the total number of cells ever read since the
  * creation of this row in memory or the last call to clearCache().
  * Most importantly, the cellCount() function returns the total number of
@@ -258,7 +258,7 @@ int row::cellCount( const cell_predicate::pointer_t column_predicate )
  * \return The number of cells read from Cassandra, can be zero.
  *
  * \sa cellCount()
- * \sa cells()
+ * \sa getCells()
  * \sa clearCache()
  */
 uint32_t row::readCells()
@@ -306,7 +306,7 @@ uint32_t row::readCells( cell_predicate::pointer_t column_predicate )
         order select_more_cells;
         select_more_cells.setCql("FETCH", order::type_of_result_t::TYPE_OF_RESULT_FETCH);
         select_more_cells.setCursorIndex(f_cursor_index);
-        order_result select_more_cells_result(parentTable()->proxy()->sendOrder(select_more_cells));
+        order_result select_more_cells_result(parentTable()->getProxy()->sendOrder(select_more_cells));
         selected_cells_result.swap(select_more_cells_result);
         if(!selected_cells_result.succeeded())
         {
@@ -374,7 +374,7 @@ uint32_t row::readCells( cell_predicate::pointer_t column_predicate )
         }
         //
 
-        order_result select_cells_result(parentTable()->proxy()->sendOrder(select_cells));
+        order_result select_cells_result(parentTable()->getProxy()->sendOrder(select_cells));
         selected_cells_result.swap(select_cells_result);
         if(!selected_cells_result.succeeded())
         {
@@ -411,7 +411,7 @@ uint32_t row::readCells( cell_predicate::pointer_t column_predicate )
         const QByteArray column_key( selected_cells_result.result( idx + 0 ) );
         const QByteArray data      ( selected_cells_result.result( idx + 1 ) );
 
-        cell::pointer_t new_cell( cell( column_key ) );
+        cell::pointer_t new_cell( getCell( column_key ) );
         new_cell->assignValue( value(data) );
     }
 
@@ -435,9 +435,9 @@ uint32_t row::readCells( cell_predicate::pointer_t column_predicate )
  *
  * \return A shared pointer to the cell.
  */
-cell::pointer_t row::cell(const char *column_name)
+cell::pointer_t row::getCell(const char *column_name)
 {
-    return cell( QByteArray(column_name, qstrlen(column_name)) );
+    return getCell( QByteArray(column_name, qstrlen(column_name)) );
 }
 
 
@@ -457,9 +457,9 @@ cell::pointer_t row::cell(const char *column_name)
  *
  * \return A shared pointer to the cell.
  */
-cell::pointer_t row::cell(const QString& column_name)
+cell::pointer_t row::getCell(const QString& column_name)
 {
-    return cell(column_name.toUtf8());
+    return getCell(column_name.toUtf8());
 }
 
 
@@ -486,10 +486,10 @@ cell::pointer_t row::cell(const QString& column_name)
  * \sa compositeCell()
  * \sa compositeCell() const
  */
-cell::pointer_t row::cell(const QByteArray& column_key)
+cell::pointer_t row::getCell(const QByteArray& column_key)
 {
     // column already exists?
-    QCassandraCells::iterator ci(f_cells.find(column_key));
+    cells::iterator ci(f_cells.find(column_key));
     if(ci != f_cells.end()) {
         return ci.value();
     }
@@ -522,7 +522,7 @@ cell::pointer_t row::cell(const QByteArray& column_key)
  * \warning
  * When reading cells from a row representing an index, you probably want to
  * clear the cells already read before the next read. This is done with the
- * clearCache() function. Then cells().isEmpty() returns true if no more
+ * clearCache() function. Then getCells().isEmpty() returns true if no more
  * cells can be read from the database.
  *
  * \warning
@@ -534,7 +534,7 @@ cell::pointer_t row::cell(const QByteArray& column_key)
  *
  * \sa clearCache()
  */
-const QCassandraCells& row::cells() const
+const cells& row::getCells() const
 {
     return f_cells;
 }
@@ -558,7 +558,7 @@ const QCassandraCells& row::cells() const
  *
  * \return A shared pointer to the cell.
  *
- * \sa cell()
+ * \sa getCell()
  * \sa exists()
  */
 cell::pointer_t row::findCell(const QString& column_name) const
@@ -584,12 +584,12 @@ cell::pointer_t row::findCell(const QString& column_name) const
  *
  * \return A shared pointer to the cell.
  *
- * \sa cell()
+ * \sa getCell()
  * \sa exists()
  */
 cell::pointer_t row::findCell(const QByteArray& column_key) const
 {
-    QCassandraCells::const_iterator ci(f_cells.find(column_key));
+    cells::const_iterator ci(f_cells.find(column_key));
     if(ci == f_cells.end()) {
         cell::pointer_t null;
         return null;
@@ -653,7 +653,7 @@ bool row::exists(const QString& column_name) const
  */
 bool row::exists(const QByteArray& column_key) const
 {
-    QCassandraCells::const_iterator ci(f_cells.find(column_key));
+    cells::const_iterator ci(f_cells.find(column_key));
     if(ci != f_cells.end())
     {
         // exists in the cache already
@@ -680,7 +680,7 @@ bool row::exists(const QByteArray& column_key) const
 
     // since we just got the value, we might as well cache it
     //
-    cell::pointer_t c(const_cast<row *>(this)->cell(column_key));
+    cell::pointer_t c(const_cast<row *>(this)->getCell(column_key));
     c->assignValue(value);
 
     return true;
@@ -704,7 +704,7 @@ bool row::exists(const QByteArray& column_key) const
  */
 cell& row::operator [] (const char * column_name)
 {
-    return *cell(column_name);
+    return *getCell(column_name);
 }
 
 
@@ -725,7 +725,7 @@ cell& row::operator [] (const char * column_name)
  */
 cell& row::operator [] (const QString& column_name)
 {
-    return *cell(column_name);
+    return *getCell(column_name);
 }
 
 
@@ -745,7 +745,7 @@ cell& row::operator [] (const QString& column_name)
  */
 cell& row::operator [] (const QByteArray& column_key)
 {
-    return *cell(column_key);
+    return *getCell(column_key);
 }
 
 
@@ -853,7 +853,7 @@ void row::closeCursor()
         order close_cursor;
         close_cursor.setCql("CLOSE", order::type_of_result_t::TYPE_OF_RESULT_CLOSE);
         close_cursor.setCursorIndex(f_cursor_index);
-        order_result close_cursor_result(parentTable()->proxy()->sendOrder(close_cursor));
+        order_result close_cursor_result(parentTable()->getProxy()->sendOrder(close_cursor));
         if(!close_cursor_result.succeeded())
         {
             throw exception("row::closeCursor(): closing cursor failed.");
@@ -929,7 +929,7 @@ void row::dropCell(const QString& column_name)
  * default you can retrieve the cell and set the consistency level as follow:
  *
  * \code
- *     cell::pointer_t c(f_row->cell(f_cell));
+ *     cell::pointer_t c(f_row->getCell(f_cell));
  * \endcode
  *
  * These 2 lines of code do NOT create the cell in the Cassandra cluster.
@@ -942,7 +942,7 @@ void row::dropCell(const QString& column_name)
  * after this call.
  *
  * \warning
- * If you used the cells() function to retrieve a reference to the list of
+ * If you used the getCells() function to retrieve a reference to the list of
  * cells as a reference, that list is broken when this function returns.
  * Make sure to re-retrieve the list after each call to the dropCell()
  * function.
@@ -951,13 +951,13 @@ void row::dropCell(const QString& column_name)
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
  *
- * \sa cell()
- * \sa cells()
+ * \sa getCell()
+ * \sa getCells()
  * \sa libdbproxy::timeofday()
  */
 void row::dropCell( const QByteArray& column_key )
 {
-    cell::pointer_t c(cell(column_key));
+    cell::pointer_t c(getCell(column_key));
 
     parentTable()->remove( f_key, column_key, c->consistencyLevel() );
     f_cells.remove(column_key);

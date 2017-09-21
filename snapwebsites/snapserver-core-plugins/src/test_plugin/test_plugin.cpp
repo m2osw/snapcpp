@@ -428,17 +428,17 @@ void test_plugin::on_replace_token(content::path_info_t & ipath, QDomDocument & 
             // did that test run before?
             // note how tests are cross website!
             if(f_test_results_table->exists(name)
-            && f_test_results_table->row(name)->exists(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS)))
+            && f_test_results_table->getRow(name)->exists(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS)))
             {
                 new_test_tag.setAttribute("ran", "ran");
-                libdbproxy::row::pointer_t row(f_test_results_table->row(name));
-                int64_t const start_date(row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_START_DATE))->value().safeInt64Value());
+                libdbproxy::row::pointer_t row(f_test_results_table->getRow(name));
+                int64_t const start_date(row->getCell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_START_DATE))->getValue().safeInt64Value());
                 new_test_tag.setAttribute("start_date", dbutils::microseconds_to_string(start_date, false));
-                int64_t const end_date(row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_END_DATE))->value().safeInt64Value());
+                int64_t const end_date(row->getCell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_END_DATE))->getValue().safeInt64Value());
                 new_test_tag.setAttribute("end_date", dbutils::microseconds_to_string(end_date, false));
                 int64_t const duration(end_date - start_date);
                 new_test_tag.setAttribute("duration", QString("%1.%2").arg(duration / 1000000).arg(duration % 1000000, 6, 10, QChar('0')));
-                new_test_tag.setAttribute("success", row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS))->value().safeSignedCharValue());
+                new_test_tag.setAttribute("success", row->getCell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS))->getValue().safeSignedCharValue());
             }
             else
             {
@@ -572,11 +572,11 @@ void test_plugin::on_process_post(QString const & uri_path)
     }
 
     libdbproxy::table::pointer_t test_results_table(get_test_results_table());
-    libdbproxy::row::pointer_t test_results_row(test_results_table->row(test_name));
-    test_results_row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_START_DATE))->setValue(start_date);
-    test_results_row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_END_DATE))->setValue(end_date);
+    libdbproxy::row::pointer_t test_results_row(test_results_table->getRow(test_name));
+    test_results_row->getCell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_START_DATE))->setValue(start_date);
+    test_results_row->getCell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_END_DATE))->setValue(end_date);
     int8_t const success_char(result == "1" ? 1 : 0);
-    test_results_row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS))->setValue(success_char);
+    test_results_row->getCell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS))->setValue(success_char);
 
     // create the AJAX response
     server_access::server_access * server_access_plugin(server_access::server_access::instance());

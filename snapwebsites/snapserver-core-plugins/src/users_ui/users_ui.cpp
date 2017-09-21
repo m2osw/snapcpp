@@ -282,7 +282,7 @@ void users_ui::fix_owner_update(int64_t variables_timestamp)
     {
         content::path_info_t ipath;
         ipath.set_path(s);
-        content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->setValue(plugin_name);
+        content_table->getRow(ipath.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->setValue(plugin_name);
     }
 }
 
@@ -1852,7 +1852,7 @@ void users_ui::process_replace_password_form()
     auto user_info(users_plugin->get_user_info_by_email(f_user_changing_password_key));
     if(user_info.exists())
     {
-        //libdbproxy::row::pointer_t row(users_table->row(f_user_changing_password_key));
+        //libdbproxy::row::pointer_t row(users_table->getRow(f_user_changing_password_key));
 
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2568,29 +2568,29 @@ void users_ui::on_finish_editor_form_processing(content::path_info_t & ipath, bo
 
     content::content * content_plugin(content::content::instance());
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
-    libdbproxy::row::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::row::pointer_t settings_row(revision_table->getRow(ipath.get_revision_key()));
 
     libdbproxy::value value;
 
-    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION))->value();
+    value = settings_row->getCell(users::get_name(users::name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION))->getValue();
     if(value.size() == sizeof(int8_t))
     {
         f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION), value);
     }
 
-    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION))->value();
+    value = settings_row->getCell(users::get_name(users::name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION))->getValue();
     if(value.size() == sizeof(int64_t))
     {
         f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION), value);
     }
 
-    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_USER_SESSION_DURATION))->value();
+    value = settings_row->getCell(users::get_name(users::name_t::SNAP_NAME_USERS_USER_SESSION_DURATION))->getValue();
     if(value.size() == sizeof(int64_t))
     {
         f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_USER_SESSION_DURATION), value);
     }
 
-    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION))->value();
+    value = settings_row->getCell(users::get_name(users::name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION))->getValue();
     if(value.size() == sizeof(int64_t))
     {
         f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION), value);

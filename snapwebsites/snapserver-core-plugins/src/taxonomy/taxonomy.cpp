@@ -235,7 +235,7 @@ void taxonomy::owner_update(int64_t variables_timestamp)
         if(content_table->exists(taxonomy_ipath.get_key()))
         {
             // the page still exists, change the owner
-            content_table->row(taxonomy_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->setValue(new_owner);
+            content_table->getRow(taxonomy_ipath.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->setValue(new_owner);
         }
     }
 }
@@ -301,17 +301,17 @@ libdbproxy::value taxonomy::find_type_with(content::path_info_t & ipath, QString
             // TODO: should this be an error instead? all the types should exist!
             return not_found;
         }
-        libdbproxy::row::pointer_t row(content_table->row(type_key));
+        libdbproxy::row::pointer_t row(content_table->getRow(type_key));
 
         // check for the key, if it exists we found what the user is
         // looking for!
-        libdbproxy::value result(row->cell(col_name)->value());
+        libdbproxy::value result(row->getCell(col_name)->getValue());
         if(!result.nullValue())
         {
             return result;
         }
         // have we reached the limit
-        libdbproxy::value limit(row->cell(QString(get_name(name_t::SNAP_NAME_TAXONOMY_NAME)))->value());
+        libdbproxy::value limit(row->getCell(QString(get_name(name_t::SNAP_NAME_TAXONOMY_NAME)))->getValue());
         if(!limit.nullValue() && limit.stringValue() == limit_name)
         {
             // we reached the limit and have not found a result
@@ -350,7 +350,7 @@ libdbproxy::value taxonomy::find_type_with(content::path_info_t & ipath, QString
 //}
 
 
-void taxonomy::on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void taxonomy::on_copy_branch_cells(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 

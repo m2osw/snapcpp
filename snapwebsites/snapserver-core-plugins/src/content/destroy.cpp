@@ -201,8 +201,8 @@ void content::destroy_page_done(path_info_t & ipath)
                 // no more revisions to process
                 break;
             }
-            libdbproxy::QCassandraRows const rows(revision_table->rows());
-            for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
+            libdbproxy::rows const rows(revision_table->getRows());
+            for(libdbproxy::rows::const_iterator o(rows.begin());
                     o != rows.end(); ++o)
             {
                 // within each row, check all the columns
@@ -257,8 +257,8 @@ void content::destroy_page_done(path_info_t & ipath)
                 // no more revisions to process
                 break;
             }
-            libdbproxy::QCassandraRows const rows(branch_table->rows());
-            for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
+            libdbproxy::rows const rows(branch_table->getRows());
+            for(libdbproxy::rows::const_iterator o(rows.begin());
                     o != rows.end(); ++o)
             {
                 // within each row, check all the columns
@@ -305,7 +305,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
     libdbproxy::table::pointer_t revision_table(get_revision_table());
 
     // check whether there is an attachment MD5
-    libdbproxy::value const attachment_md5(revision_table->row(revision_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value const attachment_md5(revision_table->getRow(revision_key)->getCell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue());
     if(attachment_md5.size() == 16)
     {
         // the name of the cell is the content key, which is the
@@ -323,7 +323,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
             QString const reference_name(QString("%1::%2")
                                     .arg(files_reference)
                                     .arg(key));
-            libdbproxy::row::pointer_t files_row(files_table->row(attachment_md5.binaryValue()));
+            libdbproxy::row::pointer_t files_row(files_table->getRow(attachment_md5.binaryValue()));
             files_row->dropCell(reference_name);
 
             // remove the reference from the "branch" table
@@ -342,7 +342,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
             column_predicate->setEndCellKey(files_reference + ":;");
             files_row->clearCache();
             files_row->readCells(column_predicate);
-            libdbproxy::QCassandraCells const cells(files_row->cells());
+            libdbproxy::cells const cells(files_row->getCells());
             if(cells.isEmpty())
             {
                 // no more references, get rid of the file itself
@@ -365,7 +365,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
                 pos_dot = revision_key.length();
             }
             QString const branch_key(QString("%1#%2").arg(key).arg(revision_key.mid(pos_slash, pos_dot - pos_slash)));
-            branch_table->row(branch_key)->dropCell(attachment_ref);
+            branch_table->getRow(branch_key)->dropCell(attachment_ref);
         }
     }
 

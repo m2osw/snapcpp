@@ -164,7 +164,7 @@ void connect_cassandra()
     }
 
     // select the Snap! context
-    g_cassandra->contexts();
+    g_cassandra->getContexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     g_context = g_cassandra->findContext(context_name);
     if(!g_context)

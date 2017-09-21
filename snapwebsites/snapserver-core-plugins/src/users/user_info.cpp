@@ -210,14 +210,14 @@ void users::user_info_t::change_user_email( QString const & new_user_email )
         QString const history_entry_name( QString("%1_%2").arg(email_history_list_base).arg(i) );
         if( user_row->exists(history_entry_name) )
         {
-            new_history_list << user_row->cell(history_entry_name)->value().stringValue();
+            new_history_list << user_row->getCell(history_entry_name)->getValue().stringValue();
         }
     }
 
     for( int i = 0; i < new_history_list.size(); ++i )
     {
         QString const history_entry_name( QString("%1_%2").arg(email_history_list_base).arg(i) );
-        user_row->cell(history_entry_name)->setValue( new_history_list[i] );
+        user_row->getCell(history_entry_name)->setValue( new_history_list[i] );
     }
 
     // Set the new email address into this object.
@@ -225,14 +225,14 @@ void users::user_info_t::change_user_email( QString const & new_user_email )
     auto const old_user_key( get_user_key() );
     f_user_email = new_user_email;
     f_user_key.clear();
-    user_row->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->setValue(f_user_email);
+    user_row->getCell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->setValue(f_user_email);
 
     // Now change the index to match
     //
-    auto index_row( f_users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)) );
+    auto index_row( f_users_table->getRow(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)) );
     index_row->dropCell( old_user_key );
     libdbproxy::value id_value( f_identifier );
-    index_row->cell(get_user_key())->setValue( id_value.binaryValue() );
+    index_row->getCell(get_user_key())->setValue( id_value.binaryValue() );
 
     SNAP_LOG_TRACE("user_info_t::change_user_email(): old_user_key=")(old_user_key)(", f_user_email=")(f_user_email)(", f_user_key=")(get_user_key());
 }
@@ -348,8 +348,8 @@ void users::user_info_t::define_user( identifier_t const identifier, QString con
         // we must save the email address in the index because otherwise
         // the lock used in register_user() would not be useful...
         //
-        auto index_row(f_users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)));
-        index_row->cell(get_user_key())->setValue(id_value.binaryValue());
+        auto index_row(f_users_table->getRow(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)));
+        index_row->getCell(get_user_key())->setValue(id_value.binaryValue());
     }
 }
 
@@ -442,7 +442,7 @@ users::user_info_t::cell_t users::user_info_t::get_cell( QString const & name ) 
     //
     if(is_user())
     {
-        return get_user_row()->cell(name);
+        return get_user_row()->getCell(name);
     }
 
     return cell_t();
@@ -484,7 +484,7 @@ users::user_info_t::value_t const & users::user_info_t::get_value( QString const
     //
     if(is_user())
     {
-        return get_cell(name)->value();
+        return get_cell(name)->getValue();
     }
 
     // since we return a const, the caller "cannot" modify the value
@@ -1062,13 +1062,13 @@ bool users::user_info_t::load_user_parameter(QString const & field_name, int64_t
 void users::user_info_t::get_user_id_by_email()
 {
     init_tables();
-    auto row( f_users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))  );
+    auto row( f_users_table->getRow(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))  );
 
     if(row->exists(get_user_key()))
     {
         // found the user, retrieve the current id
         //
-        f_identifier = row->cell(get_user_key())->value().int64Value();
+        f_identifier = row->getCell(get_user_key())->getValue().int64Value();
         if(!is_user())
         {
             // the identifier is unfortunately not correct
@@ -1094,7 +1094,7 @@ void users::user_info_t::get_user_id_by_email()
 libdbproxy::row::pointer_t users::user_info_t::get_user_row() const
 {
     init_tables();
-    return f_users_table->row(libdbproxy::value(f_identifier).binaryValue());
+    return f_users_table->getRow(libdbproxy::value(f_identifier).binaryValue());
 }
 
 

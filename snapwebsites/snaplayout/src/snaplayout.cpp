@@ -999,8 +999,8 @@ void snap_layout::add_files()
             if( rowExists("layout", row_name.toUtf8()) )
             {
                 // the row already exists, try getting the area
-                //value existing(table->row(row_name)->cell(cell_name)->value());
-                value existing;
+                //value existing(table->getRow(row_name)->getCell(cell_name)->getValue());
+                libdbproxy::value existing;
                 try
                 {
                     auto q( Query::create(f_session) );
@@ -1082,7 +1082,7 @@ void snap_layout::add_files()
             exit(1);
             snap::NOTREACHED();
         }
-        //table->row(row_name)->cell(cell_name)->setValue(content);
+        //table->getRow(row_name)->getCell(cell_name)->setValue(content);
 
         // set last modification time
         if( !mtimes.contains(row_name) || mtimes[row_name] < info.f_filetime )
@@ -1096,7 +1096,7 @@ void snap_layout::add_files()
     {
         // mtimes holds times in seconds, convert to microseconds
         const int64_t last_updated(i.value() * 1000000);
-        value existing_last_updated;
+        libdbproxy::value existing_last_updated;
         try
         {
             auto q( Query::create(f_session) );
@@ -1139,11 +1139,11 @@ void snap_layout::add_files()
             snap::NOTREACHED();
         }
 #if 0
-        value existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value());
+        value existing_last_updated(table->getRow(i.key())->getCell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->getValue());
         if(existing_last_updated.nullValue()
         || existing_last_updated.int64Value() < last_updated)
         {
-            table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated);
+            table->getRow(i.key())->getCell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated);
         }
 #endif
     }
@@ -1212,7 +1212,7 @@ void snap_layout::set_theme()
         if( theme.isEmpty() )
         {
             // remove the theme definition
-            //table->row(key)->dropCell(field);
+            //table->getRow(key)->dropCell(field);
             auto q( Query::create(f_session) );
             q->query( QString("DELETE FROM %1.content WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
@@ -1228,7 +1228,7 @@ void snap_layout::set_theme()
             //
             // TODO: add a test so we can transform a simple string to a valid
             //       JavaScript string
-            //table->row(key)->cell(field)->setValue(theme);
+            //table->getRow(key)->getCell(field)->setValue(theme);
             auto q( Query::create(f_session) );
             q->query( QString("UPDATE %1.content SET value = ? WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
@@ -1278,7 +1278,7 @@ void snap_layout::remove_theme()
         snap::NOTREACHED();
     }
 
-    //if(!table->row(row_name)->exists("theme"))
+    //if(!table->getRow(row_name)->exists("theme"))
     if( !cellExists("layout", row_name.toUtf8(), QByteArray("theme")) )
     {
         std::cerr << "warning: it looks like the \"" << row_name << "\" layout does not exist (no \"theme\" found)." << std::endl;
@@ -1341,14 +1341,14 @@ void snap_layout::extract_file()
         snap::NOTREACHED();
     }
 
-    //if(!table->row(row_name)->exists("theme"))
+    //if(!table->getRow(row_name)->exists("theme"))
     if( !cellExists("layout", row_name.toUtf8(), QByteArray("theme")) )
     {
         std::cerr << "warning: it looks like the \"" << row_name << "\" layout does not fully exist (no \"theme\" found)." << std::endl;
         // try to continue anyway
     }
 
-    //Row::pointer_t row(table->row(row_name));
+    //Row::pointer_t row(table->getRow(row_name));
 
     QString const filename( f_opt->get_string( "--", 1 ).c_str() );
     int const slash_pos(filename.lastIndexOf('/'));
@@ -1379,7 +1379,7 @@ void snap_layout::extract_file()
     }
 
     // TODO: if we reach here, the cell may have been dropped earlier...
-    //value value(row->cell(basename)->value());
+    //value value(row->getCell(basename)->getValue());
 
     try
     {

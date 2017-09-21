@@ -4494,14 +4494,14 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
             }
         }
 
-        libdbproxy::row::pointer_t row(mx_table->row(QString::fromUtf8(e.f_domain.c_str())));
-        libdbproxy::value last_checked_value(row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->value());
+        libdbproxy::row::pointer_t row(mx_table->getRow(QString::fromUtf8(e.f_domain.c_str())));
+        libdbproxy::value last_checked_value(row->getCell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->getValue());
         if(last_checked_value.size() == sizeof(int64_t))
         {
             time_t const last_update(last_checked_value.int64Value());
             if(f_start_date < last_update + 86400LL * 1000000LL)
             {
-                libdbproxy::value result_value(row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->value());
+                libdbproxy::value result_value(row->getCell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->getValue());
                 if(result_value.safeSignedCharValue())
                 {
                     // considered valid without the need to check again
@@ -4517,12 +4517,12 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
                         .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
             }
         }
-        row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->setValue(f_start_date);
+        row->getCell(QString(get_name(name_t::SNAP_NAME_CORE_MX_LAST_CHECKED)))->setValue(f_start_date);
         mail_exchangers exchangers(e.f_domain);
         if(!exchangers.domain_found())
         {
             signed char const failed(0);
-            row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
+            row->getCell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
             throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not exist.")
                         .arg(QString::fromUtf8(e.f_domain.c_str()))
                         .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
@@ -4530,13 +4530,13 @@ snap_child::verified_email_t snap_child::verify_email(QString const & email, siz
         if(exchangers.size() == 0)
         {
             signed char const failed(0);
-            row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
+            row->getCell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(failed);
             throw snap_child_exception_invalid_email(QString("domain \"%1\" from email \"%2\" does not provide an MX record.")
                         .arg(QString::fromUtf8(e.f_domain.c_str()))
                         .arg(QString::fromUtf8(e.f_canonicalized_email.c_str())));
         }
         signed char const succeeded(1);
-        row->cell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(succeeded);
+        row->getCell(QString(get_name(name_t::SNAP_NAME_CORE_MX_RESULT)))->setValue(succeeded);
 
         SNAP_LOG_TRACE("domain \"")(e.f_domain)("\" was just checked and is considered valid (it has an MX record.)");
 
@@ -4636,7 +4636,7 @@ SNAP_LOG_WARNING("snap_child::connect_cassandra() should not have to call contex
     try
     {
         // select the Snap! context
-        f_cassandra->contexts();
+        f_cassandra->getContexts();
         QString const context_name(get_name(name_t::SNAP_NAME_CONTEXT));
         f_context = f_cassandra->findContext(context_name);
         if(!f_context)
@@ -4760,7 +4760,7 @@ void snap_child::canonicalize_domain()
 {
     // retrieve domain table
     QString const table_name(get_name(name_t::SNAP_NAME_DOMAINS));
-    libdbproxy::table::pointer_t table(f_context->table(table_name));
+    libdbproxy::table::pointer_t table(f_context->getTable(table_name));
 
     // row for that domain exists?
     f_domain_key = f_uri.domain() + f_uri.top_level_domain();
@@ -4772,7 +4772,7 @@ void snap_child::canonicalize_domain()
     }
 
     // get the core::rules
-    libdbproxy::value value(table->row(f_domain_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_RULES)))->value());
+    libdbproxy::value value(table->getRow(f_domain_key)->getCell(QString(get_name(name_t::SNAP_NAME_CORE_RULES)))->getValue());
     if(value.nullValue())
     {
         // Null value means an empty string or undefined column and either
@@ -4928,7 +4928,7 @@ void snap_child::canonicalize_website()
 {
     // retrieve website table
     QString const table_name(get_name(name_t::SNAP_NAME_WEBSITES));
-    libdbproxy::table::pointer_t table(f_context->table(table_name));
+    libdbproxy::table::pointer_t table(f_context->getTable(table_name));
 
     // row for that website exists?
     if(!table->exists(f_website_key))
@@ -4939,7 +4939,7 @@ void snap_child::canonicalize_website()
     }
 
     // get the core::rules
-    libdbproxy::value value(table->row(f_website_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_RULES)))->value());
+    libdbproxy::value value(table->getRow(f_website_key)->getCell(QString(get_name(name_t::SNAP_NAME_CORE_RULES)))->getValue());
     if(value.nullValue())
     {
         // Null value means an empty string or undefined column and either
@@ -6468,7 +6468,7 @@ libdbproxy::value snap_child::get_site_parameter(QString const & name)
         libdbproxy::value value;
         return value;
     }
-    libdbproxy::row::pointer_t row(f_sites_table->row(f_site_key));
+    libdbproxy::row::pointer_t row(f_sites_table->getRow(f_site_key));
     if(!row->exists(name))
     {
         // an empty value is considered to be a null value
@@ -6476,7 +6476,7 @@ libdbproxy::value snap_child::get_site_parameter(QString const & name)
         return value;
     }
 
-    return row->cell(name)->value();
+    return row->getCell(name)->getValue();
 }
 
 
@@ -6505,7 +6505,7 @@ void snap_child::set_site_parameter(QString const & name, libdbproxy::value cons
         f_sites_table = get_table(get_name(name_t::SNAP_NAME_SITES));
     }
 
-    f_sites_table->row(f_site_key)->cell(name)->setValue(value);
+    f_sites_table->getRow(f_site_key)->getCell(name)->setValue(value);
 }
 
 

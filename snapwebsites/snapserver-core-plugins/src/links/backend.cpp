@@ -334,8 +334,8 @@ void links::cleanup_links()
             //
             break;
         }
-        libdbproxy::QCassandraRows const rows(branch_table->rows());
-        for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
+        libdbproxy::rows const rows(branch_table->getRows());
+        for(libdbproxy::rows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
             QString const key(QString::fromUtf8(o.key().data()));
@@ -362,7 +362,7 @@ void links::cleanup_links()
             for(;;)
             {
                 row->readCells(column_predicate);
-                libdbproxy::QCassandraCells const cells(row->cells());
+                libdbproxy::cells const cells(row->getCells());
                 if(cells.isEmpty())
                 {
                     // no more rows here
@@ -372,7 +372,7 @@ void links::cleanup_links()
 
                 // handle one batch
                 //
-                for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
+                for(libdbproxy::cells::const_iterator c(cells.begin());
                         c != cells.end();
                         ++c)
                 {
@@ -397,18 +397,18 @@ void links::cleanup_links()
                         {
                             // the row exists, is there an entry for this link?
                             //
-                            libdbproxy::row::pointer_t link_row(links_table->row(link_key));
+                            libdbproxy::row::pointer_t link_row(links_table->getRow(link_key));
 
                             // the column name in that row is the value of 'k'
                             // in the current cell value
                             //
                             link_info info;
-                            info.from_data(cell->value().stringValue());
+                            info.from_data(cell->getValue().stringValue());
                             // build the key with branch here (we do not have a source so we need to do it this way)
                             QString const key_with_branch(QString("%1%2").arg(info.key()).arg(cell_name.mid(branch_pos)));
                             if(link_row->exists(key_with_branch))
                             {
-                                QString const expected_name(link_row->cell(key_with_branch)->value().stringValue());
+                                QString const expected_name(link_row->getCell(key_with_branch)->getValue().stringValue());
                                 exists = cell_name == expected_name;
                             }
                         }
@@ -485,8 +485,8 @@ void links::on_backend_action_snap547_fix_link_branches()
                 break;
             }
 
-            libdbproxy::QCassandraRows const rows(links_table->rows());
-            for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
+            libdbproxy::rows const rows(links_table->getRows());
+            for(libdbproxy::rows::const_iterator o(rows.begin());
                     o != rows.end(); ++o)
             {
                 QString const key(QString::fromUtf8(o.key().data()));
@@ -505,7 +505,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                 for(;;)
                 {
                     row->readCells(column_predicate);
-                    libdbproxy::QCassandraCells const cells(row->cells());
+                    libdbproxy::cells const cells(row->getCells());
                     if(cells.isEmpty())
                     {
                         // no more rows here
@@ -515,7 +515,7 @@ void links::on_backend_action_snap547_fix_link_branches()
 
                     // handle one batch
                     //
-                    for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
+                    for(libdbproxy::cells::const_iterator c(cells.begin());
                             c != cells.end();
                             ++c)
                     {
@@ -529,7 +529,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                         {
                             // okay, this looks like an old link, fix it
                             //
-                            libdbproxy::value const value(cell->value());
+                            libdbproxy::value const value(cell->getValue());
                             QString const field_name(value.stringValue());
                             pos = field_name.indexOf('#');
                             if(pos != -1)
@@ -538,7 +538,7 @@ void links::on_backend_action_snap547_fix_link_branches()
 
                                 // keep the same value with the new cell name
                                 //
-                                row->cell(new_cell_name)->setValue(value);
+                                row->getCell(new_cell_name)->setValue(value);
 
                                 // drop the old cell where the branch is missing
                                 //
@@ -620,8 +620,8 @@ void links::on_backend_action_snap547_fix_link_branches()
                 break;
             }
 
-            libdbproxy::QCassandraRows const rows(branch_table->rows());
-            for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
+            libdbproxy::rows const rows(branch_table->getRows());
+            for(libdbproxy::rows::const_iterator o(rows.begin());
                     o != rows.end(); ++o)
             {
                 QString const key(QString::fromUtf8(o.key().data()));
@@ -644,7 +644,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                 for(;;)
                 {
                     row->readCells(column_predicate);
-                    libdbproxy::QCassandraCells const cells(row->cells());
+                    libdbproxy::cells const cells(row->getCells());
                     if(cells.isEmpty())
                     {
                         // no more rows here
@@ -654,14 +654,14 @@ void links::on_backend_action_snap547_fix_link_branches()
 
                     // handle one batch
                     //
-                    for(libdbproxy::QCassandraCells::const_iterator c(cells.begin());
+                    for(libdbproxy::cells::const_iterator c(cells.begin());
                             c != cells.end();
                             ++c)
                     {
                         libdbproxy::cell::pointer_t cell(*c);
 
                         QString const cell_name(cell->columnName());
-                        libdbproxy::value value(cell->value());
+                        libdbproxy::value value(cell->getValue());
 
                         // parse the value as a link info
                         //
@@ -682,7 +682,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                                     // save with the correct branch number
                                     //
                                     QString const new_cell_name(QString("%1#%2").arg(cell_name.mid(0, pos)).arg(info.branch()));
-                                    row->cell(new_cell_name)->setValue(value);
+                                    row->getCell(new_cell_name)->setValue(value);
 
                                     ++updated_column;
 
@@ -707,13 +707,13 @@ void links::on_backend_action_snap547_fix_link_branches()
                                         QString const new_link_cell_name(QString("%1#%2").arg(info.key()).arg(info.branch()));
                                         if(links_table->exists(link_key))
                                         {
-                                            if(links_table->row(link_key)->exists(link_cell_name))
+                                            if(links_table->getRow(link_key)->exists(link_cell_name))
                                             {
                                                 // the wrong info exists, fix it now
                                                 //
                                                 // create the new valid cell/value pair
                                                 //
-                                                links_table->row(link_key)->cell(new_link_cell_name)->setValue(new_cell_name);
+                                                links_table->getRow(link_key)->getCell(new_link_cell_name)->setValue(new_cell_name);
 
                                                 // the existing #<number> may be required
                                                 // for a "lost" link, so we want to check
@@ -730,8 +730,8 @@ void links::on_backend_action_snap547_fix_link_branches()
                                                                 .arg(branch));
                                                 QString const revision_control_language(revision_control + "::en");
 
-                                                bool const direct_key(content_table->row(ipath.get_key())->exists(revision_control));
-                                                bool const language_key(content_table->row(ipath.get_key())->exists(revision_control_language));
+                                                bool const direct_key(content_table->getRow(ipath.get_key())->exists(revision_control));
+                                                bool const language_key(content_table->getRow(ipath.get_key())->exists(revision_control_language));
                                                 if(direct_key
                                                 || language_key)
                                                 {
@@ -743,7 +743,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                                                     //          have 2 branches so we do not need to do anything
                                                     //          more that one fix like this
                                                     //
-                                                    links_table->row(link_key)->cell(link_cell_name)->setValue(cell_name);
+                                                    links_table->getRow(link_key)->getCell(link_cell_name)->setValue(cell_name);
 
                                                     link_info fix_info(info);
                                                     fix_info.set_branch(branch);
@@ -753,18 +753,18 @@ void links::on_backend_action_snap547_fix_link_branches()
                                                 {
                                                     // remove the wrong entry
                                                     //
-                                                    branch_table->row(key)
+                                                    branch_table->getRow(key)
                                                                 ->dropCell(cell_name);
-                                                    branch_table->row(QString("%1#%2").arg(ipath.get_key()).arg(branch))
+                                                    branch_table->getRow(QString("%1#%2").arg(ipath.get_key()).arg(branch))
                                                                 ->dropCell(QString("%1#%2").arg(info.name()).arg(branch));
-                                                    links_table->row(link_key)->dropCell(link_cell_name);
+                                                    links_table->getRow(link_key)->dropCell(link_cell_name);
                                                 }
 
                                                 ++updates_to_any_column;
                                             }
-                                            else if(!links_table->row(link_key)->exists(new_link_cell_name))
+                                            else if(!links_table->getRow(link_key)->exists(new_link_cell_name))
                                             {
-                                                links_table->row(link_key)->cell(new_link_cell_name)->setValue(new_cell_name);
+                                                links_table->getRow(link_key)->getCell(new_link_cell_name)->setValue(new_cell_name);
 
                                                 ++created_missing_column;
                                             }
@@ -774,7 +774,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                                             // if we cannot even find that row,
                                             // just create that new entry
                                             //
-                                            links_table->row(link_key)->cell(new_link_cell_name)->setValue(new_cell_name);
+                                            links_table->getRow(link_key)->getCell(new_link_cell_name)->setValue(new_cell_name);
 
                                             ++created_missing_row_and_column;
                                         }
@@ -784,7 +784,7 @@ void links::on_backend_action_snap547_fix_link_branches()
                                         // get rid of the other key (i.e. the one with
                                         // the wrong branch number)
                                         //
-                                        branch_table->row(key)->dropCell(cell_name);
+                                        branch_table->getRow(key)->dropCell(cell_name);
                                     }
                                 }
                                 else

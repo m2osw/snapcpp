@@ -382,11 +382,11 @@ void timetracker::add_calendar(int64_t const identifier)
     //
     content_plugin->create_content(calendar_ipath, output_plugin->get_plugin_name(), "timetracker/calendar");
 
-    libdbproxy::row::pointer_t revision_row(revision_table->row(calendar_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t revision_row(revision_table->getRow(calendar_ipath.get_revision_key()));
     int64_t const start_date(f_snap->get_start_date());
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker Calendar"));
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(QString("<div>[timetracker::calendar]</div>"));
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker Calendar"));
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(QString("<div>[timetracker::calendar]</div>"));
 
     // TODO: create a new permission for this user so he can access
     //       his calendar page (right now this is not required since
@@ -478,7 +478,7 @@ void timetracker::on_check_for_redirect(content::path_info_t & ipath)
     calendar_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)).arg(user_identifier));
 
     if(!content_table->exists(calendar_ipath.get_key())
-    || !content_table->row(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    || !content_table->getRow(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         // the user MUST exists
         return;
@@ -516,7 +516,7 @@ void timetracker::on_check_for_redirect(content::path_info_t & ipath)
     // if not, we can create that day now, the path is in "ipath"
     //
     if(content_table->exists(ipath.get_key())
-    && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    && content_table->getRow(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         // it exists, we do not need to do anything more
         return;
@@ -531,21 +531,21 @@ void timetracker::on_check_for_redirect(content::path_info_t & ipath)
     output::output * output_plugin(output::output::instance());
     content_plugin->create_content(ipath, output_plugin->get_plugin_name(), "timetracker/day");
 
-    libdbproxy::row::pointer_t content_row(content_table->row(ipath.get_key()));
-    content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT))->setValue(QString("\"timetracker-parser\";"));
-    //content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_THEME))->setValue("\"...\";");
-    content_row->cell(editor::get_name(editor::name_t::SNAP_NAME_EDITOR_LAYOUT))->setValue(QString("\"timetracker-page\";"));
+    libdbproxy::row::pointer_t content_row(content_table->getRow(ipath.get_key()));
+    content_row->getCell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT))->setValue(QString("\"timetracker-parser\";"));
+    //content_row->getCell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_THEME))->setValue("\"...\";");
+    content_row->getCell(editor::get_name(editor::name_t::SNAP_NAME_EDITOR_LAYOUT))->setValue(QString("\"timetracker-page\";"));
 
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
-    libdbproxy::row::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::row::pointer_t revision_row(revision_table->getRow(ipath.get_revision_key()));
     int64_t const start_date(f_snap->get_start_date());
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     // Note: we can hard code the date in the title since that specific page
     //       is for that specific day and it cannot be changed
     time_t const selected_date(SNAP_UNIX_TIMESTAMP(year, month, day, 0, 0, 0));
     QString const date(locale_plugin->format_date(selected_date));
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker: %1").arg(date));
-    //revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue("...using editor form...");
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker: %1").arg(date));
+    //revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue("...using editor form...");
 
     {
         // assign the user with the permission of viewing his day
@@ -692,7 +692,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
         ipath.get_child(calendar_ipath, QString("%1").arg(user_info.get_identifier()));
         calendar_ipath.set_parameter("date", ipath.get_parameter("date"));
         if(content_table->exists(calendar_ipath.get_key())
-        && content_table->row(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+        && content_table->getRow(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
             // calendar exists
             result += token_calendar(calendar_ipath);
@@ -740,7 +740,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
         ipath.get_child(calendar_ipath, QString("%1").arg(user_info.get_identifier()));
         calendar_ipath.set_parameter("date", ipath.get_parameter("date"));
         if(content_table->exists(calendar_ipath.get_key())
-        && content_table->row(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+        && content_table->getRow(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
             // calendar exists
             return token_calendar(calendar_ipath);
@@ -801,7 +801,7 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
         return QString("<p class=\"bad-user\">Calendar not available.</p>");
     }
     if(!content_table->exists(ipath.get_key())
-    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    || !content_table->getRow(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         // user does not have a calendar in this timetracker instance
         messages::messages::instance()->set_error(
@@ -954,20 +954,20 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
                 content::path_info_t day_ipath;
                 day_ipath.set_path(QString("%1%2").arg(pre_defined_day_path).arg(line, 2, 10, QChar('0')));
                 if(content_table->exists(day_ipath.get_key())
-                && content_table->row(day_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+                && content_table->getRow(day_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
                 {
-                    libdbproxy::row::pointer_t row(revision_table->row(day_ipath.get_revision_key()));
+                    libdbproxy::row::pointer_t row(revision_table->getRow(day_ipath.get_revision_key()));
 
                     // billing duration
-                    QString const duration(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_BILLING_DURATION))->value().stringValue());
+                    QString const duration(row->getCell(get_name(name_t::SNAP_NAME_TIMETRACKER_BILLING_DURATION))->getValue().stringValue());
                     day_tag.setAttribute("billing_duration", duration);
 
                     // location
-                    QString const location(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_LOCATION))->value().stringValue());
+                    QString const location(row->getCell(get_name(name_t::SNAP_NAME_TIMETRACKER_LOCATION))->getValue().stringValue());
                     day_tag.setAttribute("location", location);
 
                     // transportation
-                    QString const transportation(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_TRANSPORTATION))->value().stringValue());
+                    QString const transportation(row->getCell(get_name(name_t::SNAP_NAME_TIMETRACKER_TRANSPORTATION))->getValue().stringValue());
                     day_tag.setAttribute("transportation", transportation);
                 }
 
@@ -1042,7 +1042,7 @@ void timetracker::init_day_editor_widgets(QString const & field_id, QDomElement 
             content::path_info_t value_ipath;
             value_ipath.set_path(client_list[idx].get_uri());
             item.setAttribute("value", client_list[idx].get_uri());
-            QString const client_name(revision_table->row(value_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+            QString const client_name(revision_table->getRow(value_ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->getValue().stringValue());
             snap::snap_dom::insert_html_string_to_xml_doc(item, client_name);
         }
     }

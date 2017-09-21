@@ -214,7 +214,7 @@ const QByteArray& cell::columnKey() const
  * \sa clearCache()
  * \sa setValue()
  */
-const value& cell::value() const
+const value& cell::getValue() const
 {
     if(!f_cached)
     {

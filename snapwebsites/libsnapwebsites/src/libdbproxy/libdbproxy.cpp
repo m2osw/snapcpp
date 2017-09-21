@@ -959,13 +959,13 @@ const QString& libdbproxy::partitioner() const
  *
  * \return A shared pointer to a cassandra context.
  */
-context::pointer_t libdbproxy::context( const QString& context_name )
+context::pointer_t libdbproxy::getContext( const QString& context_name )
 {
     // get the list of existing contexts
-    const QCassandraContexts& cs(contexts());
+    const contexts& cs(getContexts());
 
     // already exists?
-    QCassandraContexts::const_iterator ci(cs.find( context_name ));
+    contexts::const_iterator ci(cs.find( context_name ));
     if ( ci != cs.end() )
     {
         return ci.value();
@@ -987,13 +987,13 @@ context::pointer_t libdbproxy::context( const QString& context_name )
  *
  * \return A shared pointer to a cassandra context.
  */
-context::pointer_t libdbproxy::context( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+context::pointer_t libdbproxy::getContext( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
 {
     // get the list of existing contexts
-    const QCassandraContexts& cs(contexts());
+    const contexts& cs(getContexts());
 
     // already exists?
-    QCassandraContexts::const_iterator ci(cs.find( keyspace_meta->getName() ));
+    contexts::const_iterator ci(cs.find( keyspace_meta->getName() ));
     if ( ci != cs.end() )
     {
         return ci.value();
@@ -1130,7 +1130,7 @@ void libdbproxy::retrieveContextMeta( context::pointer_t c, const QString& conte
  *
  * \return A reference to the internal map of contexts.
  */
-const QCassandraContexts& libdbproxy::contexts() const
+const contexts& libdbproxy::getContexts() const
 {
     if(!f_proxy)
     {
@@ -1170,7 +1170,7 @@ const QCassandraContexts& libdbproxy::contexts() const
 
         for( auto keyspace : session_meta->getKeyspaces() )
         {
-            const_cast<libdbproxy *>(this)->context(keyspace.second);
+            const_cast<libdbproxy *>(this)->getContext(keyspace.second);
         }
 //std::cerr << "[" << getpid() << "] DESCRIBE CLUSTER: completed in " << (timeofday() - n) << " us.\n";
     }
@@ -1202,7 +1202,7 @@ const QCassandraContexts& libdbproxy::contexts() const
  */
 context::pointer_t libdbproxy::findContext( const QString& context_name ) const
 {
-    QCassandraContexts::const_iterator ci( contexts().find( context_name ) );
+    contexts::const_iterator ci( contexts().find( context_name ) );
     if ( ci == f_contexts.end() )
     {
         return context::pointer_t();
@@ -1293,7 +1293,7 @@ operator[]( const QString& context_name ) const
  */
 void libdbproxy::dropContext( const QString& context_name )
 {
-    context::pointer_t c( context( context_name ) );
+    context::pointer_t c( getContext( context_name ) );
 
     // first do the context drop in Cassandra
     c->drop();

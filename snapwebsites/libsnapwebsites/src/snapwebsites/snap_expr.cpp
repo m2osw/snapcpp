@@ -1578,7 +1578,7 @@ public:
                             .arg(table_name).arg(row_name).arg(cell_name));
         }
 
-        libdbproxy::value value(g_context->table(table_name)->row(row_name)->cell(cell_name)->value());
+        libdbproxy::value value(g_context->getTable(table_name)->getRow(row_name)->getCell(cell_name)->getValue());
 //std::cerr << "  -> value size: " << value.size() << "\n";
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
@@ -1597,7 +1597,7 @@ public:
         QString const row_name(sub_results[1].get_string("cell_exist(2)"));
         QString const cell_name(sub_results[2].get_string("cell_exist(3)"));
         libdbproxy::value value;
-        value.setBoolValue(g_context->table(table_name)->row(row_name)->exists(cell_name));
+        value.setBoolValue(g_context->getTable(table_name)->getRow(row_name)->exists(cell_name));
 //SNAP_LOG_WARNING("cell_exists(")(table_name)(", ")(row_name)(", ")(cell_name)(") -> ")(value.boolValue() ? "true" : "false");
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
@@ -2399,7 +2399,7 @@ public:
         QString const table_name(sub_results[0].get_string("row_exists(1)"));
         QString const row_name(sub_results[1].get_string("row_exists(2)"));
         libdbproxy::value value;
-        value.setBoolValue(g_context->table(table_name)->exists(row_name));
+        value.setBoolValue(g_context->getTable(table_name)->exists(row_name));
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 

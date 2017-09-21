@@ -114,21 +114,21 @@ namespace libdbproxy
  * This function initializes a row object to NULL. This is
  * an equivalent to a BINARY with a size of 0.
  */
-value::value(                       )    : cassvalue::Value()      {}
-value::value(bool              value)    : cassvalue::Value(value) {}
-value::value(char              value)    : cassvalue::Value(value) {}
-value::value(signed char       value)    : cassvalue::Value(value) {}
-value::value(unsigned char     value)    : cassvalue::Value(value) {}
-value::value(int16_t           value)    : cassvalue::Value(value) {}
-value::value(uint16_t          value)    : cassvalue::Value(value) {}
-value::value(int32_t           value)    : cassvalue::Value(value) {}
-value::value(uint32_t          value)    : cassvalue::Value(value) {}
-value::value(int64_t           value)    : cassvalue::Value(value) {}
-value::value(uint64_t          value)    : cassvalue::Value(value) {}
-value::value(float             value)    : cassvalue::Value(value) {}
-value::value(double            value)    : cassvalue::Value(value) {}
-value::value(const QString&    value)    : cassvalue::Value(value) {}
-value::value(const QByteArray& value)    : cassvalue::Value(value) {}
+value::value(                     )      : cassvalue::Value()      {}
+value::value(bool              val)      : cassvalue::Value(val)   {}
+value::value(char              val)      : cassvalue::Value(val)   {}
+value::value(signed char       val)      : cassvalue::Value(val)   {}
+value::value(unsigned char     val)      : cassvalue::Value(val)   {}
+value::value(int16_t           val)      : cassvalue::Value(val)   {}
+value::value(uint16_t          val)      : cassvalue::Value(val)   {}
+value::value(int32_t           val)      : cassvalue::Value(val)   {}
+value::value(uint32_t          val)      : cassvalue::Value(val)   {}
+value::value(int64_t           val)      : cassvalue::Value(val)   {}
+value::value(uint64_t          val)      : cassvalue::Value(val)   {}
+value::value(float             val)      : cassvalue::Value(val)   {}
+value::value(double            val)      : cassvalue::Value(val)   {}
+value::value(const QString&    val)      : cassvalue::Value(val)   {}
+value::value(const QByteArray& val)      : cassvalue::Value(val)   {}
 value::value(const char *data, int size) : cassvalue::Value(data, size) {}
 
 

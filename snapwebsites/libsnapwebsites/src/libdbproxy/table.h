@@ -61,7 +61,7 @@ public:
 
     virtual ~table();
 
-    proxy::pointer_t proxy() const { return f_proxy; }
+    proxy::pointer_t getProxy() const { return f_proxy; }
 
     // context name
     const QString&  contextName() const;
@@ -81,10 +81,10 @@ public:
     // row handling
     uint32_t readRows(row_predicate::pointer_t row_predicate );
 
-    row::pointer_t    row(const char*       row_name);
-    row::pointer_t    row(const QString&    row_name);
-    row::pointer_t    row(const QByteArray& row_name);
-    const QCassandraRows&       rows();
+    row::pointer_t    getRow(const char*       row_name);
+    row::pointer_t    getRow(const QString&    row_name);
+    row::pointer_t    getRow(const QByteArray& row_name);
+    const rows&       getRows();
 
     row::pointer_t    findRow(const char* row_name) const;
     row::pointer_t    findRow(const QString& row_name) const;
@@ -138,19 +138,19 @@ private:
 
     casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t   f_schema;
 
-    bool                                f_from_cassandra = false;
+    bool                      f_from_cassandra = false;
     std::weak_ptr<context>    f_context;
-    QString                             f_context_name;
-    QString                             f_table_name;
-    QCassandraRows                      f_rows;
+    QString                   f_context_name;
+    QString                   f_table_name;
+    rows                      f_rows;
 
     proxy::pointer_t          f_proxy;
-    int32_t                             f_cursor_index = -1;
-    int32_t                             f_batch_index  = -1;
+    int32_t                   f_cursor_index = -1;
+    int32_t                   f_batch_index  = -1;
 };
 
 // list of table definitions mapped against their name (see tableName())
-typedef QMap<QString, table::pointer_t > QCassandraTables;
+typedef QMap<QString, table::pointer_t > tables;
 
 } // namespace libdbproxy
 

@@ -97,7 +97,7 @@ public:
     void                        on_process_post(QString const & uri_path);
     void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
     void                        on_filtered_content(content::path_info_t & path, QDomDocument & doc, QString const & xsl);
-    void                        on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    void                        on_copy_branch_cells(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     SNAP_SIGNAL_WITH_MODE(tweak_form, (form *f, content::path_info_t & ipath, QDomDocument form_doc), (f, ipath, form_doc), NEITHER);
     SNAP_SIGNAL_WITH_MODE(form_element, (form *f), (f), NEITHER);

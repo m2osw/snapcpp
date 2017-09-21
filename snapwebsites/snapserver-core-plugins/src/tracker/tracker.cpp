@@ -376,7 +376,7 @@ void tracker::on_detach_from_session()
 
     // now save the result in Cassandra
     libdbproxy::table::pointer_t tracker_table(get_tracker_table());
-    tracker_table->row(email)->cell(start_date_key)->setValue(value);
+    tracker_table->getRow(email)->getCell(start_date_key)->setValue(value);
 }
 
 
@@ -422,7 +422,7 @@ void tracker::on_attach_to_session()
 
         // now save the result in Cassandra
         libdbproxy::table::pointer_t tracker_table(get_tracker_table());
-        tracker_table->row(email)->cell(start_date_key)->setValue(value);
+        tracker_table->getRow(email)->getCell(start_date_key)->setValue(value);
     }
 }
 

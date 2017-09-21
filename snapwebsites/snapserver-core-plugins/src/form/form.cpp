@@ -379,7 +379,7 @@ void form::auto_fill_form(QDomDocument xml_form)
         // in auto-save mode!?
         return;
     }
-    libdbproxy::row::pointer_t row(content_table->row(key));
+    libdbproxy::row::pointer_t row(content_table->getRow(key));
 
     // if we have an auto-save, then we can auto-load too
     // otherwise only let the user plugin take care of the auto-fill
@@ -441,7 +441,7 @@ void form::auto_fill_form(QDomDocument xml_form)
                     {
                         throw form_exception_invalid_form_xml("All auto-save widgets must have a type with its HTML variable form name");
                     }
-                    libdbproxy::value const value(row->cell(name)->value());
+                    libdbproxy::value const value(row->getCell(name)->getValue());
 
                     QString widget_value;
 
@@ -756,7 +756,7 @@ QDomDocument const form::load_form(content::path_info_t & ipath, QString const &
             SNAP_LOG_ERROR("form::load_form() could not load \"" + csource + "\" from the database.");
             return g_cached_form[csource].f_doc;
         }
-        libdbproxy::row::pointer_t row(content_table->row(csource));
+        libdbproxy::row::pointer_t row(content_table->getRow(csource));
         if(!row->exists(get_name(name_t::SNAP_NAME_FORM_FORM)))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> No form defined at \""
@@ -764,7 +764,7 @@ QDomDocument const form::load_form(content::path_info_t & ipath, QString const &
             SNAP_LOG_ERROR("form::load_form() could not find a form at \"" + csource + "\".");
             return g_cached_form[csource].f_doc;
         }
-        libdbproxy::value form_xml(row->cell(get_name(name_t::SNAP_NAME_FORM_FORM))->value());
+        libdbproxy::value form_xml(row->getCell(get_name(name_t::SNAP_NAME_FORM_FORM))->getValue());
         if(!g_cached_form[csource].f_doc.setContent(form_xml.binaryValue(), true))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
@@ -1236,7 +1236,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
         // in auto-save mode!?
         return;
     }
-    libdbproxy::row::pointer_t row(content_table->row(key));
+    libdbproxy::row::pointer_t row(content_table->getRow(key));
 
     for(snap_child::environment_map_t::const_iterator it(auto_save_type.begin());
             it != auto_save_type.end();
@@ -1255,15 +1255,15 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
         {
             if(post == "on")
             {
-                row->cell(name)->setValue((static_cast<signed char>(1)));
+                row->getCell(name)->setValue((static_cast<signed char>(1)));
             }
             else if(post == "off")
             {
-                row->cell(name)->setValue((static_cast<signed char>(0)));
+                row->getCell(name)->setValue((static_cast<signed char>(0)));
             }
             else
             {
-                row->cell(name)->setValue((static_cast<signed char>(post.toInt())));
+                row->getCell(name)->setValue((static_cast<signed char>(post.toInt())));
             }
         }
         else if(type == "binary")
@@ -1333,7 +1333,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
         else if(type == "string")
         {
             // a simple string
-            row->cell(name)->setValue(post);
+            row->getCell(name)->setValue(post);
         }
         // else -- "undefined"
     }
@@ -2320,13 +2320,13 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
     {
         return QString();
     }
-    libdbproxy::row::pointer_t row(branch_table->row(ipath.get_branch_key()));
+    libdbproxy::row::pointer_t row(branch_table->getRow(ipath.get_branch_key()));
     if(!row->exists(get_name(name_t::SNAP_NAME_FORM_SOURCE)))
     {
         return QString();
     }
 
-    QString source(row->cell(get_name(name_t::SNAP_NAME_FORM_SOURCE))->value().stringValue());
+    QString source(row->getCell(get_name(name_t::SNAP_NAME_FORM_SOURCE))->getValue().stringValue());
     if(source.isEmpty())
     {
         // if empty it is not valid
@@ -2372,7 +2372,7 @@ void form::on_filtered_content(content::path_info_t & ipath, QDomDocument & doc,
 }
 
 
-void form::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void form::on_copy_branch_cells(libdbproxy::cells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 

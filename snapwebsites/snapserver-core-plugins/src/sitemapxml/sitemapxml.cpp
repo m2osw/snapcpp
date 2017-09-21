@@ -815,7 +815,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml * r)
         url.set_uri(page_key);
 
         // use the last modification date from that page
-        libdbproxy::value modified(branch_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED)))->value());
+        libdbproxy::value modified(branch_table->getRow(page_ipath.get_branch_key())->getCell(QString(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED)))->getValue());
         if(!modified.nullValue())
         {
             url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
@@ -954,11 +954,11 @@ void sitemapxml::on_backend_process()
     QString const content_updated(content::get_name(content::name_t::SNAP_NAME_CONTENT_UPDATED));
     QString const content_modified(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED));
     QString const sitemap_xml(site_key + "sitemap.xml");
-    content_table->row(sitemap_xml)->cell(content_updated)->setValue(start_date);
-    content_table->row(sitemap_xml)->cell(content_modified)->setValue(start_date);
+    content_table->getRow(sitemap_xml)->getCell(content_updated)->setValue(start_date);
+    content_table->getRow(sitemap_xml)->getCell(content_modified)->setValue(start_date);
     QString const sitemap_txt(site_key + "sitemap.txt");
-    content_table->row(sitemap_txt)->cell(content_updated)->setValue(start_date);
-    content_table->row(sitemap_txt)->cell(content_modified)->setValue(start_date);
+    content_table->getRow(sitemap_txt)->getCell(content_updated)->setValue(start_date);
+    content_table->getRow(sitemap_txt)->getCell(content_modified)->setValue(start_date);
 
 #ifdef DEBUG
 SNAP_LOG_TRACE() << "Updated [" << sitemap_xml << "]";
@@ -1202,7 +1202,7 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
         content_plugin->create_content(ipath, get_plugin_name(), "page/public");
 
         signed char const final_page(1);
-        content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FINAL))->setValue(final_page);
+        content_table->getRow(ipath.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FINAL))->setValue(final_page);
     }
 }
 
@@ -1346,7 +1346,7 @@ void sitemapxml::on_allow_shorturl(content::path_info_t & ipath, QString const &
 }
 
 
-void sitemapxml::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void sitemapxml::on_copy_branch_cells(libdbproxy::cells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 

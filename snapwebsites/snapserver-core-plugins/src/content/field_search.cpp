@@ -836,7 +836,7 @@ void field_search::run()
             }
 
             if(f_current_table->exists(self)
-            && f_current_table->row(self)->exists(f_field_name))
+            && f_current_table->getRow(self)->exists(f_field_name))
             {
                 f_found_self = true;
 
@@ -849,7 +849,7 @@ void field_search::run()
                 else
                 {
                     // save the value
-                    f_result.push_back(f_current_table->row(self)->cell(f_field_name)->value());
+                    f_result.push_back(f_current_table->getRow(self)->getCell(f_field_name)->getValue());
                 }
             }
         }

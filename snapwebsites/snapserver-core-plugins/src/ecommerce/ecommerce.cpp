@@ -1365,19 +1365,19 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
     content::path_info_t invoices_ipath;
     invoices_ipath.set_path(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICES_PATH));
     libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
-    libdbproxy::row::pointer_t content_row(content_table->row(invoices_ipath.get_key()));
+    libdbproxy::row::pointer_t content_row(content_table->getRow(invoices_ipath.get_key()));
     {
         snap_lock lock(invoices_ipath.get_key());
 
         // retrieve the current invoice number and increment by one
-        libdbproxy::value invoice_number_value(content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());
+        libdbproxy::value invoice_number_value(content_row->getCell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->getValue());
         if(invoice_number_value.size() == sizeof(uint64_t))
         {
             invoice_number = invoice_number_value.uint64Value();
         }
         ++invoice_number;
         invoice_number_value.setUInt64Value(invoice_number);
-        content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->setValue(invoice_number_value);
+        content_row->getCell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->setValue(invoice_number_value);
     }
     invoices_ipath.get_child(invoice_ipath, QString("%1").arg(invoice_number));
     invoice_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
@@ -1391,16 +1391,16 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     // TODO: as expected in a future version, we will create an object to send
     //       along the create_content() instead of having this separate.
     int64_t const start_date(f_snap->get_start_date());
-    libdbproxy::row::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    libdbproxy::row::pointer_t revision_row(revision_table->getRow(invoice_ipath.get_revision_key()));
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     QString const title(QString("Invoice #%1").arg(invoice_number));
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     QString const body; // empty for now... will be generated later
                         // by a backend or on the fly as we decide then
                         // (we could also have a tag transformed on the fly
                         // something like: [ecommerce::invoice(###)])
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
-    revision_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS))->setValue(cart_xml);
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
+    revision_row->getCell(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS))->setValue(cart_xml);
 
     // the default status is "created" which is likely to be updated
     // right behind this call...
@@ -1580,7 +1580,7 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t &
     // product either...
     content::content *content_plugin(content::content::instance());
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
-    if(revision_table->row(product_ipath.get_revision_key())->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))->value().size() != sizeof(double))
+    if(revision_table->getRow(product_ipath.get_revision_key())->getCell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))->getValue().size() != sizeof(double))
     {
         // no price?!
         messages::messages::instance()->set_error(
@@ -1684,7 +1684,7 @@ void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xm
         if(has_invoice)
         {
             if(content_table->exists(invoice_ipath.get_key())
-            && content_table->row(invoice_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+            && content_table->getRow(invoice_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
             {
                 // the invoice exists
 
@@ -1704,8 +1704,8 @@ void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xm
                 locale::locale * locale_plugin(locale::locale::instance());
                 locale_plugin->set_timezone();
                 locale_plugin->set_locale();
-                QString const invoice_status(content_table->row(invoice_ipath.get_key())->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
-                int64_t const invoice_date_us(content_table->row(invoice_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
+                QString const invoice_status(content_table->getRow(invoice_ipath.get_key())->getCell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->getValue().stringValue());
+                int64_t const invoice_date_us(content_table->getRow(invoice_ipath.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->getValue().int64Value());
                 time_t const invoice_date_sec(invoice_date_us / 1000000);
                 QString const invoice_date_str(locale_plugin->format_date(invoice_date_sec));
                 QString const invoice_time_str(locale_plugin->format_time(invoice_date_sec));

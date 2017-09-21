@@ -63,10 +63,10 @@ public:
     uint32_t readCells();
     uint32_t readCells(cell_predicate::pointer_t column_predicate);
 
-    cell::pointer_t cell(const char* column_name);
-    cell::pointer_t cell(const QString& column_name);
-    cell::pointer_t cell(const QByteArray& column_key);
-    const QCassandraCells& cells() const;
+    cell::pointer_t getCell(const char* column_name);
+    cell::pointer_t getCell(const QString& column_name);
+    cell::pointer_t getCell(const QByteArray& column_key);
+    const cells& getCells() const;
 
     cell::pointer_t findCell(const QString& column_name) const;
     cell::pointer_t findCell(const QByteArray& column_key) const;
@@ -104,12 +104,12 @@ private:
     // (there isn't a need to use a QWeakPointer or QPointer either)
     std::weak_ptr<table>      f_table;
     QByteArray                          f_key;
-    QCassandraCells                     f_cells;
+    cells                     f_cells;
     int32_t                             f_cursor_index = -1;
 };
 
 // array of rows
-typedef QMap<QByteArray, row::pointer_t > QCassandraRows;
+typedef QMap<QByteArray, row::pointer_t > rows;
 
 
 

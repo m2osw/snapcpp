@@ -337,20 +337,20 @@ void info::on_finish_editor_form_processing(content::path_info_t & ipath, bool &
 
     content::content * content_plugin(content::content::instance());
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
-    libdbproxy::row::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
+    libdbproxy::row::pointer_t settings_row(revision_table->getRow(ipath.get_revision_key()));
 
     libdbproxy::value value;
 
-    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME))->value();
+    value = settings_row->getCell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME))->getValue();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME), value);
 
-    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME))->value();
+    value = settings_row->getCell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME))->getValue();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME), value);
 
-    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME))->value();
+    value = settings_row->getCell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME))->getValue();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME), value);
 
-    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL))->value();
+    value = settings_row->getCell(snap::get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL))->getValue();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL), value);
 }
 

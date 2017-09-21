@@ -231,7 +231,7 @@ casswrapper::schema::Value::map_t& context::fields()
  *
  * \return A shared pointer to the table definition found or a null shared pointer.
  */
-table::pointer_t context::table(const QString& table_name)
+table::pointer_t context::getTable(const QString& table_name)
 {
     table::pointer_t t( findTable( table_name ) );
     if( t != table::pointer_t() )
@@ -255,7 +255,7 @@ table::pointer_t context::table(const QString& table_name)
  *
  * \return A reference to the table definitions of this context.
  */
-const QCassandraTables& context::tables()
+const tables& context::getTables()
 {
 #if 0
     if( f_tables.empty() )
@@ -290,7 +290,7 @@ table::pointer_t context::findTable(const QString& table_name)
     }
 #endif
 
-    QCassandraTables::const_iterator it(f_tables.find(table_name));
+    tables::const_iterator it(f_tables.find(table_name));
     if(it == f_tables.end()) {
         table::pointer_t null;
         return null;
@@ -542,7 +542,7 @@ void context::parseContextDefinition( casswrapper::schema::SessionMeta::Keyspace
     f_schema = keyspace_meta;
     for( const auto pair : keyspace_meta->getTables() )
     {
-        table::pointer_t t(table(pair.first));
+        table::pointer_t t(getTable(pair.first));
         t->parseTableDefinition(pair.second);
     }
 }
@@ -642,7 +642,7 @@ void context::create()
     order create_keyspace;
     create_keyspace.setCql( q_str, order::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     create_keyspace.setClearClusterDescription(true);
-    order_result const create_keyspace_result(parentCassandra()->proxy()->sendOrder(create_keyspace));
+    order_result const create_keyspace_result(parentCassandra()->getProxy()->sendOrder(create_keyspace));
     if(!create_keyspace_result.succeeded())
     {
         throw exception("keyspace creation failed");
@@ -668,7 +668,7 @@ void context::update()
     order alter_keyspace;
     alter_keyspace.setCql( q_str, order::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     alter_keyspace.setClearClusterDescription(true);
-    order_result const alter_keyspace_result(parentCassandra()->proxy()->sendOrder(alter_keyspace));
+    order_result const alter_keyspace_result(parentCassandra()->getProxy()->sendOrder(alter_keyspace));
     if(!alter_keyspace_result.succeeded())
     {
         throw exception("keyspace creation failed");
@@ -707,7 +707,7 @@ void context::drop()
     order drop_keyspace;
     drop_keyspace.setCql( q_str, order::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     drop_keyspace.setClearClusterDescription(true);
-    order_result const drop_keyspace_result(parentCassandra()->proxy()->sendOrder(drop_keyspace));
+    order_result const drop_keyspace_result(parentCassandra()->getProxy()->sendOrder(drop_keyspace));
     if(!drop_keyspace_result.succeeded())
     {
         throw exception("drop keyspace failed");
@@ -741,7 +741,7 @@ void context::dropTable(const QString& table_name)
     }
 
     // keep a shared pointer on the table
-    table::pointer_t t(table(table_name));
+    table::pointer_t t(getTable(table_name));
 
     // remove from the Cassandra database
     makeCurrent();
@@ -752,7 +752,7 @@ void context::dropTable(const QString& table_name)
     drop_table.setCql( q_str, order::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
     drop_table.setTimeout(5 * 60 * 1000);
     drop_table.setClearClusterDescription(true);
-    order_result const drop_table_result(parentCassandra()->proxy()->sendOrder(drop_table));
+    order_result const drop_table_result(parentCassandra()->getProxy()->sendOrder(drop_table));
     if(!drop_table_result.succeeded())
     {
         throw exception("drop table failed");

@@ -938,7 +938,7 @@ QString paging_t::get_list_name() const
 
         content::content *content_plugin(content::content::instance());
         libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-        f_list_name = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NAME))->value().stringValue();
+        f_list_name = branch_table->getRow(f_ipath.get_branch_key())->getCell(get_name(name_t::SNAP_NAME_LIST_NAME))->getValue().stringValue();
     }
     return f_list_name;
 }
@@ -1020,7 +1020,7 @@ int32_t paging_t::get_number_of_items() const
         // then it will be set to zero
         content::content * content_plugin(content::content::instance());
         libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-        f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
+        f_number_of_items = branch_table->getRow(f_ipath.get_branch_key())->getCell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->getValue().safeInt32Value();
     }
 
     // the total count may have been limited by the programmer
@@ -1762,7 +1762,7 @@ int32_t paging_t::get_page_size() const
     {
         content::content *content_plugin(content::content::instance());
         libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-        f_default_page_size = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_PAGE_SIZE))->value().safeInt32Value();
+        f_default_page_size = branch_table->getRow(f_ipath.get_branch_key())->getCell(get_name(name_t::SNAP_NAME_LIST_PAGE_SIZE))->getValue().safeInt32Value();
         if(f_default_page_size < 1)
         {
             // not defined in the database, bump it to 20
@@ -2078,14 +2078,14 @@ void list::on_create_content(content::path_info_t & ipath, QString const & owner
     //       and replacing that with the test of the last update is going to
     //       make it a lot faster overall.
     QString const branch_key(ipath.get_branch_key());
-    if(branch_table->row(branch_key)->exists(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)))
+    if(branch_table->getRow(branch_key)->exists(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)))
     {
         // zero marks the list as brand new so we use a different
         // algorithm to check the data in that case (i.e. the list of
         // rows in the list table is NOT complete!)
         QString const key(ipath.get_branch_key());
         int64_t const zero(0);
-        branch_table->row(key)->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
+        branch_table->getRow(key)->getCell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
     }
 
     on_modified_content(ipath); // then it is the same as on_modified_content()
@@ -2268,8 +2268,8 @@ void list::on_modified_content(content::path_info_t & ipath)
     //
     libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
-    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
-    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
+    branch_table->getRow(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
+    branch_table->getRow(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
 
     f_ping_backend = true;
 }
@@ -2497,7 +2497,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
 
     QString const branch_key(ipath.get_branch_key());
-    libdbproxy::row::pointer_t list_row(branch_table->row(branch_key));
+    libdbproxy::row::pointer_t list_row(branch_table->getRow(branch_key));
     list_row->clearCache();
 
     char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
@@ -2512,13 +2512,13 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     {
         // clear the cache before reading the next load
         list_row->readCells(column_predicate);
-        libdbproxy::QCassandraCells const cells(list_row->cells());
+        libdbproxy::cells const cells(list_row->getCells());
         if(cells.empty())
         {
             // all columns read
             break;
         }
-        for(libdbproxy::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
+        for(libdbproxy::cells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
         {
             if(start > 0)
             {
@@ -2529,7 +2529,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
                 // we keep the sort key in the item
                 list_item_t item;
                 item.set_sort_key(cell_iterator.key().mid(len));
-                item.set_uri(cell_iterator.value()->value().stringValue());
+                item.set_uri(cell_iterator.value()->getValue().stringValue());
                 result.push_back(item);
                 if(result.size() == count)
                 {
@@ -2756,8 +2756,8 @@ void list::on_backend_action(QString const & action)
             QString const key(child_info.key());
             content::path_info_t list_ipath;
             list_ipath.set_path(key);
-            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
-            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
+            branch_table->getRow(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
+            branch_table->getRow(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
         }
     }
     else
@@ -2801,8 +2801,8 @@ void list::add_all_pages_to_list_table(QString const & site_key)
             // no more pages to process
             break;
         }
-        libdbproxy::QCassandraRows const rows(content_table->rows());
-        for(libdbproxy::QCassandraRows::const_iterator o(rows.begin());
+        libdbproxy::rows const rows(content_table->getRows());
+        for(libdbproxy::rows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
             QString key(QString::fromUtf8(o.key().data()));
@@ -2980,7 +2980,7 @@ int list::generate_new_lists(QString const & site_key)
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        libdbproxy::value last_updated(branch_table->row(list_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value());
+        libdbproxy::value last_updated(branch_table->getRow(list_ipath.get_branch_key())->getCell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->getValue());
         if(last_updated.nullValue()
         || last_updated.int64Value() == 0)
         {
@@ -3001,8 +3001,8 @@ int list::generate_new_lists(QString const & site_key)
         //
         SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
 
-        libdbproxy::row::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
-        QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
+        libdbproxy::row::pointer_t list_row(branch_table->getRow(list_ipath.get_branch_key()));
+        QString const selector(list_row->getCell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->getValue().stringValue());
 
         int did_work_on_list(0);
 
@@ -3632,7 +3632,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
 
     content::content * content_plugin(content::content::instance());
     libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-    libdbproxy::row::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
+    libdbproxy::row::pointer_t list_row(branch_table->getRow(list_ipath.get_branch_key()));
 
     // check whether we already updated that page
     // (because the same page may be listed many times in the list table)
@@ -3645,7 +3645,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     // this does not seem to do what I was hoping it would do...
     // maybe we can debug this later
     //
-    //int64_t const last_updated(list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value().safeInt64Value());
+    //int64_t const last_updated(list_row->getCell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->getValue().safeInt64Value());
     NOTUSED(update_request_time);
     //if(last_updated - 60 * 1000000 > update_request_time)
     //{
@@ -3656,7 +3656,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     {
         libdbproxy::table::pointer_t content_table(content_plugin->get_content_table());
         if(!content_table->exists(page_ipath.get_key())
-        || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+        || !content_table->getRow(page_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
             // the page is not ready yet, let it be for a little longer, it will
             // be taken in account by the standard process
@@ -3678,7 +3678,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             //
             return 0;
         }
-        libdbproxy::row::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));
+        libdbproxy::row::pointer_t page_branch_row(branch_table->getRow(page_ipath.get_branch_key()));
 
         QString const link_name(get_name(name_t::SNAP_NAME_LIST_LINK));
 
@@ -3701,7 +3701,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 // the drop + create (that happens when there is a change that
                 // affects the key and you get a duplicate which is corrected
                 // later--but we probably need to fix duplicates at some point)
-                libdbproxy::value current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                libdbproxy::value current_item_key(page_branch_row->getCell(list_key_in_page)->getValue());
                 QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
                 if(current_item_key_full != new_item_key_full
                 || !page_branch_row->exists(new_item_key_full))
@@ -3709,8 +3709,8 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                     // it changed, we have to delete the old one and
                     // create a new one
                     list_row->dropCell(current_item_key_full);
-                    list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
-                    page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
+                    list_row->getCell(new_item_key_full)->setValue(page_ipath.get_key());
+                    page_branch_row->getCell(list_key_in_page)->setValue(new_item_key);
 
                     did_work = 1;
                 }
@@ -3731,11 +3731,11 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 }
 
                 // create the ordered list
-                list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
+                list_row->getCell(new_item_key_full)->setValue(page_ipath.get_key());
 
                 // save a back reference to the ordered list so we can
                 // quickly find it
-                page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
+                page_branch_row->getCell(list_key_in_page)->setValue(new_item_key);
 
                 did_work = 1;
             }
@@ -3747,7 +3747,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             // make sure it gets removed if still there
             if(page_branch_row->exists(list_key_in_page))
             {
-                libdbproxy::value current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                libdbproxy::value current_item_key(page_branch_row->getCell(list_key_in_page)->getValue());
                 QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
 
                 list_row->dropCell(current_item_key_full);
@@ -3788,7 +3788,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     //       (i.e. child receives a STOP signal)
     //
     int64_t const start_date(f_snap->get_start_date());
-    list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
+    list_row->getCell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
 
     // TODO
     // if we did work, the list size changed so we have to recalculate the
@@ -3817,7 +3817,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
         {
             // clear the cache before reading the next load
             list_row->readCells(column_predicate);
-            libdbproxy::QCassandraCells const cells(list_row->cells());
+            libdbproxy::cells const cells(list_row->getCells());
             if(cells.empty())
             {
                 // all columns read
@@ -3826,7 +3826,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             count += cells.size();
         }
 
-        list_row->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->setValue(count);
+        list_row->getCell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->setValue(count);
     }
 
     return did_work;
@@ -3861,10 +3861,10 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         content::content * content_plugin(content::content::instance());
         libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-        libdbproxy::value compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->value());
+        libdbproxy::value compiled_script(branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->getValue());
         if(compiled_script.nullValue())
         {
-            libdbproxy::value script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+            libdbproxy::value script(branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->getValue());
             if(script.nullValue())
             {
                 // no list here?!
@@ -3887,7 +3887,7 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
                 }
             }
             // save the result for next time
-            branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->setValue(e->serialize());
+            branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->setValue(e->serialize());
         }
         else
         {
@@ -3920,7 +3920,7 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
     {
         content::content *content_plugin(content::content::instance());
         libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-        libdbproxy::value script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+        libdbproxy::value script(branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->getValue());
         SNAP_LOG_TRACE() << "script [" << script.stringValue() << "] result [" << (result.is_true() ? "true" : "false") << "]";
     }
 #endif
@@ -3951,10 +3951,10 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         content::content * content_plugin(content::content::instance());
         libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-        libdbproxy::value compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
+        libdbproxy::value compiled_script(branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->getValue());
         if(compiled_script.nullValue())
         {
-            libdbproxy::value script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT))->value());
+            libdbproxy::value script(branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT))->getValue());
             if(script.nullValue())
             {
                 // no list here?!
@@ -3977,7 +3977,7 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
                 }
             }
             // save the result for next time
-            branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->setValue(e->serialize());
+            branch_table->getRow(branch_key)->getCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->setValue(e->serialize());
         }
         else
         {
@@ -4396,15 +4396,15 @@ void list::on_generate_boxes_content(content::path_info_t & page_cpath, content:
 }
 
 
-void list::on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void list::on_copy_branch_cells(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 
-    libdbproxy::QCassandraCells left_cells;
+    libdbproxy::cells left_cells;
 
     // handle one batch
     bool has_list(false);
-    for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
+    for(libdbproxy::cells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
     {
@@ -4417,7 +4417,7 @@ void list::on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libd
         {
             has_list = true;
             // copy our fields as is
-            destination_row->cell(cell_key)->setValue(source_cell->value());
+            destination_row->getCell(cell_key)->setValue(source_cell->getValue());
         }
         else
         {

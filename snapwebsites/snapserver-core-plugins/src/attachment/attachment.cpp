@@ -288,13 +288,13 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
     // file exists?
     libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
     if(!revision_table->exists(attachment_ipath.get_revision_key())
-    || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
+    || !revision_table->getRow(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         return false;
     }
 
     // load the MD5 key for that attachment
-    libdbproxy::value const attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value const attachment_key(revision_table->getRow(attachment_ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue());
     if(attachment_key.size() != 16)
     {
         return false;
@@ -310,7 +310,7 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
         return false;
     }
 
-    bool const field_name(files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)));
+    bool const field_name(files_table->getRow(attachment_key.binaryValue())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)));
     if(field_name)
     {
         // use the MD5 sum
@@ -517,13 +517,13 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
     QString const revision_key(attachment_ipath.get_revision_key());
     if(!revision_table->exists(revision_key)
-    || !revision_table->row(revision_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
+    || !revision_table->getRow(revision_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         return false;
     }
 
     // retrieve the md5 which has to be exactly 16 bytes
-    libdbproxy::value attachment_key(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    libdbproxy::value attachment_key(revision_table->getRow(revision_key)->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue());
     if(attachment_key.size() != 16)
     {
         return false;
@@ -539,11 +539,11 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
     for(;;)
     {
         // check for the minified version
-        bool const field_name(files_table->row(attachment_key.binaryValue())->exists(content::get_name(name)));
+        bool const field_name(files_table->getRow(attachment_key.binaryValue())->exists(content::get_name(name)));
         bool field_fallback_name(false);
         if(!field_name)
         {
-            field_fallback_name = files_table->row(attachment_key.binaryValue())->exists(content::get_name(fallback_name));
+            field_fallback_name = files_table->getRow(attachment_key.binaryValue())->exists(content::get_name(fallback_name));
         }
         if(field_name || field_fallback_name)
         {
@@ -561,7 +561,7 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
             //f_snap->set_header("ETag", version);
 
             // get the last modification time of this very version
-            libdbproxy::value revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+            libdbproxy::value revision_modification(revision_table->getRow(revision_key)->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->getValue());
             QDateTime expires(QDateTime().toUTC());
             expires.setTime_t(revision_modification.safeInt64Value() / 1000000);
             QLocale us_locale(QLocale::English, QLocale::UnitedStates);
@@ -714,9 +714,9 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
     libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
     libdbproxy::value const attachment_key(
             revision_table
-                ->row(attachment_ipath.get_revision_key())
-                    ->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
-                        ->value()
+                ->getRow(attachment_ipath.get_revision_key())
+                    ->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
+                        ->getValue()
             );
     if(attachment_key.size() != 16)
     {
@@ -734,7 +734,7 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
     // make sure that the data field exists
     libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+    || !files_table->getRow(attachment_key.binaryValue())->exists(field_name))
     {
         // somehow the file data is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
@@ -746,10 +746,10 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
         NOTREACHED();
     }
 
-    libdbproxy::row::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+    libdbproxy::row::pointer_t file_row(files_table->getRow(attachment_key.binaryValue()));
 
     // get the attachment MIME type and tweak it if it is a known text format
-    libdbproxy::value attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    libdbproxy::value attachment_mime_type(file_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->getValue());
     QString content_type(attachment_mime_type.stringValue());
     if(content_type == "text/javascript"
     || content_type == "text/css")
@@ -838,7 +838,7 @@ SNAP_LOG_TRACE("**** getting revision key for ipath=")(ipath.get_key())(", cpath
     }
 
     // the actual file data now
-    libdbproxy::value data(file_row->cell(field_name)->value());
+    libdbproxy::value data(file_row->getCell(field_name)->getValue());
     f_snap->output(data.binaryValue());
 
     return true;
@@ -873,7 +873,7 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
             content::path_info_t page_ipath(page.f_destination);
             page_ipath.force_branch(b);
 
-            libdbproxy::row::pointer_t branch_row(branch_table->row(page_ipath.get_branch_key()));
+            libdbproxy::row::pointer_t branch_row(branch_table->getRow(page_ipath.get_branch_key()));
             branch_row->clearCache();
 
             auto column_predicate(std::make_shared<libdbproxy::cell_range_predicate>());
@@ -884,14 +884,14 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
             for(;;)
             {
                 branch_row->readCells(column_predicate);
-                libdbproxy::QCassandraCells const branch_cells(branch_row->cells());
+                libdbproxy::cells const branch_cells(branch_row->getCells());
                 if(branch_cells.isEmpty())
                 {
                     // done
                     break;
                 }
                 // handle one batch
-                for(libdbproxy::QCassandraCells::const_iterator nc(branch_cells.begin());
+                for(libdbproxy::cells::const_iterator nc(branch_cells.begin());
                                                                  nc != branch_cells.end();
                                                                  ++nc)
                 {
@@ -904,7 +904,7 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 
                     // with that md5 we can access the files table
                     signed char const one(1);
-                    files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(page_ipath.get_key()))->setValue(one);
+                    files_table->getRow(md5)->getCell(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(page_ipath.get_key()))->setValue(one);
                 }
             }
         }
@@ -912,7 +912,7 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 }
 
 
-void attachment::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void attachment::on_copy_branch_cells(libdbproxy::cells& source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 
@@ -921,10 +921,10 @@ void attachment::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells,
     std::string content_attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     content_attachment_reference += "::";
 
-    libdbproxy::QCassandraCells left_cells;
+    libdbproxy::cells left_cells;
 
     // handle one batch
-    for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
+    for(libdbproxy::cells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
     {
@@ -934,7 +934,7 @@ void attachment::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells,
         if(cell_key.startsWith(content_attachment_reference.c_str()))
         {
             // copy our fields as is
-            destination_row->cell(cell_key)->setValue(source_cell->value());
+            destination_row->getCell(cell_key)->setValue(source_cell->getValue());
 
             // make sure the (new) list is checked so we actually get a list
             content::path_info_t ipath;
@@ -946,7 +946,7 @@ void attachment::on_copy_branch_cells(libdbproxy::QCassandraCells& source_cells,
 
             // with that md5 we can access the files table
             signed char const one(1);
-            files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(ipath.get_key()))->setValue(one);
+            files_table->getRow(md5)->getCell(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(ipath.get_key()))->setValue(one);
         }
         else
         {
@@ -1035,9 +1035,9 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     libdbproxy::table::pointer_t revision_table(content::content::instance()->get_revision_table());
     libdbproxy::value attachment_key(
             revision_table
-                ->row(attachment_ipath.get_revision_key())
-                    ->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
-                        ->value()
+                ->getRow(attachment_ipath.get_revision_key())
+                    ->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
+                        ->getValue()
             );
     if(attachment_key.nullValue())
     {
@@ -1051,7 +1051,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 
     libdbproxy::table::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+    || !files_table->getRow(attachment_key.binaryValue())->exists(field_name))
     {
         // somehow the file data is not available
         default_err.emit_error(
@@ -1061,7 +1061,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         return;
     }
 
-    libdbproxy::row::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+    libdbproxy::row::pointer_t file_row(files_table->getRow(attachment_key.binaryValue()));
 
     // TODO: If the user is loading the file as an attachment,
     //       we need those headers (TBD--would we reaaly want to do that
@@ -1075,7 +1075,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     // get the attachment MIME type and tweak it if it is a known text format
-    libdbproxy::value attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    libdbproxy::value attachment_mime_type(file_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->getValue());
     QString const content_type(attachment_mime_type.stringValue());
     if(content_type == "text/html")
     {
@@ -1141,7 +1141,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 
     // obviously, since the file is not authorized we cannot send the
     // actual file data which we could access with the following line:
-    //libdbproxy::value data(file_row->cell(field_name)->value());
+    //libdbproxy::value data(file_row->getCell(field_name)->getValue());
 
     // the actual file data now; this is defined using the MIME type
     // (and the error code?)
@@ -1167,10 +1167,10 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
                 .arg(major_mime_type)
                 .arg(minor_mime_type)
                 .arg(static_cast<int>(err_code)));
-    if(files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->exists(long_name))
+    if(files_table->getRow(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->exists(long_name))
     {
         // long name exists in the database, use it
-        data = files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->cell(long_name)->value();
+        data = files_table->getRow(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->getCell(long_name)->getValue();
     }
     else
     {
@@ -1185,10 +1185,10 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         {
             data.setBinaryValue(long_rsc_content.readAll());
         }
-        else if(files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->exists(short_name))
+        else if(files_table->getRow(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->exists(short_name))
         {
             // short name exists in the database, use it
-            data = files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->cell(short_name)->value();
+            data = files_table->getRow(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->getCell(short_name)->getValue();
         }
         else
         {
@@ -1220,9 +1220,9 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
     //
     libdbproxy::table::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
-    && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    && content_table->getRow(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
-        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        QString const owner(content_table->getRow(ipath.get_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->getValue().stringValue());
         if(owner == get_plugin_name())
         {
             // we own this page (attachment)
@@ -1255,7 +1255,7 @@ int attachment::delete_all_attachments(content::path_info_t & ipath)
 
     // page exists at all?
     if(!content_table->exists(ipath.get_key())
-    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    || !content_table->getRow(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         // error: page does not exist
         return -1;
@@ -1279,7 +1279,7 @@ int attachment::delete_all_attachments(content::path_info_t & ipath)
         // verify that the child exists
         //
         if(!content_table->exists(child_ipath.get_key())
-        || !content_table->row(child_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+        || !content_table->getRow(child_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
             continue;
         }
@@ -1303,7 +1303,7 @@ int attachment::delete_all_attachments(content::path_info_t & ipath)
         //      2. the page is marked as being final (content::final == 1)
         //      3. branch includes one or more back references
         //
-        libdbproxy::value const attachment_key(revision_table->row(child_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+        libdbproxy::value const attachment_key(revision_table->getRow(child_ipath.get_revision_key())->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->getValue());
         if(attachment_key.nullValue())
         {
             // not considered an attachment, leave this one alone

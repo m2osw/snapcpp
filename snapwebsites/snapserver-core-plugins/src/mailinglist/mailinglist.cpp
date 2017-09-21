@@ -73,7 +73,7 @@ mailinglist::list::list(mailinglist * parent, QString const & list_name)
     : f_parent(parent)
     , f_name(list_name)
     , f_table(f_parent->get_mailinglist_table())
-    , f_row(f_table->row(f_name))
+    , f_row(f_table->getRow(f_name))
     , f_column_predicate(std::make_shared<libdbproxy::cell_range_predicate>())
     //, f_cells() -- auto-init
     , f_c(f_cells.end())
@@ -126,7 +126,7 @@ QString mailinglist::list::next()
     {
         //f_row->clearCache();
         f_row->readCells(f_column_predicate);
-        f_cells = f_row->cells();
+        f_cells = f_row->getCells();
         f_c = f_cells.begin();
         if(f_c == f_cells.end())
         {
@@ -135,7 +135,7 @@ QString mailinglist::list::next()
         }
     }
 
-    libdbproxy::value value((*f_c)->value());
+    libdbproxy::value value((*f_c)->getValue());
     ++f_c;
     // TODO: write a loop so we properly handle the case of an empty
     //       entry (although it should not happen, we never know!)

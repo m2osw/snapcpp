@@ -267,12 +267,12 @@ void no_iframe::on_generate_header_content(content::path_info_t & ipath, QDomEle
         return;
     }
 
-    libdbproxy::row::pointer_t mode_row(revision_table->row(mode_ipath.get_revision_key()));
+    libdbproxy::row::pointer_t mode_row(revision_table->getRow(mode_ipath.get_revision_key()));
 
     QString mode("always");
     if(mode_row->exists(get_name(name_t::SNAP_NAME_NO_IFRAME_MODE)))
     {
-        mode = mode_row->cell(get_name(name_t::SNAP_NAME_NO_IFRAME_MODE))->value().stringValue();
+        mode = mode_row->getCell(get_name(name_t::SNAP_NAME_NO_IFRAME_MODE))->getValue().stringValue();
     }
 
     if(mode == "never")

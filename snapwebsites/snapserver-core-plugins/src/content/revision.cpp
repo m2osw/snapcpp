@@ -81,9 +81,9 @@ snap_version::version_number_t content::get_current_branch(QString const & key, 
                                 : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
     libdbproxy::table::pointer_t content_table(get_content_table());
     if(content_table->exists(key)
-    && content_table->row(key)->exists(current_branch_key))
+    && content_table->getRow(key)->exists(current_branch_key))
     {
-        return content_table->row(key)->cell(current_branch_key)->value().uint32Value();
+        return content_table->getRow(key)->getCell(current_branch_key)->getValue().uint32Value();
     }
 
     return snap_version::SPECIAL_VERSION_UNDEFINED;
@@ -120,7 +120,7 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
         QString const last_branch_key(QString("%1::%2")
                             .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                             .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
-        libdbproxy::value branch_value(content_table->row(key)->cell(last_branch_key)->value());
+        libdbproxy::value branch_value(content_table->getRow(key)->getCell(last_branch_key)->getValue());
         if(!branch_value.nullValue())
         {
             // a branch exists, although it may still be a system branch
@@ -171,9 +171,9 @@ snap_version::version_number_t content::get_current_revision(QString const & key
     }
     libdbproxy::table::pointer_t content_table(get_content_table());
     if(content_table->exists(key)
-    && content_table->row(key)->exists(revision_key))
+    && content_table->getRow(key)->exists(revision_key))
     {
-        return content_table->row(key)->cell(revision_key)->value().uint32Value();
+        return content_table->getRow(key)->getCell(revision_key)->getValue().uint32Value();
     }
 
     return snap_version::SPECIAL_VERSION_UNDEFINED;
@@ -212,9 +212,9 @@ snap_version::version_number_t content::get_current_revision(QString const & key
     }
     libdbproxy::table::pointer_t content_table(get_content_table());
     if(content_table->exists(key)
-    && content_table->row(key)->exists(revision_key))
+    && content_table->getRow(key)->exists(revision_key))
     {
-        return content_table->row(key)->cell(revision_key)->value().uint32Value();
+        return content_table->getRow(key)->getCell(revision_key)->getValue().uint32Value();
     }
 
     return snap_version::SPECIAL_VERSION_UNDEFINED;
@@ -267,7 +267,7 @@ snap_version::version_number_t content::get_new_branch(QString const & key, QStr
 
     snap_lock lock(key);
 
-    libdbproxy::value branch_value(content_table->row(key)->cell(last_branch_key)->value());
+    libdbproxy::value branch_value(content_table->getRow(key)->getCell(last_branch_key)->getValue());
     if(!branch_value.nullValue())
     {
         // it exists, increase it
@@ -281,7 +281,7 @@ snap_version::version_number_t content::get_new_branch(QString const & key, QStr
         //         hacking the database or having a robot that generates
         //         many branches every day.)
     }
-    content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+    content_table->getRow(key)->getCell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
 
     QString last_revision_key(QString("%1::%2::%3")
                     .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
@@ -291,7 +291,7 @@ snap_version::version_number_t content::get_new_branch(QString const & key, QStr
     {
         last_revision_key += "::" + locale;
     }
-    content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    content_table->getRow(key)->getCell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
 
     // unlock ASAP
     lock.unlock();
@@ -336,7 +336,7 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
     source_uri.set_path(key);
     source_uri.force_branch(source_branch);
 
-    libdbproxy::row::pointer_t source_row(branch_table->row(source_uri.get_branch_key()));
+    libdbproxy::row::pointer_t source_row(branch_table->getRow(source_uri.get_branch_key()));
     if(!source_row->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         // no source, ignore
@@ -348,7 +348,7 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
     destination_uri.set_path(key);
     destination_uri.force_branch(destination_branch);
 
-    libdbproxy::row::pointer_t destination_row(branch_table->row(destination_uri.get_branch_key()));
+    libdbproxy::row::pointer_t destination_row(branch_table->getRow(destination_uri.get_branch_key()));
 
     auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
     column_predicate->setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
@@ -356,7 +356,7 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
     for(;;)
     {
         source_row->readCells(column_predicate);
-        libdbproxy::QCassandraCells source_cells(source_row->cells());
+        libdbproxy::cells source_cells(source_row->getCells());
         if(source_cells.isEmpty())
         {
             // done
@@ -367,7 +367,7 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
 }
 
 
-bool content::copy_branch_cells_impl(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+bool content::copy_branch_cells_impl(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     // we handle the links here because the links cannot include the
     // content.h header file...
@@ -376,11 +376,11 @@ bool content::copy_branch_cells_impl(libdbproxy::QCassandraCells & source_cells,
     QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
     QByteArray const links_bytearray(links_namespace.toLatin1());
 
-    libdbproxy::QCassandraCells left_cells;
+    libdbproxy::cells left_cells;
 
     // handle one batch
     //
-    for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
+    for(libdbproxy::cells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
     {
@@ -405,7 +405,7 @@ bool content::copy_branch_cells_impl(libdbproxy::QCassandraCells & source_cells,
             // handle the content::created field
             //
             int64_t const now(f_snap->get_start_date());
-            destination_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(now);
+            destination_row->getCell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(now);
         }
         else if(cell_key.startsWith(links_bytearray))
         {
@@ -452,15 +452,15 @@ bool content::copy_branch_cells_impl(libdbproxy::QCassandraCells & source_cells,
  * \param[in] destination_row  The destination for those cells.
  * \param[in] plugin_namespace  The name of your plugin copying those cells.
  */
-void content::copy_branch_cells_as_is(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, QString const & plugin_namespace)
+void content::copy_branch_cells_as_is(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, QString const & plugin_namespace)
 {
     QString const cell_namespace(QString("%1::").arg(plugin_namespace));
     QByteArray const cell_bytearray(cell_namespace.toLatin1());
 
-    libdbproxy::QCassandraCells left_cells;
+    libdbproxy::cells left_cells;
 
     // handle one batch
-    for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
+    for(libdbproxy::cells::const_iterator nc(source_cells.begin());
             nc != source_cells.end();
             ++nc)
     {
@@ -470,7 +470,7 @@ void content::copy_branch_cells_as_is(libdbproxy::QCassandraCells & source_cells
         if(cell_key.startsWith(cell_bytearray))
         {
             // copy our fields as is
-            destination_row->cell(cell_key)->setValue(source_cell->value());
+            destination_row->getCell(cell_key)->setValue(source_cell->getValue());
         }
         else
         {
@@ -584,7 +584,7 @@ snap_version::version_number_t content::get_new_revision(
         QString const last_branch_key(QString("%1::%2")
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
-        libdbproxy::value branch_value(content_table->row(key)->cell(last_branch_key)->value());
+        libdbproxy::value branch_value(content_table->getRow(key)->getCell(last_branch_key)->getValue());
         if(!branch_value.nullValue()
         && branch > branch_value.uint32Value())
         {
@@ -596,7 +596,7 @@ snap_version::version_number_t content::get_new_revision(
     }
 #endif
 
-    libdbproxy::value revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    libdbproxy::value revision_value(content_table->getRow(key)->getCell(last_revision_key)->getValue());
     if(!revision_value.nullValue())
     {
         // it exists, increase it
@@ -613,7 +613,7 @@ snap_version::version_number_t content::get_new_revision(
         //         YEARS to reach that many revisions in that one
         //         branch...)
     }
-    content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+    content_table->getRow(key)->getCell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
 
     // copy from the current revision at this point
     // (the editor WILL tell us to copy from a specific revisions at some
@@ -621,7 +621,7 @@ snap_version::version_number_t content::get_new_revision(
     // B creates a new revision Y in the meantime, we may still want to copy
     // revision X at the time A saves his changes.)
     snap_version::version_number_t previous_revision(revision);
-    libdbproxy::value current_revision_value(content_table->row(key)->cell(current_revision_key)->value());
+    libdbproxy::value current_revision_value(content_table->getRow(key)->getCell(current_revision_key)->getValue());
     if(!current_revision_value.nullValue())
     {
         previous_revision = current_revision_value.uint32Value();
@@ -652,7 +652,7 @@ snap_version::version_number_t content::get_new_revision(
         // change the creation date
         libdbproxy::value created;
         created.setInt64Value(f_snap->get_start_date());
-        revision_table->row(revision_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created);
+        revision_table->getRow(revision_key)->getCell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created);
     }
 
     // unlock ASAP
@@ -687,7 +687,7 @@ QString content::get_branch_key(QString const& key, bool working_branch)
 
     // get the data key from the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    libdbproxy::value const value(content_table->row(key)->cell(current_key)->value());
+    libdbproxy::value const value(content_table->getRow(key)->getCell(current_key)->getValue());
     return value.stringValue();
 }
 
@@ -730,24 +730,24 @@ void content::set_branch(QString const& key, snap_version::version_number_t bran
 
     // save the data key in the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    content_table->row(key)->cell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+    content_table->getRow(key)->getCell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
 
     // Last branch
     QString const last_branch_key(QString("%1::%2")
                     .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                     .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
-    libdbproxy::value last_branch_value(content_table->row(key)->cell(last_branch_key)->value());
+    libdbproxy::value last_branch_value(content_table->getRow(key)->getCell(last_branch_key)->getValue());
     if(last_branch_value.nullValue())
     {
         // last branch does not exist yet, create it
-        content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+        content_table->getRow(key)->getCell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
     }
     else
     {
         snap_version::version_number_t const last_branch(last_branch_value.uint32Value());
         if(branch > last_branch)
         {
-            content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+            content_table->getRow(key)->getCell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
         }
     }
 }
@@ -781,7 +781,7 @@ QString content::set_branch_key(QString const& key, snap_version::version_number
 
     // save the data key in the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    content_table->row(key)->cell(current_key)->setValue(current_branch_key);
+    content_table->getRow(key)->getCell(current_key)->setValue(current_branch_key);
     return current_branch_key;
 }
 
@@ -812,12 +812,12 @@ void content::initialize_branch(QString const & key)
         QString const last_branch_key(QString("%1::%2")
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
-        libdbproxy::value branch_value(content_table->row(key)->cell(last_branch_key)->value());
+        libdbproxy::value branch_value(content_table->getRow(key)->getCell(last_branch_key)->getValue());
         if(branch_value.nullValue())
         {
             // last branch does not exist yet, create it with zero (0)
             //
-            content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
+            content_table->getRow(key)->getCell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
         }
         else
         {
@@ -829,10 +829,10 @@ void content::initialize_branch(QString const & key)
         QString const current_branch_key(QString("%1::%2")
                 .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
-        libdbproxy::value branch_value(content_table->row(key)->cell(current_branch_key)->value());
+        libdbproxy::value branch_value(content_table->getRow(key)->getCell(current_branch_key)->getValue());
         if(branch_value.nullValue())
         {
-            content_table->row(key)->cell(current_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
+            content_table->getRow(key)->getCell(current_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
         }
     }
 
@@ -840,10 +840,10 @@ void content::initialize_branch(QString const & key)
         QString const current_branch_key(QString("%1::%2")
                 .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
-        libdbproxy::value branch_value(content_table->row(key)->cell(current_branch_key)->value());
+        libdbproxy::value branch_value(content_table->getRow(key)->getCell(current_branch_key)->getValue());
         if(branch_value.nullValue())
         {
-            content_table->row(key)->cell(current_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
+            content_table->getRow(key)->getCell(current_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch_number));
         }
     }
 
@@ -902,7 +902,7 @@ QString content::get_revision_key(QString const & key, snap_version::version_num
 
     // get the data key from the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    libdbproxy::value const value(content_table->row(key)->cell(current_key)->value());
+    libdbproxy::value const value(content_table->getRow(key)->getCell(current_key)->getValue());
     return value.stringValue();
 }
 
@@ -1022,21 +1022,21 @@ void content::set_current_revision(QString const& key, snap_version::version_num
 
     // get the data key from the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    content_table->row(key)->cell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+    content_table->getRow(key)->getCell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
 
     // avoid changing the revision if defined and larger or equal
-    libdbproxy::value const revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    libdbproxy::value const revision_value(content_table->getRow(key)->getCell(last_revision_key)->getValue());
     if(revision_value.nullValue())
     {
         // last revision does not exist yet, create it
-        content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+        content_table->getRow(key)->getCell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
     }
     else
     {
         snap_version::version_number_t const last_revision(revision_value.uint32Value());
         if(revision > last_revision)
         {
-            content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+            content_table->getRow(key)->getCell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
         }
     }
 }
@@ -1082,7 +1082,7 @@ QString content::set_revision_key(QString const & key, snap_version::version_num
 
     // save the data key in the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    content_table->row(key)->cell(current_key)->setValue(current_revision_key);
+    content_table->getRow(key)->getCell(current_key)->setValue(current_revision_key);
     return current_revision_key;
 }
 
@@ -1126,7 +1126,7 @@ QString content::set_revision_key(QString const & key, snap_version::version_num
 
     // save the data key in the content table
     libdbproxy::table::pointer_t content_table(get_content_table());
-    content_table->row(key)->cell(current_key)->setValue(current_revision_key);
+    content_table->getRow(key)->getCell(current_key)->setValue(current_revision_key);
     return current_revision_key;
 }
 

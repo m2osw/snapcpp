@@ -236,8 +236,8 @@ private:
     link_info                                       		f_info;
     libdbproxy::row::pointer_t           		f_row;
     libdbproxy::cell_range_predicate::pointer_t    f_column_predicate;
-    libdbproxy::QCassandraCells                    		f_cells;
-    libdbproxy::QCassandraCells::const_iterator    		f_cell_iterator;
+    libdbproxy::cells                    		f_cells;
+    libdbproxy::cells::const_iterator    		f_cell_iterator;
     link_info                                       		f_link;
 };
 

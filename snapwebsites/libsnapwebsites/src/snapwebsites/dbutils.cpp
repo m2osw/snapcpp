@@ -83,29 +83,29 @@ void dbutils::copy_row(libdbproxy::table::pointer_t ta, QString const & a, // so
                        libdbproxy::table::pointer_t tb, QString const & b) // destination
 {
     // just in case there is still a previous query, clear the cache ahead of time
-    libdbproxy::row::pointer_t source_row(ta->row(a));
+    libdbproxy::row::pointer_t source_row(ta->getRow(a));
     source_row->clearCache();
-    libdbproxy::row::pointer_t destination_row(tb->row(b));
+    libdbproxy::row::pointer_t destination_row(tb->getRow(b));
     auto column_predicate = std::make_shared<libdbproxy::cell_range_predicate>();
     column_predicate->setCount(100); // we have to copy everything also it is likely very small (i.e. 10 fields...)
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         source_row->readCells(column_predicate);
-        libdbproxy::QCassandraCells const source_cells(source_row->cells());
+        libdbproxy::cells const source_cells(source_row->getCells());
         if(source_cells.isEmpty())
         {
             // done
             break;
         }
         // handle one batch
-        for(libdbproxy::QCassandraCells::const_iterator nc(source_cells.begin());
+        for(libdbproxy::cells::const_iterator nc(source_cells.begin());
                 nc != source_cells.end();
                 ++nc)
         {
             libdbproxy::cell::pointer_t source_cell(*nc);
             QByteArray cell_key(source_cell->columnKey());
-            destination_row->cell(cell_key)->setValue(source_cell->value());
+            destination_row->getCell(cell_key)->setValue(source_cell->getValue());
         }
     }
 }
@@ -951,7 +951,7 @@ QString dbutils::get_column_type_name( const QByteArray& key ) const
 
 QString dbutils::get_column_value( libdbproxy::cell::pointer_t c, bool const display_only ) const
 {
-    return get_column_value( c->columnKey(), c->value().binaryValue(), display_only );
+    return get_column_value( c->columnKey(), c->getValue().binaryValue(), display_only );
 }
 
 
@@ -1594,7 +1594,7 @@ void dbutils::set_column_value( const QByteArray& key, libdbproxy::value& cvalue
         case column_type_t::CT_string_value:
         {
             // all others viewed as strings
-            //v = c->value().stringValue().replace("\n", "\\n");
+            //v = c->getValue().stringValue().replace("\n", "\\n");
             QString convert( v );
             cvalue.setStringValue( convert.replace( "\\r", "\r" ).replace( "\\n", "\n" ) );
         }

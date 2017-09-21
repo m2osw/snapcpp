@@ -233,8 +233,8 @@ void detectadblocker::on_generate_header_content(content::path_info_t & ipath, Q
 
         content::path_info_t settings_ipath;
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_SETTINGS_PATH));
-        libdbproxy::row::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
-        int8_t const inform_server(settings_row->cell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_INFORM_SERVER))->value().safeSignedCharValue(0, 1)); // AJAX On/Off
+        libdbproxy::row::pointer_t settings_row(revision_table->getRow(settings_ipath.get_revision_key()));
+        int8_t const inform_server(settings_row->getCell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_INFORM_SERVER))->getValue().safeSignedCharValue(0, 1)); // AJAX On/Off
 
         QDomDocument doc(header.ownerDocument());
 
@@ -276,8 +276,8 @@ void detectadblocker::on_detach_from_session()
 
             content::path_info_t settings_ipath;
             settings_ipath.set_path(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_SETTINGS_PATH));
-            libdbproxy::row::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
-            int64_t const prevent_ads_duration(settings_row->cell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_PREVENT_ADS_DURATION))->value().safeInt64Value(0, 1)); // AJAX On/Off
+            libdbproxy::row::pointer_t settings_row(revision_table->getRow(settings_ipath.get_revision_key()));
+            int64_t const prevent_ads_duration(settings_row->getCell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_PREVENT_ADS_DURATION))->getValue().safeInt64Value(0, 1)); // AJAX On/Off
 
             time_t const timeout(time_status[0].toLongLong());
             time_t const start_time(f_snap->get_start_time());

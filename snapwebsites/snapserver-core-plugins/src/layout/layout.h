@@ -103,7 +103,7 @@ public:
     bool                on_improve_signature(QString const & path, QDomDocument doc, QDomElement & signature_tag);
 
     // content signals
-    void                on_copy_branch_cells(libdbproxy::QCassandraCells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    void                on_copy_branch_cells(libdbproxy::cells & source_cells, libdbproxy::row::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     QString             get_layout(content::path_info_t & ipath, const QString & column_name, bool use_qs_theme);
     QDomDocument        create_document(content::path_info_t & ipath, plugin * content_plugin);

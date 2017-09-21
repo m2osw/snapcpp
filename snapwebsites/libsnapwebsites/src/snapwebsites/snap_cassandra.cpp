@@ -97,7 +97,7 @@ libdbproxy::context::pointer_t snap_cassandra::get_snap_context()
     // we need to read all the contexts in order to make sure the
     // findContext() works
     //
-    f_cassandra->contexts();
+    f_cassandra->getContexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     return f_cassandra->findContext(context_name);
 }
@@ -206,7 +206,7 @@ void snap_cassandra::create_table_list()
             //
             // setup the name in the "constructor"
             //
-            table = context->table(table_name);
+            table = context->getTable(table_name);
 
             // other fields make use of a map
             //

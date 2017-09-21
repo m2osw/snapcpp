@@ -553,7 +553,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
             break;
         }
 
-        auto row_list(users_table->rows());
+        auto row_list(users_table->getRows());
         for( QByteArray const & row_key : row_list.keys() )
         {
             libdbproxy::value const email( row_key );
@@ -574,9 +574,9 @@ void users::user_identifier_update(int64_t variables_timestamp)
             }
 
             libdbproxy::row::pointer_t  const & row     ( row_list[row_key] );
-            libdbproxy::cell::pointer_t const & id_cell ( row->cell(identifier_name) );
-            libdbproxy::value const             id      ( id_cell->value() );
-            libdbproxy::row::pointer_t  const & new_row ( users_table->row(id.binaryValue()) );
+            libdbproxy::cell::pointer_t const & id_cell ( row->getCell(identifier_name) );
+            libdbproxy::value const             id      ( id_cell->getValue() );
+            libdbproxy::row::pointer_t  const & new_row ( users_table->getRow(id.binaryValue()) );
             SNAP_LOG_TRACE("found email [")(email_name)("], converting to id=[")(id.int64Value());
 
             // Now create the new row
@@ -584,11 +584,11 @@ void users::user_identifier_update(int64_t variables_timestamp)
             libdbproxy::cell_predicate::pointer_t crp( std::make_shared<libdbproxy::cell_predicate>() );
             crp->setCount( 10000 );
             row->readCells( crp );
-            auto cell_list(row->cells());
+            auto cell_list(row->getCells());
             for( QByteArray const & cell_key : cell_list.keys() )
             {
-                libdbproxy::value value( cell_list[cell_key]->value() );
-                libdbproxy::cell::pointer_t new_cell( new_row->cell(cell_key) );
+                libdbproxy::value value( cell_list[cell_key]->getValue() );
+                libdbproxy::cell::pointer_t new_cell( new_row->getCell(cell_key) );
                 new_cell->setValue( value );
             }
 
@@ -608,7 +608,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
     SNAP_LOG_TRACE("Creating *index_row*");
     {
         auto current_email_name( get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL) );
-        libdbproxy::row::pointer_t const & index_row( users_table->row(index_row_name) );
+        libdbproxy::row::pointer_t const & index_row( users_table->getRow(index_row_name) );
         for( ;; )
         {
             uint32_t const count(users_table->readRows(row_predicate));
@@ -618,7 +618,7 @@ void users::user_identifier_update(int64_t variables_timestamp)
                 break;
             }
 
-            auto row_list(users_table->rows());
+            auto row_list(users_table->getRows());
             for( QByteArray const & row_key : row_list.keys() )
             {
                 libdbproxy::value const id( row_key );
@@ -631,12 +631,12 @@ void users::user_identifier_update(int64_t variables_timestamp)
                 }
 
                 libdbproxy::row::pointer_t  const & row           ( row_list[row_key] );
-                libdbproxy::value           const & current_email ( row->cell(current_email_name)->value() );
+                libdbproxy::value           const & current_email ( row->getCell(current_email_name)->getValue() );
                 libdbproxy::value           const & identifier    ( row_key );
 
                 SNAP_LOG_TRACE("Creating current_email entry: first=")(current_email.stringValue())
                         (", second=")(identifier.int64Value());
-                index_row->cell( current_email.binaryValue() )->setValue( identifier.binaryValue() );
+                index_row->getCell( current_email.binaryValue() )->setValue( identifier.binaryValue() );
             }
         }
     }
@@ -1835,7 +1835,7 @@ void users::on_generate_page_content(content::path_info_t & ipath, QDomElement &
         }
 
         {   // snap/page/body/author[@type="users::name"]/data
-            libdbproxy::value const value(content_table->row(user_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_USERS_USERNAME))->value());
+            libdbproxy::value const value(content_table->getRow(user_ipath.get_key())->getCell(get_name(name_t::SNAP_NAME_USERS_USERNAME))->getValue());
             if(!value.nullValue())
             {
                 QDomElement author(doc.createElement("author"));
@@ -3090,7 +3090,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
         if(cell != nullptr)
         {
             cell->setConsistencyLevel(libdbproxy::CONSISTENCY_LEVEL_QUORUM);
-            email_data = cell->value();
+            email_data = cell->getValue();
         }
         if(!email_data.nullValue())
         {
@@ -3160,10 +3160,10 @@ users::status_t users::register_user(QString const & email, QString const & pass
             //
             if(users_table->exists(id_row_name))
             {
-                libdbproxy::row::pointer_t id_row(users_table->row(id_row_name));
-                libdbproxy::cell::pointer_t id_cell(id_row->cell(identifier_key));
+                libdbproxy::row::pointer_t id_row(users_table->getRow(id_row_name));
+                libdbproxy::cell::pointer_t id_cell(id_row->getCell(identifier_key));
                 id_cell->setConsistencyLevel(libdbproxy::CONSISTENCY_LEVEL_QUORUM);
-                libdbproxy::value const current_identifier(id_cell->value());
+                libdbproxy::value const current_identifier(id_cell->getValue());
                 if(current_identifier.size() != sizeof(int64_t))
                 {
                     // this means no user can register until this value gets
@@ -3195,7 +3195,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             // save the new identifier back in the database
             //
             new_identifier.setInt64Value(identifier);
-            users_table->row(id_row_name)->cell(identifier_key)->setValue(new_identifier);
+            users_table->getRow(id_row_name)->getCell(identifier_key)->setValue(new_identifier);
         }
         // the lock automatically goes away here
     }
@@ -3259,18 +3259,18 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     // mark when the user was created in the branch
     libdbproxy::table::pointer_t branch_table(content_plugin->get_branch_table());
-    libdbproxy::row::pointer_t branch_row(branch_table->row(user_ipath.get_branch_key()));
-    branch_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+    libdbproxy::row::pointer_t branch_row(branch_table->getRow(user_ipath.get_branch_key()));
+    branch_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
 
     // save a default title and body
     libdbproxy::table::pointer_t revision_table(content_plugin->get_revision_table());
-    libdbproxy::row::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+    libdbproxy::row::pointer_t revision_row(revision_table->getRow(user_ipath.get_revision_key()));
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
     // no title or body by default--other plugins could set those to the
     //                              user name or other information
     QString const empty_string;
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(empty_string);
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(empty_string);
+    revision_row->getCell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
 
     // if already marked as valid, for sure do not mark this user as new!?
     if(status != status_t::STATUS_VALID)
@@ -4200,7 +4200,7 @@ void users::token_user_count(filter::filter::token_info_t & token)
 
     content::path_info_t user_count_ipath;
     user_count_ipath.set_path(get_name(name_t::SNAP_NAME_USERS_PATH));
-    int32_t const count(branch_table->row(user_count_ipath.get_branch_key())->cell(list::get_name(list::name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value());
+    int32_t const count(branch_table->getRow(user_count_ipath.get_branch_key())->getCell(list::get_name(list::name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->getValue().safeInt32Value());
     token.f_replacement = QString("%1").arg(count);
 }
 
@@ -4238,7 +4238,7 @@ bool users::user_is_a_spammer()
         //           f_snap->get_canonicalized_remote_ip()
         //
         QString const ip(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
-        libdbproxy::row::pointer_t row(users_table->row(black_list));
+        libdbproxy::row::pointer_t row(users_table->getRow(black_list));
         if(row->exists(ip))
         {
             // "unfortunately" this user is marked as a spammer
@@ -4368,8 +4368,8 @@ void users::on_set_locale()
         content::path_info_t user_ipath;
         user_ipath.set_path(user_path);
 
-        libdbproxy::row::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
-        QString const user_locale(revision_row->cell(get_name(name_t::SNAP_NAME_USERS_LOCALE))->value().stringValue());
+        libdbproxy::row::pointer_t revision_row(revision_table->getRow(user_ipath.get_revision_key()));
+        QString const user_locale(revision_row->getCell(get_name(name_t::SNAP_NAME_USERS_LOCALE))->getValue().stringValue());
         if(!user_locale.isEmpty())
         {
             locale::locale::instance()->set_current_locale(user_locale);
@@ -4408,8 +4408,8 @@ void users::on_set_timezone()
         content::path_info_t user_ipath;
         user_ipath.set_path(user_path);
 
-        libdbproxy::row::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
-        QString const user_timezone(revision_row->cell(get_name(name_t::SNAP_NAME_USERS_TIMEZONE))->value().stringValue());
+        libdbproxy::row::pointer_t revision_row(revision_table->getRow(user_ipath.get_revision_key()));
+        QString const user_timezone(revision_row->getCell(get_name(name_t::SNAP_NAME_USERS_TIMEZONE))->getValue().stringValue());
         if(!user_timezone.isEmpty())
         {
             locale::locale::instance()->set_current_timezone(user_timezone);
