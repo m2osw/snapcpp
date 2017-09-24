@@ -45,6 +45,7 @@
 #include <QString>
 
 #include "casswrapper/session.h"
+#include "casswrapper/batch.h"
 
 
 namespace casswrapper
@@ -102,9 +103,7 @@ public:
     void                bindJsonMap         ( const size_t num, const string_map_t& value );
     void                bindMap             ( const size_t num, const string_map_t& value );
 
-    void                startLoggedBatch    ();
-    void                startUnloggedBatch  ();
-    void                startCounterBatch   ();
+    void                startBatch          ( Batch const& batch );
     void                addToBatch          ();
     void                endBatch            ( const bool block = true );
 

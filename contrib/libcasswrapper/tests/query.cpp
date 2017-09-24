@@ -36,6 +36,7 @@
  */
 
 #include "casswrapper/query.h"
+#include "casswrapper/batch.h"
 #include "casswrapper/schema.h"
 #include "casswrapper/qstring_stream.h"
 #include <QtCore>
@@ -284,7 +285,8 @@ void query_test::batchTest()
     std::cout << "Batch insert into table 'large_table'..." << std::endl;
     auto q = Query::create( f_session );
 
-    q->startLoggedBatch();
+    LoggedBatch batch;
+    q->startBatch( batch );
 
     for( int32_t i = 0; i < row_count; ++i )
     {

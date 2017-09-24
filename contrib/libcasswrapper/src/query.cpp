@@ -123,7 +123,7 @@ namespace
 
 struct data
 {
-    std::unique_ptr<batch>       f_batch;
+    std::shared_ptr<batch>       f_batch;
     std::unique_ptr<future>      f_sessionFuture;
     std::unique_ptr<iterator>    f_rowsIterator;
     std::unique_ptr<result>      f_queryResult;
@@ -603,21 +603,9 @@ std::cerr << "*** ...pause is over... ***\n";
 #endif
 
 
-void Query::startLoggedBatch()
+void Query::startBatch( Batch const& batch )
 {
-    f_data->f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_LOGGED );
-}
-
-
-void Query::startUnloggedBatch()
-{
-    f_data->f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_UNLOGGED );
-}
-
-
-void Query::startCounterBatch()
-{
-    f_data->f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_UNLOGGED );
+    f_data->f_batch = batch.f_data->f_batch;
 }
 
 
