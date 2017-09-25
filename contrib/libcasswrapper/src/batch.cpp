@@ -36,13 +36,13 @@
 
 #include "casswrapper/batch.h"
 #include "casswrapper_impl.h"
+#include "casswrapper/query.h"
 
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
 
 #include <QtCore>
-
 
 /** \class batch
  * \brief Encapulates the cassandra-cpp driver to handle batches of queries.
@@ -54,37 +54,96 @@ namespace casswrapper
 {
 
 
-struct data
-{
-    std::shared_ptr<batch> f_batch;
-};
-
-
 /** \brief Construct a batch object and manage the lifetime of the batch session.
  *
  * \sa batch
  */
 Batch::Batch()
-    : f_data(std::make_shared<data>())
 {
+}
+
+
+void Batch::clear()
+{
+    f_batch.reset();
+}
+
+
+bool Batch::isActive() const
+{
+    return static_cast<bool>(f_batch);
+}
+
+
+void Batch::addQuery( Query::pointer_t query )
+{
+    // Sanity checks
+    //
+    if( !f_batch )
+    {
+        throw libexcept::exception_t( "Batch::addQuery() cannot be called without an active batch!" );
+    }
+
+    f_queryList.push_back(query);
+}
+
+
+void Batch::run( bool const block )
+{
+    // Sanity checks
+    //
+    if( !f_batch )
+    {
+        throw libexcept::exception_t( "Batch::start() cannot be called without an active batch!" );
+    }
+    //
+    if( f_queryList.empty() )
+    {
+        throw libexcept::exception_t( "Batch::start() need at least one query!" );
+    }
+
+    for( auto q : f_queryList )
+    {
+        q->addToBatch( f_batch.get() );
+    }
+
+    f_queryList[0]->internalStart( block, f_batch.get() );
 }
 
 
 LoggedBatch::LoggedBatch()
 {
-    f_data->f_batch = std::make_shared<batch>( CASS_BATCH_TYPE_LOGGED );
+    f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_LOGGED );
+}
+
+
+LoggedBatch::pointer_t LoggedBatch::create()
+{
+    return pointer_t(new LoggedBatch);
 }
 
 
 UnloggedBatch::UnloggedBatch()
 {
-    f_data->f_batch = std::make_shared<batch>( CASS_BATCH_TYPE_UNLOGGED );
+    f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_UNLOGGED );
+}
+
+
+UnloggedBatch::pointer_t UnloggedBatch::create()
+{
+    return pointer_t(new UnloggedBatch);
 }
 
 
 CounterBatch::CounterBatch()
 {
-    f_data->f_batch = std::make_shared<batch>( CASS_BATCH_TYPE_UNLOGGED );
+    f_batch = std::make_unique<batch>( CASS_BATCH_TYPE_UNLOGGED );
+}
+
+
+CounterBatch::pointer_t CounterBatch::create()
+{
+    return pointer_t(new CounterBatch);
 }
 
 

@@ -123,7 +123,6 @@ namespace
 
 struct data
 {
-    std::shared_ptr<batch>       f_batch;
     std::unique_ptr<future>      f_sessionFuture;
     std::unique_ptr<iterator>    f_rowsIterator;
     std::unique_ptr<result>      f_queryResult;
@@ -603,38 +602,26 @@ std::cerr << "*** ...pause is over... ***\n";
 #endif
 
 
-void Query::startBatch( Batch const& batch )
+void Query::addToBatch( batch* batch_ptr )
 {
-    f_data->f_batch = batch.f_data->f_batch;
-}
-
-
-void Query::addToBatch()
-{
-    // Sanity checks
-    //
-    if( !f_data->f_batch )
-    {
-        throw libexcept::exception_t( "Query::addToBatch() cannot be called without an active batch!" );
-    }
-    //
     if( !f_data->f_queryStmt )
     {
-        throw libexcept::exception_t( "Query::addToBatch requires an active query statement! Did you call Query::query()?" );
+        throw libexcept::exception_t( "Query::addToBatch() must be called with an active query statement!" );
     }
-
-    f_data->f_batch->set_consistency( CASS_CONSISTENCY_QUORUM );
-    f_data->f_batch->add_statement( *(f_data->f_queryStmt) );
+    //
+    batch_ptr->set_consistency( CASS_CONSISTENCY_QUORUM );
+    batch_ptr->add_statement( *(f_data->f_queryStmt) );
     f_data->f_queryStmt.reset();
 }
 
 
-void Query::internalStart( const bool block )
+void Query::internalStart( const bool block, batch* batch_ptr )
 {
     f_data->f_sessionFuture = std::make_unique<future>();
-    if( f_data->f_batch )
+
+    if( batch_ptr )
     {
-        *f_data->f_sessionFuture = f_session->getSession().execute_batch( *(f_data->f_batch) );
+        *f_data->f_sessionFuture = f_session->getSession().execute_batch( *batch_ptr );
     }
     else
     {
@@ -654,18 +641,6 @@ void Query::internalStart( const bool block )
             , reinterpret_cast<void*>(this)
             );
     }
-}
-
-
-void Query::endBatch( const bool block )
-{
-    if( !f_data->f_batch )
-    {
-        throw libexcept::exception_t( "Query::endBatch() cannot be called without an active batch!" );
-    }
-
-    internalStart( block );
-    f_data->f_batch.reset();
 }
 
 

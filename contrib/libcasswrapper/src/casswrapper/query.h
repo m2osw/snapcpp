@@ -52,6 +52,7 @@ namespace casswrapper
 {
 
 struct data;
+class batch;
 
 class Query
     : public QObject
@@ -102,10 +103,6 @@ public:
     void                bindByteArray       ( const size_t num, const QByteArray&   value );
     void                bindJsonMap         ( const size_t num, const string_map_t& value );
     void                bindMap             ( const size_t num, const string_map_t& value );
-
-    void                startBatch          ( Batch const& batch );
-    void                addToBatch          ();
-    void                endBatch            ( const bool block = true );
 
     void                start               ( const bool block = true );
     bool	            isReady             () const;
@@ -160,10 +157,13 @@ private:
     int64_t                      f_timeout          = 0;
     int                          f_pagingSize       = -1;
 
+    friend class Batch;
+
+    void                addToBatch              ( batch* batch_ptr );
     void 		        setStatementConsistency ();
     void 		        setStatementTimestamp   ();
     void                throwIfError            ( const QString& msg );
-    void                internalStart           ( const bool block   );
+    void                internalStart           ( const bool block, batch* batch_ptr = nullptr );
 
     static void		    queryCallbackFunc( void* future, void *data );
 };

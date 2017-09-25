@@ -283,13 +283,13 @@ void query_test::batchTest()
     const int32_t row_count = 1000;
 
     std::cout << "Batch insert into table 'large_table'..." << std::endl;
-    auto q = Query::create( f_session );
 
-    LoggedBatch batch;
-    q->startBatch( batch );
+    auto batch( LoggedBatch::create() );
 
     for( int32_t i = 0; i < row_count; ++i )
     {
+        auto q = Query::create( f_session );
+        batch->addQuery( q );
         q->query( "INSERT INTO qtcassandra_query_test.large_table "
                 "(id, name, blob_value) "
                 "VALUES "
@@ -303,36 +303,37 @@ void query_test::batchTest()
         QString blob;
         blob.fill( 'b', 10 );
         q->bindByteArray( bind_num++, blob.toUtf8() );
-
-        q->addToBatch();
     }
 
-    q->endBatch();
+    batch->run();
 
     std::map<int32_t,QString> string_map;
 
-    std::cout << "POST BATCH: Select from 'large_table' and test paging functionality..." << std::endl;
-    q->query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
-    q->setPagingSize( 10 );
-    q->start();
-    do
     {
-//        std::cout << "Iterate through batch page..." << std::endl;
-        while( q->nextRow() )
+        std::cout << "POST BATCH: Select from 'large_table' and test paging functionality..." << std::endl;
+        auto q = Query::create( f_session );
+        q->query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
+        q->setPagingSize( 10 );
+        q->start();
+        do
         {
-            const int32_t id(q->getInt32Column("id"));
-            const QString name(q->getStringColumn("name"));
-            string_map[id] = name;
+            //        std::cout << "Iterate through batch page..." << std::endl;
+            while( q->nextRow() )
+            {
+                const int32_t id(q->getInt32Column("id"));
+                const QString name(q->getStringColumn("name"));
+                string_map[id] = name;
 #if 0
-            std::cout
-                    << "id=" << id
-                    << ", name='" << name.toStdString() << "'"
-                    << ", timestamp=" << q->getInt64Column("timestamp")
-                    << std::endl;
+                std::cout
+                        << "id=" << id
+                        << ", name='" << name.toStdString() << "'"
+                        << ", timestamp=" << q->getInt64Column("timestamp")
+                        << std::endl;
 #endif
+            }
         }
+        while( q->nextPage() );
     }
-    while( q->nextPage() );
 
     std::cout << "Check order of recovered records:" << std::endl;
     if( string_map.size() != static_cast<size_t>(row_count) )

@@ -36,20 +36,31 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 
 namespace casswrapper
 {
 
-class  Query;
-struct data;
+class Query;
+class batch;
 
 class Batch
+    : public std::enable_shared_from_this<Batch>
 {
+public:
+    typedef std::shared_ptr<Batch>  pointer_t;
+
+    void clear();
+    bool isActive() const;
+    void addQuery( std::shared_ptr<Query> query );
+    void run( bool const block = true );
+
 protected:
     Batch();
     friend class Query;
-    std::shared_ptr<data> f_data;
+    std::unique_ptr<batch>              f_batch;
+    std::vector<std::shared_ptr<Query>> f_queryList;
 };
 
 
@@ -57,6 +68,8 @@ class LoggedBatch : public Batch
 {
 public:
     LoggedBatch();
+
+    static pointer_t    create();
 };
 
 
@@ -64,6 +77,8 @@ class UnloggedBatch : public Batch
 {
 public:
     UnloggedBatch();
+
+    static pointer_t    create();
 };
 
 
@@ -71,6 +86,8 @@ class CounterBatch : public Batch
 {
 public:
     CounterBatch();
+
+    static pointer_t    create();
 };
 
 
