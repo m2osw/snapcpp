@@ -91,44 +91,35 @@ public:
     void				setTimestamp        ( int64_t val );
 
     void                query               ( const QString& query_string, const int bind_count = -1 );
+    int                 getBindCount        () const;
     int                 pagingSize          () const;
     void                setPagingSize       ( const int size );
 
-    void                bindBool            ( const size_t num, const bool          value );
-    void                bindInt32           ( const size_t num, const int32_t       value );
-    void                bindInt64           ( const size_t num, const int64_t       value );
-    void                bindFloat           ( const size_t num, const float         value );
-    void                bindDouble          ( const size_t num, const double        value );
-    void                bindString          ( const size_t num, const QString&      value );
-    void                bindByteArray       ( const size_t num, const QByteArray&   value );
-    void                bindJsonMap         ( const size_t num, const string_map_t& value );
-    void                bindMap             ( const size_t num, const string_map_t& value );
+    void                bindByteArray       ( const size_t   id, const QByteArray&   value );
+    void                bindByteArray       ( const QString& id, const QByteArray&   value );
+    void                bindVariant         ( const size_t   id, const QVariant&     value );
+    void                bindVariant         ( const QString& id, const QVariant&     value );
+    void                bindJsonMap         ( const size_t   id, const string_map_t& value );
+    void                bindJsonMap         ( const QString& id, const string_map_t& value );
+    void                bindMap             ( const size_t   id, const string_map_t& value );
+    void                bindMap             ( const QString& id, const string_map_t& value );
 
     void                start               ( const bool block = true );
     bool	            isReady             () const;
     bool				queryActive		    () const;
     void                getQueryResult      ();
     size_t              rowCount            () const;
+    size_t              columnCount         () const;
     bool                nextRow             ();
     bool                nextPage            ( const bool block = true );
     void                end                 ();
+    void                reset               ();
 
-    bool                getBoolColumn       ( const QString& name  ) const;
-    bool                getBoolColumn       ( const int      num   ) const;
-    int32_t             getInt32Column      ( const QString& name  ) const;
-    int32_t             getInt32Column      ( const int      num   ) const;
-    int64_t             getInt64Column      ( const QString& name  ) const;
-    int64_t             getInt64Column      ( const int      num   ) const;
-    float               getFloatColumn      ( const QString& name  ) const;
-    float               getFloatColumn      ( const int      num   ) const;
-    double              getDoubleColumn     ( const QString& name  ) const;
-    double              getDoubleColumn     ( const int      num   ) const;
-    QString             getStringColumn     ( const QString& name  ) const;
-    QString             getStringColumn     ( const int      num   ) const;
+    QVariant            getVariantColumn    ( const QString& name  ) const;
+    QVariant            getVariantColumn    ( const int      num   ) const;
     QByteArray          getByteArrayColumn  ( const char *   name  ) const;
     QByteArray          getByteArrayColumn  ( const QString& name  ) const;
     QByteArray          getByteArrayColumn  ( const int      num   ) const;
-
     string_map_t        getJsonMapColumn    ( const QString& name ) const;
     string_map_t        getJsonMapColumn    ( const int num ) const;
     string_map_t        getMapColumn        ( const QString& name ) const;
@@ -156,6 +147,7 @@ private:
     int64_t                      f_timestamp        = 0;
     int64_t                      f_timeout          = 0;
     int                          f_pagingSize       = -1;
+    int                          f_bindCount        = -1;
 
     friend class Batch;
 
@@ -164,6 +156,8 @@ private:
     void 		        setStatementTimestamp   ();
     void                throwIfError            ( const QString& msg );
     void                internalStart           ( const bool block, batch* batch_ptr = nullptr );
+
+    casswrapper::value const& getColumnValue( const size_t id ) const;
 
     static void		    queryCallbackFunc( void* future, void *data );
 };

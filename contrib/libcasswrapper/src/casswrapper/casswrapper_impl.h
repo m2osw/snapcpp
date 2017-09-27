@@ -288,9 +288,12 @@ public:
     result( CassResult*   );
     result( const result& );
 
-    iterator    get_iterator()   const;
-    size_t      get_row_count()  const;
-    bool        has_more_pages() const;
+    iterator    get_iterator()      const;
+    size_t      get_row_count()     const;
+    size_t      get_column_count()  const;
+    bool        has_more_pages()    const;
+
+    row         get_first_row()     const;
 
     void reset() { f_ptr.reset(); }
 
@@ -424,15 +427,24 @@ public:
     void set_paging_size  ( const int             size      ) const;
     void set_paging_state ( const result&         res       ) const;
 
-    void bind_bool       ( const size_t num, const bool         value ) const;
-    void bind_int32      ( const size_t num, const int32_t      value ) const;
-    void bind_int64      ( const size_t num, const int64_t      value ) const;
-    void bind_float      ( const size_t num, const float        value ) const;
-    void bind_double     ( const size_t num, const double       value ) const;
-    void bind_string     ( const size_t num, const std::string& value ) const;
-    void bind_string     ( const size_t num, const QString&     value ) const;
-    void bind_blob       ( const size_t num, const QByteArray&  value ) const;
-    void bind_collection ( const size_t num, const collection&  value ) const;
+    void bind_bool       ( const size_t   id, const bool         value ) const;
+    void bind_bool       ( const QString& id, const bool         value ) const;
+    void bind_int32      ( const size_t   id, const int32_t      value ) const;
+    void bind_int32      ( const QString& id, const int32_t      value ) const;
+    void bind_int64      ( const size_t   id, const int64_t      value ) const;
+    void bind_int64      ( const QString& id, const int64_t      value ) const;
+    void bind_float      ( const size_t   id, const float        value ) const;
+    void bind_float      ( const QString& id, const float        value ) const;
+    void bind_double     ( const size_t   id, const double       value ) const;
+    void bind_double     ( const QString& id, const double       value ) const;
+    void bind_string     ( const size_t   id, const std::string& value ) const;
+    void bind_string     ( const QString& id, const QString&     value ) const;
+    void bind_string     ( const size_t   id, const std::string& value ) const;
+    void bind_string     ( const QString& id, const QString&     value ) const;
+    void bind_blob       ( const size_t   id, const QByteArray&  value ) const;
+    void bind_blob       ( const QString& id, const QByteArray&  value ) const;
+    void bind_collection ( const size_t   id, const collection&  value ) const;
+    void bind_collection ( const QString& id, const collection&  value ) const;
 
     void reset() { f_ptr.reset(); }
 

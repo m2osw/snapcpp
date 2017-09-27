@@ -300,19 +300,32 @@ void Query::setStatementTimestamp()
  * \param bind_count[in]    number of parameters to bind
  * 
  */
-void Query::query( const QString &query_string, int bind_count )
+void Query::query( const QString &query_string, const int bind_count )
 {
-    if( bind_count == -1 )
+    f_bindCount = bind_count;
+    //
+    if( f_bindCount == -1 )
     {
-        bind_count = query_string.count('?');
+        f_bindCount = query_string.count('?');
     }
 
-    f_data->f_queryStmt = std::make_unique<statement>( query_string, bind_count );
+    f_data->f_queryStmt = std::make_unique<statement>( query_string, f_bindCount );
 
     setStatementConsistency();
     setStatementTimestamp();
 
     f_queryString = query_string;
+}
+
+
+/** \brief Get the bind count from the last query.
+ *
+ * If the bind count is -1, that means there has been no query run
+ * in this object life. Otherwise, it will be 0 or greater.
+ */
+int Query::getBindCount() const
+{
+    return f_bindCount;
 }
 
 
@@ -339,108 +352,63 @@ void Query::setPagingSize( const int size )
 }
 
 
-/** \brief Bind a Boolean to the numbered place holder
- *
- * This binds a value to the numbered placeholder in the current query.
- *
- * \param num[in]   placeholder number
- * \param value[in] value to bind to the query
- *
- * \sa query()
- */
-void Query::bindBool( const size_t num, const bool value )
-{
-   f_data->f_queryStmt->bind_bool( num, value );
-}
-
-
-/** \brief Bind a 32-bit signed integer to the numbered place holder
- *
- * This binds a value to the numbered placeholder in the current query.
- *
- * \param num[in]   placeholder number
- * \param value[in] value to bind to the query
- *
- * \sa query()
- */
-void Query::bindInt32( const size_t num, const int32_t value )
-{
-   f_data->f_queryStmt->bind_int32( num, value );
-}
-
-
-/** \brief Bind a 64-bit signed integer to the numbered place holder
- *
- * This binds a value to the numbered placeholder in the current query.
- *
- * \param num[in]   placeholder number
- * \param value[in] value to bind to the query
- *
- * \sa query()
- */
-void Query::bindInt64( const size_t num, const int64_t value )
-{
-   f_data->f_queryStmt->bind_int64( num, value );
-}
-
-
-/** \brief Bind a floating point value to the numbered place holder
- *
- * This binds a value to the numbered placeholder in the current query.
- *
- * \param num[in]   placeholder number
- * \param value[in] value to bind to the query
- *
- * \sa query()
- */
-void Query::bindFloat( const size_t num, const float value )
-{
-   f_data->f_queryStmt->bind_float( num, value );
-}
-
-
-/** \brief Bind a double value to the numbered place holder
- *
- * This binds a value to the numbered placeholder in the current query.
- *
- * \param num[in]   placeholder number
- * \param value[in] value to bind to the query
- *
- * \sa query()
- */
-void Query::bindDouble( const size_t num, const double value )
-{
-   f_data->f_queryStmt->bind_double( num, value );
-}
-
-
-/** \brief Bind a Qt string to the numbered place holder
- *
- * This binds a value to the numbered placeholder in the current query.
- *
- * \param num[in]   placeholder number
- * \param value[in] value to bind to the query
- *
- * \sa query()
- */
-void Query::bindString( const size_t num, const QString &value )
-{
-    f_data->f_queryStmt->bind_string( num, value );
-}
-
-
 /** \brief Bind a Qt byte-array to the numbered place holder
  *
  * This binds a value to the numbered placeholder in the current query.
  *
- * \param num[in]   placeholder number
+ * \param id[in]   placeholder number
  * \param value[in] value to bind to the query
  *
  * \sa query()
  */
-void Query::bindByteArray( const size_t num, const QByteArray& value )
+void Query::bindByteArray( const size_t id, const QByteArray& value )
 {
-    f_data->f_queryStmt->bind_blob( num, value );
+    f_data->f_queryStmt->bind_blob( id, value );
+}
+
+void Query::bindByteArray( const QString& id, const QByteArray& value )
+{
+    f_data->f_queryStmt->bind_blob( id, value );
+}
+
+
+/** \brief Bind a Qt Variant value
+ *
+ * This binds a QVariant value to the numbered placeholder in the current query.
+ *
+ * \param id[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
+void Query::bindVariant( const size_t id, const QVariant& value )
+{
+    switch( value.type() )
+    {
+    case QVariant::Bool:      f_data->f_queryStmt->bind_bool(   id, value ); break;
+    case QVariant::Int:       f_data->f_queryStmt->bind_int32(  id, value ); break;
+    case QVariant::LongLong:  f_data->f_queryStmt->bind_int64(  id, value ); break;
+    case QVariant::Double:    f_data->f_queryStmt->bind_double( id, value ); break;
+    case QVariant::String:    f_data->f_queryStmt->bind_string( id, value ); break;
+    case QVariant::ByteArray: f_data->f_queryStmt->bind_blob(   id, value ); break;
+    default:
+        qWarning("QVariant type '%d' not supported!", value.type() );
+    }
+}
+
+void Query::bindVariant( const QString& id, const QVariant& value )
+{
+    switch( value.type() )
+    {
+    case QVariant::Bool:      f_data->f_queryStmt->bind_bool(   id, value ); break;
+    case QVariant::Int:       f_data->f_queryStmt->bind_int32(  id, value ); break;
+    case QVariant::LongLong:  f_data->f_queryStmt->bind_int64(  id, value ); break;
+    case QVariant::Double:    f_data->f_queryStmt->bind_double( id, value ); break;
+    case QVariant::String:    f_data->f_queryStmt->bind_string( id, value ); break;
+    case QVariant::ByteArray: f_data->f_queryStmt->bind_blob(   id, value ); break;
+    default:
+        qWarning("QVariant type '%d' not supported!", value.type() );
+    }
 }
 
 
@@ -452,7 +420,15 @@ void Query::bindJsonMap( const size_t num, const string_map_t& value )
 }
 
 
-void Query::bindMap( const size_t num, const string_map_t& value )
+void Query::bindJsonMap( const QString& id, const string_map_t& value )
+{
+    std::string data;
+    getDataFromJsonMap( value, data );
+    f_data->f_queryStmt->bind_string( id, data );
+}
+
+
+void Query::bindMap( const size_t id, const string_map_t& value )
 {
     collection coll( CASS_COLLECTION_TYPE_MAP, value.size() );
     for( const auto& pair : value )
@@ -461,7 +437,20 @@ void Query::bindMap( const size_t num, const string_map_t& value )
         coll.append_string( pair.second );
     }
     //
-    f_data->f_queryStmt->bind_collection( num, coll );
+    f_data->f_queryStmt->bind_collection( id, coll );
+}
+
+
+void Query::bindMap( const QString& id, const string_map_t& value )
+{
+    collection coll( CASS_COLLECTION_TYPE_MAP, value.size() );
+    for( const auto& pair : value )
+    {
+        coll.append_string( pair.first  );
+        coll.append_string( pair.second );
+    }
+    //
+    f_data->f_queryStmt->bind_collection( id, coll );
 }
 
 
@@ -711,7 +700,7 @@ void Query::getQueryResult()
  *
  * Call this to reset the query and destroy all of the cassandra-cpp object.
  *
- * \sa start()
+ * \sa start(), reset()
  */
 void Query::end()
 {
@@ -723,9 +712,23 @@ void Query::end()
 }
 
 
+/** \brief Reset the state of the object, calls end()
+ *
+ */
+void Query::reset()
+{
+    end();
+}
+
+
 size_t Query::rowCount() const
 {
     return f_data->f_queryResult->get_row_count();
+}
+
+size_t Query::columnCount() const
+{
+    return f_data->f_queryResult->get_column_count();
 }
 
 
@@ -830,123 +833,59 @@ void Query::throwIfError( const QString& msg )
 #endif
 
 
-/** \brief Get named Boolean column value
- *
- * \param name[in] name of column
- */
-bool Query::getBoolColumn( const QString &name ) const
+casswrapper::value const& Query::getColumnValue( const size_t id ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_bool();
+    return f_data->f_rowsIterator->get_row().get_column( id );
 }
 
 
-/** \brief Get Boolean column value by number
- *
- * \param num[in] position of column in the result set
- */
-bool Query::getBoolColumn( const int num ) const
+casswrapper::value const& Query::getColumnValue( const QString& id ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_bool();
+    return f_data->f_rowsIterator->get_row().get_column_by_name( id );
 }
 
 
-/** \brief Get named integer column value
+/** \brief Get variant column value by position
  *
- * \param name[in] name of column
+ * \param id[in] position of column in the result set
  */
-int32_t Query::getInt32Column( const QString& name ) const
+QVariant Query::getVariantColumn( const size_t id ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_int32();
+    auto column( getColumnValue(id) );
+    switch( value.type() )
+    {
+    case QVariant::Bool      : return column.get_bool();
+    case QVariant::Int       : return column.get_int32();
+    case QVariant::LongLong  : return column.get_int64();
+    case QVariant::Double    : return column.get_double();
+    case QVariant::String    : return column.get_string();
+    case QVariant::ByteArray : return column.get_blob();
+    default:
+        qWarning("QVariant type '%d' not supported!", value.type() );
+    }
+    return QVariant();
 }
 
 
-/** \brief Get integer column value by position
+/** \brief Get variant column value by name
  *
- * \param num[in] position of column in the result set
+ * \param id[in] name of column in the result set
  */
-int32_t Query::getInt32Column( const int num ) const
+QVariant Query::getVariantColumn( const QString& id ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_int32();
-}
-
-
-/** \brief Get named counter column value
- *
- * \param name[in] name of column
- */
-int64_t Query::getInt64Column( const QString& name ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_int64();
-}
-
-
-/** \brief Get counter column value by position
- *
- * \param num[in] position of column in the result set
- */
-int64_t Query::getInt64Column( const int num ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_int64();
-}
-
-
-/** \brief Get named float column value
- *
- * \param name[in] name of column
- */
-float Query::getFloatColumn( const QString& name ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_float();
-}
-
-
-/** \brief Get float column value by position
- *
- * \param num[in] position of column in the result set
- */
-float Query::getFloatColumn( const int num ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_float();
-}
-
-
-/** \brief Get named double column value
- *
- * \param name[in] name of column
- */
-double Query::getDoubleColumn( const QString &name ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_double();
-}
-
-
-/** \brief Get double column value by position
- *
- * \param num[in] position of column in the result set
- */
-double Query::getDoubleColumn( const int num ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_double();
-}
-
-
-/** \brief Get named string column value
- *
- * \param name[in] name of column
- */
-QString Query::getStringColumn( const QString& name ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_string();
-}
-
-
-/** \brief Get string column value by position
- *
- * \param num[in] position of column in the result set
- */
-QString Query::getStringColumn( const int num ) const
-{
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_string();
+    auto column( getColumnValue(id) );
+    switch( value.type() )
+    {
+    case QVariant::Bool      : return column.get_bool();
+    case QVariant::Int       : return column.get_int32();
+    case QVariant::LongLong  : return column.get_int64();
+    case QVariant::Double    : return column.get_double();
+    case QVariant::String    : return column.get_string();
+    case QVariant::ByteArray : return column.get_blob();
+    default:
+        qWarning("QVariant type '%d' not supported!", value.type() );
+    }
+    return QVariant();
 }
 
 
@@ -956,7 +895,7 @@ QString Query::getStringColumn( const int num ) const
  */
 QByteArray Query::getByteArrayColumn( const char * name ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_blob();
+    return getColumnValue(name).get_blob();
 }
 
 
@@ -966,7 +905,7 @@ QByteArray Query::getByteArrayColumn( const char * name ) const
  */
 QByteArray Query::getByteArrayColumn( const QString& name ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column_by_name( name ).get_blob();
+    return getColumnValue(name).get_blob();
 }
 
 
@@ -976,7 +915,7 @@ QByteArray Query::getByteArrayColumn( const QString& name ) const
  */
 QByteArray Query::getByteArrayColumn( const int num ) const
 {
-    return f_data->f_rowsIterator->get_row().get_column( num ).get_blob();
+    return getColumnValue(num).get_blob();
 }
 
 
@@ -987,7 +926,7 @@ QByteArray Query::getByteArrayColumn( const int num ) const
 Query::string_map_t Query::getJsonMapColumn ( const QString& name ) const
 {
     string_map_t json_map;
-    getMapFromJsonObject( json_map, getStringColumn( name ) );
+    getMapFromJsonObject( json_map, getColumnValue(name).get_string() );
     return json_map;
 }
 
@@ -999,7 +938,7 @@ Query::string_map_t Query::getJsonMapColumn ( const QString& name ) const
 Query::string_map_t Query::getJsonMapColumn ( const int num ) const
 {
     string_map_t json_map;
-    getMapFromJsonObject( json_map, getStringColumn( num ) );
+    getMapFromJsonObject( json_map, getColumnValue(num).get_string() );
     return json_map;
 }
 
@@ -1032,7 +971,7 @@ Query::string_map_t getMapFromValue( const casswrapper::value& value )
  */
 Query::string_map_t Query::getMapColumn ( const QString& name ) const
 {
-    return getMapFromValue( f_data->f_rowsIterator->get_row().get_column_by_name( name ) );
+    return getMapFromValue( getColumnValue(name) );
 }
 
 
@@ -1042,7 +981,7 @@ Query::string_map_t Query::getMapColumn ( const QString& name ) const
  */
 Query::string_map_t Query::getMapColumn ( const int num ) const
 {
-    return getMapFromValue( f_data->f_rowsIterator->get_row().get_column( num ) );
+    return getMapFromValue( getColumnValue(num) );
 }
 
 

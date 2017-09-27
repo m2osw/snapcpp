@@ -34,9 +34,74 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-project( casswrapper_src )
+project( casswrapper )
 
-add_subdirectory( casswrapper   )
-#add_subdirectory( qt_sql_plugin )
+include_directories(
+    ${AS2JS_INCLUDE_DIR}
+    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    ${PROJECT_BINARY_DIR}
+)
+
+configure_file(
+		version.h.in
+		${PROJECT_BINARY_DIR}/casswrapper/version.h
+		)
+
+set( HEADER_FILES
+    batch.h
+    exception.h
+    query.h
+    schema.h
+    schema_value.h
+    session.h
+    qstring_stream.h
+    query_model.h
+    QCassandraDriver.h
+    QCassandraResult.h
+    ${PROJECT_BINARY_DIR}/casswrapper/version.h
+)
+
+add_library( ${PROJECT_NAME} SHARED
+    ${HEADER_FILES}
+    version.h.in
+    batch.cpp
+    casswrapper_impl.h
+    casswrapper_impl.cpp
+    cassandra.json
+    exception_impl.h
+    exception_impl.cpp
+    main.cpp
+    not_used.h
+    query.cpp
+    schema.cpp
+    schema_value.cpp
+    session.cpp
+    query_model.cpp
+    QCassandraDriver.cpp
+    QCassandraResult.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${AS2JS_LIBRARIES}
+    ${CASSANDRACPPDRIVER_LIBRARIES}
+    ${CASSVALUE_LIBRARIES}
+    ${LIBEXCEPT_LIBRARIES}
+    Qt5::Core
+    Qt5::Xml
+)
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+    VERSION ${LIBCASSWRAPPER_VERSION_MAJOR}.${LIBCASSWRAPPER_VERSION_MINOR}
+    SOVERSION ${LIBCASSWRAPPER_VERSION_MAJOR}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
+)
+
+install(
+	FILES ${HEADER_FILES}
+	DESTINATION include/casswrapper
+)
 
 # vim: ts=4 sw=4 et
