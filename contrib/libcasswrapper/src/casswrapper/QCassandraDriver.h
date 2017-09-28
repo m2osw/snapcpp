@@ -50,7 +50,6 @@ public:
     // TODO: do we actually need these?
     //QSqlIndex 		primaryIndex(const QString& tablename) const override;
     //QString 		formatValue(const QSqlField &field, bool trimStrings) const override;
-    //QVariant		handle() const override;
     //QString			escapeIdentifier(const QString &identifier, IdentifierType type) const override;
     //bool			isIdentifierEscaped(const QString &identifier, IdentifierType type) const override;
 
@@ -58,6 +57,7 @@ private:
     casswrapper::Session::pointer_t f_session;
     casswrapper::Batch::pointer_t   f_batch;
     QString                         f_db;
+    bool                            f_blocking = true;
 };
 
 QT_END_NAMESPACE

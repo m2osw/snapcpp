@@ -43,11 +43,8 @@ protected:
     bool            fetch( int i )                  override;
     bool            fetchFirst()                    override;
     bool            fetchLast()                     override;
-    bool            fetchNext()                     override;
-    bool            fetchPrev()                     override;  // Cassandra C++ driver does not support this
-                                                               // always returns false
 
-    QSqlRecord      record() const                  override;
+    //QSqlRecord      record() const                  override;
 
 private:
     casswrapper::Query::pointer_t   f_query;
@@ -55,6 +52,8 @@ private:
 
     typedef std::vector<std::vector<QVariant>> row_array_t;
     row_array_t                     f_rows;
+
+    bool                            fetchPage();
 
 private slots:
     void    onQueryFinished( Query::pointer_t q );

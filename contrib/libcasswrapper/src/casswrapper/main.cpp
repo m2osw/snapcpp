@@ -26,13 +26,13 @@ QSqlDriver* QCassandraDriverPlugin::create(const QString &name)
     if( name == QLatin1String("QCassandra") )
 	{
         QCassandraDriver* driver = new QCassandraDriver();
-		driver->setBlocking(true);
+		driver->setBlocking(false);
         return driver;
 	}
-	else if( name == QLatin1String("QCassandraAsync") )
+	else if( name == QLatin1String("QCassandraBlocking") )
 	{
         QCassandraDriver* driver = new QCassandraDriver();
-		driver->setBlocking(false);
+		driver->setBlocking(true);
         return driver;
     }
     return 0;

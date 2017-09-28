@@ -31,17 +31,10 @@ void QCassandraResult::onQueryFinished( Query::pointer_t q )
 {
     Q_ASSERT( q.get() == f_query.get() );
 
-    while( q->nextRow() )
+    if( !f_blocking )
     {
-        std::vector<QVariant> columns;
-        for( size_t column = 0; column < q->columnCount(); ++column )
-        {
-            columns.push_back( q->getVariantColumn(column) );
-        }
-        f_rows.push_back( columns );
+        fetchPage();
     }
-
-    q->nextPage(f_blocking);
 }
 
 
@@ -78,6 +71,7 @@ bool QCassandraResult::reset( QString const& query )
     f_query->reset();
     f_query->query( query );
     f_query->setPagingSize( PAGING_SIZE );
+    setAt( QSql::BeforeFirstRow );
 }
 
 
@@ -92,6 +86,11 @@ bool QCassandraResult::exec()
     try
     {
         f_query->start( f_blocking );
+        //
+        if( f_blocking )
+        {
+            while( fetchPage() );
+        }
     }
     catch( exception const& x )
     {
@@ -101,6 +100,24 @@ bool QCassandraResult::exec()
             , QSqlError::StatementError
             );
     }
+}
+
+
+bool QCassandraResult::fetchPage()
+{
+    setActive( true );
+
+    while( f_query->nextRow() )
+    {
+        std::vector<QVariant> columns;
+        for( size_t column = 0; column < f_query->columnCount(); ++column )
+        {
+            columns.push_back( f_query->getVariantColumn(column) );
+        }
+        f_rows.push_back( columns );
+    }
+
+    return f_query->nextPage(f_blocking);
 }
 
 
@@ -118,23 +135,8 @@ void QCassandraResult::bindValue( const QString &placeholder, const QVariant &va
 
 QVariant QCassandraResult::data( int field )
 {
-    if( !f_query->queryActive() )
-    {
-        setLastError
-            (
-            , QSqlError( tr("Query not active!") )
-            , QSqlError::StatementError
-            );
-        return QVariant();
-    }
-
-    if( !f_query->isReady() )
-    {
-        qWarning("Non-blocking query is not ready yet!");
-        return QVariant();
-    }
-
-    return f_query->getVariantColumn(field);
+    //return f_query->getVariantColumn(field);
+    return f_rows[at()][field];
 }
 
 
@@ -148,7 +150,7 @@ bool QCassandraResult::fetch( int i )
 {
     try
     {
-        f_row.at(i);    // If out of range, it throws.
+        f_rows.at(i);    // If out of range, it throws.
         setAt(i);
         return true;
     }
@@ -157,6 +159,18 @@ bool QCassandraResult::fetch( int i )
         // We wait until the result comes in
         return false;
     }
+}
+
+
+bool QCassandraResult::fetchFirst()
+{
+    return fetch( 0 );
+}
+
+
+bool QCassandraResult::fetchLast()
+{
+    return fetch( f_rows.size()-1 );
 }
 
 
