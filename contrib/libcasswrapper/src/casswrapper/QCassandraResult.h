@@ -29,6 +29,7 @@ public:
 
 protected:
     bool            reset( QString const& query )   override;
+    bool            prepare( QString const& query ) override;
     int             size()                          override;
     int             numRowsAffected()               override;
     bool            exec()                          override;
@@ -43,16 +44,25 @@ protected:
     bool            fetchFirst()                    override;
     bool            fetchLast()                     override;
 
-    //QSqlRecord      record() const                  override;
+    QSqlRecord      record() const                  override;
 
 private:
-    casswrapper::Query::pointer_t   f_query;
-    bool                            f_blocking = false;
+    casswrapper::Query::pointer_t                f_query;
+    bool                                         f_blocking = false;
 
     typedef std::vector<std::vector<QVariant>> row_array_t;
-    row_array_t                     f_rows;
+    row_array_t      f_rows;
 
-    bool                            fetchPage();
+    struct column_t
+    {
+        QString                            f_name;
+        casswrapper::schema::column_type_t f_type;
+    };
+    std::vector<column_t> f_orderedColumns;
+
+    void            createQuery();
+    void            parseSelectStmt();
+    bool            fetchPage();
 
 private slots:
     void    onQueryFinished( casswrapper::Query::pointer_t q );

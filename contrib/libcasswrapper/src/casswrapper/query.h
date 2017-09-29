@@ -44,8 +44,9 @@
 #include <QObject>
 #include <QString>
 
-#include "casswrapper/session.h"
 #include "casswrapper/batch.h"
+#include "casswrapper/schema.h"
+#include "casswrapper/session.h"
 
 namespace casswrapper
 {
@@ -80,6 +81,8 @@ public:
     ~Query();
 
     static pointer_t    create( Session::pointer_t session );
+
+    Session::pointer_t  getSession          () const;
 
     const QString&      description         () const;
     void                setDescription      ( const QString& val );

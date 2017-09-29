@@ -1,5 +1,5 @@
-#include <QtSql/QSqlDriverPlugin>
-#include <QStringList>
+#include <QtCore>
+#include <QtSql/QtSql>
 
 #include "casswrapper/QCassandraDriver.h"
 
@@ -23,6 +23,7 @@ QCassandraDriverPlugin::QCassandraDriverPlugin()
 
 QSqlDriver* QCassandraDriverPlugin::create(const QString &name)
 {
+    qDebug() << "QCassandraDriverPlugin: name=" << name;
     if( name == QLatin1String("QCassandra") )
 	{
         QCassandraDriver* driver = new QCassandraDriver();

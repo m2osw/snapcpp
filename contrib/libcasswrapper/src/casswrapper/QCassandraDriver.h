@@ -54,6 +54,8 @@ public:
 
     bool            isTransactionActive() const;
 
+    static QVariant::Type decodeColumnType( casswrapper::schema::column_type_t type );
+
     // TODO: do we actually need these?
     //QSqlIndex 		primaryIndex(const QString& tablename) const override;
     //QString 		formatValue(const QSqlField &field, bool trimStrings) const override;

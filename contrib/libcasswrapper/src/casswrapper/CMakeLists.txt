@@ -56,8 +56,6 @@ set( HEADER_FILES
     session.h
     qstring_stream.h
     query_model.h
-    QCassandraDriver.h
-    QCassandraResult.h
     ${PROJECT_BINARY_DIR}/casswrapper/version.h
 )
 
@@ -70,15 +68,12 @@ add_library( ${PROJECT_NAME} SHARED
     cassandra.json
     exception_impl.h
     exception_impl.cpp
-    main.cpp
     not_used.h
     query.cpp
     schema.cpp
     schema_value.cpp
     session.cpp
     query_model.cpp
-    QCassandraDriver.cpp
-    QCassandraResult.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -104,5 +99,41 @@ install(
 	FILES ${HEADER_FILES}
 	DESTINATION include/casswrapper
 )
+
+
+project( qtcassandra )
+
+set( HEADER_FILES
+    QCassandraDriver.h
+    QCassandraResult.h
+)
+
+add_library( ${PROJECT_NAME} SHARED
+    ${HEADER_FILES}
+    QCassandraDriver.cpp
+    QCassandraResult.cpp
+    main.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    casswrapper
+    Qt5::Core
+    Qt5::Xml
+    Qt5::Sql
+)
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+    VERSION ${LIBCASSWRAPPER_VERSION_MAJOR}.${LIBCASSWRAPPER_VERSION_MINOR}
+    SOVERSION ${LIBCASSWRAPPER_VERSION_MAJOR}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/qt5/plugins
+)
+
+#install(
+#    FILES ${HEADER_FILES}
+#    DESTINATION include/casswrapper
+#)
 
 # vim: ts=4 sw=4 et

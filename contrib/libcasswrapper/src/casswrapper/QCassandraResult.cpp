@@ -1,9 +1,15 @@
 #include "QCassandraDriver.h"
 #include "QCassandraResult.h"
 
+#include "casswrapper/schema.h"
+#include "casswrapper/qstring_stream.h"
+
 #include <QtSql/QtSql>
 
+#include <iostream>
+
 using namespace casswrapper;
+using namespace schema;
 
 QT_BEGIN_NAMESPACE
 
@@ -57,12 +63,92 @@ void QCassandraResult::setBlocking( bool const val )
 }
 
 
-bool QCassandraResult::reset( QString const& query )
+void QCassandraResult::createQuery()
 {
     f_query->reset();
-    f_query->query( query );
+    f_query->query( lastQuery() );
     f_query->setPagingSize( PAGING_SIZE );
     setAt( QSql::BeforeFirstRow );
+}
+
+
+void QCassandraResult::parseSelectStmt()
+{
+    f_orderedColumns.clear();
+
+    // Determine keyspace and table
+    //
+    QString lq( lastQuery() );
+    lq.replace('\n',' ');
+    QStringList const word_list  ( lq.split("FROM") );
+    QStringList const space_list ( word_list[1].trimmed().split(' ') );
+    QString     const table_name ( space_list[0].trimmed() );
+    QStringList const db_table   ( table_name.split('.') );
+    //
+    SessionMeta::pointer_t sm( SessionMeta::create(f_query->getSession()) );
+    sm->loadSchema();
+    auto km = sm->getKeyspaces().at(db_table[0]);
+    auto tm = km->getTables().at(db_table[1]);
+
+    // Parse fields
+    //
+    QString     const   select      ( word_list[0].trimmed().split("SELECT")[1].trimmed() );
+    auto        const & meta_columns( tm->getColumns() );
+    if( select == "*" )
+    {
+        for( auto col_pair : meta_columns )
+        {
+            column_t c;
+            c.f_name = col_pair.first;
+            c.f_type = col_pair.second->getColumnType();
+            f_orderedColumns.push_back( c );
+        }
+    }
+    else
+    {
+        QStringList const fields( select.split(',') );
+        for( auto field : fields )
+        {
+            field = field.trimmed();
+            column_t c;
+            //
+            auto col_iter = meta_columns.find(field);
+            if( col_iter == meta_columns.end() )
+            {
+                c.f_name = field.contains("AS")
+                         ? field.split("AS")[1].trimmed()
+                         : field;
+                c.f_type = field.contains("COUNT")
+                        ? column_type_t::TypeInt
+                        : column_type_t::TypeText;
+            }
+            else
+            {
+                c.f_name = field;
+                c.f_type = (*col_iter).second->getColumnType();
+            }
+            //
+            f_orderedColumns.push_back( c );
+        }
+    }
+}
+
+
+bool QCassandraResult::reset( QString const& query )
+{
+    setQuery( query );
+    createQuery();
+    setSelect( true );
+    parseSelectStmt();
+    return true;
+}
+
+
+bool QCassandraResult::prepare( QString const& query )
+{
+    setQuery( query );
+    createQuery();
+    setSelect( false );
     return true;
 }
 
@@ -82,6 +168,7 @@ bool QCassandraResult::exec()
     try
     {
         f_query->start( f_blocking );
+        setActive( true );
         //
         if( f_blocking )
         {
@@ -155,7 +242,7 @@ bool QCassandraResult::fetch( int i )
     }
     catch( std::out_of_range const & )
     {
-        // We wait until the result comes in
+        setAt( QSql::AfterLastRow );
         return false;
     }
 }
@@ -170,6 +257,25 @@ bool QCassandraResult::fetchFirst()
 bool QCassandraResult::fetchLast()
 {
     return fetch( f_rows.size()-1 );
+}
+
+
+QSqlRecord QCassandraResult::record() const
+{
+    QSqlRecord  record;
+
+    for( auto col : f_orderedColumns )
+    {
+        QSqlField f ( col.f_name
+                    , QCassandraDriver::decodeColumnType( col.f_type )
+        );
+        f.setRequired(true);
+        //f.setLength(field->length);       // TODO: needed?
+        //f.setPrecision(field->decimals);  // TODO: needed?
+        record.append(f);
+    }
+
+    return record;
 }
 
 

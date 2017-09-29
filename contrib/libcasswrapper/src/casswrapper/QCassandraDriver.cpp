@@ -150,7 +150,7 @@ QStringList QCassandraDriver::tables(QSql::TableType type) const
 }
 
 
-QVariant::Type decodeColumnType( column_type_t type )
+QVariant::Type QCassandraDriver::decodeColumnType( column_type_t type )
 {
     switch( type )
     {

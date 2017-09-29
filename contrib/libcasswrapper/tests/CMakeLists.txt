@@ -55,6 +55,7 @@ add_library( ${PROJECT_NAME} STATIC
 target_link_libraries(${PROJECT_NAME}
     ${AS2JS_LIBRARIES}
     ${CASSANDRACPPDRIVER_LIBRARIES}
+    qtcassandra
     casswrapper
 )
 
@@ -67,16 +68,28 @@ endif()
 set( CASSANDRA_IP "${DEFAULT_CASSANDRA_IP}" CACHE STRING "IP address of the cassandra server" )
 
 ################################################################################
-project(query)
+project(query_tests)
 
-add_executable(${PROJECT_NAME}
+set( SQLDRIVERS_DIR ${PROJECT_BINARY_DIR}/sqldrivers )
+add_custom_command( OUTPUT ${SQLDRIVERS_DIR}/libqtcassandra.so
+    COMMAND cmake -E make_directory ${SQLDRIVERS_DIR}
+    COMMAND cmake -E copy ${qtcassandra_BINARY_DIR}/libqtcassandra.so ${SQLDRIVERS_DIR}
+    DEPENDS qtcassandra
+)
+
+#create_test_sourcelist(
+#    SRCLIST ${PROJECT_NAME}.cpp describeSchema.cpp
+#    FUNCTION tests_main
+#    EXTRA_INCLUDE tests_main.h
+#)
+add_executable( ${PROJECT_NAME}
+    ${SQLDRIVERS_DIR}/libqtcassandra.so
+    query_test.h
+    query_test.cpp
     main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
-    ${AS2JS_LIBRARIES}
-    ${CASSANDRACPPDRIVER_LIBRARIES}
-    casswrapper
     libquerytest
 )
 

@@ -42,6 +42,8 @@
 #include "casswrapper/schema.h"
 #include "casswrapper/qstring_stream.h"
 
+#include <QtSql/QtSql>
+
 #include <exception>
 #include <iostream>
 
@@ -49,10 +51,12 @@ using namespace casswrapper;
 using namespace schema;
 
 
-query_test::query_test( const QString& host )
+QString query_test::f_host = "127.0.0.1";
+
+query_test::query_test()
 {
     f_session = Session::create();
-    f_session->connect( host );
+    f_session->connect( f_host );
     //
     if( !f_session->isConnected() )
     {
@@ -400,6 +404,104 @@ void query_test::largeTableTest()
     }
 
     std::cout << "Non-batch process done!" << std::endl;
+}
+
+
+static void exec( QSqlQuery& q )
+{
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery() << "]" << std::endl;
+        std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+}
+
+
+void query_test::qtSqlDriverTest()
+{
+    QSqlDatabase db = QSqlDatabase::addDatabase("QCassandraBlocking");
+    if( !db.isValid() )
+    {
+        const QString error( "QCASSANDRA database is not valid for some reason!" );
+        std::cerr << "QCASSANDRA not valid!!!" << std::endl;
+        throw std::runtime_error( error.toUtf8().data() );
+    }
+
+    QString const database_name("qtcassandra_query_test");
+    db.setHostName( f_host );
+    db.setDatabaseName(database_name);
+    if( !db.open() )
+    {
+        const QString error( QString("Cannot open QCASSANDRA database [%1]!").arg(database_name) );
+        std::cerr << "QCASSANDRA not open!!!" << std::endl;
+        throw std::runtime_error( error.toUtf8().data() );
+    }
+
+
+    {
+        std::cout << "QCassandra: Insert into table 'data'..." << std::endl;
+        QSqlQuery q;
+        q.prepare( QString("INSERT INTO %1.data "
+                       "(id, name, test, double_value, blob_value) "
+                       "VALUES "
+                       "(?,?,?,?,?)"
+                       ).arg(database_name)
+                   );
+        int bind_num = 0;
+        q.bindValue ( bind_num++, 5 );
+        q.bindValue ( bind_num++, "This is a test" );
+        q.bindValue ( bind_num++, true );
+        q.bindValue ( bind_num++, static_cast<double>(45234.5) );
+
+        QByteArray arr;
+        arr += "This is a test";
+        arr += " and yet more chars...";
+        q.bindValue( bind_num++, arr );
+
+        exec(q);
+    }
+
+    {
+        std::cout << "QCassandra: Select from table 'data'..." << std::endl;
+        QSqlQuery q
+            ( QString("SELECT id,name,test,double_value,blob_value\n"
+                  ",COUNT(*) AS count\n"
+                  "FROM %1.data").arg(database_name)
+              );
+        exec(q);
+        bool result = q.first();
+        std::cout << "result=" << result << std::endl;
+        do
+        {
+            const int32_t     id           = q.value( "id"           ).toInt();
+            const std::string name         = q.value( "name"         ).toString().toStdString();
+            const bool        test         = q.value( "test"         ).toBool();
+            const int64_t     count        = q.value( "count"        ).toLongLong();
+            const double      double_value = q.value( "double_value" ).toDouble();
+            const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
+
+            std::cout   << "id ="          << id                << std::endl
+                        << "name="         << name              << std::endl
+                        << "test="         << test              << std::endl
+                        << "count="        << count             << std::endl
+                        << "double_value=" << double_value      << std::endl
+                        << "blob_value="   << blob_value.data() << std::endl
+                           ;
+        }
+        while( q.next() );
+    }
+}
+
+
+void query_test::set_host( QString const& host )
+{
+    f_host = host;
+}
+
+QString query_test::get_host()
+{
+    return f_host;
 }
 
 // vim: ts=4 sw=4 et

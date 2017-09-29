@@ -42,7 +42,7 @@
 class query_test
 {
 public:
-    query_test( const QString& host );
+    query_test();
     ~query_test();
 
     void describeSchema();
@@ -57,8 +57,14 @@ public:
 
     void largeTableTest();
 
+    void qtSqlDriverTest();
+
+    static void set_host( QString const& host );
+    static QString get_host();
+
 private:
     casswrapper::Session::pointer_t f_session;
+    static QString f_host;
 };
 
 // vim: ts=4 sw=4 et

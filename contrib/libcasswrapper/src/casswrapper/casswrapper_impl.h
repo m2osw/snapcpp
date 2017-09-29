@@ -343,8 +343,10 @@ public:
     row( CassRow*       );
     row( CassRow const* );
 
-    value   get_column_by_name ( const QString& ) const;
-    value   get_column         ( const int num ) const;
+    value       get_column_by_name ( const QString& ) const;
+    value       get_column         ( const int num ) const;
+
+    iterator    get_iterator() const;
 
 private:
     std::shared_ptr<CassRow> f_ptr;

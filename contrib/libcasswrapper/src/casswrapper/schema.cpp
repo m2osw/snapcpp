@@ -80,110 +80,12 @@ SessionMeta::pointer_t SessionMeta::create( Session::pointer_t s )
 void SessionMeta::loadSchema()
 {
     schema_meta schema( f_session->getSession() );
-
     iterator iter( schema.get_keyspaces() );
-
     while( iter.next() )
     {
         keyspace_meta p_keyspace( iter.get_keyspace_meta() );
-        KeyspaceMeta::pointer_t keyspace( std::make_shared<KeyspaceMeta>(shared_from_this()) );
-        keyspace->f_name = p_keyspace.get_name();
-        f_keyspaces[keyspace->f_name] = keyspace;
-
-        iterator fields_iter( p_keyspace.get_fields() );
-        while( fields_iter.next() )
-        {
-            const QString field_name( fields_iter.get_meta_field_name() );
-            Value val;
-            val.readValue(fields_iter);
-            keyspace->f_fields[field_name] = val;
-        }
-
-        iterator tables_iter( p_keyspace.get_tables() );
-        while( tables_iter.next() )
-        {
-            table_meta p_table(tables_iter.get_table_meta());
-
-            using TableMeta = KeyspaceMeta::TableMeta;
-            TableMeta::pointer_t table
-                    ( std::make_shared<TableMeta>(keyspace) );
-            table->f_keyspace = keyspace;
-            table->f_name     = p_table.get_name();
-            keyspace->f_tables[table->f_name] = table;
-
-            iterator table_fields_iter( p_table.get_fields() );
-            while( table_fields_iter.next() )
-            {
-                const QString field_name( table_fields_iter.get_meta_field_name() );
-                Value val;
-                val.readValue(table_fields_iter);
-                table->f_fields[field_name] = val;
-            }
-
-            iterator columns_iter( p_table.get_columns() );
-            while( columns_iter.next() )
-            {
-                column_meta p_col( columns_iter.get_column_meta() );
-
-                using ColumnMeta = TableMeta::ColumnMeta;
-                ColumnMeta::pointer_t column( std::make_shared<ColumnMeta>(table) );
-                column->f_table = table;
-                column->f_name  = p_col.get_name();
-                table->f_columns[column->f_name] = column;
-
-                CassColumnType type = p_col.get_column_type();
-                switch( type )
-                {
-                    case CASS_COLUMN_TYPE_REGULAR        : column->f_type = ColumnMeta::type_t::TypeRegular;        break;
-                    case CASS_COLUMN_TYPE_PARTITION_KEY  : column->f_type = ColumnMeta::type_t::TypePartitionKey;   break;
-                    case CASS_COLUMN_TYPE_CLUSTERING_KEY : column->f_type = ColumnMeta::type_t::TypeClusteringKey;  break;
-                    case CASS_COLUMN_TYPE_STATIC         : column->f_type = ColumnMeta::type_t::TypeStatic;         break;
-                    case CASS_COLUMN_TYPE_COMPACT_VALUE  : column->f_type = ColumnMeta::type_t::TypeCompactValue;   break;
-                }
-
-                CassValueType vt = p_col.get_value_type();
-                switch( vt )
-                {
-                    case CASS_VALUE_TYPE_UNKNOWN    :   column->f_columnType = column_type_t::TypeUnknown    ; break;
-                    case CASS_VALUE_TYPE_CUSTOM     :   column->f_columnType = column_type_t::TypeCustom     ; break;
-                    case CASS_VALUE_TYPE_DECIMAL    :   column->f_columnType = column_type_t::TypeDecimal    ; break;
-                    case CASS_VALUE_TYPE_LAST_ENTRY :   column->f_columnType = column_type_t::TypeLast_entry ; break;
-                    case CASS_VALUE_TYPE_UDT        :   column->f_columnType = column_type_t::TypeUdt        ; break;
-                    case CASS_VALUE_TYPE_LIST       :   column->f_columnType = column_type_t::TypeList       ; break;
-                    case CASS_VALUE_TYPE_SET        :   column->f_columnType = column_type_t::TypeSet        ; break;
-                    case CASS_VALUE_TYPE_TUPLE      :   column->f_columnType = column_type_t::TypeTuple      ; break;
-                    case CASS_VALUE_TYPE_MAP        :   column->f_columnType = column_type_t::TypeMap        ; break;
-                    case CASS_VALUE_TYPE_BLOB       :   column->f_columnType = column_type_t::TypeBlob       ; break;
-                    case CASS_VALUE_TYPE_BOOLEAN    :   column->f_columnType = column_type_t::TypeBoolean    ; break;
-                    case CASS_VALUE_TYPE_FLOAT      :   column->f_columnType = column_type_t::TypeFloat      ; break;
-                    case CASS_VALUE_TYPE_DOUBLE     :   column->f_columnType = column_type_t::TypeDouble     ; break;
-                    case CASS_VALUE_TYPE_TINY_INT   :   column->f_columnType = column_type_t::TypeTinyInt    ; break;
-                    case CASS_VALUE_TYPE_SMALL_INT  :   column->f_columnType = column_type_t::TypeSmallInt   ; break;
-                    case CASS_VALUE_TYPE_INT        :   column->f_columnType = column_type_t::TypeInt        ; break;
-                    case CASS_VALUE_TYPE_VARINT     :   column->f_columnType = column_type_t::TypeVarint     ; break;
-                    case CASS_VALUE_TYPE_BIGINT     :   column->f_columnType = column_type_t::TypeBigint     ; break;
-                    case CASS_VALUE_TYPE_COUNTER    :   column->f_columnType = column_type_t::TypeCounter    ; break;
-                    case CASS_VALUE_TYPE_ASCII      :   column->f_columnType = column_type_t::TypeAscii      ; break;
-                    case CASS_VALUE_TYPE_DATE       :   column->f_columnType = column_type_t::TypeDate       ; break;
-                    case CASS_VALUE_TYPE_TEXT       :   column->f_columnType = column_type_t::TypeText       ; break;
-                    case CASS_VALUE_TYPE_TIME       :   column->f_columnType = column_type_t::TypeTime       ; break;
-                    case CASS_VALUE_TYPE_TIMESTAMP  :   column->f_columnType = column_type_t::TypeTimestamp  ; break;
-                    case CASS_VALUE_TYPE_VARCHAR    :   column->f_columnType = column_type_t::TypeVarchar    ; break;
-                    case CASS_VALUE_TYPE_UUID       :   column->f_columnType = column_type_t::TypeUuid       ; break;
-                    case CASS_VALUE_TYPE_TIMEUUID   :   column->f_columnType = column_type_t::TypeTimeuuid   ; break;
-                    case CASS_VALUE_TYPE_INET       :   column->f_columnType = column_type_t::TypeInet       ; break;
-                }
-
-                iterator meta_iter( p_col.get_fields() );
-                while( meta_iter.next() )
-                {
-                    const QString field_name( meta_iter.get_meta_field_name() );
-                    Value val;
-                    val.readValue(meta_iter);
-                    column->f_fields[field_name] = val;
-                }
-            }
-        }
+        KeyspaceMeta::pointer_t keyspace( std::make_shared<KeyspaceMeta>(p_keyspace) );
+        f_keyspaces[keyspace->getName()] = keyspace;
     }
 }
 
@@ -194,7 +96,7 @@ Session::pointer_t SessionMeta::get_session() const
 }
 
 
-const SessionMeta::KeyspaceMeta::map_t& SessionMeta::getKeyspaces()
+const KeyspaceMeta::map_t& SessionMeta::getKeyspaces()
 {
     return f_keyspaces;
 }
@@ -226,15 +128,14 @@ QByteArray SessionMeta::encodeSessionMeta() const
 }
 
 
-void SessionMeta::decodeSessionMeta(const QByteArray& encoded)
+void SessionMeta::decodeSessionMeta(const QByteArray& code)
 {
-    Decoder const decoder(encoded);
+    Decoder const decoder(code);
 
     size_t const keyspace_max(decoder.uint16Value());
     for(size_t idx(0); idx < keyspace_max; ++idx)
     {
-        KeyspaceMeta::pointer_t keyspace(std::make_shared<KeyspaceMeta>(shared_from_this()));
-        keyspace->decodeKeyspaceMeta(decoder);
+        KeyspaceMeta::pointer_t keyspace(std::make_shared<KeyspaceMeta>(decoder));
         f_keyspaces[keyspace->getName()] = keyspace;
     }
 }
@@ -243,16 +144,36 @@ void SessionMeta::decodeSessionMeta(const QByteArray& encoded)
 //================================================================/
 // KeyspaceMeta
 //
-SessionMeta::KeyspaceMeta::KeyspaceMeta( SessionMeta::pointer_t session_meta )
-    : f_session(session_meta)
+KeyspaceMeta::KeyspaceMeta( const cassvalue::Decoder& decoder )
 {
-    // TODO add sub-fields
+   decodeKeyspaceMeta(decoder);
+}
+
+KeyspaceMeta::KeyspaceMeta( keyspace_meta const& km )
+    : f_name(km.get_name())
+{
+    iterator fields_iter( km.get_fields() );
+    while( fields_iter.next() )
+    {
+        const QString field_name( fields_iter.get_meta_field_name() );
+        Value val;
+        val.readValue(fields_iter);
+        f_fields[field_name] = val;
+    }
+
+    iterator tables_iter( km.get_tables() );
+    while( tables_iter.next() )
+    {
+        table_meta p_table(tables_iter.get_table_meta());
+        TableMeta::pointer_t table( std::make_shared<TableMeta>(p_table) );
+        f_tables[table->getName()] = table;
+    }
 }
 
 
 /** \brief Generate CQL string to create the keyspace
  */
-QString	SessionMeta::KeyspaceMeta::getKeyspaceCql() const
+QString	KeyspaceMeta::getKeyspaceCql() const
 {
     QStringList keyspace_cql;
     keyspace_cql << QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(f_name);
@@ -277,46 +198,43 @@ QString	SessionMeta::KeyspaceMeta::getKeyspaceCql() const
 }
 
 
-SessionMeta::string_map_t SessionMeta::KeyspaceMeta::getTablesCql() const
+KeyspaceMeta::string_map_t KeyspaceMeta::getTablesCql() const
 {
     string_map_t ret_map;
     for( auto table : f_tables )
     {
-        ret_map[table.first] = table.second->getCqlString();
+        ret_map[table.first] = table.second->getCqlString(f_name);
     }
 
     return ret_map;
 }
 
 
-const QString& SessionMeta::KeyspaceMeta::getName() const
+const QString& KeyspaceMeta::getName() const
 {
     return f_name;
 }
 
 
-const Value::map_t&
-    SessionMeta::KeyspaceMeta::getFields() const
+const Value::map_t& KeyspaceMeta::getFields() const
 {
     return f_fields;
 }
 
 
-Value::map_t&
-    SessionMeta::KeyspaceMeta::getFields()
+Value::map_t& KeyspaceMeta::getFields()
 {
     return f_fields;
 }
 
 
-Value& SessionMeta::KeyspaceMeta::operator[]( const QString& name )
+Value& KeyspaceMeta::operator[]( const QString& name )
 {
     return f_fields[name];
 }
 
 
-const SessionMeta::KeyspaceMeta::TableMeta::map_t&
-    SessionMeta::KeyspaceMeta::getTables() const
+const TableMeta::map_t& KeyspaceMeta::getTables() const
 {
     return f_tables;
 }
@@ -329,7 +247,7 @@ const SessionMeta::KeyspaceMeta::TableMeta::map_t&
  *
  * \return The meta data in a blob.
  */
-void SessionMeta::KeyspaceMeta::encodeKeyspaceMeta(Encoder& encoder) const
+void KeyspaceMeta::encodeKeyspaceMeta(Encoder& encoder) const
 {
     // save the name as a PSTR with a size on 2 bytes
     //
@@ -360,7 +278,7 @@ void SessionMeta::KeyspaceMeta::encodeKeyspaceMeta(Encoder& encoder) const
 /** \brief Decode a KeyspaceMeta object from a blob.
  *
  */
-void SessionMeta::KeyspaceMeta::decodeKeyspaceMeta(const Decoder& decoder)
+void KeyspaceMeta::decodeKeyspaceMeta(const Decoder& decoder)
 {
     // retrieve the keyspace name
     //
@@ -387,8 +305,7 @@ void SessionMeta::KeyspaceMeta::decodeKeyspaceMeta(const Decoder& decoder)
     size_t const table_max(decoder.uint16Value());
     for(size_t idx(0); idx < table_max; ++idx)
     {
-        SessionMeta::KeyspaceMeta::TableMeta::pointer_t table(std::make_shared<SessionMeta::KeyspaceMeta::TableMeta>(shared_from_this()));
-        table->decodeTableMeta(decoder);
+        TableMeta::pointer_t table(std::make_shared<TableMeta>(decoder));
         f_tables[table->getName()] = table;
     }
 }
@@ -398,40 +315,60 @@ void SessionMeta::KeyspaceMeta::decodeKeyspaceMeta(const Decoder& decoder)
 //================================================================/
 // TableMeta
 //
-SessionMeta::KeyspaceMeta::TableMeta::TableMeta( KeyspaceMeta::pointer_t kysp )
-    : f_keyspace(kysp)
+TableMeta::TableMeta( const cassvalue::Decoder& decoder )
 {
+    decodeTableMeta(decoder);
+}
+
+TableMeta::TableMeta( table_meta const& tm )
+    //: f_table_meta(tm)
+    : f_name(tm.get_name())
+{
+    iterator table_fields_iter( tm.get_fields() );
+    while( table_fields_iter.next() )
+    {
+        const QString field_name( table_fields_iter.get_meta_field_name() );
+        Value val;
+        val.readValue(table_fields_iter);
+        f_fields[field_name] = val;
+    }
+
+    iterator columns_iter( tm.get_columns() );
+    while( columns_iter.next() )
+    {
+        column_meta p_col( columns_iter.get_column_meta() );
+
+        ColumnMeta::pointer_t column( std::make_shared<ColumnMeta>(p_col) );
+        f_columns[column->getName()] = column;
+    }
 }
 
 
-const QString& SessionMeta::KeyspaceMeta::TableMeta::getName() const
+const QString& TableMeta::getName() const
 {
     return f_name;
 }
 
 
-const Value::map_t&
-    SessionMeta::KeyspaceMeta::TableMeta::getFields() const
+const Value::map_t& TableMeta::getFields() const
 {
     return f_fields;
 }
 
 
-Value::map_t&
-    SessionMeta::KeyspaceMeta::TableMeta::getFields()
+Value::map_t& TableMeta::getFields()
 {
     return f_fields;
 }
 
 
-Value& SessionMeta::KeyspaceMeta::TableMeta::operator[]( const QString& name )
+Value& TableMeta::operator[]( const QString& name )
 {
     return f_fields[name];
 }
 
 
-const SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::map_t&
-    SessionMeta::KeyspaceMeta::TableMeta::getColumns() const
+const ColumnMeta::map_t& TableMeta::getColumns() const
 {
     return f_columns;
 }
@@ -444,7 +381,7 @@ const SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::map_t&
  *
  * \return The meta data in a blob.
  */
-void SessionMeta::KeyspaceMeta::TableMeta::encodeTableMeta(Encoder& encoder) const
+void TableMeta::encodeTableMeta(Encoder& encoder) const
 {
     // save the name as a PSTR with a size on 2 bytes
     //
@@ -476,7 +413,7 @@ void SessionMeta::KeyspaceMeta::TableMeta::encodeTableMeta(Encoder& encoder) con
 /** \brief Decode a TableMeta object from a blob.
  *
  */
-void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const Decoder& decoder)
+void TableMeta::decodeTableMeta(const Decoder& decoder)
 {
     // retrieve the table name
     //
@@ -503,8 +440,7 @@ void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const Decoder& decode
     size_t const column_max(decoder.uint16Value());
     for(size_t idx(0); idx < column_max; ++idx)
     {
-        SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column(std::make_shared<SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta>(shared_from_this()));
-        column->decodeColumnMeta(decoder);
+        ColumnMeta::pointer_t column(std::make_shared<ColumnMeta>(decoder));
         f_columns[column->getName()] = column;
     }
 }
@@ -512,17 +448,11 @@ void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const Decoder& decode
 
 /** \brief Generate CQL string to create the table
  */
-QString SessionMeta::KeyspaceMeta::TableMeta::getCqlString() const
+QString TableMeta::getCqlString( QString const& keyspace_name ) const
 {
-    KeyspaceMeta::pointer_t keyspace(f_keyspace.lock());
-    if(!keyspace)
-    {
-        throw std::runtime_error( "A table lost its keyspace!" );
-    }
-
     QStringList table_cql;
     table_cql << QString("CREATE TABLE IF NOT EXISTS %1.%2 (")
-           .arg(keyspace->getName())
+           .arg(keyspace_name)
            .arg(f_name);
 
     QString partition_key;
@@ -582,20 +512,75 @@ QString SessionMeta::KeyspaceMeta::TableMeta::getCqlString() const
 //================================================================/
 // ColumnMeta
 //
-SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::ColumnMeta( SessionMeta::KeyspaceMeta::TableMeta::pointer_t table )
-    : f_table(table)
+ColumnMeta::ColumnMeta( const cassvalue::Decoder& decoder )
 {
+    decodeColumnMeta(decoder);
+}
+
+ColumnMeta::ColumnMeta( column_meta const& cm )
+    : f_name(cm.get_name())
+{
+    CassColumnType type = cm.get_column_type();
+    switch( type )
+    {
+    case CASS_COLUMN_TYPE_REGULAR        : f_type = ColumnMeta::type_t::TypeRegular;        break;
+    case CASS_COLUMN_TYPE_PARTITION_KEY  : f_type = ColumnMeta::type_t::TypePartitionKey;   break;
+    case CASS_COLUMN_TYPE_CLUSTERING_KEY : f_type = ColumnMeta::type_t::TypeClusteringKey;  break;
+    case CASS_COLUMN_TYPE_STATIC         : f_type = ColumnMeta::type_t::TypeStatic;         break;
+    case CASS_COLUMN_TYPE_COMPACT_VALUE  : f_type = ColumnMeta::type_t::TypeCompactValue;   break;
+    }
+
+    CassValueType vt = cm.get_value_type();
+    switch( vt )
+    {
+    case CASS_VALUE_TYPE_UNKNOWN    :   f_columnType = column_type_t::TypeUnknown    ; break;
+    case CASS_VALUE_TYPE_CUSTOM     :   f_columnType = column_type_t::TypeCustom     ; break;
+    case CASS_VALUE_TYPE_DECIMAL    :   f_columnType = column_type_t::TypeDecimal    ; break;
+    case CASS_VALUE_TYPE_LAST_ENTRY :   f_columnType = column_type_t::TypeLast_entry ; break;
+    case CASS_VALUE_TYPE_UDT        :   f_columnType = column_type_t::TypeUdt        ; break;
+    case CASS_VALUE_TYPE_LIST       :   f_columnType = column_type_t::TypeList       ; break;
+    case CASS_VALUE_TYPE_SET        :   f_columnType = column_type_t::TypeSet        ; break;
+    case CASS_VALUE_TYPE_TUPLE      :   f_columnType = column_type_t::TypeTuple      ; break;
+    case CASS_VALUE_TYPE_MAP        :   f_columnType = column_type_t::TypeMap        ; break;
+    case CASS_VALUE_TYPE_BLOB       :   f_columnType = column_type_t::TypeBlob       ; break;
+    case CASS_VALUE_TYPE_BOOLEAN    :   f_columnType = column_type_t::TypeBoolean    ; break;
+    case CASS_VALUE_TYPE_FLOAT      :   f_columnType = column_type_t::TypeFloat      ; break;
+    case CASS_VALUE_TYPE_DOUBLE     :   f_columnType = column_type_t::TypeDouble     ; break;
+    case CASS_VALUE_TYPE_TINY_INT   :   f_columnType = column_type_t::TypeTinyInt    ; break;
+    case CASS_VALUE_TYPE_SMALL_INT  :   f_columnType = column_type_t::TypeSmallInt   ; break;
+    case CASS_VALUE_TYPE_INT        :   f_columnType = column_type_t::TypeInt        ; break;
+    case CASS_VALUE_TYPE_VARINT     :   f_columnType = column_type_t::TypeVarint     ; break;
+    case CASS_VALUE_TYPE_BIGINT     :   f_columnType = column_type_t::TypeBigint     ; break;
+    case CASS_VALUE_TYPE_COUNTER    :   f_columnType = column_type_t::TypeCounter    ; break;
+    case CASS_VALUE_TYPE_ASCII      :   f_columnType = column_type_t::TypeAscii      ; break;
+    case CASS_VALUE_TYPE_DATE       :   f_columnType = column_type_t::TypeDate       ; break;
+    case CASS_VALUE_TYPE_TEXT       :   f_columnType = column_type_t::TypeText       ; break;
+    case CASS_VALUE_TYPE_TIME       :   f_columnType = column_type_t::TypeTime       ; break;
+    case CASS_VALUE_TYPE_TIMESTAMP  :   f_columnType = column_type_t::TypeTimestamp  ; break;
+    case CASS_VALUE_TYPE_VARCHAR    :   f_columnType = column_type_t::TypeVarchar    ; break;
+    case CASS_VALUE_TYPE_UUID       :   f_columnType = column_type_t::TypeUuid       ; break;
+    case CASS_VALUE_TYPE_TIMEUUID   :   f_columnType = column_type_t::TypeTimeuuid   ; break;
+    case CASS_VALUE_TYPE_INET       :   f_columnType = column_type_t::TypeInet       ; break;
+    }
+
+    iterator meta_iter( cm.get_fields() );
+    while( meta_iter.next() )
+    {
+        const QString field_name( meta_iter.get_meta_field_name() );
+        Value val;
+        val.readValue(meta_iter);
+        f_fields[field_name] = val;
+    }
 }
 
 
-const QString&
-    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getName() const
+const QString& ColumnMeta::getName() const
 {
     return f_name;
 }
 
 
-QString SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getCqlString() const
+QString ColumnMeta::getCqlString() const
 {
     return QString("%1 %2")
             .arg(f_name)
@@ -604,35 +589,31 @@ QString SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getCqlString() const
 }
 
 
-SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::type_t
-    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getType() const
+ColumnMeta::type_t ColumnMeta::getType() const
 {
     return f_type;
 }
 
 
-column_type_t
-    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getColumnType() const
+column_type_t ColumnMeta::getColumnType() const
 {
     return f_columnType;
 }
 
 
-const Value::map_t&
-    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields() const
+const Value::map_t& ColumnMeta::getFields() const
 {
     return f_fields;
 }
 
 
-Value::map_t&
-    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields()
+Value::map_t& ColumnMeta::getFields()
 {
     return f_fields;
 }
 
 
-Value& SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QString& name )
+Value& ColumnMeta::operator[]( const QString& name )
 {
     return f_fields[name];
 }
@@ -645,7 +626,7 @@ Value& SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QStri
  *
  * \return The meta data in a blob.
  */
-void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::encodeColumnMeta(Encoder& encoder) const
+void ColumnMeta::encodeColumnMeta(Encoder& encoder) const
 {
     // save the name as a PSTR with a size on 2 bytes
     //
@@ -672,7 +653,7 @@ void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::encodeColumnMeta(Encoder&
 /** \brief Decode a ColumnMeta object from a blob.
  *
  */
-void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::decodeColumnMeta(const Decoder& decoder)
+void ColumnMeta::decodeColumnMeta(const Decoder& decoder)
 {
     // retrieve the column name
     //

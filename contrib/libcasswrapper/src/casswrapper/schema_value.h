@@ -36,8 +36,6 @@
 
 #pragma once
 
-#include "casswrapper/query.h"
-
 #include <cassvalue/encoder.h>
 
 #include <map>

@@ -696,6 +696,14 @@ value row::get_column( const int num ) const
 }
 
 
+iterator row::get_iterator() const
+{
+    return iterator(
+            cass_iterator_from_row( f_ptr.get() )
+            );
+}
+
+
 //===============================================================================
 // schema_meta
 //

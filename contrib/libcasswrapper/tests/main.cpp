@@ -39,9 +39,10 @@
 
 #include <QtCore>
 
+#include <iostream>
+
 int main( int argc, char *argv[] )
 {
-    const char *host( "localhost" );
     for ( int i( 1 ); i < argc; ++i )
     {
         if ( strcmp( argv[i], "--help" ) == 0 )
@@ -57,20 +58,28 @@ int main( int argc, char *argv[] )
                 qDebug() << "error: -h must be followed by a hostname.";
                 exit( 1 );
             }
-            host = argv[i];
+            query_test::set_host( argv[i] );
         }
     }
 
     //try
     {
-        query_test test( host );
+        QCoreApplication    app( argc, argv );
+        app.setApplicationName( "query_tests" );
+
+        query_test test;
         test.describeSchema();
         test.dropSchema();
         test.createSchema();
+
+        test.qtSqlDriverTest();
+
+#if 1
         test.simpleInsert();
         test.simpleSelect();
         test.batchTest();
         test.largeTableTest();
+#endif
     }
 #if 0
     catch( const std::exception& ex )

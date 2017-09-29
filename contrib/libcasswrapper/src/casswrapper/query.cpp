@@ -37,6 +37,7 @@
 #include "casswrapper/query.h"
 #include "casswrapper/schema.h"
 #include "casswrapper_impl.h"
+#include "casswrapper/qstring_stream.h"
 #include "exception_impl.h"
 
 #include <as2js/json.h>
@@ -156,6 +157,12 @@ Query::~Query()
 Query::pointer_t Query::create( Session::pointer_t session )
 {
     return pointer_t(new Query( session ));
+}
+
+
+Session::pointer_t  Query::getSession() const
+{
+    return f_session;
 }
 
 

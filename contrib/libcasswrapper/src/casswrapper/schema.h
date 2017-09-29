@@ -35,7 +35,7 @@
  */
 #pragma once
 
-#include "casswrapper/query.h"
+#include "casswrapper/session.h"
 #include "casswrapper/schema_value.h"
 
 #include <cassvalue/encoder.h>
@@ -45,6 +45,10 @@
 
 namespace casswrapper
 {
+
+class keyspace_meta;
+class table_meta;
+class column_meta;
 
 namespace schema
 {
@@ -81,6 +85,107 @@ enum class column_type_t
     TypeInet
 };
 
+class ColumnMeta
+{
+public:
+    typedef std::shared_ptr<ColumnMeta>         pointer_t;
+    typedef std::weak_ptr<ColumnMeta>           weak_pointer_t;
+    typedef std::map<QString, pointer_t>        map_t;
+
+    enum class type_t {
+        TypeRegular,
+        TypePartitionKey,
+        TypeClusteringKey,
+        TypeStatic,
+        TypeCompactValue
+    };
+
+    ColumnMeta( const cassvalue::Decoder& code );
+    ColumnMeta( column_meta const& cm );
+
+    const QString&                  getName() const;
+    type_t                          getType() const;
+    column_type_t                   getColumnType() const;
+    const Value::map_t&             getFields() const;
+    Value::map_t&                   getFields();
+
+    Value&                          operator [] ( const QString& name );
+
+    void                            encodeColumnMeta(cassvalue::Encoder& encoded) const;
+
+    QString     					getCqlString() const;
+
+private:
+    QString                         f_name;
+    Value::map_t                    f_fields;
+    type_t                          f_type       = type_t::TypeRegular;
+    column_type_t                   f_columnType = column_type_t::TypeUnknown;
+
+    void                            decodeColumnMeta(const cassvalue::Decoder& decoder);
+};
+
+class TableMeta
+{
+public:
+    typedef std::shared_ptr<TableMeta>          pointer_t;
+    typedef std::weak_ptr<TableMeta>            weak_pointer_t;
+    typedef std::map<QString, pointer_t>        map_t;
+
+    TableMeta( const cassvalue::Decoder& decoder );
+    TableMeta( table_meta const & tm );
+
+    const QString&                  getName()   const;
+    const Value::map_t&             getFields() const;
+    Value::map_t&                   getFields();
+
+    Value&                          operator [] ( const QString& name );
+
+    const ColumnMeta::map_t&        getColumns() const;
+
+    void                            encodeTableMeta(cassvalue::Encoder& encoded) const;
+
+    QString      					getCqlString( QString const& keyspace_name ) const;
+
+private:
+    QString                         f_name;
+    Value::map_t                    f_fields;
+    ColumnMeta::map_t               f_columns;
+
+    void                            decodeTableMeta(const cassvalue::Decoder& decoder);
+};
+
+class KeyspaceMeta
+{
+public:
+    typedef std::shared_ptr<KeyspaceMeta>       pointer_t;
+    typedef std::weak_ptr<KeyspaceMeta>         weak_pointer_t;
+    typedef std::map<QString, pointer_t>        map_t;
+    typedef std::map<QString, QString>          string_map_t;
+
+    KeyspaceMeta( const cassvalue::Decoder& decoder );
+    KeyspaceMeta( keyspace_meta const & km );
+
+    const QString&                  getName()   const;
+    const Value::map_t&             getFields() const;
+    Value::map_t&                   getFields();
+
+    Value&                          operator [] ( const QString& name );
+
+    const TableMeta::map_t&         getTables() const;
+
+    void                            encodeKeyspaceMeta(cassvalue::Encoder& encoded) const;
+
+    QString							getKeyspaceCql() const;
+    string_map_t					getTablesCql() const;
+
+private:
+    QString                         f_name;
+    Value::map_t                    f_fields;
+    TableMeta::map_t                f_tables;
+
+    void                            decodeKeyspaceMeta(const cassvalue::Decoder& decoder);
+};
+
 class SessionMeta
         : public std::enable_shared_from_this<SessionMeta>
 {
@@ -88,115 +193,6 @@ public:
     typedef std::shared_ptr<SessionMeta>        pointer_t;
     typedef std::weak_ptr<SessionMeta>          weak_pointer_t;
     typedef std::map<QString, pointer_t>        map_t;
-    typedef std::map<QString, QString>        	string_map_t;
-
-    class KeyspaceMeta
-            : public std::enable_shared_from_this<KeyspaceMeta>
-    {
-    public:
-        typedef std::shared_ptr<KeyspaceMeta>       pointer_t;
-        typedef std::weak_ptr<KeyspaceMeta>         weak_pointer_t;
-        typedef std::map<QString, pointer_t>        map_t;
-
-        class TableMeta
-                : public std::enable_shared_from_this<TableMeta>
-        {
-        public:
-            typedef std::shared_ptr<TableMeta>          pointer_t;
-            typedef std::weak_ptr<TableMeta>            weak_pointer_t;
-            typedef std::map<QString, pointer_t>        map_t;
-
-            class ColumnMeta
-                    : public std::enable_shared_from_this<ColumnMeta>
-            {
-            public:
-                typedef std::shared_ptr<ColumnMeta>         pointer_t;
-                typedef std::weak_ptr<ColumnMeta>           weak_pointer_t;
-                typedef std::map<QString, pointer_t>        map_t;
-
-                enum class type_t {
-                    TypeRegular,
-                    TypePartitionKey,
-                    TypeClusteringKey,
-                    TypeStatic,
-                    TypeCompactValue
-                };
-
-                ColumnMeta( TableMeta::pointer_t tbl = TableMeta::pointer_t() );
-
-                const QString&                  getName() const;
-                type_t                          getType() const;
-                column_type_t                   getColumnType() const;
-                const Value::map_t&             getFields() const;
-                Value::map_t&                   getFields();
-
-                Value&                          operator [] ( const QString& name );
-
-                void                            encodeColumnMeta(cassvalue::Encoder& encoded) const;
-                void                            decodeColumnMeta(const cassvalue::Decoder& decoder);
-
-                QString     					getCqlString() const;
-
-            private:
-                friend class SessionMeta;
-
-                TableMeta::weak_pointer_t       f_table;
-                QString                         f_name;
-                Value::map_t                    f_fields;
-                type_t                          f_type       = type_t::TypeRegular;
-                column_type_t                   f_columnType = column_type_t::TypeUnknown;
-            };
-
-            TableMeta( KeyspaceMeta::pointer_t kysp = KeyspaceMeta::pointer_t() );
-
-            const QString&                  getName()   const;
-            const Value::map_t&             getFields() const;
-            Value::map_t&                   getFields();
-
-            Value&                          operator [] ( const QString& name );
-
-            const ColumnMeta::map_t&        getColumns() const;
-
-            void                            encodeTableMeta(cassvalue::Encoder& encoded) const;
-            void                            decodeTableMeta(const cassvalue::Decoder& decoder);
-
-            QString      					getCqlString() const;
-
-        private:
-            friend class SessionMeta;
-
-            KeyspaceMeta::weak_pointer_t    f_keyspace;
-            QString                         f_name;
-            Value::map_t                    f_fields;
-            ColumnMeta::map_t               f_columns;
-        };
-
-        KeyspaceMeta( SessionMeta::pointer_t SessionMeta = SessionMeta::pointer_t() );
-
-        Session::pointer_t    get_session() const;
-
-        const QString&                  getName()   const;
-        const Value::map_t&             getFields() const;
-        Value::map_t&                   getFields();
-
-        Value&                          operator [] ( const QString& name );
-
-        const TableMeta::map_t&         getTables() const;
-
-        void                            encodeKeyspaceMeta(cassvalue::Encoder& encoded) const;
-        void                            decodeKeyspaceMeta(const cassvalue::Decoder& decoder);
-
-        QString							getKeyspaceCql() const;
-        string_map_t					getTablesCql() const;
-
-    private:
-        friend class SessionMeta;
-
-        SessionMeta::weak_pointer_t     f_session;
-        QString                         f_name;
-        Value::map_t                    f_fields;
-        TableMeta::map_t                f_tables;
-    };
 
     SessionMeta( Session::pointer_t session = Session::pointer_t() );
     ~SessionMeta();
