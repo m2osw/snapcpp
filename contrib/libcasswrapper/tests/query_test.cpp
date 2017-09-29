@@ -138,7 +138,7 @@ void query_test::createSchema()
                 "( id INT\n"                      //  0
                 ", name TEXT\n"                   //  1
                 ", test BOOLEAN\n"                //  2
-                ", float_value FLOAT\n"           //  3
+                //", float_value FLOAT\n"           //  3
                 ", double_value DOUBLE\n"         //  4
                 ", blob_value BLOB\n"             //  5
                 ", json_value TEXT\n"             //  6
@@ -178,17 +178,16 @@ void query_test::simpleInsert()
     std::cout << "Insert into table 'data'..." << std::endl;
     auto q = Query::create( f_session );
     q->query( "INSERT INTO qtcassandra_query_test.data "
-                "(id, name, test, float_value, double_value, blob_value, json_value, map_value) "
+                "(id, name, test, double_value, blob_value, json_value, map_value) "
                 "VALUES "
-                "(?,?,?,?,?,?,?,?)"
-             , 8
+                "(?,?,?,?,?,?,?)"
         );
     int bind_num = 0;
     q->bindVariant ( bind_num++, 5 );
     q->bindVariant ( bind_num++, "This is a test" );
     q->bindVariant ( bind_num++, true );
-    q->bindVariant ( bind_num++, 4.5 );
-    q->bindVariant ( bind_num++, 45234.5 );
+    //q->bindVariant ( bind_num++, static_cast<float>(4.5) );
+    q->bindVariant ( bind_num++, static_cast<double>(45234.5) );
 
     QByteArray arr;
     arr += "This is a test";
@@ -214,7 +213,7 @@ void query_test::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
     auto q = Query::create( f_session );
-    q->query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
+    q->query( "SELECT id,name,test,double_value,blob_value,json_value,map_value\n"
              ",COUNT(*) AS count\n"
              ",WRITETIME(blob_value) AS timestamp\n"
              "FROM qtcassandra_query_test.data" );
@@ -225,7 +224,7 @@ void query_test::simpleSelect()
         const std::string                   name         = q->getVariantColumn   ( "name"         ).toString().toStdString();
         const bool                          test         = q->getVariantColumn   ( "test"         ).toBool();
         const int64_t                       count        = q->getVariantColumn   ( "count"        ).toLongLong();
-        const float                         float_value  = q->getVariantColumn   ( "float_value"  ).toDouble();
+        //const float                         float_value  = q->getVariantColumn   ( "float_value"  ).toDouble();
         const double                        double_value = q->getVariantColumn   ( "double_value" ).toDouble();
         const QByteArray                    blob_value   = q->getByteArrayColumn ( "blob_value"   );
         const Query::string_map_t           json_value   = q->getJsonMapColumn   ( "json_value"   );
@@ -236,7 +235,7 @@ void query_test::simpleSelect()
                     << "name="         << name              << std::endl
                     << "test="         << test              << std::endl
                     << "count="        << count             << std::endl
-                    << "float_value="  << float_value       << std::endl
+                    //<< "float_value="  << float_value       << std::endl
                     << "double_value=" << double_value      << std::endl
                     << "blob_value="   << blob_value.data() << std::endl
                     << "timestamp="    << timestamp         << std::endl
@@ -273,7 +272,6 @@ void query_test::batchTest()
                 "(id, name, blob_value) "
                 "VALUES "
                 "(?,?,?)"
-                , 3
                );
         int bind_num = 0;
         q->bindVariant ( bind_num++, i );
@@ -351,7 +349,6 @@ void query_test::largeTableTest()
                 "(id, name, blob_value) "
                 "VALUES "
                 "(?,?,?)"
-                , 3
                );
         int bind_num = 0;
         q->bindVariant ( bind_num++, i );

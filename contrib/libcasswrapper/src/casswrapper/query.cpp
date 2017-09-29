@@ -35,6 +35,7 @@
  */
 
 #include "casswrapper/query.h"
+#include "casswrapper/schema.h"
 #include "casswrapper_impl.h"
 #include "exception_impl.h"
 
@@ -845,25 +846,36 @@ casswrapper::value Query::getColumnValue( const QString& id ) const
 }
 
 
+static QVariant get_variant_column( casswrapper::value const& val )
+{
+    switch( val.get_type() )
+    {
+    case CASS_VALUE_TYPE_BOOLEAN   : return val.get_bool();
+    case CASS_VALUE_TYPE_INT       : return val.get_int32();
+    case CASS_VALUE_TYPE_TINY_INT  : return val.get_int8();
+    case CASS_VALUE_TYPE_SMALL_INT : return val.get_int16();
+    case CASS_VALUE_TYPE_BIGINT    : return static_cast<qlonglong>(val.get_int64());
+    case CASS_VALUE_TYPE_FLOAT     : return val.get_float();
+    case CASS_VALUE_TYPE_DOUBLE    : return val.get_double();
+    case CASS_VALUE_TYPE_ASCII     :
+    case CASS_VALUE_TYPE_VARCHAR   : return val.get_string();
+    case CASS_VALUE_TYPE_BLOB      : return val.get_blob();
+    case CASS_VALUE_TYPE_TIMEUUID  : return val.get_uuid_timestamp();
+    case CASS_VALUE_TYPE_UUID      : return val.get_uuid();
+    default:
+        qWarning("Column type '%d' not supported!", val.get_type() );
+    }
+    return QVariant();
+}
+
+
 /** \brief Get variant column value by position
  *
  * \param id[in] position of column in the result set
  */
 QVariant Query::getVariantColumn( const size_t id ) const
 {
-    auto column( getColumnValue(id) );
-    switch( column.get_type() )
-    {
-    case QVariant::Bool      : return column.get_bool();
-    case QVariant::Int       : return column.get_int32();
-    case QVariant::LongLong  : return static_cast<qlonglong>(column.get_int64());
-    case QVariant::Double    : return column.get_double();
-    case QVariant::String    : return column.get_string();
-    case QVariant::ByteArray : return column.get_blob();
-    default:
-        qWarning("QVariant type '%d' not supported!", column.get_type() );
-    }
-    return QVariant();
+    return get_variant_column( getColumnValue(id) );
 }
 
 
@@ -873,19 +885,7 @@ QVariant Query::getVariantColumn( const size_t id ) const
  */
 QVariant Query::getVariantColumn( const QString& id ) const
 {
-    auto column( getColumnValue(id) );
-    switch( column.get_type() )
-    {
-    case QVariant::Bool      : return column.get_bool();
-    case QVariant::Int       : return column.get_int32();
-    case QVariant::LongLong  : return static_cast<qlonglong>(column.get_int64());
-    case QVariant::Double    : return column.get_double();
-    case QVariant::String    : return column.get_string();
-    case QVariant::ByteArray : return column.get_blob();
-    default:
-        qWarning("QVariant type '%d' not supported!", column.get_type() );
-    }
-    return QVariant();
+    return get_variant_column( getColumnValue(id) );
 }
 
 
