@@ -385,12 +385,12 @@ void Query::bindVariant( const size_t id, const QVariant& value )
 {
     switch( value.type() )
     {
-    case QVariant::Bool:      f_data->f_queryStmt->bind_bool(   id, value ); break;
-    case QVariant::Int:       f_data->f_queryStmt->bind_int32(  id, value ); break;
-    case QVariant::LongLong:  f_data->f_queryStmt->bind_int64(  id, value ); break;
-    case QVariant::Double:    f_data->f_queryStmt->bind_double( id, value ); break;
-    case QVariant::String:    f_data->f_queryStmt->bind_string( id, value ); break;
-    case QVariant::ByteArray: f_data->f_queryStmt->bind_blob(   id, value ); break;
+    case QVariant::Bool:      f_data->f_queryStmt->bind_bool   ( id, value.toBool()      ); break;
+    case QVariant::Int:       f_data->f_queryStmt->bind_int32  ( id, value.toInt()       ); break;
+    case QVariant::LongLong:  f_data->f_queryStmt->bind_int64  ( id, value.toLongLong()  ); break;
+    case QVariant::Double:    f_data->f_queryStmt->bind_double ( id, value.toDouble()    ); break;
+    case QVariant::String:    f_data->f_queryStmt->bind_string ( id, value.toString()    ); break;
+    case QVariant::ByteArray: f_data->f_queryStmt->bind_blob   ( id, value.toByteArray() ); break;
     default:
         qWarning("QVariant type '%d' not supported!", value.type() );
     }
@@ -400,12 +400,12 @@ void Query::bindVariant( const QString& id, const QVariant& value )
 {
     switch( value.type() )
     {
-    case QVariant::Bool:      f_data->f_queryStmt->bind_bool(   id, value ); break;
-    case QVariant::Int:       f_data->f_queryStmt->bind_int32(  id, value ); break;
-    case QVariant::LongLong:  f_data->f_queryStmt->bind_int64(  id, value ); break;
-    case QVariant::Double:    f_data->f_queryStmt->bind_double( id, value ); break;
-    case QVariant::String:    f_data->f_queryStmt->bind_string( id, value ); break;
-    case QVariant::ByteArray: f_data->f_queryStmt->bind_blob(   id, value ); break;
+    case QVariant::Bool:      f_data->f_queryStmt->bind_bool   ( id, value.toBool()      ); break;
+    case QVariant::Int:       f_data->f_queryStmt->bind_int32  ( id, value.toInt()       ); break;
+    case QVariant::LongLong:  f_data->f_queryStmt->bind_int64  ( id, value.toLongLong()  ); break;
+    case QVariant::Double:    f_data->f_queryStmt->bind_double ( id, value.toDouble()    ); break;
+    case QVariant::String:    f_data->f_queryStmt->bind_string ( id, value.toString()    ); break;
+    case QVariant::ByteArray: f_data->f_queryStmt->bind_blob   ( id, value.toByteArray() ); break;
     default:
         qWarning("QVariant type '%d' not supported!", value.type() );
     }
@@ -833,13 +833,13 @@ void Query::throwIfError( const QString& msg )
 #endif
 
 
-casswrapper::value const& Query::getColumnValue( const size_t id ) const
+casswrapper::value Query::getColumnValue( const size_t id ) const
 {
     return f_data->f_rowsIterator->get_row().get_column( id );
 }
 
 
-casswrapper::value const& Query::getColumnValue( const QString& id ) const
+casswrapper::value Query::getColumnValue( const QString& id ) const
 {
     return f_data->f_rowsIterator->get_row().get_column_by_name( id );
 }
@@ -852,16 +852,16 @@ casswrapper::value const& Query::getColumnValue( const QString& id ) const
 QVariant Query::getVariantColumn( const size_t id ) const
 {
     auto column( getColumnValue(id) );
-    switch( value.type() )
+    switch( column.get_type() )
     {
     case QVariant::Bool      : return column.get_bool();
     case QVariant::Int       : return column.get_int32();
-    case QVariant::LongLong  : return column.get_int64();
+    case QVariant::LongLong  : return static_cast<qlonglong>(column.get_int64());
     case QVariant::Double    : return column.get_double();
     case QVariant::String    : return column.get_string();
     case QVariant::ByteArray : return column.get_blob();
     default:
-        qWarning("QVariant type '%d' not supported!", value.type() );
+        qWarning("QVariant type '%d' not supported!", column.get_type() );
     }
     return QVariant();
 }
@@ -874,16 +874,16 @@ QVariant Query::getVariantColumn( const size_t id ) const
 QVariant Query::getVariantColumn( const QString& id ) const
 {
     auto column( getColumnValue(id) );
-    switch( value.type() )
+    switch( column.get_type() )
     {
     case QVariant::Bool      : return column.get_bool();
     case QVariant::Int       : return column.get_int32();
-    case QVariant::LongLong  : return column.get_int64();
+    case QVariant::LongLong  : return static_cast<qlonglong>(column.get_int64());
     case QVariant::Double    : return column.get_double();
     case QVariant::String    : return column.get_string();
     case QVariant::ByteArray : return column.get_blob();
     default:
-        qWarning("QVariant type '%d' not supported!", value.type() );
+        qWarning("QVariant type '%d' not supported!", column.get_type() );
     }
     return QVariant();
 }

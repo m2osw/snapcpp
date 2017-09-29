@@ -1,8 +1,10 @@
 #pragma once
 
-#include <QtSql/qsqldriver.h>
-#include <QtSql/qsqlresult.h>
+#include <QtSql/QSqlDriver>
+#include <QtSql/QSqlResult>
 
+#include <casswrapper/batch.h>
+#include <casswrapper/query.h>
 #include <casswrapper/session.h>
 
 #ifdef QT_PLUGIN
@@ -15,7 +17,8 @@ QT_BEGIN_NAMESPACE
 
 class QCassandraResult;
 
-class Q_EXPORT_SQLDRIVER_CASSANDRA QCassandraDriver : public QSqlDriver
+class Q_EXPORT_SQLDRIVER_CASSANDRA QCassandraDriver
+        : public QSqlDriver
 {
     friend class QCassandraResult;
     Q_OBJECT
@@ -25,14 +28,18 @@ public:
     ~QCassandraDriver();
 
     bool hasFeature(DriverFeature f) const override;
-    bool open(const QString & db,
-               const QString & host,
-               int port,
-               const QString& connOpts) override;	// Not sure about connOpts
+    bool open ( const QString & db
+              , const QString & user     = QString()
+              , const QString & password = QString()
+              , const QString & host     = QString()
+              , int             port     = -1
+              , const QString & connOpts = QString()
+              ) override;
+
     void close() override;
 
     bool    getBlocking() const;
-    void    setBlocking( bool const blocking ) const;
+    void    setBlocking( bool const blocking );
 
     QVariant handle() const      override;
 

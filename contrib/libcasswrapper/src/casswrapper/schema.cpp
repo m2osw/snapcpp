@@ -611,6 +611,13 @@ SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::type_t
 }
 
 
+column_type_t
+    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getColumnType() const
+{
+    return f_columnType;
+}
+
+
 const Value::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields() const
 {

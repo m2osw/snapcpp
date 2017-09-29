@@ -35,39 +35,18 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "query_test.h"
+
 #include "casswrapper/query.h"
 #include "casswrapper/batch.h"
 #include "casswrapper/schema.h"
 #include "casswrapper/qstring_stream.h"
-#include <QtCore>
 
 #include <exception>
 #include <iostream>
 
 using namespace casswrapper;
 using namespace schema;
-
-class query_test
-{
-public:
-    query_test( const QString& host );
-    ~query_test();
-
-    void describeSchema();
-
-    void createSchema();
-    void dropSchema();
-
-    void simpleInsert();
-    void simpleSelect();
-
-    void batchTest();
-
-    void largeTableTest();
-
-private:
-    Session::pointer_t f_session;
-};
 
 
 query_test::query_test( const QString& host )
@@ -205,11 +184,11 @@ void query_test::simpleInsert()
              , 8
         );
     int bind_num = 0;
-    q->bindInt32  ( bind_num++, 5 );
-    q->bindString ( bind_num++, "This is a test" );
-    q->bindBool   ( bind_num++, true );
-    q->bindFloat  ( bind_num++, 4.5 );
-    q->bindDouble ( bind_num++, 45234.5L );
+    q->bindVariant ( bind_num++, 5 );
+    q->bindVariant ( bind_num++, "This is a test" );
+    q->bindVariant ( bind_num++, true );
+    q->bindVariant ( bind_num++, 4.5 );
+    q->bindVariant ( bind_num++, 45234.5 );
 
     QByteArray arr;
     arr += "This is a test";
@@ -242,16 +221,16 @@ void query_test::simpleSelect()
     q->start();
     while( q->nextRow() )
     {
-        const int32_t                       id           = q->getInt32Column     ( "id"           );
-        const std::string                   name         = q->getStringColumn    ( "name"         ).toStdString();
-        const bool                          test         = q->getBoolColumn      ( "test"         );
-        const int64_t                       count        = q->getInt64Column     ( "count"        );
-        const float                         float_value  = q->getFloatColumn     ( "float_value"  );
-        const double                        double_value = q->getDoubleColumn    ( "double_value" );
+        const int32_t                       id           = q->getVariantColumn   ( "id"           ).toInt();
+        const std::string                   name         = q->getVariantColumn   ( "name"         ).toString().toStdString();
+        const bool                          test         = q->getVariantColumn   ( "test"         ).toBool();
+        const int64_t                       count        = q->getVariantColumn   ( "count"        ).toLongLong();
+        const float                         float_value  = q->getVariantColumn   ( "float_value"  ).toDouble();
+        const double                        double_value = q->getVariantColumn   ( "double_value" ).toDouble();
         const QByteArray                    blob_value   = q->getByteArrayColumn ( "blob_value"   );
-        const Query::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
-        const Query::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
-        const int64_t	                    timestamp    = q->getInt64Column     ( "timestamp"    );
+        const Query::string_map_t           json_value   = q->getJsonMapColumn   ( "json_value"   );
+        const Query::string_map_t           map_value    = q->getMapColumn       ( "map_value"    );
+        const int64_t	                    timestamp    = q->getVariantColumn   ( "timestamp"    ).toLongLong() ;
 
         std::cout   << "id ="          << id                << std::endl
                     << "name="         << name              << std::endl
@@ -297,8 +276,8 @@ void query_test::batchTest()
                 , 3
                );
         int bind_num = 0;
-        q->bindInt32  ( bind_num++, i );
-        q->bindString ( bind_num++, QString("This is test %1.").arg(i) );
+        q->bindVariant ( bind_num++, i );
+        q->bindVariant ( bind_num++, QString("This is test %1.").arg(i) );
 
         QString blob;
         blob.fill( 'b', 10 );
@@ -320,8 +299,8 @@ void query_test::batchTest()
             //        std::cout << "Iterate through batch page..." << std::endl;
             while( q->nextRow() )
             {
-                const int32_t id(q->getInt32Column("id"));
-                const QString name(q->getStringColumn("name"));
+                const int32_t id(q->getVariantColumn("id").toInt());
+                const QString name(q->getVariantColumn("name").toString());
                 string_map[id] = name;
 #if 0
                 std::cout
@@ -375,8 +354,8 @@ void query_test::largeTableTest()
                 , 3
                );
         int bind_num = 0;
-        q->bindInt32  ( bind_num++, i );
-        q->bindString ( bind_num++, QString("This is test %1.").arg(i) );
+        q->bindVariant ( bind_num++, i );
+        q->bindVariant ( bind_num++, QString("This is test %1.").arg(i) );
 
         QString blob;
         blob.fill( 'b', 10000 );
@@ -397,8 +376,8 @@ void query_test::largeTableTest()
 //        std::cout << "Iterate through page..." << std::endl;
         while( q->nextRow() )
         {
-            const int32_t id(q->getInt32Column("id"));
-            const QString name(q->getStringColumn("name"));
+            const int32_t id(q->getVariantColumn("id").toInt());
+            const QString name(q->getVariantColumn("name").toString());
 //            std::cout
 //                    << "id=" << id
 //                    << ", name='" << name.toStdString() << "'"
@@ -424,51 +403,6 @@ void query_test::largeTableTest()
     }
 
     std::cout << "Non-batch process done!" << std::endl;
-}
-
-
-int main( int argc, char *argv[] )
-{
-    const char *host( "localhost" );
-    for ( int i( 1 ); i < argc; ++i )
-    {
-        if ( strcmp( argv[i], "--help" ) == 0 )
-        {
-            qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
-            exit( 1 );
-        }
-        if ( strcmp( argv[i], "-h" ) == 0 )
-        {
-            ++i;
-            if ( i >= argc )
-            {
-                qDebug() << "error: -h must be followed by a hostname.";
-                exit( 1 );
-            }
-            host = argv[i];
-        }
-    }
-
-    //try
-    {
-        query_test test( host );
-        test.describeSchema();
-        test.dropSchema();
-        test.createSchema();
-        test.simpleInsert();
-        test.simpleSelect();
-        test.batchTest();
-        test.largeTableTest();
-    }
-#if 0
-    catch( const std::exception& ex )
-    {
-        std::cerr << "Exception caught! what=[" << ex.what() << "]" << std::endl;
-        return 1;
-    }
-#endif
-
-    return 0;
 }
 
 // vim: ts=4 sw=4 et

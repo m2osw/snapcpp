@@ -1,7 +1,7 @@
-#include <QSqlDriverPlugin>
+#include <QtSql/QSqlDriverPlugin>
 #include <QStringList>
 
-#include "qsql_cassandra_p.h"
+#include "casswrapper/QCassandraDriver.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -37,5 +37,7 @@ QSqlDriver* QCassandraDriverPlugin::create(const QString &name)
     }
     return 0;
 }
+
+#include "main.moc"
 
 QT_END_NAMESPACE

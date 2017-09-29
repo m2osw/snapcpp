@@ -1,6 +1,8 @@
 #include "QCassandraDriver.h"
 #include "QCassandraResult.h"
 
+#include <QtSql/QtSql>
+
 using namespace casswrapper;
 
 QT_BEGIN_NAMESPACE
@@ -10,15 +12,14 @@ namespace
     int const PAGING_SIZE = 100;
 }
 
-QCassandraResult::QCassandraDriver(QCassandraDriver *db)
-    : QCassandraResult(db)
+QCassandraResult::QCassandraResult(QCassandraDriver const *db)
+    : QSqlResult(db)
     , f_query(Query::create(db->f_session))
 {
-    connect( f_query.get(), &Query::queryFinished
-           , this         , &QCassandraResult::onQueryFinished
-           );
-
     f_rows.reserve(PAGING_SIZE);
+    connect( f_query.get() , &Query::queryFinished
+           , this          , &QCassandraResult::onQueryFinished
+           );
 }
 
 
@@ -40,17 +41,7 @@ void QCassandraResult::onQueryFinished( Query::pointer_t q )
 
 QVariant QCassandraResult::handle() const
 {
-    return f_query.get();
-}
-
-
-QVariant QCassandraResult::data( int field )
-{
-    if( !isSelect() || field >= f_query->columnCount() )
-    {
-        qWarning("QCassandraResult::data(): column %d out of range!", field);
-        return QVariant();
-    }
+    return QVariant( reinterpret_cast<qulonglong>(f_query.get()) );
 }
 
 
@@ -72,6 +63,7 @@ bool QCassandraResult::reset( QString const& query )
     f_query->query( query );
     f_query->setPagingSize( PAGING_SIZE );
     setAt( QSql::BeforeFirstRow );
+    return true;
 }
 
 
@@ -80,6 +72,10 @@ int QCassandraResult::size()
     return f_rows.size();
 }
 
+int QCassandraResult::numRowsAffected()
+{
+    return -1;  // TODO: implement for non-select queries
+}
 
 bool QCassandraResult::exec()
 {
@@ -91,14 +87,17 @@ bool QCassandraResult::exec()
         {
             while( fetchPage() );
         }
+        return true;
     }
-    catch( exception const& x )
+    catch( std::exception const& x )
     {
-        setLastError
-            (
-            , QSqlError( tr("Query error=%1").arg(x.what()) )
-            , QSqlError::StatementError
-            );
+        setLastError( QSqlError
+                      ( QObject::tr("Query error=%1").arg(x.what())
+                      , QString()
+                      , QSqlError::StatementError
+                      )
+                    );
+        return false;
     }
 }
 
@@ -123,13 +122,13 @@ bool QCassandraResult::fetchPage()
 
 void QCassandraResult::bindValue( int index, const QVariant &val, QSql::ParamType /*paramType*/ )
 {
-    f_query->bindValue( index, val );
+    f_query->bindVariant( index, val );
 }
 
 
 void QCassandraResult::bindValue( const QString &placeholder, const QVariant &val, QSql::ParamType /*paramType*/ )
 {
-    f_query->bindValue( placeholder, val );
+    f_query->bindVariant( placeholder, val );
 }
 
 
@@ -142,7 +141,7 @@ QVariant QCassandraResult::data( int field )
 
 bool QCassandraResult::isNull( int index )
 {
-    return data( index ).isNull();
+    return f_rows[at()][index].isNull();
 }
 
 

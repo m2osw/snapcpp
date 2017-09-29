@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QtSql/qsqldriver.h>
-#include <QtSql/qsqlresult.h>
+#include <QtSql/QSqlDriver>
+#include <QtSql/QSqlResult>
 
 #include <casswrapper/query.h>
 
@@ -15,10 +15,9 @@ QT_BEGIN_NAMESPACE
 
 class QCassandraDriver;
 
-class Q_EXPORT_SQLDRIVER_CASSANDRA QCassandraResult : public QSqlDriver
+class QCassandraResult : public QSqlResult, public QObject
 {
-    friend class QCassandraResult;
-    Q_OBJECT
+    friend class QCassandraDriver;
 
 public:
     explicit QCassandraResult( QCassandraDriver const *db );
@@ -56,7 +55,7 @@ private:
     bool                            fetchPage();
 
 private slots:
-    void    onQueryFinished( Query::pointer_t q );
+    void    onQueryFinished( casswrapper::Query::pointer_t q );
 };
 
 QT_END_NAMESPACE

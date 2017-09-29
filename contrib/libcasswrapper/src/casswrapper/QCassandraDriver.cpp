@@ -1,14 +1,21 @@
 #include "QCassandraDriver.h"
 #include "QCassandraResult.h"
 
+#include "casswrapper/schema.h"
+
+#include <QtSql/QtSql>
+
+#include <memory>
+
 using namespace casswrapper;
 using namespace schema;
 
 QT_BEGIN_NAMESPACE
 
 
-QCassandraDriver::QCassandraDriver(QObject *p=0)
-    : f_session( std::make_shared<Session>() )
+QCassandraDriver::QCassandraDriver(QObject *p)
+    : QSqlDriver(p)
+    , f_session( Session::create() )
 {
 }
 
@@ -33,10 +40,13 @@ bool QCassandraDriver::hasFeature(DriverFeature f) const
 }
 
 
-bool QCassandraDriver::open(const QString & db,
-		   const QString & host,
-		   int port,
-		   const QString& connOpts)
+bool QCassandraDriver::open ( const QString & db
+                            , const QString & /*user*/
+                            , const QString & /*password*/
+                            , const QString & host
+                            , int             port
+                            , const QString & connOpts
+                            )
 {
     f_db = db;
     bool const use_ssl = (connOpts == "CASSANDRA_USE_SSL");
@@ -47,11 +57,12 @@ bool QCassandraDriver::open(const QString & db,
     }
     catch( std::exception const& e )
     {
-        setLastError
-            (
-            , QSqlError( tr("Cannot open database! Error=%1").arg(e.what()) )
-            , QSqlError::ConnectionError
-            );
+        setLastError( QSqlError
+                      ( tr("Cannot open database!")
+                      , e.what()
+                      , QSqlError::TransactionError
+                      )
+                    );
         return false;
     }
 
@@ -71,7 +82,7 @@ bool QCassandraDriver::getBlocking() const
 }
 
 
-void QCassandraDriver::setBlocking( bool const blocking ) const
+void QCassandraDriver::setBlocking( bool const blocking )
 {
     f_blocking = blocking;
 }
@@ -79,15 +90,15 @@ void QCassandraDriver::setBlocking( bool const blocking ) const
 
 QVariant QCassandraDriver::handle() const
 {
-    return f_session.get();
+    return reinterpret_cast<qulonglong>(f_session.get());
 }
 
 
 QSqlResult *QCassandraDriver::createResult() const
 {
-    auto result( new QCassandraResult(this) );
+    std::unique_ptr<QCassandraResult> result( new QCassandraResult(this) );
     result->setBlocking( f_blocking );
-    return result;
+    return result.release();
 }
 
 
@@ -99,10 +110,10 @@ bool QCassandraDriver::isOpen() const
 
 QStringList QCassandraDriver::tables(QSql::TableType type) const
 {
-    SessionMeta::pointer_t meta( SessionMeta::create(f_session) );
+    auto meta( SessionMeta::create(f_session) );
     meta->loadSchema();
 
-    KeyspaceMeta::pointer_t db_keyspace( meta->getKeyspaces()[f_db] );
+    auto db_keyspace( meta->getKeyspaces().at(f_db) );
 
     QStringList table_list;
 
@@ -143,43 +154,47 @@ QVariant::Type decodeColumnType( column_type_t type )
 {
     switch( type )
     {
-        case TypeUnknown    :
-        case TypeCustom     :
-        case TypeDecimal    :
-        case TypeLast_entry :
-        case TypeUdt        :
-        case TypeInet       :
-        case TypeList       :
-        case TypeSet        :
-        case TypeTuple      :
-        case TypeMap        :   return QVariant::Invalid;   // TODO Not sure how to handle many of these...
+    case column_type_t::TypeUnknown    :
+    case column_type_t::TypeCustom     :
+    case column_type_t::TypeDecimal    :
+    case column_type_t::TypeLast_entry :
+    case column_type_t::TypeUdt        :
+    case column_type_t::TypeInet       :
+    case column_type_t::TypeList       :
+    case column_type_t::TypeSet        :
+    case column_type_t::TypeTuple      :
+    case column_type_t::TypeMap        :   return QVariant::Invalid;   // TODO Not sure how to handle many of these...
 
-        case TypeBlob       :   return QVariant::ByteArray;
-        case TypeBoolean    :   return QVariant::Bool
-        case TypeFloat      :
-        case TypeDouble     :   return QVariant::Double;
-        case TypeTinyInt    :
-        case TypeSmallInt   :
-        case TypeInt        :
-        case TypeVarint     :
-        case TypeBigint     :
-        case TypeCounter    :   return QVariant::Int;
-        case TypeDate       :   return QVariant::Date;
-        case TypeTime       :   return QVariant::Time;
-        case TypeTimestamp  :   return QVariant::DateTime;
-        case TypeAscii      :
-        case TypeVarchar    :
-        case TypeText       :   return QVariant::String;
-        case TypeUuid       :
-        case TypeTimeuuid   :   return QVariant::Uuid;
+    case column_type_t::TypeBlob       :   return QVariant::ByteArray;
+    case column_type_t::TypeBoolean    :   return QVariant::Bool;
+    case column_type_t::TypeFloat      :
+    case column_type_t::TypeDouble     :   return QVariant::Double;
+    case column_type_t::TypeTinyInt    :
+    case column_type_t::TypeSmallInt   :
+    case column_type_t::TypeInt        :
+    case column_type_t::TypeVarint     :
+    case column_type_t::TypeBigint     :
+    case column_type_t::TypeCounter    :   return QVariant::Int;
+    case column_type_t::TypeDate       :   return QVariant::Date;
+    case column_type_t::TypeTime       :   return QVariant::Time;
+    case column_type_t::TypeTimestamp  :   return QVariant::DateTime;
+    case column_type_t::TypeAscii      :
+    case column_type_t::TypeVarchar    :
+    case column_type_t::TypeText       :   return QVariant::String;
+    case column_type_t::TypeUuid       :
+    case column_type_t::TypeTimeuuid   :   return QVariant::Uuid;
+    default                            :   return QVariant::Invalid;
     }
 }
 
 
 QSqlRecord QCassandraDriver::record(const QString& tablename) const
 {
-    KeyspaceMeta::pointer_t             db_keyspace  ( meta->getKeyspaces()[f_db] );
-    KeyspaceMeta::TableMeta::pointer_t  table_record ( db_keyspace->getTables()[tablename] );
+    auto meta( SessionMeta::create(f_session) );
+    meta->loadSchema();
+
+    auto db_keyspace  ( meta->getKeyspaces().at(f_db) );
+    auto table_record ( db_keyspace->getTables().at(tablename) );
     if( !table_record )
     {
         // Not found...
@@ -205,13 +220,14 @@ QSqlRecord QCassandraDriver::record(const QString& tablename) const
 
 bool QCassandraDriver::beginTransaction()
 {
-    if( f_batch.isActive() )
+    if( f_batch->isActive() )
     {
-        setLastError
-            (
-            , QSqlError( tr("Batch is already active! Please commit or rollback.") )
-            , QSqlError::TransactionError
-            );
+        setLastError( QSqlError
+                      ( tr("Batch is already active! Please commit or rollback.")
+                      , QString()
+                      , QSqlError::TransactionError
+                      )
+                    );
         return false;
     }
 
@@ -222,13 +238,14 @@ bool QCassandraDriver::beginTransaction()
 
 bool QCassandraDriver::commitTransaction()
 {
-    if( !f_batch.isActive() )
+    if( !f_batch->isActive() )
     {
-        setLastError
-            (
-            , QSqlError( tr("There is no batch active!") )
-            , QSqlError::TransactionError
-            );
+        setLastError( QSqlError
+                      ( tr("There is no batch active!")
+                      , QString()
+                      , QSqlError::TransactionError
+                      )
+                    );
         return false;
     }
 
@@ -239,13 +256,14 @@ bool QCassandraDriver::commitTransaction()
 
 bool QCassandraDriver::rollbackTransaction()
 {
-    if( !f_batch.isActive() )
+    if( !f_batch->isActive() )
     {
-        setLastError
-            (
-            , QSqlError( tr("There is no batch active!") )
-            , QSqlError::TransactionError
-            );
+        setLastError( QSqlError
+                      ( tr("There is no batch active!")
+                      , QString()
+                      , QSqlError::TransactionError
+                      )
+                    );
         return false;
     }
 
@@ -256,7 +274,7 @@ bool QCassandraDriver::rollbackTransaction()
 
 bool QCassandraDriver::isTransactionActive() const
 {
-    return f_batch.isActive();
+    return f_batch->isActive();
 }
 
 

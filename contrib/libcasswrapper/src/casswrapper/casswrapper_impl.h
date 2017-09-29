@@ -340,7 +340,8 @@ public:
         void operator()(CassRow* p) const;
     };
 
-    row( CassRow* );
+    row( CassRow*       );
+    row( CassRow const* );
 
     value   get_column_by_name ( const QString& ) const;
     value   get_column         ( const int num ) const;
@@ -438,8 +439,8 @@ public:
     void bind_double     ( const size_t   id, const double       value ) const;
     void bind_double     ( const QString& id, const double       value ) const;
     void bind_string     ( const size_t   id, const std::string& value ) const;
-    void bind_string     ( const QString& id, const QString&     value ) const;
-    void bind_string     ( const size_t   id, const std::string& value ) const;
+    void bind_string     ( const QString& id, const std::string& value ) const;
+    void bind_string     ( const size_t   id, const QString&     value ) const;
     void bind_string     ( const QString& id, const QString&     value ) const;
     void bind_blob       ( const size_t   id, const QByteArray&  value ) const;
     void bind_blob       ( const QString& id, const QByteArray&  value ) const;

@@ -48,6 +48,7 @@ find_package( CassandraCppDriver REQUIRED )
 find_package( CassValue          REQUIRED )
 find_package( LibExcept          REQUIRED )
 find_package( Qt5Core            REQUIRED )
+find_package( Qt5Sql             REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen )
@@ -63,6 +64,7 @@ include_directories(
         ${CASSWRAPPER_INCLUDE_DIRS}
         ${LIBEXCEPT_INCLUDE_DIRS}
         ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Sql_INCLUDE_DIRS}
         ${Qt5Xml_INCLUDE_DIRS}
 )
 

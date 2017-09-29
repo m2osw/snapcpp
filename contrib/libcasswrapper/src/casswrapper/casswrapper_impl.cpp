@@ -667,6 +667,12 @@ row::row( CassRow* p )
 }
 
 
+row::row( CassRow const* p )
+    : f_ptr( const_cast<CassRow*>(p), deleter_t() )
+{
+}
+
+
 void row::deleter_t::operator()( CassRow* ) const
 {
     // Not needed, API deletes it on its own.
@@ -827,7 +833,7 @@ void statement::bind_bool( const size_t id, const bool value ) const
 
 void statement::bind_bool( const QString& id, const bool value ) const
 {
-   cass_statement_bind_bool_by_name( f_ptr.get(), id, value? cass_true: cass_false );
+   cass_statement_bind_bool_by_name( f_ptr.get(), id.toUtf8().data(), value? cass_true: cass_false );
 }
 
 
@@ -839,7 +845,7 @@ void statement::bind_int32( const size_t id, const int32_t value ) const
 
 void statement::bind_int32( const QString& id, const int32_t value ) const
 {
-   cass_statement_bind_int32_by_name( f_ptr.get(), id, value );
+   cass_statement_bind_int32_by_name( f_ptr.get(), id.toUtf8().data(), value );
 }
 
 
@@ -851,7 +857,7 @@ void statement::bind_int64( const size_t id, const int64_t value ) const
 
 void statement::bind_int64( const QString& id, const int64_t value ) const
 {
-   cass_statement_bind_int64_by_name( f_ptr.get(), id, value );
+   cass_statement_bind_int64_by_name( f_ptr.get(), id.toUtf8().data(), value );
 }
 
 
@@ -863,7 +869,7 @@ void statement::bind_float( const size_t id, const float value ) const
 
 void statement::bind_float( const QString& id, const float value ) const
 {
-   cass_statement_bind_float_by_name( f_ptr.get(), id, value );
+   cass_statement_bind_float_by_name( f_ptr.get(), id.toUtf8().data(), value );
 }
 
 
@@ -875,7 +881,7 @@ void statement::bind_double( const size_t id, const double value ) const
 
 void statement::bind_double( const QString& id, const double value ) const
 {
-   cass_statement_bind_double_by_name( f_ptr.get(), id, value );
+   cass_statement_bind_double_by_name( f_ptr.get(), id.toUtf8().data(), value );
 }
 
 
@@ -885,15 +891,15 @@ void statement::bind_string( const size_t id, const std::string& value ) const
 }
 
 
-void statement::bind_string( const size_t id, const QString& value ) const
-{
-    bind_blob( id, value.toUtf8() );
-}
-
-
 void statement::bind_string( const QString& id, const std::string& value ) const
 {
     bind_blob( id, value.c_str() );
+}
+
+
+void statement::bind_string( const size_t id, const QString& value ) const
+{
+    bind_blob( id, value.toUtf8() );
 }
 
 
@@ -911,7 +917,7 @@ void statement::bind_blob( const size_t id, const QByteArray& value ) const
 
 void statement::bind_blob( const QString& id, const QByteArray& value ) const
 {
-    cass_statement_bind_string_by_name_n( f_ptr.get(), id, value.constData(), value.size() );
+    cass_statement_bind_string_by_name_n( f_ptr.get(), id.toUtf8().data(), id.size(), value.constData(), value.size() );
 }
 
 
@@ -923,7 +929,7 @@ void statement::bind_collection ( const size_t id, const collection& value ) con
 
 void statement::bind_collection ( const QString& id, const collection& value ) const
 {
-    cass_statement_bind_collection_by_name( f_ptr.get(), id, value.f_ptr.get() );
+    cass_statement_bind_collection_by_name( f_ptr.get(), id.toUtf8().data(), value.f_ptr.get() );
 }
 
 

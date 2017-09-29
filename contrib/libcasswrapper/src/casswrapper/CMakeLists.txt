@@ -88,6 +88,7 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBEXCEPT_LIBRARIES}
     Qt5::Core
     Qt5::Xml
+    Qt5::Sql
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES

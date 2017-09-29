@@ -47,12 +47,12 @@
 #include "casswrapper/session.h"
 #include "casswrapper/batch.h"
 
-
 namespace casswrapper
 {
 
 struct data;
 class batch;
+class value;
 
 class Query
     : public QObject
@@ -115,11 +115,11 @@ public:
     void                end                 ();
     void                reset               ();
 
-    QVariant            getVariantColumn    ( const QString& name  ) const;
-    QVariant            getVariantColumn    ( const int      num   ) const;
-    QByteArray          getByteArrayColumn  ( const char *   name  ) const;
-    QByteArray          getByteArrayColumn  ( const QString& name  ) const;
-    QByteArray          getByteArrayColumn  ( const int      num   ) const;
+    QVariant            getVariantColumn    ( const size_t   id   ) const;
+    QVariant            getVariantColumn    ( const QString& id   ) const;
+    QByteArray          getByteArrayColumn  ( const char *   name ) const;
+    QByteArray          getByteArrayColumn  ( const QString& name ) const;
+    QByteArray          getByteArrayColumn  ( const int      num  ) const;
     string_map_t        getJsonMapColumn    ( const QString& name ) const;
     string_map_t        getJsonMapColumn    ( const int num ) const;
     string_map_t        getMapColumn        ( const QString& name ) const;
@@ -157,7 +157,8 @@ private:
     void                throwIfError            ( const QString& msg );
     void                internalStart           ( const bool block, batch* batch_ptr = nullptr );
 
-    casswrapper::value const& getColumnValue( const size_t id ) const;
+    casswrapper::value  getColumnValue( const size_t   id ) const;
+    casswrapper::value  getColumnValue( const QString& id ) const;
 
     static void		    queryCallbackFunc( void* future, void *data );
 };
