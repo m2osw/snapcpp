@@ -43,6 +43,7 @@
 #include <QByteArray>
 #include <QObject>
 #include <QString>
+#include <QMutex>
 
 #include "casswrapper/batch.h"
 #include "casswrapper/schema.h"
@@ -75,8 +76,8 @@ public:
         level_three
     };
 
-    typedef std::shared_ptr<Query>  pointer_t;
-    typedef std::map<std::string,std::string> string_map_t;
+    typedef std::shared_ptr<Query>              pointer_t;
+    typedef std::map<std::string,std::string>   string_map_t;
 
     ~Query();
 
@@ -131,11 +132,11 @@ public:
     string_map_t        getMapColumn        ( const int num ) const;
 
 signals:
-    void                threadQueryFinished( Query* q );
-    void                queryFinished( Query::pointer_t q );
+    void                threadQueryFinished ( pointer_t q );
+    void                queryFinished       ( pointer_t q );
 
 private slots:
-    void                onThreadQueryFinished( Query* q );
+    void                onThreadQueryFinished ( pointer_t q );
 
 private:
     Query( Session::pointer_t session );
@@ -166,6 +167,10 @@ private:
     casswrapper::value  getColumnValue( const QString& id ) const;
 
     static void		    queryCallbackFunc( void* future, void *data );
+
+    typedef std::vector<pointer_t> pointer_list_t;
+    static QMutex           f_mutex;
+    static pointer_list_t   f_pendingQueryList;
 };
 
 

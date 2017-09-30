@@ -132,6 +132,9 @@ struct data
 };
 
 
+QMutex                  Query::f_mutex;
+Query::pointer_list_t   Query::f_pendingQueryList;
+
 /** \brief Construct a query object and manage the lifetime of the query session.
  *
  * \sa query
@@ -151,6 +154,26 @@ Query::Query( Session::pointer_t session )
 Query::~Query()
 {
     end();
+
+    QMutexLocker locker(&f_mutex);
+    //
+    // Remove this pointer from the list
+    //
+    std::vector<pointer_list_t::iterator> iter_list;
+    for( auto iter = f_pendingQueryList.begin();
+         iter != f_pendingQueryList.end();
+         ++iter )
+    {
+        if( iter->get() == this )
+        {
+            iter_list.push_back(iter);
+        }
+    }
+    //
+    for( auto iter : iter_list )
+    {
+        f_pendingQueryList.erase(iter);
+    }
 }
 
 
@@ -462,44 +485,6 @@ void Query::bindMap( const QString& id, const string_map_t& value )
 }
 
 
-void Query::queryCallbackFunc( void* f, void *data )
-{
-    const CassFuture*   this_future( reinterpret_cast<const CassFuture*>(f) );
-    Query*              this_query( reinterpret_cast<Query*>(data) );
-    //
-    if( this_query->f_data->f_sessionFuture->get() != this_future )
-    {
-        //throw libexcept::exception_t( "Unexpected future!" );
-        // Do nothing with this future, because this belongs to a different query
-        return;
-    }
-
-    // This comes from the background thread created by the Cassandra driver
-    // However, when Qt5 emits it, it is properly marshalled into the
-    // main thread (when using the GUI, this would be the GUI thread).
-    // Therefore, this is completely thread safe, so there is no need to
-    // serialize access to any shared data members.
-    //
-    // However, one of the side effects is that I have to send the bare pointer
-    // through the signal into the main thread. Qt does not let me marshall
-    // the shared_ptr<> for some reason. However, once in the main thread, the
-    // emmissions from that point on will only be shared_ptr.
-    //
-    emit this_query->threadQueryFinished( this_query );
-}
-
-
-void Query::onThreadQueryFinished( Query* q )
-{
-    if( q != this )
-    {
-        throw libexcept::exception_t("Query::onThreadQueryFinished(): Query objects are not the same!");
-    }
-
-    emit queryFinished( shared_from_this() );
-}
-
-
 #if 0
 void Query::testMetrics()
 {
@@ -633,11 +618,55 @@ void Query::internalStart( const bool block, batch* batch_ptr )
     {
         // This will call back on a background thread
         //
+        QMutexLocker locker(&f_mutex);
+        f_pendingQueryList.push_back( shared_from_this() );
         f_data->f_sessionFuture->set_callback
             ( reinterpret_cast<void*>(&Query::queryCallbackFunc)
-            , reinterpret_cast<void*>(this)
+            , reinterpret_cast<void*>(f_pendingQueryList.size()-1)
             );
     }
+}
+
+
+void Query::queryCallbackFunc( void* f, void *data )
+{
+    QMutexLocker locker(&f_mutex);
+
+    const CassFuture*   this_future( reinterpret_cast<const CassFuture*>(f) );
+    size_t const        index( reinterpret_cast<size_t>(data) );
+    auto                iter( Query::f_pendingQueryList.begin() + index );
+    Query::pointer_t&   this_query( *iter );
+    //
+    if( this_query->f_data->f_sessionFuture->get() != this_future )
+    {
+        //throw libexcept::exception_t( "Unexpected future!" );
+        // Do nothing with this future, because this belongs to a different query
+        return;
+    }
+
+    // This comes from the background thread created by the Cassandra driver
+    // However, when Qt5 emits it, it is properly marshalled into the
+    // main thread (when using the GUI, this would be the GUI thread).
+    // Therefore, this is completely thread safe, so there is no need to
+    // serialize access to any shared data members.
+    //
+    // However, one of the side effects is that I have to send the bare pointer
+    // through the signal into the main thread. Qt does not let me marshall
+    // the shared_ptr<> for some reason. However, once in the main thread, the
+    // emmissions from that point on will only be shared_ptr.
+    //
+    emit this_query->threadQueryFinished( this_query );
+}
+
+
+void Query::onThreadQueryFinished( pointer_t q )
+{
+    if( q.get() != this )
+    {
+        throw libexcept::exception_t("Query::onThreadQueryFinished(): Query objects are not the same!");
+    }
+
+    emit queryFinished( shared_from_this() );
 }
 
 

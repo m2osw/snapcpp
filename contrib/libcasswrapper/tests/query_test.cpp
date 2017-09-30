@@ -420,7 +420,7 @@ static void exec( QSqlQuery& q )
 
 void query_test::qtSqlDriverTest()
 {
-    QSqlDatabase db = QSqlDatabase::addDatabase("QCassandraBlocking");
+    QSqlDatabase db = QSqlDatabase::addDatabase("QCassandra");
     if( !db.isValid() )
     {
         const QString error( "QCASSANDRA database is not valid for some reason!" );
@@ -438,9 +438,8 @@ void query_test::qtSqlDriverTest()
         throw std::runtime_error( error.toUtf8().data() );
     }
 
-
     std::cout << "QCassandra: Insert into table 'data'..." << std::endl;
-    for( int idx = 0; idx < 100; ++idx )
+    for( int idx = 0; idx < 10000; ++idx )
     {
         QSqlQuery q;
         q.prepare( QString("INSERT INTO %1.data "
@@ -464,6 +463,8 @@ void query_test::qtSqlDriverTest()
         exec(q);
     }
 
+#if 0
+    // TODO: Develop up a test which handles async database responses.
     {
         std::cout << "QCassandra: Select from table 'data'..." << std::endl;
         QSqlQuery q
@@ -471,27 +472,90 @@ void query_test::qtSqlDriverTest()
                   ",COUNT(*) AS count\n"
                   "FROM %1.data").arg(database_name)
               );
+        auto result_func = [&](const QString &notification_name)
+            {
+                if( notification_name != "QCassandraDriver::queryFinished()" )
+                {
+                    return;
+                }
+
+                bool result = q.first();
+                std::cout << "result=" << result << std::endl;
+                do
+                {
+                    const int32_t     id           = q.value( "id"           ).toInt();
+                    const std::string name         = q.value( "name"         ).toString().toStdString();
+                    const bool        test         = q.value( "test"         ).toBool();
+                    const int64_t     count        = q.value( "count"        ).toLongLong();
+                    const double      double_value = q.value( "double_value" ).toDouble();
+                    const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
+
+                    std::cout   << "id ="          << id                << std::endl
+                                << "name="         << name              << std::endl
+                                << "test="         << test              << std::endl
+                                << "count="        << count             << std::endl
+                                << "double_value=" << double_value      << std::endl
+                                << "blob_value="   << blob_value.data() << std::endl
+                                   ;
+                }
+                while( q.next() );
+            };
+        QObject::connect( q.driver()
+                        , static_cast<void(QSqlDriver::*)(const QString&)>(&QSqlDriver::notification)
+                        , result_func
+                        );
+        q.driver()->subscribeToNotification( "QCassandraDriver::queryFinished()" );
         exec(q);
-        bool result = q.first();
-        std::cout << "result=" << result << std::endl;
-        do
+
+        // This doesn't work because the application ends before we receive any hits
+        // since it doesn't block. Some kind of GUI test might be appropriate here.
+    }
+#endif
+
+    {
+        std::cout << "QCassandra: Count rows in table 'data'..." << std::endl;
+        QSqlQuery q
+                ( QString("SELECT COUNT(*) AS count FROM %1.data").arg(database_name)
+                  );
+        exec(q);
+
+        if( !q.first() )
+        {
+            throw std::runtime_error( "should be one row!" );
+        }
+
+        const int64_t  count = q.value( "count" ).toLongLong();
+        std::cout << "count=" << count << std::endl;
+
+        if( q.next() )
+        {
+            throw std::runtime_error( "should be at only one row!" );
+        }
+    }
+
+    {
+        std::cout << "QCassandra: Select from table 'data'..." << std::endl;
+        QSqlQuery q
+                ( QString("SELECT id,name,test,double_value,blob_value\n"
+                          "FROM %1.data").arg(database_name)
+                  );
+        exec(q);
+
+        for( q.first(); q.next(); )
         {
             const int32_t     id           = q.value( "id"           ).toInt();
             const std::string name         = q.value( "name"         ).toString().toStdString();
             const bool        test         = q.value( "test"         ).toBool();
-            const int64_t     count        = q.value( "count"        ).toLongLong();
             const double      double_value = q.value( "double_value" ).toDouble();
             const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
 
             std::cout   << "id ="          << id                << std::endl
                         << "name="         << name              << std::endl
                         << "test="         << test              << std::endl
-                        << "count="        << count             << std::endl
                         << "double_value=" << double_value      << std::endl
                         << "blob_value="   << blob_value.data() << std::endl
                            ;
         }
-        while( q.next() );
     }
 
     {
@@ -500,9 +564,7 @@ void query_test::qtSqlDriverTest()
             ( QString("SELECT * FROM %1.data").arg(database_name)
               );
         exec(q);
-        bool result = q.first();
-        std::cout << "result=" << result << std::endl;
-        do
+        for( q.first(); q.next(); )
         {
             const int32_t     id           = q.value( "id"           ).toInt();
             const std::string name         = q.value( "name"         ).toString().toStdString();
@@ -519,7 +581,6 @@ void query_test::qtSqlDriverTest()
                         << "blob_value="   << blob_value.data() << std::endl
                            ;
         }
-        while( q.next() );
     }
 }
 

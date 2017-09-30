@@ -41,6 +41,7 @@ void QCassandraResult::onQueryFinished( Query::pointer_t q )
     if( !f_blocking )
     {
         fetchPage();
+        dynamic_cast<const QCassandraDriver*>(driver())->emitQueryFinishedSignal();
     }
 }
 

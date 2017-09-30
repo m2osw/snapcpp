@@ -30,7 +30,7 @@ bool QCassandraDriver::hasFeature(DriverFeature f) const
     switch( f )
     {
         case QSqlDriver::BLOB                   :
-        //case QSqlDriver::EventNotifications     :
+        case QSqlDriver::EventNotifications     :
         case QSqlDriver::QuerySize              :
         case QSqlDriver::PositionalPlaceholders :
         case QSqlDriver::Transactions           :
@@ -275,6 +275,14 @@ bool QCassandraDriver::rollbackTransaction()
 bool QCassandraDriver::isTransactionActive() const
 {
     return f_batch->isActive();
+}
+
+
+void QCassandraDriver::emitQueryFinishedSignal() const
+{
+    // Kludge because the notification method is not 'const'.
+    //
+    emit const_cast<QCassandraDriver*>(this)->notification( "QCassandraDriver::queryFinished()" );
 }
 
 

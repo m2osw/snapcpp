@@ -64,7 +64,7 @@ private:
     bool            fetchPage();
 
 private slots:
-    void    onQueryFinished( casswrapper::Query::pointer_t q );
+    void            onQueryFinished( casswrapper::Query::pointer_t q );
 };
 
 QT_END_NAMESPACE

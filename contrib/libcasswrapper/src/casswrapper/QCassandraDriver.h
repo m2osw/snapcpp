@@ -67,6 +67,8 @@ private:
     casswrapper::Batch::pointer_t   f_batch;
     QString                         f_db;
     bool                            f_blocking = true;
+
+    void                            emitQueryFinishedSignal() const;
 };
 
 QT_END_NAMESPACE
