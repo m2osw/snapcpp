@@ -73,7 +73,6 @@ int main( int argc, char *argv[] )
         test.createSchema();
 
         test.qtSqlDriverTest();
-
 #if 1
         test.simpleInsert();
         test.simpleSelect();

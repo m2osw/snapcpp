@@ -439,8 +439,9 @@ void query_test::qtSqlDriverTest()
     }
 
 
+    std::cout << "QCassandra: Insert into table 'data'..." << std::endl;
+    for( int idx = 0; idx < 100; ++idx )
     {
-        std::cout << "QCassandra: Insert into table 'data'..." << std::endl;
         QSqlQuery q;
         q.prepare( QString("INSERT INTO %1.data "
                        "(id, name, test, double_value, blob_value) "
@@ -449,14 +450,15 @@ void query_test::qtSqlDriverTest()
                        ).arg(database_name)
                    );
         int bind_num = 0;
-        q.bindValue ( bind_num++, 5 );
-        q.bindValue ( bind_num++, "This is a test" );
+        q.bindValue ( bind_num++, 5+idx );
+        q.bindValue ( bind_num++, QString("This is test %1").arg(idx) );
         q.bindValue ( bind_num++, true );
-        q.bindValue ( bind_num++, static_cast<double>(45234.5) );
+        q.bindValue ( bind_num++, static_cast<double>(45234.5) * idx );
 
         QByteArray arr;
         arr += "This is a test";
         arr += " and yet more chars...";
+        arr += QString("And a number=%1").arg(idx);
         q.bindValue( bind_num++, arr );
 
         exec(q);

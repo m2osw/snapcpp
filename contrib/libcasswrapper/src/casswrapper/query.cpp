@@ -908,10 +908,15 @@ QVariant Query::getVariantColumn( const size_t id ) const
     {
         return get_variant_column( getColumnValue(id) );
     }
-    catch( cassandra_exception_t const& )
+    catch( cassandra_exception_t const& e )
     {
-        // Null values, just ignore them...
-        return QVariant();
+        if( e.getCode() == CASS_ERROR_LIB_NULL_VALUE )
+        {
+            // Ignore null values
+            //
+            return QVariant();
+        }
+        throw;
     }
 }
 
@@ -962,9 +967,22 @@ QByteArray Query::getByteArrayColumn( const int num ) const
  */
 Query::string_map_t Query::getJsonMapColumn ( const QString& name ) const
 {
-    string_map_t json_map;
-    getMapFromJsonObject( json_map, getColumnValue(name).get_string() );
-    return json_map;
+    try
+    {
+        string_map_t json_map;
+        getMapFromJsonObject( json_map, getColumnValue(name).get_string() );
+        return json_map;
+    }
+    catch( cassandra_exception_t const& e )
+    {
+        if( e.getCode() == CASS_ERROR_LIB_NULL_VALUE )
+        {
+            // Ignore null values
+            //
+            return Query::string_map_t();
+        }
+        throw;
+    }
 }
 
 
@@ -974,9 +992,22 @@ Query::string_map_t Query::getJsonMapColumn ( const QString& name ) const
  */
 Query::string_map_t Query::getJsonMapColumn ( const int num ) const
 {
-    string_map_t json_map;
-    getMapFromJsonObject( json_map, getColumnValue(num).get_string() );
-    return json_map;
+    try
+    {
+        string_map_t json_map;
+        getMapFromJsonObject( json_map, getColumnValue(num).get_string() );
+        return json_map;
+    }
+    catch( cassandra_exception_t const& e )
+    {
+        if( e.getCode() == CASS_ERROR_LIB_NULL_VALUE )
+        {
+            // Ignore null values
+            //
+            return Query::string_map_t();
+        }
+        throw;
+    }
 }
 
 
@@ -988,7 +1019,7 @@ Query::string_map_t getMapFromValue( const casswrapper::value& value )
 {
     Query::string_map_t ret_map;
     iterator map_iter( value.get_iterator_from_map() );
-    while( map_iter.next() )
+    while( map_iter.isValid() && map_iter.next() )
     {
         casswrapper::value const key( map_iter.get_map_key   () );
         casswrapper::value const val( map_iter.get_map_value () );

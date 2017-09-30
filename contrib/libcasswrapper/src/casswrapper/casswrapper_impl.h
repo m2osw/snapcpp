@@ -233,6 +233,8 @@ public:
     iterator( CassIterator*   );
     iterator( const iterator& );
 
+    bool isValid() const { return f_ptr.get() != nullptr; }
+
     bool          next()                 const;
 
     value         get_map_key()          const;
