@@ -288,12 +288,13 @@ public:
     result( CassResult*   );
     result( const result& );
 
-    iterator    get_iterator()      const;
-    size_t      get_row_count()     const;
-    size_t      get_column_count()  const;
-    bool        has_more_pages()    const;
-
-    row         get_first_row()     const;
+    iterator        get_iterator()                          const;
+    size_t          get_row_count()                         const;
+    size_t          get_column_count()                      const;
+    bool            has_more_pages()                        const;
+    QString         get_column_name( size_t const index )   const;
+    CassValueType   get_column_type( size_t const index )   const;
+    row             get_first_row()                         const;
 
     void reset() { f_ptr.reset(); }
 

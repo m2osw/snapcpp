@@ -113,6 +113,8 @@ public:
     void                getQueryResult      ();
     size_t              rowCount            () const;
     size_t              columnCount         () const;
+    QString             columnName          ( size_t const index );
+    schema::column_type_t columnType        ( size_t const index );
     bool                nextRow             ();
     bool                nextPage            ( const bool block = true );
     void                end                 ();

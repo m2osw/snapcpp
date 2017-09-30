@@ -115,6 +115,8 @@ public:
 
     QString     					getCqlString() const;
 
+    static column_type_t            getValueType( int const cass_type );
+
 private:
     QString                         f_name;
     Value::map_t                    f_fields;

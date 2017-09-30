@@ -689,6 +689,28 @@ bool Query::queryActive() const
 }
 
 
+QString Query::columnName( size_t const index )
+{
+    if( !queryActive() )
+    {
+        throw libexcept::exception_t( "Query is not active!" );
+    }
+
+    return f_data->f_queryResult->get_column_name( index );
+}
+
+
+schema::column_type_t Query::columnType( size_t const index )
+{
+    if( !queryActive() )
+    {
+        throw libexcept::exception_t( "Query is not active!" );
+    }
+
+    return schema::ColumnMeta::getValueType( f_data->f_queryResult->get_column_type( index ) );
+}
+
+
 /** \brief Get the query result. This method blocks if the result is not ready yet.
  *
  * \note Throws libexcept::exception_t if query failed.
@@ -882,7 +904,15 @@ static QVariant get_variant_column( casswrapper::value const& val )
  */
 QVariant Query::getVariantColumn( const size_t id ) const
 {
-    return get_variant_column( getColumnValue(id) );
+    try
+    {
+        return get_variant_column( getColumnValue(id) );
+    }
+    catch( cassandra_exception_t const& )
+    {
+        // Null values, just ignore them...
+        return QVariant();
+    }
 }
 
 

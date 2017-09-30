@@ -530,38 +530,7 @@ ColumnMeta::ColumnMeta( column_meta const& cm )
     case CASS_COLUMN_TYPE_COMPACT_VALUE  : f_type = ColumnMeta::type_t::TypeCompactValue;   break;
     }
 
-    CassValueType vt = cm.get_value_type();
-    switch( vt )
-    {
-    case CASS_VALUE_TYPE_UNKNOWN    :   f_columnType = column_type_t::TypeUnknown    ; break;
-    case CASS_VALUE_TYPE_CUSTOM     :   f_columnType = column_type_t::TypeCustom     ; break;
-    case CASS_VALUE_TYPE_DECIMAL    :   f_columnType = column_type_t::TypeDecimal    ; break;
-    case CASS_VALUE_TYPE_LAST_ENTRY :   f_columnType = column_type_t::TypeLast_entry ; break;
-    case CASS_VALUE_TYPE_UDT        :   f_columnType = column_type_t::TypeUdt        ; break;
-    case CASS_VALUE_TYPE_LIST       :   f_columnType = column_type_t::TypeList       ; break;
-    case CASS_VALUE_TYPE_SET        :   f_columnType = column_type_t::TypeSet        ; break;
-    case CASS_VALUE_TYPE_TUPLE      :   f_columnType = column_type_t::TypeTuple      ; break;
-    case CASS_VALUE_TYPE_MAP        :   f_columnType = column_type_t::TypeMap        ; break;
-    case CASS_VALUE_TYPE_BLOB       :   f_columnType = column_type_t::TypeBlob       ; break;
-    case CASS_VALUE_TYPE_BOOLEAN    :   f_columnType = column_type_t::TypeBoolean    ; break;
-    case CASS_VALUE_TYPE_FLOAT      :   f_columnType = column_type_t::TypeFloat      ; break;
-    case CASS_VALUE_TYPE_DOUBLE     :   f_columnType = column_type_t::TypeDouble     ; break;
-    case CASS_VALUE_TYPE_TINY_INT   :   f_columnType = column_type_t::TypeTinyInt    ; break;
-    case CASS_VALUE_TYPE_SMALL_INT  :   f_columnType = column_type_t::TypeSmallInt   ; break;
-    case CASS_VALUE_TYPE_INT        :   f_columnType = column_type_t::TypeInt        ; break;
-    case CASS_VALUE_TYPE_VARINT     :   f_columnType = column_type_t::TypeVarint     ; break;
-    case CASS_VALUE_TYPE_BIGINT     :   f_columnType = column_type_t::TypeBigint     ; break;
-    case CASS_VALUE_TYPE_COUNTER    :   f_columnType = column_type_t::TypeCounter    ; break;
-    case CASS_VALUE_TYPE_ASCII      :   f_columnType = column_type_t::TypeAscii      ; break;
-    case CASS_VALUE_TYPE_DATE       :   f_columnType = column_type_t::TypeDate       ; break;
-    case CASS_VALUE_TYPE_TEXT       :   f_columnType = column_type_t::TypeText       ; break;
-    case CASS_VALUE_TYPE_TIME       :   f_columnType = column_type_t::TypeTime       ; break;
-    case CASS_VALUE_TYPE_TIMESTAMP  :   f_columnType = column_type_t::TypeTimestamp  ; break;
-    case CASS_VALUE_TYPE_VARCHAR    :   f_columnType = column_type_t::TypeVarchar    ; break;
-    case CASS_VALUE_TYPE_UUID       :   f_columnType = column_type_t::TypeUuid       ; break;
-    case CASS_VALUE_TYPE_TIMEUUID   :   f_columnType = column_type_t::TypeTimeuuid   ; break;
-    case CASS_VALUE_TYPE_INET       :   f_columnType = column_type_t::TypeInet       ; break;
-    }
+    f_columnType = getValueType( cm.get_value_type() );
 
     iterator meta_iter( cm.get_fields() );
     while( meta_iter.next() )
@@ -571,6 +540,45 @@ ColumnMeta::ColumnMeta( column_meta const& cm )
         val.readValue(meta_iter);
         f_fields[field_name] = val;
     }
+}
+
+
+column_type_t ColumnMeta::getValueType( int const cass_type )
+{
+    CassValueType vt = static_cast<CassValueType>(cass_type);
+    column_type_t ct;
+    switch( vt )
+    {
+    case CASS_VALUE_TYPE_UNKNOWN    :   ct = column_type_t::TypeUnknown    ; break;
+    case CASS_VALUE_TYPE_CUSTOM     :   ct = column_type_t::TypeCustom     ; break;
+    case CASS_VALUE_TYPE_DECIMAL    :   ct = column_type_t::TypeDecimal    ; break;
+    case CASS_VALUE_TYPE_LAST_ENTRY :   ct = column_type_t::TypeLast_entry ; break;
+    case CASS_VALUE_TYPE_UDT        :   ct = column_type_t::TypeUdt        ; break;
+    case CASS_VALUE_TYPE_LIST       :   ct = column_type_t::TypeList       ; break;
+    case CASS_VALUE_TYPE_SET        :   ct = column_type_t::TypeSet        ; break;
+    case CASS_VALUE_TYPE_TUPLE      :   ct = column_type_t::TypeTuple      ; break;
+    case CASS_VALUE_TYPE_MAP        :   ct = column_type_t::TypeMap        ; break;
+    case CASS_VALUE_TYPE_BLOB       :   ct = column_type_t::TypeBlob       ; break;
+    case CASS_VALUE_TYPE_BOOLEAN    :   ct = column_type_t::TypeBoolean    ; break;
+    case CASS_VALUE_TYPE_FLOAT      :   ct = column_type_t::TypeFloat      ; break;
+    case CASS_VALUE_TYPE_DOUBLE     :   ct = column_type_t::TypeDouble     ; break;
+    case CASS_VALUE_TYPE_TINY_INT   :   ct = column_type_t::TypeTinyInt    ; break;
+    case CASS_VALUE_TYPE_SMALL_INT  :   ct = column_type_t::TypeSmallInt   ; break;
+    case CASS_VALUE_TYPE_INT        :   ct = column_type_t::TypeInt        ; break;
+    case CASS_VALUE_TYPE_VARINT     :   ct = column_type_t::TypeVarint     ; break;
+    case CASS_VALUE_TYPE_BIGINT     :   ct = column_type_t::TypeBigint     ; break;
+    case CASS_VALUE_TYPE_COUNTER    :   ct = column_type_t::TypeCounter    ; break;
+    case CASS_VALUE_TYPE_ASCII      :   ct = column_type_t::TypeAscii      ; break;
+    case CASS_VALUE_TYPE_DATE       :   ct = column_type_t::TypeDate       ; break;
+    case CASS_VALUE_TYPE_TEXT       :   ct = column_type_t::TypeText       ; break;
+    case CASS_VALUE_TYPE_TIME       :   ct = column_type_t::TypeTime       ; break;
+    case CASS_VALUE_TYPE_TIMESTAMP  :   ct = column_type_t::TypeTimestamp  ; break;
+    case CASS_VALUE_TYPE_VARCHAR    :   ct = column_type_t::TypeVarchar    ; break;
+    case CASS_VALUE_TYPE_UUID       :   ct = column_type_t::TypeUuid       ; break;
+    case CASS_VALUE_TYPE_TIMEUUID   :   ct = column_type_t::TypeTimeuuid   ; break;
+    case CASS_VALUE_TYPE_INET       :   ct = column_type_t::TypeInet       ; break;
+    }
+    return ct;
 }
 
 

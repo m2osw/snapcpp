@@ -491,6 +491,34 @@ void query_test::qtSqlDriverTest()
         }
         while( q.next() );
     }
+
+    {
+        std::cout << "QCassandra: Select from table 'data' with '*'..." << std::endl;
+        QSqlQuery q
+            ( QString("SELECT * FROM %1.data").arg(database_name)
+              );
+        exec(q);
+        bool result = q.first();
+        std::cout << "result=" << result << std::endl;
+        do
+        {
+            const int32_t     id           = q.value( "id"           ).toInt();
+            const std::string name         = q.value( "name"         ).toString().toStdString();
+            const bool        test         = q.value( "test"         ).toBool();
+            const int64_t     count        = q.value( "count"        ).toLongLong();
+            const double      double_value = q.value( "double_value" ).toDouble();
+            const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
+
+            std::cout   << "id ="          << id                << std::endl
+                        << "name="         << name              << std::endl
+                        << "test="         << test              << std::endl
+                        << "count="        << count             << std::endl
+                        << "double_value=" << double_value      << std::endl
+                        << "blob_value="   << blob_value.data() << std::endl
+                           ;
+        }
+        while( q.next() );
+    }
 }
 
 

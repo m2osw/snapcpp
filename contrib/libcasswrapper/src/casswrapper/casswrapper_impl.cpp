@@ -652,6 +652,25 @@ bool result::has_more_pages() const
 }
 
 
+QString result::get_column_name( size_t const index ) const
+{
+    const char * name;
+    size_t len;
+    CassError rc = cass_result_column_name( f_ptr.get(), index, &name, &len );
+    if( rc != CASS_OK )
+    {
+        throw cassandra_exception_impl( QString("Error fetching column name from column %1").arg(index), rc );
+    }
+    return QString::fromUtf8( name, len );
+}
+
+
+CassValueType result::get_column_type( size_t const index ) const
+{
+    return cass_result_column_type( f_ptr.get(), index );
+}
+
+
 row result::get_first_row() const
 {
     return cass_result_first_row(f_ptr.get());

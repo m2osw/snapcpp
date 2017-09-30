@@ -61,7 +61,6 @@ private:
     std::vector<column_t> f_orderedColumns;
 
     void            createQuery();
-    void            parseSelectStmt();
     bool            fetchPage();
 
 private slots:
