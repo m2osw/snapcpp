@@ -650,11 +650,6 @@ void Query::queryCallbackFunc( void* f, void *data )
     // Therefore, this is completely thread safe, so there is no need to
     // serialize access to any shared data members.
     //
-    // However, one of the side effects is that I have to send the bare pointer
-    // through the signal into the main thread. Qt does not let me marshall
-    // the shared_ptr<> for some reason. However, once in the main thread, the
-    // emmissions from that point on will only be shared_ptr.
-    //
     emit this_query->threadQueryFinished( this_query );
 }
 
