@@ -56,6 +56,7 @@
 
 // CassWrapper lib
 //
+#include <casswrapper/batch.h>
 #include <casswrapper/query.h>
 #include <casswrapper/session.h>
 
@@ -214,6 +215,7 @@ private:
     struct batch_t
     {
         casswrapper::Query::pointer_t f_query;
+        casswrapper::Batch::pointer_t f_batch;
     };
 
     void                        send_order(casswrapper::Query::pointer_t q, libdbproxy::order const & order);

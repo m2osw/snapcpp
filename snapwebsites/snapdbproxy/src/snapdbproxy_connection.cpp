@@ -575,7 +575,8 @@ void snapdbproxy_connection::send_order(casswrapper::Query::pointer_t q, libdbpr
     else
     {
         // add to the existing batch
-        q->addToBatch();
+        // This is now done in the declare_batch() method
+        //q->addToBatch();
     }
 }
 
@@ -618,7 +619,8 @@ void snapdbproxy_connection::declare_batch(libdbproxy::order const & order)
     snap::NOTUSED(order);
     batch_t batch;
     batch.f_query = casswrapper::Query::create(f_session);
-    batch.f_query->startLoggedBatch();
+    batch.f_batch = casswrapper::LoggedBatch::create();
+    batch.f_batch->addQuery(batch.f_query);
     f_batches.push_back(batch);
 
     libdbproxy::order_result result;
@@ -759,7 +761,7 @@ void snapdbproxy_connection::commit_batch(libdbproxy::order const & order)
 
     // End the batch, which causes everything to be committed to the database.
     //
-    f_batches[batch_index].f_query->endBatch();
+    f_batches[batch_index].f_batch->run();
 
     // send an empty, successful reply in this case
     //

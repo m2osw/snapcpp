@@ -1006,8 +1006,8 @@ void snap_layout::add_files()
                     auto q( Query::create(f_session) );
                     q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
                     int bind = 0;
-                    q->bindString( bind++, row_name  );
-                    q->bindString( bind++, cell_name );
+                    q->bindVariant( bind++, row_name  );
+                    q->bindVariant( bind++, cell_name );
                     q->start();
                     if( q->nextRow() )
                     {
@@ -1125,8 +1125,8 @@ void snap_layout::add_files()
                 auto q( Query::create(f_session) );
                 q->query( QString("UPDATE %1.layout SET value = ? WHERE key = ? and column1 = ?;").arg(context_name) );
                 int bind = 0;
-                q->bindInt64    ( bind++, last_updated      );
-                q->bindString   ( bind++, i.key()           );
+                q->bindVariant  ( bind++, static_cast<qulonglong>(last_updated) );
+                q->bindVariant  ( bind++, i.key()           );
                 q->bindByteArray( bind++, last_updated_name );
                 q->start();
                 q->end();
@@ -1216,8 +1216,8 @@ void snap_layout::set_theme()
             auto q( Query::create(f_session) );
             q->query( QString("DELETE FROM %1.content WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
-            q->bindString( bind++, key   );
-            q->bindString( bind++, field );
+            q->bindVariant( bind++, key   );
+            q->bindVariant( bind++, field );
             q->start();
             q->end();
         }
@@ -1232,9 +1232,9 @@ void snap_layout::set_theme()
             auto q( Query::create(f_session) );
             q->query( QString("UPDATE %1.content SET value = ? WHERE key = ? AND column1 = ?;").arg(context_name) );
             int bind = 0;
-            q->bindString( bind++, theme );
-            q->bindString( bind++, key   );
-            q->bindString( bind++, field );
+            q->bindVariant( bind++, theme );
+            q->bindVariant( bind++, key   );
+            q->bindVariant( bind++, field );
             q->start();
             q->end();
         }
@@ -1293,7 +1293,7 @@ void snap_layout::remove_theme()
         auto q( Query::create(f_session) );
         q->query( QString("DELETE FROM %1.layout WHERE key = ?;").arg(context_name) );
         int bind = 0;
-        q->bindString( bind++, row_name );
+        q->bindVariant( bind++, row_name );
         q->start();
         q->end();
     }

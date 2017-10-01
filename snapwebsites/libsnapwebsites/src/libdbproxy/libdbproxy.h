@@ -103,7 +103,7 @@ private:
     void setCurrentContext(context::pointer_t c);
     void clearCurrentContextIf(const context& c);
 
-    context::pointer_t getContext( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta );
+    context::pointer_t getContext( casswrapper::schema::KeyspaceMeta::pointer_t keyspace_meta );
     void retrieveContextMeta( context::pointer_t c, const QString& context_name ) const;
 
     friend class context;

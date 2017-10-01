@@ -87,7 +87,7 @@ private:
     context & operator = (context const &) = delete;
 
     void resetSchema();
-    void parseContextDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
+    void parseContextDefinition( casswrapper::schema::KeyspaceMeta::pointer_t keyspace );
     QString getKeyspaceOptions();
 
     friend class libdbproxy;
@@ -98,7 +98,7 @@ private:
     // Also, it cannot be a shared_ptr unless you make a restriction that
     // all instances must be allocated on the heap. Thus is the deficiency of
     // std::enabled_shared_from_this<>.
-    casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t f_schema;
+    casswrapper::schema::KeyspaceMeta::pointer_t f_schema;
     //
     std::weak_ptr<libdbproxy>                   f_cassandra;
     QString                                     f_context_name;

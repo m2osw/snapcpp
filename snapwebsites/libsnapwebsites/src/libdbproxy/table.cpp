@@ -158,7 +158,7 @@ namespace libdbproxy
  * \param[in] table_name  The name of the table definition being created.
  */
 table::table(context::pointer_t context, const QString& table_name)
-    : f_schema(std::make_shared<casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta>())
+    : f_schema() -- auto-init
     //f_from_cassandra(false) -- auto-init
     , f_context(context)
     //f_rows() -- auto-init
@@ -356,7 +356,7 @@ void table::setFromCassandra()
  *
  * \param[in] data  The pointer to the CfDef object.
  */
-void table::parseTableDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta )
+void table::parseTableDefinition( casswrapper::schema::TableMeta::pointer_t table_meta )
 {
     f_schema         = table_meta;
     f_from_cassandra = true;

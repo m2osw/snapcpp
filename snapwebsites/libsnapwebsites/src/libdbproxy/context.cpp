@@ -141,7 +141,7 @@ namespace libdbproxy
  * \sa libdbproxy::context()
  */
 context::context(libdbproxy::pointer_t cassandra, const QString& context_name)
-    //: f_schema(std::make_shared<casswrapper::schema::SessionMeta::KeyspaceMeta>())
+    //: f_schema() -- auto-init
     : f_cassandra(cassandra)
     , f_context_name(context_name)
       //f_tables() -- auto-init
@@ -171,7 +171,7 @@ context::~context()
 
 void context::resetSchema()
 {
-    f_schema = std::make_shared<casswrapper::schema::SessionMeta::KeyspaceMeta>();
+    f_schema = std::make_shared<casswrapper::schema::KeyspaceMeta>( f_context_name );
 
     casswrapper::schema::Value replication;
     auto& replication_map(replication.map());
@@ -537,7 +537,7 @@ QString context::generateReplicationStanza() const
  *
  * \sa prepareContextDefinition()
  */
-void context::parseContextDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+void context::parseContextDefinition( casswrapper::schema::KeyspaceMeta::pointer_t keyspace_meta )
 {
     f_schema = keyspace_meta;
     for( const auto pair : keyspace_meta->getTables() )

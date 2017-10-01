@@ -987,7 +987,7 @@ context::pointer_t libdbproxy::getContext( const QString& context_name )
  *
  * \return A shared pointer to a cassandra context.
  */
-context::pointer_t libdbproxy::getContext( casswrapper::schema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+context::pointer_t libdbproxy::getContext( casswrapper::schema::KeyspaceMeta::pointer_t keyspace_meta )
 {
     // get the list of existing contexts
     const contexts& cs(getContexts());

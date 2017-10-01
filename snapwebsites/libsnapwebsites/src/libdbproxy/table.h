@@ -113,7 +113,7 @@ private:
     table(std::shared_ptr<context> context, const QString& table_name);
 
     void        setFromCassandra();
-    void        parseTableDefinition( casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta );
+    void        parseTableDefinition( casswrapper::schema::TableMeta::pointer_t table_meta );
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const value& value);
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, value& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const value& value);
@@ -136,7 +136,7 @@ private:
     friend class context;
     friend class row;
 
-    casswrapper::schema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t   f_schema;
+    casswrapper::schema::TableMeta::pointer_t   f_schema;
 
     bool                      f_from_cassandra = false;
     std::weak_ptr<context>    f_context;
