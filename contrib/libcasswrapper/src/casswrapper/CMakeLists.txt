@@ -100,40 +100,4 @@ install(
 	DESTINATION include/casswrapper
 )
 
-
-project( qtcassandra )
-
-set( HEADER_FILES
-    qt5/QCassandraDriver.h
-    qt5/QCassandraResult.h
-)
-
-add_library( ${PROJECT_NAME} SHARED
-    ${HEADER_FILES}
-    qt5/QCassandraDriver.cpp
-    qt5/QCassandraResult.cpp
-    qt5/main.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    casswrapper
-    Qt5::Core
-    Qt5::Xml
-    Qt5::Sql
-)
-
-set_target_properties( ${PROJECT_NAME} PROPERTIES
-    VERSION ${LIBCASSWRAPPER_VERSION_MAJOR}.${LIBCASSWRAPPER_VERSION_MINOR}
-    SOVERSION ${LIBCASSWRAPPER_VERSION_MAJOR}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/qt5/plugins
-)
-
-#install(
-#    FILES ${HEADER_FILES}
-#    DESTINATION include/casswrapper
-#)
-
 # vim: ts=4 sw=4 et

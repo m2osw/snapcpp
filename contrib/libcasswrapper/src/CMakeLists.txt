@@ -36,7 +36,7 @@
 
 project( casswrapper_src )
 
-add_subdirectory( casswrapper   )
-#add_subdirectory( qt_sql_plugin )
+add_subdirectory( casswrapper )
+add_subdirectory( qtcassandra )
 
 # vim: ts=4 sw=4 et
