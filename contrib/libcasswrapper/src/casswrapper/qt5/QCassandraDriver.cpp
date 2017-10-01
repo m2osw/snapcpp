@@ -1,5 +1,5 @@
-#include "QCassandraDriver.h"
-#include "QCassandraResult.h"
+#include "qt5/QCassandraDriver.h"
+#include "qt5/QCassandraResult.h"
 
 #include "casswrapper/schema.h"
 

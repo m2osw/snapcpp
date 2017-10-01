@@ -1,7 +1,7 @@
 #include <QtCore>
 #include <QtSql/QtSql>
 
-#include "casswrapper/QCassandraDriver.h"
+#include "casswrapper/qt5/QCassandraDriver.h"
 
 QT_BEGIN_NAMESPACE
 

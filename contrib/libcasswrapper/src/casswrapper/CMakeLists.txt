@@ -104,15 +104,15 @@ install(
 project( qtcassandra )
 
 set( HEADER_FILES
-    QCassandraDriver.h
-    QCassandraResult.h
+    qt5/QCassandraDriver.h
+    qt5/QCassandraResult.h
 )
 
 add_library( ${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    QCassandraDriver.cpp
-    QCassandraResult.cpp
-    main.cpp
+    qt5/QCassandraDriver.cpp
+    qt5/QCassandraResult.cpp
+    qt5/main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
