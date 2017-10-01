@@ -100,8 +100,9 @@ public:
         TypeCompactValue
     };
 
+    ColumnMeta( QString const& column_name     );
     ColumnMeta( const cassvalue::Decoder& code );
-    ColumnMeta( column_meta const& cm );
+    ColumnMeta( column_meta const& cm          );
 
     const QString&                  getName() const;
     type_t                          getType() const;
@@ -133,8 +134,9 @@ public:
     typedef std::weak_ptr<TableMeta>            weak_pointer_t;
     typedef std::map<QString, pointer_t>        map_t;
 
+    TableMeta( QString const& table_name         );
     TableMeta( const cassvalue::Decoder& decoder );
-    TableMeta( table_meta const & tm );
+    TableMeta( table_meta const & tm             );
 
     const QString&                  getName()   const;
     const Value::map_t&             getFields() const;
@@ -164,8 +166,9 @@ public:
     typedef std::map<QString, pointer_t>        map_t;
     typedef std::map<QString, QString>          string_map_t;
 
+    KeyspaceMeta( const QString& keyspace_name      );
     KeyspaceMeta( const cassvalue::Decoder& decoder );
-    KeyspaceMeta( keyspace_meta const & km );
+    KeyspaceMeta( keyspace_meta const & km          );
 
     const QString&                  getName()   const;
     const Value::map_t&             getFields() const;

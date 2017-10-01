@@ -144,6 +144,11 @@ void SessionMeta::decodeSessionMeta(const QByteArray& code)
 //================================================================/
 // KeyspaceMeta
 //
+KeyspaceMeta::KeyspaceMeta( QString const& keyspace_name )
+    : f_name(keyspace_name)
+{
+}
+
 KeyspaceMeta::KeyspaceMeta( const cassvalue::Decoder& decoder )
 {
    decodeKeyspaceMeta(decoder);
@@ -315,6 +320,11 @@ void KeyspaceMeta::decodeKeyspaceMeta(const Decoder& decoder)
 //================================================================/
 // TableMeta
 //
+TableMeta::TableMeta( QString const& table_name )
+    : f_name(table_name)
+{
+}
+
 TableMeta::TableMeta( const cassvalue::Decoder& decoder )
 {
     decodeTableMeta(decoder);
@@ -370,6 +380,7 @@ Value& TableMeta::operator[]( const QString& name )
 
 const ColumnMeta::map_t& TableMeta::getColumns() const
 {
+
     return f_columns;
 }
 
@@ -512,6 +523,11 @@ QString TableMeta::getCqlString( QString const& keyspace_name ) const
 //================================================================/
 // ColumnMeta
 //
+ColumnMeta::ColumnMeta( QString const& column_name )
+    : f_name(column_name)
+{
+}
+
 ColumnMeta::ColumnMeta( const cassvalue::Decoder& decoder )
 {
     decodeColumnMeta(decoder);

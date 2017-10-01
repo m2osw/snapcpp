@@ -677,7 +677,7 @@ void Query::onThreadQueryFinished( pointer_t q )
  *
  * \param block[in]	if true, then the method blocks while waiting for completion. It does not block if false.
  *
- * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
+ * \sa query(), setPagingSize(), bindVariant(), bindByteArray()
  */
 void Query::start( const bool block )
 {
