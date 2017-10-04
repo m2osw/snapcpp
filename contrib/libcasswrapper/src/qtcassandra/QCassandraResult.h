@@ -32,28 +32,37 @@ public:
     void            setBlocking( bool const val = true );
 
 protected:
-    bool            reset( QString const& query )   override;
-    bool            prepare( QString const& query ) override;
-    int             size()                          override;
-    int             numRowsAffected()               override;
-    bool            exec()                          override;
+    void            setQuery( QString const& query ) override;
+    bool            reset( QString const& query )    override;
+    bool            prepare( QString const& query )  override;
+    int             size()                           override;
+    int             numRowsAffected()                override;
+    bool            exec()                           override;
 
     void 	        bindValue( int index,                   const QVariant &val, QSql::ParamType paramType ) override;
     void 	        bindValue( const QString &placeholder,  const QVariant &val, QSql::ParamType paramType ) override;
 
-    QVariant        data( int field )               override;
-    bool            isNull(int index)               override;
+    QVariant        data( int field )                override;
+    bool            isNull(int index)                override;
 
-    bool            fetch( int i )                  override;
-    bool            fetchFirst()                    override;
-    bool            fetchLast()                     override;
+    bool            fetch( int i )                   override;
+    bool            fetchFirst()                     override;
+    bool            fetchLast()                      override;
 
-    QSqlRecord      record() const                  override;
+    QSqlRecord      record() const                   override;
+
+    int             pagingSize() const;
+    void            setPagingSize( int const size );
+
+signals:
+    void            queryPageFinished();
 
 private:
     casswrapper::Query::pointer_t                f_query;
     bool                                         f_blocking = false;
     mutable QMutex                               f_mutex;
+    int                                          f_totalCount = 0;
+    int                                          f_pagingSize = -1;
 
     typedef std::vector<std::vector<QVariant>> row_array_t;
     row_array_t      f_rows;
@@ -66,12 +75,17 @@ private:
     std::vector<column_t> f_orderedColumns;
 
     void            createQuery();
-    bool            fetchPage();
+    void            fetchPage();
+
+    int             totalCount() const;
+
+    void            pushRow( std::vector<QVariant> const& columns );
+    QVariant        atRow( int const field );
 
     void            threadFinished() override;
 
-//private slots:
-    //void            onQueryFinished( casswrapper::Query::pointer_t q );
+private slots:
+    void            onQueryPageFinished();
 };
 
 QT_END_NAMESPACE

@@ -22,9 +22,10 @@ QCassandraResult::QCassandraResult(QCassandraDriver const *db)
     : QSqlResult(db)
     , f_query(Query::create(db->f_session))
     , f_mutex(QMutex::Recursive)
+    , f_pagingSize(PAGING_SIZE)
 {
     f_query->addCallback( this );
-    f_rows.reserve(PAGING_SIZE);
+    f_rows.reserve(f_pagingSize);
 }
 
 
@@ -36,15 +37,28 @@ QCassandraResult::~QCassandraResult()
 
 void QCassandraResult::threadFinished()
 {
-    QMutexLocker locker(&f_mutex);
-    if( !f_blocking )
+    if( !isBlocking() )
     {
-        fetchPage();
+        setActive( true );
+        do
+        {
+            fetchPage();
+
+            // Marshall this into the main thread.
+            emit queryPageFinished();
+        }
+        while( f_query->nextPage( true /*blocking*/ ) );
 
         // This marshalls the signal out of the thread and into the main UI thread, so the call won't
         // require serialization (unless the user wants to alter the f_row field.
         dynamic_cast<const QCassandraDriver*>(driver())->emitQueryFinishedSignal();
     }
+}
+
+
+void QCassandraResult::onQueryPageFinished()
+{
+    // Do nothing yet...
 }
 
 
@@ -70,30 +84,55 @@ void QCassandraResult::setBlocking( bool const val )
 
 void QCassandraResult::createQuery()
 {
-    QMutexLocker locker(&f_mutex);
     f_query->reset();
     f_query->query( lastQuery() );
-    f_query->setPagingSize( PAGING_SIZE );
+    f_query->setPagingSize( f_pagingSize );
     setAt( QSql::BeforeFirstRow );
+}
+
+
+void QCassandraResult::setQuery( QString const& query )
+{
+    QSqlResult::setQuery( query );
+
+    if( isSelect() && query.contains("COUNT(*)") )
+    {
+        f_totalCount = 1;
+    }
+    else if( isSelect() )
+    {
+        QStringList fromSplit( query.split("FROM") );
+        QString count_query_sql( QString("SELECT COUNT(*) FROM %1").arg(fromSplit[1].trimmed()) );
+        qDebug() << "Count Query=" << count_query_sql;
+        Query::pointer_t count_query( Query::create( f_query->getSession() ) );
+        count_query->query( count_query_sql );
+        count_query->start();
+        f_totalCount = count_query->getVariantColumn(0).toInt();
+        count_query->end();
+        qDebug() << "f_totalCount=" << f_totalCount;
+        f_rows.reserve( f_totalCount );
+    }
+    else
+    {
+        f_totalCount = 0;
+    }
 }
 
 
 bool QCassandraResult::reset( QString const& query )
 {
-    QMutexLocker locker(&f_mutex);
+    setSelect( true );
     setQuery( query );
     createQuery();
-    setSelect( true );
     return exec();
 }
 
 
 bool QCassandraResult::prepare( QString const& query )
 {
-    QMutexLocker locker(&f_mutex);
+    setSelect( false );
     setQuery( query );
     createQuery();
-    setSelect( false );
     return true;
 }
 
@@ -102,7 +141,16 @@ int QCassandraResult::size()
 {
     QMutexLocker locker(&f_mutex);
     return f_rows.size();
+    //return f_totalCount;
 }
+
+
+int QCassandraResult::totalCount() const
+{
+    QMutexLocker locker(&f_mutex);
+    return f_totalCount;
+}
+
 
 int QCassandraResult::numRowsAffected()
 {
@@ -114,13 +162,22 @@ bool QCassandraResult::exec()
 {
     try
     {
-        QMutexLocker locker(&f_mutex);
-        f_query->start( f_blocking );
-        setActive( true );
-        //
-        if( f_blocking )
+        if( f_query->queryActive() )
         {
-            while( fetchPage() );
+            if( !f_query->nextPage( f_blocking ) )
+            {
+                return false;
+            }
+        }
+        else
+        {
+            f_query->start( f_blocking );
+            setActive( true );
+        }
+        //
+        if( isBlocking() )
+        {
+            fetchPage();
         }
         return true;
     }
@@ -137,12 +194,8 @@ bool QCassandraResult::exec()
 }
 
 
-bool QCassandraResult::fetchPage()
+void QCassandraResult::fetchPage()
 {
-    QMutexLocker locker(&f_mutex);
-
-    setActive( true );
-
     while( f_query->nextRow() )
     {
         std::vector<QVariant> columns;
@@ -151,75 +204,109 @@ bool QCassandraResult::fetchPage()
             columns.push_back( f_query->getVariantColumn(column) );
         }
 
-        f_rows.push_back( columns );
+        pushRow( columns );
     }
 
-    return f_query->nextPage(f_blocking);
+    //std::cout << "row count after fetch of page: " << f_query->rowCount() << std::endl;
+}
+
+
+void QCassandraResult::pushRow( std::vector<QVariant> const& columns )
+{
+    QMutexLocker locker( &f_mutex );
+    f_rows.push_back( columns );
 }
 
 
 void QCassandraResult::bindValue( int index, const QVariant &val, QSql::ParamType /*paramType*/ )
 {
-    QMutexLocker locker(&f_mutex);
+    //QMutexLocker locker(&f_mutex);
     f_query->bindVariant( index, val );
 }
 
 
 void QCassandraResult::bindValue( const QString &placeholder, const QVariant &val, QSql::ParamType /*paramType*/ )
 {
-    QMutexLocker locker(&f_mutex);
     f_query->bindVariant( placeholder, val );
+}
+
+
+QVariant QCassandraResult::atRow( int const field )
+{
+    QMutexLocker locker(&f_mutex);
+    return f_rows.at(at())[field];
 }
 
 
 QVariant QCassandraResult::data( int field )
 {
-    QMutexLocker locker(&f_mutex);
-    return f_rows[at()][field];
+    try
+    {
+        return atRow(field);
+    }
+    catch( std::out_of_range const & )
+    {
+        return QVariant();
+    }
+    catch( ... )
+    {
+        throw;
+    }
 }
 
 
 bool QCassandraResult::isNull( int index )
 {
-    QMutexLocker locker(&f_mutex);
-    return f_rows[at()][index].isNull();
+    try
+    {
+        return atRow(index).isNull();
+    }
+    catch( std::out_of_range const & )
+    {
+        return true;
+    }
+    catch( ... )
+    {
+        throw;
+    }
 }
 
 
 bool QCassandraResult::fetch( int i )
 {
-    try
+    if( i >= size() )
     {
-        QMutexLocker locker(&f_mutex);
-        f_rows.at(i);    // If out of range, it throws.
+        setAt( QSql::AfterLastRow );
+    }
+    else if( i < 0 )
+    {
+        setAt( QSql::BeforeFirstRow );
+    }
+    else
+    {
         setAt(i);
         return true;
     }
-    catch( std::out_of_range const & )
-    {
-        setAt( QSql::AfterLastRow );
-        return false;
-    }
+    //
+    return false;
 }
 
 
 bool QCassandraResult::fetchFirst()
 {
-    QMutexLocker locker(&f_mutex);
     return fetch( 0 );
 }
 
 
 bool QCassandraResult::fetchLast()
 {
-    QMutexLocker locker(&f_mutex);
-    return fetch( f_rows.size()-1 );
+    return fetch( size() - 1 );
 }
 
 
 QSqlRecord QCassandraResult::record() const
 {
-    QMutexLocker locker(&f_mutex);
+    //QMutexLocker locker(&f_mutex);
     QSqlRecord   record;
 
     if( !f_query->isReady() || !f_query->queryActive() )
@@ -239,6 +326,18 @@ QSqlRecord QCassandraResult::record() const
     }
 
     return record;
+}
+
+
+int  QCassandraResult::pagingSize() const
+{
+    return f_pagingSize;
+}
+
+
+void QCassandraResult::setPagingSize( int const size )
+{
+    f_pagingSize = size;
 }
 
 

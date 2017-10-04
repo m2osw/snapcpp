@@ -30,11 +30,11 @@ bool QCassandraDriver::hasFeature(DriverFeature f) const
     switch( f )
     {
         case QSqlDriver::BLOB                   :
-        case QSqlDriver::EventNotifications     :
         case QSqlDriver::QuerySize              :
         case QSqlDriver::PositionalPlaceholders :
         case QSqlDriver::Transactions           :
         case QSqlDriver::Unicode                : return true;
+        case QSqlDriver::EventNotifications     : return !f_blocking;
         default                                 : return false;
     }
 }

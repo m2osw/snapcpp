@@ -532,21 +532,25 @@ void query_test::qtSqlDriverTest()
             throw std::runtime_error( "There is a problem with the query!" );
         }
 
-        for( q.first(); q.next(); )
+        do
         {
-            const int32_t     id           = q.value( "id"           ).toInt();
-            const std::string name         = q.value( "name"         ).toString().toStdString();
-            const bool        test         = q.value( "test"         ).toBool();
-            const double      double_value = q.value( "double_value" ).toDouble();
-            const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
+            for( q.first(); q.next(); )
+            {
+                const int32_t     id           = q.value( "id"           ).toInt();
+                const std::string name         = q.value( "name"         ).toString().toStdString();
+                const bool        test         = q.value( "test"         ).toBool();
+                const double      double_value = q.value( "double_value" ).toDouble();
+                const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
 
-            std::cout   << "id ="          << id                << std::endl
-                        << "name="         << name              << std::endl
-                        << "test="         << test              << std::endl
-                        << "double_value=" << double_value      << std::endl
-                        << "blob_value="   << blob_value.data() << std::endl
-                           ;
+                std::cout   << "id ="          << id                << std::endl
+                            << "name="         << name              << std::endl
+                            << "test="         << test              << std::endl
+                            << "double_value=" << double_value      << std::endl
+                            << "blob_value="   << blob_value.data() << std::endl
+                               ;
+            }
         }
+        while( q.exec() );
     }
 
     {
@@ -557,23 +561,27 @@ void query_test::qtSqlDriverTest()
             throw std::runtime_error( "There is a problem with the query!" );
         }
 
-        for( q.first(); q.next(); )
+        do
         {
-            const int32_t     id           = q.value( "id"           ).toInt();
-            const std::string name         = q.value( "name"         ).toString().toStdString();
-            const bool        test         = q.value( "test"         ).toBool();
-            const int64_t     count        = q.value( "count"        ).toLongLong();
-            const double      double_value = q.value( "double_value" ).toDouble();
-            const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
+            for( q.first(); q.next(); )
+            {
+                const int32_t     id           = q.value( "id"           ).toInt();
+                const std::string name         = q.value( "name"         ).toString().toStdString();
+                const bool        test         = q.value( "test"         ).toBool();
+                const int64_t     count        = q.value( "count"        ).toLongLong();
+                const double      double_value = q.value( "double_value" ).toDouble();
+                const QByteArray  blob_value   = q.value( "blob_value"   ).toByteArray();
 
-            std::cout   << "id ="          << id                << std::endl
-                        << "name="         << name              << std::endl
-                        << "test="         << test              << std::endl
-                        << "count="        << count             << std::endl
-                        << "double_value=" << double_value      << std::endl
-                        << "blob_value="   << blob_value.data() << std::endl
-                           ;
+                std::cout   << "id ="          << id                << std::endl
+                            << "name="         << name              << std::endl
+                            << "test="         << test              << std::endl
+                            << "count="        << count             << std::endl
+                            << "double_value=" << double_value      << std::endl
+                            << "blob_value="   << blob_value.data() << std::endl
+                               ;
+            }
         }
+        while( q.exec() );
     }
 }
 

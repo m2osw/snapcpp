@@ -601,26 +601,28 @@ void Query::addToBatch( batch* batch_ptr )
 
 void Query::internalStart( const bool block, batch* batch_ptr )
 {
-    lock_t locker(f_mutex);
-    f_data->f_sessionFuture = std::make_unique<future>();
+    {
+        lock_t locker(f_mutex);
+        f_data->f_sessionFuture = std::make_unique<future>();
 
-    if( batch_ptr )
-    {
-        *f_data->f_sessionFuture = f_session->getSession().execute_batch( *batch_ptr );
-    }
-    else
-    {
-        *f_data->f_sessionFuture = f_session->getSession().execute( *(f_data->f_queryStmt) );
+        if( batch_ptr )
+        {
+            *f_data->f_sessionFuture = f_session->getSession().execute_batch( *batch_ptr );
+        }
+        else
+        {
+            *f_data->f_sessionFuture = f_session->getSession().execute( *(f_data->f_queryStmt) );
+        }
     }
 
-    if( block )
-    {
-        getQueryResult();
-    }
-    else
+    if( !block )
     {
         addToPendingList();
     }
+
+    // Get first page
+    //
+    getQueryResult();
 }
 
 
@@ -635,14 +637,12 @@ void Query::internalStart( const bool block, batch* batch_ptr )
  */
 void Query::start( const bool block )
 {
-    lock_t locker(f_mutex);
-    //testMetrics();
-    //int64_t const now(QCassandra::timeofday());
-    //std::cerr << now << " -- Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
-
-    if( !f_data->f_queryStmt )
     {
-        throw libexcept::exception_t( "Query::start() called with an unconnected session or no query statement." );
+        lock_t locker(f_mutex);
+        if( !f_data->f_queryStmt )
+        {
+            throw libexcept::exception_t( "Query::start() called with an unconnected session or no query statement." );
+        }
     }
 
     internalStart( block );
@@ -780,13 +780,15 @@ bool Query::nextRow()
  */
 bool Query::nextPage( const bool block )
 {
-    lock_t locker(f_mutex);
-    if( !f_data->f_queryResult->has_more_pages() )
     {
-        return false;
-    }
+        lock_t locker(f_mutex);
+        if( !f_data->f_queryResult->has_more_pages() )
+        {
+            return false;
+        }
 
-    f_data->f_queryStmt->set_paging_state( *f_data->f_queryResult );
+        f_data->f_queryStmt->set_paging_state( *f_data->f_queryResult );
+    }
 
     // Reset the current query session, and run the next page
     //
@@ -1088,8 +1090,10 @@ void Query::addToPendingList()
 {
     // This will call back on a background thread
     //
-    lock_t locker(f_mutex);
-    f_pendingQueryList.push_back( shared_from_this() );
+    {
+        lock_t locker(f_mutex);
+        f_pendingQueryList.push_back( shared_from_this() );
+    }
     f_data->f_sessionFuture->set_callback
         ( reinterpret_cast<void*>(&Query::queryCallbackFunc)
           , reinterpret_cast<void*>(f_pendingQueryList.size()-1)
@@ -1123,35 +1127,39 @@ void Query::removeFromPendingList()
 
 void Query::queryCallbackFunc( void* f, void *data )
 {
-    lock_t locker(f_mutex);
-
-    const CassFuture*   this_future( reinterpret_cast<const CassFuture*>(f) );
-    size_t const        index( reinterpret_cast<size_t>(data) );
-    auto                iter( Query::f_pendingQueryList.begin() + index );
-    Query::pointer_t&   this_query( *iter );
-    //
-    if( this_query->f_data->f_sessionFuture->get() != this_future )
+    Query::pointer_t   this_query;
     {
-        // Do nothing with this future, because this belongs to a different query
-        return;
+        lock_t locker(f_mutex);
+        const CassFuture*   this_future( reinterpret_cast<const CassFuture*>(f) );
+        size_t const        index( reinterpret_cast<size_t>(data) );
+        auto                iter( Query::f_pendingQueryList.begin() + index );
+        this_query = *iter;
+        //
+        if( this_query->f_data->f_sessionFuture->get() != this_future )
+        {
+            // Do nothing with this future, because this belongs to a different query
+            return;
+        }
     }
 
+    Q_ASSERT(this_query.get());
     this_query->threadQueryFinished();
 }
 
 
 void Query::threadQueryFinished()
 {
-    lock_t locker(f_mutex);
-    getQueryResult();
-
+    f_mutex.lock();
     for( auto callback : f_callbackList )
     {
         if( callback )
         {
+            // Avoid deadlock...
+            f_mutex.unlock();
             callback->threadFinished();
         }
     }
+    f_mutex.unlock();
 
     // This comes from the background thread created by the Cassandra driver
     // However, when Qt5 emits it, it is properly marshalled into the
