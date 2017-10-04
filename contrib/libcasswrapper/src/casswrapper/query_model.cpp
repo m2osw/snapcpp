@@ -94,6 +94,8 @@ void query_model::init
 
 void query_model::doQuery( Query::pointer_t q )
 {
+    QMutexLocker locker(&f_mutex);
+
     if( f_query )
     {
         disconnect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
@@ -120,10 +122,13 @@ void query_model::doQuery( Query::pointer_t q )
 
 void query_model::clear()
 {
+    QMutexLocker locker(&f_mutex);
+
     if( f_query )
     {
         disconnect( f_query.get(), &Query::queryFinished, this, &query_model::onQueryFinished );
     }
+    //
     f_query.reset();
     f_session.reset();
     f_keyspaceName.clear();
@@ -148,14 +153,15 @@ bool query_model::fetchFilter( const QByteArray& key )
 }
 
 
-void query_model::onQueryFinished( Query::pointer_t q )
+void query_model::threadFinished()
 {
+    QMutexLocker locker(&f_mutex);
+
     try
     {
-        q->getQueryResult();
-        while( q->nextRow() )
+        while( f_query->nextRow() )
         {
-            const QByteArray key( q->getByteArrayColumn(0) );
+            const QByteArray key( f_query->getByteArrayColumn(0) );
             if( fetchFilter( key ) )
             {
                 f_pendingRows.push( key );
@@ -168,11 +174,12 @@ void query_model::onQueryFinished( Query::pointer_t q )
         displayError( except, tr("Cannot read from database!") );
     }
 
-    QTimer::singleShot( 1000, this, &query_model::onFetchMore );
+    //QTimer::singleShot( 1000, this, &query_model::onFetchMore );
+    emit onFetchMore();
 
     // Trigger a new page if there is more
     //
-    f_isMore = q->nextPage( false /*block*/ );
+    f_isMore = f_query->nextPage( false /*block*/ );
 }
 
 
@@ -186,6 +193,8 @@ void query_model::fetchCustomData( Query::pointer_t q )
 
 void query_model::onFetchMore()
 {
+    QMutexLocker locker(&f_mutex);
+
     try
     {
         const size_t start_row = f_rows.size();
@@ -197,7 +206,12 @@ void query_model::onFetchMore()
                 break;
             }
 
-            f_rows.push_back( f_pendingRows.front() );
+            if( fetchFilter( key ) )
+            {
+                f_rows.push_back( f_pendingRows.front() );
+                fetchCustomData( f_query );
+            }
+
             f_pendingRows.pop();
         }
         beginInsertRows

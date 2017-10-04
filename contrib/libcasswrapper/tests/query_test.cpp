@@ -407,17 +407,6 @@ void query_test::largeTableTest()
 }
 
 
-static void exec( QSqlQuery& q )
-{
-    if( !q.exec() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery() << "]" << std::endl;
-        std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
-    }
-}
-
-
 void query_test::qtSqlDriverTest()
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QCassandra");
@@ -442,11 +431,10 @@ void query_test::qtSqlDriverTest()
     for( int idx = 0; idx < 10000; ++idx )
     {
         QSqlQuery q;
-        q.prepare( QString("INSERT INTO %1.data "
+        q.prepare( "INSERT INTO data "
                        "(id, name, test, double_value, blob_value) "
                        "VALUES "
                        "(?,?,?,?,?)"
-                       ).arg(database_name)
                    );
         int bind_num = 0;
         q.bindValue ( bind_num++, 5+idx );
@@ -460,7 +448,12 @@ void query_test::qtSqlDriverTest()
         arr += QString("And a number=%1").arg(idx);
         q.bindValue( bind_num++, arr );
 
-        exec(q);
+        if( !q.exec() )
+        {
+            std::cerr << "lastQuery=[" << q.lastQuery() << "]" << std::endl;
+            std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
+            throw std::runtime_error( q.lastError().text().toUtf8().data() );
+        }
     }
 
 #if 0
@@ -514,10 +507,7 @@ void query_test::qtSqlDriverTest()
 
     {
         std::cout << "QCassandra: Count rows in table 'data'..." << std::endl;
-        QSqlQuery q
-                ( QString("SELECT COUNT(*) AS count FROM %1.data").arg(database_name)
-                  );
-        exec(q);
+        QSqlQuery q( "SELECT COUNT(*) AS count FROM data" );
 
         if( !q.first() )
         {
@@ -535,11 +525,12 @@ void query_test::qtSqlDriverTest()
 
     {
         std::cout << "QCassandra: Select from table 'data'..." << std::endl;
-        QSqlQuery q
-                ( QString("SELECT id,name,test,double_value,blob_value\n"
-                          "FROM %1.data").arg(database_name)
-                  );
-        exec(q);
+        QSqlQuery q( "SELECT id,name,test,double_value,blob_value\n"
+                          "FROM data");
+        if( q.size() <= 0 )
+        {
+            throw std::runtime_error( "There is a problem with the query!" );
+        }
 
         for( q.first(); q.next(); )
         {
@@ -560,10 +551,12 @@ void query_test::qtSqlDriverTest()
 
     {
         std::cout << "QCassandra: Select from table 'data' with '*'..." << std::endl;
-        QSqlQuery q
-            ( QString("SELECT * FROM %1.data").arg(database_name)
-              );
-        exec(q);
+        QSqlQuery q( "SELECT * FROM data" );
+        if( q.size() <= 0 )
+        {
+            throw std::runtime_error( "There is a problem with the query!" );
+        }
+
         for( q.first(); q.next(); )
         {
             const int32_t     id           = q.value( "id"           ).toInt();

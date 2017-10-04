@@ -37,47 +37,27 @@
 project( casswrapper )
 
 include_directories(
-    ${AS2JS_INCLUDE_DIR}
-    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
-    ${PROJECT_BINARY_DIR}
+    ${casswrapper_SOURCE_DIR}
 )
 
-configure_file(
-		version.h.in
-		${PROJECT_BINARY_DIR}/casswrapper/version.h
-		)
+
+project( qtcassandra )
 
 set( HEADER_FILES
-    batch.h
-    exception.h
-    query.h
-    schema.h
-    schema_value.h
-    session.h
-    qstring_stream.h
-    ${PROJECT_BINARY_DIR}/casswrapper/version.h
+    QCassandraDriver.h
+    QCassandraResult.h
 )
 
 add_library( ${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    version.h.in
-    batch.cpp
-    casswrapper_impl.h
-    casswrapper_impl.cpp
-    exception_impl.h
-    exception_impl.cpp
-    not_used.h
-    query.cpp
-    schema.cpp
-    schema_value.cpp
-    session.cpp
+    QCassandraDriver.cpp
+    QCassandraResult.cpp
+    cassandra.json
+    main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
-    ${AS2JS_LIBRARIES}
-    ${CASSANDRACPPDRIVER_LIBRARIES}
-    ${CASSVALUE_LIBRARIES}
-    ${LIBEXCEPT_LIBRARIES}
+    casswrapper
     Qt5::Core
     Qt5::Xml
     Qt5::Sql
@@ -89,12 +69,12 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 )
 
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/qt5/plugins
 )
 
-install(
-	FILES ${HEADER_FILES}
-	DESTINATION include/casswrapper
-)
+#install(
+#    FILES ${HEADER_FILES}
+#    DESTINATION include/casswrapper
+#)
 
 # vim: ts=4 sw=4 et

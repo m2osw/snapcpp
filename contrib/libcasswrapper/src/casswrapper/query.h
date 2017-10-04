@@ -39,11 +39,11 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <mutex>
 
 #include <QByteArray>
 #include <QObject>
 #include <QString>
-#include <QMutex>
 
 #include "casswrapper/batch.h"
 #include "casswrapper/schema.h"
@@ -55,6 +55,14 @@ namespace casswrapper
 struct data;
 class batch;
 class value;
+
+
+class QueryCallback
+{
+public:
+    virtual void  threadFinished() = 0;
+};
+
 
 class Query
     : public QObject
@@ -82,6 +90,9 @@ public:
     ~Query();
 
     static pointer_t    create( Session::pointer_t session );
+
+    void                addCallback    ( QueryCallback* callback );
+    void                removeCallback ( QueryCallback* callback );
 
     Session::pointer_t  getSession          () const;
 
@@ -111,7 +122,6 @@ public:
     void                start               ( const bool block = true );
     bool	            isReady             () const;
     bool				queryActive		    () const;
-    void                getQueryResult      ();
     size_t              rowCount            () const;
     size_t              columnCount         () const;
     QString             columnName          ( size_t const index );
@@ -132,11 +142,7 @@ public:
     string_map_t        getMapColumn        ( const int num ) const;
 
 signals:
-    void                threadQueryFinished ( pointer_t q );
     void                queryFinished       ( pointer_t q );
-
-private slots:
-    void                onThreadQueryFinished ( pointer_t q );
 
 private:
     Query( Session::pointer_t session );
@@ -163,14 +169,24 @@ private:
     void                throwIfError            ( const QString& msg );
     void                internalStart           ( const bool block, batch* batch_ptr = nullptr );
 
-    casswrapper::value  getColumnValue( const size_t   id ) const;
-    casswrapper::value  getColumnValue( const QString& id ) const;
+    void                getQueryResult          ();
+    casswrapper::value  getColumnValue          ( const size_t   id ) const;
+    casswrapper::value  getColumnValue          ( const QString& id ) const;
 
-    static void		    queryCallbackFunc( void* future, void *data );
+    // Background thread management
+    //
+    typedef std::vector<pointer_t>                  pointer_list_t;
+    typedef std::lock_guard<std::recursive_mutex>   lock_t;
+    typedef std::vector<QueryCallback*>             callback_list_t;
+    //
+    static pointer_list_t               f_pendingQueryList;
+    static std::recursive_mutex         f_mutex;
+    callback_list_t                     f_callbackList;
 
-    typedef std::vector<pointer_t> pointer_list_t;
-    static QMutex           f_mutex;
-    static pointer_list_t   f_pendingQueryList;
+    static void         queryCallbackFunc( void* future, void *data );
+    void                addToPendingList();
+    void                removeFromPendingList();
+    void                threadQueryFinished();
 };
 
 

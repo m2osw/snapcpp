@@ -48,12 +48,24 @@ bool QCassandraDriver::open ( const QString & db
                             , const QString & connOpts
                             )
 {
-    f_db = db;
-    bool const use_ssl = (connOpts == "CASSANDRA_USE_SSL");
-
     try
     {
+        f_db = db;
+
+        if( f_db.isEmpty() )
+        {
+            throw std::runtime_error( "Cassandra keyspace (database) MUST be specified!" );
+        }
+
+        bool const use_ssl = (connOpts == "CASSANDRA_USE_SSL");
         f_session->connect( host, port, use_ssl );
+        //
+        // USE the specified DB
+        //
+        Query::pointer_t use_query( Query::create(f_session) );
+        use_query->query( "USE " + f_db );
+        use_query->start();
+        use_query->end();
     }
     catch( std::exception const& e )
     {

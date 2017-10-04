@@ -2,8 +2,9 @@
 
 #include <QtSql/QSqlDriver>
 #include <QtSql/QSqlResult>
+#include <QMutex>
 
-#include <casswrapper/query.h>
+#include "casswrapper/query.h"
 
 #ifdef QT_PLUGIN
 #	define Q_EXPORT_SQLDRIVER_CASSANDRA
@@ -15,7 +16,10 @@ QT_BEGIN_NAMESPACE
 
 class QCassandraDriver;
 
-class QCassandraResult : public QSqlResult, public QObject
+class QCassandraResult
+        : public QSqlResult
+        , public QObject
+        , private casswrapper::QueryCallback
 {
     friend class QCassandraDriver;
 
@@ -49,6 +53,7 @@ protected:
 private:
     casswrapper::Query::pointer_t                f_query;
     bool                                         f_blocking = false;
+    mutable QMutex                               f_mutex;
 
     typedef std::vector<std::vector<QVariant>> row_array_t;
     row_array_t      f_rows;
@@ -63,8 +68,10 @@ private:
     void            createQuery();
     bool            fetchPage();
 
-private slots:
-    void            onQueryFinished( casswrapper::Query::pointer_t q );
+    void            threadFinished() override;
+
+//private slots:
+    //void            onQueryFinished( casswrapper::Query::pointer_t q );
 };
 
 QT_END_NAMESPACE
