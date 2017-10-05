@@ -45,7 +45,8 @@
 using namespace casswrapper;
 
 
-TableModel::TableModel()
+TableModel::TableModel(QObject *p, QSqlDatabase db)
+    : QSqlDatabase( p, db )
 {
 }
 

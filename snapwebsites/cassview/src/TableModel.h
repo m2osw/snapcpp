@@ -20,19 +20,17 @@
 //===============================================================================
 #pragma once
 
-#include <QModelIndex>
-
-#include <casswrapper/query_model.h>
+#include <QSqlTableModel>
 
 #include <snapwebsites/dbutils.h>
 
 class TableModel
-    : public casswrapper::query_model
+    : public QSqlTableModel
 {
     Q_OBJECT
 
 public:
-    TableModel();
+    TableModel( QObject *p = Q_NULLPTR, QSqlDatabase db = QSqlDatabase() );
 
     void doQuery();
 
