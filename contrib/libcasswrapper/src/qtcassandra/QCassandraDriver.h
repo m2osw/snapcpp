@@ -38,9 +38,6 @@ public:
 
     void close() override;
 
-    bool    getBlocking() const;
-    void    setBlocking( bool const blocking );
-
     QVariant handle() const      override;
 
     QSqlResult *	createResult()                      const override;
@@ -66,7 +63,6 @@ private:
     casswrapper::Session::pointer_t f_session;
     casswrapper::Batch::pointer_t   f_batch;
     QString                         f_db;
-    bool                            f_blocking = true;
 
     void                            emitQueryFinishedSignal() const;
 };

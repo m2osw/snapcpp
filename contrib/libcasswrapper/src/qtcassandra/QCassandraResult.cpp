@@ -21,56 +21,20 @@ namespace
 QCassandraResult::QCassandraResult(QCassandraDriver const *db)
     : QSqlResult(db)
     , f_query(Query::create(db->f_session))
-    , f_mutex(QMutex::Recursive)
     , f_pagingSize(PAGING_SIZE)
 {
-    f_query->addCallback( this );
     f_rows.reserve(f_pagingSize);
 }
 
 
 QCassandraResult::~QCassandraResult()
 {
-    f_query->removeCallback( this );
-}
-
-
-void QCassandraResult::threadFinished()
-{
-    if( !isBlocking() )
-    {
-        setActive( true );
-
-        // This marshalls the signal out of the thread and into the main UI thread, so the call won't
-        // require serialization (unless the user wants to alter the f_row field.
-        dynamic_cast<const QCassandraDriver*>(driver())->emitQueryFinishedSignal();
-    }
-}
-
-
-void QCassandraResult::onQueryPageFinished()
-{
-    // Do nothing yet...
 }
 
 
 QVariant QCassandraResult::handle() const
 {
     return QVariant( reinterpret_cast<qulonglong>(f_query.get()) );
-}
-
-
-bool QCassandraResult::isBlocking() const
-{
-    QMutexLocker locker(&f_mutex);
-    return f_blocking;
-}
-
-
-void QCassandraResult::setBlocking( bool const val )
-{
-    QMutexLocker locker(&f_mutex);
-    f_blocking = val;
 }
 
 
@@ -143,7 +107,6 @@ int QCassandraResult::numRowsAffected()
 
 int QCassandraResult::totalCount() const
 {
-    QMutexLocker locker(&f_mutex);
     return f_totalCount;
 }
 
@@ -152,8 +115,9 @@ bool QCassandraResult::exec()
 {
     try
     {
-        f_query->start( f_blocking );
+        f_query->start();
         setActive( true );
+        setAt( QSql::BeforeFirstRow );
         return true;
     }
     catch( std::exception const& x )
@@ -171,7 +135,6 @@ bool QCassandraResult::exec()
 
 void QCassandraResult::bindValue( int index, const QVariant &val, QSql::ParamType /*paramType*/ )
 {
-    //QMutexLocker locker(&f_mutex);
     f_query->bindVariant( index, val );
 }
 
@@ -184,7 +147,6 @@ void QCassandraResult::bindValue( const QString &placeholder, const QVariant &va
 
 QVariant QCassandraResult::atRow( int const field )
 {
-    QMutexLocker locker(&f_mutex);
     return f_rows.at(at())[field];
 }
 
@@ -225,7 +187,6 @@ bool QCassandraResult::isNull( int index )
 
 void QCassandraResult::pushRow( std::vector<QVariant> const& columns )
 {
-    QMutexLocker locker( &f_mutex );
     f_rows.push_back( columns );
 }
 
@@ -257,7 +218,7 @@ bool QCassandraResult::fetch( int i )
             return true;
         }
         //
-        if( f_query->nextPage( f_blocking ) )
+        if( f_query->nextPage() )
         {
             if( getNextRow() )
             {
@@ -290,7 +251,6 @@ bool QCassandraResult::fetchLast()
 
 QSqlRecord QCassandraResult::record() const
 {
-    //QMutexLocker locker(&f_mutex);
     QSqlRecord   record;
 
     if( !f_query->isReady() || !f_query->queryActive() )

@@ -19,7 +19,6 @@ class QCassandraDriver;
 class QCassandraResult
         : public QSqlResult
         , public QObject
-        , private casswrapper::QueryCallback
 {
     friend class QCassandraDriver;
 
@@ -28,8 +27,6 @@ public:
     virtual ~QCassandraResult();
 
     QVariant        handle()   const override;
-    bool            isBlocking() const;
-    void            setBlocking( bool const val = true );
 
 protected:
     void            setQuery( QString const& query ) override;
@@ -59,8 +56,6 @@ signals:
 
 private:
     casswrapper::Query::pointer_t                f_query;
-    bool                                         f_blocking = false;
-    mutable QMutex                               f_mutex;
     int                                          f_totalCount = 0;
     int                                          f_pagingSize = -1;
 
@@ -80,11 +75,6 @@ private:
     void            pushRow( std::vector<QVariant> const& columns );
     bool            getNextRow();
     QVariant        atRow( int const field );
-
-    void            threadFinished() override;
-
-private slots:
-    void            onQueryPageFinished();
 };
 
 QT_END_NAMESPACE

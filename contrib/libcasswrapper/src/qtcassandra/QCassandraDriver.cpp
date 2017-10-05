@@ -30,11 +30,9 @@ bool QCassandraDriver::hasFeature(DriverFeature f) const
     switch( f )
     {
         case QSqlDriver::BLOB                   :
-        case QSqlDriver::QuerySize              :
         case QSqlDriver::PositionalPlaceholders :
         case QSqlDriver::Transactions           :
         case QSqlDriver::Unicode                : return true;
-        case QSqlDriver::EventNotifications     : return !f_blocking;
         default                                 : return false;
     }
 }
@@ -88,18 +86,6 @@ void QCassandraDriver::close()
 }
 
 
-bool QCassandraDriver::getBlocking() const
-{
-    return f_blocking;
-}
-
-
-void QCassandraDriver::setBlocking( bool const blocking )
-{
-    f_blocking = blocking;
-}
-
-
 QVariant QCassandraDriver::handle() const
 {
     return reinterpret_cast<qulonglong>(f_session.get());
@@ -109,7 +95,6 @@ QVariant QCassandraDriver::handle() const
 QSqlResult *QCassandraDriver::createResult() const
 {
     std::unique_ptr<QCassandraResult> result( new QCassandraResult(this) );
-    result->setBlocking( f_blocking );
     return result.release();
 }
 

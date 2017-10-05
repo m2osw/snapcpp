@@ -23,17 +23,9 @@ QCassandraDriverPlugin::QCassandraDriverPlugin()
 
 QSqlDriver* QCassandraDriverPlugin::create(const QString &name)
 {
-    if( name == QLatin1String("QCassandraAsync") )
+    if( name == QLatin1String("QCassandra") )
 	{
-        QCassandraDriver* driver = new QCassandraDriver();
-		driver->setBlocking(false);
-        return driver;
-	}
-    else if( name == QLatin1String("QCassandra") )
-	{
-        QCassandraDriver* driver = new QCassandraDriver();
-		driver->setBlocking(true);
-        return driver;
+        return new QCassandraDriver();
     }
     return 0;
 }
