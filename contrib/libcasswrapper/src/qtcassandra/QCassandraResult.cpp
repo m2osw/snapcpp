@@ -40,14 +40,6 @@ void QCassandraResult::threadFinished()
     if( !isBlocking() )
     {
         setActive( true );
-        do
-        {
-            fetchPage();
-
-            // Marshall this into the main thread.
-            emit queryPageFinished();
-        }
-        while( f_query->nextPage( true /*blocking*/ ) );
 
         // This marshalls the signal out of the thread and into the main UI thread, so the call won't
         // require serialization (unless the user wants to alter the f_row field.
@@ -139,9 +131,13 @@ bool QCassandraResult::prepare( QString const& query )
 
 int QCassandraResult::size()
 {
-    QMutexLocker locker(&f_mutex);
-    return f_rows.size();
-    //return f_totalCount;
+    return -1;
+}
+
+
+int QCassandraResult::numRowsAffected()
+{
+    return -1;
 }
 
 
@@ -152,33 +148,12 @@ int QCassandraResult::totalCount() const
 }
 
 
-int QCassandraResult::numRowsAffected()
-{
-    QMutexLocker locker(&f_mutex);
-    return -1;  // TODO: implement for non-select queries
-}
-
 bool QCassandraResult::exec()
 {
     try
     {
-        if( f_query->queryActive() )
-        {
-            if( !f_query->nextPage( f_blocking ) )
-            {
-                return false;
-            }
-        }
-        else
-        {
-            f_query->start( f_blocking );
-            setActive( true );
-        }
-        //
-        if( isBlocking() )
-        {
-            fetchPage();
-        }
+        f_query->start( f_blocking );
+        setActive( true );
         return true;
     }
     catch( std::exception const& x )
@@ -191,30 +166,6 @@ bool QCassandraResult::exec()
                     );
         return false;
     }
-}
-
-
-void QCassandraResult::fetchPage()
-{
-    while( f_query->nextRow() )
-    {
-        std::vector<QVariant> columns;
-        for( size_t column = 0; column < f_query->columnCount(); ++column )
-        {
-            columns.push_back( f_query->getVariantColumn(column) );
-        }
-
-        pushRow( columns );
-    }
-
-    //std::cout << "row count after fetch of page: " << f_query->rowCount() << std::endl;
-}
-
-
-void QCassandraResult::pushRow( std::vector<QVariant> const& columns )
-{
-    QMutexLocker locker( &f_mutex );
-    f_rows.push_back( columns );
 }
 
 
@@ -272,20 +223,53 @@ bool QCassandraResult::isNull( int index )
 }
 
 
+void QCassandraResult::pushRow( std::vector<QVariant> const& columns )
+{
+    QMutexLocker locker( &f_mutex );
+    f_rows.push_back( columns );
+}
+
+
+bool QCassandraResult::getNextRow()
+{
+    if( f_query->nextRow() )
+    {
+        std::vector<QVariant> columns;
+        for( size_t column = 0; column < f_query->columnCount(); ++column )
+        {
+            columns.push_back( f_query->getVariantColumn(column) );
+        }
+
+        pushRow( columns );
+        return true;
+    }
+    return false;
+}
+
+
 bool QCassandraResult::fetch( int i )
 {
     if( i >= size() )
     {
+        if( getNextRow() )
+        {
+            setAt(i);
+            return true;
+        }
+        //
+        if( f_query->nextPage( f_blocking ) )
+        {
+            if( getNextRow() )
+            {
+                setAt(i);
+                return true;
+            }
+        }
         setAt( QSql::AfterLastRow );
     }
     else if( i < 0 )
     {
         setAt( QSql::BeforeFirstRow );
-    }
-    else
-    {
-        setAt(i);
-        return true;
     }
     //
     return false;

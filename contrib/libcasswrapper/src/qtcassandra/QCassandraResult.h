@@ -75,11 +75,10 @@ private:
     std::vector<column_t> f_orderedColumns;
 
     void            createQuery();
-    void            fetchPage();
-
     int             totalCount() const;
 
     void            pushRow( std::vector<QVariant> const& columns );
+    bool            getNextRow();
     QVariant        atRow( int const field );
 
     void            threadFinished() override;
