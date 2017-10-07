@@ -96,6 +96,7 @@ bool QCassandraResult::prepare( QString const& query )
 int QCassandraResult::size()
 {
     return -1;
+    //return f_totalCount;  // This can be way too slow if you scrub to the end on a remote connection.
 }
 
 
@@ -147,7 +148,15 @@ void QCassandraResult::bindValue( const QString &placeholder, const QVariant &va
 
 QVariant QCassandraResult::atRow( int const field )
 {
-    return f_rows.at(at())[field];
+    int const idx(at());
+    if( static_cast<size_t>(idx) >= f_rows.size() )
+    {
+        return QVariant();
+    }
+
+    auto value( f_rows[idx][field] );
+    qDebug() << "f_rows[" << idx << "][" << field << "] = " << value;
+    return value;
 }
 
 
@@ -210,30 +219,40 @@ bool QCassandraResult::getNextRow()
 
 bool QCassandraResult::fetch( int i )
 {
-    if( i >= size() )
+    if( !isActive() || i < 0 )
     {
-        if( getNextRow() )
+        return false;
+    }
+
+    if( at() == i )
+    {
+        return true;
+    }
+
+    // This is required because the model will "test"
+    // to see if there are 255 records. So in that case,
+    // we have to "wind up" until we reach `i`.
+    //
+    while( at() < i + 1 )
+    {
+        if( !getNextRow() && !f_query->nextPage() )
         {
-            setAt(i);
-            return true;
+            // No more records at all.
+            break;
         }
         //
-        if( f_query->nextPage() )
-        {
-            if( getNextRow() )
-            {
-                setAt(i);
-                return true;
-            }
-        }
-        setAt( QSql::AfterLastRow );
+        setAt(at() + 1);
     }
-    else if( i < 0 )
+
+    if( i >= f_totalCount )
     {
-        setAt( QSql::BeforeFirstRow );
+        // Reached the end of the entire result set.
+        //
+        return false;
     }
-    //
-    return false;
+
+    setAt(i);
+    return true;
 }
 
 
