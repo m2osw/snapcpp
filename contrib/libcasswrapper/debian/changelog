@@ -1,3 +1,9 @@
+libcasswrapper (1.1.0~xenial) xenial; urgency=high
+
+  * Added qt5 QSql support for Cassandra.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sun, 08 Oct 2017 16:34:56 -0700
+
 libcasswrapper (1.0.5.248~xenial) xenial; urgency=high
 
   * Nightly build.

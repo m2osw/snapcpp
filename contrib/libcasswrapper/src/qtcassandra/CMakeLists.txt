@@ -63,13 +63,13 @@ target_link_libraries(${PROJECT_NAME}
     Qt5::Sql
 )
 
-set_target_properties( ${PROJECT_NAME} PROPERTIES
-    VERSION ${LIBCASSWRAPPER_VERSION_MAJOR}.${LIBCASSWRAPPER_VERSION_MINOR}
-    SOVERSION ${LIBCASSWRAPPER_VERSION_MAJOR}
-)
-
+execute_process( COMMAND uname -m OUTPUT_VARIABLE MACHINE_TYPE )
+string(STRIP ${MACHINE_TYPE} STRIPPED_MT ) # remove trailing \n
+if( "${STRIPPED_MT}" STREQUAL "x86_64" )
+    set( LIBPREFIX "${STRIPPED_MT}-linux-gnu/" )
+endif()
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/qt5/plugins
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib/${LIBPREFIX}qt5/plugins/sqldrivers
 )
 
 #install(
