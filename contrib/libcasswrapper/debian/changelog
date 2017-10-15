@@ -1,4 +1,4 @@
-libcasswrapper (1.1.0~xenial) xenial; urgency=high
+libcasswrapper (1.1.0.0~xenial) xenial; urgency=high
 
   * Added qt5 QSql support for Cassandra.
 

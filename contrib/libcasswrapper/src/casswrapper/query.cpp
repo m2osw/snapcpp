@@ -664,7 +664,8 @@ void Query::start( const bool block )
 bool Query::isReady() const
 {
     lock_t locker(f_mutex);
-    return f_data->f_sessionFuture->is_ready();
+    auto const & session( f_data->f_sessionFuture );
+    return session && session->is_ready();
 }
 
 
