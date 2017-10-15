@@ -20,14 +20,14 @@
 //===============================================================================
 #pragma once
 
-#include <casswrapper/query_model.h>
-
 #include <snapwebsites/dbutils.h>
+
+#include <QSqlTableModel>
 
 #include <memory>
 
 class RowModel
-    : public casswrapper::query_model
+    : public QSqlTableModel
 {
     Q_OBJECT
 
@@ -37,7 +37,7 @@ public:
     const QByteArray&     rowKey() const                     { return f_rowKey; }
     void                  setRowKey( const QByteArray& key ) { f_rowKey = key;  }
 
-    virtual bool          fetchFilter( const QByteArray& key ) override;
+    //virtual bool          fetchFilter( const QByteArray& key ) override;
 
     virtual QVariant      data  ( const QModelIndex & index, int role = Qt::DisplayRole ) const override;
     virtual Qt::ItemFlags flags ( const QModelIndex & idx ) const override;
@@ -48,10 +48,16 @@ public:
 
     // Resizable methods
     //
-    bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
-    virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
+    //bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
+    //virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
 
-    void                doQuery();
+    //void                doQuery();
+
+public slots:
+    bool                select() override;
+
+protected:
+    QString             selectStatement() const override;
 
 private:
     QByteArray                      f_rowKey;

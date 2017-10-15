@@ -32,21 +32,24 @@ class TableModel
 public:
     TableModel( QObject *p = Q_NULLPTR, QSqlDatabase db = QSqlDatabase() );
 
-    void doQuery();
+    //void doQuery();
 
     bool sortModel() const              { return f_sortModel; }
     void setSortModel( const bool val ) { f_sortModel = val;  }
 
     // Read only access
     //
-    virtual bool     fetchFilter( const QByteArray& key ) override;
+    //virtual bool     fetchFilter( const QByteArray& key ) override;
     virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
-    virtual void     fetchCustomData( casswrapper::Query::pointer_t q ) override;
+    //virtual void     fetchCustomData( casswrapper::Query::pointer_t q ) override;
+
+protected:
+    QString selectStatement() const override;
 
 private:
     typedef std::map<QString,QByteArray> sort_map_t;
     sort_map_t                      f_sortMap;
-    std::shared_ptr<snap::dbutils>  f_dbutils;
+    mutable std::shared_ptr<snap::dbutils>  f_dbutils;
     bool                            f_sortModel = false;
 };
 

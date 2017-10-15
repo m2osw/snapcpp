@@ -46,11 +46,19 @@ using namespace casswrapper;
 
 
 TableModel::TableModel(QObject *p, QSqlDatabase db)
-    : QSqlDatabase( p, db )
+    : QSqlTableModel( p, db )
 {
 }
 
 
+QString TableModel::selectStatement() const
+{
+    f_dbutils = std::make_shared<snap::dbutils>( tableName(), "" );
+    return QString("SELECT key, column1, value FROM %1").arg(tableName());
+}
+
+
+#if 0
 void TableModel::doQuery()
 {
     f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
@@ -81,6 +89,7 @@ bool TableModel::fetchFilter( const QByteArray& key )
     //
     return true;
 }
+#endif
 
 
 QVariant TableModel::data( QModelIndex const & idx, int role ) const
@@ -90,13 +99,13 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    if( static_cast<int>(f_sortMap.size()) <= idx.row() )
-    {
-        return QVariant();
-    }
-
     if( f_sortModel )
     {
+        if( static_cast<int>(f_sortMap.size()) <= idx.row() )
+        {
+            return QVariant();
+        }
+
         auto iter = f_sortMap.begin();
         for( int i = 0; i < idx.row(); ++i) iter++;
         if( role == Qt::UserRole )
@@ -110,18 +119,20 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
     }
     else
     {
+        auto data_entry( QSqlTableModel::data( idx, role ) );
         if( role == Qt::UserRole )
         {
-            return query_model::data( idx, role );
+            return data_entry;
         }
         else
         {
-            return f_dbutils->get_row_name( f_rows[idx.row()] );
+            return f_dbutils->get_row_name( data_entry.toByteArray() );
         }
     }
 }
 
 
+#if 0
 void TableModel::fetchCustomData( Query::pointer_t q )
 {
     if( !f_sortModel )
@@ -132,6 +143,7 @@ void TableModel::fetchCustomData( Query::pointer_t q )
     const QByteArray value(q->getByteArrayColumn(0));
     f_sortMap[f_dbutils->get_row_name(value)] = value;
 }
+#endif
 
 
 // vim: ts=4 sw=4 et

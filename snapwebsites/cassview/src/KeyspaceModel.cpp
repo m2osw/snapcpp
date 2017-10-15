@@ -21,6 +21,8 @@
 
 #include "KeyspaceModel.h"
 
+#include <QtSql>
+
 #include <iostream>
 
 using namespace casswrapper;
@@ -30,9 +32,15 @@ using namespace casswrapper::schema;
 void KeyspaceModel::reset()
 {
     beginResetModel();
+    f_tableNames.clear();
+    for( auto table : QSqlDatabase::database().tables() )
+    {
+        f_tableNames.push_back( table );
+    }
     endResetModel();
 }
 
+#if 0
 void KeyspaceModel::setCassandra( Session::pointer_t c, const QString& keyspace_name )
 {
     auto sessionMeta = SessionMeta::create( c );
@@ -51,6 +59,7 @@ void KeyspaceModel::setCassandra( Session::pointer_t c, const QString& keyspace_
 
     reset();
 }
+#endif
 
 
 Qt::ItemFlags KeyspaceModel::flags( const QModelIndex & /*idx*/ ) const

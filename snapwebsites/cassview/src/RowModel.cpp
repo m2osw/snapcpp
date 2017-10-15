@@ -26,6 +26,7 @@
 #include <snapwebsites/snap_exception.h>
 
 #include <QtCore>
+#include <QtSql>
 
 #include <snapwebsites/poison.h>
 
@@ -37,6 +38,49 @@ RowModel::RowModel()
 }
 
 
+QString RowModel::selectStatement() const
+{
+    return QString();
+}
+
+
+bool RowModel::select()
+{
+    beginResetModel();
+
+    bool succeeded = true;
+    try
+    {
+        f_dbutils = std::make_shared<snap::dbutils>( tableName(), "" );
+
+        QSqlQuery qu;
+        qu.prepare( QString("SELECT DISTINCT key FROM %1 WHERE key = ?").arg(tableName()) );
+        qu.bindValue( 0, f_rowKey );
+        if( qu.exec() )
+        {
+            setQuery( qu );
+        }
+        else
+        {
+            throw std::runtime_error(qu.lastError().text().toUtf8().data());
+        }
+    }
+    catch( std::exception const& e )
+    {
+        qDebug() << "Query error! what=" << e.what();
+        succeeded = false;
+    }
+    catch( ... )
+    {
+        qDebug() << "Unknown query error!";
+        succeeded = false;
+    }
+
+    endResetModel();
+    return succeeded;
+}
+
+#if 0
 void RowModel::doQuery()
 {
     f_dbutils = std::make_shared<snap::dbutils>( f_tableName, QString::fromUtf8(f_rowKey.data()) );
@@ -69,6 +113,7 @@ bool RowModel::fetchFilter( const QByteArray& key )
     //
     return true;
 }
+#endif
 
 
 Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
@@ -89,9 +134,10 @@ Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 
 QVariant RowModel::data( QModelIndex const & idx, int role ) const
 {
+    auto column_name( QSqlTableModel::data( idx, role ) );
     if( role == Qt::UserRole )
     {
-        return query_model::data( idx, role );
+        return column_name;
     }
 
     if( role != Qt::DisplayRole && role != Qt::EditRole )
@@ -105,8 +151,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    auto const column_name( *(f_rows.begin() + idx.row()) );
-    return f_dbutils->get_column_name( column_name );
+    return f_dbutils->get_column_name( column_name.toByteArray() );
 }
 
 
@@ -117,8 +162,14 @@ bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_vari
         return false;
     }
 
+    QByteArray new_col_key;
+    f_dbutils->set_column_name( new_col_key, new_col_variant.toString() );
+    return QSqlTableModel::setData( index, new_col_key, role );
+
+#if 0
     try
     {
+        //auto column_name( QSqlTableModel::data( idx, role ) );
         QByteArray value;
         QByteArray new_col_key;
         f_dbutils->set_column_name( new_col_key, new_col_variant.toString() );
@@ -212,9 +263,11 @@ bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_vari
     }
 
     return false;
+#endif
 }
 
 
+#if 0
 bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index )
 {
     try
@@ -297,6 +350,7 @@ bool RowModel::removeRows( int row, int count, const QModelIndex & )
 
     return true;
 }
+#endif
 
 
 // vim: ts=4 sw=4 et

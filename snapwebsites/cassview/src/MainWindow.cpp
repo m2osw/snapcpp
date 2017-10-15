@@ -30,6 +30,7 @@
 #include <snapwebsites/dbutils.h>
 
 #include <QMessageBox>
+#include <QtSql>
 
 #include <iostream>
 
@@ -53,11 +54,12 @@ MainWindow::MainWindow(QWidget *p)
 
     f_context = settings.value("snap_keyspace", "snap_websites").toString();
 
-    f_session = Session::create();
-    connectCassandra();
+    //f_session = Session::create();
+    connectDatabase();
     //
     f_contextModel = std::make_shared<KeyspaceModel>();
-    f_contextModel->setCassandra( f_session, f_context );
+    //f_contextModel->setCassandra( f_session, f_context );
+    f_contextModel->reset();
     //
     fillTableList();
 
@@ -109,17 +111,35 @@ namespace
 }
 
 
-void MainWindow::connectCassandra()
+void MainWindow::connectDatabase()
 {
     QSettings const settings;
     QString const host( settings.value( "cassandra_host" ).toString() );
     int     const port( settings.value( "cassandra_port" ).toInt()    );
     try
     {
-        f_session->connect( host, port, settings.value( "use_ssl", true ).toBool() );
+        //f_session->connect( host, port, settings.value( "use_ssl", true ).toBool() );
         //
         //qDebug() << "Working on Cassandra Cluster Named"    << f_session->clusterName();
         //qDebug() << "Working on Cassandra Protocol Version" << f_session->protocolVersion();
+
+        QSqlDatabase db = QSqlDatabase::addDatabase("QCassandra");
+        if( !db.isValid() )
+        {
+            const QString error( "QCASSANDRA database is not valid for some reason!" );
+            std::cerr << "QCASSANDRA not valid!!!" << std::endl;
+            throw std::runtime_error( error.toUtf8().data() );
+        }
+
+        db.setHostName     ( host      );
+        db.setPort         ( port      );
+        db.setDatabaseName ( f_context );
+        if( !db.open() )
+        {
+            const QString error( QString("Cannot open QCASSANDRA keyspace [%1]!").arg(f_context) );
+            std::cerr << "QCASSANDRA not open!!!" << std::endl;
+            throw std::runtime_error( error.toUtf8().data() );
+        }
 
         QString const hostname( tr("%1:%2").arg(host).arg(port) );
         setWindowTitle( tr("Cassandra View [%1]").arg(hostname) );
@@ -158,13 +178,13 @@ void MainWindow::fillTableList()
     f_rowsView->setModel  ( f_tableModel.get()   );
     f_cellsView->setModel ( f_rowModel.get()     );
 
-    f_tableModel->setSortModel( true );
+    //f_tableModel->setSortModel( true );
 
-    connect( f_tableModel.get(), &TableModel::exceptionCaught, this, &MainWindow::onExceptionCaught         );
-    connect( f_tableModel.get(), &TableModel::queryFinished,   this, &MainWindow::onTableModelQueryFinished );
-    connect( f_rowModel.get(),   &RowModel::exceptionCaught,   this, &MainWindow::onExceptionCaught         );
+    //connect( f_tableModel.get(), &TableModel::exceptionCaught, this, &MainWindow::onExceptionCaught         );
+    //connect( f_tableModel.get(), &TableModel::queryFinished,   this, &MainWindow::onTableModelQueryFinished );
+    //connect( f_rowModel.get(),   &RowModel::exceptionCaught,   this, &MainWindow::onExceptionCaught         );
     connect( f_rowModel.get(),   &RowModel::modelReset,        this, &MainWindow::onCellsModelReset         );
-    connect( f_rowModel.get(),   &RowModel::queryFinished,     this, &MainWindow::onRowModelQueryFinished   );
+    //connect( f_rowModel.get(),   &RowModel::queryFinished,     this, &MainWindow::onRowModelQueryFinished   );
 
     connect( f_rowsView,                    &QListView::customContextMenuRequested, this, &MainWindow::onShowRowsContextMenu       );
     connect( f_rowsView->selectionModel(),  &QItemSelectionModel::currentChanged,   this, &MainWindow::onRowsCurrentChanged        );
@@ -227,7 +247,7 @@ void MainWindow::on_action_Settings_triggered()
         SettingsDialog dlg(this);
         if( dlg.exec() == QDialog::Accepted )
         {
-            connectCassandra();
+            connectDatabase();
             fillTableList();
         }
     }
@@ -268,6 +288,9 @@ void MainWindow::onTablesCurrentIndexChanged(QString const & table_name)
 
     try
     {
+        f_tableModel->setTable( table_name );
+        f_tableModel->select();
+#if 0
         f_tableModel->init
                 ( f_session
                 , f_context
@@ -275,6 +298,7 @@ void MainWindow::onTablesCurrentIndexChanged(QString const & table_name)
                 , filter
                 );
         f_tableModel->doQuery();
+#endif
     }
     catch( const std::exception& except )
     {
@@ -363,9 +387,10 @@ void MainWindow::saveValue( const QModelIndex& index )
 
                 const QString q_str(
                             QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
-                            .arg(f_rowModel->keyspaceName())
+                            .arg(f_rowModel->database().databaseName())
                             .arg(f_rowModel->tableName())
                             );
+#if 0
                 auto query = Query::create( f_session );
                 query->query( q_str, 3 );
                 int num = 0;
@@ -374,6 +399,18 @@ void MainWindow::saveValue( const QModelIndex& index )
                 query->bindByteArray( num++, column_key           );
                 query->start();
                 query->end();
+#else
+                QSqlQuery query;
+                int num = 0;
+                query.prepare(q_str);
+                query.bindValue( num++, value );
+                query.bindValue( num++, f_rowModel->rowKey() );
+                query.bindValue( num++, column_key           );
+                if( !query.exec() )
+                {
+                    throw std::runtime_error( query.lastError().text().toUtf8().data() );
+                }
+#endif
             }
         }
     }
@@ -400,15 +437,18 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
 
         if( current.isValid() )
         {
-            const QByteArray row_key( f_tableModel->data(current,Qt::UserRole).toByteArray() );
+            const QByteArray row_key( f_tableModel->data(current,Qt::DisplayRole/*UserRole*/).toByteArray() );
 
+#if 0
             f_rowModel->init
                 ( f_session
                   , f_tableModel->keyspaceName()
                   , f_tableModel->tableName()
                 );
+#endif
+            f_rowModel->setTable( f_tableModel->tableName() );
             f_rowModel->setRowKey( row_key );
-            f_rowModel->doQuery();
+            f_rowModel->select();
 
             action_InsertColumn->setEnabled( true );
             action_DeleteColumns->setEnabled( true );
@@ -442,9 +482,10 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
             const QByteArray column_key(f_rowModel->data(current, Qt::UserRole).toByteArray());
             const QString q_str(
                     QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
-                    .arg(f_rowModel->keyspaceName())
+                    .arg(f_context)
                     .arg(f_rowModel->tableName())
                     );
+#if 0
             auto query = Query::create( f_session );
             query->query( q_str );
             int num = 0;
@@ -454,6 +495,20 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
 
             snap::dbutils du( f_rowModel->tableName(), QString::fromUtf8(f_rowModel->rowKey().data()) );
             const QString value = du.get_column_value( column_key, query->getByteArrayColumn(0) );
+#else
+            QSqlQuery query;
+            query.prepare( q_str );
+            int num = 0;
+            query.bindValue( num++, f_rowModel->rowKey() );
+            query.bindValue( num++, column_key           );
+            if( !query.exec() )
+            {
+                throw std::runtime_error( query.lastError().text().toUtf8().data() );
+            }
+
+            snap::dbutils du( f_rowModel->tableName(), QString::fromUtf8(f_rowModel->rowKey().data()) );
+            const QString value = du.get_column_value( column_key, query.value(0).toByteArray() );
+#endif
 
             doc->setPlainText( value );
             doc->setModified( false );

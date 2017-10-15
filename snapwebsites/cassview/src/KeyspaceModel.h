@@ -36,7 +36,9 @@ class KeyspaceModel
 
         KeyspaceModel() {}
 
-        void setCassandra( casswrapper::Session::pointer_t c, const QString& keyspace_name );
+        void reset();
+
+        //void setCassandra( casswrapper::Session::pointer_t c, const QString& keyspace_name );
 
         Qt::ItemFlags   flags       ( const QModelIndex & index ) const;
         QVariant        data        ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -45,8 +47,6 @@ class KeyspaceModel
 
     private:
         string_list_t   f_tableNames;
-
-        void reset();
 };
 
 

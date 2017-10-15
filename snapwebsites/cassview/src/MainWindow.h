@@ -78,7 +78,7 @@ private:
     QMenu            f_row_context_menu;
     QMenu            f_col_context_menu;
 
-    void connectCassandra ();
+    void connectDatabase  ();
     void fillTableList    ();
     void saveValue        ();
     void saveValue        ( const QModelIndex &index );
