@@ -1,3 +1,0 @@
-Snap C++ cmake modules are very easy to install. Just update your
-CMAKE_MODULE_PATH to point where they are located (usually the Modules folder).
-

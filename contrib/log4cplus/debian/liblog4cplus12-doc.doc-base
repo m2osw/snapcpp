@@ -1,9 +1,0 @@
-Document: liblog4cplus
-Title: Debian log4cplus C++ Library Manual
-Author: Vaclav Haisman
-Abstract: This is the reference manual of the log4cplus API.
-Section: web
-
-Format: HTML
-Index: /usr/share/doc/log4cplus/html/index.html
-Files: /usr/share/doc/log4cplus/html/*

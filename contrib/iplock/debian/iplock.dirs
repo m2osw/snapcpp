@@ -1,5 +1,0 @@
-etc/iplock
-etc/iplock/schemes
-etc/iplock/iplock.d
-etc/fail2ban
-var/cache/iplock

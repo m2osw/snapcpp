@@ -1,0 +1,42 @@
+[submodule "cmake"]
+	path = cmake
+	url = git@github.com:m2osw/snapcmakemodules.git
+[submodule "contrib/advgetopt"]
+	path = contrib/advgetopt
+	url = git@github.com:m2osw/advgetopt.git
+[submodule "contrib/as2js"]
+	path = contrib/as2js
+	url = git@github.com:m2osw/as2js.git
+[submodule "contrib/csspp"]
+	path = contrib/csspp
+	url = git@github.com:m2osw/csspp.git
+[submodule "contrib/iplock"]
+	path = contrib/iplock
+	url = git@github.com:m2osw/iplock.git
+[submodule "contrib/libaddr"]
+	path = contrib/libaddr
+	url = git@github.com:m2osw/libaddr.git
+[submodule "contrib/libcassvalue"]
+	path = contrib/libcassvalue
+	url = git@github.com:m2osw/libcassvalue.git
+[submodule "contrib/libcasswrapper"]
+	path = contrib/libcasswrapper
+	url = git@github.com:m2osw/libcasswrapper.git
+[submodule "contrib/libexcept"]
+	path = contrib/libexcept
+	url = git@github.com:m2osw/libexcept.git
+[submodule "contrib/libQtSerialization"]
+	path = contrib/libQtSerialization
+	url = git@github.com:m2osw/libQtSerialization.git
+[submodule "contrib/libtld"]
+	path = contrib/libtld
+	url = git@github.com:m2osw/libtld.git
+[submodule "contrib/log4cplus"]
+	path = contrib/log4cplus
+	url = git@github.com:m2osw/log4cplus.git
+[submodule "contrib/zipios"]
+	path = contrib/zipios
+	url = git@github.com:Zipios/Zipios.git
+[submodule "snapwebsites"]
+	path = snapwebsites
+	url = git@github.com:m2osw/snapwebsites.git

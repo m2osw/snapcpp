@@ -1,9 +1,0 @@
-Document: snaplistd
-Title: snaplistd daemon
-Author: Alexis Wilke
-Abstract: This is the reference manual for the snaplistd daemon.
-Section: web
-
-Format: HTML
-Index: /usr/share/doc/snaplistd/html/index.html
-Files: /usr/share/doc/snaplistd/html/*

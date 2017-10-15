@@ -1,3 +1,0 @@
-We may want to look into using slick instead of jquery.carousel...
-
-http://kenwheeler.github.io/slick/
