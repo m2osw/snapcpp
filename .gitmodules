@@ -37,6 +37,3 @@
 [submodule "contrib/zipios"]
 	path = contrib/zipios
 	url = git@github.com:Zipios/Zipios.git
-[submodule "snapwebsites"]
-	path = snapwebsites
-	url = git@github.com:m2osw/snapwebsites.git
