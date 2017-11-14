@@ -169,9 +169,14 @@ documentation and some extras for tests.
     apt-get install git
     mkdir snapwebsites
     cd snapwebsites
-    git clone https://github.com/m2osw/snapcpp.git snapcpp
+    git clone --recursive https://github.com/m2osw/snapcpp.git snapcpp
     snapcpp/bin/snap-ubuntu-packages --optional
     snapcpp/bin/snap-build
+
+For a clone that ends up being a read/write version, then you want to
+use a slightly different URL for the purpose:
+
+    git clone --recursive git@github.com:m2osw/snapcpp.git snapcpp
 
 After a while, you'll have all the built objects under a BUILD directory
 in your snapwebsites directory. The distribution being under the BUILD/dist
