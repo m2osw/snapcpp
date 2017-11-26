@@ -17,6 +17,7 @@ apt-get install \
     catch \
     closure-linter \
     cmake \
+    dh-systemd \
     dpkg-dev \
     gcc \
     g++ \
