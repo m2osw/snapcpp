@@ -147,5 +147,21 @@ git clone --recursive https://github.com/m2osw/snapcpp
 cd snapcpp
 git submodule update --init --recursive
 
+# When checking the status of a parent module you may see the following
+# message:
+#
+#   Changes not staged for commit:
+#       modified:   snapwebsites (modified content)
+#
+# This means you need to commit data in that submodule and then commit
+# that commit in the parent.
+cd snapwebsites
+git commit .
+git push origin master
+cd ..
+git commit .
+git push origin master
+
+
 
 # vim: syntax=sh
