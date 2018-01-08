@@ -29,6 +29,8 @@ else
     MODULE=snapwebsites
 fi
 
+TMP=../tmp
+
 # Generating the source must be done in the concerned folder
 case $MODULE in
 "snapwebsites")
@@ -39,6 +41,7 @@ case $MODULE in
     ;;
 *)
     cd contrib/$MODULE
+    TMP=../../tmp
     ;;
 esac
 
@@ -59,5 +62,8 @@ cd ..
 
 dput ppa:snapcpp/ppa ${MODULE}_${VERSION}_source.changes
 
+# Get rid of those files from our source tree
+mkdir -p $TMP/sources
+mv ${MODULE}_${VERSION}* $TMP/sources/.
 
 # vim: ts=4 sw=4 et
