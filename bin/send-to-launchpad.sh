@@ -7,8 +7,40 @@ then
     cd ..
 fi
 
+if test "$1" = "-h" -o "$1" = "--help"
+then
+    echo
+    echo "Usage: $0 [project-name]"
+    echo
+    echo "  Where project-name defaults to \"snapwebsites\""
+    echo "  and it can be set to any one of our contrib as well"
+    echo
+    echo "Valid project-names are:"
+    echo
+    ls contrib/ | tr '[:upper:]' '[:lower:]' | grep -v cmakelists.txt | sed -e '$a\ \ snapcmakemodules' -e '$a\ \ snapwebsites' -e 's/^/  /' | sort
+    echo
+    exit 1;
+fi
+
+if test -n "$1"
+then
+    MODULE="$1"
+else
+    MODULE=snapwebsites
+fi
+
 # Generating the source must be done in the concerned folder
-cd snapwebsites
+case $MODULE in
+"snapwebsites")
+    cd snapwebsites
+    ;;
+"snapcmakemodules")
+    cd cmake
+    ;;
+*)
+    cd contrib/$MODULE
+    ;;
+esac
 
 # Verify that version is 4 numbers separated by 3 periods
 VERSION=`dpkg-parsechangelog -S version`
@@ -21,9 +53,11 @@ fi
 
 debuild -S -sa
 
+# To send the source to Launchpad, we need to be at the same level as those
+# files
 cd ..
 
-dput ppa:snapcpp/ppa snapwebsites_${VERSION}_source.changes
+dput ppa:snapcpp/ppa ${MODULE}_${VERSION}_source.changes
 
 
 # vim: ts=4 sw=4 et
