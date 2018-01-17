@@ -24,12 +24,14 @@ apt-get install \
     libboost-all-dev \
     libmagic-dev \
     libmagick++-dev \
+    libncurses-dev \
     libprocps-dev \
     libqrencode-dev \
     libqt5script5 \
     libqt5scripttools5 \
     libqt5xmlpatterns5-dev \
     libqt5webkit5-dev \
+    libreadline-dev \
     libssl-dev \
     libxml2-utils \
     libyaml-cpp-dev \
