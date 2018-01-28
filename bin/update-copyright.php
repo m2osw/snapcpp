@@ -47,7 +47,7 @@ function update_copyright_notice($filename)
     // The copyright "symbol" (i.e. the "(c)") may be in uppercase, we
     // catch those too as our searches are case insensitive
     //
-    $count = preg_match_all("/copyright (.*) (?:by )?made to order software corp.*/i"
+    $count = preg_match_all("/copyright (.*) (?:by )?made to order software corp(?:\.)?[^\\\"'.\n\r]*/i"
                           , $data
                           , $matches
                           , PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE);
@@ -59,6 +59,10 @@ function update_copyright_notice($filename)
         //
         return false;
     }
+//echo "------------------- Matches = ", $filename, "\n";
+//var_dump($matches);
+//echo "\n";
+//return false;
 
     // we got a match now we have an array of arrays of arrays with:
     //
