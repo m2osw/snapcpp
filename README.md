@@ -8,7 +8,7 @@ The project includes many libraries, many daemons/servers, it supports
 plugins for third party extensions, and it uses Cassandra as its database
 of choice (especially, a NoSQL, although Cassandra now has CQL...)
 
-Click on this link to go to the [official home page](http://snapwebsites.org/)
+Click on this link to go to the [official home page](https://snapwebsites.org/)
 for the development of Snap! C++. The website includes documentation about
 the core plugins and their more or less current status. It also includes
 many pages about the entire environment. How things work, etc.
@@ -34,7 +34,7 @@ websites with tiny websites. Both benefit from the other!
 
 Your cluster should have at least:
 
-* 4 frontend computers to run Apache2, snap.cgi and snapserver (1Gb)
+* 4 frontend computers to run Apache2, `snap.cgi` and `snapserver` (1Gb)
 * 4 Cassandra nodes (at least 2 CPU and 4Gb of RAM)
 * 1 snapbackend computer (for the CRON like tasks) (1Gb)
 * 1 other services (mail, DNS, etc.) (1Gb)
@@ -84,23 +84,23 @@ a Cassandra node.
 
 In other words, you do not need to have a cluster to work on Snap! Websites
 as a developer. You can even have a single Cassandra node. It will be
-somwhat slower, but it is bearable. Of course, as a developer with a
+somewhat slower, but it is bearable. Of course, as a developer with a
 single node, you may lose the data in that node, but I would imagine it
 would only be test data...
 
 ## A Snap! Websites Cluster
 
 The following images shows you an installation example. The cloud represents
-clients accessing your Snap! environment. The Apache + snap.cgi represents
+clients accessing your Snap! environment. The `Apache + snap.cgi` represents
 access points (you can have as many as you want to load balance the incoming
 hits). All the other computers can be 100% private (i.e. no direct access to
-the Internet). The snapserver computers represent the frontend of Snap!
-(middle-end as far as the cluster is concerned.) At some point snap.cgi
+the Internet). The `snapserver` computers represent the frontend of Snap!
+(middle-end as far as the cluster is concerned.) At some point `snap.cgi`
 will be smart enough to auto-load balance your stack, right now we just use
 a simple round robin DNS definition. The Cassandra computers each run one
 node. Those must have at least 4Gb of RAM in a valid live system. The
 snapbackend run CRON like tasks. However, those are dynamic and receive a
-PING message from the snapserver whenever a client makes a change (on a
+PING message from the `snapserver` whenever a client makes a change (on a
 POST). So really it does work in the background but instantly once data to
 crunch is available.
 
@@ -109,7 +109,7 @@ crunch is available.
 ## The Snap! Websites Stack
 
 We have
-[another picture and more details on this page](http://snapwebsites.org/implementation/snap-websites-processes)
+[another picture and more details on this page](https://snapwebsites.org/implementation/snap-websites-processes)
 showing how the processes are linked together. It does not show all
 the details, such as the fact that `snapcommunicator` is used as the
 inter-process and inter-computer hub (i.e. `snapserver` sends the
@@ -123,11 +123,11 @@ of protections in Apache2 such as `mod_security`), then it loads `snap.cgi`
 and runs it with a set of variables representing the header we just
 received and a packet with POST data if any was attached.
 
-At that point, the snap.cgi choose a snapserver that's not too loaded, and
+At that point, the `snap.cgi` choose a `snapserver` that's not too loaded, and
 sends the access data to it and wait for the reply which is then sent to
 Apache2 and finally back to the client.
 
-The snapserver will access the database, Cassandra, through the
+The `snapserver` will access the database, Cassandra, through the
 `snapdbproxy` daemon (which allows us to have the system go really fast
 because we connect to it on localhost instead of directly to Cassandra,
 which can be much slower, especially if through an SSL connection. We also
@@ -136,12 +136,14 @@ gather the meta data only once and cache it.)
 
 # Getting Started
 
-TODO: We are not using the PPA environment at this time...
-I suggest you first run bin/snap-ubuntu-packages to get all
-dependencies installed. Then do cmake + make.
+TODO: We are using the PPA environment again at this time... If you want
+a pre-compiled version, that's the way to go!
 
-The whole environment is based on cmake and also matches pbuilder so we
-can create Ubuntu packages with ease (cmake even makes use of the control
+I suggest you first run bin/snap-ubuntu-packages to get all
+dependencies installed. Then do `cmake` + `make`.
+
+The whole environment is based on `cmake` and also matches `pbuilder` so we
+can create Ubuntu packages with ease (`cmake` even makes use of the control
 files to generate the inter project dependencies!) We do not yet release
 the Ubuntu packages publicly. We have a launchpad.net environment, but
 unfortunately, it is too complicated to use when you manage a large
@@ -162,7 +164,7 @@ The command `snap-ubuntu-packages` installs many packages that the build
 requires. This is done automatically in the build system using the control
 file information. For a developer, that's not automatic. So the easiest
 is to run that command. Although we try to keep it up to date, if something
-is missing, cmake should tell you. Worst case scenario, the compiler stops
+is missing, `cmake` should tell you. Worst case scenario, the compiler stops
 with an error. We recommend the --optional packages so you get full
 documentation and some extras for tests.
 
@@ -179,8 +181,8 @@ use a slightly different URL for the purpose:
     git clone --recursive git@github.com:m2osw/snapcpp.git snapcpp
 
 After a while, you'll have all the built objects under a BUILD directory
-in your snapwebsites directory. The distribution being under the BUILD/dist
-directory (warning: executables under the distribuation will be stripped
+in your `snapwebsites` directory. The distribution being under the BUILD/dist
+directory (warning: executables under the distribution will be stripped
 from their `RPATH` which means you cannot run them without some magic;
 namely changing your `PATH` and `LD_LIBRARY_PATH`)
 
@@ -203,9 +205,9 @@ TODO: need to complete this one...
 
 Once you compiled everything, you will have an environment that can be
 used to run Snap! Only, it won't work as is. You first have to setup a
-certain number of parts: /etc/snapwebsites, /var/lib/snapwebistes,
-/var/log/snapwebsites, /var/cache/snapwebsites, and make sure
-snapmanagerdaemon starts as root.
+certain number of parts: `/etc/snapwebsites`, `/var/lib/snapwebistes`,
+`/var/log/snapwebsites`, `/var/cache/snapwebsites`, and make sure
+`snapmanagerdaemon` starts as root.
 
 Although these things do get installed automatically when you install
 the Snap! packages, doing so with the packages will install these files
@@ -217,8 +219,10 @@ files.
 ## Creating packages
 
 To build Ubuntu packages, you want to run the following commands,
-althouh this is currently incomplete! We will try to ameliorate that
+although this is currently incomplete! We will try to ameliorate that
 info with time. It currently takes 1h30 to rebuild everything as packages.
+(Note that it can be parallelized and run a lot faster that way, like
+10 to 15 minutes.)
 
     # get some extra development tools if you don't have them yet
     apt-get install ubuntu-dev-tools eatmydata debhelper
@@ -233,7 +237,7 @@ info with time. It currently takes 1h30 to rebuild everything as packages.
     make pbuilder
 
 
-## Linux
+## Linux Only
 
 At this point we only have a Linux version of the project. We have no
 plans in updating the project to work on a different platform, although
@@ -242,8 +246,8 @@ the project is not yet considered complete, so it would be quite premature
 to attempt to convert it.
 
 Note that the software makes heavy use of the `fork()` instruction. That
-means it will be prohibitive to use under MS-Windows unless, as I think I
-heard, they now do support the `fork()` functionality.
+means it will be prohibitive to use under earlier versions of MS-Windows
+(i.e. MS-Windows 10 and newer offer the `fork()` instruction now.)
 
 
 # Bugs
@@ -252,4 +256,4 @@ Submit bug reports and patches on
 [github](https://github.com/m2osw/snapcpp/issues).
 
 
-_This file is part of the [snapcpp project](http://snapwebsites.org/)._
+_This file is part of the [snapcpp project](https://snapwebsites.org/)._
