@@ -10,9 +10,6 @@ then
 	exit 1;
 fi
 
-# Full clean up
-rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
-
 # You may change the compiler with something like this:
 # (The CMAKE_C_COMPILER and CMAKE_CXX_COMPILER will NOT work)
 #export CC=gcc-4.9
@@ -20,6 +17,62 @@ rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
 
 #PROCESSORS=1
 PROCESSORS=2
+
+# Default come from cmake setups--these may not be up to date but it should
+#                                 give you an idea about possible values
+#DEBUILD_EMAIL="Build Server <build@m2osw.com>"
+#DEBUILD_PLATFORM=xenial
+
+if test -f ~/.build-snap.rc
+then
+	# Let you have a form of `rc` file (like .netrc) for the
+	# build-snap script
+	#
+	# You can redefine one or more of the variables defined above
+	# this if/fi block
+	#
+	. ~/.build-snap.rc
+fi
+
+while test -n "$1"
+do
+	case "$1" in
+	-h|--help)
+		echo
+		echo "Usage: $0 [--opts]"
+		echo
+		echo "where --opts can be one of:"
+		echo "   --email \"name <name@example.com>\"    define the debuild email"
+		echo "   --help | -h                            print out this screen"
+		echo
+		exit 1;
+		;;
+	--email)
+		shift
+		if test -z "$1"
+		then
+			echo "the --email is expected to be followed by an email address"
+			exit 1;
+		fi
+		DEBUILD_EMAIL="$1"
+		shift
+		;;
+	*)
+		echo "error: unknown command line option"
+		exit 1;
+		;;
+	esac
+done
+
+if test -n "$DEBUILD_EMAIL"
+then
+	DEBUILD_EMAIL_VAR="-DDEBUILD_EMAIL=$DEBUILD_EMAIL"
+else
+	DEBUILD_EMAIL_VAR=""
+fi
+
+# Full clean up
+rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
 
 # Configure and generate the Release version
 mkdir RELEASE
@@ -30,6 +83,7 @@ cmake \
 	-DBUILD_ONCE=OFF \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
 	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
+	"$DEBUILD_EMAIL_VAR" \
 	../snapcpp
 
 # Do not bild the release version by default
@@ -46,6 +100,7 @@ cmake \
 	-DBUILD_ONCE=OFF \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
 	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
+	"$DEBUILD_EMAIL_VAR" \
 	../snapcpp
 
 # Build the Debug version
