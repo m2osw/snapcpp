@@ -86,7 +86,7 @@ cmake \
 	"$DEBUILD_EMAIL_VAR" \
 	../snapcpp
 
-# Do not bild the release version by default
+# Do not build the release version by default
 # Use something like:
 #        make -C RELEASE
 
