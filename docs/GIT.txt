@@ -143,9 +143,11 @@ git clone --recursive https://github.com/m2osw/snapcpp
 
 
 # If you already cloned the top module (snapcpp) then you can clone all
-# submodule with the following command:
+# submodules with the following command:
+#
 cd snapcpp
 git submodule update --init --recursive
+
 
 # When checking the status of a parent module you may see the following
 # message:
