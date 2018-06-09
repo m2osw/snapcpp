@@ -56,6 +56,7 @@ then
     apt-get install \
         doxygen \
         graphviz \
+        lcov \
         libicu-dev \
         libqxcppunit-dev \
         qtxmlpatterns5-dev-tools
