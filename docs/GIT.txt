@@ -138,6 +138,44 @@ git rebase --continue
 # repeat
 
 
+# how to fix your branch and 'origin/master' have diverged
+# it tells you there is a rebase problem, but you actually
+# need to do a merge, not use the rebase command
+# this happens quite a bit in the top module without any good
+# reason (that is, there are multiple messages and their way
+# to merge things is ... manual)
+git merge origin/master
+# -- verify that things look as expected --
+git commit -a
+git push origin master
+
+# The following is an example of the failed push because of a "pretend" rebase
+# # # $ git push origin master
+# # #To git@github.com:m2osw/snapcpp.git
+# # # ! [rejected]        master -> master (non-fast-forward)
+# # #error: failed to push some refs to 'git@github.com:m2osw/snapcpp.git'
+# # #hint: Updates were rejected because a pushed branch tip is behind its remote
+# # #hint: counterpart. Check out this branch and integrate the remote changes
+# # #hint: (e.g. 'git pull ...') before pushing again.
+# # #hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+
+# And the following is about a conflict which is never really shown to you
+# because the conflict is only in the "logs" and not in a file you manage!
+# # # $ git status
+# # #rebase in progress; onto 92cb30c
+# # #You are currently rebasing branch 'master' on '92cb30c'.
+# # #  (all conflicts fixed: run "git rebase --continue")
+# # #
+# # #Changes to be committed:
+# # #  (use "git reset HEAD <file>..." to unstage)
+# # #
+# # #	modified:   snapwebsites
+
+
+
+
+
 # cloning with submodules in one command
 git clone --recursive https://github.com/m2osw/snapcpp
 
