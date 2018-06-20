@@ -1,4 +1,6 @@
 
+![Snap! Websites](https://snapwebsites.org/sites/all/modules/mo_m2osw/snap-medium-icon.png)
+
 # Introduction
 
 Snap! C++ is a website backend project mainly written in C++ (there is a
