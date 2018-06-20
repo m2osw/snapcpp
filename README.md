@@ -1,6 +1,6 @@
 
 <p align="center">
-![Snap! Websites](https://snapwebsites.org/sites/all/modules/mo_m2osw/snap-medium-icon.png)
+<img alt="Snap! Websites" src="https://snapwebsites.org/sites/all/modules/mo_m2osw/snap-medium-icon.png" width="70" height="70"/>
 </p>
 
 # Introduction
