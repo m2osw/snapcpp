@@ -1,5 +1,7 @@
 
+<p align="center">
 ![Snap! Websites](https://snapwebsites.org/sites/all/modules/mo_m2osw/snap-medium-icon.png)
+</p>
 
 # Introduction
 
