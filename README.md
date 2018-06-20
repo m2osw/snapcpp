@@ -106,6 +106,7 @@ crunch is available.
 
 ![Snap! Websites Cluster Setup](snapwebsites/libsnapwebsites/doc/snapwebsites-cluster-setup.png)
 
+
 ## The Snap! Websites Stack
 
 We have
@@ -136,8 +137,122 @@ gather the meta data only once and cache it.)
 
 # Getting Started
 
-TODO: We are using the PPA environment again at this time... If you want
+If you are an administrator who just wants to install Snap! on your systems,
+then you want to look at the Launchpad section below.
+
+If you are a developer and want to work on the source code, check 
+We are using the PPA environment again at this time... If you want
 a pre-compiled version, that's the way to go!
+
+
+## Launchpad (Simple Installation for Administrators)
+
+We now make use of Launchpad, also called the PPA repository of Ubuntu,
+to compile and generate all our public Snap! packages.
+
+We currently have three main sections:
+
+* cmake
+* contribs, and
+* snapwebsites
+
+The cmake folder includes various cmake scripts used to handle the Snap!
+C++ development environment.
+
+The contribs are independent libraries, many of which we authored especially
+for Snap! C++ but that can be used in other projects with very minor help.
+A couple (log4cplus and zipios) are actually third party libraries which
+we compile specifically because Ubuntu does not offer that latest greatest
+version yet. We intend to stop supporting those on the edge versions once
+we can switch to the latest version available as is in the Ubuntu repository.
+
+The snapwebsites project is the Snap! C++ environment. Although it is
+composed of many sub-projects, these would be difficult to use on their
+own. For this reason, at the moment we keep these together in one large
+package. However, with time we will break-up various parts to contribs
+instead.
+
+
+### Getting Packages from Launchpad
+
+We offer a [PPA](https://launchpad.net/~snapcpp/+archive/ubuntu/ppa)
+with all the projects found in Snap! C++.
+
+To get that to work on your system, you want to install the PPA in your
+apt-get environment. The following are the two lines you can add to your
+apt-get source files to make things work.
+
+    deb http://ppa.launchpad.net/snapcpp/ppa/ubuntu xenial main 
+    deb-src http://ppa.launchpad.net/snapcpp/ppa/ubuntu xenial main 
+
+You can also use the `apt-add-repository` command as follow:
+
+    sudo apt-add-repository ppa:snapcpp/ppa
+
+This way, you automatically get the keys installed so you don't have
+to do that manually.
+
+Once you've upgraded the PPA, you can see a new file under
+`/etc/apt/sources/list.d`. It should be named something like this:
+
+    snapcpp-ubuntu-ppa-xenial.list
+
+If you had other snapcpp list files, you probably want to remove them
+and finally run an update and dist-upgrade:
+
+    sudo apt-get update
+    sudo apt-get dist-upgrade
+
+Note that the Upgrade in the `snapmanager.cgi` interface works the same
+way as these last two commands. So if you add the Snap! C++ repository to
+all your nodes you can then use the `snapmanager.cgi` to run the upgrade.
+However, chances are you are installing for the very first time and thus
+you need to upgrade manually and even install a package from Snap! C++
+such as the `snapserver`.
+
+
+### Building Launchpad Packages
+
+To rebuild all the packages on Launchpad, we have all the necessary scripts
+in our makefiles. Once you ran cmake successfully, say under a directory
+named BUILD, then you can run the following command:
+
+    make -C BUILD dput
+
+This will prepare all the source packages and upload them to the Launchpad
+repository. The files are not going to be uploaded if their version did not
+change. To change the version of a project, edit its changelog file and add
+an entry at the beginning of the file. In most cases this is about what
+changed in your last commit(s). If you did not really change anything but
+still need a rebuild (i.e. a dependency changed but the PPA was not smart
+enough to rebuild another package.) then increase the 4th number and put
+a comment about the fact this is just to kickstart a build of that project.
+
+
+### Making sure packages will build on Launchpad
+
+Whenever you are ready to build on the PPA, you may want to first check
+whether everything builds on your system. If you used the snap-build scripts,
+you have two folders: `BUILD` and `RELEASE`. The `BUILD` folder is generally
+the one you use on your development system since it's the debug version. That
+also means the `RELEASE` rarely gets rebuilt. This is where a Launchpad
+compilation happens, though, and therefore not having that rebuild on your
+system would show you that the PPA is going to have a problem on its own.
+
+So, we suggest that you run a `RELEASE` build once before attempting a PPA
+build with the following command:
+
+    make -C RELEASE
+
+If that fails, then the PPA will sure fail. Make sure you have the latest
+version of everything, check where the error occurs, try compiling and
+fixing just that one project until it works, and push all your changes if
+any, then run the PPA update.
+
+
+
+
+## From Sources (For Advanced Developers)
 
 I suggest you first run bin/snap-ubuntu-packages to get all
 dependencies installed. Then do `cmake` + `make`.
