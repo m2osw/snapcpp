@@ -7,3 +7,8 @@ tags
 *.swp
 *.log
 *.out
+*.dsc
+*_*~*.tar.gz
+*.build
+*.changes
+*.ppa.upload
