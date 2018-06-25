@@ -1,6 +1,40 @@
 
 # Note: in many cases a filename can be "." (current directory)
 
+# Create a new private repository
+# The following tells me the steps of creating a new private repository
+# as we do not have a way that automates that 100%
+#
+#  1. create your own local repository
+git init
+git add "<your-file(s)>"
+git commit
+
+#  2. create the remote repository
+ssh build.m2osw.com
+sudo su - git
+cd /mnt/git
+mkdir "<your-repository-name>"
+cd "<your-repository-name>"
+git init --bare
+
+#  3. make the new remote repository your URL in your local repository
+git remote add origin "ssh://buildgit/mnt/git/<your-repository-name>"
+git push -u origin master
+
+# if you already added a URL, then you will need to use the "set-url"
+# instead of the "add" instruction:
+git remote set-url origin "ssh://buildgit/mnt/git/<your-repository-name>"
+
+#  4. verify status
+prompt $ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+nothing to commit, working directory clean
+
+
+
+
 # Check out a copy from the repository
 git clone git://git.code.sf.net/p/snapcpp/code snapcpp
 
@@ -177,7 +211,12 @@ git push origin master
 
 
 # cloning with submodules in one command
-git clone --recursive https://github.com/m2osw/snapcpp
+#
+# WARNING: you must have an account with github or the sub-modules won't
+#          load properly; the https://... method won't work with sub-
+#          modules at this time
+#
+git clone --recursive git@github.com/m2osw/snapcpp
 
 
 # If you already cloned the top module (snapcpp) then you can clone all

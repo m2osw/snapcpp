@@ -58,8 +58,12 @@ then
         graphviz \
         lcov \
         libicu-dev \
-        libqxcppunit-dev \
         qtxmlpatterns5-dev-tools
+
+    if apt-cache show libqxcppunit-dev >/dev/null
+    then
+        apt-get install libqxcppunit-dev
+    fi
 else
     echo
     echo "WARNING:"
