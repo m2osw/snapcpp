@@ -2,6 +2,8 @@
 
 set -e
 
+# Make sure the script is called from the right place
+#
 if test ! -d snapcpp
 then
 	echo "error: This script must be run from the directly right outside of the snapcpp source code."
@@ -12,17 +14,35 @@ fi
 
 # You may change the compiler with something like this:
 # (The CMAKE_C_COMPILER and CMAKE_CXX_COMPILER will NOT work)
+#
 #export CC=gcc-4.9
 #export CXX=g++-4.9 cmake
 
+
+# By default use one processor for your build, you can increase that
+# number here or use the --processors command line option
+#
 PROCESSORS=1
-#PROCESSORS=2
+
+
+# By default I turn ON the sanitize option for Debug
+# (it's always OFF for release, you have to edit the cmake Module
+# SnapCMakeModulesConfig.cmake to get -fsanitize=... options added
+# to a release build.)
+#
+SANITIZE_OPTIONS=ON
+
 
 # Default come from cmake setups--these may not be up to date but it should
 #                                 give you an idea about possible values
+#
 #DEBUILD_EMAIL="Build Server <build@m2osw.com>"
 #DEBUILD_PLATFORM=xenial
 
+# Source the user defined .build-snap.rc file
+# In most cases this is used to define the DEBUILD_EMAIL to your own
+# email address so you can sign all the packages properly.
+#
 if test -f ~/.build-snap.rc
 then
 	# Let you have a form of `rc` file (like .netrc) for the
@@ -34,6 +54,9 @@ then
 	. ~/.build-snap.rc
 fi
 
+
+# Check the command line options if any
+#
 while test -n "$1"
 do
 	case "$1" in
@@ -68,6 +91,16 @@ do
 		PROCESSORS="$1"
 		shift
 		;;
+	--sanitize)
+		shift
+		if test -z "$1"
+		then
+			echo "the --sanitize is expecteed to be followed by ON or OFF"
+			exit 1;
+		fi
+		SANITIZE_OPTIONS="$1"
+		shift
+		;;
 	*)
 		echo "error: unknown command line option"
 		exit 1;
@@ -83,9 +116,11 @@ else
 fi
 
 # Full clean up
+#
 rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
 
 # Configure and generate the Release version
+#
 mkdir RELEASE
 cd RELEASE
 cmake \
@@ -102,6 +137,7 @@ cmake \
 #        make -C RELEASE
 
 # Configure and generate the Debug version
+#
 cd ..
 mkdir BUILD
 cd BUILD
@@ -109,10 +145,12 @@ cmake \
 	-DCMAKE_BUILD_TYPE=Debug \
 	-DMAKEFLAGS=-j$PROCESSORS \
 	-DBUILD_ONCE=OFF \
+	-DSANITIZE_OPTIONS=$SANITIZE_OPTIONS \
 	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
 	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
 	"$DEBUILD_EMAIL_VAR" \
 	../snapcpp
 
 # Build the Debug version
+#
 make
