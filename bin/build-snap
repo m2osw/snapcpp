@@ -25,12 +25,18 @@ fi
 PROCESSORS=1
 
 
-# By default I turn ON the sanitize option for Debug
+# By default I turn OFF the sanitize option for Debug
 # (it's always OFF for release, you have to edit the cmake Module
 # SnapCMakeModulesConfig.cmake to get -fsanitize=... options added
 # to a release build.)
 #
-SANITIZE_OPTIONS=ON
+# Use the --sanitize command line option of this script to turn it
+# ON. The reason for having it off by default is that it creates
+# binaries that allocate 20Tb of virtual memory. It may not look
+# like a big deal, but it quickly eats your RAM if you don't have
+# much of it.
+#
+SANITIZE_OPTIONS=OFF
 
 
 # Default come from cmake setups--these may not be up to date but it should
