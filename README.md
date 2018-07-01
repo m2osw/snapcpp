@@ -173,8 +173,10 @@ we can switch to the latest version available as is in the Ubuntu repository.
 The snapwebsites project is the Snap! C++ environment. Although it is
 composed of many sub-projects, these would be difficult to use on their
 own. For this reason, at the moment we keep these together in one large
-package. However, with time we will break-up various parts to contribs
-instead.
+package. However, with time we will break-up various parts as contribs
+instead (for example, the libaddr and libexcept constribs are two libraries
+that were created from the libsnapwebsites code that we wanted to reuse
+in other contribs.)
 
 
 ### Getting Packages from Launchpad
