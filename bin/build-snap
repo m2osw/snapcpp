@@ -74,6 +74,7 @@ do
 		echo "   --email \"name <name@example.com>\"    define the debuild email"
 		echo "   --help | -h                            print out this screen"
 		echo "   --processors <count>                   processors used to compile"
+		echo "   --sanitize ON|OFF                      define whether to use sanitize compiler options"
 		echo
 		exit 1;
 		;;
