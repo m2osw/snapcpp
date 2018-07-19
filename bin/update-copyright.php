@@ -227,6 +227,11 @@ echo "Processed $count_directories directories.\n";
 echo "Skip $count_binary_files binary files.\n";
 echo "Processed $count_modified_files source files out of $count_total_files.\n";
 
+// if correct we can remove this warning
+echo "\n";
+echo "+++ WARNING: was snapwebsites/snapcgi/conf/maintenance.html updated properly? The copyright date is in two place. +++\n";
+echo "\n";
+
 if($errcount > 0)
 {
     echo "\n",
