@@ -203,8 +203,22 @@ Once you've upgraded the PPA, you can see a new file under
 
     snapcpp-ubuntu-ppa-xenial.list
 
-If you had other snapcpp list files, you probably want to remove them
-and finally run an update and dist-upgrade:
+If you had other snapcpp list files, you probably want to remove them.
+
+The first installation requires the snapmanagercgi package:
+
+    sudo apt-get update
+    sudo apt-get install snapmanagercgi
+
+The computer after that command should be ready to accept your installations
+fromthe snapmanager.cgi interface, although you may need to tweak a few
+things to get Apache and snapmanager.cgi to work together. It works as is
+for us on DigitalOcean, though.
+
+To upgrade later, run an update and dist-upgrade (the snapmanager.cgi will
+do it for you if you'd like, but if you like to see the output, that's
+the easiest way, although with snapmanager.cgi it will run the upgrade on
+ALL your computers at once):
 
     sudo apt-get update
     sudo apt-get dist-upgrade
@@ -215,45 +229,6 @@ all your nodes you can then use the `snapmanager.cgi` to run the upgrade.
 However, chances are you are installing for the very first time and thus
 you need to upgrade manually and even install a package from Snap! C++
 such as the `snapserver`.
-
-
-### Building Launchpad Packages
-
-To rebuild all the packages on Launchpad, we have all the necessary scripts
-in our makefiles. Once you ran cmake successfully, say under a directory
-named BUILD, then you can run the following command:
-
-    make -C BUILD dput
-
-This will prepare all the source packages and upload them to the Launchpad
-repository. The files are not going to be uploaded if their version did not
-change. To change the version of a project, edit its changelog file and add
-an entry at the beginning of the file. In most cases this is about what
-changed in your last commit(s). If you did not really change anything but
-still need a rebuild (i.e. a dependency changed but the PPA was not smart
-enough to rebuild another package.) then increase the 4th number and put
-a comment about the fact this is just to kickstart a build of that project.
-
-
-### Making sure packages will build on Launchpad
-
-Whenever you are ready to build on the PPA, you may want to first check
-whether everything builds on your system. If you used the snap-build scripts,
-you have two folders: `BUILD` and `RELEASE`. The `BUILD` folder is generally
-the one you use on your development system since it's the debug version. That
-also means the `RELEASE` rarely gets rebuilt. This is where a Launchpad
-compilation happens, though, and therefore not having that rebuild on your
-system would show you that the PPA is going to have a problem on its own.
-
-So, we suggest that you run a `RELEASE` build once before attempting a PPA
-build with the following command:
-
-    make -C RELEASE
-
-If that fails, then the PPA will sure fail. Make sure you have the latest
-version of everything, check where the error occurs, try compiling and
-fixing just that one project until it works, and push all your changes if
-any, then run the PPA update.
 
 
 
@@ -318,6 +293,47 @@ The build type can either be Debug or Release.
         -DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
         -DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
         ..
+
+
+### Building Launchpad Packages
+
+To rebuild all the packages on Launchpad, we have all the necessary scripts
+in our makefiles. Once you ran cmake successfully, say under a directory
+named BUILD, then you can run the following command:
+
+    make -C BUILD dput
+
+This will prepare all the source packages and upload them to the Launchpad
+repository. The files are not going to be uploaded if their version did not
+change. To change the version of a project, edit its changelog file and add
+an entry at the beginning of the file. In most cases this is about what
+changed in your last commit(s). If you did not really change anything but
+still need a rebuild (i.e. a dependency changed but the PPA was not smart
+enough to rebuild another package.) then increase the 4th number and put
+a comment about the fact this is just to kickstart a build of that project.
+
+
+### Making sure packages will build on Launchpad
+
+Whenever you are ready to build on the PPA, you may want to first check
+whether everything builds on your system. If you used the snap-build scripts,
+you have two folders: `BUILD` and `RELEASE`. The `BUILD` folder is generally
+the one you use on your development system since it's the debug version. That
+also means the `RELEASE` rarely gets rebuilt. This is where a Launchpad
+compilation happens, though, and therefore not having that rebuild on your
+system would show you that the PPA is going to have a problem on its own.
+
+So, we suggest that you run a `RELEASE` build once before attempting a PPA
+build with the following command:
+
+    make -C RELEASE
+
+If that fails, then the PPA will sure fail. Make sure you have the latest
+version of everything, check where the error occurs, try compiling and
+fixing just that one project until it works, and push all your changes if
+any, then run the PPA update.
+
+
 
 
 ## Setting up a development environment
