@@ -59,6 +59,9 @@ you cannot do an upgrade without stopping everything. With 4 computers,
 you can stop one Cassandra node, upgrade that computer, restart the
 node. Proceed to the next node.
 
+Note: ScyllaDB should work just fine too. We are planning in testing
+that theory soon.
+
 ## Horizontal Growth
 
 Note that the number of frontend computers, middle-end if you separate
@@ -149,7 +152,7 @@ We are using the PPA environment again at this time... If you want
 a pre-compiled version, that's the way to go!
 
 
-## Launchpad (Simple Installation for Administrators)
+## Basics about the Snap! C++ Projects
 
 We now make use of Launchpad, also called the PPA repository of Ubuntu,
 to compile and generate all our public Snap! packages.
@@ -172,9 +175,10 @@ we can switch to the latest version available as is in the Ubuntu repository.
 
 The snapwebsites project is the Snap! C++ environment. Although it is
 composed of many sub-projects, these would be difficult to use on their
-own. For this reason, at the moment we keep these together in one large
-package. However, with time we will break-up various parts as contribs
-instead (for example, the libaddr and libexcept constribs are two libraries
+own. We still have one or more packages per project. Often we break down
+a project by library, tools, development, and documentation.
+Along the way, we break-up various parts as contrib libraries instead
+(for example, the libaddr and libexcept constribs are two libraries
 that were created from the libsnapwebsites code that we wanted to reuse
 in other contribs.)
 
@@ -205,31 +209,115 @@ Once you've upgraded the PPA, you can see a new file under
 
 If you had other snapcpp list files, you probably want to remove them.
 
+TODO: We currently don't offer the Cassandra C++ Driver as a third party
+was offering it. We are now thinking it would be easier for us to include
+another contrib entry with that driver so it works with whatever version
+of Ubuntu we want to support.
+
 The first installation requires the snapmanagercgi package:
 
     sudo apt-get update
     sudo apt-get install snapmanagercgi
 
 The computer after that command should be ready to accept your installations
-fromthe snapmanager.cgi interface, although you may need to tweak a few
-things to get Apache and snapmanager.cgi to work together. It works as is
-for us on DigitalOcean, though.
+from the `snapmanager.cgi` browser interface, although you may need to tweak
+a few things to get Apache and `snapmanager.cgi` to work together. It works
+as is for us on DigitalOcean and our VPS using VirtualBox on our development
+computers.
 
-To upgrade later, run an update and dist-upgrade (the snapmanager.cgi will
-do it for you if you'd like, but if you like to see the output, that's
-the easiest way, although with snapmanager.cgi it will run the upgrade on
-ALL your computers at once):
+To upgrade later, run an `update` and `dist-upgrade` (the `snapmanagerdaemon`
+does it for you, but if you like to see the output, that's the easiest way,
+although with `snapmanager.cgi` it runs an upgrade on **all** your
+computers at once:
 
     sudo apt-get update
     sudo apt-get dist-upgrade
 
 Note that the Upgrade in the `snapmanager.cgi` interface works the same
 way as these last two commands. So if you add the Snap! C++ repository to
-all your nodes you can then use the `snapmanager.cgi` to run the upgrade.
-However, chances are you are installing for the very first time and thus
-you need to upgrade manually and even install a package from Snap! C++
-such as the `snapserver`.
+all your nodes you can then use the `snapmanager.cgi` interface to run an
+upgrade on your entire cluster.
 
+Once ready, the `snapmanager.cgi` gives you access to a list of _bundles_.
+These are used to install a part to your system. For example, the Cassandra
+nodes don't get the `snapbackend` bundle installed. However, attempting to
+install Snap! C++ by hand is complicated. There are small setups to do which
+if you miss them prevents the system from working correctly. I'm the author
+and frankly, there are just way too many things to remember about to not be
+using `snapmanager.cgi` to proceed with installations.
+
+### Installing a Website
+
+Once you installed the `snapserver` bundle, you may start installing a
+website. At the moment this is complicated because we do not have a
+`snapmanager.cgi` interface quite yet. You may use the GUI, but when
+installing a remote version of Snap! C++, it's complicated (as it requires
+an ssh tunnel.)
+
+First we want to prepare the database context. Note that this may take a
+little time as the process waits for the creation to be complete before
+returning.
+
+    snapcreatecontext
+
+Right now, the snapdbproxy won't detect that the new context was created.
+It needs to be restarted so we can create the tables:
+
+    sudo systemctl restart snapdbproxy
+
+At some point we are thinking to get the `snapdbproxy` to do the work
+of creating the context and tables. Then later to understand requests
+to install a new website in the database. That way, you won't have to
+worry about having to do that yourself. The `snapdbproxy` can easily
+detect whether the context exists and check the tables before accepting
+connections from other parts of the system.
+
+Next we want to install the tables in the context. The tables are declared
+in XML files so the tool can read those and do the necessary work.
+
+    snapcreatetables
+
+Tables are assigned a name and a model. The model defines many parameters
+so Cassandra has a better chance to handle that table properly.
+
+Once the tables were created, it is possible to install the domain name,
+website name, and then the actual website data. This is currently all
+done in one go with the `snapinstallwebsite` tool, although with that
+tool we currently limit the installation to a standard/default setup.
+Later it will be possible to edit or provide more advanced declarations
+for your domains and websites so you can manage much more complex
+parameter gathering from your domain name and website path.
+
+    snapinstallwebsite --protocol HTTP --domain www.snap.website --port 80
+
+At this time we support port 80 and 443.
+
+The domain name may or may not include a sub-domain name.
+
+The installation of the domain and website is extremely fast (very small
+parameters to save to the database.) What followe, however, requires more
+time.
+
+By default, the tool is verbose and informs you of the current step in the
+installation process. The last step says:
+
+> Status: Initialization succeeded.
+
+Unless you encounter a problem while initializing. You may re-run the
+process multiple times until you get a postive outcome. However, some
+errors won't be corrected with additional run. They will instead have
+been skipped.
+
+Now the first website is ready for viewing in your browser. You should be
+able to visit the front page with:
+
+    http://www.snap.website/
+
+The information may not be available to the existing instance. To make
+sure that the newest everything (tables, data, etc.) is ready for use,
+you may want to reboot your cluster once. This will reset all memory
+caches and make sure all the daemons are running as expected. Then
+try again to access your website.
 
 
 
