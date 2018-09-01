@@ -134,8 +134,6 @@ cmake \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DMAKEFLAGS=-j$PROCESSORS \
 	-DBUILD_ONCE=OFF \
-	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
-	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
 	"$DEBUILD_EMAIL_VAR" \
 	../snapcpp
 
@@ -153,8 +151,6 @@ cmake \
 	-DMAKEFLAGS=-j$PROCESSORS \
 	-DBUILD_ONCE=OFF \
 	-DSANITIZE_OPTIONS=$SANITIZE_OPTIONS \
-	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
-	-DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
 	"$DEBUILD_EMAIL_VAR" \
 	../snapcpp
 

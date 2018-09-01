@@ -378,8 +378,7 @@ The build type can either be Debug or Release.
 
     cmake \
         -DCMAKE_BUILD_TYPE=Release \
-        -DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
-        -DXSD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/xsd" \
+        -DSNAP_COMMON_DIR:PATH="`pwd`/BUILD/dist/share/snapwebsites" \
         ..
 
 
