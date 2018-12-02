@@ -242,5 +242,24 @@ git commit .
 git push origin master
 
 
+# Tagging to get a tag on github and automatically get a tarball/zip for
+# people to download a specific version of our libraries, etc.
+#
+# Further reading: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+#
+# FIRST MAKE SURE THAT THE VERSIONS ARE A GOOD MATCH BETWEEN
+# THE debian/changelog AND THE CMakeLists.txt
+#
+# 'version' is our version such as 'v1.2.3'
+#
+git tag -a 'version' -m 'annotation'
+git push origin 'version'
+
+# Made a mistake? Delete and create a new one after you applied fixes as
+# required...
+#
+git tag -d 'version'
+
+
 
 # vim: syntax=sh
