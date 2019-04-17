@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2017 Made to Order Software Corp.
+#      Copyright (c) 2011-2019 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -43,7 +43,7 @@ project( snapwebsites_contrib )
 #
 ConfigureMakeProject( PROJECT_NAME zipios
     CONFIG_ARGS
-        -DBUILD_ZIPIOS_TESTS:BOOL=OFF
+        -DBUILD_ZIPIOS_TESTS:BOOL=ON
     COMPONENT contrib
 )
 

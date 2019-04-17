@@ -92,7 +92,7 @@ do
 		shift
 		if test -z "$1"
 		then
-			echo "the --processors is expecteed to be followed by a number"
+			echo "the --processors is expected to be followed by a number"
 			exit 1;
 		fi
 		PROCESSORS="$1"
