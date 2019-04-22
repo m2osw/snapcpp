@@ -40,3 +40,9 @@
 [submodule "snapwebsites"]
 	path = snapwebsites
 	url = git@github.com:m2osw/snapwebsites.git
+[submodule "contrib/cassandra-cpp-driver-snap"]
+	path = contrib/cassandra-cpp-driver-snap
+	url = git@github.com:m2osw/cassandra-cpp-driver-snap.git
+[submodule "contrib/libuv1-snap"]
+	path = contrib/libuv1-snap
+	url = git@github.com:m2osw/libuv1-snap.git
