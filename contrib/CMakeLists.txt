@@ -176,6 +176,8 @@ ConfigureMakeProject(
         zipios
     CONFIG_ARGS
         -DBUILD_ZIPIOS_TESTS:BOOL=ON
+    COMPONENT
+        contrib
 )
 
 ################################################################################
