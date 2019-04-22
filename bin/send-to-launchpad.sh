@@ -46,8 +46,11 @@ case $MODULE in
 esac
 
 # Verify that version is 4 numbers separated by 3 periods
+# The "~xenial" part has to be updated for each platform
+# (add (xenial|<another>|<another>|...) to support multiple versions.)
+#
 VERSION=`dpkg-parsechangelog -S version`
-VALID=`echo "$VERSION" | sed -e 's/[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+~.*//'`
+VALID=`echo "$VERSION" | sed -e 's/[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+~xenial//'`
 if test -n "$VALID"
 then
     echo "error: invalid version \"$VERSION\": must be 4 numbers separated by periods."
