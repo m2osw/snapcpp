@@ -75,22 +75,6 @@ ConfigureMakeProject(
         snapwebsites
     COMPONENT
         main
-    DEPENDS
-        advgetopt
-        as2js
-        cassandra-cpp-driver
-        cmake
-        csspp
-        iplock
-        libaddr
-        libexcept
-        libcassvalue
-        libcasswrapper
-        libQtSerialization
-        libtld
-        libuv1-snap
-        log4cplus
-        zipios
 )
 
 BuildRepro    ( "main" )

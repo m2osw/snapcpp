@@ -46,7 +46,8 @@ project( snapwebsites_contrib )
 # (This gives us the order in which we have to compile these projects
 # on Launchpad.)
 #
-# Note: <null> makes it explicit that there are no dependencies.
+# Note 1: <null> makes it explicit that there are no dependencies.
+# Note 2: these dependencies are defined in the debian/control files.
 #
 #   advgetopt: cmake
 #   as2js: advgetopt
@@ -65,19 +66,12 @@ project( snapwebsites_contrib )
 #   snapwebsites: (all the others, always upload last)
 #   zipios: <null>
 #
-# IMPORTANT: The DEPENDS parameter is for information only at the moment,
-#            it is not required by the cmake configuration. That way, though
-#            we can document our dependencies here (it is also defined in the
-#            debian/control file of each project.)
-#
 
 ConfigureMakeProject(
     PROJECT_NAME
         advgetopt
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 ConfigureMakeProject(
@@ -85,9 +79,6 @@ ConfigureMakeProject(
         as2js
     COMPONENT
         contrib
-    DEPENDS
-        advgetopt
-        cmake
 )
 
 # TODO: make the -std=c++14 a variable in our SnapBuild use it here
@@ -98,8 +89,6 @@ ConfigureMakeProject(
         -DCMAKE_CXX_FLAGS=-std=c++14
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 ConfigureMakeProject(
@@ -107,9 +96,6 @@ ConfigureMakeProject(
         csspp
     COMPONENT
         contrib
-    DEPENDS
-        advgetopt
-        cmake
 )
 
 ConfigureMakeProject(
@@ -117,11 +103,6 @@ ConfigureMakeProject(
         iplock
     COMPONENT
         contrib
-    DEPENDS
-        advgetopt
-        cmake
-        libaddr
-        libexcept
 )
 
 ConfigureMakeProject(
@@ -129,9 +110,6 @@ ConfigureMakeProject(
         libaddr
     COMPONENT
         contrib
-    DEPENDS
-        cmake
-        libexcept
 )
 
 ConfigureMakeProject(
@@ -139,9 +117,6 @@ ConfigureMakeProject(
         libcassvalue
     COMPONENT
         contrib
-    DEPENDS
-        cmake
-        libexcept
 )
 
 ConfigureMakeProject(
@@ -149,13 +124,6 @@ ConfigureMakeProject(
         libcasswrapper
     COMPONENT
         contrib
-    DEPENDS
-        advgetopt
-        cassandra-cpp-driver-snap
-        cmake
-        as2js
-        libcassvalue
-        libexcept
 )
 
 ConfigureMakeProject(
@@ -163,8 +131,6 @@ ConfigureMakeProject(
         libexcept
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 ConfigureMakeProject(
@@ -172,8 +138,6 @@ ConfigureMakeProject(
         libQtSerialization
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 ConfigureMakeProject(
@@ -181,8 +145,6 @@ ConfigureMakeProject(
         libtld
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 # TODO: make the -std=c++14 a variable in our SnapBuild use it here
@@ -193,8 +155,6 @@ ConfigureMakeProject(
         -DCMAKE_CXX_FLAGS=-std=c++14
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 # TODO: make the -std=c++14 a variable in our SnapBuild use it here
@@ -209,8 +169,6 @@ ConfigureMakeProject(
         -DLOG4CPLUS_QT5=OFF
     COMPONENT
         contrib
-    DEPENDS
-        cmake
 )
 
 ConfigureMakeProject(
@@ -218,8 +176,6 @@ ConfigureMakeProject(
         zipios
     CONFIG_ARGS
         -DBUILD_ZIPIOS_TESTS:BOOL=ON
-    COMPONENT
-        contrib
 )
 
 ################################################################################
