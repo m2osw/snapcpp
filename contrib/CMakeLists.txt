@@ -88,6 +88,7 @@ ConfigureMakeProject(
     CONFIG_ARGS
         -DCMAKE_CXX_FLAGS=-std=c++14
         -DCASS_BUILD_STATIC=ON
+        -DCASS_BUILD_DOCS=ON
         -D_LIBUV_FOUND=TRUE
         -D_LIBUV_LIBDIR=${CMAKE_BINARY_DIR}/dist
     COMPONENT
