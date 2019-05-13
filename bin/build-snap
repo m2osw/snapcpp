@@ -19,6 +19,11 @@ fi
 #export CXX=g++-4.9 cmake
 
 
+# Whether make is invoked at the end of the cmake process (--no-build)
+#
+DO_BUILD=true
+
+
 # By default use one processor for your build, you can increase that
 # number here or use the --processors command line option
 #
@@ -73,6 +78,7 @@ do
 		echo "where --opts can be one of:"
 		echo "   --email \"name <name@example.com>\"    define the debuild email"
 		echo "   --help | -h                            print out this screen"
+		echo "   --build | --no-build                   whether to run make after the cmake commands"
 		echo "   --processors <count>                   processors used to compile"
 		echo "   --sanitize ON|OFF                      define whether to use sanitize compiler options"
 		echo
@@ -87,6 +93,14 @@ do
 		fi
 		DEBUILD_EMAIL="$1"
 		shift
+		;;
+	--build)
+		shift
+		DO_BUILD=true
+		;;
+	--no-build)
+		shift
+		DO_BUILD=false
 		;;
 	--processors)
 		shift
@@ -156,4 +170,7 @@ cmake \
 
 # Build the Debug version
 #
-make
+if $DO_BUILD
+then
+	make
+fi
