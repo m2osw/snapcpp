@@ -49,20 +49,20 @@ project( snapwebsites_contrib )
 # Note 1: <null> makes it explicit that there are no dependencies.
 # Note 2: these dependencies are defined in the debian/control files.
 #
-#   advgetopt: cmake
+#   advgetopt: libexcept
 #   as2js: advgetopt
 #   cassandra-cpp-driver-snap: libuv-snap
-#   cmake: <null> (snapcmakemodules)
+#   snapcmakemodules: <null>
 #   csspp: advgetopt
 #   iplock: advgetopt libaddr
 #   libaddr: libexcept
 #   libcassvalue: libexcept
 #   libcasswrapper: cassandra-cpp-driver-snap as2js libcassvalue
-#   libexcept: cmake
-#   libQtSerialization: cmake
-#   libtld: cmake
+#   libexcept: snapcmakemodules
+#   libQtSerialization: snapcmakemodules
+#   libtld: snapcmakemodules
 #   libuv1-snap: <null>
-#   log4cplus: cmake
+#   log4cplus: snapcmakemodules
 #   snapwebsites: (all the others, always upload last)
 #   zipios: <null>
 #
