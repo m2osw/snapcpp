@@ -46,3 +46,9 @@
 [submodule "contrib/libuv1-snap"]
 	path = contrib/libuv1-snap
 	url = git@github.com:m2osw/libuv1-snap.git
+[submodule "contrib/libutf8"]
+	path = contrib/libutf8
+	url = git@github.com:m2osw/libutf8.git
+[submodule "contrib/snapcatch2"]
+	path = contrib/snapcatch2
+	url = git@github.com:m2osw/snapcatch2.git

@@ -151,6 +151,13 @@ ConfigureMakeProject(
         contrib
 )
 
+ConfigureMakeProject(
+    PROJECT_NAME
+        libutf8
+    COMPONENT
+        contrib
+)
+
 # TODO: make the -std=c++14 a variable in our SnapBuild use it here
 ConfigureMakeProject(
     PROJECT_NAME
@@ -171,6 +178,13 @@ ConfigureMakeProject(
         -DLOG4CPLUS_SINGLE_THREADED=OFF
         -DLOG4CPLUS_QT4=OFF
         -DLOG4CPLUS_QT5=OFF
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        snapcatch2
     COMPONENT
         contrib
 )
