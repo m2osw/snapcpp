@@ -52,3 +52,6 @@
 [submodule "contrib/snapcatch2"]
 	path = contrib/snapcatch2
 	url = git@github.com:m2osw/snapcatch2.git
+[submodule "contrib/snapdev"]
+	path = contrib/snapdev
+	url = git@github.com:m2osw/snapdev.git

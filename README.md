@@ -474,6 +474,18 @@ means it will be prohibitive to use under earlier versions of MS-Windows
 (i.e. MS-Windows 10 and newer offer the `fork()` instruction now.)
 
 
+# Dependency Tree
+
+This tree changes from time to time, but it gives you an idea of all
+the project tha we are managing inside the Snap! C++ environment.
+
+<p align="center">
+<img alt="advgetopt" title="CMake Module Extensions to Build Snap! C++."
+src="https://snapwebsites.org/sites/snapwebsites.org/files/images/dependencies.svg"/>
+</p>
+
+
+
 # Bugs
 
 Submit bug reports and patches on
