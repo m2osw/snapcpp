@@ -39,6 +39,12 @@ case $MODULE in
 "snapcmakemodules")
     cd cmake
     ;;
+"libqtserialization"|"libQtSerialization")
+    # Necessary because of the capitals
+    cd contrib/libQtSerialization
+    MODULE=libqtserialization
+    TMP=../../tmp
+    ;;
 *)
     cd contrib/$MODULE
     TMP=../../tmp
