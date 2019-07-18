@@ -62,7 +62,7 @@ project( snapwebsites_contrib )
 #   libQtSerialization: snapcmakemodules
 #   libtld: snapcmakemodules
 #   libuv1-snap: <null>
-#   log4cplus: snapcmakemodules
+#   log4cplus12: snapcmakemodules
 #   snapwebsites: (all the others, always upload last)
 #   zipios: <null>
 #
@@ -171,7 +171,7 @@ ConfigureMakeProject(
 # TODO: make the -std=c++14 a variable in our SnapBuild use it here
 ConfigureMakeProject(
     PROJECT_NAME
-        log4cplus
+        log4cplus12
     CONFIG_ARGS
         -DCMAKE_CXX_FLAGS=-std=c++14
         -DLOG4CPLUS_BUILD_TESTING=OFF
