@@ -48,6 +48,20 @@ apt-get install \
 
 if test "$1" = "--optional"
 then
+    if ! test -x /usr/bin/X
+    then
+        echo
+        echo "WARNING:"
+        echo "  Installing the optional dependencies will force an installation"
+        echo "  if the X server (because of graphviz)"
+        echo "  Are you sure you want to proceed? yes/[no] \c"
+        read answer
+        if test answer != "yes"
+        then
+            echo "warning: optional packages not installed."
+            exit 1
+        fi
+    fi
     apt-get install \
         doxygen \
         graphviz \
