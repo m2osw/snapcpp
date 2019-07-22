@@ -22,6 +22,7 @@ apt-get install \
     gcc \
     g++ \
     libboost-all-dev \
+    libicu-dev \
     libmagic-dev \
     libmagick++-dev \
     libncurses-dev \
@@ -39,7 +40,6 @@ apt-get install \
     mysql-server \
     qt5-default \
     qtscript5-dev \
-    libreadline-dev \
     uuid-dev \
     zip \
     zlib1g-dev
@@ -67,7 +67,6 @@ then
         graphviz \
         lcov \
         libgvpr2 \
-        libicu-dev \
         qtxmlpatterns5-dev-tools
 
     if apt-cache show libqxcppunit-dev >/dev/null
