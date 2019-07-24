@@ -226,6 +226,13 @@ cd snapcpp
 git submodule update --init --recursive
 
 
+# To add a new submodule, simple use the add command with the URL of the
+# submodule; the URL can be found in .git/config file of the submodule
+# project directory.
+#
+git submodule add git@github.com:m2osw/snaplogger.git
+
+
 # When checking the status of a parent module you may see the following
 # message:
 #
