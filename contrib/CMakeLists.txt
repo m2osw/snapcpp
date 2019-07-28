@@ -1,7 +1,4 @@
 #
-# File:
-#      CMakeLists.txt
-#
 # Description:
 #      Definitions to create the build environment with cmake
 #
@@ -192,6 +189,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         snapdev
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        snaplogger
     COMPONENT
         contrib
 )
