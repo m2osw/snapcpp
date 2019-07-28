@@ -55,6 +55,3 @@
 [submodule "contrib/snapdev"]
 	path = contrib/snapdev
 	url = git@github.com:m2osw/snapdev.git
-[submodule "contrib/snaplogger"]
-	path = contrib/snaplogger
-	url = git@github.com:m2osw/snaplogger.git
