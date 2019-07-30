@@ -36,7 +36,8 @@ nothing to commit, working directory clean
 
 
 # Check out a copy from the repository
-git clone git://git.code.sf.net/p/snapcpp/code snapcpp
+#git clone git://git.code.sf.net/p/snapcpp/code snapcpp -- very old, not up to date
+git clone --recursive git@github.com:m2osw/snapcpp
 
 # check what you've changed (verify that you want to commit all of those)
 git diff ["<filename>"]
@@ -216,7 +217,7 @@ git push origin master
 #          load properly; the https://... method won't work with sub-
 #          modules at this time
 #
-git clone --recursive git@github.com/m2osw/snapcpp
+git clone --recursive git@github.com:m2osw/snapcpp
 
 
 # If you already cloned the top module (snapcpp) then you can clone all
