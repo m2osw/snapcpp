@@ -481,7 +481,7 @@ the project tha we are managing inside the Snap! C++ environment.
 
 <p align="center">
 <img alt="advgetopt" title="CMake Module Extensions to Build Snap! C++."
-src="https://snapwebsites.org/sites/snapwebsites.org/files/images/dependencies.svg"/>
+src="https://snapwebsites.org/sites/snapwebsites.org/files/images/clean-dependencies.svg"/>
 </p>
 
 

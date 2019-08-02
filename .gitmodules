@@ -58,3 +58,6 @@
 [submodule "contrib/snaplogger"]
 	path = contrib/snaplogger
 	url = git@github.com:m2osw/snaplogger.git
+[submodule "contrib/cppthread"]
+	path = contrib/cppthread
+	url = git@github.com:m2osw/cppthread.git
