@@ -94,6 +94,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        cppthread
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         csspp
     COMPONENT
         contrib
