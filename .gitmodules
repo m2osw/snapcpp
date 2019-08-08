@@ -61,3 +61,6 @@
 [submodule "contrib/cppthread"]
 	path = contrib/cppthread
 	url = git@github.com:m2osw/cppthread.git
+[submodule "contrib/eventdispatcher"]
+	path = contrib/eventdispatcher
+	url = git@github.com:m2osw/eventdispatcher.git
