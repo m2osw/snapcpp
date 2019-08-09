@@ -227,9 +227,18 @@ cd snapcpp
 git submodule update --init --recursive
 
 
+# When new submodules where added, the --init --recursive is not enough
+# to checkout the new submodules, the one way I found so far that works
+# is to specify which submodule to initialize:
+#
+cd snapcpp/contrib
+git submodule update --init snapdev
+
+
 # To add a new submodule, simple use the add command with the URL of the
 # submodule; the URL can be found in .git/config file of the submodule
-# project directory.
+# project directory. You want to create a project with the submodule FIRST.
+# (i.e. git init, git add, git commit, git remote add origin ..., git push.)
 #
 git submodule add git@github.com:m2osw/snaplogger.git
 
@@ -242,6 +251,7 @@ git submodule add git@github.com:m2osw/snaplogger.git
 #
 # This means you need to commit data in that submodule and then commit
 # that commit in the parent.
+#
 cd snapwebsites
 git commit .
 git push origin master
