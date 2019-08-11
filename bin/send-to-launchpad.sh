@@ -36,8 +36,9 @@ case $MODULE in
 "snapwebsites")
     cd snapwebsites
     ;;
-"snapcmakemodules")
+"cmake"|"snapcmakemodules")
     cd cmake
+    MODULE=snapcmakemodules
     ;;
 "libqtserialization"|"libQtSerialization")
     # Necessary because of the capitals
