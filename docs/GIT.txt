@@ -207,6 +207,15 @@ git push origin master
 # # #
 # # #	modified:   snapwebsites
 
+# Try a:
+git rebase --continue
+
+# if the error presists (i.e. in most cases because of an empty patch)
+# Then do:
+git rebase --skip
+
+# That should move you back to the branch you were working on. Then do:
+git push origin master
 
 
 
