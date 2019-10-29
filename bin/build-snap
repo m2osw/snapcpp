@@ -123,7 +123,7 @@ do
 		shift
 		;;
 	*)
-		echo "error: unknown command line option"
+		echo "error: unknown command line option \"$1\""
 		exit 1;
 		;;
 	esac
