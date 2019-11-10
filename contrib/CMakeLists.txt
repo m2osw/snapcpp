@@ -48,7 +48,7 @@ project( snapwebsites_contrib )
 #
 #   advgetopt: libexcept
 #   as2js: advgetopt
-#   cassandra-cpp-driver-snap: libuv-snap
+#   cassandra-cpp-driver-snap: libuv1-snap
 #   snapcmakemodules: <null>
 #   csspp: advgetopt
 #   iplock: advgetopt libaddr
@@ -175,6 +175,7 @@ ConfigureMakeProject(
         libuv1-snap
     CONFIG_ARGS
         -DCMAKE_CXX_FLAGS=-std=c++14
+        -DLIBUV_BUILD_TESTS=OFF
     COMPONENT
         contrib
 )
