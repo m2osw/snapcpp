@@ -44,6 +44,17 @@ apt-get install \
     zip \
     zlib1g-dev
 
+# Build
+
+if test "$1" = "--build"
+then
+    sudo apt-get install \
+        pbuilder \
+        reprepro
+
+    shift
+fi
+
 # Optional:
 
 if test "$1" = "--optional"

@@ -64,7 +64,9 @@ then
     exit 1
 fi
 
-debuild -S -sa
+debuild -S -d -sa
+
+SOURCE_DIR=`pwd`
 
 # To send the source to Launchpad, we need to be at the same level as those
 # files
@@ -75,5 +77,7 @@ dput ppa:snapcpp/ppa ${MODULE}_${VERSION}_source.changes
 # Get rid of those files from our source tree
 mkdir -p $TMP/sources
 mv ${MODULE}_${VERSION}* $TMP/sources/.
+
+rm -f ${SOURCE_DIR}/debian/files
 
 # vim: ts=4 sw=4 et
