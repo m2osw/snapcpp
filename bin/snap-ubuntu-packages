@@ -73,7 +73,12 @@ then
             exit 1
         fi
     fi
+    # cloc/lcov -- coverage
+    # doxygen/graphviz -- documentation
+    # libqxcppunit-dev -- unit testing (not working since 18.04)
+    # qtxmlpatterns5-dev-tools -- for developers to run xmlpatterns
     apt-get install \
+        cloc \
         doxygen \
         graphviz \
         lcov \
