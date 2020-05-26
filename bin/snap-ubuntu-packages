@@ -93,7 +93,7 @@ else
     echo
     echo "WARNING:"
     echo "  Not installing optional packages by default. Re-run the script"
-    echo "  the --optional command line option to force the installation"
+    echo "  with the --optional command line option to force the installation"
     echo "  of the optional packages."
     echo
 fi

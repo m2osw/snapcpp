@@ -364,6 +364,32 @@ use a slightly different URL for the purpose:
 
     git clone --recursive git@github.com:m2osw/snapcpp.git snapcpp
 
+**WARNING:** When you clone everything with `--recursive` the leaves
+(a.k.a. contribs) are going to be in "HEAD detached" mode. To fix this,
+assuming you think about it before you make changes, just checkout the
+master:
+
+    cd snapcpp/contrib/as2js
+    git checkout master
+
+If you already made changes, the simplest is to create a branch and then
+merge that in the master branch like so:
+
+    cd snapcpp/contrib/as2js
+    ...changes happen...
+    git checkout -b iforgot
+    git checkout master
+    git merge iforgot
+    git branch -d iforget
+    ...
+
+After that maneuver you can use your git as normal.
+
+**BUT WHY?** -- this happens because `git` uses the latest available in
+the master git info and not the newer version in the repository. When we
+use modules, the module that gets checked out is the one defined in the
+snapcpp git and that's not always the latest.
+
 After a while, you'll have all the built objects under a BUILD directory
 in your `snapwebsites` directory. The distribution being under the BUILD/dist
 directory (warning: executables under the distribution will be stripped

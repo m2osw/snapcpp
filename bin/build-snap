@@ -27,6 +27,9 @@ DO_BUILD=true
 # By default use one processor for your build, you can increase that
 # number here or use the --processors command line option
 #
+# We could also use `nproc`, but memory is important too, not just the
+# number of processors.
+#
 PROCESSORS=1
 
 

@@ -57,7 +57,7 @@ esac
 # (add (xenial|<another>|<another>|...) to support multiple versions.)
 #
 VERSION=`dpkg-parsechangelog -S version`
-VALID=`echo "$VERSION" | sed -e 's/[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+~xenial//'`
+VALID=`echo "$VERSION" | sed -e 's/[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+~[a-z]\+//'`
 if test -n "$VALID"
 then
     echo "error: invalid version \"$VERSION\": must be 4 numbers separated by periods."
