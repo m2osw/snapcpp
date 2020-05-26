@@ -64,9 +64,9 @@
 [submodule "contrib/eventdispatcher"]
 	path = contrib/eventdispatcher
 	url = git@github.com:m2osw/eventdispatcher.git
-[submodule "contrib/murmur3"]
-	path = contrib/murmur3
-	url = git@github.com:m2osw/murmur3.git
 [submodule "contrib/snaprfs"]
 	path = contrib/snaprfs
 	url = git@github.com:m2osw/snaprfs.git
+[submodule "contrib/libmurmur3"]
+	path = contrib/libmurmur3
+	url = git@github.com:m2osw/libmurmur3.git
