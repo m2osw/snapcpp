@@ -79,7 +79,7 @@ do
 		echo "Usage: $0 [--opts]"
 		echo
 		echo "where --opts can be one of:"
-		echo "   --email \"name <name@example.com>\"    define the debuild email"
+		echo "   --email \"name <name@example.com>\"      define the debuild email"
 		echo "   --help | -h                            print out this screen"
 		echo "   --build | --no-build                   whether to run make after the cmake commands"
 		echo "   --processors <count>                   processors used to compile"
