@@ -22,6 +22,7 @@ apt-get install \
     gcc \
     g++ \
     libboost-all-dev \
+    libhiredis-dev \
     libicu-dev \
     libmagic-dev \
     libmagick++-dev \
