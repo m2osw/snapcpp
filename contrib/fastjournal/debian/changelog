@@ -1,0 +1,5 @@
+fastjournal (1.0.0.0~bionic) bionic; urgency=high
+
+  * First version of fastjournal.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 06 Sep 2020 16:19:38 -0700
