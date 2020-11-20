@@ -70,3 +70,6 @@
 [submodule "contrib/libmurmur3"]
 	path = contrib/libmurmur3
 	url = git@github.com:m2osw/libmurmur3.git
+[submodule "contrib/fastjournal"]
+	path = contrib/fastjournal
+	url = git@github.com:m2osw/fastjournal.git
