@@ -19,6 +19,10 @@ case $1 in
 	make -j${PROCESSORS} -C ../../../BUILD/contrib/fastjournal install
 	;;
 
+"-c")
+	dev/coverage
+	;;
+
 "-t")
 	(
 		if make -j${PROCESSORS} -C ../../../BUILD/contrib/fastjournal
