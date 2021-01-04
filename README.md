@@ -323,34 +323,20 @@ try again to access your website.
 
 ## From Sources (For Advanced Developers)
 
-I suggest you first run bin/snap-ubuntu-packages to get all
-dependencies installed. Then do `cmake` + `make`.
+### Introduction
 
 The whole environment is based on `cmake` and also matches `pbuilder` so we
 can create Ubuntu packages with ease (`cmake` even makes use of the control
-files to generate the inter project dependencies!) We do not yet release
-the Ubuntu packages publicly. We have a launchpad.net environment, but
-unfortunately, it is too complicated to use when you manage a large
-project that includes many sub-projects.
+files to generate the inter project dependencies!) You can also find some
+of the compiled packages on
+[launchpad.net](https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+packages)
+Note that we do not actively maintain all the versions. We try to have valid
+long term versions compilable, at least.
 
-To compile everything you have one dependency on the C++ Cassandra Driver.
-This can be obtained from the following PPA:
+### Compiling Everything
 
-    sudo add-apt-repository ppa:tcpcloud/extra
-    sudo apt-get update
-    sudo apt-get install cassandra-cpp-driver-dev
-
-To get started quickly, create a directory, clone the source, then run
-the build-snap script. (You may want to check it out once first to make
-sure it is satisfactory to you.) By default it build snaps in Debug mode.
-
-The command `snap-ubuntu-packages` installs many packages that the build
-requires. This is done automatically in the build system using the control
-file information. For a developer, that's not automatic. So the easiest
-is to run that command. Although we try to keep it up to date, if something
-is missing, `cmake` should tell you. Worst case scenario, the compiler stops
-with an error. We recommend the --optional packages so you get full
-documentation and some extras for tests.
+Here are the few commands that generally get the code from the repository
+and compile it all:
 
     apt-get install git
     mkdir snapwebsites
@@ -359,10 +345,56 @@ documentation and some extras for tests.
     sudo snapcpp/bin/snap-ubuntu-packages --optional
     snapcpp/bin/snap-build
 
-For a clone that ends up being a read/write version, then you want to
-use a slightly different URL for the purpose:
+The first time you try to build on your system, we suggest you run the
+`bin/snap-ubuntu-packages` script to get all the dependencies installed.
+Then the `snap-build` script does most everything else.
+
+**IMPORTANT:** to run the `snap-build` script, you must be right outside of
+the snapcpp environment.
+
+### Installing the Dependencies
+
+The `snap-ubuntu-packages` command installs many packages that the build
+requires. This is done automatically in the build system using the control
+file information. For a developer, that's not automatic. So the easiest
+is to run that command. Although we try to keep it up to date, if something
+is missing, `cmake` should tell you. Worst case scenario, the compiler stops
+with an error. We recommend the `--optional` packages so you get full
+documentation and some extras for tests, however, if you do not want to
+install the X11 desktop, do NOT use that option.
+
+### Read/Write Repository (if you have write access)
+
+For a clone that ends up being a read/write version, you want to use a
+slightly different URL for the purpose:
 
     git clone --recursive git@github.com:m2osw/snapcpp.git snapcpp
+
+
+### The `BUILD` Directory
+
+(to be changed: right now we have the BUILD and RELEASE directories as two
+separate folders; at some point we are going to have one BUILD and within
+that directory a Debug & a Release sub-directory).
+
+After a while, you'll have all the built objects under a BUILD directory
+in your `snapwebsites` directory. The distribution being under the BUILD/dist
+directory (warning: executables under the distribution will be stripped
+from their `RPATH` which means you cannot run them without some magic;
+namely changing your `PATH` or `LD_LIBRARY_PATH` environment variables).
+
+We support a few variables, although in most cases you will not have to
+setup anything to get started. You can find the main variables in our
+`bin/build-snap` script which you can use to create a developer environment.
+Here is an example of what you can do to generate the build environment.
+The build type can either be Debug or Release.
+
+    cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DSNAP_COMMON_DIR:PATH="`pwd`/BUILD/dist/share/snapwebsites" \
+        ..
+
+### 'HEAD Detached' Message
 
 **WARNING:** When you clone everything with `--recursive` the leaves
 (a.k.a. contribs) are going to be in "HEAD detached" mode. To fix this,
@@ -390,40 +422,37 @@ the master git info and not the newer version in the repository. When we
 use modules, the module that gets checked out is the one defined in the
 snapcpp git and that's not always the latest.
 
-After a while, you'll have all the built objects under a BUILD directory
-in your `snapwebsites` directory. The distribution being under the BUILD/dist
-directory (warning: executables under the distribution will be stripped
-from their `RPATH` which means you cannot run them without some magic;
-namely changing your `PATH` and `LD_LIBRARY_PATH`)
+### C++ Cassandra Driver
 
-We support a few variables, although in most cases you will not have to
-setup anything to get started. You can find the main variables in our
-bin/build-snap script which you can use to create a developer environment.
-There is an example of what you can do to generate the build environment.
-The build type can either be Debug or Release.
+To compile everything in older version, you had one more external dependency
+which was the C++ Cassandra Driver.
 
-    cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DSNAP_COMMON_DIR:PATH="`pwd`/BUILD/dist/share/snapwebsites" \
-        ..
+You can obtain the precompiled for Ubuntu 16.04 code with the following PPA:
 
+    sudo add-apt-repository ppa:tcpcloud/extra
+    sudo apt-get update
+    sudo apt-get install cassandra-cpp-driver-dev
+
+Newer version make sue of the driver inside the `snapcpp/contrib` folder
+(i.e. we compile our own version).
 
 ### Building Launchpad Packages
 
 To rebuild all the packages on Launchpad, we have all the necessary scripts
-in our makefiles. Once you ran cmake successfully, say under a directory
-named BUILD, then you can run the following command:
+in our makefiles. Once you ran `cmake` successfully, say under a directory
+named `BUILD`, then you can run the following command:
 
     make -C BUILD dput
 
 This will prepare all the source packages and upload them to the Launchpad
 repository. The files are not going to be uploaded if their version did not
-change. To change the version of a project, edit its changelog file and add
-an entry at the beginning of the file. In most cases this is about what
-changed in your last commit(s). If you did not really change anything but
-still need a rebuild (i.e. a dependency changed but the PPA was not smart
-enough to rebuild another package.) then increase the 4th number and put
-a comment about the fact this is just to kickstart a build of that project.
+change. To change the version of a project, edit its `debian/changelog` file
+and add an entry at the beginning of the file. In most cases, this is about
+what changed in your last commit(s). If you did not really change anything
+but still need a rebuild (i.e. a dependency changed but the PPA was not
+smart enough to rebuild another package), then increase the 4th number and
+put a comment about the fact this is just to kickstart a build of that
+project.
 
 
 ### Making sure packages will build on Launchpad
@@ -483,7 +512,7 @@ info with time. It currently takes 1h30 to rebuild everything as packages.
     # Prepare source packages
     make debuild
 
-    # Create packges
+    # Create packages
     make pbuilder
 
 
@@ -503,7 +532,7 @@ means it will be prohibitive to use under earlier versions of MS-Windows
 # Dependency Tree
 
 This tree changes from time to time, but it gives you an idea of all
-the project tha we are managing inside the Snap! C++ environment.
+the projects that we are managing inside the Snap! C++ environment.
 
 <p align="center">
 <img alt="advgetopt" title="CMake Module Extensions to Build Snap! C++."
