@@ -13,9 +13,18 @@
 # yet, the correct way is to install libprocps-dev instead (especially since
 # 16.10 where libprocps6-dev does not exist)
 
+OS_VERSION=`lsb_release -r | cut -f2`
+VERSIONx100=`echo "$OS_VERSION * 100 / 1" | bc`
+echo "Check version $OS_VERSION -- $VERSIONx100"
+if test "$VERSIONx100" -le 1804
+then
+    extra_1604_1804=closure-linter
+else
+    extra_2004_plus=closure-compiler
+fi
+
 apt-get install \
     catch \
-    closure-linter \
     cmake \
     dh-systemd \
     dpkg-dev \
@@ -43,13 +52,15 @@ apt-get install \
     qtscript5-dev \
     uuid-dev \
     zip \
-    zlib1g-dev
+    zlib1g-dev \
+    $extra_1604_1804 \
+    $extra_2004_plus
 
 # Build
 
 if test "$1" = "--build"
 then
-    sudo apt-get install \
+    apt-get install \
         pbuilder \
         reprepro
 
