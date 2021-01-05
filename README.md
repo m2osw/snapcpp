@@ -352,6 +352,67 @@ Then the `snap-build` script does most everything else.
 **IMPORTANT:** to run the `snap-build` script, you must be right outside of
 the snapcpp environment.
 
+### `git` Fails with Permission Errors
+
+We have setup our sub-modules to use SSH. It's much more practical for us,
+but that means you need to have a key setup with github for the cloning
+to complete 100%. Without a key, you'll get errors for all the submodules.
+
+To fix that issue, you have a few solutions:
+
+1. Create a Key
+
+    See the [github SSH key documentation](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/connecting-to-github-with-ssh)
+    for information on how to do that.
+
+    This is probably your best bet because many project are likely to do it
+    the same as us. It will also allow you to fork and offer patches (if
+    you're able to do so).
+
+2. Use a Redirection
+
+    This can be tricky long term. That is, a redirect is likely to get in
+    your way. You may want to look into getting a key instead. Now, if you
+    remember to remove the redirection once done, you should be fine. As far
+    as I know, once the clone is done, you won't need the redirect anymore.
+
+    To add a redirect, edit your `~/.gitconfig` file and add this rule at
+    the end:
+
+        [url "https://github.com/"]
+           insteadOf = ssh://git@github.com/
+
+    This tells `git` to use `https://...` instead of `ssh://...`.
+
+3. Edit the `.git/config` File
+
+    We do not recommend this solution, but it's possible to edit the
+    configuration file and edit the URLs there too. Do the clone of
+    the `snapcpp` without the `--recursive` command line option. Then
+    edit the `.git/config` file:
+
+        # Change the
+	url = git@github.com:m2osw/<project>.git
+
+	# To:
+	url = https://github.com/m2osw/<project>.git
+
+    Then you should be able to get the `submodules` with a command such
+    as the following (not tested):
+
+        git submodule foreach git pull origin master
+
+    You may instead need the following (again, not tested):
+
+        git submodule update --recursive
+	# or
+	git submodule update --init --recursive
+
+    The edit can be problematic long term to maintain the project source
+    tree, but if you just want to checkout the code and compile a given
+    version, that's probably enough for you.
+
+
 ### Installing the Dependencies
 
 The `snap-ubuntu-packages` command installs many packages that the build
