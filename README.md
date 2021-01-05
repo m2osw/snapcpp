@@ -391,9 +391,9 @@ To fix that issue, you have a few solutions:
     the `snapcpp` without the `--recursive` command line option. Then
     edit the `.git/config` file:
 
-        # Change the
+        # Change:
 	url = git@github.com:m2osw/<project>.git
-
+        
 	# To:
 	url = https://github.com/m2osw/<project>.git
 
