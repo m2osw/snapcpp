@@ -14,9 +14,8 @@
 # 16.10 where libprocps6-dev does not exist)
 
 OS_VERSION=`lsb_release -r | cut -f2`
-VERSIONx100=`echo "$OS_VERSION * 100 / 1" | bc`
-echo "Check version $OS_VERSION -- $VERSIONx100"
-if test "$VERSIONx100" -le 1804
+echo "Build for Ubuntu v${OS_VERSION}"
+if dpkg --compare-version "${OS_VERSION}" "le" "18.04"
 then
     extra_1604_1804=closure-linter
 else
