@@ -392,10 +392,10 @@ To fix that issue, you have a few solutions:
     edit the `.git/config` file:
 
         # Change:
-	url = git@github.com:m2osw/<project>.git
+        url = git@github.com:m2osw/<project>.git
         
-	# To:
-	url = https://github.com/m2osw/<project>.git
+        # To:
+        url = https://github.com/m2osw/<project>.git
 
     Then you should be able to get the `submodules` with a command such
     as the following (not tested):
@@ -405,8 +405,8 @@ To fix that issue, you have a few solutions:
     You may instead need the following (again, not tested):
 
         git submodule update --recursive
-	# or
-	git submodule update --init --recursive
+        # or
+        git submodule update --init --recursive
 
     The edit can be problematic long term to maintain the project source
     tree, but if you just want to checkout the code and compile a given
