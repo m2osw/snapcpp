@@ -608,4 +608,6 @@ Submit bug reports and patches on
 [github](https://github.com/m2osw/snapcpp/issues).
 
 
+vim: ts=4 sw=4 et
+
 _This file is part of the [snapcpp project](https://snapwebsites.org/)._
