@@ -39,11 +39,13 @@ pull() {
 	do
 		if test -d contrib/$submodule
 		then
+			echo "Retrieve contrib/$submodule ($2)"
 			(
 				cd contrib/$submodule
 				git pull origin $2
 			)
 		else
+			echo "Retrieve $submodule ($2)"
 			(
 				cd $submodule
 				git pull origin $2
@@ -52,6 +54,6 @@ pull() {
 	done
 }
 
-pull $SUBMODULE_MASTER master
-pull $SUBMODULE_MAIN main
+pull "$SUBMODULE_MASTER" master
+pull "$SUBMODULE_MAIN" main
 
