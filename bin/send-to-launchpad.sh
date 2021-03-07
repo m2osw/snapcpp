@@ -97,7 +97,10 @@ restore_files() {
     # Restore the files we just changed so it doesn't look like we need a new
     # commit and that a different distro is selected
     #
-    git checkout ${SOURCE_DIR}/debian/changelog ${SOURCE_DIR}/debian/control
+    (
+        cd ${SOURCE_DIR}/debian
+        git checkout changelog control
+    )
 }
 
 for distro in ${DISTRIBUTIONS}
