@@ -39,20 +39,29 @@ project(snapwebsites_contrib)
 # Note 1: <null> makes it explicit that there are no dependencies.
 # Note 2: these dependencies are defined in the debian/control files.
 #
-#   advgetopt: libexcept
+#   advgetopt: cppthread libutf8
 #   as2js: advgetopt
 #   cassandra-cpp-driver-snap: libuv1-snap
-#   snapcmakemodules: <null>
+#   cppthread: snapdev
 #   csspp: advgetopt
-#   iplock: advgetopt libaddr
-#   libaddr: libexcept
+#   eventdispatcher: libaddr snaplogger
+#   fastjournal: eventdispatcher
+#   ftmesh: snapdev libutf8
+#   iplock: libaddr
+#   libaddr: advgetopt
 #   libcassvalue: libexcept
 #   libcasswrapper: cassandra-cpp-driver-snap as2js libcassvalue
 #   libexcept: snapcmakemodules
-#   libQtSerialization: snapcmakemodules
+#   libQtSerialization: snapdev
 #   libtld: snapcmakemodules
+#   libutf8: libexcept snapcatch2
 #   libuv1-snap: <null>
 #   log4cplus12: snapcmakemodules
+#   snapcatch2: snapcmakemodules
+#   snapcmakemodules: <null>
+#   snapdev: libexcept snapcatch2
+#   snaplogger: advgetopt
+#   snaprfs: ...
 #   snapwebsites: (all the others, always upload last)
 #   zipios: <null>
 #
@@ -95,6 +104,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         csspp
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        ftmesh
     COMPONENT
         contrib
 )
