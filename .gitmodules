@@ -73,3 +73,6 @@
 [submodule "contrib/fastjournal"]
 	path = contrib/fastjournal
 	url = git@github.com:m2osw/fastjournal.git
+[submodule "contrib/ftmesh"]
+	path = contrib/ftmesh
+	url = git@github.com:m2osw/ftmesh.git
