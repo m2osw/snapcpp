@@ -132,6 +132,8 @@ do
 	esac
 done
 
+echo "info: Use ${PROCESSORS} to compile Snap! C++"
+
 if test -n "$DEBUILD_EMAIL"
 then
 	DEBUILD_EMAIL_VAR="-DDEBUILD_EMAIL=$DEBUILD_EMAIL"
