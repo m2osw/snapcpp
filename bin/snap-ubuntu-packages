@@ -15,7 +15,7 @@
 
 OS_VERSION=`lsb_release -r | cut -f2`
 echo "Build for Ubuntu v${OS_VERSION}"
-if dpkg --compare-version "${OS_VERSION}" "le" "18.04"
+if dpkg --compare-versions "${OS_VERSION}" "le" "18.04"
 then
     extra_1604_1804=closure-linter
 else
