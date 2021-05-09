@@ -27,6 +27,7 @@ apt-get install \
     cmake \
     dh-systemd \
     dpkg-dev \
+    freeglut3-dev \
     gcc \
     g++ \
     libboost-all-dev \
