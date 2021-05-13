@@ -14,18 +14,24 @@
 # 16.10 where libprocps6-dev does not exist)
 
 OS_VERSION=`lsb_release -r | cut -f2`
-echo "Build for Ubuntu v${OS_VERSION}"
+echo "--- Install for Ubuntu v${OS_VERSION}"
 if dpkg --compare-versions "${OS_VERSION}" "le" "18.04"
 then
-    extra_1604_1804=closure-linter
+    extra_1604_1804="closure-linter"
 else
-    extra_2004_plus=closure-compiler
+    extra_2004_plus="closure-compiler"
+fi
+if dpkg --compare-versions "${OS_VERSION}" "lt" "21.04"
+then
+    extra_to_2004="
+        dh-systemd
+        qt5-default"
 fi
 
+echo "--- Install generic packages (mandatory)"
 apt-get install \
     catch \
     cmake \
-    dh-systemd \
     dpkg-dev \
     freeglut3-dev \
     gcc \
@@ -48,18 +54,19 @@ apt-get install \
     libxml2-utils \
     libyaml-cpp-dev \
     mysql-server \
-    qt5-default \
     qtscript5-dev \
     uuid-dev \
     zip \
     zlib1g-dev \
     $extra_1604_1804 \
+    $extra_to_2004 \
     $extra_2004_plus
 
 # Build
 
 if test "$1" = "--build"
 then
+    echo "--- Install packages to build packages"
     apt-get install \
         pbuilder \
         reprepro
@@ -89,6 +96,7 @@ then
     # doxygen/graphviz -- documentation
     # libqxcppunit-dev -- unit testing (not working since 18.04)
     # qtxmlpatterns5-dev-tools -- for developers to run xmlpatterns
+    echo "--- Install optional packages"
     apt-get install \
         cloc \
         doxygen \
@@ -97,8 +105,9 @@ then
         libgvpr2 \
         qtxmlpatterns5-dev-tools
 
-    if apt-cache show libqxcppunit-dev >/dev/null
+    if apt-cache show libqxcppunit-dev >/dev/null 2>&1
     then
+        echo "--- Install old libqxcppunit"
         apt-get install libqxcppunit-dev
     fi
 else
