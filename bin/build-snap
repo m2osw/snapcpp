@@ -132,7 +132,7 @@ do
 	esac
 done
 
-echo "info: Use ${PROCESSORS} to compile Snap! C++"
+echo "info: Use ${PROCESSORS} processors to compile Snap! C++"
 
 if test -n "$DEBUILD_EMAIL"
 then
