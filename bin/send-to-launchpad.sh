@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-DISTRIBUTIONS="xenial bionic focal"
+DISTRIBUTIONS="hh xenial bionic focal"
 
 DIR=`pwd`
 BASENAME=`basename $DIR`
