@@ -4,7 +4,7 @@ private
 tmp
 tags
 *.user
-*.swp
+*.sw?
 *.log
 *.out
 *.dsc
