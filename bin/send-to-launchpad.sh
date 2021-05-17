@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-DISTRIBUTIONS="hh xenial bionic focal"
+DISTRIBUTIONS="xenial bionic focal hirsute"
 
 DIR=`pwd`
 BASENAME=`basename $DIR`
@@ -12,7 +12,7 @@ fi
 if test "$1" = "-h" -o "$1" = "--help"
 then
     echo
-    echo "Usage: $0 [project-name] [signature-email]"
+    echo "Usage: $0 [--distros \"<name> <name> ...\"] [project-name] [signature-email]"
     echo
     echo "  Where project-name defaults to \"snapwebsites\""
     echo "  and it can be set to any one of our contrib as well"
@@ -22,6 +22,13 @@ then
     ls contrib/ | tr '[:upper:]' '[:lower:]' | grep -v cmakelists.txt | sed -e '$a\ \ snapcmakemodules' -e '$a\ \ snapwebsites' -e 's/^/  /' | sort
     echo
     exit 1;
+fi
+
+if test "$1" = "--distros"
+then
+    shift
+    DISTRIBUTIONS="$1"
+    shift
 fi
 
 if test -n "$1"
