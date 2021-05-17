@@ -62,6 +62,13 @@ add_subdirectory( contrib      )
 
 ConfigureMakeProject(
     PROJECT_NAME
+        snapbuilder
+    COMPONENT
+        build
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         snapwebsites
     COMPONENT
         main

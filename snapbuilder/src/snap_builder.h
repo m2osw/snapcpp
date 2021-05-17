@@ -1,0 +1,109 @@
+// Copyright (c) 2021  Made to Order Software Corp.  All Rights Reserved
+//
+// https://snapwebsites.org/project/snap-builder
+// contact@m2osw.com
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#pragma once
+
+// self
+//
+#include    "ui_snap_builder-MainWindow.h"
+#include    "project.h"
+
+
+// eventdispatcher lib
+//
+#include    <eventdispatcher/communicator.h>
+#include    <eventdispatcher/qt_connection.h>
+
+
+// advgetopt lib
+//
+#include    <advgetopt/advgetopt.h>
+
+
+// snapdev lib
+//
+#include    <snapdev/not_reached.h>
+
+
+// Qt includes
+//
+#include    <QCloseEvent>
+#include    <QSettings>
+
+
+
+namespace builder
+{
+
+
+
+
+
+
+// the main object, which is also a Qt window
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+class snap_builder
+    : public QMainWindow
+    , private Ui::snap_builder
+{
+private:
+    Q_OBJECT
+
+public:
+                                    snap_builder(int argc, char * argv[]);
+                                    snap_builder(snap_builder const &) = delete;
+    virtual                         ~snap_builder() override;
+
+    snap_builder &                  operator = (snap_builder const &) = delete;
+
+    void                            run();
+
+    std::string const &             get_root_path() const;
+    std::string const &             get_cache_path() const;
+    std::string const &             get_launchpad_url() const;
+    advgetopt::string_list_t const &get_release_names() const;
+
+protected:
+    virtual void                    closeEvent(QCloseEvent * event) override;
+
+private slots:
+    void                            on_refresh_list_triggered();
+    void                            on_build_release_triggered();
+    void                            on_build_debug_triggered();
+    void                            on_action_quit_triggered();
+
+private:
+    void                            read_list_of_projects();
+    void                            adjust_columns();
+
+    QSettings                       f_settings = QSettings();
+    advgetopt::getopt               f_opt;
+    ed::communicator::pointer_t     f_communicator = ed::communicator::pointer_t();
+    ed::qt_connection::pointer_t    f_qt_connection = ed::qt_connection::pointer_t();
+    std::string                     f_root_path = std::string();
+    std::string                     f_cache_path = std::string();
+    std::string                     f_launchpad_url = std::string("http://ppa.launchpad.net/snapcpp/ppa/ubuntu");
+    project::vector_t               f_projects = project::vector_t();
+    advgetopt::string_list_t        f_release_names = advgetopt::string_list_t();
+};
+//#pragma GCC diagnostic pop
+
+
+} // builder namespace
+// vim: ts=4 sw=4 et
