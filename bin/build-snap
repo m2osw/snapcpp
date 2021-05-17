@@ -4,54 +4,45 @@ set -e
 
 # Make sure the script is called from the right place
 #
-if test ! -d snapcpp
+if test ! -x bin/build-snap
 then
-	echo "error: This script must be run from the directly right outside of the snapcpp source code."
-	echo "error: i.e. the command line generally looks like: snapcpp/bin/build-snap"
-	echo "error: It also assumes that you did a clone in a directory named \"snapcpp\"."
+	echo "error: This script must be run from the snapcpp top directory"
+	echo "error: i.e. the command line generally looks like:"
+	echo "error:           bin/build-snap --processors 8 --email build@m2osw.com"
+	echo "error: (note: default parameters can be saved in ~/.build-snap.rc)"
 	exit 1;
 fi
 
 # You may change the compiler with something like this:
 # (The CMAKE_C_COMPILER and CMAKE_CXX_COMPILER will NOT work)
 #
-#export CC=gcc-4.9
-#export CXX=g++-4.9 cmake
+#export CC=gcc-10.3
+#export CXX=g++-10.3 cmake
 
 
 # Whether make is invoked at the end of the cmake process (--no-build)
 #
-DO_BUILD=true
+DO_BUILD=debug
 
 
 # By default use one processor for your build, you can increase that
 # number here or use the --processors command line option
 #
 # We could also use `nproc`, but memory is important too, not just the
-# number of processors.
+# number of processors. A full build with a large number of processors
+# requires a lot of memory (i.e. on my 64 CPU machine, there are times
+# when the process uses well over 10Gb of RAM while compiling with that
+# many processors).
 #
 PROCESSORS=1
-
-
-# By default I turn OFF the sanitize option for Debug
-# (it's always OFF for release, you have to edit the cmake Module
-# SnapCMakeModulesConfig.cmake to get -fsanitize=... options added
-# to a release build.)
-#
-# Use the --sanitize command line option of this script to turn it
-# ON. The reason for having it off by default is that it creates
-# binaries that allocate 20Tb of virtual memory. It may not look
-# like a big deal, but it quickly eats your RAM if you don't have
-# much of it.
-#
-SANITIZE_OPTIONS=OFF
 
 
 # Default come from cmake setups--these may not be up to date but it should
 #                                 give you an idea about possible values
 #
 #DEBUILD_EMAIL="Build Server <build@m2osw.com>"
-#DEBUILD_PLATFORM=xenial
+#DEBUILD_PLATFORM=hirsute
+
 
 # Source the user defined .build-snap.rc file
 # In most cases this is used to define the DEBUILD_EMAIL to your own
@@ -81,9 +72,13 @@ do
 		echo "where --opts can be one of:"
 		echo "   --email \"name <name@example.com>\"      define the debuild email"
 		echo "   --help | -h                            print out this screen"
-		echo "   --build | --no-build                   whether to run make after the cmake commands"
+		echo "   --build | --build-all | --no-build     whether to run make after the cmake commands"
 		echo "   --processors <count>                   processors used to compile"
-		echo "   --sanitize ON|OFF                      define whether to use sanitize compiler options"
+		echo
+		echo "note: default parameters can be saved in ~/.build-snap.rc"
+		echo "      for --email use DEBUILD_EMAIL=..."
+		echo "      for --build use DO_BUILD=..."
+		echo "      for --processors use PROCESSORS=..."
 		echo
 		exit 1;
 		;;
@@ -99,11 +94,15 @@ do
 		;;
 	--build)
 		shift
-		DO_BUILD=true
+		DO_BUILD=debug
+		;;
+	--build-all)
+		shift
+		DO_BUILD=all
 		;;
 	--no-build)
 		shift
-		DO_BUILD=false
+		DO_BUILD=no
 		;;
 	--processors)
 		shift
@@ -143,39 +142,115 @@ fi
 
 # Full clean up
 #
-rm -rf BUILD RELEASE /tmp/SnapFindDeps.pl.hash
+rm -rf BUILD /tmp/SnapFindDeps.pl.hash
+
+# Start working on the new BUILD folder
+#
+mkdir BUILD
+cd BUILD
 
 # Configure and generate the Release version
 #
-mkdir RELEASE
-cd RELEASE
-cmake \
-	-DCMAKE_BUILD_TYPE=Release \
-	-DMAKEFLAGS=-j$PROCESSORS \
-	-DBUILD_ONCE=OFF \
-	"$DEBUILD_EMAIL_VAR" \
-	../snapcpp
+(
+	echo
+	echo "========================== CONFIGURE RELEASE =========================="
+	echo
+	mkdir Release
+	cd Release
+	cmake \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DMAKEFLAGS=-j$PROCESSORS \
+		-DBUILD_ONCE=OFF \
+		-DSANITIZE_OPTIONS=OFF \
+		"$DEBUILD_EMAIL_VAR" \
+			../..
+)
 
 # Do not build the release version by default
 # Use something like:
-#        make -C RELEASE
+#        make -C BUILD/Release
 
 # Configure and generate the Debug version
 #
-cd ..
-mkdir BUILD
-cd BUILD
-cmake \
-	-DCMAKE_BUILD_TYPE=Debug \
-	-DMAKEFLAGS=-j$PROCESSORS \
-	-DBUILD_ONCE=OFF \
-	-DSANITIZE_OPTIONS=$SANITIZE_OPTIONS \
-	"$DEBUILD_EMAIL_VAR" \
-	../snapcpp
+(
+	echo
+	echo "========================== CONFIGURE DEBUG =========================="
+	echo
+	mkdir Debug
+	cd Debug
+	cmake \
+		-DCMAKE_BUILD_TYPE=Debug \
+		-DMAKEFLAGS=-j$PROCESSORS \
+		-DBUILD_ONCE=OFF \
+		-DSANITIZE_OPTIONS=OFF \
+		"$DEBUILD_EMAIL_VAR" \
+			../..
+)
+
+# Configure and generate the Sanitized version
+#
+(
+	echo
+	echo "========================== CONFIGURE SANITIZE =========================="
+	echo
+	mkdir Sanitize
+	cd Sanitize
+	cmake \
+		-DCMAKE_BUILD_TYPE=Debug \
+		-DMAKEFLAGS=-j$PROCESSORS \
+		-DBUILD_ONCE=OFF \
+		-DSANITIZE_OPTIONS=ON \
+		"$DEBUILD_EMAIL_VAR" \
+			../..
+)
 
 # Build the Debug version
 #
-if $DO_BUILD
-then
-	make
-fi
+case $DO_BUILD in
+"all")
+	(
+		echo
+		echo "========================== BUILD DEBUG =========================="
+		echo
+		cd Debug
+		make
+	)
+	(
+		echo
+		echo "========================== BUILD SANITIZE =========================="
+		echo
+		cd Sanitize
+		make
+	)
+	(
+		echo
+		echo "========================== BUILD RELEASE =========================="
+		echo
+		cd Release
+		make
+	)
+	;;
+
+"debug")
+	(
+		echo
+		echo "========================== BUILD DEBUG =========================="
+		echo
+		cd Debug
+		make
+	)
+	;;
+
+"no")
+	echo
+	echo "No building."
+	echo
+	;;
+
+*)
+	echo "error: unexpected value for DO_BUILD ($DO_BUILD)"
+	exit 1
+	;;
+
+esac
+
