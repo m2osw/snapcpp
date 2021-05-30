@@ -2,12 +2,15 @@
 
 DISTRIBUTIONS="xenial bionic focal hirsute"
 
-DIR=`pwd`
-BASENAME=`basename $DIR`
-if test "$BASENAME" = "snapwebsites"
-then
+while ! test -d BUILD/Debug -a -d BUILD/Release
+do
+    if test "`pwd`" = "/"
+    then
+        echo "BUILD folder not found"
+        exit 1
+    fi
     cd ..
-fi
+done
 
 if test "$1" = "-h" -o "$1" = "--help"
 then
@@ -42,7 +45,16 @@ if test -n "$2"
 then
     DEBEMAIL="$2"
 else
-    DEBEMAIL="Build Server <build@m2osw.com>"
+    if test -f ~/.build-snap.rc
+    then
+        . ~/.build-snap.rc
+    fi
+    if test -n "$DEBUILD_EMAIL"
+    then
+        DEBEMAIL="$DEBUILD_EMAIL"
+    else
+        DEBEMAIL="Build Server <build@m2osw.com>"
+    fi
 fi
 
 TMP=../tmp

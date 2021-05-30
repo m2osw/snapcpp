@@ -342,12 +342,20 @@ and compile it all:
     mkdir snapwebsites
     cd snapwebsites
     git clone --recursive https://github.com/m2osw/snapcpp.git snapcpp
+       or
+    git clone --recursive git@github.com:m2osw/snapcpp.git
     sudo snapcpp/bin/snap-ubuntu-packages --optional
     snapcpp/bin/snap-build
 
 The first time you try to build on your system, we suggest you run the
 `bin/snap-ubuntu-packages` script to get all the dependencies installed.
 Then the `snap-build` script does most everything else.
+
+**NOTE:** The `git clone` command is going to download all the contribs
+which are in separate git repositories. This causes an issue: the scheme
+will change to `git@github.com:` under your feet. So that means you need
+to have an account or do not use the recursive and manually get each
+project with `https:`.
 
 **IMPORTANT:** to run the `snap-build` script, you must be right outside of
 the snapcpp environment.
