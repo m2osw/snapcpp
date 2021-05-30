@@ -20,6 +20,7 @@
 // self
 //
 #include    "snap_builder.h"
+#include    "project.h"
 #include    "version.h"
 
 
@@ -61,6 +62,8 @@
 // C lib
 //
 #include    <stdlib.h>
+#include    <sys/stat.h>
+#include    <unistd.h>
 
 
 // last include
@@ -176,6 +179,8 @@ snap_builder::snap_builder(int argc, char * argv[])
 
     setupUi(this);
     f_table->horizontalHeader()->setStretchLastSection(true);
+    f_table->setSelectionBehavior(QTableWidget::SelectRows);
+    f_table->setSelectionMode(QTableWidget::SingleSelection);
 
     restoreGeometry(f_settings.value("geometry", saveGeometry()).toByteArray());
     restoreState(f_settings.value("state", saveState()).toByteArray());
@@ -258,7 +263,9 @@ void snap_builder::closeEvent(QCloseEvent * event)
 
 void snap_builder::read_list_of_projects()
 {
-    std::string path(f_root_path);
+    statusbar->showMessage("Reading list of projects...");
+
+    std::string path(get_root_path());
     path += "/BUILD/Debug/deps.make";
 
     std::ifstream deps;
@@ -277,6 +284,15 @@ void snap_builder::read_list_of_projects()
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
         return;
     }
+
+    std::string reselect;
+    if(f_current_project != nullptr)
+    {
+        reselect = f_current_project->get_name();
+        f_current_project.reset();
+    }
+
+    f_projects.clear();
 
     int line(1);
     std::string s;
@@ -311,29 +327,68 @@ void snap_builder::read_list_of_projects()
 
     project::sort(f_projects);
 
+    f_table->clearContents();   // restart from scratch
+
     int const count(std::count_if(
                   f_projects.begin()
                 , f_projects.end()
                 , [](project::pointer_t p) { return p->is_valid(); }));
     f_table->setRowCount(count);
 
+    QTableWidgetItem  * item = nullptr;
     int row(0);
+    int reselect_row(-1);
     for(auto const & p : f_projects)
     {
         if(p->is_valid())
         {
-            f_table->setItem(row, 0, new QTableWidgetItem(QString::fromUtf8(p->get_name().c_str())));
-            f_table->setItem(row, 1, new QTableWidgetItem(QString::fromUtf8(p->get_version().c_str())));
-            f_table->setItem(row, 2, new QTableWidgetItem("-")); // TODO
-            f_table->setItem(row, 3, new QTableWidgetItem(QString::fromUtf8(p->get_state().c_str())));
-            f_table->setItem(row, 4, new QTableWidgetItem(QString::fromUtf8(p->get_last_commit_as_string().c_str())));
-            f_table->setItem(row, 5, new QTableWidgetItem("-")); // TODO
+            project_ptr ptr({p});
+            QVariant v(QVariant::fromValue(ptr));
+
+            if(p->get_name() == reselect)
+            {
+                reselect_row = row;
+                f_current_project = p;
+            }
+
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_name().c_str()));
+            item->setData(Qt::UserRole, v);
+            f_table->setItem(row, 0, item);
+
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_version().c_str()));
+            item->setData(Qt::UserRole, v);
+            f_table->setItem(row, 1, item);
+
+            item = new QTableWidgetItem("-"); // TODO -- launchpad version
+            item->setData(Qt::UserRole, v);
+            f_table->setItem(row, 2, item);
+
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_state().c_str()));
+            item->setData(Qt::UserRole, v);
+            f_table->setItem(row, 3, item);
+
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_last_commit_as_string().c_str()));
+            item->setData(Qt::UserRole, v);
+            f_table->setItem(row, 4, item);
+
+            item = new QTableWidgetItem("-"); // TODO -- compiled date (on launchpad)
+            item->setData(Qt::UserRole, v);
+            f_table->setItem(row, 5, item);
 
             ++row;
         }
     }
 
     adjust_columns();
+
+    if(reselect_row != -1)
+    {
+        f_table->selectRow(reselect_row);
+    }
+
+    set_button_status();
+
+    statusbar->clearMessage();
 }
 
 
@@ -355,31 +410,343 @@ void snap_builder::on_refresh_list_triggered()
 
 void snap_builder::on_build_release_triggered()
 {
+    statusbar->showMessage("Build Release version of the entire Snap! C++ environment...");
+
     // TODO: make it output in a Qt window and prevent doubling the call...
     //
     std::string cmd("make -C ");
-    cmd += f_root_path;
+    cmd += get_root_path();
     cmd += "/BUILD/Release &";
-    std::cout << "command: " << cmd << "\n";
+    std::cout << "\n-----------------------------------------\ncommand: " << cmd << "\n";
     system(cmd.c_str());
+
+    statusbar->clearMessage();
 }
 
 
 void snap_builder::on_build_debug_triggered()
 {
+    statusbar->showMessage("Build Debug version of the entire Snap! C++ environment...");
+
     // TODO: make it output in a Qt window and prevent doubling the call...
     //
     std::string cmd("make -C ");
-    cmd += f_root_path;
+    cmd += get_root_path();
     cmd += "/BUILD/Debug &";
-    std::cout << "command: " << cmd << "\n";
+    std::cout << "\n-----------------------------------------\ncommand: " << cmd << "\n";
     system(cmd.c_str());
+
+    statusbar->clearMessage();
+}
+
+
+void snap_builder::on_build_sanitize_triggered()
+{
+    statusbar->showMessage("Build Sanitize version of the entire Snap! C++ environment...");
+
+    // TODO: make it output in a Qt window and prevent doubling the call...
+    //
+    std::string cmd("make -C ");
+    cmd += get_root_path();
+    cmd += "/BUILD/Sanatize &";
+    std::cout << "\n-----------------------------------------\ncommand: " << cmd << "\n";
+    system(cmd.c_str());
+
+    statusbar->clearMessage();
 }
 
 
 void snap_builder::on_action_quit_triggered()
 {
     close();
+}
+
+
+void snap_builder::on_f_table_clicked(QModelIndex const & index)
+{
+    QList<QTableWidgetItem *> items(f_table->selectedItems());
+    if(items.empty())
+    {
+        f_current_project.reset();
+    }
+    else
+    {
+        QVariant const v(index.data(Qt::UserRole));
+        f_current_project = v.value<project_ptr>().f_ptr;
+    }
+
+    set_button_status();
+}
+
+
+void snap_builder::set_button_status()
+{
+    if(f_current_project == nullptr)
+    {
+        f_current_selection->setText("No Selection");
+        build_package->setEnabled(false);
+        edit_changelog->setEnabled(false);
+        edit_control->setEnabled(false);
+        local_compile->setEnabled(false);
+        git_commit->setEnabled(false);
+        git_push->setEnabled(false);
+    }
+    else
+    {
+        // TODO: test everything necessary to properly set the status of the
+        //       buttons and not just all enabled...
+        //       (i.e. the version/state on Launchpad are important)
+
+        f_current_selection->setText(QString::fromUtf8(f_current_project->get_name().c_str()));
+
+        std::string const & state(f_current_project->get_state());
+        build_package->setEnabled(state == "ready");
+        edit_changelog->setEnabled(true);
+        edit_control->setEnabled(true);
+        local_compile->setEnabled(true);
+        git_commit->setEnabled(state == "not committed");
+        git_push->setEnabled(state == "not pushed");
+    }
+}
+
+
+std::string snap_builder::get_selection() const
+{
+    if(f_current_project == nullptr)
+    {
+        return std::string();
+    }
+
+    return f_current_project->get_name();
+}
+
+
+std::string snap_builder::get_selection_with_path() const
+{
+    std::string path(get_selection());
+    if(path.empty())
+    {
+        return path;
+    }
+
+    std::string root_path(get_root_path());
+
+    std::string const top_dir(root_path + '/' + path);
+    struct stat s;
+    if(stat(top_dir.c_str(), &s) == 0
+    && S_ISDIR(s.st_mode))
+    {
+        return top_dir;
+    }
+
+    std::string const contrib_dir(root_path + "/contrib/" + path);
+    if(stat(contrib_dir.c_str(), &s) == 0
+    && S_ISDIR(s.st_mode))
+    {
+        return contrib_dir;
+    }
+
+    QMessageBox(
+          QMessageBox::Critical
+        , "Project Directory Not Found"
+        , QString("We could not find the directory for project \"")
+            + QString::fromUtf8(path.c_str())
+            + "\""
+        , QMessageBox::Close
+        , const_cast<snap_builder *>(this)
+        , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+
+    return std::string();
+}
+
+
+void snap_builder::on_edit_changelog_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Editing changelog file...");
+
+    std::string cmd("gvim --nofork ");
+    cmd += selection;
+    cmd += "/debian/changelog";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Edit Command Failed"
+            , "Edit command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+    else
+    {
+        read_list_of_projects();
+    }
+
+    statusbar->clearMessage();
+}
+
+
+void snap_builder::on_edit_control_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Editing control file...");
+
+    std::string cmd("gvim --nofork ");
+    cmd += selection;
+    cmd += "/debian/control";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Edit Command Failed"
+            , "Edit command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+
+    statusbar->clearMessage();
+}
+
+
+void snap_builder::on_local_compile_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Running local build of Release version...");
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += "; ./mk -r -i";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Local Compile Failed"
+            , "The ./mk command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+
+    statusbar->clearMessage();
+}
+
+
+void snap_builder::on_git_commit_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += "; GIT_EDITOR=\"gvim --nofork\" git commit .";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Commit Failed"
+            , "The git command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+    else
+    {
+        read_list_of_projects();
+    }
+}
+
+
+void snap_builder::on_git_push_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += "; git push";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Commit Failed"
+            , "The git command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+    else
+    {
+        read_list_of_projects();
+    }
+}
+
+
+void snap_builder::on_build_package_clicked()
+{
+    std::string const selection(get_selection());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Send source to launchpad to build package...");
+
+    std::string cmd(get_root_path());
+    cmd += "/bin/send-to-launchpad.sh ";
+    cmd += selection;
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Start of Build Failed"
+            , "The send-to-launchpad command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+
+    statusbar->clearMessage();
 }
 
 

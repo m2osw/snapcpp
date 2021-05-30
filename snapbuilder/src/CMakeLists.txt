@@ -28,7 +28,9 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/version.h
 )
 
+
 qt5_wrap_ui(WINDOW_UI snap_builder-MainWindow.ui)
+
 
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -41,6 +43,7 @@ include_directories(
     ${Qt5Widgets_INCLUDE_DIRS}
     ${X11_INCLUDE_DIR}
 )
+
 
 add_executable(${PROJECT_NAME}
     main.cpp

@@ -86,11 +86,22 @@ private slots:
     void                            on_refresh_list_triggered();
     void                            on_build_release_triggered();
     void                            on_build_debug_triggered();
+    void                            on_build_sanitize_triggered();
     void                            on_action_quit_triggered();
+    void                            on_f_table_clicked(QModelIndex const & index);
+    void                            on_edit_changelog_clicked();
+    void                            on_edit_control_clicked();
+    void                            on_local_compile_clicked();
+    void                            on_git_commit_clicked();
+    void                            on_git_push_clicked();
+    void                            on_build_package_clicked();
 
 private:
     void                            read_list_of_projects();
     void                            adjust_columns();
+    std::string                     get_selection() const;
+    std::string                     get_selection_with_path() const;
+    void                            set_button_status();
 
     QSettings                       f_settings = QSettings();
     advgetopt::getopt               f_opt;
@@ -100,6 +111,7 @@ private:
     std::string                     f_cache_path = std::string();
     std::string                     f_launchpad_url = std::string("http://ppa.launchpad.net/snapcpp/ppa/ubuntu");
     project::vector_t               f_projects = project::vector_t();
+    project::pointer_t              f_current_project = project::pointer_t();
     advgetopt::string_list_t        f_release_names = advgetopt::string_list_t();
 };
 //#pragma GCC diagnostic pop

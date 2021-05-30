@@ -23,6 +23,11 @@
 #include    <advgetopt/utils.h>
 
 
+// Qt lib
+//
+#include    <QWidget>
+
+
 // C++ lib
 //
 #include    <memory>
@@ -35,6 +40,7 @@ namespace builder
 
 class snap_builder;
 
+
 class project
 {
 public:
@@ -46,7 +52,7 @@ public:
                                     , std::string const & name
                                     , advgetopt::string_list_t const & deps);
                                 project(project const & rhs) = delete;
-    project                     operator = (project const & rhs) = delete;
+    project &                   operator = (project const & rhs) = delete;
 
     bool                        is_valid() const;
     std::string const &         get_name() const;
@@ -82,4 +88,15 @@ private:
 
 
 } // builder namespace
+
+struct project_ptr
+{
+    builder::project::pointer_t     f_ptr = builder::project::pointer_t();
+
+private:
+    Q_GADGET
+};
+
+Q_DECLARE_METATYPE(project_ptr)
+
 // vim: ts=4 sw=4 et

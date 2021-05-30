@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1800</width>
+    <width>1887</width>
     <height>945</height>
    </rect>
   </property>
@@ -26,12 +26,14 @@
         </column>
         <column>
          <property name="text">
-          <string>Current Version</string>
+          <string>Current
+Version</string>
          </property>
         </column>
         <column>
          <property name="text">
-          <string>Launchpad Version</string>
+          <string>Launchpad
+Version</string>
          </property>
         </column>
         <column>
@@ -54,12 +56,47 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QPushButton" name="build">
+         <widget class="QLabel" name="current_selection_label">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Current Selection</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="f_current_selection">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>No Selection</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="build_package">
           <property name="enabled">
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>Build</string>
+           <string>Build Package</string>
           </property>
          </widget>
         </item>
@@ -117,7 +154,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="commit">
+         <widget class="QPushButton" name="git_commit">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -127,7 +164,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="push">
+         <widget class="QPushButton" name="git_push">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -147,7 +184,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1800</width>
+     <width>1887</width>
      <height>39</height>
     </rect>
    </property>
@@ -159,6 +196,7 @@
     <addaction name="separator"/>
     <addaction name="build_release"/>
     <addaction name="build_debug"/>
+    <addaction name="build_sanitize"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
@@ -183,6 +221,9 @@
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Refresh the list of projects.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
   </action>
   <action name="build_release">
    <property name="text">
@@ -198,6 +239,14 @@
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Build the whole Snap! C++ Debug environment (keep in mind that the launchpad builds use the Release version).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="build_sanitize">
+   <property name="text">
+    <string>Build Snap! &amp;C++ Sanatize</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Build the whole Snap! C++ Sanitize environment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
  </widget>

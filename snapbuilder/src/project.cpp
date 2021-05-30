@@ -181,7 +181,7 @@ bool project::check_state()
     {
         std::string cmd("cd ");
         cmd += f_project_path;
-        cmd += "; test \"`git rev-parse @{u}`\" != \"`git rev-parse HEAD`\"";
+        cmd += "; test \"`git rev-parse @{u}`\" = \"`git rev-parse HEAD`\"";
 
         //SNAP_LOG_INFO
         //    << "verify pushed with: "
@@ -325,7 +325,7 @@ bool project::operator < (project const & rhs) const
     auto jt(std::find(rhs.f_dependencies.begin(), rhs.f_dependencies.end(), f_name));
     if(jt != rhs.f_dependencies.end())
     {
-        return false;
+        return true;
     }
 
     // A and B do not depend on each other, sort by name

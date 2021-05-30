@@ -95,9 +95,6 @@ then
 	rm -rf ${OUTPUT}/doc/${PROJECT}-doc-${DOC_VERSION}.tar.gz
 fi
 
-LESS=false
-TEST=false
-
 if $LESS
 then
 	make -j${PROCESSORS} -C ${OUTPUT} ${TARGET} 2>&1 | less -SR
