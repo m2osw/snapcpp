@@ -90,10 +90,12 @@ private slots:
     void                            on_action_quit_triggered();
     void                            on_f_table_clicked(QModelIndex const & index);
     void                            on_edit_changelog_clicked();
+    void                            on_bump_version_clicked();
     void                            on_edit_control_clicked();
     void                            on_local_compile_clicked();
     void                            on_git_commit_clicked();
     void                            on_git_push_clicked();
+    void                            on_git_pull_clicked();
     void                            on_build_package_clicked();
 
 private:
@@ -110,6 +112,7 @@ private:
     std::string                     f_root_path = std::string();
     std::string                     f_cache_path = std::string();
     std::string                     f_launchpad_url = std::string("http://ppa.launchpad.net/snapcpp/ppa/ubuntu");
+    std::string                     f_distribution = std::string("bionic");
     project::vector_t               f_projects = project::vector_t();
     project::pointer_t              f_current_project = project::pointer_t();
     advgetopt::string_list_t        f_release_names = advgetopt::string_list_t();

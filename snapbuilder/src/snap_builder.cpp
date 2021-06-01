@@ -80,6 +80,15 @@ namespace
 const advgetopt::option g_options[] =
 {
     advgetopt::define_option(
+        advgetopt::Name("distribution")
+      , advgetopt::Flags(advgetopt::any_flags<
+            advgetopt::GETOPT_FLAG_GROUP_OPTIONS
+          , advgetopt::GETOPT_FLAG_COMMAND_LINE
+          , advgetopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE
+          , advgetopt::GETOPT_FLAG_CONFIGURATION_FILE>())
+      , advgetopt::Help("Define the name of the distribution to use when clicking the Bump Version button (and automatic rebuild of the tree).")
+    ),
+    advgetopt::define_option(
         advgetopt::Name("release-names")
       , advgetopt::Flags(advgetopt::any_flags<
             advgetopt::GETOPT_FLAG_GROUP_OPTIONS
@@ -87,6 +96,15 @@ const advgetopt::option g_options[] =
           , advgetopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE
           , advgetopt::GETOPT_FLAG_CONFIGURATION_FILE>())
       , advgetopt::Help("Select a list of releases that are being built (xenial, bionic, etc) separated by commas.")
+    ),
+    advgetopt::define_option(
+        advgetopt::Name("verify")
+      , advgetopt::Flags(advgetopt::any_flags<
+            advgetopt::GETOPT_FLAG_GROUP_OPTIONS
+          , advgetopt::GETOPT_FLAG_COMMAND_LINE
+          , advgetopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE
+          , advgetopt::GETOPT_FLAG_CONFIGURATION_FILE>())
+      , advgetopt::Help("[NOT IMPLEMENTED] Verify as much as possible that everything is as expected before running a build.")
     ),
     advgetopt::end_options()
 };
@@ -185,9 +203,14 @@ snap_builder::snap_builder(int argc, char * argv[])
     restoreGeometry(f_settings.value("geometry", saveGeometry()).toByteArray());
     restoreState(f_settings.value("state", saveState()).toByteArray());
 
+    if(f_opt.is_defined("distribution"))
+    {
+        f_distribution = f_opt.get_string("distribution");
+    }
+
     if(!f_opt.is_defined("verify"))
     {
-        // ...
+        // ... what did I really want to verify with a global flag?
     }
 
     f_cache_path = getenv("HOME");
@@ -261,6 +284,9 @@ void snap_builder::closeEvent(QCloseEvent * event)
 }
 
 
+// TODO: implement a version where we only update one project, which would make
+//       it a lot faster
+//
 void snap_builder::read_list_of_projects()
 {
     statusbar->showMessage("Reading list of projects...");
@@ -487,9 +513,11 @@ void snap_builder::set_button_status()
         build_package->setEnabled(false);
         edit_changelog->setEnabled(false);
         edit_control->setEnabled(false);
+        bump_version->setEnabled(false);
         local_compile->setEnabled(false);
         git_commit->setEnabled(false);
         git_push->setEnabled(false);
+        git_pull->setEnabled(false);
     }
     else
     {
@@ -502,10 +530,12 @@ void snap_builder::set_button_status()
         std::string const & state(f_current_project->get_state());
         build_package->setEnabled(state == "ready");
         edit_changelog->setEnabled(true);
+        bump_version->setEnabled(true);
         edit_control->setEnabled(true);
         local_compile->setEnabled(true);
         git_commit->setEnabled(state == "not committed");
         git_push->setEnabled(state == "not pushed");
+        git_pull->setEnabled(state == "ready");
     }
 }
 
@@ -595,6 +625,138 @@ void snap_builder::on_edit_changelog_clicked()
 }
 
 
+void snap_builder::on_bump_version_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Increasing build version by 1...");
+
+    std::string const version(f_current_project->get_version());
+    advgetopt::string_list_t numbers;
+    advgetopt::split_string(version, numbers, {"."});
+    switch(numbers.size())
+    {
+    case 0:
+        QMessageBox(
+              QMessageBox::Critical
+            , "Undefined Version"
+            , "The version could not be determined for this project \""
+                + QString::fromUtf8(version.c_str())
+                + "\"."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        return;
+
+    case 1:
+        numbers.push_back("0");
+#if __cplusplus >= 201700
+        [[fallthrough]];
+#endif
+    case 2:
+        numbers.push_back("0");
+#if __cplusplus >= 201700
+        [[fallthrough]];
+#endif
+    case 3:
+        numbers.push_back("1");
+        break;
+
+    default:
+        numbers[3] = std::to_string(std::stoi(numbers[3]) + 1);
+        break;
+
+    }
+
+    std::string const new_version(
+              numbers[0]
+            + '.'
+            + numbers[1]
+            + '.'
+            + numbers[2]
+            + '.'
+            + numbers[3]);
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += " && dch --newversion ";
+    cmd += new_version;
+    cmd += "~";
+    cmd += f_distribution;
+    cmd += " --urgency high --distribution ";
+    cmd += f_distribution;
+    cmd += " \"Bumped build version to rebuild on Launchpad.\"";
+    int r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Bump Version Failed"
+            , "Increasing version to \""
+                + QString::fromUtf8(new_version.c_str())
+                + "\" failed."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+    else
+    {
+        bool refresh_status(true);
+        if(f_current_project->get_state() == "ready")
+        {
+            QMessageBox::StandardButton const result(QMessageBox::question(
+                  this
+                , "Bump Version Success"
+                , "Do you want to auto-commit/push?"));
+            if(result == QMessageBox::Yes)
+            {
+                // commit
+                //
+                std::string cmd_commit("cd ");
+                cmd_commit += selection;
+                cmd_commit += " && git commit -m \"Bumped build version to rebuild on Launchpad.\" debian/changelog";
+                r = system(cmd_commit.c_str());
+                if(r != 0)
+                {
+                    QMessageBox(
+                          QMessageBox::Critical
+                        , "Commit Failed"
+                        , "The git command \""
+                            + QString::fromUtf8(cmd_commit.c_str())
+                            + "\" failed. See your console for details."
+                        , QMessageBox::Close
+                        , this
+                        , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+                }
+                else
+                {
+                    refresh_status = false;
+
+                    read_list_of_projects();
+
+                    if(f_current_project->get_state() == "not pushed")
+                    {
+                        // push
+                        //
+                        on_git_push_clicked();
+                    }
+                }
+            }
+        }
+        if(refresh_status)
+        {
+            read_list_of_projects();
+        }
+    }
+
+    statusbar->clearMessage();
+}
+
+
 void snap_builder::on_edit_control_clicked()
 {
     std::string const selection(get_selection_with_path());
@@ -638,7 +800,7 @@ void snap_builder::on_local_compile_clicked()
 
     std::string cmd("cd ");
     cmd += selection;
-    cmd += "; ./mk -r -i";
+    cmd += " && ./mk -r -i";
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
@@ -667,7 +829,7 @@ void snap_builder::on_git_commit_clicked()
 
     std::string cmd("cd ");
     cmd += selection;
-    cmd += "; GIT_EDITOR=\"gvim --nofork\" git commit .";
+    cmd += " && GIT_EDITOR=\"gvim --nofork\" git commit .";
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
@@ -698,13 +860,44 @@ void snap_builder::on_git_push_clicked()
 
     std::string cmd("cd ");
     cmd += selection;
-    cmd += "; git push";
+    cmd += " && git push";
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
         QMessageBox(
               QMessageBox::Critical
-            , "Commit Failed"
+            , "Push Failed"
+            , "The git command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+    else
+    {
+        read_list_of_projects();
+    }
+}
+
+
+void snap_builder::on_git_pull_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += " && git pull";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Pull Failed"
             , "The git command \""
                 + QString::fromUtf8(cmd.c_str())
                 + "\" failed. See your console for details."
