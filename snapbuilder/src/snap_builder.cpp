@@ -377,28 +377,46 @@ void snap_builder::read_list_of_projects()
                 f_current_project = p;
             }
 
+            QBrush background;
+
+            std::string const & state(p->get_state());
+            if(state == "not committed")
+            {
+                background = QBrush(QColor(255, 248, 240));
+            }
+            else if(state == "not pushed")
+            {
+                background = QBrush(QColor(255, 240, 230));
+            }
+
             item = new QTableWidgetItem(QString::fromUtf8(p->get_name().c_str()));
             item->setData(Qt::UserRole, v);
+            item->setBackground(background);
             f_table->setItem(row, 0, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_version().c_str()));
             item->setData(Qt::UserRole, v);
+            item->setBackground(background);
             f_table->setItem(row, 1, item);
 
             item = new QTableWidgetItem("-"); // TODO -- launchpad version
             item->setData(Qt::UserRole, v);
+            item->setBackground(background);
             f_table->setItem(row, 2, item);
 
-            item = new QTableWidgetItem(QString::fromUtf8(p->get_state().c_str()));
+            item = new QTableWidgetItem(QString::fromUtf8(state.c_str()));
             item->setData(Qt::UserRole, v);
+            item->setBackground(background);
             f_table->setItem(row, 3, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_last_commit_as_string().c_str()));
             item->setData(Qt::UserRole, v);
+            item->setBackground(background);
             f_table->setItem(row, 4, item);
 
             item = new QTableWidgetItem("-"); // TODO -- compiled date (on launchpad)
             item->setData(Qt::UserRole, v);
+            item->setBackground(background);
             f_table->setItem(row, 5, item);
 
             ++row;
