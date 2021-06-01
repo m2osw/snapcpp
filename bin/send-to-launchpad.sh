@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
-DISTRIBUTIONS="xenial bionic focal hirsute"
+# Old distributions: xenial
+DISTRIBUTIONS="bionic focal hirsute"
 
 while ! test -d BUILD/Debug -a -d BUILD/Release
 do
