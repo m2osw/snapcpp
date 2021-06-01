@@ -533,6 +533,7 @@ void snap_builder::set_button_status()
         edit_control->setEnabled(false);
         bump_version->setEnabled(false);
         local_compile->setEnabled(false);
+        run_tests->setEnabled(false);
         git_commit->setEnabled(false);
         git_push->setEnabled(false);
         git_pull->setEnabled(false);
@@ -551,6 +552,7 @@ void snap_builder::set_button_status()
         bump_version->setEnabled(true);
         edit_control->setEnabled(true);
         local_compile->setEnabled(true);
+        run_tests->setEnabled(true);
         git_commit->setEnabled(state == "not committed");
         git_push->setEnabled(state == "not pushed");
         git_pull->setEnabled(state == "ready");
@@ -825,6 +827,37 @@ void snap_builder::on_local_compile_clicked()
         QMessageBox(
               QMessageBox::Critical
             , "Local Compile Failed"
+            , "The ./mk command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+
+    statusbar->clearMessage();
+}
+
+
+void snap_builder::on_run_tests_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Running tests locally...");
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += " && ./mk -t";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Tests Failed"
             , "The ./mk command \""
                 + QString::fromUtf8(cmd.c_str())
                 + "\" failed. See your console for details."

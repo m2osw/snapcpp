@@ -93,6 +93,7 @@ private slots:
     void                            on_bump_version_clicked();
     void                            on_edit_control_clicked();
     void                            on_local_compile_clicked();
+    void                            on_run_tests_clicked();
     void                            on_git_commit_clicked();
     void                            on_git_push_clicked();
     void                            on_git_pull_clicked();

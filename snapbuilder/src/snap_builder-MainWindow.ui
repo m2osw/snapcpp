@@ -154,6 +154,16 @@ Version</string>
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="run_tests">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Run Tests</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="git_commit">
           <property name="enabled">
            <bool>false</bool>
