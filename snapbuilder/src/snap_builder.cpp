@@ -973,6 +973,8 @@ void snap_builder::on_build_package_clicked()
 
     statusbar->showMessage("Send source to launchpad to build package...");
 
+    std::cout << "\n----------------------------\nBuild package\n\n";
+
     std::string cmd(get_root_path());
     cmd += "/bin/send-to-launchpad.sh ";
     cmd += selection;
