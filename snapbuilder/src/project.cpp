@@ -52,11 +52,15 @@ project::project(
         , advgetopt::string_list_t const & deps)
     : f_snap_builder(parent)
     , f_name(name)
-    , f_dependencies(deps)
 {
     if(f_name == "snapbuilder")
     {
         return;
+    }
+
+    for(auto & d : deps)
+    {
+        add_dependency(d);
     }
 
     if(find_project())
@@ -300,7 +304,7 @@ void project::load_remote_data()
 }
 
 
-advgetopt::string_list_t project::get_dependencies() const
+project::dependencies_t project::get_dependencies() const
 {
     return f_dependencies;
 }
@@ -334,15 +338,109 @@ bool project::operator < (project const & rhs) const
 }
 
 
-void project::sort(std::vector<pointer_t> & vector)
+void project::sort(std::vector<pointer_t> & v)
 {
-    std::sort(vector.begin(), vector.end(), compare);
+    std::sort(v.begin(), v.end(), compare);
+}
+
+
+void project::add_dependency(std::string const & name)
+{
+    f_dependencies.insert(name);
 }
 
 
 bool project::compare(pointer_t a, pointer_t b)
 {
     return *a < *b;
+}
+
+
+void project::simplify(vector_t & v)
+{
+    // add all the project to a map so we can search them painlessly
+    //
+    map_t m;
+    for(auto & p : v)
+    {
+        m[p->get_name()] = p;
+    }
+
+    // first we make sure that we have all the dependencies in our
+    // f_dependencies list; as far as I know that's how I generate
+    // it so it should always be the case
+    //
+    for(auto & p : v)
+    {
+        p->add_missing_dependencies(p, m);
+
+        // reset the recursed flag to make sure we capture all dependencies
+        // (this should not be needed as far as I know; because the
+        // dependencies form a valid tree which doesn't cycle...)
+        //
+        for(auto & r : v)
+        {
+            r->f_recursed_add_dependencies = false;
+        }
+    }
+
+    // now we want to create a trimmed version of the list of dependencies
+    // which is a list with the minimum number of dependencies so that all
+    // the projects will still be built
+    //
+}
+
+
+/** \brief Function used to add all the missing dependencies to all the projects.
+ *
+ * This recursive function adds all the dependencies of the dependencies of
+ * \p p to \p p. So if \p p depends on a project m, and project m has
+ * dependency q which is not yet defined in \p p, then q gets added to
+ * \p p.
+ *
+ * This is recursive meaning that if p depends on m which depends on q, all
+ * will be checked.
+ */
+void project::add_missing_dependencies(pointer_t p, map_t & m)
+{
+    if(p->f_recursed_add_dependencies)
+    {
+        return;
+    }
+    p->f_recursed_add_dependencies = true;
+
+    for(;;)
+    {
+        dependencies_t const dependencies(p->get_dependencies());
+        for(auto const & dependency_name : dependencies)
+        {
+            auto it(m.find(dependency_name));
+            if(it == m.end())
+            {
+                SNAP_LOG_ERROR
+                    << "Project \""
+                    << p->get_name()
+                    << "\" has dependency \""
+                    << dependency_name
+                    << "\" which did not match any project name."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+            add_missing_dependencies(it->second, m);
+            dependencies_t const sub_dependencies(it->second->get_dependencies());
+            for(auto const & sub_dependency_name : sub_dependencies)
+            {
+                p->add_dependency(sub_dependency_name);
+            }
+        }
+
+        if(dependencies.size() == p->get_dependencies().size())
+        {
+            break;
+        }
+// this happens, I'd need to look closer for why & how does it work...
+//std::cerr << "--------------- found missing dependencies in \"" << p->get_name() << "\"!?\n";
+    }
 }
 
 

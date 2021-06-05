@@ -358,6 +358,7 @@ void snap_builder::read_list_of_projects()
         project::pointer_t p(std::make_shared<project>(this, name, dep_list));
         f_projects.push_back(p);
     }
+    project::simplify(f_projects);
 
     project::sort(f_projects);
 

@@ -31,6 +31,7 @@
 // C++ lib
 //
 #include    <memory>
+#include    <set>
 
 
 
@@ -46,6 +47,8 @@ class project
 public:
     typedef std::shared_ptr<project>            pointer_t;
     typedef std::vector<pointer_t>              vector_t;
+    typedef std::map<std::string, pointer_t>    map_t;
+    typedef std::set<std::string>               dependencies_t;
 
                                 project(
                                       snap_builder * parent
@@ -60,12 +63,16 @@ public:
     std::string const &         get_state() const;
     time_t                      get_last_commit() const;
     std::string                 get_last_commit_as_string() const;
-    advgetopt::string_list_t    get_dependencies() const;
+    dependencies_t              get_dependencies() const;
 
     bool                        operator < (project const & rhs) const;
-    static void                 sort(std::vector<pointer_t> & vector);
+    static void                 sort(vector_t & v);
+
+    static void                 simplify(vector_t & v);
 
 private:
+    void                        add_dependency(std::string const & name);
+    void                        add_missing_dependencies(pointer_t p, map_t & m);
     static bool                 compare(pointer_t a, pointer_t b);
 
     bool                        find_project();
@@ -82,7 +89,9 @@ private:
     std::string                 f_version = std::string();
     time_t                      f_last_commit = 0;
     bool                        f_valid = false;
-    advgetopt::string_list_t    f_dependencies = advgetopt::string_list_t();
+    bool                        f_recursed_add_dependencies = false;
+    dependencies_t              f_dependencies = dependencies_t();
+    advgetopt::string_list_t    f_trimmed_dependencies = advgetopt::string_list_t();
 };
 
 
