@@ -89,6 +89,7 @@ private slots:
     void                            on_build_sanitize_triggered();
     void                            on_action_quit_triggered();
     void                            on_f_table_clicked(QModelIndex const & index);
+    void                            on_meld_clicked();
     void                            on_edit_changelog_clicked();
     void                            on_bump_version_clicked();
     void                            on_edit_control_clicked();

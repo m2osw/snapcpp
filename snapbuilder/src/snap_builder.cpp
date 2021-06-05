@@ -162,7 +162,15 @@ snap_builder::snap_builder(int argc, char * argv[])
 {
     snaplogger::add_logger_options(f_opt);
     f_opt.finish_parsing(argc, argv);
-    snaplogger::process_logger_options(f_opt, "/etc/snapwebsites/logger");
+    if(!snaplogger::process_logger_options(
+                  f_opt
+                , "/etc/snapwebsites/logger"
+                , std::cout
+                , false))       // avoid the banner by default
+    {
+        // exit on any error
+        throw advgetopt::getopt_exit("logger options generated an error.", 0);
+    }
 
     // TODO: use an option instead?
     //
@@ -529,6 +537,7 @@ void snap_builder::set_button_status()
     {
         f_current_selection->setText("No Selection");
         build_package->setEnabled(false);
+        meld->setEnabled(false);
         edit_changelog->setEnabled(false);
         edit_control->setEnabled(false);
         bump_version->setEnabled(false);
@@ -548,6 +557,7 @@ void snap_builder::set_button_status()
 
         std::string const & state(f_current_project->get_state());
         build_package->setEnabled(state == "ready");
+        meld->setEnabled(true);
         edit_changelog->setEnabled(true);
         bump_version->setEnabled(true);
         edit_control->setEnabled(true);
@@ -607,6 +617,41 @@ std::string snap_builder::get_selection_with_path() const
         , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
 
     return std::string();
+}
+
+
+void snap_builder::on_meld_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Compare changes with meld...");
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += " && meld .";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox(
+              QMessageBox::Critical
+            , "Meld Failed"
+            , "Meld \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    }
+    else
+    {
+        read_list_of_projects();
+    }
+
+    statusbar->clearMessage();
 }
 
 

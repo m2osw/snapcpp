@@ -111,6 +111,16 @@ Version</string>
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="meld">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Meld</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="edit_changelog">
           <property name="enabled">
            <bool>false</bool>

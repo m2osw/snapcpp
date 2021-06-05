@@ -1,0 +1,10 @@
+
+* Add a file so we can know whether the tests passed.
+
+i.e. if we run `./mk -t` then we can know whether the tests pass or not.
+If not, delete the file, if it passes create the file. If the binary file
+to run the test has a timestamp more recent than the test file the
+snapbuilder creates, then the tests were not yet run against the latest
+version and we should do so before we run a Launchpad build.
+
+
