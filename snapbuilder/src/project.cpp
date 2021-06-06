@@ -32,6 +32,7 @@
 // C++ lib
 //
 #include    <algorithm>
+#include    <fstream>
 
 
 // C lib
@@ -304,9 +305,67 @@ void project::load_remote_data()
 }
 
 
+/** \brief Get all the dependencies of this project.
+ *
+ * Each project may depend on one or more other project. This list includes
+ * all the dependencies, whatever the depth.
+ *
+ * This parameter is what we read from the source `deps.make` file, although
+ * in many cases some dependencies are missing so we use our
+ * add_missing_dependencies() function to complement the list.
+ *
+ * \note
+ * The class uses a set of strings since there is no point in duplicating
+ * names. It is likely sorted in alphabetic order.
+ *
+ * \return The set of dependencies.
+ */
 project::dependencies_t project::get_dependencies() const
 {
     return f_dependencies;
+}
+
+
+/** \brief The trimmed list of dependencies.
+ *
+ * This list, contrary to the previous one, is going to be as small as
+ * possible (trimmed). It only includes direct dependencies of this
+ * project.
+ *
+ * Say that you have the following definitions in the `deps.make`:
+ *
+ *     a: b c d
+ *     b: c d
+ *     ...
+ *
+ * The `a` only needs to depend on `b` because `b` already depends on `c`
+ * and `d` so in effect when `a` depends on `b` it also depends on what
+ * `b` depends on, which are `c` and `d`.
+ *
+ * This is true in this case as well:
+ *
+ *      a: b c d
+ *      b: c
+ *      c: d
+ *      ...
+ *
+ * `a` also depends on `c` and `d` through `b`, even if the dependency on
+ * `d` is through a dependency of `b` and not a direct dependency of `b`.
+ *
+ * Note that since we have a list of all the dependencies of each project
+ * (a.k.a. `f_dependencies`), this is a rather easy to compute list. We
+ * just have to do:
+ *
+ *     a.f_trimmed_dependencies = a.f_dependencies
+ *                                      - b.f_dependencies
+ *                                      - c.f_dependencies
+ *                                      - d.f_dependencies;
+ *
+ * \return The list of trimmed dependencies.
+ */
+project::dependencies_t project::get_trimmed_dependencies() const
+{
+    return f_trimmed_dependencies;
 }
 
 
@@ -388,6 +447,61 @@ void project::simplify(vector_t & v)
     // which is a list with the minimum number of dependencies so that all
     // the projects will still be built
     //
+    for(auto & p : v)
+    {
+        if(p->f_dependencies.size() > 1)
+        {
+            auto q(p->f_dependencies.begin());
+            auto it(m.find(*q));
+            if(it == m.end())
+            {
+                SNAP_LOG_ERROR
+                    << "Project \""
+                    << p->get_name()
+                    << "\" has dependency \""
+                    << *q
+                    << "\" which did not match any project name."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+            std::set_difference(
+                      p->f_dependencies.begin()
+                    , p->f_dependencies.end()
+                    , it->second->f_dependencies.begin()
+                    , it->second->f_dependencies.end()
+                    , std::inserter(p->f_trimmed_dependencies, p->f_trimmed_dependencies.begin()));
+            for(++q; q != p->f_dependencies.end(); ++q)
+            {
+                it = m.find(*q);
+                if(it == m.end())
+                {
+                    SNAP_LOG_ERROR
+                        << "Project \""
+                        << p->get_name()
+                        << "\" has dependency \""
+                        << *q
+                        << "\" which did not match any project name."
+                        << SNAP_LOG_SEND;
+                    continue;
+                }
+                project::dependencies_t trimmed;
+                std::set_difference(
+                          p->f_trimmed_dependencies.begin()
+                        , p->f_trimmed_dependencies.end()
+                        , it->second->f_dependencies.begin()
+                        , it->second->f_dependencies.end()
+                        , std::inserter(trimmed, trimmed.begin()));
+                p->f_trimmed_dependencies = trimmed;
+            }
+        }
+        else
+        {
+            // when we have one or zero dependencies, there is no need
+            // to subtract anything, just copy
+            //
+            p->f_trimmed_dependencies = p->f_dependencies;
+        }
+    }
 }
 
 
@@ -438,12 +552,142 @@ void project::add_missing_dependencies(pointer_t p, map_t & m)
         {
             break;
         }
-// this happens, I'd need to look closer for why & how does it work...
+// this happens, I'd need to look closer for why & how...
 //std::cerr << "--------------- found missing dependencies in \"" << p->get_name() << "\"!?\n";
     }
 }
 
 
+void project::generate_svg(vector_t & v, std::string const & root_path)
+{
+    std::string const dot_filename(root_path + "/BUILD/dependencies.dot");
+    std::ofstream dot(dot_filename);
+    if(!dot)
+    {
+        SNAP_LOG_ERROR
+            << "could not open \""
+            << dot_filename
+            << "\" to create the dot script."
+            << SNAP_LOG_SEND;
+        return;
+    }
+    dot << "digraph dependencies {\n";
+    for(auto & p : v)
+    {
+        if(p->get_name() == "snapbuilder")
+        {
+            continue;
+        }
+        dependencies_t const dependencies(p->get_trimmed_dependencies());
+        if(!dependencies.empty())
+        {
+            dot << "\"" << p->get_name() << "\" [shape=box];\n";
+            for(auto const & n : dependencies)
+            {
+                dot << "\"" << p->get_name() << "\" -> \"" << n << "\";\n";
+            }
+        }
+        else
+        {
+            dot << "\"" << p->get_name() << "\" [shape=ellipse];\n";
+        }
+    }
+    dot << "}\n";
+
+    std::string const svg_filename(root_path + "/BUILD/dependencies.svg");
+
+    std::string cmd("/usr/bin/dot -Tsvg ");
+    cmd += dot_filename;
+    cmd += " > ";
+    cmd += svg_filename;
+
+    SNAP_LOG_INFO
+        << "Run dot command: `"
+        << cmd
+        << "`"
+        << SNAP_LOG_SEND;
+
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        SNAP_LOG_ERROR
+            << "command to generate SVG image failed with "
+            << r
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+//    std::ofstream svg(svg_filename);
+//    if(!svg)
+//    {
+//        SNAP_LOG_ERROR
+//            << "could not open \""
+//            << svg_filename
+//            << "\" to generate the SVG image."
+//            << SNAP_LOG_SEND;
+//        return;
+//    }
+//
+//    FILE * pipe(popen(cmd.c_str(), "r"));
+//    if(pipe == nullptr)
+//    {
+//        SNAP_LOG_ERROR
+//            << "could not pipe dot command \""
+//            << cmd
+//            << "\" to generate the SVG image."
+//            << SNAP_LOG_SEND;
+//        return;
+//    }
+//
+//    char buf[1024];
+//    for(;;)
+//    {
+//        ssize_t size(fread(buf, 1, sizeof(buf), pipe));
+//std::cerr << "pipe read " << size << " bytes...\n";
+//        if(size < 0)
+//        {
+//            pclose(pipe);
+//            SNAP_LOG_ERROR
+//                << "could not read pipe properly with command \""
+//                << cmd
+//                << "\"."
+//                << SNAP_LOG_SEND;
+//            return;
+//        }
+//        if(size == 0)
+//        {
+//            break;
+//        }
+//        svg.write(buf, size);
+//    }
+//    pclose(pipe);
+}
+
+
+void project::view_svg(vector_t & v, std::string const & root_path)
+{
+    std::string const svg_filename(root_path + "/BUILD/dependencies.svg");
+    struct stat s;
+    if(stat(svg_filename.c_str(), &s) != 0)
+    {
+        // try generating it first
+        //
+        generate_svg(v, root_path);
+    }
+
+    std::string cmd("display ");
+    cmd += svg_filename;
+    cmd += " &";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        SNAP_LOG_ERROR
+            << "command \""
+            << cmd
+            << "\" generated an error."
+            << SNAP_LOG_SEND;
+    }
+}
 
 
 } // builder namespace

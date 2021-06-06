@@ -48,7 +48,14 @@ Version</string>
         </column>
         <column>
          <property name="text">
-          <string>Compiled Date</string>
+          <string>Launchpad
+Compiled Date</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Launchpad
+Refresh</string>
          </property>
         </column>
        </widget>
@@ -228,6 +235,11 @@ Version</string>
     <addaction name="build_debug"/>
     <addaction name="build_sanitize"/>
     <addaction name="separator"/>
+    <addaction name="generate_dependency_svg"/>
+    <addaction name="view_clean_dependencies"/>
+    <addaction name="separator"/>
+    <addaction name="clear_launchpad_caches"/>
+    <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
    <addaction name="menu_File"/>
@@ -265,7 +277,7 @@ Version</string>
   </action>
   <action name="build_debug">
    <property name="text">
-    <string>Build &amp;Snap! C++ Debug</string>
+    <string>Build Snap! C++ &amp;Debug</string>
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Build the whole Snap! C++ Debug environment (keep in mind that the launchpad builds use the Release version).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -273,10 +285,25 @@ Version</string>
   </action>
   <action name="build_sanitize">
    <property name="text">
-    <string>Build Snap! &amp;C++ Sanatize</string>
+    <string>Build Snap! C++ &amp;Sanatize</string>
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Build the whole Snap! C++ Sanitize environment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="clear_launchpad_caches">
+   <property name="text">
+    <string>&amp;Clear Launchpad Caches</string>
+   </property>
+  </action>
+  <action name="generate_dependency_svg">
+   <property name="text">
+    <string>&amp;Generate Clean Dependency SVG</string>
+   </property>
+  </action>
+  <action name="view_clean_dependencies">
+   <property name="text">
+    <string>&amp;View Clean Dependency SVG</string>
    </property>
   </action>
  </widget>

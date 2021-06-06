@@ -221,6 +221,24 @@ snap_builder::snap_builder(int argc, char * argv[])
         // ... what did I really want to verify with a global flag?
     }
 
+    f_config_path = getenv("HOME");
+    f_config_path += "/.config/snapbuilder";
+
+    {
+        std::string cmd("mkdir -p ");
+        cmd += f_config_path;
+        int const r(system(cmd.c_str()));
+        if(r != 0)
+        {
+            SNAP_LOG_ERROR
+                << "could not create folder \""
+                << f_config_path
+                << "\"."
+                << SNAP_LOG_SEND;
+            throw std::runtime_error("could not create config folder");
+        }
+    }
+
     f_cache_path = getenv("HOME");
     f_cache_path += "/.cache/snapbuilder";
 
@@ -242,6 +260,8 @@ snap_builder::snap_builder(int argc, char * argv[])
     // TODO: do that after n secs. so the UI is up
     //
     read_list_of_projects();
+
+    project::generate_svg(f_projects, f_root_path);
 }
 
 
@@ -428,6 +448,18 @@ void snap_builder::read_list_of_projects()
             item->setBackground(background);
             f_table->setItem(row, 5, item);
 
+            // Manually add a "Refresh" button
+            //
+            QWidget * centered_button(new QWidget());
+            QHBoxLayout * refresh_layout(new QHBoxLayout(centered_button));
+            QPushButton * refresh_button(new QPushButton());
+            refresh_button->setText("Refresh");
+            refresh_layout->addWidget(refresh_button);
+            refresh_layout->setAlignment(Qt::AlignCenter);
+            refresh_layout->setContentsMargins(0, 0, 0, 0);
+            centered_button->setLayout(refresh_layout);
+            f_table->setCellWidget(row, 6, centered_button);
+
             ++row;
         }
     }
@@ -506,6 +538,22 @@ void snap_builder::on_build_sanitize_triggered()
     system(cmd.c_str());
 
     statusbar->clearMessage();
+}
+
+
+void snap_builder::on_generate_dependency_svg_triggered()
+{
+    statusbar->showMessage("Generating SVG of dependencies...");
+
+    project::generate_svg(f_projects, f_root_path);
+
+    statusbar->clearMessage();
+}
+
+
+void snap_builder::on_view_clean_dependencies_triggered()
+{
+    project::view_svg(f_projects, f_root_path);
 }
 
 

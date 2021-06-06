@@ -87,6 +87,8 @@ private slots:
     void                            on_build_release_triggered();
     void                            on_build_debug_triggered();
     void                            on_build_sanitize_triggered();
+    void                            on_generate_dependency_svg_triggered();
+    void                            on_view_clean_dependencies_triggered();
     void                            on_action_quit_triggered();
     void                            on_f_table_clicked(QModelIndex const & index);
     void                            on_meld_clicked();
@@ -112,6 +114,7 @@ private:
     ed::communicator::pointer_t     f_communicator = ed::communicator::pointer_t();
     ed::qt_connection::pointer_t    f_qt_connection = ed::qt_connection::pointer_t();
     std::string                     f_root_path = std::string();
+    std::string                     f_config_path = std::string();
     std::string                     f_cache_path = std::string();
     std::string                     f_launchpad_url = std::string("http://ppa.launchpad.net/snapcpp/ppa/ubuntu");
     std::string                     f_distribution = std::string("bionic");

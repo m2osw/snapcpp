@@ -64,11 +64,14 @@ public:
     time_t                      get_last_commit() const;
     std::string                 get_last_commit_as_string() const;
     dependencies_t              get_dependencies() const;
+    dependencies_t              get_trimmed_dependencies() const;
 
     bool                        operator < (project const & rhs) const;
     static void                 sort(vector_t & v);
 
     static void                 simplify(vector_t & v);
+    static void                 generate_svg(vector_t & v, std::string const & root_path);
+    static void                 view_svg(vector_t & v, std::string const & root_path);
 
 private:
     void                        add_dependency(std::string const & name);
@@ -91,7 +94,7 @@ private:
     bool                        f_valid = false;
     bool                        f_recursed_add_dependencies = false;
     dependencies_t              f_dependencies = dependencies_t();
-    advgetopt::string_list_t    f_trimmed_dependencies = advgetopt::string_list_t();
+    dependencies_t              f_trimmed_dependencies = dependencies_t();
 };
 
 
