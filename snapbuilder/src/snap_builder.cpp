@@ -208,6 +208,8 @@ snap_builder::snap_builder(int argc, char * argv[])
     f_table->setSelectionBehavior(QTableWidget::SelectRows);
     f_table->setSelectionMode(QTableWidget::SingleSelection);
 
+    setWindowIcon(QIcon(":/icons/icon.png"));
+
     restoreGeometry(f_settings.value("geometry", saveGeometry()).toByteArray());
     restoreState(f_settings.value("state", saveState()).toByteArray());
 

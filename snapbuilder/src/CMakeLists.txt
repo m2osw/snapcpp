@@ -32,6 +32,9 @@ configure_file(
 qt5_wrap_ui(WINDOW_UI snap_builder-MainWindow.ui)
 
 
+qt5_add_resources(RESOURCE_FILES resources.qrc)
+
+
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${ADVGETOPT_INCLUDE_DIRS}
@@ -48,10 +51,13 @@ include_directories(
 add_executable(${PROJECT_NAME}
     main.cpp
 
-    ${WINDOW_UI}
     project.cpp
+    resources.qrc
     snap_builder.cpp
     version.cpp
+
+    ${RESOURCE_FILES}
+    ${WINDOW_UI}
 )
 
 message("EVENTDISPATCHER_LIBRARIES=${EVENTDISPATCHER_LIBRARIES}")
