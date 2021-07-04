@@ -139,7 +139,10 @@ bool project::retrieve_version()
 
     FILE * p(popen(cmd.c_str(), "r"));
     char buf[256];
-    fgets(buf, sizeof(buf) - 1, p);
+    if(fgets(buf, sizeof(buf) - 1, p) == nullptr)
+    {
+        buf[0] = '\0';
+    }
     buf[sizeof(buf) - 1] = '\0';
     pclose(p);
     f_version = buf;
@@ -221,7 +224,10 @@ bool project::get_last_commit_timestamp()
 
     FILE * p(popen(cmd.c_str(), "r"));
     char buf[256];
-    fgets(buf, sizeof(buf) - 1, p);
+    if(fgets(buf, sizeof(buf) - 1, p) == nullptr)
+    {
+        buf[0] = '\0';
+    }
     buf[sizeof(buf) - 1] = '\0';
     pclose(p);
 

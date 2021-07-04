@@ -30,6 +30,7 @@
 
 // C++ lib
 //
+#include    <deque>
 #include    <memory>
 #include    <set>
 
@@ -47,6 +48,7 @@ class project
 public:
     typedef std::shared_ptr<project>            pointer_t;
     typedef std::vector<pointer_t>              vector_t;
+    typedef std::deque<pointer_t>               deque_t;
     typedef std::map<std::string, pointer_t>    map_t;
     typedef std::set<std::string>               dependencies_t;
 

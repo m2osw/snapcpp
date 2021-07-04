@@ -232,7 +232,7 @@ snap_builder::snap_builder(int argc, char * argv[])
         int const r(system(cmd.c_str()));
         if(r != 0)
         {
-            SNAP_LOG_ERROR
+            SNAP_LOG_FATAL
                 << "could not create folder \""
                 << f_config_path
                 << "\"."
@@ -250,7 +250,7 @@ snap_builder::snap_builder(int argc, char * argv[])
         int const r(system(cmd.c_str()));
         if(r != 0)
         {
-            SNAP_LOG_ERROR
+            SNAP_LOG_FATAL
                 << "could not create folder \""
                 << f_cache_path
                 << "\"."
@@ -505,7 +505,15 @@ void snap_builder::on_build_release_triggered()
     cmd += get_root_path();
     cmd += "/BUILD/Release &";
     std::cout << "\n-----------------------------------------\ncommand: " << cmd << "\n";
-    system(cmd.c_str());
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        SNAP_LOG_ERROR
+            << "make command failed: \""
+            << cmd
+            << "\"."
+            << SNAP_LOG_SEND;
+    }
 
     statusbar->clearMessage();
 }
@@ -521,7 +529,15 @@ void snap_builder::on_build_debug_triggered()
     cmd += get_root_path();
     cmd += "/BUILD/Debug &";
     std::cout << "\n-----------------------------------------\ncommand: " << cmd << "\n";
-    system(cmd.c_str());
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        SNAP_LOG_ERROR
+            << "make command failed: \""
+            << cmd
+            << "\"."
+            << SNAP_LOG_SEND;
+    }
 
     statusbar->clearMessage();
 }
@@ -537,7 +553,15 @@ void snap_builder::on_build_sanitize_triggered()
     cmd += get_root_path();
     cmd += "/BUILD/Sanatize &";
     std::cout << "\n-----------------------------------------\ncommand: " << cmd << "\n";
-    system(cmd.c_str());
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        SNAP_LOG_ERROR
+            << "make command failed: \""
+            << cmd
+            << "\"."
+            << SNAP_LOG_SEND;
+    }
 
     statusbar->clearMessage();
 }
