@@ -263,7 +263,7 @@ snap_builder::snap_builder(int argc, char * argv[])
     //
     read_list_of_projects();
 
-    project::generate_svg(f_projects, f_root_path);
+    on_generate_dependency_svg_triggered();
 }
 
 
@@ -450,18 +450,6 @@ void snap_builder::read_list_of_projects()
             item->setBackground(background);
             f_table->setItem(row, 5, item);
 
-            // Manually add a "Refresh" button
-            //
-            QWidget * centered_button(new QWidget());
-            QHBoxLayout * refresh_layout(new QHBoxLayout(centered_button));
-            QPushButton * refresh_button(new QPushButton());
-            refresh_button->setText("Refresh");
-            refresh_layout->addWidget(refresh_button);
-            refresh_layout->setAlignment(Qt::AlignCenter);
-            refresh_layout->setContentsMargins(0, 0, 0, 0);
-            centered_button->setLayout(refresh_layout);
-            f_table->setCellWidget(row, 6, centered_button);
-
             ++row;
         }
     }
@@ -492,6 +480,18 @@ void snap_builder::adjust_columns()
 void snap_builder::on_refresh_list_triggered()
 {
     read_list_of_projects();
+}
+
+
+void snap_builder::on_refresh_triggered()
+{
+    QMessageBox(
+          QMessageBox::Critical
+        , "Not Yet Implemented"
+        , QString("The Refresh button is not yet implemented.")
+        , QMessageBox::Close
+        , const_cast<snap_builder *>(this)
+        , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
 }
 
 
@@ -573,6 +573,11 @@ void snap_builder::on_generate_dependency_svg_triggered()
 
     project::generate_svg(f_projects, f_root_path);
 
+    // TODO: fix path once we cleared the dot tool issue
+    //
+    std::string const dot_filename(get_root_path() + "/BUILD/Debug/clean-dependencies.svg");
+    dependency_tree->load(QString::fromUtf8(dot_filename.c_str()));
+
     statusbar->clearMessage();
 }
 
@@ -594,6 +599,8 @@ void snap_builder::on_f_table_clicked(QModelIndex const & index)
     QList<QTableWidgetItem *> items(f_table->selectedItems());
     if(items.empty())
     {
+        // this should not happen, but just in case
+        //
         f_current_project.reset();
     }
     else
@@ -621,6 +628,7 @@ void snap_builder::set_button_status()
         git_commit->setEnabled(false);
         git_push->setEnabled(false);
         git_pull->setEnabled(false);
+        refresh->setEnabled(false);
     }
     else
     {
@@ -641,6 +649,7 @@ void snap_builder::set_button_status()
         git_commit->setEnabled(state == "not committed");
         git_push->setEnabled(state == "not pushed");
         git_pull->setEnabled(state == "ready");
+        refresh->setEnabled(true);
     }
 }
 

@@ -47,6 +47,8 @@ include_directories(
     ${X11_INCLUDE_DIR}
 )
 
+#find_package(DumpCMakeVariables)
+#DumpCMakeVariables(Qt.*)
 
 add_executable(${PROJECT_NAME}
     main.cpp
@@ -67,8 +69,9 @@ target_link_libraries(${PROJECT_NAME}
     ${EVENTDISPATCHER_QT_LIBRARIES}
     ${SNAPLOGGER_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
-    Qt5::Core
-    Qt5::Widgets
+    ${Qt5Core_LIBRARIES}
+    ${Qt5Svg_LIBRARIES}
+    ${Qt5Widgets_LIBRARIES}
 )
 
 install(

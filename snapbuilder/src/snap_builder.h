@@ -84,6 +84,7 @@ protected:
 
 private slots:
     void                            on_refresh_list_triggered();
+    void                            on_refresh_triggered();
     void                            on_build_release_triggered();
     void                            on_build_debug_triggered();
     void                            on_build_sanitize_triggered();
