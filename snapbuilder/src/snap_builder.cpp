@@ -20,6 +20,8 @@
 // self
 //
 #include    "snap_builder.h"
+
+#include    "about_dialog.h"
 #include    "project.h"
 #include    "version.h"
 
@@ -329,7 +331,7 @@ void snap_builder::read_list_of_projects()
     if(!deps.is_open())
     {
         // TODO: A message box will currently fail on load...
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Dependencies Not Found"
             , QString("The list of dependencies could not be read from ")
@@ -338,6 +340,7 @@ void snap_builder::read_list_of_projects()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
         return;
     }
 
@@ -483,15 +486,16 @@ void snap_builder::on_refresh_list_triggered()
 }
 
 
-void snap_builder::on_refresh_triggered()
+void snap_builder::on_refresh_clicked()
 {
-    QMessageBox(
+    QMessageBox msg(
           QMessageBox::Critical
         , "Not Yet Implemented"
         , QString("The Refresh button is not yet implemented.")
         , QMessageBox::Close
         , const_cast<snap_builder *>(this)
         , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    msg.exec();
 }
 
 
@@ -582,15 +586,16 @@ void snap_builder::on_generate_dependency_svg_triggered()
 }
 
 
-void snap_builder::on_view_clean_dependencies_triggered()
-{
-    project::view_svg(f_projects, f_root_path);
-}
-
-
 void snap_builder::on_action_quit_triggered()
 {
     close();
+}
+
+
+void snap_builder::on_about_snapbuilder_triggered()
+{
+    AboutDialog about(this);
+    about.exec();
 }
 
 
@@ -690,7 +695,7 @@ std::string snap_builder::get_selection_with_path() const
         return contrib_dir;
     }
 
-    QMessageBox(
+    QMessageBox msg(
           QMessageBox::Critical
         , "Project Directory Not Found"
         , QString("We could not find the directory for project \"")
@@ -699,6 +704,7 @@ std::string snap_builder::get_selection_with_path() const
         , QMessageBox::Close
         , const_cast<snap_builder *>(this)
         , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    msg.exec();
 
     return std::string();
 }
@@ -720,7 +726,7 @@ void snap_builder::on_meld_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Meld Failed"
             , "Meld \""
@@ -729,6 +735,7 @@ void snap_builder::on_meld_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
     else
     {
@@ -755,7 +762,7 @@ void snap_builder::on_edit_changelog_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Edit Command Failed"
             , "Edit command \""
@@ -764,6 +771,7 @@ void snap_builder::on_edit_changelog_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
     else
     {
@@ -790,15 +798,18 @@ void snap_builder::on_bump_version_clicked()
     switch(numbers.size())
     {
     case 0:
-        QMessageBox(
-              QMessageBox::Critical
-            , "Undefined Version"
-            , "The version could not be determined for this project \""
-                + QString::fromUtf8(version.c_str())
-                + "\"."
-            , QMessageBox::Close
-            , this
-            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        {
+            QMessageBox msg(
+                  QMessageBox::Critical
+                , "Undefined Version"
+                , "The version could not be determined for this project \""
+                    + QString::fromUtf8(version.c_str())
+                    + "\"."
+                , QMessageBox::Close
+                , this
+                , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+            msg.exec();
+        }
         return;
 
     case 1:
@@ -842,7 +853,7 @@ void snap_builder::on_bump_version_clicked()
     int r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Bump Version Failed"
             , "Increasing version to \""
@@ -851,6 +862,7 @@ void snap_builder::on_bump_version_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
     else
     {
@@ -871,7 +883,7 @@ void snap_builder::on_bump_version_clicked()
                 r = system(cmd_commit.c_str());
                 if(r != 0)
                 {
-                    QMessageBox(
+                    QMessageBox msg(
                           QMessageBox::Critical
                         , "Commit Failed"
                         , "The git command \""
@@ -880,6 +892,7 @@ void snap_builder::on_bump_version_clicked()
                         , QMessageBox::Close
                         , this
                         , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+                    msg.exec();
                 }
                 else
                 {
@@ -922,7 +935,7 @@ void snap_builder::on_edit_control_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Edit Command Failed"
             , "Edit command \""
@@ -931,6 +944,7 @@ void snap_builder::on_edit_control_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
 
     statusbar->clearMessage();
@@ -953,7 +967,7 @@ void snap_builder::on_local_compile_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Local Compile Failed"
             , "The ./mk command \""
@@ -962,6 +976,7 @@ void snap_builder::on_local_compile_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
 
     statusbar->clearMessage();
@@ -984,7 +999,7 @@ void snap_builder::on_run_tests_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Tests Failed"
             , "The ./mk command \""
@@ -993,6 +1008,7 @@ void snap_builder::on_run_tests_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
 
     statusbar->clearMessage();
@@ -1013,7 +1029,7 @@ void snap_builder::on_git_commit_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Commit Failed"
             , "The git command \""
@@ -1022,6 +1038,7 @@ void snap_builder::on_git_commit_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
     else
     {
@@ -1044,7 +1061,7 @@ void snap_builder::on_git_push_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Push Failed"
             , "The git command \""
@@ -1053,6 +1070,7 @@ void snap_builder::on_git_push_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
     else
     {
@@ -1075,7 +1093,7 @@ void snap_builder::on_git_pull_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Pull Failed"
             , "The git command \""
@@ -1084,6 +1102,7 @@ void snap_builder::on_git_pull_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
     else
     {
@@ -1110,7 +1129,7 @@ void snap_builder::on_build_package_clicked()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        QMessageBox(
+        QMessageBox msg(
               QMessageBox::Critical
             , "Start of Build Failed"
             , "The send-to-launchpad command \""
@@ -1119,6 +1138,7 @@ void snap_builder::on_build_package_clicked()
             , QMessageBox::Close
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
     }
 
     statusbar->clearMessage();

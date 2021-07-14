@@ -30,6 +30,7 @@ configure_file(
 
 
 qt5_wrap_ui(WINDOW_UI snap_builder-MainWindow.ui)
+qt5_wrap_ui(ABOUT_UI about_dialog.ui)
 
 
 qt5_add_resources(RESOURCE_FILES resources.qrc)
@@ -53,6 +54,7 @@ include_directories(
 add_executable(${PROJECT_NAME}
     main.cpp
 
+    about_dialog.cpp
     project.cpp
     resources.qrc
     snap_builder.cpp
@@ -60,6 +62,7 @@ add_executable(${PROJECT_NAME}
 
     ${RESOURCE_FILES}
     ${WINDOW_UI}
+    ${ABOUT_UI}
 )
 
 message("EVENTDISPATCHER_LIBRARIES=${EVENTDISPATCHER_LIBRARIES}")

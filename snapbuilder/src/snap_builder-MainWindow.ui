@@ -271,13 +271,19 @@ Compiled Date</string>
     <addaction name="build_sanitize"/>
     <addaction name="separator"/>
     <addaction name="generate_dependency_svg"/>
-    <addaction name="view_clean_dependencies"/>
     <addaction name="separator"/>
     <addaction name="clear_launchpad_caches"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="about_snapbuilder"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_quit">
@@ -339,6 +345,11 @@ Compiled Date</string>
   <action name="view_clean_dependencies">
    <property name="text">
     <string>&amp;View Clean Dependency SVG</string>
+   </property>
+  </action>
+  <action name="about_snapbuilder">
+   <property name="text">
+    <string>About Snap! Builder</string>
    </property>
   </action>
  </widget>

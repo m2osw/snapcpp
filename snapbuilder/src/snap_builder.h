@@ -84,13 +84,13 @@ protected:
 
 private slots:
     void                            on_refresh_list_triggered();
-    void                            on_refresh_triggered();
+    void                            on_refresh_clicked();
     void                            on_build_release_triggered();
     void                            on_build_debug_triggered();
     void                            on_build_sanitize_triggered();
     void                            on_generate_dependency_svg_triggered();
-    void                            on_view_clean_dependencies_triggered();
     void                            on_action_quit_triggered();
+    void                            on_about_snapbuilder_triggered();
     void                            on_f_table_clicked(QModelIndex const & index);
     void                            on_meld_clicked();
     void                            on_edit_changelog_clicked();

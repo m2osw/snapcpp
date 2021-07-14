@@ -680,6 +680,16 @@ void project::view_svg(vector_t & v, std::string const & root_path)
         //
         generate_svg(v, root_path);
     }
+    if(stat(svg_filename.c_str(), &s) != 0)
+    {
+        return;
+    }
+    if(s.st_size == 0)
+    {
+        // this currently happens...
+        std::cerr << "error: dependencies.svg file is empty?!" << std::endl;
+        return;
+    }
 
     std::string cmd("display ");
     cmd += svg_filename;
