@@ -499,6 +499,38 @@ void snap_builder::on_refresh_clicked()
 }
 
 
+void snap_builder::on_coverage_clicked()
+{
+    std::string const selection(get_selection_with_path());
+    if(selection.empty())
+    {
+        return;
+    }
+
+    statusbar->showMessage("Running coverage...");
+
+    std::string cmd("cd ");
+    cmd += selection;
+    cmd += " && ./mk -c";
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        QMessageBox msg(
+              QMessageBox::Critical
+            , "Coverage Run Failed"
+            , "The ./mk command \""
+                + QString::fromUtf8(cmd.c_str())
+                + "\" failed. See your console for details."
+            , QMessageBox::Close
+            , this
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
+    }
+
+    statusbar->clearMessage();
+}
+
+
 void snap_builder::on_build_release_triggered()
 {
     statusbar->showMessage("Build Release version of the entire Snap! C++ environment...");
@@ -634,6 +666,7 @@ void snap_builder::set_button_status()
         git_push->setEnabled(false);
         git_pull->setEnabled(false);
         refresh->setEnabled(false);
+        coverage->setEnabled(false);
     }
     else
     {
@@ -655,6 +688,7 @@ void snap_builder::set_button_status()
         git_push->setEnabled(state == "not pushed");
         git_pull->setEnabled(state == "ready");
         refresh->setEnabled(true);
+        coverage->setEnabled(true);
     }
 }
 
