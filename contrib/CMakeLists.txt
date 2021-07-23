@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2020 Made to Order Software Corp.
+# Copyright (c) 2011-2021 Made to Order Software Corp.
 #
 # http://snapwebsites.org/
 # contact@m2osw.com
