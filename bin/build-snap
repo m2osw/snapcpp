@@ -139,7 +139,7 @@ fi
 
 # Verify memory levels
 FREE_MEM=`grep MemFree: /proc/meminfo | awk '{ print int($2 / 1048576) }'`
-REQUIRED_MEM=`expr ${PROCESSORS} \* 40`
+REQUIRED_MEM=`expr ${PROCESSORS} \* 4`
 if test ${FREE_MEM} -lt ${REQUIRED_MEM}
 then
 	echo "warning: you are low on memory..."
@@ -147,7 +147,7 @@ then
 	then
 		echo "warning: since you requested a single processor, you probably don't have much chose at the moment."
 	else
-		MAX_PROCESSORS=`expr ${FREE_MEM} / 40`
+		MAX_PROCESSORS=`expr ${FREE_MEM} / 4`
 		if test ${MAX_PROCESSORS} -le 0
 		then
 			echo "warning: we suggest you try to compile with a single processor"
