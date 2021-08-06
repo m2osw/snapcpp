@@ -131,6 +131,40 @@ do
 	esac
 done
 
+if test ${PROCESSORS} -le 0
+then
+	echo "error: the number of processors must be a positive number."
+	exit 1
+fi
+
+# Verify memory levels
+FREE_MEM=`grep MemFree: /proc/meminfo | awk '{ print int($2 / 1048576) }'`
+REQUIRED_MEM=`expr ${PROCESSORS} \* 40`
+if test ${FREE_MEM} -lt ${REQUIRED_MEM}
+then
+	echo "warning: you are low on memory..."
+	if test ${PROCESSORS} -eq 1
+	then
+		echo "warning: since you requested a single processor, you probably don't have much chose at the moment."
+	else
+		MAX_PROCESSORS=`expr ${FREE_MEM} / 40`
+		if test ${MAX_PROCESSORS} -le 0
+		then
+			echo "warning: we suggest you try to compile with a single processor"
+		else
+			echo "warning: we suggest you try compiling with only ${MAX_PROCESSORS} processors"
+		fi
+	fi
+	echo -n "warning: do you want to continue with ${PROCESSORS} processors? (y/[N]) "
+	read ANSWER
+	if test "${ANSWER}" != "y" -a "${ANSWER}" != "Y"
+	then
+		echo "error: build process aborted."
+		exit 1
+	fi
+fi
+
+
 echo "info: Use ${PROCESSORS} processors to compile Snap! C++"
 
 if test -n "$DEBUILD_EMAIL"
