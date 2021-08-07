@@ -48,19 +48,6 @@ int main(int argc, char * argv[])
 {
     try
     {
-        //std::cerr << "attribute on startup: "
-        //    << (QApplication::testAttribute(Qt::AA_EnableHighDpiScaling)
-        //            ? "true" : "false")
-        //    << " and the disable is: "
-        //    << (QApplication::testAttribute(Qt::AA_DisableHighDpiScaling)
-        //            ? "true" : "false")
-        //    << "\n";
-        //QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-
-        // until the High DPI works again!?
-        char * scale = strdup("QT_SCALE_FACTOR=1.5");
-        putenv(scale);
-
         QT_REQUIRE_VERSION(argc, argv, QT_VERSION_STR)
 
         QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

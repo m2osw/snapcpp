@@ -1,4 +1,14 @@
 
+# Packages
+
+The packages on Launchpad are built and saved under:
+
+http://ppa.launchpad.net/snapcpp/ppa/ubuntu/
+
+This is a standard Debian repository. So you can first download the Packages.xz
+and then look for the file(s) you're interested in and use the URLs in there
+to download the actualy .deb files to install.
+
 # Launchpad API
 
 The projects on Launchpad are accessible via the

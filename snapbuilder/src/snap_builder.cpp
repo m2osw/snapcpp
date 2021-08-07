@@ -175,6 +175,7 @@ snap_builder::snap_builder(int argc, char * argv[])
     }
 
     // TODO: use an option instead?
+    // (also somehow this fails in gdb!?)
     //
     advgetopt::string_list_t segments;
     advgetopt::split_string(argv[0], segments, {"/"});
