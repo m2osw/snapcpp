@@ -50,11 +50,8 @@ PROCESSORS=1
 #
 if test -f ~/.build-snap.rc
 then
-	# Let you have a form of `rc` file (like .netrc) for the
-	# build-snap script
-	#
-	# You can redefine one or more of the variables defined above
-	# this if/fi block
+	# This lets you redefine one or more of the variables defined above
+	# this "if-block"
 	#
 	. ~/.build-snap.rc
 fi
@@ -71,8 +68,9 @@ do
 		echo
 		echo "where --opts can be one of:"
 		echo "   --email \"name <name@example.com>\"      define the debuild email"
+		echo "   --build | --build-all | --build-all-parallel | --build-release | --build-sanitize | --no-build"
+		echo "                                          whether to run make after the cmake commands"
 		echo "   --help | -h                            print out this screen"
-		echo "   --build | --build-all | --no-build     whether to run make after the cmake commands"
 		echo "   --processors <count>                   processors used to compile"
 		echo
 		echo "note: default parameters can be saved in ~/.build-snap.rc"
@@ -80,8 +78,11 @@ do
 		echo "      for --build use DO_BUILD=..."
 		echo "      for --processors use PROCESSORS=..."
 		echo
+		echo "The valid DO_BUILD values are:"
+		echo "      all, debug, no, parallel, release, sanitize"
 		exit 1;
 		;;
+
 	--email)
 		shift
 		if test -z "$1"
@@ -92,18 +93,37 @@ do
 		DEBUILD_EMAIL="$1"
 		shift
 		;;
+
 	--build)
 		shift
 		DO_BUILD=debug
 		;;
+
 	--build-all)
 		shift
 		DO_BUILD=all
 		;;
+
+	--build-all-parallel)
+		shift
+		DO_BUILD=parallel
+		;;
+
+	--build-release)
+		shift
+		DO_BUILD=release
+		;;
+
+	--build-sanitize)
+		shift
+		DO_BUILD=sanitize
+		;;
+
 	--no-build)
 		shift
 		DO_BUILD=no
 		;;
+
 	--processors)
 		shift
 		if test -z "$1"
@@ -114,20 +134,12 @@ do
 		PROCESSORS="$1"
 		shift
 		;;
-	--sanitize)
-		shift
-		if test -z "$1"
-		then
-			echo "the --sanitize is expecteed to be followed by ON or OFF"
-			exit 1;
-		fi
-		SANITIZE_OPTIONS="$1"
-		shift
-		;;
+
 	*)
 		echo "error: unknown command line option \"$1\""
 		exit 1;
 		;;
+
 	esac
 done
 
@@ -195,7 +207,7 @@ cd BUILD
 		-DCMAKE_BUILD_TYPE=Release \
 		-DMAKEFLAGS=-j$PROCESSORS \
 		-DBUILD_ONCE=OFF \
-		-DSANITIZE_OPTIONS=OFF \
+		-DSANITIZE=OFF \
 		"$DEBUILD_EMAIL_VAR" \
 			../..
 )
@@ -216,7 +228,7 @@ cd BUILD
 		-DCMAKE_BUILD_TYPE=Debug \
 		-DMAKEFLAGS=-j$PROCESSORS \
 		-DBUILD_ONCE=OFF \
-		-DSANITIZE_OPTIONS=OFF \
+		-DSANITIZE=OFF \
 		"$DEBUILD_EMAIL_VAR" \
 			../..
 )
@@ -233,7 +245,7 @@ cd BUILD
 		-DCMAKE_BUILD_TYPE=Debug \
 		-DMAKEFLAGS=-j$PROCESSORS \
 		-DBUILD_ONCE=OFF \
-		-DSANITIZE_OPTIONS=ON \
+		-DSANITIZE=ON \
 		"$DEBUILD_EMAIL_VAR" \
 			../..
 )
@@ -265,12 +277,57 @@ case $DO_BUILD in
 	)
 	;;
 
+"parallel")
+	(
+		echo
+		echo "========================== BUILD DEBUG =========================="
+		echo
+		cd Debug
+		make
+	) &
+	(
+		echo
+		echo "========================== BUILD SANITIZE =========================="
+		echo
+		cd Sanitize
+		make
+	) &
+	(
+		echo
+		echo "========================== BUILD RELEASE =========================="
+		echo
+		cd Release
+		make
+	) &
+	wait
+	;;
+
 "debug")
 	(
 		echo
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
+		make
+	)
+	;;
+
+"sanitize")
+	(
+		echo
+		echo "========================== BUILD SANITIZE =========================="
+		echo
+		cd Sanitize
+		make
+	)
+	;;
+
+"release")
+	(
+		echo
+		echo "========================== BUILD RELEASE =========================="
+		echo
+		cd Release
 		make
 	)
 	;;
