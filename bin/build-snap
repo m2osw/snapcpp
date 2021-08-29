@@ -150,7 +150,7 @@ then
 fi
 
 # Verify memory levels
-FREE_MEM=`grep MemFree: /proc/meminfo | awk '{ print int($2 / 1048576) }'`
+FREE_MEM=`grep MemAvailable: /proc/meminfo | awk '{ print int($2 / 1048576) }'`
 REQUIRED_MEM=`expr ${PROCESSORS} \* 4`
 if test ${FREE_MEM} -lt ${REQUIRED_MEM}
 then
