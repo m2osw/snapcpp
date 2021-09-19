@@ -24,6 +24,7 @@ project(snapbuilder_tool)
 set(CMAKE_AUTOMOC TRUE)
 
 find_package(AdvGetOpt          REQUIRED)
+find_package(CppProcess         REQUIRED)
 find_package(EventDispatcher    REQUIRED)
 find_package(EventDispatcherQt  REQUIRED)
 find_package(LibExcept          REQUIRED)

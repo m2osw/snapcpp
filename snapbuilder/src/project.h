@@ -23,6 +23,11 @@
 #include    <advgetopt/utils.h>
 
 
+// eventdispatcher lib
+//
+#include    <cppprocess/process.h>
+
+
 // Qt lib
 //
 #include    <QWidget>
@@ -72,7 +77,10 @@ public:
     static void                 sort(vector_t & v);
 
     static void                 simplify(vector_t & v);
-    static void                 generate_svg(vector_t & v, std::string const & root_path);
+    static void                 generate_svg(
+                                      vector_t & v
+                                    , std::string const & root_path
+                                    , cppprocess::process::capture_done_t output_captured);
     static void                 view_svg(vector_t & v, std::string const & root_path);
 
 private:

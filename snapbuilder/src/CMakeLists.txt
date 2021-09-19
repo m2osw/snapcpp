@@ -36,18 +36,6 @@ qt5_wrap_ui(ABOUT_UI about_dialog.ui)
 qt5_add_resources(RESOURCE_FILES resources.qrc)
 
 
-include_directories(
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${ADVGETOPT_INCLUDE_DIRS}
-    ${LIBEXCEPT_INCLUDE_DIRS}
-    ${EVENTDISPATCHER_INCLUDE_DIRS}
-    ${EVENTDISPATCHER_QT_INCLUDE_DIRS}
-    ${SNAPLOGGER_INCLUDE_DIRS}
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Widgets_INCLUDE_DIRS}
-    ${X11_INCLUDE_DIR}
-)
-
 #find_package(DumpCMakeVariables)
 #DumpCMakeVariables(Qt.*)
 
@@ -65,12 +53,27 @@ add_executable(${PROJECT_NAME}
     ${ABOUT_UI}
 )
 
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${ADVGETOPT_INCLUDE_DIRS}
+        ${LIBEXCEPT_INCLUDE_DIRS}
+        ${EVENTDISPATCHER_INCLUDE_DIRS}
+        ${EVENTDISPATCHER_QT_INCLUDE_DIRS}
+        ${SNAPLOGGER_INCLUDE_DIRS}
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Widgets_INCLUDE_DIRS}
+        ${X11_INCLUDE_DIR}
+        ${CPPPROCESS_INCLUDE_DIR}
+)
+
 message("EVENTDISPATCHER_LIBRARIES=${EVENTDISPATCHER_LIBRARIES}")
 target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${EVENTDISPATCHER_LIBRARIES}
     ${EVENTDISPATCHER_QT_LIBRARIES}
     ${SNAPLOGGER_LIBRARIES}
+    ${CPPPROCESS_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
     ${Qt5Core_LIBRARIES}
     ${Qt5Svg_LIBRARIES}

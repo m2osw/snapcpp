@@ -608,12 +608,32 @@ void snap_builder::on_generate_dependency_svg_triggered()
 {
     statusbar->showMessage("Generating SVG of dependencies...");
 
-    project::generate_svg(f_projects, f_root_path);
+    project::generate_svg(
+              f_projects
+            , f_root_path
+            , std::bind(&snap_builder::svg_ready, this, std::placeholders::_1));
+}
 
+
+void snap_builder::svg_ready(std::string const & svg)
+{
     // TODO: fix path once we cleared the dot tool issue
     //
-    std::string const dot_filename(get_root_path() + "/BUILD/Debug/clean-dependencies.svg");
-    dependency_tree->load(QString::fromUtf8(dot_filename.c_str()));
+    std::string const svg_filename(get_root_path() + "/BUILD/Debug/clean-dependencies.svg");
+
+    {
+        std::ofstream out;
+        out.open(svg_filename);
+        if(!out.is_open())
+        {
+            // Make this a GUI error
+            std::cerr << "error: could not open " << svg_filename << "\n";
+            return;
+        }
+        out.write(svg.c_str(), svg.size());
+    }
+
+    dependency_tree->load(QString::fromUtf8(svg_filename.c_str()));
 
     statusbar->clearMessage();
 }
@@ -1154,6 +1174,9 @@ void snap_builder::on_build_package_clicked()
         return;
     }
 
+    build_package->setStyleSheet("background-color: #e0a0a0;");
+    build_package->setEnabled(false);
+    build_package->setText("Building...");
     statusbar->showMessage("Send source to launchpad to build package...");
 
     std::cout << "\n----------------------------\nBuild package\n\n";
@@ -1177,6 +1200,9 @@ void snap_builder::on_build_package_clicked()
     }
 
     statusbar->clearMessage();
+    build_package->setText("Build Package");
+    build_package->setEnabled(true);
+    build_package->setStyleSheet(QString());
 }
 
 

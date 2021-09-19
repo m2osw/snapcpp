@@ -110,6 +110,7 @@ private:
     std::string                     get_selection() const;
     std::string                     get_selection_with_path() const;
     void                            set_button_status();
+    void                            svg_ready(std::string const & svg);
 
     QSettings                       f_settings = QSettings();
     advgetopt::getopt               f_opt;

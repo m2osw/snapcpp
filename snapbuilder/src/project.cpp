@@ -45,6 +45,20 @@ namespace builder
 {
 
 
+namespace
+{
+
+
+// the dot process needs to survive the function so we have a global
+// we don't need to run it more than once anyway (but we need to see how
+// to avoid destroying an old version too soon)
+//
+cppprocess::process::pointer_t  g_dot_process = cppprocess::process::pointer_t();
+
+
+} // no name namespace
+
+
 
 
 project::project(
@@ -564,19 +578,11 @@ void project::add_missing_dependencies(pointer_t p, map_t & m)
 }
 
 
-void project::generate_svg(vector_t & v, std::string const & root_path)
+void project::generate_svg(
+      vector_t & v
+    , cppprocess::process::capture_done_t output_captured)
 {
-    std::string const dot_filename(root_path + "/BUILD/dependencies.dot");
-    std::ofstream dot(dot_filename);
-    if(!dot)
-    {
-        SNAP_LOG_ERROR
-            << "could not open \""
-            << dot_filename
-            << "\" to create the dot script."
-            << SNAP_LOG_SEND;
-        return;
-    }
+    std::stringstream dot;
     dot << "digraph dependencies {\n";
     for(auto & p : v)
     {
@@ -600,93 +606,36 @@ void project::generate_svg(vector_t & v, std::string const & root_path)
     }
     dot << "}\n";
 
-    std::string const svg_filename(root_path + "/BUILD/dependencies.svg");
-
-    std::string cmd("/usr/bin/dot -Tsvg ");
-    cmd += dot_filename;
-    cmd += " > ";
-    cmd += svg_filename;
-
     SNAP_LOG_INFO
-        << "Run dot command: `"
-        << cmd
-        << "`"
+        << "Run dot command: `dot -Tsvg`"
         << SNAP_LOG_SEND;
 
-    int const r(system(cmd.c_str()));
-    if(r != 0)
-    {
-        SNAP_LOG_ERROR
-            << "command to generate SVG image failed with "
-            << r
-            << SNAP_LOG_SEND;
-        return;
-    }
+    std::string script(dot.str());
+    g_dot_process = std::make_shared<cppprocess::process>("dependencies");
 
-//    std::ofstream svg(svg_filename);
-//    if(!svg)
-//    {
-//        SNAP_LOG_ERROR
-//            << "could not open \""
-//            << svg_filename
-//            << "\" to generate the SVG image."
-//            << SNAP_LOG_SEND;
-//        return;
-//    }
-//
-//    FILE * pipe(popen(cmd.c_str(), "r"));
-//    if(pipe == nullptr)
-//    {
-//        SNAP_LOG_ERROR
-//            << "could not pipe dot command \""
-//            << cmd
-//            << "\" to generate the SVG image."
-//            << SNAP_LOG_SEND;
-//        return;
-//    }
-//
-//    char buf[1024];
-//    for(;;)
-//    {
-//        ssize_t size(fread(buf, 1, sizeof(buf), pipe));
-//std::cerr << "pipe read " << size << " bytes...\n";
-//        if(size < 0)
-//        {
-//            pclose(pipe);
-//            SNAP_LOG_ERROR
-//                << "could not read pipe properly with command \""
-//                << cmd
-//                << "\"."
-//                << SNAP_LOG_SEND;
-//            return;
-//        }
-//        if(size == 0)
-//        {
-//            break;
-//        }
-//        svg.write(buf, size);
-//    }
-//    pclose(pipe);
+    g_dot_process->set_command("dot");
+    g_dot_process->add_argument("-Tsvg");
+    g_dot_process->add_input(cppprocess::buffer_t(script.data(), script.data() + script.length()));
+    g_dot_process->set_capture_output();
+    g_dot_process->set_output_capture_done(output_captured);
+    g_dot_process->start(); // TODO: check return value for errors
 }
 
 
 void project::view_svg(vector_t & v, std::string const & root_path)
 {
+    snap::NOT_USED(v);
+
     std::string const svg_filename(root_path + "/BUILD/dependencies.svg");
     struct stat s;
-    if(stat(svg_filename.c_str(), &s) != 0)
-    {
-        // try generating it first
-        //
-        generate_svg(v, root_path);
-    }
     if(stat(svg_filename.c_str(), &s) != 0)
     {
         return;
     }
     if(s.st_size == 0)
     {
-        // this currently happens...
+        // TODO: make that a GUI error
+        //
         std::cerr << "error: dependencies.svg file is empty?!" << std::endl;
         return;
     }
