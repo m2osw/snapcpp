@@ -24,6 +24,12 @@
 #include    "snap_builder.h"
 
 
+// cppprocess lib
+//
+#include    <cppprocess/io_capture_pipe.h>
+#include    <cppprocess/io_data_pipe.h>
+
+
 // snaplogger lib
 //
 #include    <snaplogger/message.h>
@@ -580,7 +586,7 @@ void project::add_missing_dependencies(pointer_t p, map_t & m)
 
 void project::generate_svg(
       vector_t & v
-    , cppprocess::process::capture_done_t output_captured)
+    , cppprocess::io::process_io_done_t output_captured)
 {
     std::stringstream dot;
     dot << "digraph dependencies {\n";
@@ -610,14 +616,17 @@ void project::generate_svg(
         << "Run dot command: `dot -Tsvg`"
         << SNAP_LOG_SEND;
 
-    std::string script(dot.str());
+    cppprocess::io_data_pipe::pointer_t input(std::make_shared<cppprocess::io_data_pipe>());
+    input->add_input(dot.str());
+
+    cppprocess::io_capture_pipe::pointer_t capture(std::make_shared<cppprocess::io_capture_pipe>());
+    capture->add_process_done_callback(output_captured);
+
     g_dot_process = std::make_shared<cppprocess::process>("dependencies");
 
     g_dot_process->set_command("dot");
     g_dot_process->add_argument("-Tsvg");
-    g_dot_process->add_input(cppprocess::buffer_t(script.data(), script.data() + script.length()));
-    g_dot_process->set_capture_output();
-    g_dot_process->set_output_capture_done(output_captured);
+    g_dot_process->set_output_io(capture);
     g_dot_process->start(); // TODO: check return value for errors
 }
 

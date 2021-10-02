@@ -33,6 +33,11 @@
 #include    <snaplogger/options.h>
 
 
+// cppprocess lib
+//
+#include    <cppprocess/io_capture_pipe.h>
+
+
 // advgetopt lib
 //
 #include    <advgetopt/exception.h>
@@ -610,14 +615,26 @@ void snap_builder::on_generate_dependency_svg_triggered()
 
     project::generate_svg(
               f_projects
-            , f_root_path
-            , std::bind(&snap_builder::svg_ready, this, std::placeholders::_1));
+            , std::bind(&snap_builder::svg_ready, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 
-void snap_builder::svg_ready(std::string const & svg)
+bool snap_builder::svg_ready(cppprocess::io * output_pipe, cppprocess::done_reason_t reason)
 {
-    // TODO: fix path once we cleared the dot tool issue
+    if(reason != cppprocess::done_reason_t::DONE_REASON_EOF)
+    {
+        std::cerr << "error: dot command failed.\n";
+        return false;
+    }
+
+    cppprocess::io_capture_pipe * capture(dynamic_cast<cppprocess::io_capture_pipe *>(output_pipe));
+    if(capture == nullptr)
+    {
+        std::cerr << "error: could not get the output capture pipe.\n";
+        return false;
+    }
+
+    // TODO: should this be Debug or another sub-directory or yet another directory?
     //
     std::string const svg_filename(get_root_path() + "/BUILD/Debug/clean-dependencies.svg");
 
@@ -628,14 +645,17 @@ void snap_builder::svg_ready(std::string const & svg)
         {
             // Make this a GUI error
             std::cerr << "error: could not open " << svg_filename << "\n";
-            return;
+            return false;
         }
+        std::string svg(capture->get_output());
         out.write(svg.c_str(), svg.size());
     }
 
     dependency_tree->load(QString::fromUtf8(svg_filename.c_str()));
 
     statusbar->clearMessage();
+
+    return true;
 }
 
 

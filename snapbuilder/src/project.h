@@ -79,8 +79,7 @@ public:
     static void                 simplify(vector_t & v);
     static void                 generate_svg(
                                       vector_t & v
-                                    , std::string const & root_path
-                                    , cppprocess::process::capture_done_t output_captured);
+                                    , cppprocess::io::process_io_done_t output_captured);
     static void                 view_svg(vector_t & v, std::string const & root_path);
 
 private:
