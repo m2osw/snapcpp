@@ -6,14 +6,16 @@
 # understands the difference between contribs and main submodules.
 # (which is why a simple git submodule recursive wouldn't work).
 
-SUBMODULE_MASTER="
+SUBMODULE_MASTER="cmake"
+
+SUBMODULE_MAIN="
 	advgetopt
 	as2js
 	cassandra-cpp-driver-snap
-	cmake
 	cppthread
 	csspp
 	eventdispatcher
+	fastjournal
 	iplock
 	libaddr
 	libcassvalue
@@ -31,8 +33,6 @@ SUBMODULE_MASTER="
 	snaprfs
 	snapwebsites
 	zipios"
-
-SUBMODULE_MAIN="fastjournal"
 
 pull() {
 	for submodule in $1
