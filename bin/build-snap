@@ -10,7 +10,14 @@ then
 	echo "error: i.e. the command line generally looks like:"
 	echo "error:           bin/build-snap --processors 8 --email build@m2osw.com"
 	echo "error: (note: default parameters can be saved in ~/.build-snap.rc)"
-	exit 1;
+	exit 1
+fi
+
+if test ! -x /usr/bin/cmake
+then
+	echo "error: For this script to work, you must install the dependencies"
+	echo "error: with the bin/snap-ubuntu-packages script first."
+	exit 1
 fi
 
 # You may change the compiler with something like this:
