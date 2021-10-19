@@ -408,7 +408,7 @@ To fix that issue, you have a few solutions:
     Then you should be able to get the `submodules` with a command such
     as the following (not tested):
 
-        git submodule foreach git pull origin master
+        git submodule foreach git pull origin main
 
     You may instead need the following (again, not tested):
 
@@ -442,15 +442,14 @@ slightly different URL for the purpose:
 
 ### The `BUILD` Directory
 
-(to be changed: right now we have the BUILD and RELEASE directories as two
-separate folders; at some point we are going to have one BUILD and within
-that directory a Debug & a Release sub-directory).
+After a while, you'll have all the built objects under a `BUILD` directory
+in your `snapcpp` directory. The debug distribution being under the
+`BUILD/Debug/dist` directory (**warning:** executables under the
+distribution directory are stripped from their `RPATH` which means you
+cannot run them without some magic; namely changing your `PATH` and
+`LD_LIBRARY_PATH` environment variables).
 
-After a while, you'll have all the built objects under a BUILD directory
-in your `snapwebsites` directory. The distribution being under the BUILD/dist
-directory (warning: executables under the distribution will be stripped
-from their `RPATH` which means you cannot run them without some magic;
-namely changing your `PATH` or `LD_LIBRARY_PATH` environment variables).
+Similarly, we build the `Release` and `Sanitized` versions.
 
 We support a few variables, although in most cases you will not have to
 setup anything to get started. You can find the main variables in our
@@ -527,24 +526,50 @@ project.
 ### Making sure packages will build on Launchpad
 
 Whenever you are ready to build on the PPA, you may want to first check
-whether everything builds on your system. If you used the snap-build scripts,
-you have two folders: `BUILD` and `RELEASE`. The `BUILD` folder is generally
-the one you use on your development system since it's the debug version. That
-also means the `RELEASE` rarely gets rebuilt. This is where a Launchpad
-compilation happens, though, and therefore not having that rebuild on your
-system would show you that the PPA is going to have a problem on its own.
+whether everything builds on your system. If you used the `bin/build-snap`
+scripts, you have three folders under `BUILD`:
 
-So, we suggest that you run a `RELEASE` build once before attempting a PPA
-build with the following command:
+* `BUILD/Debug` -- the debug version.
+* `BUILD/Release` -- the release version which has no debug code but is fully
+optimized (in case you need to test the speed of the resulting software).
+* `BUILD/Sanitize` -- a version with the sanitize options turned on, helpful
+to detect memory leaks and invalid accesses (access after free, for example).
 
-    make -C RELEASE
+The `BUILD/Debug` folder is generally the one you use on your development
+system since it's the debug version. The debug version is the default so
+you do not need to specify the `-g` flag on the `mk` command line:
 
-If that fails, then the PPA will sure fail. Make sure you have the latest
-version of everything, check where the error occurs, try compiling and
-fixing just that one project until it works, and push all your changes if
-any, then run the PPA update.
+    ./mk
 
+If you have memory issues, you can also use the `BULID/Sanitize` version
+which is likely to let you know as soon as you misuse memory. This version
+is accessed using the `-s` command line option as in:
 
+    ./mk -s
+
+The `BUILD/Release` is rarely built on your development system except when
+you are ready to build packages on Launchpad. This ensures it compiles with
+all the optimizations turned on. The release is build with the `-r` command
+line option as in:
+
+    ./mk -r -i
+
+If the release build fails, then the PPA will sure fail. Note that I also put
+the `-i` option since you want to test instaling the software to the
+distribution folder (`BUILD/Release/dist/...`). On errors, make sure you have
+the latest version of everything, check where the error occurs, try
+compiling and fixing just that one project until it works, and push all your
+changes if any, then run the PPA update. Note that you can rebuild one project
+at a time on the PPA. The `snapbuilder` tool is expected to be used for that
+purpose (it's not yet complete as of Oct 2021, but it's getting there--it is
+also specific to our Launchpad environment at the moment).
+
+While working, you can run the tests with the `-t` option like so:
+
+    ./mk -t [<test-name> ...]
+
+You can also include test names to limit the run to only those tests. The
+`-t` can be used with the `-g`, `-s` and `-r` options.
 
 
 ## Setting up a development environment
