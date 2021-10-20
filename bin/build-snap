@@ -16,7 +16,8 @@ fi
 if test ! -x /usr/bin/cmake
 then
 	echo "error: For this script to work, you must install the dependencies"
-	echo "error: with the bin/snap-ubuntu-packages script first."
+	echo "error: with the following command:"
+	echo "error:           sudo bin/snap-ubuntu-packages"
 	exit 1
 fi
 
