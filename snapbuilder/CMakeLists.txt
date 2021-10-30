@@ -34,7 +34,7 @@ find_package(Qt5Widgets         REQUIRED)
 find_package(SnapCMakeModules   REQUIRED)
 find_package(SnapDev            REQUIRED)
 find_package(SnapLogger         REQUIRED)
-find_package(X11                COMPONENTS X11 REQUIRED)
+find_package(X11                REQUIRED)
 
 SnapGetVersion(SNAPBUILDER ${CMAKE_CURRENT_SOURCE_DIR})
 
