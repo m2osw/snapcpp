@@ -467,18 +467,18 @@ The build type can either be Debug or Release.
 **WARNING:** When you clone everything with `--recursive` the leaves
 (a.k.a. contribs) are going to be in "HEAD detached" mode. To fix this,
 assuming you think about it before you make changes, just checkout the
-master:
+`main` branch:
 
     cd snapcpp/contrib/as2js
-    git checkout master
+    git checkout main
 
 If you already made changes, the simplest is to create a branch and then
-merge that in the master branch like so:
+merge that in the `main` branch like so:
 
     cd snapcpp/contrib/as2js
     ...changes happen...
     git checkout -b iforgot
-    git checkout master
+    git checkout main
     git merge iforgot
     git branch -d iforget
     ...
@@ -486,7 +486,7 @@ merge that in the master branch like so:
 After that maneuver you can use your git as normal.
 
 **BUT WHY?** -- this happens because `git` uses the latest available in
-the master git info and not the newer version in the repository. When we
+the main git info and not the newer version in the repository. When we
 use modules, the module that gets checked out is the one defined in the
 snapcpp git and that's not always the latest.
 
