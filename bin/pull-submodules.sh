@@ -6,13 +6,14 @@
 # understands the difference between contribs and main submodules.
 # (which is why a simple git submodule recursive wouldn't work).
 
-SUBMODULE_MASTER="cmake"
+SUBMODULE_MASTER=""
 
 SUBMODULE_MAIN="
 	advgetopt
 	as2js
 	cassandra-cpp-driver-snap
 	cppthread
+	cmake
 	csspp
 	eventdispatcher
 	fastjournal

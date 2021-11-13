@@ -1,0 +1,109 @@
+#!/bin/sh -e
+#
+# Install various packages in order for the snap-server to compile
+# at once--this is also available on our website; make sure to use sudo
+# This is a helper script, you would be told about all of those libraries
+# by the various projects cmake scripts.
+#
+
+# Qt changed from 4 to 5 when moving to 16.04
+# added mysql-server for snaplog, you do not need it just to compile
+
+# libprocps3-dev changed to libprocps4-dev when moving from 14.04 to 16.04
+# yet, the correct way is to install libprocps-dev instead (especially since
+# 16.10 where libprocps6-dev does not exist)
+
+OS_VERSION="TODO"
+echo "--- Install for Ubuntu v${OS_VERSION}"
+
+echo "--- Install generic packages (mandatory)"
+#    catch \
+#    freeglut3-dev \
+#    libboost-all-dev \
+#    libhiredis-dev \
+#    libicu-dev \
+#    libmagic-dev \
+#    libmagick++-dev \
+#    libncurses-dev \
+#    libprocps-dev \
+#    libqrencode-dev \
+#    libqt5script5 \
+#    libqt5scripttools5 \
+#    libqt5svg5-dev \
+#    libqt5x11extras5-dev \
+#    libqt5xmlpatterns5-dev \
+#    libqt5webkit5-dev \
+#    libreadline-dev \
+#    libssl-dev \
+#    libxml2-utils \
+#    libyaml-cpp-dev \
+#    qtscript5-dev \
+#    uuid-dev \
+#    zlib1g-dev \
+sudo yum install \
+    boost-devel \
+    cmake \
+    dpkg-dev \
+    gcc \
+    g++ \
+    mysql-server \
+    zip
+
+# Build
+
+if test "$1" = "--build"
+then
+    echo "--- Install packages to build packages"
+    sudo yum install \
+        pbuilder \
+        reprepro
+
+    shift
+fi
+
+# Optional:
+
+if test "$1" = "--optional"
+then
+    if ! test -x /usr/bin/X
+    then
+        echo
+        echo "WARNING:"
+        echo "  Installing the optional dependencies will force an installation"
+        echo "  if the X server (because of graphviz)"
+        echo "  Are you sure you want to proceed? yes/[no] \c"
+        read answer
+        if test answer != "yes"
+        then
+            echo "warning: optional packages not installed."
+            exit 1
+        fi
+    fi
+    # cloc/lcov -- coverage
+    # doxygen/graphviz -- documentation
+    # libqxcppunit-dev -- unit testing (not working since 18.04)
+    # qtxmlpatterns5-dev-tools -- for developers to run xmlpatterns
+    echo "--- Install optional packages"
+    sudo yum install \
+        cloc \
+        doxygen \
+        graphviz \
+        lcov \
+        libgvpr2 \
+        qtxmlpatterns5-dev-tools
+
+    if apt-cache show libqxcppunit-dev >/dev/null 2>&1
+    then
+        echo "--- Install old libqxcppunit"
+        sydo yum install libqxcppunit-dev
+    fi
+else
+    echo
+    echo "WARNING:"
+    echo "  Not installing optional packages by default. Re-run the script"
+    echo "  with the --optional command line option to force the installation"
+    echo "  of the optional packages."
+    echo
+fi
+
+# vim: ts=4 sw=4 et
