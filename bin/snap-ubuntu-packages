@@ -26,6 +26,8 @@ then
     extra_to_2004="
         dh-systemd
         qt5-default"
+else
+    extra_2104_plus="dh-make"
 fi
 
 echo "--- Install generic packages (mandatory)"
@@ -61,7 +63,8 @@ apt-get install \
     zlib1g-dev \
     $extra_1604_1804 \
     $extra_to_2004 \
-    $extra_2004_plus
+    $extra_2004_plus \
+    $extra_2104_plus
 
 # Build
 
