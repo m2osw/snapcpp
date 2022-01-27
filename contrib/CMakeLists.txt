@@ -34,7 +34,8 @@ project(snapwebsites_contrib)
 # Dependencies in make syntax:
 #
 # (This gives us the order in which we have to compile these projects
-# on Launchpad.)
+# on Launchpad; this is not always kept up to date, see the
+# clean-dependencies.svg instead--available after cmake ran)
 #
 # Note 1: <null> makes it explicit that there are no dependencies.
 # Note 2: these dependencies are defined in the debian/control files.
@@ -48,6 +49,7 @@ project(snapwebsites_contrib)
 #   fastjournal: eventdispatcher
 #   ftmesh: snapdev libutf8
 #   iplock: libaddr
+#   ipmgr: libaddr libtld
 #   libaddr: advgetopt
 #   libcassvalue: libexcept
 #   libcasswrapper: cassandra-cpp-driver-snap as2js libcassvalue
@@ -96,6 +98,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        commonmarkcpp
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         cppthread
     COMPONENT
         contrib
@@ -132,6 +141,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         iplock
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        ipmgr
     COMPONENT
         contrib
 )
