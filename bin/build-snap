@@ -267,21 +267,21 @@ case $DO_BUILD in
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
-		make
+		make -j$PROCESSORS
 	)
 	(
 		echo
 		echo "========================== BUILD SANITIZE =========================="
 		echo
 		cd Sanitize
-		make
+		make -j$PROCESSORS
 	)
 	(
 		echo
 		echo "========================== BUILD RELEASE =========================="
 		echo
 		cd Release
-		make
+		make -j$PROCESSORS
 	)
 	;;
 
@@ -291,21 +291,21 @@ case $DO_BUILD in
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
-		make
+		make -j$PROCESSORS
 	) &
 	(
 		echo
 		echo "========================== BUILD SANITIZE =========================="
 		echo
 		cd Sanitize
-		make
+		make -j$PROCESSORS
 	) &
 	(
 		echo
 		echo "========================== BUILD RELEASE =========================="
 		echo
 		cd Release
-		make
+		make -j$PROCESSORS
 	) &
 	wait
 	;;
@@ -316,7 +316,7 @@ case $DO_BUILD in
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
-		make
+		make -j$PROCESSORS
 	)
 	;;
 
@@ -326,7 +326,7 @@ case $DO_BUILD in
 		echo "========================== BUILD SANITIZE =========================="
 		echo
 		cd Sanitize
-		make
+		make -j$PROCESSORS
 	)
 	;;
 
@@ -336,7 +336,7 @@ case $DO_BUILD in
 		echo "========================== BUILD RELEASE =========================="
 		echo
 		cd Release
-		make
+		make -j$PROCESSORS
 	)
 	;;
 

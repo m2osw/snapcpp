@@ -233,7 +233,7 @@ echo "Processed $count_modified_files source files out of $count_total_files.\n"
 
 // if correct we can remove this warning
 echo "\n";
-echo "+++ WARNING: was snapwebsites/snapcgi/conf/maintenance.html updated properly? The copyright date is in two place. +++\n";
+echo "+++ WARNING: was snapwebsites/snapcgi/conf/maintenance.html updated properly? The copyright date is in two places. +++\n";
 echo "\n";
 
 if($errcount > 0)
