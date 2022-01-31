@@ -1,6 +1,6 @@
 // Copyright (c) 2021  Made to Order Software Corp.  All Rights Reserved
 //
-// https://snapwebsites.org/project/snap-builder
+// https://snapwebsites.org/project/snapbuilder
 // contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
@@ -54,7 +54,7 @@ int main(int argc, char * argv[])
         QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
         QApplication app(argc, argv);
-        app.setApplicationName("snap-builder");
+        app.setApplicationName("snapbuilder");
         app.setApplicationVersion(SNAPBUILDER_VERSION_STRING);
         app.setOrganizationDomain("snapwebsites.org");
         app.setOrganizationName("Made to Order Software Corp.");

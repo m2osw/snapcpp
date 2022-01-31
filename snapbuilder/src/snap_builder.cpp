@@ -1,6 +1,6 @@
 // Copyright (c) 2021  Made to Order Software Corp.  All Rights Reserved
 //
-// https://snapwebsites.org/project/snap-builder
+// https://snapwebsites.org/project/snapbuilder
 // contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
@@ -118,7 +118,7 @@ const advgetopt::option g_options[] =
 
 constexpr char const * const g_configuration_files[]
 {
-    "/etc/snapwebsites/snap-builder.conf",
+    "/etc/snapwebsites/snapbuilder.conf",
     nullptr
 };
 
@@ -127,7 +127,7 @@ constexpr char const * const g_configuration_files[]
 #pragma GCC diagnostic ignored "-Wpedantic"
 advgetopt::options_environment const g_options_environment =
 {
-    .f_project_name = "snap-builder",
+    .f_project_name = "snapbuilder",
     .f_group_name = "snapwebsites",
     .f_options = g_options,
     .f_options_files_directory = nullptr,
@@ -622,9 +622,14 @@ void snap_builder::on_generate_dependency_svg_triggered()
 
 bool snap_builder::svg_ready(cppprocess::io * output_pipe, cppprocess::done_reason_t reason)
 {
-    if(reason != cppprocess::done_reason_t::DONE_REASON_EOF)
+    if(reason != cppprocess::done_reason_t::DONE_REASON_EOF
+    && reason != cppprocess::done_reason_t::DONE_REASON_HUP)
     {
-        std::cerr << "error: dot command failed.\n";
+        SNAP_LOG_ERROR
+            << "error: dot command failed; reason: "
+            << static_cast<int>(reason)
+            << "\n"
+            << SNAP_LOG_SEND;
         return false;
     }
 

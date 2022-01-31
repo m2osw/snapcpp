@@ -1,6 +1,6 @@
 # Copyright (c) 2021  Made to Order Software Corp.  All Rights Reserved
 #
-# https://snapwebsites.org/project/snap-builder
+# https://snapwebsites.org/project/snapbuilder
 # contact@m2osw.com
 #
 # This program is free software; you can redistribute it and/or modify

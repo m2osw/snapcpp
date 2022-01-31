@@ -1,6 +1,6 @@
 // Copyright (c) 2021  Made to Order Software Corp.  All Rights Reserved
 //
-// https://snapwebsites.org/project/snap-builder
+// https://snapwebsites.org/project/snapbuilder
 // contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
@@ -395,6 +395,26 @@ project::dependencies_t project::get_trimmed_dependencies() const
 }
 
 
+void project::load_ppa_status()
+{
+    std::string const & cache(f_snap_builder->get_cache_path());
+
+    std::string cmd("wget -qa -O ");
+    cmd += cache;
+    cmd += '/';
+    cmd += f_name;
+    cmd += ".json ";
+    cmd += "https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa?ws.op=getBuildRecords&source_name=";
+    cmd += f_name;
+
+    std::cout << cmd << '\n'
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+    }
+}
+
+
 bool project::operator < (project const & rhs) const
 {
     // B E A/dependencies => A > B
@@ -626,6 +646,7 @@ void project::generate_svg(
 
     g_dot_process->set_command("dot");
     g_dot_process->add_argument("-Tsvg");
+    g_dot_process->set_input_io(input);
     g_dot_process->set_output_io(capture);
     g_dot_process->start(); // TODO: check return value for errors
 }
@@ -633,7 +654,7 @@ void project::generate_svg(
 
 void project::view_svg(vector_t & v, std::string const & root_path)
 {
-    snap::NOT_USED(v);
+    snapdev::NOT_USED(v);
 
     std::string const svg_filename(root_path + "/BUILD/dependencies.svg");
     struct stat s;
