@@ -20,7 +20,7 @@ git init --bare
 
 #  3. make the new remote repository your URL in your local repository
 git remote add origin "ssh://buildgit/mnt/git/<your-repository-name>"
-git push -u origin master
+git push -u origin main
 
 # if you already added a URL, then you will need to use the "set-url"
 # instead of the "add" instruction:
@@ -28,8 +28,8 @@ git remote set-url origin "ssh://buildgit/mnt/git/<your-repository-name>"
 
 #  4. verify status
 prompt $ git status
-On branch master
-Your branch is up-to-date with 'origin/master'.
+On branch main
+Your branch is up-to-date with 'origin/main'.
 nothing to commit, working directory clean
 
 
@@ -50,10 +50,10 @@ git commit -m 'info about commit' -a
 git commit -m 'info about commit' "<filename>"
 
 # retrieve data from repository (changes by others)
-git pull origin master
+git pull origin main
 
 # push your changes to the server (you may need a pull first)
-git push origin master
+git push origin main
 
 # fix a conflict
 # After a git pull ... you may have a conflict (you should see that in the
@@ -106,7 +106,7 @@ git log --stat ["path"]
 # More details available on this page (and next/previous)
 #    https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
 #
-# WARNING: By default, switching from the master to another branch
+# WARNING: By default, switching from the main to another branch
 #          forces a merge (I do not understand why that would be a good
 #          thing though.)
 #
@@ -129,10 +129,25 @@ git branch "branch-name"
 git checkout "branch-name"
 git commit "branch-name"
 
+# If you create a branch of a branch and now want the newest branch to be
+# based on the main branch (TO BE PROVEN--because my attempt failed):
+git checkout -b foo
+...make changes to foo, commits, etc...
+git checkout -b bar
+...start making changes to bar...
+git checkout foo
+git merge main
+git checkout main
+git merge foo
+...now foo is merged inside main, but bar still "depends" on foo...
+git checkout bar
+git rebase bar main
+...now bar looks like it was created directly from main...
+
 
 # Merging one commit in another branch
 #
-# Say you create a cool commit in master and want to add that to a certain
+# Say you create a cool commit in main and want to add that to a certain
 # branch, maybe because that other branch is a release branch and you only
 # want to fix one small thing in that branch... That's done with cherry-pick
 # but if you have auto-rebase like me, then you need to abort the rebasing
@@ -173,21 +188,21 @@ git rebase --continue
 # repeat
 
 
-# how to fix your branch and 'origin/master' have diverged
+# how to fix your branch and 'origin/main' have diverged
 # it tells you there is a rebase problem, but you actually
 # need to do a merge, not use the rebase command
 # this happens quite a bit in the top module without any good
 # reason (that is, there are multiple messages and their way
 # to merge things is ... manual)
-git merge origin/master
+git merge origin/main
 # -- verify that things look as expected --
 git commit -a
-git push origin master
+git push origin main
 
 # The following is an example of the failed push because of a "pretend" rebase
-# # # $ git push origin master
+# # # $ git push origin main
 # # #To git@github.com:m2osw/snapcpp.git
-# # # ! [rejected]        master -> master (non-fast-forward)
+# # # ! [rejected]        main -> main (non-fast-forward)
 # # #error: failed to push some refs to 'git@github.com:m2osw/snapcpp.git'
 # # #hint: Updates were rejected because a pushed branch tip is behind its remote
 # # #hint: counterpart. Check out this branch and integrate the remote changes
@@ -199,7 +214,7 @@ git push origin master
 # because the conflict is only in the "logs" and not in a file you manage!
 # # # $ git status
 # # #rebase in progress; onto 92cb30c
-# # #You are currently rebasing branch 'master' on '92cb30c'.
+# # #You are currently rebasing branch 'main' on '92cb30c'.
 # # #  (all conflicts fixed: run "git rebase --continue")
 # # #
 # # #Changes to be committed:
@@ -215,7 +230,7 @@ git rebase --continue
 git rebase --skip
 
 # That should move you back to the branch you were working on. Then do:
-git push origin master
+git push origin main
 
 
 
@@ -263,10 +278,10 @@ git submodule add git@github.com:m2osw/snaplogger.git
 #
 cd snapwebsites
 git commit .
-git push origin master
+git push origin main
 cd ..
 git commit .
-git push origin master
+git push origin main
 
 
 # Tagging to get a tag on github and automatically get a tarball/zip for
