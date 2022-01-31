@@ -32,7 +32,6 @@ fi
 
 echo "--- Install generic packages (mandatory)"
 apt-get install \
-    catch \
     cmake \
     dpkg-dev \
     freeglut3-dev \
