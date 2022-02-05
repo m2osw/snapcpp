@@ -268,11 +268,18 @@ snap_builder::snap_builder(int argc, char * argv[])
         }
     }
 
+    if(f_opt.is_defined("launchpad-url"))
+    {
+        f_launchpad_url = f_opt.get_string("launchpad-url");
+    }
+
     // TODO: do that after n secs. so the UI is up
     //
     read_list_of_projects();
 
     on_generate_dependency_svg_triggered();
+
+    f_timer_id = startTimer(1000 * 60); // 1 minute interval
 }
 
 
@@ -320,6 +327,37 @@ void snap_builder::closeEvent(QCloseEvent * event)
 
     f_settings.setValue("geometry", saveGeometry());
     f_settings.setValue("state", saveState());
+}
+
+
+void snap_builder::timerEvent(QTimerEvent * timer_event)
+{
+    snapdev::NOT_USED(timer_event);
+
+    int row(0);
+    for(auto const & p : f_projects)
+    {
+        if(p->is_valid())
+        {
+            if(p->get_building())
+            {
+                if(p->retrieve_ppa_status())
+                {
+                    p->load_remote_data();
+
+                    QTableWidgetItem * item(f_table->item(row, 2));
+                    item->setText(QString::fromUtf8(p->get_remote_version().c_str()));
+
+                    item = f_table->item(row, 5);
+                    item->setText(QString::fromUtf8(p->get_remote_build_state().c_str()));
+
+                    item = f_table->item(row, 6);
+                    item->setText(QString::fromUtf8(p->get_remote_build_date().c_str()));
+                }
+            }
+            ++row;
+        }
+    }
 }
 
 
@@ -440,7 +478,7 @@ void snap_builder::read_list_of_projects()
             item->setBackground(background);
             f_table->setItem(row, 1, item);
 
-            item = new QTableWidgetItem("-"); // TODO -- launchpad version
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_remote_version().c_str()));
             item->setData(Qt::UserRole, v);
             item->setBackground(background);
             f_table->setItem(row, 2, item);
@@ -455,10 +493,15 @@ void snap_builder::read_list_of_projects()
             item->setBackground(background);
             f_table->setItem(row, 4, item);
 
-            item = new QTableWidgetItem("-"); // TODO -- compiled date (on launchpad)
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_remote_build_state().c_str()));
             item->setData(Qt::UserRole, v);
             item->setBackground(background);
             f_table->setItem(row, 5, item);
+
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_remote_build_date().c_str()));
+            item->setData(Qt::UserRole, v);
+            item->setBackground(background);
+            f_table->setItem(row, 6, item);
 
             ++row;
         }
@@ -495,14 +538,20 @@ void snap_builder::on_refresh_list_triggered()
 
 void snap_builder::on_refresh_clicked()
 {
-    QMessageBox msg(
-          QMessageBox::Critical
-        , "Not Yet Implemented"
-        , QString("The Refresh button is not yet implemented.")
-        , QMessageBox::Close
-        , const_cast<snap_builder *>(this)
-        , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
-    msg.exec();
+    if(f_current_project == nullptr)
+    {
+        QMessageBox msg(
+              QMessageBox::Critical
+            , "No Selection"
+            , QString("The Refresh button requires a project to be selected to work.")
+            , QMessageBox::Close
+            , const_cast<snap_builder *>(this)
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
+        return;
+    }
+
+    f_current_project->retrieve_ppa_status();
 }
 
 
@@ -1223,6 +1272,29 @@ void snap_builder::on_build_package_clicked()
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
         msg.exec();
+    }
+    else
+    {
+        // create a <project-name>.building flag in the cache folder, as long as
+        // this is there, we want to continue checking the status on launchpad
+        // until the package is built or it failed
+        {
+            std::string const building(f_current_project->get_flag_filename());
+            std::ofstream flag;
+            flag.open(building);
+            if(flag.is_open())
+            {
+                time_t now(time(nullptr));
+                tm t;
+                gmtime_r(&now, &t);
+                char buf[256];
+                strftime(buf, sizeof(buf) - 1, "Started on %y/%m/%d %H:%M:%S", &t);
+                buf[sizeof(buf) - 1] = '\0';
+                flag << buf << std::endl;
+            }
+        }
+
+        f_current_project->set_building(true);
     }
 
     statusbar->clearMessage();

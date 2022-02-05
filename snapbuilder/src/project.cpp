@@ -30,9 +30,24 @@
 #include    <cppprocess/io_data_pipe.h>
 
 
+// as2js lib
+//
+#include    <as2js/json.h>
+
+
 // snaplogger lib
 //
 #include    <snaplogger/message.h>
+
+
+// snapdev lib
+//
+#include    <snapdev/string_replace_many.h>
+
+
+// Qt lib
+//
+#include    <QtWidgets>
 
 
 // C++ lib
@@ -67,6 +82,72 @@ cppprocess::process::pointer_t  g_dot_process = cppprocess::process::pointer_t()
 
 
 
+void project_remote_info::set_date(std::string const & date)
+{
+    f_date = date;
+}
+
+
+void project_remote_info::set_build_codename(std::string const & codename)
+{
+    f_build_codename = codename;
+}
+
+
+void project_remote_info::set_build_state(std::string const & build_state)
+{
+    f_build_state = build_state;
+}
+
+
+void project_remote_info::set_build_version(std::string const & build_version)
+{
+    f_build_version = build_version;
+}
+
+
+void project_remote_info::set_build_arch(std::string const & build_arch)
+{
+    f_build_arch = build_arch;
+}
+
+
+std::string const & project_remote_info::get_date() const
+{
+    return f_date;
+}
+
+
+std::string const & project_remote_info::get_build_codename() const
+{
+    return f_build_codename;
+}
+
+
+std::string const & project_remote_info::get_build_state() const
+{
+    return f_build_state;
+}
+
+
+std::string const & project_remote_info::get_build_version() const
+{
+    return f_build_version;
+}
+
+
+std::string const & project_remote_info::get_build_arch() const
+{
+    return f_build_arch;
+}
+
+
+
+
+
+
+
+
 project::project(
           snap_builder * parent
         , std::string const & name
@@ -86,11 +167,11 @@ project::project(
 
     if(find_project())
     {
-        //SNAP_LOG_INFO
-        //    << "find project in: \""
-        //    << f_project_path
-        //    << "\""
-        //    << SNAP_LOG_SEND;
+        SNAP_LOG_INFO
+            << "found project under: \""
+            << f_project_path
+            << "\""
+            << SNAP_LOG_SEND;
 
         load_project();
     }
@@ -125,6 +206,12 @@ bool project::find_project()
 
 void project::load_project()
 {
+    SNAP_LOG_INFO
+        << "Loading project "
+        << f_name
+        << "."
+        << SNAP_LOG_SEND;
+
     if(!retrieve_version())
     {
         return;
@@ -139,6 +226,8 @@ void project::load_project()
     {
         return;
     }
+
+    retrieve_building_state();
 
     f_valid = true;
 
@@ -262,6 +351,17 @@ bool project::get_last_commit_timestamp()
 }
 
 
+void project::retrieve_building_state()
+{
+    // if the .building file exists, then that means we started a build
+    // and we don't yet know whether it's finished
+    //
+    std::ifstream flag;
+    flag.open(get_flag_filename());
+    set_building(flag.is_open());
+}
+
+
 bool project::is_valid() const
 {
     return f_valid;
@@ -274,9 +374,43 @@ std::string const & project::get_name() const
 }
 
 
+/** \brief Get the exact name as found on launchpad
+ *
+ * The `cmake` project is renamed `snapcmakemodules` on launchpad. This
+ * function returns that name for that project.
+ *
+ * \return The name of the project as defined on launchpad.
+ */
+std::string project::get_project_name() const
+{
+    if(f_name == "cmake")
+    {
+        return "snapcmakemodules";
+    }
+
+    if(f_name == "libQtSerialization")
+    {
+        return "libqtserialization";
+    }
+
+    return f_name;
+}
+
+
 std::string const & project::get_version() const
 {
     return f_version;
+}
+
+
+std::string project::get_remote_version() const
+{
+    if(f_remote_info.size() == 0)
+    {
+        return std::string("-");
+    }
+
+    return f_remote_info[0]->get_build_version();
 }
 
 
@@ -303,32 +437,389 @@ std::string project::get_last_commit_as_string() const
 }
 
 
+std::string project::get_remote_build_state() const
+{
+    if(f_remote_info.size() == 0)
+    {
+        return std::string("-");
+    }
+
+    return f_remote_info[0]->get_build_state();
+}
+
+
+std::string project::get_remote_build_date() const
+{
+    if(f_remote_info.size() == 0)
+    {
+        return std::string("-");
+    }
+
+    // this may not be the build date, we find 3 dates:
+    //   . creation date
+    //   . start date
+    //   . finished date
+    //
+    std::string date(f_remote_info[0]->get_date());
+    std::string::size_type pos(date.find('T'));
+    if(pos != std::string::npos)
+    {
+        date[pos] = ' ';
+    }
+    pos = date.find('.');
+    if(pos != std::string::npos)
+    {
+        return date.substr(0, pos);
+    }
+    return date;
+}
+
+
+/** \brief Load the remote data from launchpad.
+ *
+ * This function checks whether we already have a cache of the launchpad data.
+ * If so then the function does nothing. If we do not have any information
+ * about the project, then we download it from launchpad. This tells us
+ * whether we need to run a build or not.
+ */
 void project::load_remote_data()
 {
     // a build is complete only once all the releases are built (or failed to)
     //
-    // we have one Packages.gz per release which lists the latest version
-    // available
+    // we can download a JSON file from launchpad that gives us the information
+    // about the latest build(s)
     //
-    //    dists/<release>/main/binary-amd64/Packages.gz
-    //
-    // note that all the releases are present, but we only support a few
-    //
-    // once we have the package built, we can check the date with a HEAD
-    // request of the .deb (the .deb itself doesn't actually have a Date:
-    // field, somehow?!). The Packages.gz file includes the path to the
-    // file which starts from the same top launchpad URL:
-    //
-    //    pool/main/a/as2js/as2js_0.1.32.0~<release>_amd64.deb
-    //
-    // just like the release, multiple architectures means we also have one
-    // package per architecture
-    //
-    // Example:
-    //    curl -I http://ppa.launchpad.net/snapcpp/ppa/ubuntu/pool/main/a/as2js/as2js_0.1.32.0~hirsute_amd64.deb
 
-    std::string url(f_snap_builder->get_launchpad_url());
+    std::string const cache_filename(get_ppa_json_filename());
+    if(access(cache_filename.c_str(), R_OK) != 0)
+    {
+        // no cache available, load it for the first time
+        //
+        if(!retrieve_ppa_status())
+        {
+            // load failed, that's it for now on that one...
+            //
+            return;
+        }
+    }
+
+    if(access(cache_filename.c_str(), R_OK) != 0)
+    {
+        SNAP_LOG_MAJOR
+            << "cache file \""
+            << cache_filename
+            << "\" not available even after PPA retrieval. Try forcibly resetting the cache of that project."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+    // read the file and save the few fields we're interested in:
+    //
+    //   - last build date
+    //   - build state
+    //   - source version
+    //   - architecture
+    //
+    as2js::String json_filename(cache_filename);
+    as2js::JSON json;
+    as2js::JSON::JSONValue::pointer_t root(json.load(json_filename));
+    if(root->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
+    {
+        SNAP_LOG_ERROR
+            << "JSON found in cache file \""
+            << cache_filename
+            << "\" does not represent an object."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+    as2js::JSON::JSONValue::object_t const & top_fields(root->get_object());
+    if(top_fields.find("total_size") != top_fields.end())
+    {
+        // if not empty, we have a "total_size_link" instead
+        //
+        // this happens whenever we create a new project and we have not
+        // yet compiled it on launchpad
+        //
+        SNAP_LOG_ERROR
+            << "JSON found in cache file \""
+            << cache_filename
+            << "\" has a \"total_size\" field which means it is empty."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+    // TODO: verify that the "start" field is 0
+
+    auto const it(top_fields.find("entries"));
+    if(it == top_fields.cend())
+    {
+        SNAP_LOG_ERROR
+            << "JSON found in cache file \""
+            << cache_filename
+            << "\" has no \"entries\" field."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+    if(it->second->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_ARRAY)
+    {
+        SNAP_LOG_ERROR
+            << "JSON found in cache file \""
+            << cache_filename
+            << "\" has an \"entries\" field, but it is not an array."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+    as2js::JSON::JSONValue::array_t const & entries(it->second->get_array());
+    for(as2js::JSON::JSONValue::pointer_t const & e : entries)
+    {
+        // just in case, verify that the entry is an object, if not, just
+        // ignore that item
+        //
+        if(e->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
+        {
+            continue;
+        }
+        as2js::JSON::JSONValue::object_t build(e->get_object());
+
+        // verify that the project name matches this entry, if not, we
+        // may need to delete the cache...
+        //
+        auto const source_package_name_it(build.find("source_package_name"));
+        if(source_package_name_it == build.end())
+        {
+            SNAP_LOG_ERROR
+                << "\"source_package_name\" field not found."
+                << SNAP_LOG_SEND;
+            return;
+        }
+        if(source_package_name_it->second->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+        {
+            SNAP_LOG_ERROR
+                << "\"source_package_name\" is not a string."
+                << SNAP_LOG_SEND;
+            return;
+        }
+        if(source_package_name_it->second->get_string().to_utf8() != get_project_name())
+        {
+            SNAP_LOG_ERROR
+                << "\"source_package_name\" says \""
+                << source_package_name_it->second->get_string().to_utf8()
+                << "\", we expected \""
+                << get_project_name()
+                << "\" instead."
+                << SNAP_LOG_SEND;
+            return;
+        }
+
+        // get the creation date
+        //
+        std::string date;
+        auto const date_built_it(build.find("datebuilt"));
+        if(date_built_it != build.end())
+        {
+            // date when it was last built, we keep that one!
+            //
+            if(date_built_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            {
+                date = date_built_it->second->get_string().to_utf8();
+            }
+
+            // TODO: get duration
+        }
+        if(date.empty())
+        {
+            auto const date_started_it(build.find("date_started"));
+            if(date_started_it != build.end())
+            {
+                // date when it was last built, we keep that one!
+                //
+                if(date_started_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+                {
+                    date = date_started_it->second->get_string().to_utf8();
+                }
+            }
+        }
+        if(date.empty())
+        {
+            auto const date_started_it(build.find("datecreated"));
+            if(date_started_it != build.end())
+            {
+                // date when it was last built, we keep that one!
+                //
+                if(date_started_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+                {
+                    date = date_started_it->second->get_string().to_utf8();
+                }
+            }
+        }
+        if(date.empty())
+        {
+            SNAP_LOG_WARNING
+                << "no date found in this entry."
+                << SNAP_LOG_SEND;
+        }
+
+        // get the build version
+        //
+        std::string build_version;
+        auto const build_version_it(build.find("source_package_version"));
+        if(build_version_it != build.end())
+        {
+            if(build_version_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            {
+                build_version = build_version_it->second->get_string().to_utf8();
+            }
+        }
+        if(build_version.empty())
+        {
+            SNAP_LOG_ERROR
+                << "no version found in this entry."
+                << SNAP_LOG_SEND;
+            continue;
+        }
+
+        // the version includes a codename (i.e. "....~bionic")
+        // here we want to break that up so we have a version
+        // and a seperated codename
+        //
+        std::string::size_type const pos(build_version.find('~'));
+        if(pos == std::string::npos)
+        {
+            SNAP_LOG_ERROR
+                << "no '~' found in the version, we expected a codename."
+                << SNAP_LOG_SEND;
+            continue;
+        }
+        std::string const build_codename(build_version.substr(pos + 1));
+        build_version.erase(pos);
+
+        // get the build state of this entry
+        //
+        std::string build_state;
+        auto const build_state_it(build.find("buildstate"));
+        if(build_state_it != build.end())
+        {
+            if(build_state_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            {
+                build_state = build_state_it->second->get_string().to_utf8();
+
+                if(f_building
+                && (build_state == "Successfully built"
+                    || build_state == "Failed to build")
+                && build_version == f_version)
+                {
+                    f_building = false;
+
+                    // delete the flag, we're done with it
+                    //
+                    snapdev::NOT_USED(unlink(get_flag_filename().c_str()));
+
+                    SNAP_LOG_INFO
+                        << "Done building \""
+                        << f_name
+                        << "\", new status is: \""
+                        << build_state
+                        << "\""
+                        << SNAP_LOG_SEND;
+                }
+                // else set it to true?
+            }
+        }
+
+        // get the build architecture
+        //
+        std::string build_arch;
+        auto const build_arch_it(build.find("arch_tag"));
+        if(build_arch_it != build.end())
+        {
+            // date when it was last built, we keep that one!
+            //
+            if(build_arch_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            {
+                build_arch = build_arch_it->second->get_string().to_utf8();
+            }
+        }
+        if(build_arch.empty())
+        {
+            SNAP_LOG_ERROR
+                << "no version found in this entry."
+                << SNAP_LOG_SEND;
+            continue;
+        }
+
+        find_remote_info(build_codename, build_arch);
+
+        project_remote_info::pointer_t info(std::make_shared<project_remote_info>());
+        info->set_date(date);
+        info->set_build_codename(build_codename);
+        info->set_build_state(build_state);
+        info->set_build_version(build_version);
+        info->set_build_arch(build_arch);
+
+        f_remote_info.push_back(info);
+    }
+
+
+/* example of an enry
+{
+  "self_link": "https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa/+build/23113615",
+  "web_link": "https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+build/23113615",
+  "resource_type_link": "https://api.launchpad.net/devel/#build",
+  "datecreated": "2022-02-01T03:45:14.192170+00:00",
+  "date_started": "2022-02-01T03:45:28.563934+00:00",
+  "datebuilt": "2022-02-01T03:47:52.315429+00:00",
+  "duration": "0:02:23.751495",
+  "date_first_dispatched": "2022-02-01T03:45:28.563934+00:00",
+  "builder_link": "https://api.launchpad.net/devel/builders/lcy02-amd64-024",
+  "buildstate": "Successfully built",
+  "build_log_url": "https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+build/23113615/+files/buildlog_ubuntu-impish-amd64.snapdev_1.1.18.0~impish_BUILDING.txt.gz",
+  "title": "amd64 build of snapdev 1.1.18.0~impish in ubuntu impish RELEASE",
+  "dependencies": null,
+  "can_be_rescored": false,
+  "can_be_retried": false,
+  "can_be_cancelled": false,
+  "archive_link": "https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa",
+  "pocket": "Release",
+  "upload_log_url": null,
+  "distribution_link": "https://api.launchpad.net/devel/ubuntu",
+  "current_source_publication_link": "https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa/+sourcepub/13233258",
+  "source_package_name": "snapdev",
+  "source_package_version": "1.1.18.0~impish",
+  "arch_tag": "amd64",
+  "changesfile_url": "https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+build/23113615/+files/snapdev_1.1.18.0~impish_amd64.changes",
+  "score": null,
+  "external_dependencies": null,
+  "http_etag": "\"6bc0b24353084b49907e42a239bf2f99c5d1a6b3-670cb7b5c2dce75465f2d7cfb3ddbe3e879544f5\""
 }
+*/
+
+
+}
+
+
+project_remote_info::pointer_t project::find_remote_info(
+      std::string const & build_codename
+    , std::string const & build_arch)
+{
+    auto const it(std::find_if(
+          f_remote_info.cbegin()
+        , f_remote_info.cend()
+        , [build_codename, build_arch](project_remote_info::pointer_t info)
+        {
+            return info->get_build_codename() == build_codename
+                && info->get_build_arch() == build_arch;
+        }));
+    if(it != f_remote_info.end())
+    {
+        return *it;
+    }
+
+    return project_remote_info::pointer_t();
+}
+
 
 
 /** \brief Get all the dependencies of this project.
@@ -395,23 +886,95 @@ project::dependencies_t project::get_trimmed_dependencies() const
 }
 
 
-void project::load_ppa_status()
+std::string project::get_ppa_json_filename() const
 {
     std::string const & cache(f_snap_builder->get_cache_path());
+    return cache + '/' + get_project_name() + ".json";
+}
 
-    std::string cmd("wget -qa -O ");
-    cmd += cache;
-    cmd += '/';
-    cmd += f_name;
-    cmd += ".json ";
-    cmd += "https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa?ws.op=getBuildRecords&source_name=";
-    cmd += f_name;
 
-    std::cout << cmd << '\n'
+std::string project::get_flag_filename() const
+{
+    std::string const & cache(f_snap_builder->get_cache_path());
+    return cache + '/' + get_project_name() + ".building";
+}
+
+
+/** \brief Load the PPA status from LaunchPad.
+ *
+ * This function forcibly loads a copy of this project JSON which gives us
+ * the status of a build (among other things).
+ *
+ * The function should be called only if (1) we started a build and it is
+ * still ongoing or (2) we do not have a version cached on our side.
+ * Otherwise it's kind of a waste. The user will be given the ability
+ * to by-pass the cache to make sure he can refresh the screen properly.
+ *
+ * \return true if the PPA was contacted successfully.
+ */
+bool project::retrieve_ppa_status()
+{
+    std::string cmd("wget -q -O '");
+    cmd += get_ppa_json_filename();
+    cmd += "' '";
+    cmd += snapdev::string_replace_many(
+                  f_snap_builder->get_launchpad_url()
+                , {{ "@PROJECT_NAME@", get_project_name() }});
+    cmd += '\'';
+
+    SNAP_LOG_INFO
+        << "Updating cache of \""
+        << f_name
+        << "\" with command: \""
+        << cmd
+        << "\"."
+        << SNAP_LOG_SEND;
+
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
+        // When within the QTimerEvent this blocks everything, so not a good
+        // idea, using a log message instead
+        //
+        //QMessageBox msg(
+        //      QMessageBox::Critical
+        //    , "Error Retrieving Remote Project Data"
+        //    , QString("We had trouble retrieving the remote project data from LaunchPad.")
+        //    , QMessageBox::Close
+        //    , const_cast<snap_builder *>(f_snap_builder)
+        //    , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        //msg.exec();
+
+        SNAP_LOG_INFO
+            << "Cache of \""
+            << f_name
+            << "\" could not be updated (r = "
+            << r
+            << ")."
+            << SNAP_LOG_SEND;
+
+        return false;
     }
+
+    SNAP_LOG_INFO
+        << "Cache of \""
+        << f_name
+        << "\" updated successfully."
+        << SNAP_LOG_SEND;
+
+    return true;
+}
+
+
+bool project::get_building() const
+{
+    return f_building;
+}
+
+
+void project::set_building(bool building)
+{
+    f_building = building;
 }
 
 

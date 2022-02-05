@@ -47,6 +47,33 @@ namespace builder
 
 class snap_builder;
 
+class project_remote_info
+{
+public:
+    typedef std::shared_ptr<project_remote_info>    pointer_t;
+    typedef std::vector<pointer_t>                  vector_t;
+
+    void                    set_date(std::string const & date);
+    void                    set_build_codename(std::string const & codename);
+    void                    set_build_state(std::string const & build_state);
+    void                    set_build_version(std::string const & build_version);
+    void                    set_build_arch(std::string const & build_arch);
+
+    std::string const &     get_date() const;
+    std::string const &     get_build_codename() const;
+    std::string const &     get_build_state() const;
+    std::string const &     get_build_version() const;
+    std::string const &     get_build_arch() const;
+
+private:
+    std::string             f_date = std::string();     // first of: date built, started build, created
+    std::string             f_build_codename = std::string();
+    std::string             f_build_state = std::string();
+    std::string             f_build_version = std::string();
+    std::string             f_build_arch = std::string();
+};
+
+
 
 class project
 {
@@ -66,12 +93,23 @@ public:
 
     bool                        is_valid() const;
     std::string const &         get_name() const;
+    std::string                 get_project_name() const;
     std::string const &         get_version() const;
+    std::string                 get_remote_version() const;
     std::string const &         get_state() const;
     time_t                      get_last_commit() const;
     std::string                 get_last_commit_as_string() const;
+    std::string                 get_remote_build_state() const;
+    std::string                 get_remote_build_date() const;
     dependencies_t              get_dependencies() const;
     dependencies_t              get_trimmed_dependencies() const;
+
+    std::string                 get_ppa_json_filename() const;
+    std::string                 get_flag_filename() const;
+    void                        load_remote_data();
+    bool                        retrieve_ppa_status();
+    bool                        get_building() const;
+    void                        set_building(bool building);
 
     bool                        operator < (project const & rhs) const;
     static void                 sort(vector_t & v);
@@ -92,7 +130,11 @@ private:
     bool                        retrieve_version();
     bool                        check_state();
     bool                        get_last_commit_timestamp();
-    void                        load_remote_data();
+    void                        retrieve_building_state();
+    project_remote_info::pointer_t
+                                find_remote_info(
+                                      std::string const & build_codename
+                                    , std::string const & build_arch);
 
     snap_builder *              f_snap_builder = nullptr;
     std::string                 f_name = std::string();
@@ -102,8 +144,11 @@ private:
     time_t                      f_last_commit = 0;
     bool                        f_valid = false;
     bool                        f_recursed_add_dependencies = false;
+    bool                        f_building = false;
     dependencies_t              f_dependencies = dependencies_t();
     dependencies_t              f_trimmed_dependencies = dependencies_t();
+    project_remote_info::vector_t
+                                f_remote_info = project_remote_info::vector_t();
 };
 
 

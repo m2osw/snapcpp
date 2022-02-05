@@ -76,11 +76,13 @@ public:
 
     std::string const &             get_root_path() const;
     std::string const &             get_cache_path() const;
+    std::string const &             get_flag_name(std::string const & project_name) const;
     std::string const &             get_launchpad_url() const;
     advgetopt::string_list_t const &get_release_names() const;
 
 protected:
     virtual void                    closeEvent(QCloseEvent * event) override;
+    virtual void                    timerEvent(QTimerEvent *event) override;
 
 private slots:
     void                            on_refresh_list_triggered();
@@ -121,11 +123,12 @@ private:
     std::string                     f_root_path = std::string();
     std::string                     f_config_path = std::string();
     std::string                     f_cache_path = std::string();
-    std::string                     f_launchpad_url = std::string("http://ppa.launchpad.net/snapcpp/ppa/ubuntu");
+    std::string                     f_launchpad_url = std::string("https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa?ws.op=getBuildRecords&ws.size=10&ws.start=0&source_name=@PROJECT_NAME@");
     std::string                     f_distribution = std::string("bionic");
     project::vector_t               f_projects = project::vector_t();
     project::pointer_t              f_current_project = project::pointer_t();
     advgetopt::string_list_t        f_release_names = advgetopt::string_list_t();
+    int                             f_timer_id = 0;
 };
 //#pragma GCC diagnostic pop
 

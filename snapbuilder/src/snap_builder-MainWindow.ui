@@ -51,6 +51,11 @@ Version</string>
         </column>
         <column>
          <property name="text">
+          <string>Build State</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
           <string>Launchpad
 Compiled Date</string>
          </property>
@@ -140,26 +145,6 @@ Compiled Date</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="breaking_change">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Breaking Change(s)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QPushButton" name="build_package">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Build Package</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="2">
            <widget class="QPushButton" name="local_compile">
             <property name="enabled">
@@ -223,16 +208,6 @@ Compiled Date</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QPushButton" name="refresh">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Refresh</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="2">
            <widget class="QPushButton" name="coverage">
             <property name="enabled">
@@ -240,6 +215,36 @@ Compiled Date</string>
             </property>
             <property name="text">
              <string>Coverage</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="build_package">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Build Package</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="breaking_change">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Breaking Change(s)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="refresh">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Remote Refresh</string>
             </property>
            </widget>
           </item>
@@ -257,7 +262,7 @@ Compiled Date</string>
      <x>0</x>
      <y>0</y>
      <width>1887</width>
-     <height>22</height>
+     <height>39</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -278,7 +283,7 @@ Compiled Date</string>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>He&amp;lp</string>
     </property>
     <addaction name="about_snapbuilder"/>
    </widget>
@@ -349,7 +354,7 @@ Compiled Date</string>
   </action>
   <action name="about_snapbuilder">
    <property name="text">
-    <string>About Snap! Builder</string>
+    <string>&amp;About Snap! Builder</string>
    </property>
   </action>
  </widget>
