@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# List installed Snap! C++ packages
+
+PACKAGES=`grep 'Package: ' cmake/debian/control contrib/*/debian/control snapwebsites/debian/control | sed -e 's/.*Package: //'`
+
+NOT_INSTALLED=
+COUNT_INSTALLED=0
+COUNT_UNINSTALLED=0
+for p in $PACKAGES
+do
+	installed=`dpkg -l ${p} 2>/dev/null | grep ${p}`
+	if test -n "${installed}"
+	then
+		echo "${installed}"
+		COUNT_INSTALLED=`expr ${COUNT_INSTALLED} + 1`
+	else
+		NOT_INSTALLED="${NOT_INSTALLED}${p}\n"
+		COUNT_UNINSTALLED=`expr ${COUNT_UNINSTALLED} + 1`
+	fi
+done
+
+echo "$COUNT_INSTALLED installed packages"
+echo
+echo "Not installed ($COUNT_UNINSTALLED):"
+
+# We use an indentation of 4 so we need to subtract at least 4 from the width
+TERMINAL_WIDTH=`tput cols`
+COLUMNS_WIDTH=`expr $TERMINAL_WIDTH - 4`
+
+echo "$NOT_INSTALLED" | pr --omit-pagination --omit-header \
+	--width=$COLUMNS_WIDTH --page-width=$COLUMNS_WIDTH \
+	--indent=4 --column=4
+echo
+
+if test -f /run/reboot-required
+then
+	echo "REBOOT IS REQUIRED"
+	echo
+fi
