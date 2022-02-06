@@ -1,23 +1,25 @@
 #!/bin/sh
 #
 # This script is expected to pull all the sub-modules from the remote
-# repository. If anything was not commited then the command will fail.
-# The script knows of the master and main top repositories. It also
-# understands the difference between contribs and main submodules.
-# (which is why a simple git submodule recursive wouldn't work).
+# repository. If anything was not committed then the command will fail.
+# The script understands the difference between contribs and main
+# submodules (which is why a simple `git submodule` recursive wouldn't work)
+# and it pulls the latest for each sub-module instead of whatever the main
+# module thinks is current (since at times it's not 100% up to date).
 
-SUBMODULE_MASTER=""
-
-SUBMODULE_MAIN="
+SUBMODULES="
 	advgetopt
 	as2js
 	cassandra-cpp-driver-snap
-	cppthread
 	cmake
+	commonmarkcpp
+	cppthread
 	csspp
 	eventdispatcher
 	fastjournal
+	ftmesh
 	iplock
+	ipmgr
 	libaddr
 	libcassvalue
 	libcasswrapper
@@ -35,26 +37,23 @@ SUBMODULE_MAIN="
 	snapwebsites
 	zipios"
 
-pull() {
-	for submodule in $1
-	do
-		if test -d contrib/$submodule
-		then
-			echo "Retrieve contrib/$submodule ($2)"
-			(
-				cd contrib/$submodule
-				git pull origin $2
-			)
-		else
-			echo "Retrieve $submodule ($2)"
-			(
-				cd $submodule
-				git pull origin $2
-			)
-		fi
-	done
-}
-
-pull "$SUBMODULE_MASTER" master
-pull "$SUBMODULE_MAIN" main
+for submodule in $1
+do
+	if test -d contrib/$submodule
+	then
+		echo "Retrieve contrib/$submodule (main)"
+		(
+			cd contrib/$submodule
+			git checkout main
+			git pull origin main
+		)
+	else
+		echo "Retrieve $submodule (main)"
+		(
+			cd $submodule
+			git checkout main
+			git pull origin main
+		)
+	fi
+done
 
