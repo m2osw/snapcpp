@@ -37,7 +37,7 @@ SUBMODULES="
 	snapwebsites
 	zipios"
 
-for submodule in $1
+for submodule in $SUBMODULES
 do
 	if test -d contrib/$submodule
 	then
