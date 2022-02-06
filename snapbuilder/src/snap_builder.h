@@ -115,6 +115,7 @@ private:
     bool                            svg_ready(
                                           cppprocess::io * output_pipe
                                         , cppprocess::done_reason_t reason);
+    void                            update_state(int row);
 
     QSettings                       f_settings = QSettings();
     advgetopt::getopt               f_opt;

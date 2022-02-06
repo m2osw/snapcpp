@@ -334,6 +334,7 @@ void snap_builder::timerEvent(QTimerEvent * timer_event)
 {
     snapdev::NOT_USED(timer_event);
 
+    QTableWidgetItem * item(nullptr);
     int row(0);
     for(auto const & p : f_projects)
     {
@@ -345,18 +346,143 @@ void snap_builder::timerEvent(QTimerEvent * timer_event)
                 {
                     p->load_remote_data();
 
-                    QTableWidgetItem * item(f_table->item(row, 2));
+                    item = f_table->item(row, 2);
                     item->setText(QString::fromUtf8(p->get_remote_version().c_str()));
+
+                    item = f_table->item(row, 3);
+                    item->setText(QString::fromUtf8(p->get_state().c_str()));
 
                     item = f_table->item(row, 5);
                     item->setText(QString::fromUtf8(p->get_remote_build_state().c_str()));
 
                     item = f_table->item(row, 6);
                     item->setText(QString::fromUtf8(p->get_remote_build_date().c_str()));
+
+                    update_state(row);
                 }
             }
             ++row;
         }
+    }
+}
+
+
+/** \brief This function computes a state for each row (project).
+ *
+ * The state of a project is determined by the project. It results
+ * in a color and a string and represents what we can do next with
+ * that object.
+ */
+void snap_builder::update_state(int row)
+{
+    QTableWidgetItem * item(f_table->item(row, 0));
+    QVariant const v(item->data(Qt::UserRole));
+    project::pointer_t p(v.value<project_ptr>().f_ptr);
+    if(p == nullptr)
+    {
+        // this should never happen
+        //
+        return;
+    }
+
+    std::string state(p->get_state());
+    if(state.empty())
+    {
+        state = "?";
+    }
+
+    // a default brush represents the default background color
+    //
+    std::string unknown;
+    QBrush background;
+    switch(state[0])
+    {
+    case 'b':
+        if(state == "bad version")
+        {
+            // there are changes in your local version but the version is
+            // the same as a successful build on the remote (i.e. you need
+            // to click on "Edit Changelog")
+            //
+            background = QColor(222, 119, 153);
+        }
+        else if(state == "building")
+        {
+            // the project is being built right now
+            //
+            background = QColor(211, 255, 78);
+        }
+        else if(state == "build failed")
+        {
+            // the last build failed
+            //
+            background = QColor(255, 225, 225);
+        }
+        else if(state == "built")
+        {
+            // the last build succeeded and we do not have changes on our end
+            //
+            background = QColor(240, 255, 240);
+        }
+        else
+        {
+            unknown = state;
+        }
+        break;
+
+    case 'n':
+        if(state == "never built")
+        {
+            // this means we never got info from the remote (or the file
+            // is empty) and that means it was never built there
+            //
+            background = QColor(200, 200, 200);
+        }
+        else if(state == "not committed")
+        {
+            background = QBrush(QColor(255, 248, 240));
+        }
+        else if(state == "not pushed")
+        {
+            background = QBrush(QColor(255, 240, 230));
+        }
+        else
+        {
+            unknown = state;
+        }
+        break;
+
+    case 'r':
+        if(state == "ready")
+        {
+            // this is the default
+            //
+            background = QBrush();
+        }
+        else
+        {
+            unknown = state;
+        }
+        break;
+
+    }
+
+    if(!unknown.empty())
+    {
+        SNAP_LOG_WARNING
+            << "unknown (unhandled) project state: \""
+            << unknown
+            << "\"."
+            << SNAP_LOG_SEND;
+    }
+
+    // update the background of the entire row
+    //
+    int const max(f_table->columnCount());
+    for(int col(0); col < max; ++col)
+    {
+        QTableWidgetItem * cell(f_table->item(row, col));
+        cell->setBackground(background);
     }
 }
 
@@ -440,7 +566,7 @@ void snap_builder::read_list_of_projects()
                 , [](project::pointer_t p) { return p->is_valid(); }));
     f_table->setRowCount(count);
 
-    QTableWidgetItem  * item = nullptr;
+    QTableWidgetItem * item(nullptr);
     int row(0);
     int reselect_row(-1);
     for(auto const & p : f_projects)
@@ -456,52 +582,35 @@ void snap_builder::read_list_of_projects()
                 f_current_project = p;
             }
 
-            QBrush background;
-
-            std::string const & state(p->get_state());
-            if(state == "not committed")
-            {
-                background = QBrush(QColor(255, 248, 240));
-            }
-            else if(state == "not pushed")
-            {
-                background = QBrush(QColor(255, 240, 230));
-            }
-
             item = new QTableWidgetItem(QString::fromUtf8(p->get_name().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 0, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_version().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 1, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_remote_version().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 2, item);
 
-            item = new QTableWidgetItem(QString::fromUtf8(state.c_str()));
+            item = new QTableWidgetItem(QString::fromUtf8(p->get_state().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 3, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_last_commit_as_string().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 4, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_remote_build_state().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 5, item);
 
             item = new QTableWidgetItem(QString::fromUtf8(p->get_remote_build_date().c_str()));
             item->setData(Qt::UserRole, v);
-            item->setBackground(background);
             f_table->setItem(row, 6, item);
+
+            update_state(row);
 
             ++row;
         }
@@ -1275,25 +1384,6 @@ void snap_builder::on_build_package_clicked()
     }
     else
     {
-        // create a <project-name>.building flag in the cache folder, as long as
-        // this is there, we want to continue checking the status on launchpad
-        // until the package is built or it failed
-        {
-            std::string const building(f_current_project->get_flag_filename());
-            std::ofstream flag;
-            flag.open(building);
-            if(flag.is_open())
-            {
-                time_t now(time(nullptr));
-                tm t;
-                gmtime_r(&now, &t);
-                char buf[256];
-                strftime(buf, sizeof(buf) - 1, "Started on %y/%m/%d %H:%M:%S", &t);
-                buf[sizeof(buf) - 1] = '\0';
-                flag << buf << std::endl;
-            }
-        }
-
         f_current_project->set_building(true);
     }
 

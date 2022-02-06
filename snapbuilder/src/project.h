@@ -96,7 +96,7 @@ public:
     std::string                 get_project_name() const;
     std::string const &         get_version() const;
     std::string                 get_remote_version() const;
-    std::string const &         get_state() const;
+    std::string                 get_state() const;
     time_t                      get_last_commit() const;
     std::string                 get_last_commit_as_string() const;
     std::string                 get_remote_build_state() const;
@@ -106,10 +106,13 @@ public:
 
     std::string                 get_ppa_json_filename() const;
     std::string                 get_flag_filename() const;
+    std::string                 get_build_hash_filename() const;
     void                        load_remote_data();
     bool                        retrieve_ppa_status();
     bool                        get_building() const;
     void                        set_building(bool building);
+    bool                        get_build_succeeded() const;
+    bool                        get_build_failed() const;
 
     bool                        operator < (project const & rhs) const;
     static void                 sort(vector_t & v);
@@ -130,6 +133,8 @@ private:
     bool                        retrieve_version();
     bool                        check_state();
     bool                        get_last_commit_timestamp();
+    bool                        get_last_commit_hash();
+    bool                        get_build_hash();
     void                        retrieve_building_state();
     project_remote_info::pointer_t
                                 find_remote_info(
@@ -142,9 +147,12 @@ private:
     std::string                 f_state = std::string();
     std::string                 f_version = std::string();
     time_t                      f_last_commit = 0;
+    std::string                 f_last_commit_hash = std::string();
+    std::string                 f_build_hash = std::string();
     bool                        f_valid = false;
     bool                        f_recursed_add_dependencies = false;
     bool                        f_building = false;
+    int                         f_built_successfully = -1;
     dependencies_t              f_dependencies = dependencies_t();
     dependencies_t              f_trimmed_dependencies = dependencies_t();
     project_remote_info::vector_t

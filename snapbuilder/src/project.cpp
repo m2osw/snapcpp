@@ -43,6 +43,7 @@
 // snapdev lib
 //
 #include    <snapdev/string_replace_many.h>
+#include    <snapdev/trim_string.h>
 
 
 // Qt lib
@@ -227,6 +228,16 @@ void project::load_project()
         return;
     }
 
+    if(!get_last_commit_hash())
+    {
+        return;
+    }
+
+    if(!get_build_hash())
+    {
+        return;
+    }
+
     retrieve_building_state();
 
     f_valid = true;
@@ -327,7 +338,7 @@ bool project::get_last_commit_timestamp()
     cmd += "; git log -1 --format=%ct";
 
     //SNAP_LOG_INFO
-    //    << "last commit timestamp with: "
+    //    << "get last commit timestamp with: "
     //    << cmd
     //    << SNAP_LOG_SEND;
 
@@ -351,6 +362,81 @@ bool project::get_last_commit_timestamp()
 }
 
 
+bool project::get_last_commit_hash()
+{
+// Using a process would be great but this is asynchronous and at this
+// point I just don't want to deal with 100% asynchronous functionality
+// (i.e. I would then have to read the list of processes and then gather
+// their data; as the data arrives, we could then update the table the
+// user sees, it will be great, but this is just a quick builder helper
+// not an end user project)
+//
+//    // retrieve the hash of our latest `git commit ...` so it can be
+//    // compared against the last build hash
+//    //
+//    {
+//        cppprocess::io_capture_pipe::pointer_t capture(std::make_shared<cppprocess::io_capture_pipe>());
+//        capture->add_process_done_callback(std::bind(&project::last_commit, this));
+//
+//        -- this is the process definition from the header
+//        cppprocess::process::pointer_t
+//                                f_last_commit_process = cppprocess::process::pointer_t();
+//
+//        f_last_commit_process = std::make_shared<cppprocess::process>("last-commit");
+//        f_last_commit_process->set_working_directory(f_project_path);
+//        f_last_commit_process->set_command("git");
+//        f_last_commit_process->add_argument("rev-parse");
+//        f_last_commit_process->add_argument("HEAD");
+//        f_last_commit_process->set_output_io(capture);
+//        f_last_commit_process->start(); // TODO: check return value for errors
+//    }
+
+    std::string cmd("cd ");
+    cmd += f_project_path;
+    cmd += "; git rev-parse HEAD";
+
+    //SNAP_LOG_INFO
+    //    << "get last commit hash with: "
+    //    << cmd
+    //    << SNAP_LOG_SEND;
+
+    FILE * p(popen(cmd.c_str(), "r"));
+    char buf[256];
+    if(fgets(buf, sizeof(buf) - 1, p) == nullptr)
+    {
+        buf[0] = '\0';
+    }
+    buf[sizeof(buf) - 1] = '\0';
+    pclose(p);
+
+    f_last_commit_hash = snapdev::trim_string(std::string(buf));
+
+    //SNAP_LOG_INFO
+    //    << "last commit hash: "
+    //    << f_last_commit_hash
+    //    << SNAP_LOG_SEND;
+
+    return !f_last_commit_hash.empty();
+}
+
+
+bool project::get_build_hash()
+{
+    // this state would need to be communicated if you have multiple
+    // programmers using the snapbuilder...
+    //
+    std::ifstream hash;
+    hash.open(get_build_hash_filename());
+    if(hash.is_open())
+    {
+        hash >> f_build_hash;
+        f_build_hash = snapdev::trim_string(f_build_hash);
+    }
+
+    return true;
+}
+
+
 void project::retrieve_building_state()
 {
     // if the .building file exists, then that means we started a build
@@ -358,7 +444,12 @@ void project::retrieve_building_state()
     //
     std::ifstream flag;
     flag.open(get_flag_filename());
-    set_building(flag.is_open());
+
+    // WARNING: do not call the set_building() otherwise we may mess up the
+    //          last revision UUID file, which is important to know the
+    //          status of the build
+    //
+    f_building = flag.is_open();
 }
 
 
@@ -414,8 +505,78 @@ std::string project::get_remote_version() const
 }
 
 
-std::string const & project::get_state() const
+/** \brief Compute the state of the project.
+ *
+ * The project has many states which are computed as follow:
+ *
+ * * <empty> -- this is the default state value which means that the
+ * state was not yet calculated
+ *
+ * * not committed -- the project is not yet commit; we have changes in
+ * our local files
+ *
+ * * not pushed -- the project was not yet pushed to the remote repository;
+ * we prefer to have files pushed when we generate the source for a build
+ * even though it doesn't matter to launchpad, it makes it easier if you
+ * have multiple developers to have things pushed; our build system, though
+ * would use files from the remote repository, so in that case it is
+ * important to us
+ *
+ * * ready -- everything is ready for a build
+ *
+ * * building -- launchpad is currently building
+ */
+std::string project::get_state() const
 {
+    // building has priority
+    //
+    if(f_building)
+    {
+        return "building";
+    }
+
+    // "not committed" and "not pushed" are returned as is
+    //
+    if(f_state != "ready")
+    {
+        return f_state;
+    }
+
+    // never built? (at least no info from remote)
+    //
+    if(get_remote_version() == "-")
+    {
+        return "never built";
+    }
+
+    if(get_build_failed())
+    {
+        return "build failed";
+    }
+
+    // if the version did not change, but the hash did, then the programmer
+    // has to edit the changelog to bump the version
+    //
+    if(get_version() == get_remote_version())
+    {
+        // the build hash may not be available (not yet in our cache)
+        // which is a big problem we'll want to resolve at some point
+        // (i.e. we would need the cache to be on our build server not
+        // individually defined for each user)
+        //
+        if(f_build_hash.empty()
+        || f_last_commit_hash == f_build_hash)
+        {
+            return "built";
+        }
+        else
+        {
+            return "bad version";
+        }
+    }
+
+    // we're ready for a new build!
+    //
     return f_state;
 }
 
@@ -572,7 +733,13 @@ void project::load_remote_data()
         return;
     }
 
+    std::set<std::string> complete_list_of_codenames_and_archs;
+    std::set<std::string> built_list_of_codenames_and_archs;
+    f_built_successfully = -1;
+
     as2js::JSON::JSONValue::array_t const & entries(it->second->get_array());
+    f_remote_info.clear();
+    f_remote_info.reserve(entries.size());
     for(as2js::JSON::JSONValue::pointer_t const & e : entries)
     {
         // just in case, verify that the entry is an object, if not, just
@@ -593,14 +760,14 @@ void project::load_remote_data()
             SNAP_LOG_ERROR
                 << "\"source_package_name\" field not found."
                 << SNAP_LOG_SEND;
-            return;
+            continue;
         }
         if(source_package_name_it->second->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
         {
             SNAP_LOG_ERROR
                 << "\"source_package_name\" is not a string."
                 << SNAP_LOG_SEND;
-            return;
+            continue;
         }
         if(source_package_name_it->second->get_string().to_utf8() != get_project_name())
         {
@@ -611,7 +778,7 @@ void project::load_remote_data()
                 << get_project_name()
                 << "\" instead."
                 << SNAP_LOG_SEND;
-            return;
+            continue;
         }
 
         // get the creation date
@@ -696,39 +863,6 @@ void project::load_remote_data()
         std::string const build_codename(build_version.substr(pos + 1));
         build_version.erase(pos);
 
-        // get the build state of this entry
-        //
-        std::string build_state;
-        auto const build_state_it(build.find("buildstate"));
-        if(build_state_it != build.end())
-        {
-            if(build_state_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
-            {
-                build_state = build_state_it->second->get_string().to_utf8();
-
-                if(f_building
-                && (build_state == "Successfully built"
-                    || build_state == "Failed to build")
-                && build_version == f_version)
-                {
-                    f_building = false;
-
-                    // delete the flag, we're done with it
-                    //
-                    snapdev::NOT_USED(unlink(get_flag_filename().c_str()));
-
-                    SNAP_LOG_INFO
-                        << "Done building \""
-                        << f_name
-                        << "\", new status is: \""
-                        << build_state
-                        << "\""
-                        << SNAP_LOG_SEND;
-                }
-                // else set it to true?
-            }
-        }
-
         // get the build architecture
         //
         std::string build_arch;
@@ -745,7 +879,62 @@ void project::load_remote_data()
         if(build_arch.empty())
         {
             SNAP_LOG_ERROR
-                << "no version found in this entry."
+                << "no architecture specified in this entry."
+                << SNAP_LOG_SEND;
+            continue;
+        }
+
+        // to know whether all the versions and architectures are built
+        // we need a complete list of those for our given version
+        //
+        // TODO: this is flaky because it may take a moment for the
+        //       remote system to enter all the data; at this time,
+        //       though, we take 1 min. to re-read the state so we
+        //       should be good... assuming no huge delay on launchpad
+        //
+        if(build_version == f_version)
+        {
+            complete_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+        }
+
+        // get the build state of this entry
+        //
+        std::string build_state;
+        auto const build_state_it(build.find("buildstate"));
+        if(build_state_it != build.end())
+        {
+            if(build_state_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            {
+                build_state = build_state_it->second->get_string().to_utf8();
+
+                if(build_version == f_version)
+                {
+                    if(build_state == "Successfully built")
+                    {
+                        built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+
+                        // set to 1 if first; then if already 1, we're good
+                        // and if set to 0, we keep it in the "failed" state
+                        // because at least one version failed
+                        //
+                        if(f_built_successfully == -1)
+                        {
+                            f_built_successfully = 1;
+                        }
+                    }
+                    else if(build_state == "Failed to build"
+                         || build_state == "Dependency wait")
+                    {
+                        built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+                        f_built_successfully = 0;
+                    }
+                }
+            }
+        }
+        if(build_state.empty())
+        {
+            SNAP_LOG_ERROR
+                << "no build state found in this entry."
                 << SNAP_LOG_SEND;
             continue;
         }
@@ -760,6 +949,28 @@ void project::load_remote_data()
         info->set_build_arch(build_arch);
 
         f_remote_info.push_back(info);
+    }
+
+    if(f_building
+    && complete_list_of_codenames_and_archs == built_list_of_codenames_and_archs)
+    {
+        f_building = false;
+
+        // delete the flag, we're done with it
+        //
+        snapdev::NOT_USED(unlink(get_flag_filename().c_str()));
+
+        SNAP_LOG_INFO
+            << "Done building \""
+            << f_name
+            << "\", new status is: \""
+            << (f_built_successfully == -1
+                ? "unknown"
+                : (f_built_successfully == 1
+                    ? "Built successfully"
+                    : "Build failed"))
+            << "\""
+            << SNAP_LOG_SEND;
     }
 
 
@@ -900,6 +1111,13 @@ std::string project::get_flag_filename() const
 }
 
 
+std::string project::get_build_hash_filename() const
+{
+    std::string const & cache(f_snap_builder->get_cache_path());
+    return cache + '/' + get_project_name() + ".hash";
+}
+
+
 /** \brief Load the PPA status from LaunchPad.
  *
  * This function forcibly loads a copy of this project JSON which gives us
@@ -974,7 +1192,66 @@ bool project::get_building() const
 
 void project::set_building(bool building)
 {
+    // create a <project-name>.building flag in the cache folder, as long as
+    // this is there, we want to continue checking the status on launchpad
+    // until the package is built or it failed
+    //
+    if(building)
+    {
+        std::ofstream flag;
+        flag.open(get_flag_filename());
+        if(flag.is_open())
+        {
+            time_t now(time(nullptr));
+            tm t;
+            gmtime_r(&now, &t);
+            char buf[256];
+            strftime(buf, sizeof(buf) - 1, "Started on %y/%m/%d %H:%M:%S", &t);
+            buf[sizeof(buf) - 1] = '\0';
+            flag << buf << std::endl;
+        }
+
+        // gather the latest commit hash in case the programmer updated
+        // a few last issues and thus the hash was updated
+        //
+        if(!get_last_commit_hash())
+        {
+            SNAP_LOG_ERROR
+                << "could not gather the latest commit hash for \""
+                << f_name
+                << "\" when marking that project as building. Using \""
+                << f_last_commit_hash
+                << "\" for now."
+                << SNAP_LOG_SEND;
+        }
+        f_build_hash = f_last_commit_hash;
+
+        std::ofstream hash;
+        hash.open(get_build_hash_filename());
+        if(hash.is_open())
+        {
+            hash << f_last_commit_hash << std::endl;
+        }
+    }
+
     f_building = building;
+}
+
+
+bool project::get_build_succeeded() const
+{
+    // this value has 3 states:
+    //    -1 -- unknown
+    //     0 -- build failed
+    //     1 -- build succeeded
+    //
+    return f_built_successfully == 1;
+}
+
+
+bool project::get_build_failed() const
+{
+    return f_built_successfully == 0;
 }
 
 
