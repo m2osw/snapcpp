@@ -952,6 +952,7 @@ void project::load_remote_data()
     }
 
     if(f_building
+    && !complete_list_of_codenames_and_archs.empty()
     && complete_list_of_codenames_and_archs == built_list_of_codenames_and_archs)
     {
         f_building = false;
