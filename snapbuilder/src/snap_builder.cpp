@@ -132,6 +132,7 @@ advgetopt::options_environment const g_options_environment =
     .f_options = g_options,
     .f_options_files_directory = nullptr,
     .f_environment_variable_name = "SNAP_BUILDER",
+    .f_environment_variable_intro = nullptr,
     .f_section_variables_name = nullptr,
     .f_configuration_files = g_configuration_files,
     .f_configuration_filename = nullptr,
@@ -525,6 +526,7 @@ void snap_builder::read_list_of_projects()
     f_projects.clear();
 
     int line(1);
+    std::string first;
     std::string s;
     while(std::getline(deps, s))
     {
@@ -536,15 +538,34 @@ void snap_builder::read_list_of_projects()
             continue;
         }
 
-        std::string::size_type const colon(s.find(':'));
-        if(colon == std::string::npos)
+        if(first.empty())
         {
-            std::cerr
-                << "error:"
+            first = s;
+        }
+        else if(first == s)
+        {
+            // TODO: fix the cmake that generates this file, once in a while
+            //       it duplicates the output without first clearing the
+            //       file (i.e. because we use an append)
+            //
+            SNAP_LOG_ERROR
                 << path
                 << ":"
                 << line
-                << ": no ':' found on the line.\n";
+                << ": repeat of first line found in the dependencies file.\n"
+                << SNAP_LOG_SEND;
+            break;
+        }
+
+        std::string::size_type const colon(s.find(':'));
+        if(colon == std::string::npos)
+        {
+            SNAP_LOG_ERROR
+                << path
+                << ":"
+                << line
+                << ": no ':' found on the line.\n"
+                << SNAP_LOG_SEND;
             continue;
         }
 
@@ -1106,7 +1127,12 @@ void snap_builder::on_bump_version_clicked()
     else
     {
         bool refresh_status(true);
-        if(f_current_project->get_state() == "ready")
+
+        // I don't think that testing the state makes sense herel
+        // if we had the right to bump the version, we should have the
+        // right to commit + push automatically
+        //
+        //if(f_current_project->get_state() == "ready")
         {
             QMessageBox::StandardButton const result(QMessageBox::question(
                   this
