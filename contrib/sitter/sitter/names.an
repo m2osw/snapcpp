@@ -1,0 +1,25 @@
+# Global names for the Sitter
+
+introducer=SITTER_NAME
+project=sitter
+
+[public]
+administrator_email=administrator_email
+cache_path=cache_path
+data_path=data_path
+log_path=/var/log/snapwebsites
+error_report_critical_priority=error_report_critical_priority
+ERROR_REPORT_LOW_PRIORITY=error_report_low_priority
+ERROR_REPORT_MEDIUM_PRIORITY=error_report_medium_priority
+ERROR_REPORT_SETTLE_TIME=error_report_settle_time
+FROM_EMAIL=from_email
+LOG_DEFINITIONS_PATH=watchdog_log_definitions_path
+LOG_PATH=log_path
+SERVER_NAME=server_name
+SERVERSTATS=serverstats
+STATISTICS_FREQUENCY=statistics_frequency
+STATISTICS_PERIOD=statistics_period
+STATISTICS_TTL=statistics_ttl
+USER_GROUP=user_group
+
+# vim: syntax=dosini

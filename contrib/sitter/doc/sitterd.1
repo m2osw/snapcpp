@@ -1,0 +1,219 @@
+.TH SITTERD 1 "March 2022" "sitter 1.x" "User Commands"
+.SH NAME
+sitterd \- The Sitter daemon
+.SH SYNOPSIS
+.B sitterd
+[\fI\-\-debug\fR]
+[\fI\-\-execute | \-e "<expression>"\fR]
+[\fI\-\-stdout\fR]
+\fI<configuration\-file>\fR
+.SH DESCRIPTION
+The sitter daemon is a service which runs a set of functions found in plugins
+to determine whether the system is healthy.
+.PP
+The daemon implements a loop to run the plugins functions that are used to
+detect whether things are still running.
+
+TODO: fix the rest
+.SH "READING A FIELD"
+To read a field, you simply use an expression without an assignment.
+.PP
+.in +4n
+.EX
+dns\-options \-e options.directory /etc/bind/named.conf.options
+.EE
+
+.SH "SETTING A FIELD"
+To set a field, you include an assignment followed by a value.
+.PP
+.in +4n
+.EX
+dns\-options \-e 'options.directory="/var/lib/bind"' /etc/bind/named.conf.options
+.EE
+.PP
+Notice the use of the single quote (') character so that way the double
+quotes (") of the value actually get saved in the file.
+
+.SH "CONDITIONALLY SETTING A FIELD"
+To set a field only if it is not yet defined, you use the special \fI?=\fR
+assignment.
+.PP
+.in +4n
+.EX
+dns\-options \-e 'options.directory?="/var/lib/bind"' /etc/bind/named.conf.options
+.EE
+.PP
+This command does nothing if the parameter \fIoptions.directory\fR is
+already set.
+
+.SH "APPENDING A SETTING TO A FIELD"
+To add to an existing field, you use the special \fI+=\fR assignment. This
+is particularly useful with options that define lists such as an \fIacl\fR.
+.PP
+.in +4n
+.EX
+dns\-options \-e acl[trusted\-servers]+=192.168.55.123 /etc/bind/named.conf.options
+.EE
+.PP
+TODO: This command does nothing if the parameter already exists in the list.
+
+.SH "REMOVING A FIELD"
+To remove a field, assign the special value \fInull\fR to it.
+.PP
+.in +4n
+.EX
+dns\-options \-e options.directory=null /etc/bind/named.conf.options
+.EE
+.PP
+This can be used to remove an option entirely. You can then re\-add it if
+you'd like.
+
+.SH "MATCHING A FIELD"
+The input expression is a set of field names and indexes used to match
+similar entries in the input file. The expression is composed of a
+field name optionally followed by one or more index optionally followed
+by additional fields and indexes. The syntax looks like this:
+.PP
+.in +4n
+.EX
+<keyword>
+  ( '[' <keyword> | '"' <string> '"' ']' )*
+    ( '.' field ( '[' <keyword> | '"' <string> '"' ']' )* )*
+      ( ( '?' | '+' )? '='
+        ( 'null' | (<keyword> | '"' <string> '"' )+ ) )?
+.EE
+.PP
+First you must have a \fI<field>\fR which is a keyword such as
+\fIoptions\fR or \fIacl\fR.
+.PP
+Following a field name, you can have one or more index. An index is
+specified between square brackets ([...]). You can either write a
+keyword (\fItrusted\-ips\fR) or a string written between double quotes
+(\fI"logs"\fR). In case of a string, you may use the match\-all script:
+\fI"*"\fR, which matches any input field in the configuration file.
+.PP
+A field and indexes can be followed by another field and indexes.
+In both cases, the indexes are optional. A sub\-field must be introduced
+by a period (.).
+.PP
+Once done defining the list of fields and indexes, you can stop here
+in which case the expression represents a field name to retrieve from
+the input configuration file.
+.PP
+When the fields and indexes are followed by an assignment operator
+(\fI=\fR, \fI?=\fR, or \fI+=\fR), then the expression represents a
+set and the operator must be followed by a value.
+.PP
+The special value \fInull\fR is used to delete a field. It will not be
+set to the value \fInull\fR in the configuration file. Instead it will
+completely be removed.
+.PP
+The value can be any number of keywords and double quoted strings. They
+will be output as is with one space between each element. Note that in
+the values, the \fI"*"\fR has not special meaning and it will be added
+to the configuration file as is.
+
+.SH "COMMAND LINE OPTIONS"
+.TP
+\fB\-\-build\-date\fR
+Print the date when this version of dns\-options was built.
+
+.TP
+\fB\-\-compiler\-version\fR
+Output the version information of the C++ compiler used to compile the
+`advgetopt' library. In most cases, this is the same as the compiler used
+to compile the `dns-options' tool.
+
+.TP
+\fB\-\-configuration\-filenames\fR
+`ipmgr' does not currently support configuration files.
+
+.TP
+\fB\-C\fR, \fB\-\-copyright\fR
+Print out the copyright notice of the `ipmgr' tool.
+
+.TP
+\fB\-\-debug\fR
+Output some debug information. This is mainly to work on the tool and fix
+it as we go.
+
+.TP
+\fB\-\-environment\-variable\-name\fR
+Print the name of the variable to the console. This variable can be used
+to enter options instead of writing them on the command line or the
+setup file. Commands are not allowed in the environment variable.
+
+.TP
+\fB\-e\fR, \fB\-\-execute\fR \fIexpression\fR
+The expression used to match the input configuration data and output the
+new results.
+
+.TP
+\fB\-\-has\-sanitizer\fR
+Print whether this version was compiled with the C++ compiler sanitizer.
+
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print a brief document about the tool usage, then exit.
+
+.TP
+\fB\-L\fR, \fB\-\-license\fR
+Print out the license of `ipmgr' and exit.
+
+.TP
+\fB\-\-path\-to\-option\-definitions\fR
+Currently, the dns-options doesn't support configuration files.
+
+.TP
+\fB\-\-show\-option\-sources\fR
+The `advgetopt' library has the ability to trace where each value is
+read from: which file, the command line, the environment variable.
+This option can be used to determine where a value is defined, which once
+in a while is particularly useful.
+
+.TP
+\fB\-\-stdout\fR]
+Print the resulting changes to stdout instead of overwriting the source
+file. This is particularly useful to debug an issue or write the changes
+to a new file.
+
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+print version number, then exit
+
+.SH "ZONE DIRECTORIES"
+.PP
+By default, the zone directories are set to the following three directories:
+.TP
+/usr/share/ipmgr/zones
+A directory where other projects are expected to drop zone files.
+.TP
+/etc/ipmgr/zones
+The directory where the system administrator is expected to add zone files.
+.TP
+/var/lib/ipmgr/zones
+A directory where dynamically created zones are expected to be installed.
+.PP
+.BR Note:
+Zone directories are read in the order specified. This can be
+important if you want a file to make changes, it is possible to do so in a
+later directory. All the files are read before they get processed.
+
+.SH AUTHOR
+Written by Alexis Wilke <alexis@m2osw.com>.
+.SH "REPORTING BUGS"
+Report bugs to <https://github.com/m2osw/ipmgr/issues>.
+.br
+ipmgr home page: <https://snapwebsites.org/project/ipmgr>.
+.SH COPYRIGHT
+Copyright \(co 2022 Made to Order Software Corporation
+.br
+License: GPLv3
+.br
+This is free software: you are free to change and redistribute it.
+.br
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+.BR ipmgr (1),
+.BR named.conf (5)
+.BR named (8)

@@ -1,0 +1,282 @@
+.TH FIND\-PROCESS 1 "Marsh 2022" "find-process 1.x" "User Commands"
+.SH NAME
+find\-process \- Look for processes including command line parameters
+.SH SYNOPSIS
+.B find\-process
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+This tool can be used to search for a process by name and command line
+parameters. This allows you to find a specific process even if started
+as a script such as with bash, java, python, etc.
+.SH "PLUGINS"
+The system loads plugins to handle the actual sitter's work. The sitter
+is responsible to find the plugins and run a loop to get all the data
+collected and send an email if required.
+
+.SH "COMMAND LINE OPTIONS"
+.TP
+\fB\-\-build\-date\fR
+Display the date and time when the tool was last built.
+
+.TP
+\fB\-\-command\-help\fR
+List the commands understood by `ipmgr'.
+
+.TP
+\fB\-\-compiler\-version\fR
+Output the version information of the C++ compiler used to compile the
+`advgetopt' library. In most cases, this is the same as the compiler used
+to compile the `ipmgr' tool.
+
+.TP
+\fB\-\-config\-dir\fR [\fISOURCE\fR]...
+Define a list of configuration directories to search for configuration files.
+
+.TP
+\fB\-\-configuration\-filenames\fR
+List the filename of each configuration file that the `ipmgr' will read
+to get initialized. \fBWARNING:\fR this does not include the zones that
+get loaded later in the process.
+
+.TP
+\fB\-\-config\-warnings\fR \fItrue | false\fR
+Whether to show warnings when reading configuration files. Default to false.
+
+.TP
+\fB\-\-console\fR
+Print the logs out to the console. This overrides the logger configuration
+files.
+
+.TP
+\fB\-C\fR, \fB\-\-copyright\fR
+Print out the copyright notice of the `ipmgr' tool.
+
+.TP
+\fB\-\-debug\fR
+Change the logger severity to the `debug' level. This command line option
+changes the level of all the appenders configured for `ipmgr'.
+
+.TP
+\fB\-\-default\-expire\fR \fIduration\fR...
+Define the amount of time to remember a zone value, even if stale.
+The default is two weeks (2w).
+
+.TP
+\fB\-\-default\-group\fR \fIname\fR
+Define a default group name. The group names are used to place different
+zones within the same directory. For example, you could have groups named
+`company', `customers', and `personal'.
+
+.TP
+\fB\-\-default\-hostmaster\fR \fIemail\fR
+Define a default hostmaster email address for all your zones. You can change
+this parameter on a per zone basis.
+
+.TP
+\fB\-\-default\-ips\fR \fIIP\fR...
+One or more IP addresses to use by default. If you have a single server,
+that would be that one IP address (although really you need at least two
+servers to make a DNS work correctly since you need two nameserver IP
+addresses).
+
+.TP
+\fB\-\-default\-minimum\-cache\-failures\fR \fIduration\fR
+Define the minimum amount of time a cache refresh attempt has to wait on
+a failure before trying again.
+
+.TP
+\fB\-\-default\-nameservers\fR \fIsubdomain.domain.tld\fR
+Define two or more default nameserver dmain names. The domain names must
+include the subdomain, domain, and TLD. These will be used by all the
+zones that did not define their own domain nameservers. In most cases,
+this is enough.
+
+.TP
+\fB\-\-default\-refresh\fR \fIduration\fR
+The default refresh duration defines at what rate your secondary DNS server
+is to refresh its copies of your domain names.
+
+.TP
+\fB\-\-default\-retry\fR \fIduration\fR
+Define the retry rate in case the main server does not reply to the
+secondary server.
+
+.TP
+\fB\-\-default\-ttl\fR \fIduration\fR
+Define the TTL of each one of your IP address. Each zone and each IP
+address can itself define its own TTL. The default is used everywhere else.
+
+.TP
+\fB\-\-dns\-ip\fR \fIIP\fR
+Define an IP address to use to dynamically update DNS zones.
+
+.TP
+\fB\-d\fR, \fB\-\-dry\-run\fR
+Do not run the commands that will modify the BIND9 settings. Useful to
+first verify that everything compiles as expected.
+
+.TP
+\fB\-\-environment\-variable\-name\fR
+Print the name of the variable to the console. This variable can be used
+to enter options instead of writing them on the command line or the
+setup file. Commands are not allowed in the environment variable.
+
+.TP
+\fB\-\-force\-severity\fR \fIlevel\fR
+Change the logger severity to this specific level. This new level is
+applied to all the defined appenders. The lelve is changed whether it
+is higher or lower than the current appender's level.
+
+.TP
+\fB\-\-has\-sanitizer\fR
+Print whether this version was compiled with the C++ compiler sanitizer.
+
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print a brief document about the tool usage, then exit.
+
+.TP
+\fB\-L\fR, \fB\-\-license\fR
+Print out the license of `ipmgr' and exit.
+
+.TP
+\fB\-\-list\-severities\fR
+List the available severities as used by the logger.
+
+.TP
+\fB\-\-log\-component\fR \fIname\fR...
+Define one or more component name to filter the logs. Only logs with that
+component are output, others are ignored. You can use the `!' (exclamation
+mark) character in front of a name to exclude logs from that component.
+
+.TP
+\fB\-\-log\-config\fR \fIfilename\fR
+Only load this very configuration file to setup the logger.
+
+.TP
+\fB\-\-log\-config\-path\fR \fIpath\fR
+Define a path to search for log configuration files instead of using the
+default.
+
+.TP
+\fB\-\-log\-file\fR \fIfilename\fR
+Save the logs in this specific file instead of what is defined in the
+configuration files.
+
+.TP
+\fB\-\-logger\-configuration\-filenames\fR
+List the files that the logger will read to be setup. If not files are found,
+then messages will appear in the console by default.
+
+.TP
+\fB\-\-logger\-hide\-banner\fR
+Request that the logger does not print the banner in the console. This is
+particularly useful for command line options (opposed to a service). The
+`ipmgr' service automatically turns this option on.
+
+.TP
+\fB\-\-logger\-show\-banner\fR
+Request that the logger prints its banner when it starts. This is useful
+if you run the tool from a service and want to make sure the administrator
+knows which version of the tool is being used.
+
+.TP
+\fB\-\-logger\-version\fR
+Print out the version of the Snap! Logger and exit.
+
+.TP
+\fB\-\-log\-severity\fR \fIlevel\fR
+Change the severity to this level unless the appender already accepts logs
+for a lower level. So for example, an appender setup to output logs with a
+severity level of `error' or higher will be affected by the `warning' level.
+An appender setup to output logs with a severity level of `info' will not
+be changed when setting this command line option to `warning'.
+
+.TO
+\fB\-\-no\-log\fR
+Turn off the logger so nothing gets printed out. This is somewhat similar
+to a quiet or silent option that many Unix tools offer.
+
+.TP
+\fB\-\-option\-help\fR
+Print the list of options supported by `ipmgr'.
+
+.TP
+\fB\-\-path\-to\-option\-definitions\fR
+Option definitions can be defined in a .ini file. If it exists, this is the
+path where it can be found.
+
+.TO
+\fB\-q\fR, \fB\-\-quiet\fR
+Make the `ipmgr' quiet. This flag cancels the effect of \-\-verbose flag.
+This is also the default.
+
+.TP
+\fB\-\-show\-option\-sources\fR
+The `advgetopt' library has the ability to trace where each value is
+read from: which file, the command line, the environment variable.
+This option can be used to determine where a value is defined, which once
+in a while is particularly useful.
+
+.TP
+\fB\-\-slave\fR [\fItrue | false\fR]
+Request the `ipmgr' to generate bind files for the slave server if set to
+true.
+
+.TP
+\fB\-\-syslog\fR [\fIidentity\fR]
+Send the logs to the system `syslog'. If specified, the `identity' is used
+along each message.
+
+.TP
+\fB\-\-trace\fR
+Change the logger severity to the TRACE level. All appenders will accept
+all the logs that they receive.
+
+.TP
+\fB-v\fR, \fB\-\-verbose\fR
+Show the various steps table by the `ipmgr' before running them.
+
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+print version number, then exit
+
+.TP
+\fB\-\-zone\-directories\fR [\fIDIRECTORY\fR]...
+One of more directories to read zone files from. The directories are searched
+for .conf files which will be transformed to BIND9 compatible .zone files.
+
+.SH "ZONE DIRECTORIES"
+.PP
+By default, the zone directories are set to the following three directories:
+.TP
+/usr/share/ipmgr/zones
+A directory where other projects are expected to drop zone files.
+.TP
+/etc/ipmgr/zones
+The directory where the system administrator is expected to add zone files.
+.TP
+/var/lib/ipmgr/zones
+A directory where dynamically created zones are expected to be installed.
+.PP
+.BR Note:
+Zone directories are read in the order specified. This can be
+important if you want a file to make changes, it is possible to do so in a
+later directory. All the files are read before they get processed.
+
+.SH AUTHOR
+Written by Alexis Wilke <alexis@m2osw.com>.
+.SH "REPORTING BUGS"
+Report bugs to <https://github.com/m2osw/ipmgr/issues>.
+.br
+ipmgr home page: <https://snapwebsites.org/project/ipmgr>.
+.SH COPYRIGHT
+Copyright \(co 2022 Made to Order Software Corporation
+.br
+License: GPLv3
+.br
+This is free software: you are free to change and redistribute it.
+.br
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+.BR find\-process (5)
