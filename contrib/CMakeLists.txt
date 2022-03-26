@@ -82,6 +82,13 @@ ConfigureMakeProject(
         contrib
 )
 
+ConfigureMakeProject(
+    PROJECT_NAME
+        brs
+    COMPONENT
+        contrib
+)
+
 # TODO: make the -std=c++14 a variable in our SnapBuild use it here
 ConfigureMakeProject(
     PROJECT_NAME
@@ -119,7 +126,7 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
-        ftmesh
+        edhttp
     COMPONENT
         contrib
 )
@@ -134,6 +141,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         fastjournal
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        ftmesh
     COMPONENT
         contrib
 )
@@ -182,6 +196,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        libmimemail
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         libmurmur3
     COMPONENT
         contrib
@@ -219,16 +240,9 @@ ConfigureMakeProject(
         contrib
 )
 
-# TODO: make the -std=c++14 a variable in our SnapBuild use it here
 ConfigureMakeProject(
     PROJECT_NAME
-        log4cplus12
-    CONFIG_ARGS
-        -DCMAKE_CXX_FLAGS=-std=c++14
-        -DLOG4CPLUS_BUILD_TESTING=OFF
-        -DLOG4CPLUS_SINGLE_THREADED=OFF
-        -DLOG4CPLUS_QT4=OFF
-        -DLOG4CPLUS_QT5=OFF
+        serverplugins
     COMPONENT
         contrib
 )
