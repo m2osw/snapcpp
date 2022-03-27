@@ -32,7 +32,7 @@
 	path = contrib/libtld
 	url = git@github.com:m2osw/libtld.git
 [submodule "contrib/log4cplus12"]
-	path = contrib/log4cplus12
+	path = archive/contrib/log4cplus12
 	url = git@github.com:m2osw/log4cplus12.git
 [submodule "contrib/zipios"]
 	path = contrib/zipios
@@ -82,3 +82,18 @@
 [submodule "contrib/commonmarkcpp"]
 	path = contrib/commonmarkcpp
 	url = git@github.com:m2osw/commonmarkcpp.git
+[submodule "contrib/libmimemail"]
+	path = contrib/libmimemail
+	url = git@github.com:m2osw/libmimemail.git
+[submodule "contrib/edhttp"]
+	path = contrib/edhttp
+	url = git@github.com:m2osw/edhttp.git
+[submodule "contrib/sitter"]
+	path = contrib/sitter
+	url = git@github.com:m2osw/sitter.git
+[submodule "contrib/brs"]
+	path = contrib/brs
+	url = git@github.com:m2osw/brs.git
+[submodule "contrib/serverplugins"]
+	path = contrib/serverplugins
+	url = git@github.com:m2osw/serverplugins.git
