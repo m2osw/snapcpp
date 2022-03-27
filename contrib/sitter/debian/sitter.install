@@ -1,7 +1,0 @@
-usr/lib/libsitter.so.*
-usr/bin
-usr/sbin
-conf/sitter.conf                        etc/sitter/
-conf/flags.conf                         etc/sitter/
-conf/README.md                          etc/sitter/sitter.d/
-conf/logger/sitter.conf                 etc/sitter/logger/
