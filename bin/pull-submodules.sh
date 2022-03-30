@@ -10,11 +10,13 @@
 SUBMODULES="
 	advgetopt
 	as2js
+	brs
 	cassandra-cpp-driver-snap
 	cmake
 	commonmarkcpp
 	cppthread
 	csspp
+	edhttp
 	eventdispatcher
 	fastjournal
 	ftmesh
@@ -24,12 +26,15 @@ SUBMODULES="
 	libcassvalue
 	libcasswrapper
 	libexcept
+	libmimemail
 	libmurmur3
 	libQtSerialization
 	libtld
 	libutf8
 	libuv1-snap
-	log4cplus12
+	serverplugins
+	sitter
+	snapbuilder
 	snapcatch2
 	snapdev
 	snaplogger
