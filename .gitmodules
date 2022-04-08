@@ -97,3 +97,6 @@
 [submodule "contrib/serverplugins"]
 	path = contrib/serverplugins
 	url = git@github.com:m2osw/serverplugins.git
+[submodule "contrib/snapcommunicator"]
+	path = contrib/snapcommunicator
+	url = git@github.com:m2osw/snapcommunicator.git
