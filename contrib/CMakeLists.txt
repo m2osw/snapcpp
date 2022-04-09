@@ -1,5 +1,4 @@
-#
-# Copyright (c) 2011-2021 Made to Order Software Corp.
+# Copyright (c) 2011-2022 Made to Order Software Corp.
 #
 # http://snapwebsites.org/
 # contact@m2osw.com
@@ -25,47 +24,22 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-project(snapwebsites_contrib)
+project(snapwebsites_contribs)
 
 
 ################################################################################
-# Snap Contrib libraries
+# Snap Contrib libraries and tools
 #
-# Dependencies in make syntax:
+# To determine the dependencies of a project, we look at its debian/control
+# file. This is done automatically whenever we build the snapcpp project
+# and you get a final like using the makefile syntax such as:
 #
-# (This gives us the order in which we have to compile these projects
-# on Launchpad; this is not always kept up to date, see the
-# clean-dependencies.svg instead--available after cmake ran)
+#    advgetopt: cppthread libutf8
 #
-# Note 1: <null> makes it explicit that there are no dependencies.
-# Note 2: these dependencies are defined in the debian/control files.
-#
-#   advgetopt: cppthread libutf8
-#   as2js: advgetopt
-#   cassandra-cpp-driver-snap: libuv1-snap
-#   cppthread: snapdev
-#   csspp: advgetopt
-#   eventdispatcher: libaddr snaplogger
-#   fastjournal: eventdispatcher
-#   ftmesh: snapdev libutf8
-#   iplock: libaddr
-#   ipmgr: libaddr libtld
-#   libaddr: advgetopt
-#   libcassvalue: libexcept
-#   libcasswrapper: cassandra-cpp-driver-snap as2js libcassvalue
-#   libexcept: snapcmakemodules
-#   libQtSerialization: snapdev
-#   libtld: snapcmakemodules
-#   libutf8: libexcept snapcatch2
-#   libuv1-snap: <null>
-#   log4cplus12: snapcmakemodules
-#   snapcatch2: snapcmakemodules
-#   snapcmakemodules: <null>
-#   snapdev: libexcept snapcatch2
-#   snaplogger: advgetopt
-#   snaprfs: ...
-#   snapwebsites: (all the others, always upload last)
-#   zipios: <null>
+# The script further checks the dependencies of the dependencies, so the
+# list can be pretty long. We try to optimize the final results and then
+# create and SVG using dot. This is also used inside our snapbuilder
+# application.
 #
 
 ConfigureMakeProject(
@@ -141,6 +115,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         fastjournal
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        fluid-settings
     COMPONENT
         contrib
 )
