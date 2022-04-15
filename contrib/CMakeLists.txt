@@ -244,6 +244,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        snapcommunicator
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         snapdev
     COMPONENT
         contrib
