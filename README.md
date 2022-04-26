@@ -51,6 +51,32 @@ Otherwise loss of data is very high (only the Cassandra cluster retains
 website data, other computers may have various caches, but they do not
 retain the official website data.)
 
+## Port Allocation
+
+The project uses ports in the range 4000 and 4999 inclusive. The following
+lists the current usage so we can make sure that we do not attempt to
+assign the same port number to two different services.
+
+* snapserver / tcp -- 4004
+* sendmail / udp -- 4005
+* pagelist / udp -- 4006
+* snapserver / udp -- 4007
+* snapcommunicatord / tcp / private network -- 4040
+* snapcommunicatord / udp -- 4041
+* snapdbproxy / tcp -- 4042 (will be retired)
+* fluid-settingsd / tcp -- 4049
+* snaploggerd / tcp -- 4050
+* snaploggerd / udp -- 4051 (log rotate)
+
+At this time, the number of ports is relatively small because most of our
+services connect to the snapcommunicatord and then it sends messages
+through that system instead of each service having a listening server
+and making sure that all IPs and Ports are correct. The snapcommunicator
+sends the messages between services making it really easy for each service
+to send and receive messages. That also means those services connect to
+port 4040 locally and then communicate to all the other services anywhere
+in the cluster that way.
+
 ## Cassandra Requirement
 
 The reason for having at least 4 Cassandra nodes is because you want
