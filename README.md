@@ -51,7 +51,7 @@ Otherwise loss of data is very high (only the Cassandra cluster retains
 website data, other computers may have various caches, but they do not
 retain the official website data.)
 
-## Port Allocation
+## Port Allocation & Socket Names
 
 The project uses ports in the range 4000 and 4999 inclusive. The following
 lists the current usage so we can make sure that we do not attempt to
@@ -61,9 +61,13 @@ assign the same port number to two different services.
 * sendmail / udp -- 4005
 * pagelist / udp -- 4006
 * snapserver / udp -- 4007
-* snapcommunicatord / tcp / private network -- 4040
-* snapcommunicatord / udp -- 4041
-* snapdbproxy / tcp -- 4042 (will be retired)
+* snapcommunicatord / tcp / private network -- 4040 (sc)
+* snapcommunicatord / udp -- 4041 (scu)
+* snapcommunicatord / tcp / remote -- 4042 (sc)
+* snapcommunicatord / tcp / secure -- 4043 (scs)
+* snapcommunicatord / stream -- (sc) /run/snapcommunicatord/snapcommunicatord.sock
+* snapcommunicatord / datagram -- (scu) -- NOT AVAILABLE
+* snapdbproxy / tcp -- 4048 (will be retired--was 4042)
 * fluid-settingsd / tcp -- 4049
 * snaploggerd / tcp -- 4050
 * snaploggerd / udp -- 4051 (log rotate)
