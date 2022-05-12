@@ -2,16 +2,20 @@ Source: snapbuilder
 Priority: optional
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
+    cppprocess-dev (>= 1.1.51.0~bionic),
     debhelper,
     doxygen,
     graphviz,
     advgetopt-dev (>= 2.0.18.0~bionic),
     eventdispatcher-dev (>= 1.1.30.1~bionic),
+    eventdispatcher-qt-dev (>= 1.1.30.1~bionic),
+    libas2js-dev (>= 0.1.36.0~bionic),
     libboost-dev | libboost1.49-dev,
     libexcept-dev (>= 1.1.8.0~bionic),
     qtbase5-dev,
     snapcmakemodules (>= 1.0.35.3~bionic),
-    snapdev (>= 1.1.12.0~bionic)
+    snapdev (>= 1.1.12.0~bionic),
+    snaplogger-dev (>= 1.0.0.0~bionic)
 Standards-Version: 3.9.4
 Section: utils
 Homepage: https://snapwebsites.org/project/snap-builder
