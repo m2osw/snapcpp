@@ -154,19 +154,20 @@ ConfigureMakeProject(
         contrib
 )
 
-ConfigureMakeProject(
-    PROJECT_NAME
-        libcassvalue
-    COMPONENT
-        contrib
-)
-
-ConfigureMakeProject(
-    PROJECT_NAME
-        libcasswrapper
-    COMPONENT
-        contrib
-)
+# TBD: I think these two can directly fit in `snapdatabase`
+#ConfigureMakeProject(
+#    PROJECT_NAME
+#        libcassvalue
+#    COMPONENT
+#        contrib
+#)
+#
+#ConfigureMakeProject(
+#    PROJECT_NAME
+#        libcasswrapper
+#    COMPONENT
+#        contrib
+#)
 
 ConfigureMakeProject(
     PROJECT_NAME
@@ -189,12 +190,13 @@ ConfigureMakeProject(
         contrib
 )
 
-ConfigureMakeProject(
-    PROJECT_NAME
-        libQtSerialization
-    COMPONENT
-        contrib
-)
+# Use `brs` instead
+#ConfigureMakeProject(
+#    PROJECT_NAME
+#        libQtSerialization
+#    COMPONENT
+#        contrib
+#)
 
 ConfigureMakeProject(
     PROJECT_NAME
@@ -210,16 +212,16 @@ ConfigureMakeProject(
         contrib
 )
 
-# TODO: make the -std=c++14 a variable in our SnapBuild use it here
-ConfigureMakeProject(
-    PROJECT_NAME
-        libuv1-snap
-    CONFIG_ARGS
-        -DCMAKE_CXX_FLAGS=-std=c++14
-        -DLIBUV_BUILD_TESTS=OFF
-    COMPONENT
-        contrib
-)
+# use `snapdatabase` instead (under `snapwebsites`)
+#ConfigureMakeProject(
+#    PROJECT_NAME
+#        libuv1-snap
+#    CONFIG_ARGS
+#        -DCMAKE_CXX_FLAGS=-std=c++14
+#        -DLIBUV_BUILD_TESTS=OFF
+#    COMPONENT
+#        contrib
+#)
 
 ConfigureMakeProject(
     PROJECT_NAME
