@@ -104,5 +104,5 @@
 	path = contrib/fluid-settings
 	url = git@github.com:m2osw/fluid-settings.git
 [submodule "contrib/snapcommunicatord"]
-	path = contrib/snapcommunicatord
+	path = contrib/communicatord
 	url = git@github.com:m2osw/snapcommunicatord.git

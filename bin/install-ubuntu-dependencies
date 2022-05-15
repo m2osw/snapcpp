@@ -25,6 +25,7 @@ if dpkg --compare-versions "${OS_VERSION}" "lt" "21.04"
 then
     extra_to_2004="
         dh-systemd
+        dh-sysuser
         qt5-default"
 else
     extra_2104_plus="dh-make"

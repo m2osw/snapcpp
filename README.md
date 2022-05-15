@@ -374,12 +374,13 @@ and compile it all:
     git clone --recursive https://github.com/m2osw/snapcpp.git snapcpp
        or
     git clone --recursive git@github.com:m2osw/snapcpp.git
-    sudo snapcpp/bin/snap-ubuntu-packages --optional
-    snapcpp/bin/snap-build
+    cd snapcpp
+    sudo bin/snap-ubuntu-packages --optional
+    bin/build-snap
 
 The first time you try to build on your system, we suggest you run the
 `bin/snap-ubuntu-packages` script to get all the dependencies installed.
-Then the `snap-build` script does most everything else.
+Then the `build-snap` script does most everything else.
 
 **NOTE:** The `git clone` command is going to download all the contribs
 which are in separate git repositories. This causes an issue: the scheme
