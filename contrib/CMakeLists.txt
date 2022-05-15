@@ -245,7 +245,7 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
-        snapcommunicatord
+        communicatord
     COMPONENT
         contrib
 )
