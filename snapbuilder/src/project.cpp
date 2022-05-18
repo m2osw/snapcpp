@@ -1068,7 +1068,7 @@ project::dependencies_t project::get_dependencies() const
  *     ...
  *
  * The `a` only needs to depend on `b` because `b` already depends on `c`
- * and `d` so in effect when `a` depends on `b` it also depends on what
+ * and `d` so in other words when `a` depends on `b` it also depends on what
  * `b` depends on, which are `c` and `d`.
  *
  * This is true in this case as well:
