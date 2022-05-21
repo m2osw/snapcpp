@@ -1,0 +1,32 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+%:
+	dh $@ --parallel
+
+override_dh_install:
+	ARCH=`uname -p`; \
+	if test "$${ARCH}" != "x86_64"; then \
+		sed -i -e "s/x86_64/$${ARCH}/g" debian/*.install; \
+	fi
+	dh_install
+
+override_dh_auto_install:
+	dh_auto_install
+	ARCH=`uname -p`; \
+	cp ./obj-$${ARCH}-linux-gnu/libcassandra_static.a ./debian/tmp/usr/lib/$${ARCH}-linux-gnu/libcassandra.a
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++14 -DCASS_BUILD_STATIC=ON -DLIBUV_ROOT_DIR=/usr/include/libuv-snap -DLIBUV_NAMES=uv-snap
+
+override_dh_makeshlibs:
+	dh_makeshlibs -V
+

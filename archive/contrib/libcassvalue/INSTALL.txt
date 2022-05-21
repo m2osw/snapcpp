@@ -1,0 +1,32 @@
+
+ * Compile, Build, Install
+
+This project uses cmake to generate the Makefile necessary to build the
+project:
+
+   tar xf libQtCassandra-0.5.0.tar.gz
+   mkdir BUILD
+   cd BUILD
+   cmake ../libQtCassandra-0.5.0
+   make
+   [sudo] make install
+
+This should work on all Unices. We have not yet worked on the project to
+get it to function under MS-Windows.
+
+
+ * Thrift (see README.txt for more info)
+
+If you have an uncompatible (?!) version of thrift or Cassandra, you may
+need to regenerate the thrift-gencpp-cassandra directory. This is done
+with:
+
+   thrift --gencpp <path to cassandra>/interface/cassandra.thrift
+
+The output will go in a directory named gencpp by default. You'll want to
+rename the directories, and copy the CMakeLists.txt file in your new
+directory. Also, I made a few changes marked with "Snap! Websites" (you
+can search on that string!) so it compiles in my environment. It is likely
+that you'll also need those additional #include because the default integer
+type extensions are not available as is.
+

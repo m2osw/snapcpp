@@ -1,0 +1,122 @@
+branches:
+  except:
+    - gh-pages
+skip_commits:
+  files:
+    - '**/*.bat'
+    - '**/*.info'
+    - '**/*.jar'
+    - '**/*.nav'
+    - '**/*.md'
+    - '**/.clang-format'
+    - '**/.documenter_local_last_run'
+    - '**/.gitignore'
+    - '**/build.yaml'
+    - '**/docs.yaml'
+    - '**/Doxyfile.in'
+    - '**/AUTHORS'
+    - '**/COPYING'
+    - '**/LICENSE'
+    - '**/LICENSE.txt'
+    - packaging/
+    - test/ccm_bridge/data/
+shallow_clone: false
+cache:
+  - C:\projects\dependencies\bin -> appveyor.ps1
+  - C:\projects\dependencies\libs -> appveyor.yml
+platform:
+  - x64
+hosts:
+  cpp-driver.hostname.: 127.254.254.254
+environment:
+  ARTIFACTORY_BASE_URI:
+    secure: JgzXEe8SETmb1jGeufZM87ov61t4gvBp/Gq0Q9lCfi41fMgV2z/21SiCobd+twf2aV5Wm+hqBLLdDwukT4UmqSWhfyq7S0CbHmaGzTXG3PE=
+  ARTIFACTORY_USERNAME:
+    secure: PLLc0JCL9I7y8zw8p9meQhxXGAbyWCjyWO17xKOsyxE=
+  ARTIFACTORY_PASSWORD:
+    secure: h28bN22Py3CZPqrWoZWEjIFnpes+kslusCKP1mRYdUqBEf+OO1kFEQTZ9DGD7tuCSIIRDI3Mf9LX8zgUdmdlZA==
+  APPVEYOR_IGNORE_COMMIT_FILTERING_ON_TAG: true
+  DRIVER_TYPE: CASS
+  BOOST_VERSION: 1.69.0
+  LIBSSH2_VERSION: 1.9.0
+  LIBUV_VERSION: 1.33.0
+  OPENSSL_1_0_VERSION: 1.0.2s
+  OPENSSL_1_1_VERSION: 1.1.1c
+  ZLIB_VERSION: 1.2.11
+  matrix:
+    - CMAKE_GENERATOR: Visual Studio 10 2010
+      OPENSSL_MAJOR_MINOR: 1.0
+      VISUAL_STUDIO_INTERNAL_VERSION: 100
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#    - CMAKE_GENERATOR: Visual Studio 10 2010
+#      OPENSSL_MAJOR_MINOR: 1.1
+#      VISUAL_STUDIO_INTERNAL_VERSION: 100
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - CMAKE_GENERATOR: Visual Studio 11 2012
+      OPENSSL_MAJOR_MINOR: 1.0
+      VISUAL_STUDIO_INTERNAL_VERSION: 110
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#    - CMAKE_GENERATOR: Visual Studio 11 2012
+#      OPENSSL_MAJOR_MINOR: 1.1
+#      VISUAL_STUDIO_INTERNAL_VERSION: 110
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - CMAKE_GENERATOR: Visual Studio 12 2013
+      OPENSSL_MAJOR_MINOR: 1.0
+      VISUAL_STUDIO_INTERNAL_VERSION: 120
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#    - CMAKE_GENERATOR: Visual Studio 12 2013
+#      OPENSSL_MAJOR_MINOR: 1.1
+#      VISUAL_STUDIO_INTERNAL_VERSION: 120
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    - CMAKE_GENERATOR: Visual Studio 14 2015
+      OPENSSL_MAJOR_MINOR: 1.0
+      VISUAL_STUDIO_INTERNAL_VERSION: 140
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+#    - CMAKE_GENERATOR: Visual Studio 14 2015
+#      OPENSSL_MAJOR_MINOR: 1.1
+#      VISUAL_STUDIO_INTERNAL_VERSION: 140
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - CMAKE_GENERATOR: Visual Studio 15 2017
+      OPENSSL_MAJOR_MINOR: 1.0
+      VISUAL_STUDIO_INTERNAL_VERSION: 141
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+#    - CMAKE_GENERATOR: Visual Studio 15 2017
+#      OPENSSL_MAJOR_MINOR: 1.1
+#      VISUAL_STUDIO_INTERNAL_VERSION: 141
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - CMAKE_GENERATOR: Visual Studio 16 2019
+      OPENSSL_MAJOR_MINOR: 1.0
+      VISUAL_STUDIO_INTERNAL_VERSION: 142
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      BOOST_VERSION: 1.70.0
+#    - CMAKE_GENERATOR: Visual Studio 16 2019
+#      OPENSSL_MAJOR_MINOR: 1.1
+#      VISUAL_STUDIO_INTERNAL_VERSION: 142
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+#      BOOST_VERSION: 1.70.0
+#init:
+#  - ps: iex ((New-Object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+install:
+  - ps: . .\appveyor.ps1 # Source AppVeyor build functions
+  - ps: Build-Configuration-Information
+  - ps: Hardware-Information
+  - ps: Environment-Information
+  - ps: Initialize-Build-Environment
+  - ps: Install-Driver-Environment
+build_script:
+  - ps: Build-Driver
+after_build:
+  - ps: Package-Artifacts
+  - ps: Push-Artifacts
+test_script:
+  - ps: Execute-Driver-Unit-Tests
+on_finish:
+  - ps: Push-Driver-Unit-Tests-Results
+  - ps: Build-Configuration-Information
+  - ps: Hardware-Information
+  - ps: Environment-Information
+#  - ps: $blockRdp = $True; iex ((New-Object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+on_failure:
+  - ps: Push-Build-Logs
+on_success:
+  - ps: Publish-Artifacts

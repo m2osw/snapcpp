@@ -1,0 +1,91 @@
+libcassvalue (1.0.4.5~bionic) bionic; urgency=high
+
+  * Bumped build version to rebuild on Launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 29 Aug 2021 13:06:34 -0700
+
+libcassvalue (1.0.4.4~bionic) bionic; urgency=high
+
+  * Bumped build version to rebuild on Launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 24 Aug 2021 16:18:19 -0700
+
+libcassvalue (1.0.4.3~bionic) bionic; urgency=high
+
+  * Bumped build version to rebuild on Launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 04 Jun 2021 18:36:04 -0700
+
+libcassvalue (1.0.4.2~xenial) xenial; urgency=high
+
+  * Bump version to get a recompile on launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 15 May 2021 09:14:34 -0700
+
+libcassvalue (1.0.4.1~xenial) xenial; urgency=high
+
+  * Bump version to get a recompile on launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri,  9 Aug 2019 18:29:05 -0800
+
+libcassvalue (1.0.4.0~xenial) xenial; urgency=high
+
+  * Added a PROJECT_BRIEF description.
+  * Added in=C++ to the MAPPING_EXTENSION.
+  * Updated the doxy file to 1.8.11.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 11 Jun 2019 23:49:15 -0800
+
+libcassvalue (1.0.3.2~xenial) xenial; urgency=high
+
+  * Bump version to get a recompile on launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 11 May 2019 18:28:48 -0800
+
+libcassvalue (1.0.3.0~xenial) xenial; urgency=high
+
+  * Made code -Weffc++ compatible.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 25 Jul 2018 19:28:25 -0800
+
+libcassvalue (1.0.2.3~xenial) xenial; urgency=high
+
+  * Bump version to recompile without the -fsanitizer flags.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 27 Jun 2018 19:46:10 -0800
+
+libcassvalue (1.0.2.2~xenial) xenial; urgency=high
+
+  * Bump version to recompile with the -fsanitizer flags.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 26 Jun 2018 20:03:27 -0800
+
+libcassvalue (1.0.2.1~xenial) xenial; urgency=high
+
+  * Fixed the protocol to the snapwebsites.org.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  8 Feb 2018 00:56:16 -0800
+
+libcassvalue (1.0.2.0~xenial) xenial; urgency=high
+
+  * Bumped copyright notice dates.
+  * Fixed file references folders.
+  * Added a version.cpp so one can call functions to determine the library
+    version (which can be different than the one you compiled with.)
+  * Fixed the namespace of the version.h.in file.
+  * Removed the `LIB` part in the version as defined in the CMakeList.txt.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 28 Jan 2018 23:46:52 -0800
+
+libcassvalue (1.0.1.0~xenial) xenial; urgency=high
+
+  * Bumped copyright dates.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed,  4 Jan 2017 23:45:51 -0800
+
+libcassvalue (1.0.0.0~xenial) xenial; urgency=high
+
+  * SNAP-258: moved value parsing to its own library.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 22 Dec 2016 16:49:11 -0700
+

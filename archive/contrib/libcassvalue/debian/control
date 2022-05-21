@@ -1,0 +1,60 @@
+Source: libcassvalue
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: cmake,
+    debhelper,
+    doxygen,
+    graphviz,
+    libexcept-dev (>= 1.0.2.250~xenial),
+    qtbase5-dev,
+    snapcmakemodules (>= 1.0.35.3~xenial)
+Standards-Version: 3.9.4
+Section: libs
+Homepage: https://snapwebsites.org/
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/libcassvalue
+
+Package: libcassvalue-dev
+Section: libdevel
+Architecture: any
+Depends: libcassvalue (= ${binary:Version}), ${misc:Depends}
+#Suggests: libcassvalue-doc
+Description: C++ bindings to the Cassandra database server.
+ The libcassvalue library is an advanced C++ library used to access Cassandra
+ servers in C++.
+ Contrary to the basic Cassadra server interface, this C++ library brings you
+ separate objects that handle each level of the server data, i.e. the cluster,
+ contexts, table, rows, cells.
+ Details for developers can be found on the reference pages (a 100% complete
+ Doxygen documentation of the library including source code and working
+ examples.)
+
+Package: libcassvalue
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: C++ bindings to the Cassandra database server.
+ The libcassvalue library is an advanced C++ library used to access Cassandra
+ servers in C++.
+ Contrary to the basic Cassadra server interface, this C++ library brings you
+ separate objects that handle each level of the server data, i.e. the cluster,
+ contexts, tables, rows, cells.
+ Details for developers can be found on the reference pages (a 100% complete
+ Doxygen documentation of the library including source code and working
+ examples.)
+
+#Package: libcassvalue-doc
+#Section: libdevel
+#Architecture: all
+#Depends: ${misc:Depends}
+#Description: C++ bindings to the Cassandra database server.
+# The libcassvalue library is an advanced C++ library used to access Cassandra
+# servers in C++.
+# Contrary to the basic Cassadra server interface, this C++ library brings you
+# separate objects that handle each level of the server data, i.e. the cluster,
+# contexts, table, rows, cells.
+# Details for developers can be found on the reference pages (a 100% complete
+# Doxygen documentation of the library including source code and working
+# examples.)
+
+# vim: ts=4 sw=4 et

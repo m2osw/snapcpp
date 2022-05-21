@@ -1,0 +1,76 @@
+Source: libcasswrapper
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: cassandra-cpp-driver-snap-dev (>= 2.11),
+    cmake,
+    debhelper,
+    doxygen,
+    graphviz,
+    libadvgetopt-dev (>= 2.0.4.0~xenial),
+    libas2js-dev (>= 0.1.18.194~xenial),
+    libboost1.49-dev | libboost-dev,
+    libcassvalue-dev (>= 1.0.1.269~xenial),
+    libexcept-dev (>= 1.0.2.250~xenial),
+    libssl-dev,
+    qtbase5-dev,
+    snapcmakemodules (>= 1.0.35.3~xenial)
+Standards-Version: 3.9.4
+Section: libs
+Homepage: https://snapwebsites.org/project/libqtcassandra
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/libcasswrapper
+
+Package: libcasswrapper-dev
+Section: libdevel
+Architecture: any
+Depends: libcasswrapper (= ${binary:Version}), ${misc:Depends}
+Suggests: libcasswrapper-doc
+Description: C++ bindings to the Cassandra database server.
+ The libcasswrapper library is an advanced C++ library used to access Cassandra
+ servers in C++.
+ Contrary to the basic Cassadra server interface, this C++ library brings you
+ separate objects that handle each level of the server data, i.e. the cluster,
+ contexts, table, rows, cells.
+ Details for developers can be found on the reference pages (a 100% complete
+ Doxygen documentation of the library including source code and working
+ examples.)
+
+Package: libcasswrapper
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Suggests: libcasswrapper-doc
+Description: C++ bindings to the Cassandra database server.
+ The libcasswrapper library is an advanced C++ library used to access Cassandra
+ servers in C++.
+ Contrary to the basic Cassadra server interface, this C++ library brings you
+ separate objects that handle each level of the server data, i.e. the cluster,
+ contexts, tables, rows, cells.
+ Details for developers can be found on the reference pages (a 100% complete
+ Doxygen documentation of the library including source code and working
+ examples.)
+
+Package: libcasswrapper-doc
+Section: libdevel
+Architecture: all
+Depends: ${misc:Depends}
+Description: C++ bindings to the Cassandra database server.
+ The libcasswrapper library is an advanced C++ library used to access Cassandra
+ servers in C++.
+ Contrary to the basic Cassadra server interface, this C++ library brings you
+ separate objects that handle each level of the server data, i.e. the cluster,
+ contexts, table, rows, cells.
+ Details for developers can be found on the reference pages (a 100% complete
+ Doxygen documentation of the library including source code and working
+ examples.)
+
+Package: libqt5sql5-cassandra
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Suggests: libcasswrapper-doc
+Description: Qt5 QSql plugin for Cassandra
+ This package provides the Cassandra plugin for the Qt5 QSql facility. This drops in
+ to provide Cassandra support using the QSqlQuery abstraction.
+
+# vim: ts=4 sw=4 et

@@ -1,0 +1,4 @@
+usr/include/uv.h                                   usr/include/libuv-snap/
+usr/include/uv/*                                   usr/include/libuv-snap/uv/
+usr/lib/x86_64-linux-gnu/libuv-snap.a              usr/lib/x86_64-linux-gnu/
+usr/lib/x86_64-linux-gnu/pkgconfig/libuv-snap.pc   usr/lib/x86_64-linux-gnu/pkgconfig/

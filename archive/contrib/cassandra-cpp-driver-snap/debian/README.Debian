@@ -1,0 +1,28 @@
+cassandra-cpp-driver for Debian
+-------------------------------
+
+IMPORTANT NOTE ABOUT THE VERSION:
+
+> The version comes from the `include/cassandra.h` file. Search for:
+>
+>     #define CASS_VERSION_MAJOR 2
+>     #define CASS_VERSION_MINOR 11
+>     #define CASS_VERSION_PATCH 0
+>     #define CASS_VERSION_SUFFIX ""
+>
+> Here we see version 2.11.0.
+>
+> For Snap!, we add another number and do not use the suffix. Each new version
+> from Snap! will be the `<major>.<minor>.<patch>.<build>` number where
+> `<build>` represents a change either in the origin suffix or from a _patch_
+> in the Snap! version.
+
+The source of this package was made part of the Snap C++ project because
+it is very tidly bound to our application. That way we can make sure it
+is available on new systems without looking left and right for a version
+that was compiled for a given version of Ubuntu.
+
+As long as Cassandra is not directly part of Ubuntu, we will continue to
+offer this project along Snap! C++.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 21 Apr 2019 18:00:25 -0800
