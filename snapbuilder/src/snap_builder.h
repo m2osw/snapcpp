@@ -92,6 +92,7 @@ private slots:
     void                            on_build_debug_triggered();
     void                            on_build_sanitize_triggered();
     void                            on_generate_dependency_svg_triggered();
+    void                            on_mark_build_done_triggered();
     void                            on_action_quit_triggered();
     void                            on_about_snapbuilder_triggered();
     void                            on_f_table_clicked(QModelIndex const & index);

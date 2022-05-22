@@ -789,6 +789,26 @@ void snap_builder::on_build_sanitize_triggered()
 }
 
 
+void snap_builder::on_mark_build_done_triggered()
+{
+    if(f_current_project == nullptr)
+    {
+        QMessageBox msg(
+              QMessageBox::Critical
+            , "No Project Selected"
+            , "To clear a project's build status, a project needs to be selected."
+            , QMessageBox::Close
+            , const_cast<snap_builder *>(this)
+            , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+        msg.exec();
+        return;
+    }
+
+std::cerr << "on_mark_build_done_triggered() called!\n";
+    f_current_project->mark_as_done_building();
+}
+
+
 void snap_builder::on_generate_dependency_svg_triggered()
 {
     statusbar->showMessage("Generating SVG of dependencies...");
@@ -903,7 +923,7 @@ void snap_builder::set_button_status()
         f_current_selection->setText(QString::fromUtf8(f_current_project->get_name().c_str()));
 
         std::string const & state(f_current_project->get_state());
-        build_package->setEnabled(state == "ready");
+        build_package->setEnabled(state == "ready" || state == "never built");
         meld->setEnabled(true);
         edit_changelog->setEnabled(true);
         bump_version->setEnabled(true);

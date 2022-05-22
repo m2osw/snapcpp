@@ -106,6 +106,7 @@ public:
 
     std::string                 get_ppa_json_filename() const;
     std::string                 get_flag_filename() const;
+    void                        mark_as_done_building();
     std::string                 get_build_hash_filename() const;
     void                        load_remote_data();
     bool                        retrieve_ppa_status();

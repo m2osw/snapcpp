@@ -453,6 +453,12 @@ void project::retrieve_building_state()
 }
 
 
+void project::mark_as_done_building()
+{
+    snapdev::NOT_USED(unlink(get_flag_filename().c_str()));
+}
+
+
 bool project::is_valid() const
 {
     return f_valid;
@@ -662,16 +668,16 @@ void project::load_remote_data()
             //
             return;
         }
-    }
 
-    if(access(cache_filename.c_str(), R_OK) != 0)
-    {
-        SNAP_LOG_MAJOR
-            << "cache file \""
-            << cache_filename
-            << "\" not available even after PPA retrieval. Try forcibly resetting the cache of that project."
-            << SNAP_LOG_SEND;
-        return;
+        if(access(cache_filename.c_str(), R_OK) != 0)
+        {
+            SNAP_LOG_MAJOR
+                << "cache file \""
+                << cache_filename
+                << "\" not available even after PPA retrieval."
+                << SNAP_LOG_SEND;
+            return;
+        }
     }
 
     // read the file and save the few fields we're interested in:
@@ -695,26 +701,27 @@ void project::load_remote_data()
     }
 
     as2js::JSON::JSONValue::object_t const & top_fields(root->get_object());
-    if(top_fields.find("total_size") != top_fields.end())
-    {
-        // if not empty, we have a "total_size_link" instead
-        //
-        // this happens whenever we create a new project and we have not
-        // yet compiled it on launchpad
-        //
-        SNAP_LOG_ERROR
-            << "JSON found in cache file \""
-            << cache_filename
-            << "\" has a \"total_size\" field which means it is empty."
-            << SNAP_LOG_SEND;
-        return;
-    }
 
     // TODO: verify that the "start" field is 0
 
     auto const it(top_fields.find("entries"));
     if(it == top_fields.cend())
     {
+        if(top_fields.find("total_size") != top_fields.end())
+        {
+            // if not empty, we have a "total_size_link" instead
+            //
+            // this happens whenever we create a new project and we have not
+            // yet compiled it on launchpad
+            //
+            SNAP_LOG_ERROR
+                << "JSON found in cache file \""
+                << cache_filename
+                << "\" has a \"total_size\" field which means it is empty."
+                << SNAP_LOG_SEND;
+            return;
+        }
+
         SNAP_LOG_ERROR
             << "JSON found in cache file \""
             << cache_filename
@@ -909,6 +916,30 @@ void project::load_remote_data()
 
                 if(build_version == f_version)
                 {
+                    auto const build_self_link(build.find("self_link"));
+                    if(build_self_link != build.end()
+                    && build_self_link->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+                    {
+                        SNAP_LOG_INFO
+                            << get_project_name()
+                            << " v"
+                            << build_version
+                            << "~"
+                            << build_codename
+                            << " for "
+                            << build_arch
+                            << ": "
+                            << date
+                            << ": Found build state \""
+                            << build_state
+                            << "\" with self-link \""
+                            << build_self_link->second->get_string().to_utf8()
+                            << "\". (success? "
+                            << f_built_successfully
+                            << ")"
+                            << SNAP_LOG_SEND;
+                    }
+
                     if(build_state == "Successfully built")
                     {
                         built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);

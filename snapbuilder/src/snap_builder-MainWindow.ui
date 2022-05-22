@@ -281,6 +281,7 @@ Compiled Date</string>
     <addaction name="generate_dependency_svg"/>
     <addaction name="separator"/>
     <addaction name="clear_launchpad_caches"/>
+    <addaction name="mark_build_done"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
@@ -358,6 +359,11 @@ Compiled Date</string>
   <action name="about_snapbuilder">
    <property name="text">
     <string>&amp;About Snap! Builder</string>
+   </property>
+  </action>
+  <action name="mark_build_done">
+   <property name="text">
+    <string>&amp;Mark Build as Done</string>
    </property>
   </action>
  </widget>
