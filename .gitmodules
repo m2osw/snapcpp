@@ -16,18 +16,9 @@
 [submodule "contrib/libaddr"]
 	path = contrib/libaddr
 	url = git@github.com:m2osw/libaddr.git
-[submodule "contrib/libcassvalue"]
-	path = contrib/libcassvalue
-	url = git@github.com:m2osw/libcassvalue.git
-[submodule "contrib/libcasswrapper"]
-	path = contrib/libcasswrapper
-	url = git@github.com:m2osw/libcasswrapper.git
 [submodule "contrib/libexcept"]
 	path = contrib/libexcept
 	url = git@github.com:m2osw/libexcept.git
-[submodule "contrib/libQtSerialization"]
-	path = contrib/libQtSerialization
-	url = git@github.com:m2osw/libQtSerialization.git
 [submodule "contrib/libtld"]
 	path = contrib/libtld
 	url = git@github.com:m2osw/libtld.git
@@ -40,9 +31,6 @@
 [submodule "snapwebsites"]
 	path = snapwebsites
 	url = git@github.com:m2osw/snapwebsites.git
-[submodule "contrib/cassandra-cpp-driver-snap"]
-	path = contrib/cassandra-cpp-driver-snap
-	url = git@github.com:m2osw/cassandra-cpp-driver-snap.git
 [submodule "contrib/libuv1-snap"]
 	path = contrib/libuv1-snap
 	url = git@github.com:m2osw/libuv1-snap.git
@@ -91,9 +79,6 @@
 [submodule "contrib/sitter"]
 	path = contrib/sitter
 	url = git@github.com:m2osw/sitter.git
-[submodule "contrib/brs"]
-	path = contrib/brs
-	url = git@github.com:m2osw/brs.git
 [submodule "contrib/serverplugins"]
 	path = contrib/serverplugins
 	url = git@github.com:m2osw/serverplugins.git

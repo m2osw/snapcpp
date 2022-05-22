@@ -32,7 +32,7 @@ project(snapwebsites_contribs)
 #
 # To determine the dependencies of a project, we look at its debian/control
 # file. This is done automatically whenever we build the snapcpp project
-# and you get a final like using the makefile syntax such as:
+# and you get a final deps.make using the makefile syntax such as:
 #
 #    advgetopt: cppthread libutf8
 #
@@ -55,26 +55,6 @@ ConfigureMakeProject(
     COMPONENT
         contrib
 )
-
-ConfigureMakeProject(
-    PROJECT_NAME
-        brs
-    COMPONENT
-        contrib
-)
-
-#ConfigureMakeProject(
-#    PROJECT_NAME
-#        cassandra-cpp-driver-snap
-#    CONFIG_ARGS
-#        -DCMAKE_CXX_FLAGS=-std=c++14
-#        -DCASS_BUILD_STATIC=ON
-#        -DCASS_BUILD_DOCS=ON
-#        -D_LIBUV_FOUND=TRUE
-#        -D_LIBUV_LIBDIR=${CMAKE_BINARY_DIR}/dist
-#    COMPONENT
-#        contrib
-#)
 
 ConfigureMakeProject(
     PROJECT_NAME
@@ -153,21 +133,6 @@ ConfigureMakeProject(
         contrib
 )
 
-# TBD: I think these two can directly fit in `snapdatabase`
-#ConfigureMakeProject(
-#    PROJECT_NAME
-#        libcassvalue
-#    COMPONENT
-#        contrib
-#)
-#
-#ConfigureMakeProject(
-#    PROJECT_NAME
-#        libcasswrapper
-#    COMPONENT
-#        contrib
-#)
-
 ConfigureMakeProject(
     PROJECT_NAME
         libexcept
@@ -189,14 +154,6 @@ ConfigureMakeProject(
         contrib
 )
 
-# Use `brs` instead
-#ConfigureMakeProject(
-#    PROJECT_NAME
-#        libQtSerialization
-#    COMPONENT
-#        contrib
-#)
-
 ConfigureMakeProject(
     PROJECT_NAME
         libtld
@@ -210,17 +167,6 @@ ConfigureMakeProject(
     COMPONENT
         contrib
 )
-
-# use `snapdatabase` instead (under `snapwebsites`)
-#ConfigureMakeProject(
-#    PROJECT_NAME
-#        libuv1-snap
-#    CONFIG_ARGS
-#        -DCMAKE_CXX_FLAGS=-std=c++14
-#        -DLIBUV_BUILD_TESTS=OFF
-#    COMPONENT
-#        contrib
-#)
 
 ConfigureMakeProject(
     PROJECT_NAME
