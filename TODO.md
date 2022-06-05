@@ -7,7 +7,7 @@
 # as2js
 
 * Remove the advgetopt dependency to allow for JSON inside advgetopt.
-* Rework the test to use SnapCatch2.
+* Rework the tests to use SnapCatch2.
 
 
 # advgetopt
@@ -20,7 +20,7 @@
 # iplock (snapfirewall)
 
 * Move snapfirewall to iplock.
-* Use a system of setup allowing other apps to grow the firewall seamlessly.
+* Use a setting system allowing other packages to grow the firewall seamlessly.
 
 
 # eventdispatcher

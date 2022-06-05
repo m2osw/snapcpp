@@ -200,6 +200,14 @@ function process($path)
             continue;
         }
 
+        // ignore directories we know are to going to include source data
+        //
+        if($entry == "tmp"
+        || $entry == "BUILD")
+        {
+            continue;
+        }
+
         // generate the "full" path from where we are
         //
         $subpath = $path . "/" . $entry;
