@@ -61,9 +61,9 @@ assign the same port number to two different services.
 * sendmail / udp -- 4005
 * pagelist / udp -- 4006
 * snapserver / udp -- 4007
-* snapcommunicatord / tcp / private network -- 4040 (sc)
+* snapcommunicatord / tcp / local network (loopback) -- 4040 (sc)
 * snapcommunicatord / udp -- 4041 (scu)
-* snapcommunicatord / tcp / remote -- 4042 (sc)
+* snapcommunicatord / tcp / private network (remote) -- 4042 (sc)
 * snapcommunicatord / tcp / secure -- 4043 (scs)
 * snapcommunicatord / stream -- (sc) /run/snapcommunicatord/snapcommunicatord.sock
 * snapcommunicatord / datagram -- (scu) -- NOT AVAILABLE
