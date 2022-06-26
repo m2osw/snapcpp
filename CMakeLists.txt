@@ -27,7 +27,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project( snapwebsites_main )
+project(snapwebsites_main)
 
 
 ################################################################################
@@ -38,7 +38,7 @@ list(APPEND CMAKE_MODULE_PATH
     ${CMAKE_BINARY_DIR}/dist/share/cmake-3.5/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake
 )
-find_package( SnapBuild REQUIRED )
+find_package(SnapBuild REQUIRED)
 
 
 ################################################################################
@@ -58,7 +58,7 @@ ConfigureMakeProject(
 #
 # Include snapwebsites projects next
 #
-add_subdirectory( contrib      )
+add_subdirectory(contrib)
 
 ConfigureMakeProject(
     PROJECT_NAME
@@ -74,7 +74,7 @@ ConfigureMakeProject(
         main
 )
 
-BuildRepro    ( "main" )
-CreateTargets ( "top"  )
+BuildRepro("main")
+CreateTargets("top")
 
 # vim: ts=4 sw=4 et nocindent
