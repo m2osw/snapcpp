@@ -71,6 +71,7 @@ assign the same port number to two different services.
 * fluid-settingsd / tcp -- 4049
 * snaploggerd / tcp -- 4050
 * snaploggerd / udp -- 4051 (log rotate)
+* fluid-settings-gui / udp -- 4052 (log rotate)
 
 At this time, the number of ports is relatively small because most of our
 services connect to the snapcommunicatord and then it sends messages
