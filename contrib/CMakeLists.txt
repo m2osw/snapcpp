@@ -1,4 +1,4 @@
-# Copyright (c) 2011-2022 Made to Order Software Corp.
+# Copyright (c) 2011-2022  Made to Order Software Corp.  All Rights Reserved
 #
 # http://snapwebsites.org/
 # contact@m2osw.com
@@ -21,8 +21,8 @@
 # CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
-cmake_minimum_required(VERSION 3.5)
+
+cmake_minimum_required(VERSION 3.10.2)
 
 project(snapwebsites_contribs)
 
