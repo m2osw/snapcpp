@@ -65,6 +65,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        communicatord
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         cppthread
     COMPONENT
         contrib
@@ -191,13 +198,6 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
-        communicatord
-    COMPONENT
-        contrib
-)
-
-ConfigureMakeProject(
-    PROJECT_NAME
         snapdev
     COMPONENT
         contrib
@@ -206,6 +206,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         snaplogger
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        snaprfs
     COMPONENT
         contrib
 )
