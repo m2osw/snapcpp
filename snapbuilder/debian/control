@@ -2,7 +2,8 @@ Source: snapbuilder
 Priority: optional
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
-    cppprocess-dev (>= 1.1.51.0~bionic),
+    cppprocess-dev (>= 1.1.52.0~bionic),
+    cppthread-dev (>= 1.1.12.1~bionic),
     debhelper,
     doxygen,
     graphviz,
