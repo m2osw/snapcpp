@@ -208,6 +208,25 @@ rm -rf BUILD /tmp/SnapFindDeps.pl.hash
 mkdir BUILD
 cd BUILD
 
+# TODO: would we have a better way to create that file?
+#
+cat > Makefile <<EOM
+# Auto-generated Top Makefile (See bin/build-snap)
+# Stop on first with errors
+all:
+	make -C Debug
+	make -C Release
+	make -C Sanitize
+
+# Try compiling everything, ignore errors until the end
+most:
+	ret=0; \\
+	make -C Debug; ret=\`expr \$\$ret + \$\$?\`; \\
+	make -C Release; ret=\`expr \$\$ret + \$\$?\`; \\
+	make -C Sanitize; ret=\`expr \$\$ret + \$\$?\`; \\
+	exit \$\$ret
+EOM
+
 # Configure and generate the Release version
 #
 (
