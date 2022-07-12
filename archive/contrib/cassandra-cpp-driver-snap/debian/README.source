@@ -1,8 +1,0 @@
-cassandra-cpp-driver for Debian
--------------------------------
-
-The source of this package is part of the Snap C++ project.
-
-Except for the debian folder, most of the source comes as is from the
-[Datastax C++ Driver](https://github.com/datastax/cpp-driver).
-

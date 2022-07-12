@@ -1,3 +1,0 @@
-usr/bin/*
-conf/snapinit.properties conf/snapinit.conf conf/snapinit.xml etc/snapwebsites
-conf/services-README.txt etc/snapwebsites/services.d
