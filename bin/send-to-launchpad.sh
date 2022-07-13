@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-# Old distributions: xenial
-DISTRIBUTIONS="bionic focal impish jammy"
+# Old distributions: xenial impish
+DISTRIBUTIONS="bionic focal jammy"
 
 while ! test -d BUILD/Debug -a -d BUILD/Release
 do
