@@ -23,7 +23,15 @@ then
     echo
     echo "Valid project-names are:"
     echo
-    ls contrib/ | tr '[:upper:]' '[:lower:]' | grep -v cmakelists.txt | sed -e '$a\ \ snapcmakemodules' -e '$a\ \ snapwebsites' -e 's/^/  /' | sort
+    TERMINAL_WIDTH=`tput cols`
+    ls contrib/ | \
+        tr '[:upper:]' '[:lower:]' | \
+        grep -v cmakelists.txt | \
+        sed -e '$a\ \ snapcmakemodules' -e '$a\ \ snapwebsites' -e 's/^/  /' | \
+        sort | \
+        pr --omit-pagination --omit-header \
+            --width=${TERMINAL_WIDTH} --page-width=${TERMINAL_WIDTH} \
+            --indent=0 --column=5
     echo
     exit 1;
 fi
@@ -69,11 +77,9 @@ case $MODULE in
     cd cmake
     MODULE=snapcmakemodules
     ;;
-"libqtserialization"|"libQtSerialization")
-    # Necessary because of the capitals
-    cd contrib/libQtSerialization
-    MODULE=libqtserialization
-    TMP=../../tmp
+"snapbuilder")
+    echo "error: snapbuild is not to be sent to launchpad."
+    exit 1
     ;;
 *)
     cd contrib/$MODULE
