@@ -1,2 +1,2 @@
-debian/snapbuilder/usr/bin/snapbuilder    usr/bin
+bin/snapbuilder
 conf/snapbuilder.conf                     etc/snapwebsites/
