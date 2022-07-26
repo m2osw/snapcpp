@@ -82,6 +82,16 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(
+    CODE
+        "execute_process(COMMAND find)"
+)
+
+install(
+    CODE
+        "execute_process(COMMAND pwd)"
+)
+
+install(
     TARGETS
         ${PROJECT_NAME}
 
