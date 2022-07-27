@@ -83,7 +83,7 @@ target_link_libraries(${PROJECT_NAME}
 
 install(
     CODE
-        "execute_process(COMMAND find)"
+        "execute_process(COMMAND find ..)"
 )
 
 install(
