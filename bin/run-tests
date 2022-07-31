@@ -1,0 +1,45 @@
+#!/bin/sh -e
+#
+# Run all the tests
+
+TOPDIR="`pwd`"
+while true
+do
+    BASE="`basename $TOPDIR`"
+    if test "$BASE" = "snapcpp"
+    then
+        break
+    fi
+    TOPDIR="`dirname $TOPDIR`"
+done
+
+cd "${TOPDIR}"
+
+#echo "TOPDIR = [$TOPDIR]"
+
+BUILD="${TOPDIR}/BUILD/Debug"
+CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d`"
+
+#echo "CONTRIBS = [$CONTRIBS]"
+
+SUCCESS=true
+for d in ${CONTRIBS} snapwebsites
+do
+    echo "--- RUNNING TESTS OF: ${d} ---"
+    (
+        cd "${d}"
+        OUTPUTDIR="${BUILD}/${d}/tmp"
+        mkdir -p "${OUTPUTDIR}"
+        OUTPUT="${OUTPUTDIR}/output.txt"
+        if ! ./mk -t >"${OUTPUT}" 2>&1
+        then
+            echo "   an error occurred, see output here: ${OUTPUT}"
+            echo
+            SUCCESS=false
+        fi
+    )
+done
+
+$SUCCESS
+
+# vim: ts=4 sw=4 et

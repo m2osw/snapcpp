@@ -30,9 +30,10 @@ project(snapwebsites_main)
 ################################################################################
 # Load up necessary modules
 #
+string(REPLACE "/usr/" "" SNAP_CMAKE_MODULES_DIR "${CMAKE_ROOT}")
 list(APPEND CMAKE_MODULE_PATH
     ${CMAKE_SOURCE_DIR}/cmake/Modules
-    ${CMAKE_BINARY_DIR}/dist/share/cmake-3.5/Modules
+    ${CMAKE_BINARY_DIR}/dist/${SNAP_CMAKE_MODULES_DIR}/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake
 )
 find_package(SnapBuild REQUIRED)
