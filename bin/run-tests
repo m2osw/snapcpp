@@ -25,17 +25,22 @@ CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d`"
 SUCCESS=true
 for d in ${CONTRIBS} snapwebsites
 do
-    echo "--- RUNNING TESTS OF: ${d} ---"
     (
         cd "${d}"
-        OUTPUTDIR="${BUILD}/${d}/tmp"
-        mkdir -p "${OUTPUTDIR}"
-        OUTPUT="${OUTPUTDIR}/output.txt"
-        if ! ./mk -t >"${OUTPUT}" 2>&1
+        if test -d tests
         then
-            echo "   an error occurred, see output here: ${OUTPUT}"
-            echo
-            SUCCESS=false
+            echo "--- RUNNING TESTS OF: ${d} ---"
+            OUTPUTDIR="${BUILD}/${d}/tmp"
+            mkdir -p "${OUTPUTDIR}"
+            OUTPUT="${OUTPUTDIR}/output.txt"
+            if ! ./mk -t >"${OUTPUT}" 2>&1
+            then
+                echo "   an error occurred, see output here: ${OUTPUT}"
+                echo
+                SUCCESS=false
+            fi
+        else
+            echo "--- SKIPPING: ${d} ---"
         fi
     )
 done
