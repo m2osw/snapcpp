@@ -82,6 +82,14 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+)
+
+install(
     CODE
         "execute_process(COMMAND find ../..)"
 )
@@ -89,14 +97,6 @@ install(
 install(
     CODE
         "execute_process(COMMAND pwd)"
-)
-
-install(
-    TARGETS
-        ${PROJECT_NAME}
-
-    RUNTIME DESTINATION
-        bin
 )
 
 # vim: ts=4 sw=4 et
