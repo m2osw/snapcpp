@@ -1,2 +1,2 @@
 conf/snapbuilder.conf                     etc/snapwebsites/
-obj-x86_64-linux-gnu/src/snapbuilder      bin/
+usr/bin/snapbuilder                       usr/bin/
