@@ -1,2 +1,2 @@
 conf/snapbuilder.conf                     etc/snapwebsites/
-usr/bin/snapbuilder                       usr/bin/
+#usr/bin/snapbuilder                       usr/bin/
