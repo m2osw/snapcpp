@@ -6,8 +6,11 @@
 
 # as2js
 
+* Rework the tests to use SnapCatch2 (started).
+* Make it possible to compute expressions (like the snapexpr.cpp/h would do).
 * Remove the advgetopt dependency to allow for JSON inside advgetopt.
-* Rework the tests to use SnapCatch2.
+* Move sub-classes outside of their classes (to avoid one namespace).
+* Move private sub-classes as details declared & implemented in our .cpp.
 
 
 # advgetopt
@@ -15,12 +18,19 @@
 * Add support for the JSON format.
 * Add support for the XML format.
 * Add support for the yml format.
+* Note: extending the advgetopt is now much less of a priority since we have
+        the fluid-settings which replace that in our services.
 
 
 # iplock (snapfirewall)
 
 * Move snapfirewall to iplock.
 * Use a setting system allowing other packages to grow the firewall seamlessly.
+
+
+# fastjournal
+
+* Implement.
 
 
 # eventdispatcher
@@ -38,16 +48,16 @@
 * Open several connections: Unix socket (plain), TCP plain, TCP with TLS, UDP.
 
 
-# eventdispatcher-http
+# edhttp
 
 * Implement the HTTP 1, 1.1, 2, 3 client/server objects.
   (I'll look into using whatever NodeJS and/or Golang uses since they have
   that and it works)
 
 
-# fluid settings
+# fluid-settings
 
-* Implement (Depends: snapcommunicator).
+* Implemented tested with the sitter.
 
 
 # libutf8
@@ -62,10 +72,9 @@
 * Review the dependency tree of the list (or keep alphabetized but have clicks
   work in the graph!).
 * Implement the "one click" build process.
-* Look at having a local build server as well.
 
 
-# snapdb
+# snapdb / snapdatabase
 
 * Implement our own datastore with indexes that work best for our environment.
 
@@ -78,8 +87,13 @@
 # snapwebsite
 
 * Replace old code (cppthread, snaplogger, eventdispatcher, etc.)
-* Move the flag(s) implementation to a library so all our services can use it.
-* snapdatabse -- look into finishing that up...
+* snapdatabase -- see snapdb above
+
+
+# Local Build Server
+
+* Test that it works with Ubuntu 20.04 & 22.04.
+* Look into running the tests in this case.
 
 
 # IPv6 Support
@@ -91,7 +105,6 @@
   We already have the low level handled (eventdispatcher will be done soon),
   we nearly just need to use the correct settings everywhere and especially
   get the IPv6 firewall setup, then test and see that we can run Snap! 100%
-  in IPv6 instead of IPv4 (except for the local network, although that one
-  should in part make use of Unix sockets instead...).
+  in IPv6 instead of IPv4 (except for the LAN which can remain in IPv4).
 
 
