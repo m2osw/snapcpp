@@ -687,10 +687,10 @@ void project::load_remote_data()
     //   - source version
     //   - architecture
     //
-    as2js::String json_filename(cache_filename);
-    as2js::JSON json;
-    as2js::JSON::JSONValue::pointer_t root(json.load(json_filename));
-    if(root->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
+    std::string json_filename(cache_filename);
+    as2js::json json;
+    as2js::json::json_value::pointer_t root(json.load(json_filename));
+    if(root->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
     {
         SNAP_LOG_ERROR
             << "JSON found in cache file \""
@@ -700,7 +700,7 @@ void project::load_remote_data()
         return;
     }
 
-    as2js::JSON::JSONValue::object_t const & top_fields(root->get_object());
+    as2js::json::json_value::object_t const & top_fields(root->get_object());
 
     // TODO: verify that the "start" field is 0
 
@@ -730,7 +730,7 @@ void project::load_remote_data()
         return;
     }
 
-    if(it->second->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_ARRAY)
+    if(it->second->get_type() != as2js::json::json_value::type_t::JSON_TYPE_ARRAY)
     {
         SNAP_LOG_ERROR
             << "JSON found in cache file \""
@@ -744,19 +744,19 @@ void project::load_remote_data()
     std::set<std::string> built_list_of_codenames_and_archs;
     f_built_successfully = -1;
 
-    as2js::JSON::JSONValue::array_t const & entries(it->second->get_array());
+    as2js::json::json_value::array_t const & entries(it->second->get_array());
     f_remote_info.clear();
     f_remote_info.reserve(entries.size());
-    for(as2js::JSON::JSONValue::pointer_t const & e : entries)
+    for(as2js::json::json_value::pointer_t const & e : entries)
     {
         // just in case, verify that the entry is an object, if not, just
         // ignore that item
         //
-        if(e->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
+        if(e->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
         {
             continue;
         }
-        as2js::JSON::JSONValue::object_t build(e->get_object());
+        as2js::json::json_value::object_t build(e->get_object());
 
         // verify that the project name matches this entry, if not, we
         // may need to delete the cache...
@@ -769,18 +769,18 @@ void project::load_remote_data()
                 << SNAP_LOG_SEND;
             continue;
         }
-        if(source_package_name_it->second->get_type() != as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+        if(source_package_name_it->second->get_type() != as2js::json::json_value::type_t::JSON_TYPE_STRING)
         {
             SNAP_LOG_ERROR
                 << "\"source_package_name\" is not a string."
                 << SNAP_LOG_SEND;
             continue;
         }
-        if(source_package_name_it->second->get_string().to_utf8() != get_project_name())
+        if(source_package_name_it->second->get_string() != get_project_name())
         {
             SNAP_LOG_ERROR
                 << "\"source_package_name\" says \""
-                << source_package_name_it->second->get_string().to_utf8()
+                << source_package_name_it->second->get_string()
                 << "\", we expected \""
                 << get_project_name()
                 << "\" instead."
@@ -796,9 +796,9 @@ void project::load_remote_data()
         {
             // date when it was last built, we keep that one!
             //
-            if(date_built_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            if(date_built_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
             {
-                date = date_built_it->second->get_string().to_utf8();
+                date = date_built_it->second->get_string();
             }
 
             // TODO: get duration
@@ -810,9 +810,9 @@ void project::load_remote_data()
             {
                 // date when it was last built, we keep that one!
                 //
-                if(date_started_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+                if(date_started_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
                 {
-                    date = date_started_it->second->get_string().to_utf8();
+                    date = date_started_it->second->get_string();
                 }
             }
         }
@@ -823,9 +823,9 @@ void project::load_remote_data()
             {
                 // date when it was last built, we keep that one!
                 //
-                if(date_started_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+                if(date_started_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
                 {
-                    date = date_started_it->second->get_string().to_utf8();
+                    date = date_started_it->second->get_string();
                 }
             }
         }
@@ -842,9 +842,9 @@ void project::load_remote_data()
         auto const build_version_it(build.find("source_package_version"));
         if(build_version_it != build.end())
         {
-            if(build_version_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            if(build_version_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
             {
-                build_version = build_version_it->second->get_string().to_utf8();
+                build_version = build_version_it->second->get_string();
             }
         }
         if(build_version.empty())
@@ -878,9 +878,9 @@ void project::load_remote_data()
         {
             // date when it was last built, we keep that one!
             //
-            if(build_arch_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            if(build_arch_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
             {
-                build_arch = build_arch_it->second->get_string().to_utf8();
+                build_arch = build_arch_it->second->get_string();
             }
         }
         if(build_arch.empty())
@@ -910,15 +910,15 @@ void project::load_remote_data()
         auto const build_state_it(build.find("buildstate"));
         if(build_state_it != build.end())
         {
-            if(build_state_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+            if(build_state_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
             {
-                build_state = build_state_it->second->get_string().to_utf8();
+                build_state = build_state_it->second->get_string();
 
                 if(build_version == f_version)
                 {
                     auto const build_self_link(build.find("self_link"));
                     if(build_self_link != build.end()
-                    && build_self_link->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING)
+                    && build_self_link->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
                     {
                         SNAP_LOG_INFO
                             << get_project_name()
@@ -933,7 +933,7 @@ void project::load_remote_data()
                             << ": Found build state \""
                             << build_state
                             << "\" with self-link \""
-                            << build_self_link->second->get_string().to_utf8()
+                            << build_self_link->second->get_string()
                             << "\". (success? "
                             << f_built_successfully
                             << ")"
