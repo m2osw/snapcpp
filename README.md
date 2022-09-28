@@ -65,7 +65,7 @@ assign the same port number to two different services.
 * snapcommunicatord / udp -- 4041 (scu)
 * snapcommunicatord / tcp / private network (remote) -- 4042 (sc)
 * snapcommunicatord / tcp / secure -- 4043 (scs)
-* snapcommunicatord / stream -- (sc) /run/snapcommunicatord/snapcommunicatord.sock
+* snapcommunicatord / stream -- (sc) /run/communicatord/communicatord.sock
 * snapcommunicatord / datagram -- (scu) -- NOT AVAILABLE
 * snapdbproxy / tcp -- 4048 (will be retired--was 4042)
 * fluid-settingsd / tcp -- 4049
@@ -178,7 +178,7 @@ gather the meta data only once and cache it.)
 If you are an administrator who just wants to install Snap! on your systems,
 then you want to look at the Launchpad section below.
 
-If you are a developer and want to work on the source code, check 
+If you are a developer and want to work on the source code, check
 We are using the PPA environment again at this time... If you want
 a pre-compiled version, that's the way to go!
 
@@ -223,8 +223,8 @@ To get that to work on your system, you want to install the PPA in your
 apt-get environment. The following are the two lines you can add to your
 apt-get source files to make things work.
 
-    deb http://ppa.launchpad.net/snapcpp/ppa/ubuntu xenial main 
-    deb-src http://ppa.launchpad.net/snapcpp/ppa/ubuntu xenial main 
+    deb http://ppa.launchpad.net/snapcpp/ppa/ubuntu xenial main
+    deb-src http://ppa.launchpad.net/snapcpp/ppa/ubuntu xenial main
 
 You can also use the `apt-add-repository` command as follow:
 
@@ -433,7 +433,7 @@ To fix that issue, you have a few solutions:
 
         # Change:
         url = git@github.com:m2osw/<project>.git
-        
+
         # To:
         url = https://github.com/m2osw/<project>.git
 
@@ -665,6 +665,26 @@ the projects that we are managing inside the Snap! C++ environment.
 src="https://snapwebsites.org/sites/snapwebsites.org/files/images/clean-dependencies.svg"/>
 </p>
 
+
+
+# Time Code
+
+In order to time a few instructions of code to bench  various possibilities,
+one can use the RTSC instruction like so:
+
+    uint64_t benchmark(...)
+    {
+      uint64_t start;
+      uint64_t end;
+
+      asm volatile ("rdtsc\n\tshl $32, %%rdx\n\tor %%rdx, %0" : "=a" (start) : : "%rdx");
+      ...code to time...
+      asm volatile ("rdtsc\n\tshl $32, %%rdx\n\tor %%rdx, %0" : "=a" (end) : : "%rdx");
+
+      return end - start;
+    }
+
+The result is in nanoseconds.
 
 
 # Bugs
