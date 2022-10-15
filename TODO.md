@@ -1,4 +1,11 @@
 
+# general
+
+* Look for any references to "blacklist"/"whitelist" and change with
+  "denylist"/"allowlist".
+* Look for any references to "master"/"slave" and change with
+  "primary"/"replica" or "primary"/"secondary".
+
 # advgetopt
 
 * Work more on getting edit-config to generally work better.
