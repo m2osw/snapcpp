@@ -6,7 +6,7 @@
 # Introduction
 
 Snap! C++ is a website backend project mainly written in C++ (there is a
-little bit of C and it uses many C libraries...)
+little bit of C and it uses many C libraries).
 
 The project includes many libraries, many daemons/servers, it supports
 plugins for third party extensions, and it uses Cassandra as its database
