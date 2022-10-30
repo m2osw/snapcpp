@@ -156,7 +156,7 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
-        libmurmur3
+        murmur3
     COMPONENT
         contrib
 )

@@ -85,3 +85,6 @@
 [submodule "contrib/snapcommunicatord"]
 	path = contrib/communicatord
 	url = git@github.com:m2osw/snapcommunicatord.git
+[submodule "contrib/murmur3"]
+	path = contrib/murmur3
+	url = git@github.com:m2osw/murmur3.git
