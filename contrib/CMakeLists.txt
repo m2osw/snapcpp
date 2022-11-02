@@ -156,13 +156,6 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
-        murmur3
-    COMPONENT
-        contrib
-)
-
-ConfigureMakeProject(
-    PROJECT_NAME
         libtld
     COMPONENT
         contrib
@@ -171,6 +164,20 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         libutf8
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        murmur3
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        prinbee
     COMPONENT
         contrib
 )
