@@ -88,3 +88,6 @@
 [submodule "contrib/murmur3"]
 	path = contrib/murmur3
 	url = git@github.com:m2osw/murmur3.git
+[submodule "contrib/prinbee"]
+	path = contrib/prinbee
+	url = git@github.com:m2osw/prinbee.git

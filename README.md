@@ -687,6 +687,51 @@ one can use the RTSC instruction like so:
 The result is in nanoseconds.
 
 
+# Debugging a Tool Crashing at Build Time
+
+When trying to debug a tool while building, it can be tough since the feedback
+is generally very little (i.e. _"exception E occurred"_).
+
+In order to debug such tools within the build system, it is possible to run
+the process with gdb. This requires two steps:
+
+1. Change the command using gdb to start it like so:
+
+       add_custom_command(
+           OUTPUT ${TLD_DATA_C}
+           COMMAND
+               "gdb"
+                   "-batch"
+                   "-ex"
+                   "run"
+                   "-ex"
+                   "bt"
+                   "--args"
+                   "./tld_parser"
+                       "--source"
+                           "${CMAKE_SOURCE_DIR}/conf/tlds"
+                       "--verify"
+                       "--output-json"
+                           "--include-offsets"
+                       "--c-file"
+                           "${TLD_DATA_C}"
+                       "tlds.tld"
+           DEPENDS tld_parser ${TLD_FILES}
+       )
+
+2. Add `gdb` as a dependency:
+
+       Build-Depends: cmake,
+           debhelper,
+           doxygen,
+           gdb,
+           graphviz,
+           snapcmakemodules (>= 1.0.35.3~bionic)
+
+Make sure to bump the version in the changelog and try running that build
+again.
+
+
 # Bugs
 
 Submit bug reports and patches on
