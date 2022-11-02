@@ -234,7 +234,7 @@ This way, you automatically get the keys installed so you don't have
 to do that manually.
 
 Once you've upgraded the PPA, you can see a new file under
-`/etc/apt/sources/list.d`. It should be named something like this:
+`/etc/apt/sources.list.d`. It should be named something like this:
 
     snapcpp-ubuntu-ppa-xenial.list
 
