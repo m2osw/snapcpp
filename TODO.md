@@ -5,6 +5,8 @@
   "denylist"/"allowlist".
 * Look for any references to "master"/"slave" and change with
   "primary"/"replica" or "primary"/"secondary".
+* Call the `snapdev::drop_root_privileges()` on startup of tools/services
+  that should not ever be `root` while running.
 
 # advgetopt
 
