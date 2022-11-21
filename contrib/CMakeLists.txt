@@ -58,6 +58,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        basic-xml
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         commonmarkcpp
     COMPONENT
         contrib
