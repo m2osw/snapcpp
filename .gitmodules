@@ -88,3 +88,6 @@
 [submodule "contrib/prinbee"]
 	path = contrib/prinbee
 	url = git@github.com:m2osw/prinbee.git
+[submodule "contrib/basic-xml"]
+	path = contrib/basic-xml
+	url = git@github.com:m2osw/basic-xml.git
