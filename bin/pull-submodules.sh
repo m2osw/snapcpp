@@ -10,28 +10,26 @@
 SUBMODULES="
 	advgetopt
 	as2js
-	brs
-	cassandra-cpp-driver-snap
+	basic-xml
 	cmake
 	commonmarkcpp
+	communicatord
 	cppthread
 	csspp
 	edhttp
 	eventdispatcher
 	fastjournal
+	fluid-settings
 	ftmesh
 	iplock
 	ipmgr
 	libaddr
-	libcassvalue
-	libcasswrapper
 	libexcept
 	libmimemail
-	libmurmur3
-	libQtSerialization
 	libtld
 	libutf8
-	libuv1-snap
+	murmur3
+	prinbee
 	serverplugins
 	sitter
 	snapbuilder
@@ -40,6 +38,7 @@ SUBMODULES="
 	snaplogger
 	snaprfs
 	snapwebsites
+	versiontheca
 	zipios"
 
 for submodule in $SUBMODULES

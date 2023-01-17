@@ -259,12 +259,14 @@ cd snapcpp/contrib
 git submodule update --init snapdev
 
 
-# To add a new submodule, simple use the add command with the URL of the
+# To add a new submodule, simply use the add command with the URL of the
 # submodule; the URL can be found in .git/config file of the submodule
 # project directory. You want to create a project with the submodule FIRST.
-# (i.e. git init, git add, git commit, git remote add origin ..., git push.)
+# (i.e. git init, git add, git commit, git remote add origin ..., git push).
+# Make sure to do so from the top folder and use the full path from there
+# (like the next command).
 #
-git submodule add git@github.com:m2osw/snaplogger.git
+git submodule add git@github.com:m2osw/snaplogger.git contrib/snaplogger
 
 
 # When checking the status of a parent module you may see the following

@@ -233,6 +233,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        versiontheca
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         zipios
     CONFIG_ARGS
         -DBUILD_ZIPIOS_TESTS:BOOL=ON

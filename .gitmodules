@@ -91,3 +91,6 @@
 [submodule "contrib/basic-xml"]
 	path = contrib/basic-xml
 	url = git@github.com:m2osw/basic-xml.git
+[submodule "contrib/versiontheca"]
+	path = contrib/versiontheca
+	url = git@github.com:m2osw/versiontheca.git

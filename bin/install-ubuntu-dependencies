@@ -59,6 +59,7 @@ apt-get install \
     libyaml-cpp-dev \
     mysql-server \
     qtscript5-dev \
+    txt2html \
     uuid-dev \
     zip \
     zlib1g-dev \
