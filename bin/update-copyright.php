@@ -83,7 +83,7 @@ function update_copyright_notice($filename)
         --$i;
 
         $c_date = $matches[1][$i][0];
-        if(preg_match("/\[year\]/", $c_date) > 0
+        if(preg_match("/year/", $c_date) > 0
         || preg_match("/UTC_BUILD_YEAR/", $c_date) > 0)
         {
             // ignore the "Copyright [year] (c) by ..." notices in our XML
