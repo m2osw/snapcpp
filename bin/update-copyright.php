@@ -103,6 +103,15 @@ function update_copyright_notice($filename)
             exit(1);
         }
 
+        if(preg_match("/\\\\\\(co/", $c_date) > 0)
+        {
+            $copyright_sign = "\\(co";
+        }
+        else
+        {
+            $copyright_sign = "(c)";
+        }
+
         $n_date = "";
         if(count($m_date) == 2)
         {
@@ -140,7 +149,8 @@ function update_copyright_notice($filename)
         //$matches[0][$i][0] string to replace
         //$matches[0][$i][1] start offset
 
-        $new_notice = "Copyright (c) " . $n_date . "  Made to Order Software Corp.  All Rights Reserved";
+        $new_notice = "Copyright " . $copyright_sign . " " . $n_date
+                    . "  Made to Order Software Corp.  All Rights Reserved";
 
         $data = substr($data, 0, $matches[0][$i][1])
               . $new_notice
