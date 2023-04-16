@@ -67,6 +67,8 @@ assign the same port number to two different services.
 * snapcommunicatord / tcp / secure -- 4043 (scs)
 * snapcommunicatord / stream -- (sc) /run/communicatord/communicatord.sock
 * snapcommunicatord / datagram -- (scu) -- NOT AVAILABLE
+* snaprfs / tcp | udp / private network -- 4044 (rfs -- plain data connection)
+* snaprfs / tcp / secure -- 4045 (rfs -- encrypted data connection)
 * snapdbproxy / tcp -- 4048 (will be retired--was 4042)
 * fluid-settingsd / tcp -- 4049
 * snaploggerd / tcp -- 4050
