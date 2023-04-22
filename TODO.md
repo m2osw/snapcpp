@@ -7,6 +7,8 @@
   "primary"/"replica" or "primary"/"secondary".
 * Call the `snapdev::drop_root_privileges()` on startup of tools/services
   that should not ever be `root` while running.
+* Make sure all services exit with code 9 on a configuration failure.
+  (and make the .service know that--see snaprfs daemon/.service)
 
 # advgetopt
 
