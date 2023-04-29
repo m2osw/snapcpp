@@ -52,6 +52,8 @@ fi
 
 trap 'rm -f status.txt checkout.txt error.txt pull.txt' EXIT
 
+mkdir -p "${TMPDIR}"
+
 for f in ${CONTRIB}/*
 do
 	# The dev/coverage of zipios still creates this folder...
