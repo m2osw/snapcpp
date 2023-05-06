@@ -10,6 +10,7 @@
 * Make sure all services exit with code 9 on a configuration failure.
   (and make the .service know that--see snaprfs daemon/.service)
 
+
 # advgetopt
 
 * Work more on getting edit-config to generally work better.
@@ -22,11 +23,11 @@
 
 # as2js
 
-* Rework the tests to use SnapCatch2 (started).
-* Make it possible to compute expressions (like the snapexpr.cpp/h would do).
-* Remove the advgetopt dependency to allow for JSON inside advgetopt.
 * Move sub-classes outside of their classes (to avoid one namespace).
 * Move private sub-classes as details declared & implemented in our .cpp.
+
+
+# basic-xml
 
 
 # commonmarkcpp
@@ -46,7 +47,7 @@
 
 # csspp
 
-* Implement version 2.x which compiles everything to object and then have
+* Implement version 2.x which compiles everything to objects and then have
   a function that spits the data back out. This way we can have a real
   optimizer. Also the CSS specs have grown quite dramatically.
 
@@ -84,8 +85,6 @@
 
 # iplock (snapfirewall -> ipwall & ipload)
 
-* Move snapfirewall to iplock (nearly complete, the ipload works, the rules
-  are not quite complete).
 * Finish the ipwall implementation, it needs to access a database to save
   the IP addresses we want blocked on all our computers.
 
@@ -115,18 +114,24 @@
 * Write unit tests.
 
 
-# libmurmur3
-
-
 # libtld
 
 * Update the TLDs once in a while.
+* Consider v2 which would be 100% C++ with a C interface on top.
 
 
 # libutf8
 
 * Implement UTF-8 normalization.
 * With the normalization, we also get upper/lower and similar capabilities.
+
+
+# murmur3
+
+
+# prinbee (snapdb / snapdatabase)
+
+* Implement our own datastore with indexes that work best for our environment.
 
 
 # serverplugins
@@ -146,11 +151,6 @@
 * Implement the "one click" build process.
 
 
-# snapdb / snapdatabase
-
-* Implement our own datastore with indexes that work best for our environment.
-
-
 # snapcatch2
 
 * Update whenever a new version is posted.
@@ -159,6 +159,7 @@
 # snapdev
 
 * Add functions as required by other libraries and tools.
+* Finish up writing unit tests for entire set of functions.
 
 
 # snaplogger
@@ -168,7 +169,7 @@
 
 # snaprfs
 
-* Implement (Depends: communicatord).
+* Finish implementing.
 
 
 # snapwebsite
@@ -176,7 +177,11 @@
 * Replace old code (cppthread, snaplogger, eventdispatcher, etc.)
 * Change scheme to allow for a mostly client side implementation of websites
   (i.e. the server becomes mainly a datastore).
-* snapdatabase -- see snapdb above instead
+
+
+# versiontheca
+
+* Enhance the client interface.
 
 
 # zipios
@@ -184,12 +189,13 @@
 * Look at whether we can implement a ZipFile() constructor with istream.
   (this is partially implemented now; it does not quite work but it's moving
   forward...)
+* Look at having support for 64 bits.
 
 
 # Local Build Server
 
 * Test that it works with Ubuntu 20.04 & 22.04.
-* Look into running the tests (but only in our build server, not launchpad).
+* Look into running all unit tests on our build server (not launchpad).
 
 
 # IPv6 Support
