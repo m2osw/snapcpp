@@ -76,8 +76,11 @@ do
 		echo
 		echo "where --opts can be one of:"
 		echo "   --email \"name <name@example.com>\"      define the debuild email"
-		echo "   --build | --build-all | --build-all-parallel | --build-release | --build-sanitize | --no-build"
-		echo "                                          whether to run make after the cmake commands"
+		echo "   --build | --build-debug                build the debug version (default)"
+		echo "     | --build-all | --build-all-parallel build all versions"
+		echo "     | --build-release                    build the release version"
+		echo "     | --build-sanitize                   build the sanitized version"
+		echo "     | --no-build                         do not build"
 		echo "   --help | -h                            print out this screen"
 		echo "   --processors <count>                   processors used to compile"
 		echo
@@ -102,7 +105,7 @@ do
 		shift
 		;;
 
-	--build)
+	--build|--build-debug)
 		shift
 		DO_BUILD=debug
 		;;
