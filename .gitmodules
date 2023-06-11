@@ -94,3 +94,6 @@
 [submodule "contrib/versiontheca"]
 	path = contrib/versiontheca
 	url = git@github.com:m2osw/versiontheca.git
+[submodule "contrib/safepasswords"]
+	path = contrib/safepasswords
+	url = git@github.com:m2osw/safepasswords.git

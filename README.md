@@ -454,6 +454,35 @@ To fix that issue, you have a few solutions:
     tree, but if you just want to checkout the code and compile a given
     version, that's probably enough for you.
 
+### Adding a new module to the contrib or other directory
+
+The following commands add a module:
+
+1. Add module on github
+
+2. Do a
+
+       git clone git@github.com:m2osw/libmurmur3.git
+
+3. Add the files and then:
+
+       git add .
+       git commit .
+       git push
+
+4, Then add the submodule to the main snapcpp repo
+
+   As we can see we need a URI and a path to the location of the project
+   within the local repository:
+
+       git submodule add git@github.com:m2osw/libmurmur3.git contrib/libmurmur3
+
+5. Then we can commit and push the main repository
+
+   To finish up we need to commit and push the main directory:
+
+       git commit .
+       git push
 
 ### Installing the Dependencies
 
