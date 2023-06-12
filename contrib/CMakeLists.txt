@@ -1,4 +1,4 @@
-# Copyright (c) 2011-2022  Made to Order Software Corp.  All Rights Reserved
+# Copyright (c) 2011-2023  Made to Order Software Corp.  All Rights Reserved
 #
 # http://snapwebsites.org/
 # contact@m2osw.com
@@ -185,6 +185,13 @@ ConfigureMakeProject(
 ConfigureMakeProject(
     PROJECT_NAME
         prinbee
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
+        safepasswords
     COMPONENT
         contrib
 )
