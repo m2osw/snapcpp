@@ -305,5 +305,13 @@ git push origin 'version'
 git tag -d 'version'
 
 
+# Grep the full history for a regular expression
+# The second instance is for projects where the rev-list is too large
+# the third instance limits the search to "lib"
+#
+git grep 'regexp' $(git rev-list --all)
+git rev-list --all | xargs git grep 'regexp'
+git grep 'regexp' $(git rev-list --all -- lib) -- lib
+
 
 # vim: syntax=sh
