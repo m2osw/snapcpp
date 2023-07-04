@@ -1,4 +1,4 @@
-snapbuilder (1.0.0.0~bionic) bionic; urgency=high
+snapbuilder (1.0.0.0~jammy) jammy; urgency=high
 
   * This file is mainly so I can have a version and compile in our Snap! C++
     environment since we do not plan to publish this as a debian package.
