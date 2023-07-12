@@ -172,6 +172,140 @@ function update_copyright_notice($filename)
 }
 
 
+function update_copyright_file($filename)
+{
+    global $errcount, $current_year;
+
+    // read the data
+    //
+    $data = file_get_contents($filename);
+    if($data === false)
+    {
+        echo "error: could not read Debian copyright file \"$filename\"...";
+        ++$errcount;
+        return false;
+    }
+
+    // got the file contents, search for the Copyright field
+    //
+    // We have a few types of notices in those files. At the moment we just
+    // fix the date range. So if the year is not the current year, or the
+    // right hand-side of the range is not the current year, replace that
+    // range with <oldest-year>-<current-year>
+    //
+    // TODO: change the format of each line like so:
+    //
+    //     Copyright: Copyright (c) 2011-2023  Made to Order Software Corporation  All Rights Reserved <contact@m2osw.com>
+    //     Copyright: Copyright (c) 2011-2023  Alexis Wilke  All Rights Reserved <alexis@m2osw.com>
+    //     Copyright: Copyright (c) 2011-2023  R. Douglas Barbieri  All Rights Reserved <doug@m2osw.com>
+    //
+    // some of the copyright notices will include other people in which case
+    // their notice is not change by this script
+    //
+    $count = preg_match_all("/Copyright:(?:\s+(?:.*)(?:made to order software|alexis wilke|(?:r. )?douglas barbieri)(?:.*)[\n\r])+/i"
+                          , $data
+                          , $matches
+                          , PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE);
+
+    if($count === false
+    || $count == 0)
+    {
+        // no matches, return as is
+        //
+        return false;
+    }
+
+
+    // we got a lines which need to be further checked for the correct name
+    // if not the correct name, do not change that line at all
+    //
+    $converted = 0;
+    $i = $count;
+    while($i > 0)
+    {
+        --$i;
+        $lines = explode("\n", $matches[0][$i][0]);
+
+//echo "------------------- $count Matches = ", $filename, "\n";
+//var_dump($matches);
+//echo "--- lines:\n";
+//var_dump($lines);
+//echo "\n";
+//return false;
+
+        for($j = 0; $j < count($lines); ++$j)
+        {
+            $l = $lines[$j];
+            if(strlen($l) == 0)
+            {
+                // ignore empty lines
+                //
+                continue;
+            }
+
+            $n = preg_match_all("/([0-9]{4})(?:\-([0-9]{4}))?/"
+                          , $l
+                          , $m_date
+                          , PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE);
+            if($n != 1)
+            {
+                echo "error:$filename: could not properly determine dates in \"$l\".";
+                exit(1);
+            }
+//echo "---           check line: [$l] (";
+//echo count($m_date);
+//echo ")\n";
+//var_dump($m_date);
+//echo "---\n";
+
+            if(count($m_date) == 3)
+            {
+                if(strlen($m_date[2][0][0]) == 0)
+                {
+                    if($m_date[1][0][0] != $current_year)
+                    {
+                        // only "from" defined at the moment
+                        //
+                        $lines[$j] = substr($l, 0, $m_date[1][0][1] + strlen($m_date[1][0][0]))
+                            . '-'
+                            . $current_year
+                            . "  "
+                            . trim(substr($l, $m_date[1][0][1] + strlen($m_date[1][0][0])));
+                        ++$converted;
+                    }
+                }
+                elseif($m_date[2][0][0] != $current_year)
+                {
+                    // "from-to"
+                    //
+                    $lines[$j] = substr($l, 0, $m_date[1][0][1] + strlen($m_date[1][0][0]))
+                        . '-'
+                        . $current_year
+                        . "  "
+                        . trim(substr($l, $m_date[2][0][1] + strlen($m_date[2][0][0])));
+                    ++$converted;
+                }
+            }
+        }
+
+        $data = substr($data, 0, $matches[0][$i][1])
+            . implode("\n", $lines)
+            . substr($data, $matches[0][$i][1] + strlen($matches[0][$i][0]));
+    }
+
+    if($converted > 0)
+    {
+        //echo "----------------------------------- Converted ", $converted, " in ", $filename, "\n";
+        //echo $data;
+        file_put_contents($filename, $data);
+
+        return true;
+    }
+
+    return false;
+}
+
+
 function process($path)
 {
     global $errcount, $count_modified_files, $count_binary_files, $count_total_files, $count_directories;
@@ -213,7 +347,8 @@ function process($path)
         // ignore directories we know are to going to include source data
         //
         if($entry == "tmp"
-        || $entry == "BUILD")
+        || $entry == "BUILD"
+        || $entry == ".git")
         {
             continue;
         }
@@ -232,7 +367,14 @@ function process($path)
         {
             ++$count_total_files;
 
-            if(update_copyright_notice($subpath))
+            if($subpath == "./debian/copyright")
+            {
+                if(update_copyright_file($subpath))
+                {
+                    ++$count_modified_files;
+                }
+            }
+            elseif(update_copyright_notice($subpath))
             {
                 ++$count_modified_files;
             }
