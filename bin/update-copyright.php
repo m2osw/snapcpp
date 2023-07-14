@@ -236,7 +236,8 @@ function update_copyright_file($filename)
         for($j = 0; $j < count($lines); ++$j)
         {
             $l = $lines[$j];
-            if(strlen($l) == 0)
+            if(strlen($l) == 0
+            || trim($l) == "Copyright:")
             {
                 // ignore empty lines
                 //
