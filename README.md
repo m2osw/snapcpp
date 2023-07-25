@@ -447,8 +447,14 @@ To fix that issue, you have a few solutions:
     You may instead need the following (again, not tested):
 
         git submodule update --recursive
+
         # or
         git submodule update --init --recursive
+
+        # or for one specific submodule (tested, that one works)
+        git submodule update --init contrib/fluid-settings
+        cd contrib/fluid-settings
+        git checkout main
 
     The edit can be problematic long term to maintain the project source
     tree, but if you just want to checkout the code and compile a given
