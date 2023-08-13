@@ -84,7 +84,7 @@ to send and receive messages. That also means those services connect to
 port 4040 locally and then communicate to all the other services anywhere
 in the cluster that way.
 
-## Cassandra Requirement
+## Cassandra Requirement (will be replaced by Prinbee)
 
 The reason for having at least 4 Cassandra nodes is because you want
 a minimum of 3 as the replication factor and with only 3 computers,
@@ -278,6 +278,32 @@ install Snap! C++ by hand is complicated. There are small setups to do which
 if you miss them prevents the system from working correctly. I'm the author
 and frankly, there are just way too many things to remember about to not be
 using `snapmanager.cgi` to proceed with installations.
+
+#### Package Compatibility Level
+
+The debhelper tools make use of a compatibility level to allow older packages
+to continue to work even when the new scripts have incompatible behavior with
+the older scripts.
+
+The compatibility level was written in a file named `debian/compat` as a
+simple number (i.e. `12`).
+
+The newer versions of the build system now support a dependency like so:
+
+    Build-Depends: debhelper-compat (= 13)
+
+The most current version is often a little bit ahead of the currently used
+`debhelper` package (i.e. as a "developer version" or beta). You can find
+that version in the manual page:
+
+    man debhelper
+
+At time of writing, this is version 15 which (finally!) fixes the discrepancy
+of packages with a single package or two or more packages. This is really
+good because that way we can go back to having single binary packages without
+the need to switch back and forth if we decide to go back to two or more.
+(at the moment, I have a few packages that have a separate, albeit tiny,
+`-doc` which I wanted to remove; here we are!)
 
 ### Installing a Website
 
