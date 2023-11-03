@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-# Old distributions: xenial impish
-DISTRIBUTIONS="bionic focal jammy"
+# List the distributions you want to build on the PPA
+DISTRIBUTIONS="jammy lunar mantic"
 
 while ! test -d BUILD/Debug -a -d BUILD/Release
 do
