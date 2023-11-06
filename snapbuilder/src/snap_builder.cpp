@@ -207,7 +207,10 @@ snap_builder::snap_builder(int argc, char * argv[])
     }
     if(f_root_path.empty())
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
         f_root_path = ".";
+#pragma GCC diagnostic pop
     }
 
     f_qt_connection = std::make_shared<ed::qt_connection>();
@@ -389,7 +392,10 @@ void snap_builder::update_state(int row)
     std::string state(p->get_state());
     if(state.empty())
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
         state = "?";
+#pragma GCC diagnostic pop
     }
 
     // a default brush represents the default background color
