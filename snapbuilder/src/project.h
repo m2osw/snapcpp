@@ -108,10 +108,10 @@ public:
     std::string                 get_flag_filename() const;
     void                        mark_as_done_building();
     std::string                 get_build_hash_filename() const;
-    void                        load_remote_data();
+    void                        load_remote_data(bool load);
     bool                        retrieve_ppa_status();
-    bool                        get_building() const;
-    void                        set_building(bool building);
+    bool                        is_building() const;
+    void                        started_building();
     bool                        get_build_succeeded() const;
     bool                        get_build_failed() const;
 
@@ -125,6 +125,13 @@ public:
     static void                 view_svg(vector_t & v, std::string const & root_path);
 
 private:
+    enum class building_t : std::uint8_t
+    {
+        BUILDING_NOT_BUILDING,      // not currently building
+        BUILDING_COMPILING,         // until .json tells us "build succeeded"
+        BUILDING_PACKAGING,         // until .deb are downloadable
+    };
+
     void                        add_dependency(std::string const & name);
     void                        add_missing_dependencies(pointer_t p, map_t & m);
     static bool                 compare(pointer_t a, pointer_t b);
@@ -141,6 +148,7 @@ private:
                                 find_remote_info(
                                       std::string const & build_codename
                                     , std::string const & build_arch);
+    bool                        dot_deb_exists();
 
     snap_builder *              f_snap_builder = nullptr;
     std::string                 f_name = std::string();
@@ -152,12 +160,13 @@ private:
     std::string                 f_build_hash = std::string();
     bool                        f_valid = false;
     bool                        f_recursed_add_dependencies = false;
-    bool                        f_building = false;
+    building_t                  f_building = building_t::BUILDING_NOT_BUILDING;
     int                         f_built_successfully = -1;
     dependencies_t              f_dependencies = dependencies_t();
     dependencies_t              f_trimmed_dependencies = dependencies_t();
     project_remote_info::vector_t
                                 f_remote_info = project_remote_info::vector_t();
+    std::set<std::string>       f_list_of_codenames_and_archs = std::set<std::string>();
 };
 
 

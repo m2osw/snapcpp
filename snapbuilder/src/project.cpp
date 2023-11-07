@@ -59,6 +59,7 @@
 
 // C lib
 //
+#include    <curl/curl.h>
 #include    <sys/stat.h>
 
 
@@ -242,7 +243,7 @@ void project::load_project()
 
     f_valid = true;
 
-    load_remote_data();
+    load_remote_data(true);
 }
 
 
@@ -445,11 +446,11 @@ void project::retrieve_building_state()
     std::ifstream flag;
     flag.open(get_flag_filename());
 
-    // WARNING: do not call the set_building() otherwise we may mess up the
-    //          last revision UUID file, which is important to know the
-    //          status of the build
+    // WARNING: do not call the started_building() since this very function
+    //          is called about continuation, not startup and as a result
+    //          it could mess up files and parameters
     //
-    f_building = flag.is_open();
+    f_building = flag.is_open() ? building_t::BUILDING_COMPILING : building_t::BUILDING_NOT_BUILDING;
 }
 
 
@@ -536,9 +537,18 @@ std::string project::get_state() const
 {
     // building has priority
     //
-    if(f_building)
+    switch(f_building)
     {
+    case building_t::BUILDING_COMPILING:
         return "building";
+
+    case building_t::BUILDING_PACKAGING:
+        return "packaging";
+
+    default:
+        // see below for status
+        break;
+
     }
 
     // "not committed" and "not pushed" are returned as is
@@ -649,365 +659,427 @@ std::string project::get_remote_build_date() const
  * about the project, then we download it from launchpad. This tells us
  * whether we need to run a build or not.
  */
-void project::load_remote_data()
+void project::load_remote_data(bool loading)
 {
     // a build is complete only once all the releases are built (or failed to)
     //
     // we can download a JSON file from launchpad that gives us the information
     // about the latest build(s)
     //
-
-    std::string const cache_filename(get_ppa_json_filename());
-    if(access(cache_filename.c_str(), R_OK) != 0)
+    if(loading
+    || f_building == building_t::BUILDING_COMPILING
+    || f_list_of_codenames_and_archs.empty())
     {
-        // no cache available, load it for the first time
-        //
-        if(!retrieve_ppa_status())
-        {
-            // load failed, that's it for now on that one...
-            //
-            return;
-        }
-
+        std::string const cache_filename(get_ppa_json_filename());
         if(access(cache_filename.c_str(), R_OK) != 0)
         {
-            SNAP_LOG_MAJOR
-                << "cache file \""
-                << cache_filename
-                << "\" not available even after PPA retrieval."
-                << SNAP_LOG_SEND;
-            return;
+            // no cache available, load it for the first time
+            //
+            if(!retrieve_ppa_status())
+            {
+                // load failed, that's it for now on that one...
+                //
+                return;
+            }
+
+            if(access(cache_filename.c_str(), R_OK) != 0)
+            {
+                SNAP_LOG_MAJOR
+                    << "cache file \""
+                    << cache_filename
+                    << "\" not available even after PPA retrieval."
+                    << SNAP_LOG_SEND;
+                return;
+            }
         }
-    }
 
-    // read the file and save the few fields we're interested in:
-    //
-    //   - last build date
-    //   - build state
-    //   - source version
-    //   - architecture
-    //
-    std::string json_filename(cache_filename);
-    as2js::json json;
-    as2js::json::json_value::pointer_t root(json.load(json_filename));
-    if(root->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
-    {
-        SNAP_LOG_ERROR
-            << "JSON found in cache file \""
-            << cache_filename
-            << "\" does not represent an object."
-            << SNAP_LOG_SEND;
-        return;
-    }
-
-    as2js::json::json_value::object_t const & top_fields(root->get_object());
-
-    // TODO: verify that the "start" field is 0
-
-    auto const it(top_fields.find("entries"));
-    if(it == top_fields.cend())
-    {
-        if(top_fields.find("total_size") != top_fields.end())
+        // read the file and save the few fields we're interested in:
+        //
+        //   - last build date
+        //   - build state
+        //   - source version
+        //   - architecture
+        //
+        std::string json_filename(cache_filename);
+        as2js::json json;
+        as2js::json::json_value::pointer_t root(json.load(json_filename));
+        if(root->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
         {
-            // if not empty, we have a "total_size_link" instead
-            //
-            // this happens whenever we create a new project and we have not
-            // yet compiled it on launchpad
-            //
             SNAP_LOG_ERROR
                 << "JSON found in cache file \""
                 << cache_filename
-                << "\" has a \"total_size\" field which means it is empty."
+                << "\" does not represent an object."
                 << SNAP_LOG_SEND;
             return;
         }
 
-        SNAP_LOG_ERROR
-            << "JSON found in cache file \""
-            << cache_filename
-            << "\" has no \"entries\" field."
-            << SNAP_LOG_SEND;
-        return;
-    }
+        as2js::json::json_value::object_t const & top_fields(root->get_object());
 
-    if(it->second->get_type() != as2js::json::json_value::type_t::JSON_TYPE_ARRAY)
-    {
-        SNAP_LOG_ERROR
-            << "JSON found in cache file \""
-            << cache_filename
-            << "\" has an \"entries\" field, but it is not an array."
-            << SNAP_LOG_SEND;
-        return;
-    }
+        // TODO: verify that the "start" field is 0
 
-    std::set<std::string> complete_list_of_codenames_and_archs;
-    std::set<std::string> built_list_of_codenames_and_archs;
-    f_built_successfully = -1;
-
-    as2js::json::json_value::array_t const & entries(it->second->get_array());
-    f_remote_info.clear();
-    f_remote_info.reserve(entries.size());
-    for(as2js::json::json_value::pointer_t const & e : entries)
-    {
-        // just in case, verify that the entry is an object, if not, just
-        // ignore that item
-        //
-        if(e->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
+        auto const it(top_fields.find("entries"));
+        if(it == top_fields.cend())
         {
-            continue;
-        }
-        as2js::json::json_value::object_t build(e->get_object());
-
-        // verify that the project name matches this entry, if not, we
-        // may need to delete the cache...
-        //
-        auto const source_package_name_it(build.find("source_package_name"));
-        if(source_package_name_it == build.end())
-        {
-            SNAP_LOG_ERROR
-                << "\"source_package_name\" field not found."
-                << SNAP_LOG_SEND;
-            continue;
-        }
-        if(source_package_name_it->second->get_type() != as2js::json::json_value::type_t::JSON_TYPE_STRING)
-        {
-            SNAP_LOG_ERROR
-                << "\"source_package_name\" is not a string."
-                << SNAP_LOG_SEND;
-            continue;
-        }
-        if(source_package_name_it->second->get_string() != get_project_name())
-        {
-            SNAP_LOG_ERROR
-                << "\"source_package_name\" says \""
-                << source_package_name_it->second->get_string()
-                << "\", we expected \""
-                << get_project_name()
-                << "\" instead."
-                << SNAP_LOG_SEND;
-            continue;
-        }
-
-        // get the creation date
-        //
-        std::string date;
-        auto const date_built_it(build.find("datebuilt"));
-        if(date_built_it != build.end())
-        {
-            // date when it was last built, we keep that one!
-            //
-            if(date_built_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+            if(top_fields.find("total_size") != top_fields.end())
             {
-                date = date_built_it->second->get_string();
+                // if not empty, we have a "total_size_link" instead
+                //
+                // this happens whenever we create a new project and we have not
+                // yet compiled it on launchpad
+                //
+                SNAP_LOG_ERROR
+                    << "JSON found in cache file \""
+                    << cache_filename
+                    << "\" has a \"total_size\" field which means it is empty."
+                    << SNAP_LOG_SEND;
+                return;
             }
 
-            // TODO: get duration
+            SNAP_LOG_ERROR
+                << "JSON found in cache file \""
+                << cache_filename
+                << "\" has no \"entries\" field."
+                << SNAP_LOG_SEND;
+            return;
         }
-        if(date.empty())
+
+        if(it->second->get_type() != as2js::json::json_value::type_t::JSON_TYPE_ARRAY)
         {
-            auto const date_started_it(build.find("date_started"));
-            if(date_started_it != build.end())
+            SNAP_LOG_ERROR
+                << "JSON found in cache file \""
+                << cache_filename
+                << "\" has an \"entries\" field, but it is not an array."
+                << SNAP_LOG_SEND;
+            return;
+        }
+
+        std::set<std::string> built_list_of_codenames_and_archs;
+        f_list_of_codenames_and_archs.clear();
+        f_built_successfully = -1;
+
+        as2js::json::json_value::array_t const & entries(it->second->get_array());
+        f_remote_info.clear();
+        f_remote_info.reserve(entries.size());
+        for(as2js::json::json_value::pointer_t const & e : entries)
+        {
+            // just in case, verify that the entry is an object, if not, just
+            // ignore that item
+            //
+            if(e->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
+            {
+                continue;
+            }
+            as2js::json::json_value::object_t build(e->get_object());
+
+            // verify that the project name matches this entry, if not, we
+            // may need to delete the cache...
+            //
+            auto const source_package_name_it(build.find("source_package_name"));
+            if(source_package_name_it == build.end())
+            {
+                SNAP_LOG_ERROR
+                    << "\"source_package_name\" field not found."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+            if(source_package_name_it->second->get_type() != as2js::json::json_value::type_t::JSON_TYPE_STRING)
+            {
+                SNAP_LOG_ERROR
+                    << "\"source_package_name\" is not a string."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+            if(source_package_name_it->second->get_string() != get_project_name())
+            {
+                SNAP_LOG_WARNING
+                    << "\"source_package_name\" says \""
+                    << source_package_name_it->second->get_string()
+                    << "\", we expected \""
+                    << get_project_name()
+                    << "\" instead (this happens if you changed the name of the project and there are old references in the JSON file from launchpad)."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+
+            // get the creation date
+            //
+            std::string date;
+            auto const date_built_it(build.find("datebuilt"));
+            if(date_built_it != build.end())
             {
                 // date when it was last built, we keep that one!
                 //
-                if(date_started_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                if(date_built_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
                 {
-                    date = date_started_it->second->get_string();
+                    date = date_built_it->second->get_string();
                 }
+
+                // TODO: get duration
             }
-        }
-        if(date.empty())
-        {
-            auto const date_started_it(build.find("datecreated"));
-            if(date_started_it != build.end())
+            if(date.empty())
             {
-                // date when it was last built, we keep that one!
-                //
-                if(date_started_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                auto const date_started_it(build.find("date_started"));
+                if(date_started_it != build.end())
                 {
-                    date = date_started_it->second->get_string();
-                }
-            }
-        }
-        if(date.empty())
-        {
-            SNAP_LOG_WARNING
-                << "no date found in this entry."
-                << SNAP_LOG_SEND;
-        }
-
-        // get the build version
-        //
-        std::string build_version;
-        auto const build_version_it(build.find("source_package_version"));
-        if(build_version_it != build.end())
-        {
-            if(build_version_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
-            {
-                build_version = build_version_it->second->get_string();
-            }
-        }
-        if(build_version.empty())
-        {
-            SNAP_LOG_ERROR
-                << "no version found in this entry."
-                << SNAP_LOG_SEND;
-            continue;
-        }
-
-        // the version includes a codename (i.e. "....~bionic")
-        // here we want to break that up so we have a version
-        // and a seperated codename
-        //
-        std::string::size_type const pos(build_version.find('~'));
-        if(pos == std::string::npos)
-        {
-            SNAP_LOG_ERROR
-                << "no '~' found in the version, we expected a codename."
-                << SNAP_LOG_SEND;
-            continue;
-        }
-        std::string const build_codename(build_version.substr(pos + 1));
-        build_version.erase(pos);
-
-        // get the build architecture
-        //
-        std::string build_arch;
-        auto const build_arch_it(build.find("arch_tag"));
-        if(build_arch_it != build.end())
-        {
-            // date when it was last built, we keep that one!
-            //
-            if(build_arch_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
-            {
-                build_arch = build_arch_it->second->get_string();
-            }
-        }
-        if(build_arch.empty())
-        {
-            SNAP_LOG_ERROR
-                << "no architecture specified in this entry."
-                << SNAP_LOG_SEND;
-            continue;
-        }
-
-        // to know whether all the versions and architectures are built
-        // we need a complete list of those for our given version
-        //
-        // TODO: this is flaky because it may take a moment for the
-        //       remote system to enter all the data; at this time,
-        //       though, we take 1 min. to re-read the state so we
-        //       should be good... assuming no huge delay on launchpad
-        //
-        if(build_version == f_version)
-        {
-            complete_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
-        }
-
-        // get the build state of this entry
-        //
-        std::string build_state;
-        auto const build_state_it(build.find("buildstate"));
-        if(build_state_it != build.end())
-        {
-            if(build_state_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
-            {
-                build_state = build_state_it->second->get_string();
-
-                if(build_version == f_version)
-                {
-                    auto const build_self_link(build.find("self_link"));
-                    if(build_self_link != build.end()
-                    && build_self_link->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                    // date when it was last built, we keep that one!
+                    //
+                    if(date_started_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
                     {
-                        SNAP_LOG_INFO
-                            << get_project_name()
-                            << " v"
-                            << build_version
-                            << "~"
-                            << build_codename
-                            << " for "
-                            << build_arch
-                            << ": "
-                            << date
-                            << ": Found build state \""
-                            << build_state
-                            << "\" with self-link \""
-                            << build_self_link->second->get_string()
-                            << "\". (success? "
-                            << f_built_successfully
-                            << ")"
-                            << SNAP_LOG_SEND;
+                        date = date_started_it->second->get_string();
                     }
-
-                    if(build_state == "Successfully built")
+                }
+            }
+            if(date.empty())
+            {
+                auto const date_started_it(build.find("datecreated"));
+                if(date_started_it != build.end())
+                {
+                    // date when it was last built, we keep that one!
+                    //
+                    if(date_started_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
                     {
-                        built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+                        date = date_started_it->second->get_string();
+                    }
+                }
+            }
+            if(date.empty())
+            {
+                SNAP_LOG_WARNING
+                    << "no date found in this entry."
+                    << SNAP_LOG_SEND;
+            }
 
-                        // set to 1 if first; then if already 1, we're good
-                        // and if set to 0, we keep it in the "failed" state
-                        // because at least one version failed
-                        //
-                        if(f_built_successfully == -1)
+            // get the build version
+            //
+            std::string build_version;
+            auto const build_version_it(build.find("source_package_version"));
+            if(build_version_it != build.end())
+            {
+                if(build_version_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                {
+                    build_version = build_version_it->second->get_string();
+                }
+            }
+            if(build_version.empty())
+            {
+                SNAP_LOG_ERROR
+                    << "no version found in this entry."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+
+            // the version includes a codename (i.e. "....~bionic")
+            // here we want to break that up so we have a version
+            // and a seperated codename
+            //
+            std::string::size_type const pos(build_version.find('~'));
+            if(pos == std::string::npos)
+            {
+                SNAP_LOG_ERROR
+                    << "no '~' found in the version, we expected a codename."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+            std::string const build_codename(build_version.substr(pos + 1));
+            build_version.erase(pos);
+
+            // get the build architecture
+            //
+            std::string build_arch;
+            auto const build_arch_it(build.find("arch_tag"));
+            if(build_arch_it != build.end())
+            {
+                // date when it was last built, we keep that one!
+                //
+                if(build_arch_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                {
+                    build_arch = build_arch_it->second->get_string();
+                }
+            }
+            if(build_arch.empty())
+            {
+                SNAP_LOG_ERROR
+                    << "no architecture specified in this entry."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+
+            // to know whether all the versions and architectures are built
+            // we need a complete list of those for our given version
+            //
+            // TODO: this is flaky because it may take a moment for the
+            //       remote system to enter all the data; at this time,
+            //       though, we take 1 min. to re-read the state so we
+            //       should be good... assuming no huge delay on launchpad
+            //
+            if(build_version == f_version)
+            {
+                f_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+            }
+
+            // get the build state of this entry
+            //
+            std::string build_state;
+            auto const build_state_it(build.find("buildstate"));
+            if(build_state_it != build.end())
+            {
+                if(build_state_it->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                {
+                    build_state = build_state_it->second->get_string();
+
+                    if(build_version == f_version)
+                    {
+                        if(build_state == "Successfully built")
                         {
-                            f_built_successfully = 1;
+                            built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+
+                            // set to 1 if first; then if already 1, we're good
+                            // and if set to 0, we keep it in the "failed" state
+                            // because at least one version failed
+                            //
+                            if(f_built_successfully == -1)
+                            {
+                                f_built_successfully = 1;
+                            }
+                        }
+                        else if(build_state == "Failed to build"
+                             || build_state == "Dependency wait")
+                        {
+                            built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
+                            f_built_successfully = 0;
+                        }
+
+                        auto const build_self_link(build.find("self_link"));
+                        if(build_self_link != build.end()
+                        && build_self_link->second->get_type() == as2js::json::json_value::type_t::JSON_TYPE_STRING)
+                        {
+                            SNAP_LOG_INFO
+                                << get_project_name()
+                                << " v"
+                                << build_version
+                                << "~"
+                                << build_codename
+                                << " for "
+                                << build_arch
+                                << ": "
+                                << date
+                                << ": Found build state \""
+                                << build_state
+                                << "\" with self-link \""
+                                << build_self_link->second->get_string()
+                                << "\". (success? "
+                                << f_built_successfully
+                                << ")"
+                                << SNAP_LOG_SEND;
                         }
                     }
-                    else if(build_state == "Failed to build"
-                         || build_state == "Dependency wait")
-                    {
-                        built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
-                        f_built_successfully = 0;
-                    }
                 }
             }
+            if(build_state.empty())
+            {
+                SNAP_LOG_ERROR
+                    << "no build state found in this entry."
+                    << SNAP_LOG_SEND;
+                continue;
+            }
+
+            find_remote_info(build_codename, build_arch);
+
+            project_remote_info::pointer_t info(std::make_shared<project_remote_info>());
+            info->set_date(date);
+            info->set_build_codename(build_codename);
+            info->set_build_state(build_state);
+            info->set_build_version(build_version);
+            info->set_build_arch(build_arch);
+
+            f_remote_info.push_back(info);
         }
-        if(build_state.empty())
+
+        if(f_building == building_t::BUILDING_COMPILING)
         {
-            SNAP_LOG_ERROR
-                << "no build state found in this entry."
-                << SNAP_LOG_SEND;
-            continue;
+            if(!f_list_of_codenames_and_archs.empty()
+            && f_list_of_codenames_and_archs == built_list_of_codenames_and_archs)
+            {
+                // the compiling is done, switch to packaging mode
+                //
+                if(f_built_successfully == 1)
+                {
+                    f_building = building_t::BUILDING_PACKAGING;
+
+                    SNAP_LOG_INFO
+                        << "Done compiling \""
+                        << f_name
+                        << "\", starting packaging."
+                        << SNAP_LOG_SEND;
+                }
+                else
+                {
+                    f_building = building_t::BUILDING_NOT_BUILDING;
+
+                    // delete the flag, we are done with it
+                    //
+                    mark_as_done_building();
+
+                    SNAP_LOG_INFO
+                        << "Done compiling \""
+                        << f_name
+                        << "\". All were not successful. Build process stopped."
+                        << SNAP_LOG_SEND;
+                }
+            }
+            else if(!f_list_of_codenames_and_archs.empty()
+                 && !built_list_of_codenames_and_archs.empty())
+            {
+                SNAP_LOG_INFO
+                    << "Still building \""
+                    << f_name
+                    << "\", completed list of code names & architectures: \""
+                    << snapdev::join_strings(f_list_of_codenames_and_archs, ", ")
+                    << "\", list of built code names & architectures: \""
+                    << snapdev::join_strings(built_list_of_codenames_and_archs, ", ")
+                    << "\""
+                    << SNAP_LOG_SEND;
+            }
         }
-
-        find_remote_info(build_codename, build_arch);
-
-        project_remote_info::pointer_t info(std::make_shared<project_remote_info>());
-        info->set_date(date);
-        info->set_build_codename(build_codename);
-        info->set_build_state(build_state);
-        info->set_build_version(build_version);
-        info->set_build_arch(build_arch);
-
-        f_remote_info.push_back(info);
     }
 
-    if(f_building
-    && !complete_list_of_codenames_and_archs.empty()
-    && complete_list_of_codenames_and_archs == built_list_of_codenames_and_archs)
+    // WARNING: the dot_deb_exists() call takes MUNITES PER .deb file
+    //          and I'm not too sure why; although it works, it's really
+    //          really slow... so when loading the app. I skip that test
+    //          and the package remains in "building" status until the
+    //          timer comes off and then we test those files in the
+    //          background (on the timer)
+    //
+    if(!loading
+    && f_building == building_t::BUILDING_PACKAGING)
     {
-        f_building = false;
-
-        // delete the flag, we're done with it
+        // we want to make sure that the .deb are indeed available
+        // before marking the system as built
         //
-        snapdev::NOT_USED(unlink(get_flag_filename().c_str()));
+        if(dot_deb_exists())
+        {
+            f_building = building_t::BUILDING_NOT_BUILDING;
 
-        SNAP_LOG_INFO
-            << "Done building \""
-            << f_name
-            << "\", new status is: \""
-            << (f_built_successfully == -1
-                ? "unknown"
-                : (f_built_successfully == 1
-                    ? "Built successfully"
-                    : "Build failed"))
-            << "\""
-            << SNAP_LOG_SEND;
+            // delete the flag, we are done with it
+            //
+            mark_as_done_building();
+
+            SNAP_LOG_INFO
+                << "Done building \""
+                << f_name
+                << "\", new status is: \""
+                << (f_built_successfully == -1
+                    ? "unknown"
+                    : (f_built_successfully == 1
+                        ? "Built successfully"
+                        : "Build failed"))
+                << "\""
+                << SNAP_LOG_SEND;
+        }
     }
-
+}
 
 /* example of an enry
-{
   "self_link": "https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa/+build/23113615",
   "web_link": "https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+build/23113615",
   "resource_type_link": "https://api.launchpad.net/devel/#build",
@@ -1036,10 +1108,106 @@ void project::load_remote_data()
   "score": null,
   "external_dependencies": null,
   "http_etag": "\"6bc0b24353084b49907e42a239bf2f99c5d1a6b3-670cb7b5c2dce75465f2d7cfb3ddbe3e879544f5\""
-}
+
+  example of URL to a built .deb file:
+  https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+files/snapdev_1.1.34.0~jammy_amd64.deb
 */
 
 
+bool project::dot_deb_exists()
+{
+    // Note: I added a pause of 5 min. to check for packages because it can
+    //       already take 1 to 2 minutes to check one .deb
+    //
+    static int pause = 0;
+
+    if(pause > 0)
+    {
+        --pause;
+        return false;
+    }
+    pause = 5; // minutes
+
+    // the URL looks like this:
+    // https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+files/snapdev_1.1.34.0~jammy_amd64.deb
+    // and a HEAD against it has to return a 3XX result if the file
+    // exists, otherwise it returns a 404. If it returns a 5XX, then
+    // we probably need to try again later
+    //
+    // TODO: we need to check all entries until a 3XX is returned and then
+    //       stop checking that specific entry
+    //
+    std::string const remote_version(get_remote_version());
+    for(auto codename_and_arch : f_list_of_codenames_and_archs)
+    {
+        std::string::size_type const pos(codename_and_arch.find(':'));
+        std::string const codename(codename_and_arch.substr(0, pos));
+        std::string const arch(codename_and_arch.substr(pos + 1));
+
+        std::string url("https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+files/");
+        url += f_name;
+        url += '_';
+        url += remote_version;
+        url += '~';
+        url += codename;
+        url += '_';
+        url += arch;
+        url += ".deb";
+
+        std::unique_ptr<CURL, decltype(&::curl_easy_cleanup)> curl(curl_easy_init(), &::curl_easy_cleanup);
+        if(curl == nullptr)
+        {
+            SNAP_LOG_ERROR
+                << "could not properly initialize curl to check .deb availability for the \""
+                << f_name
+                << "\" project."
+                << SNAP_LOG_SEND;
+            return false;
+        }
+
+        curl_easy_setopt(curl.get(), CURLOPT_CUSTOMREQUEST, "HEAD");
+        curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl.get(), CURLOPT_DEFAULT_PROTOCOL, "https");
+        //curl_slist * headers(NULL);
+        //headers = curl_slist_append(headers, "Accept: application/json");
+        //headers = curl_slist_append(headers, "Authorization: Bearer secretkeyHere");
+        //headers = curl_slist_append(headers, "Content-Type: application/json");
+        //curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers);
+
+        CURLcode const res(curl_easy_perform(curl.get()));
+        if(res != CURLE_OK)
+        {
+            SNAP_LOG_ERROR
+                << "curl HEAD to \""
+                << url
+                << "\" failed. ("
+                << curl_easy_strerror(res)
+                << ")."
+                << SNAP_LOG_SEND;
+            return false;
+        }
+
+        long http_code(599);
+        curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
+        if(http_code >= 400)
+        {
+            SNAP_LOG_WARNING
+                << "curl HEAD to \""
+                << url
+                << "\" return HTTP error code: "
+                << http_code
+                << ". The package is not yet ready."
+                << SNAP_LOG_SEND;
+            return false;
+        }
+
+        // TBD: should we verify that it is a 301, 302, 303, 306, or 307?
+    }
+
+    // all the .deb seem to be available at the moment
+    //
+    pause = 0;
+    return true;
 }
 
 
@@ -1216,57 +1384,55 @@ bool project::retrieve_ppa_status()
 }
 
 
-bool project::get_building() const
+bool project::is_building() const
 {
-    return f_building;
+    return f_building != building_t::BUILDING_NOT_BUILDING;
 }
 
 
-void project::set_building(bool building)
+void project::started_building()
 {
     // create a <project-name>.building flag in the cache folder, as long as
     // this is there, we want to continue checking the status on launchpad
     // until the package is built or it failed
     //
-    if(building)
+    std::ofstream flag;
+    flag.open(get_flag_filename());
+    if(flag.is_open())
     {
-        std::ofstream flag;
-        flag.open(get_flag_filename());
-        if(flag.is_open())
-        {
-            time_t now(time(nullptr));
-            tm t;
-            gmtime_r(&now, &t);
-            char buf[256];
-            strftime(buf, sizeof(buf) - 1, "Started on %y/%m/%d %H:%M:%S", &t);
-            buf[sizeof(buf) - 1] = '\0';
-            flag << buf << std::endl;
-        }
-
-        // gather the latest commit hash in case the programmer updated
-        // a few last issues and thus the hash was updated
-        //
-        if(!get_last_commit_hash())
-        {
-            SNAP_LOG_ERROR
-                << "could not gather the latest commit hash for \""
-                << f_name
-                << "\" when marking that project as building. Using \""
-                << f_last_commit_hash
-                << "\" for now."
-                << SNAP_LOG_SEND;
-        }
-        f_build_hash = f_last_commit_hash;
-
-        std::ofstream hash;
-        hash.open(get_build_hash_filename());
-        if(hash.is_open())
-        {
-            hash << f_last_commit_hash << std::endl;
-        }
+        time_t const now(time(nullptr));
+        tm t;
+        gmtime_r(&now, &t);
+        char buf[256];
+        strftime(buf, sizeof(buf) - 1, "Date: %y/%m/%d %H:%M:%S", &t);
+        buf[sizeof(buf) - 1] = '\0';
+        flag << buf << "\n"
+                "Version: " << get_version() << '\n';
     }
 
-    f_building = building;
+    // gather the latest commit hash in case the programmer updated
+    // a few last issues and thus the hash was updated
+    //
+    if(!get_last_commit_hash())
+    {
+        SNAP_LOG_ERROR
+            << "could not gather the latest commit hash for \""
+            << f_name
+            << "\" when marking that project as building. Using \""
+            << f_last_commit_hash
+            << "\" for now."
+            << SNAP_LOG_SEND;
+    }
+    f_build_hash = f_last_commit_hash;
+
+    std::ofstream hash;
+    hash.open(get_build_hash_filename());
+    if(hash.is_open())
+    {
+        hash << f_last_commit_hash << std::endl;
+    }
+
+    f_building = building_t::BUILDING_COMPILING;
 }
 
 

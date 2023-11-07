@@ -27,28 +27,29 @@
 
 
 
-// snaplogger lib
+// snaplogger
 //
+#include    <snaplogger/logger.h>
 #include    <snaplogger/message.h>
 #include    <snaplogger/options.h>
 
 
-// cppprocess lib
+// cppprocess
 //
 #include    <cppprocess/io_capture_pipe.h>
 
 
-// advgetopt lib
+// advgetopt
 //
 #include    <advgetopt/exception.h>
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/not_used.h>
 
 
-// Qt lib
+// Qt
 //
 #include    <QtWidgets>
 #include    <QFile>
@@ -56,17 +57,17 @@
 #include    <QDir>
 
 
-// boost lib
+// boost
 //
 #include    <boost/preprocessor/stringize.hpp>
 
 
-// C++ lib
+// C++
 //
 #include    <fstream>
 
 
-// C lib
+// C
 //
 #include    <stdlib.h>
 #include    <sys/stat.h>
@@ -338,17 +339,26 @@ void snap_builder::timerEvent(QTimerEvent * timer_event)
 {
     snapdev::NOT_USED(timer_event);
 
+    // TODO: change this loop to run it in a QThread
+    //
+    //       for graphical updates, we need to send message instead of
+    //       doing the work directly (i.e. the setText() cannot be called
+    //       directly from a QThread and other similar things)
+    //
+    //       that will also introduce the need for a mutex when accessing
+    //       a project object
+
     QTableWidgetItem * item(nullptr);
     int row(0);
     for(auto const & p : f_projects)
     {
         if(p->is_valid())
         {
-            if(p->get_building())
+            if(p->is_building())
             {
                 if(p->retrieve_ppa_status())
                 {
-                    p->load_remote_data();
+                    p->load_remote_data(false);
 
                     item = f_table->item(row, 2);
                     item->setText(QString::fromUtf8(p->get_remote_version().c_str()));
@@ -456,6 +466,15 @@ void snap_builder::update_state(int row)
         else
         {
             unknown = state;
+        }
+        break;
+
+    case 'p':
+        if(state == "packaging")
+        {
+            // the project is being packaged (built but .deb not yet available)
+            //
+            background = QColor(211, 255, 78);
         }
         break;
 
@@ -1436,7 +1455,7 @@ void snap_builder::on_build_package_clicked()
     }
     else
     {
-        f_current_project->set_building(true);
+        f_current_project->started_building();
     }
 
     statusbar->clearMessage();
