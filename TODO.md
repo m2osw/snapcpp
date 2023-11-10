@@ -6,9 +6,12 @@
 * Look for any references to "master"/"slave" and change with
   "primary"/"replica" or "primary"/"secondary".
 * Call the `snapdev::drop_root_privileges()` on startup of tools/services
-  that should not ever be `root` while running.
+  that should not ever be `root` while running. If the service is not to
+  be started as root anyway, do that in the .service file as well.
 * Make sure all services exit with code 9 on a configuration failure.
   (and make the .service know that--see snaprfs daemon/.service)
+* Look into removing mysql from the list of dependencies.
+* Remove all the pragma -Wrestrict once we're done with Lunar.
 
 
 # advgetopt

@@ -7,6 +7,8 @@
 # and it pulls the latest for each sub-module instead of whatever the main
 # module thinks is current (since at times it's not 100% up to date).
 
+# WARNING: snapbuilder is part of the top module (snapcpp) and plays the
+#          role of updating that module to the latest
 SUBMODULES="
 	advgetopt
 	as2js
@@ -30,6 +32,7 @@ SUBMODULES="
 	libutf8
 	murmur3
 	prinbee
+	safepasswords
 	serverplugins
 	sitter
 	snapbuilder
