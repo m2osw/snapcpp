@@ -1,4 +1,14 @@
 
+* Use thread to work on the packages in a separate task
+
+  I want to create a version where I have a separate task (a thread)
+  because right now it takes forever to load all the data and it can very
+  badly block the main process.
+
+  I need proper synchronization when updating a project, but other than
+  that, I think it's doable. I also need a signal to the main thread so
+  the window can be updated.
+
 * New Version while building
 
   If you change the version in a changelog file before the build is finished,
@@ -10,10 +20,9 @@
   launchpad and report that. This can be detected and reported whenever
   the build flag is true.
 
-  I think the simplest is to save the version we are sending in the .build
-  file (instead of an empty file). When testing again, read that version from
-  that file and not from the current changelog (and possibly show the
-  discrepancy in the list?)
+  I now save the version & date to the .build file so we can reuse that
+  part, and I'm going to also save the list of package/arch because we
+  need those too in order to verify that the packages were built.
 
 * Add a file so we can know whether the tests passed.
 
@@ -28,19 +37,7 @@
 
 * Verify that the new package is indeed available
 
-  It looks like new packages are not available right away and when we try
-  to build back to back, the build server may end up using an old version.
-
-  I'd like to see whether that's visible in the JSON we get from the server.
-  If not, then look at how we can download those packages. If we can't then
-  it's not yet ready and we have to wait.
-
-  One way to make more sure that we can download the correct version would
-  be to implement what Doug had done: a change of all the versions in the
-  control file. That way, if the build service cannot find the file, it
-  can either fail or wait on the file before moving forward. [this is not
-  correct, the launchpad build mechanism doesn't wait on "internal"
-  dependencies--those that are in the same PPA; that said, it would fail
-  with a clear error "version unavailable" which may be better than what
-  we have now]
+  This somewhat works, I have an issue with the name & architecture which
+  may not match the folder name one to one. Also I want to move that code
+  in a thread so it doesn't completely block the interface.
 
