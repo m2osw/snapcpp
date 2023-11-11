@@ -24,40 +24,40 @@
 #include    "snap_builder.h"
 
 
-// cppprocess lib
+// cppprocess
 //
 #include    <cppprocess/io_capture_pipe.h>
 #include    <cppprocess/io_data_pipe.h>
 
 
-// as2js lib
+// as2js
 //
 #include    <as2js/json.h>
 
 
-// snaplogger lib
+// snaplogger
 //
 #include    <snaplogger/message.h>
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/string_replace_many.h>
 #include    <snapdev/trim_string.h>
 
 
-// Qt lib
+// Qt
 //
 #include    <QtWidgets>
 
 
-// C++ lib
+// C++
 //
 #include    <algorithm>
 #include    <fstream>
 
 
-// C lib
+// C
 //
 #include    <curl/curl.h>
 #include    <sys/stat.h>
@@ -150,6 +150,36 @@ std::string const & project_remote_info::get_build_arch() const
 
 
 
+/** \brief Initialize a project.
+ *
+ * The project is given a name (as per deps.make) and the constructor also
+ * checks whether the project exists (i.e. we can find a folder with the
+ * same name in the top folder or under contrib/...).
+ *
+ * The state goes like this:
+ *
+ * * `f_exists` is false, then the folder does not exist, we abandon that
+ *   project altogether (not shown in the Qt table) -- this happens for
+ *   the snapbuilder project
+ * * `f_exists` is true, the folder exists, we will try to load it in our
+ *   background thread
+ * * `f_loaded` is false, either the project does not exist (see `f_exists`)
+ *   or it was not loaded yet
+ * * `f_loaded` is true, we successfully loaded the project once, most
+ *   of the project data has been updated to what was found on disk/remotely
+ * * `f_valid` is false, either the project does not exist (see `f_exists`)
+ *   or we did not yet load it, or we loaded it and it failed
+ * * `f_valid` is true, the project was loaded successfully
+ *
+ * Further, we determine a state using the `f_building` value, the `f_state`
+ * value, and compare various other fields to know whther the project is
+ * ready to be built, it is building now, packaging, etc.
+ *
+ * \param[in] parent  The snapbuilder object so we can access the root and
+ * other paths.
+ * \param[in] name  The name of the project as found in deps.make.
+ * \param[in] deps  The dependencies found so far.
+ */
 project::project(
           snap_builder * parent
         , std::string const & name
@@ -167,42 +197,39 @@ project::project(
         add_dependency(d);
     }
 
-    if(find_project())
-    {
-        SNAP_LOG_INFO
-            << "found project under: \""
-            << f_project_path
-            << "\""
-            << SNAP_LOG_SEND;
-
-        load_project();
-    }
+    find_project();
 }
 
 
-bool project::find_project()
+void project::find_project()
 {
     struct stat s;
 
     // top folder?
     //
     f_project_path = f_snap_builder->get_root_path() + "/" + f_name;
-    if(stat(f_project_path.c_str(), &s) == 0)
+    if(stat(f_project_path.c_str(), &s) != 0)
     {
-        return true;
+        // contrib?
+        //
+        f_project_path = f_snap_builder->get_root_path() + "/contrib/" + f_name;
+        if(stat(f_project_path.c_str(), &s) != 0)
+        {
+            f_project_path.clear();
+            f_exists = false;
+            return;
+        }
     }
 
-    // contrib?
-    //
-    f_project_path = f_snap_builder->get_root_path() + "/contrib/" + f_name;
-    if(stat(f_project_path.c_str(), &s) == 0)
-    {
-        return true;
-    }
+    SNAP_LOG_DEBUG
+        << "found project \""
+        << f_name
+        << "\" under: \""
+        << f_project_path
+        << "\"."
+        << SNAP_LOG_SEND;
 
-    // not found
-    //
-    return false;
+    f_exists = true;
 }
 
 
@@ -214,6 +241,29 @@ void project::load_project()
         << "."
         << SNAP_LOG_SEND;
 
+    class send_project_changed_signal
+    {
+    public:
+        send_project_changed_signal(snap_builder * sb, pointer_t p)
+            : f_snap_builder(sb)
+            , f_project(p)
+        {
+        }
+
+        send_project_changed_signal(send_project_changed_signal const &) = delete;
+        send_project_changed_signal & operator = (send_project_changed_signal const &) = delete;
+
+        ~send_project_changed_signal()
+        {
+            f_snap_builder->project_changed(f_project);
+        }
+
+    private:
+        snap_builder * f_snap_builder = nullptr;
+        pointer_t      f_project = nullptr;
+    };
+    send_project_changed_signal send_signal(f_snap_builder, shared_from_this());
+
     if(!retrieve_version())
     {
         return;
@@ -223,6 +273,10 @@ void project::load_project()
     {
         return;
     }
+
+    // at this point we know about the other states
+    //
+    f_loaded = true;
 
     if(!get_last_commit_timestamp())
     {
@@ -460,14 +514,48 @@ void project::mark_as_done_building()
 }
 
 
+/** \brief Check whether the folder exists.
+ *
+ * When we read the deps.make file, we could end up with a project name that
+ * was deleted. This function returns true if the project still exists.
+ *
+ * \return true if the project folder was found.
+ */
+bool project::exists() const
+{
+    return f_exists;
+}
+
+
 bool project::is_valid() const
 {
     return f_valid;
 }
 
 
+/** \brief Return the name of the project.
+ *
+ * This function returns the name of the project as found in the deps.make
+ * file.
+ *
+ * \warning
+ * The name of the project is the name of folder, not the name of the
+ * final package. Actually, the name of the packages are found inside
+ * the `debian/control` file. This is important since one project may
+ * generate many packages (such as the eventdispatcher).
+ *
+ * \warning
+ * Also we have a special case with the `cmake` folder. The name of that
+ * package on GIT is snapcmakemodules. So in some places we change that
+ * name to make things work.
+ *
+ * \return The name of the project folder.
+ */
 std::string const & project::get_name() const
 {
+    // no need for a mutex, the name is set on construction and it cannot
+    // be changed
+    //
     return f_name;
 }
 
@@ -535,6 +623,13 @@ std::string project::get_remote_version() const
  */
 std::string project::get_state() const
 {
+    // state is unknown until the project is loaded
+    //
+    if(!f_loaded)
+    {
+        return "unknown";
+    }
+
     // building has priority
     //
     switch(f_building)
@@ -605,6 +700,11 @@ time_t project::get_last_commit() const
 
 std::string project::get_last_commit_as_string() const
 {
+    if(f_last_commit == 0)
+    {
+        return "-";
+    }
+
     char buf[256];
     tm t;
     localtime_r(&f_last_commit, &t);
@@ -1387,6 +1487,12 @@ bool project::retrieve_ppa_status()
 bool project::is_building() const
 {
     return f_building != building_t::BUILDING_NOT_BUILDING;
+}
+
+
+bool project::is_packaging() const
+{
+    return f_building == building_t::BUILDING_PACKAGING;
 }
 
 

@@ -43,6 +43,7 @@ add_executable(${PROJECT_NAME}
     main.cpp
 
     about_dialog.cpp
+    background_processing.cpp
     project.cpp
     resources.qrc
     snap_builder.cpp
@@ -58,6 +59,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_BINARY_DIR}
         ${AS2JS_INCLUDE_DIRS}
         ${ADVGETOPT_INCLUDE_DIRS}
+        ${CPPTHREAD_INCLUDE_DIRS}
         ${LIBEXCEPT_INCLUDE_DIRS}
         ${EVENTDISPATCHER_INCLUDE_DIRS}
         ${EVENTDISPATCHER_QT_INCLUDE_DIRS}
@@ -71,6 +73,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     ${AS2JS_LIBRARIES}
     ${ADVGETOPT_LIBRARIES}
+    ${CPPTHREAD_LIBRARIES}
     ${CURL_LIBRARIES}
     ${EVENTDISPATCHER_LIBRARIES}
     ${EVENTDISPATCHER_QT_LIBRARIES}

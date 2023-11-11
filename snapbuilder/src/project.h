@@ -18,24 +18,23 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #pragma once
 
-// advgetopt lib
+// advgetopt
 //
 #include    <advgetopt/utils.h>
 
 
-// eventdispatcher lib
+// eventdispatcher
 //
 #include    <cppprocess/process.h>
 
 
-// Qt lib
+// Qt
 //
 #include    <QWidget>
 
 
-// C++ lib
+// C++
 //
-#include    <deque>
 #include    <memory>
 #include    <set>
 
@@ -76,11 +75,11 @@ private:
 
 
 class project
+    : public std::enable_shared_from_this<project>
 {
 public:
     typedef std::shared_ptr<project>            pointer_t;
     typedef std::vector<pointer_t>              vector_t;
-    typedef std::deque<pointer_t>               deque_t;
     typedef std::map<std::string, pointer_t>    map_t;
     typedef std::set<std::string>               dependencies_t;
 
@@ -91,6 +90,7 @@ public:
                                 project(project const & rhs) = delete;
     project &                   operator = (project const & rhs) = delete;
 
+    bool                        exists() const;
     bool                        is_valid() const;
     std::string const &         get_name() const;
     std::string                 get_project_name() const;
@@ -111,6 +111,7 @@ public:
     void                        load_remote_data(bool load);
     bool                        retrieve_ppa_status();
     bool                        is_building() const;
+    bool                        is_packaging() const;
     void                        started_building();
     bool                        get_build_succeeded() const;
     bool                        get_build_failed() const;
@@ -118,6 +119,7 @@ public:
     bool                        operator < (project const & rhs) const;
     static void                 sort(vector_t & v);
 
+    void                        load_project();
     static void                 simplify(vector_t & v);
     static void                 generate_svg(
                                       vector_t & v
@@ -136,8 +138,7 @@ private:
     void                        add_missing_dependencies(pointer_t p, map_t & m);
     static bool                 compare(pointer_t a, pointer_t b);
 
-    bool                        find_project();
-    void                        load_project();
+    void                        find_project();
     bool                        retrieve_version();
     bool                        check_state();
     bool                        get_last_commit_timestamp();
@@ -158,6 +159,8 @@ private:
     time_t                      f_last_commit = 0;
     std::string                 f_last_commit_hash = std::string();
     std::string                 f_build_hash = std::string();
+    bool                        f_exists = false;
+    bool                        f_loaded = false;
     bool                        f_valid = false;
     bool                        f_recursed_add_dependencies = false;
     building_t                  f_building = building_t::BUILDING_NOT_BUILDING;
@@ -172,6 +175,8 @@ private:
 
 
 } // builder namespace
+
+
 
 struct project_ptr
 {
