@@ -20,27 +20,34 @@
 
 // self
 //
+#include    "background_processing.h"
 #include    "ui_snap_builder-MainWindow.h"
 #include    "project.h"
 
 
-// eventdispatcher lib
+// eventdispatcher
 //
 #include    <eventdispatcher/communicator.h>
 #include    <eventdispatcher/qt_connection.h>
 
 
-// advgetopt lib
+// cppthread
+//
+#include    <cppthread/thread.h>
+
+
+// advgetopt
 //
 #include    <advgetopt/advgetopt.h>
 
 
-// snapdev lib
+// snapdev
 //
+#include    <snapdev/lockfile.h>
 #include    <snapdev/not_reached.h>
 
 
-// Qt includes
+// Qt
 //
 #include    <QCloseEvent>
 #include    <QSettings>
@@ -52,6 +59,16 @@ namespace builder
 
 
 
+enum column_t : int
+{
+    COLUMN_PROJECT_NAME,
+    COLUMN_CURRENT_VERSION,
+    COLUMN_LAUNCHPAD_VERSION,
+    COLUMN_CHANGES,
+    COLUMN_LOCAL_CHANGES_DATE,
+    COLUMN_BUILD_STATE,
+    COLUMN_LAUNCHPAD_COMPILED_DATE,
+};
 
 
 
@@ -80,13 +97,24 @@ public:
     std::string const &             get_launchpad_url() const;
     advgetopt::string_list_t const &get_release_names() const;
 
+    void                            project_changed(project::pointer_t p);
+    void                            adjust_columns();
+    bool                            is_background_thread() const;
+
 protected:
     virtual void                    closeEvent(QCloseEvent * event) override;
-    virtual void                    timerEvent(QTimerEvent *event) override;
+    //virtual void                    timerEvent(QTimerEvent *event) override;
+
+signals:
+    void                            projectChanged(project_ptr p);
+    void                            adjustColumns();
 
 private slots:
+    void                            on_project_changed(project_ptr p);
+    void                            on_adjust_columns();
     void                            on_refresh_list_triggered();
-    void                            on_refresh_clicked();
+    void                            on_local_refresh_clicked();
+    void                            on_remote_refresh_clicked();
     void                            on_coverage_clicked();
     void                            on_build_release_triggered();
     void                            on_build_debug_triggered();
@@ -109,7 +137,6 @@ private slots:
 
 private:
     void                            read_list_of_projects();
-    void                            adjust_columns();
     std::string                     get_selection() const;
     std::string                     get_selection_with_path() const;
     void                            set_button_status();
@@ -117,6 +144,7 @@ private:
                                           cppprocess::io * output_pipe
                                         , cppprocess::done_reason_t reason);
     void                            update_state(int row);
+    int                             find_row(project::pointer_t p) const;
 
     QSettings                       f_settings = QSettings();
     advgetopt::getopt               f_opt;
@@ -125,12 +153,17 @@ private:
     std::string                     f_root_path = std::string();
     std::string                     f_config_path = std::string();
     std::string                     f_cache_path = std::string();
-    std::string                     f_launchpad_url = std::string("https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa?ws.op=getBuildRecords&ws.size=10&ws.start=0&source_name=@PROJECT_NAME@");
+    std::string                     f_launchpad_url = std::string();
     std::string                     f_distribution = std::string("bionic");
     project::vector_t               f_projects = project::vector_t();
     project::pointer_t              f_current_project = project::pointer_t();
     advgetopt::string_list_t        f_release_names = advgetopt::string_list_t();
     int                             f_timer_id = 0;
+    std::shared_ptr<snapdev::lockfile>
+                                    f_lockfile = std::shared_ptr<snapdev::lockfile>();
+    bool                            f_auto_update_svg = false;
+    background_worker::pointer_t    f_background_worker = background_worker::pointer_t();
+    cppthread::thread::pointer_t    f_worker_thread = cppthread::thread::pointer_t();
 };
 //#pragma GCC diagnostic pop
 

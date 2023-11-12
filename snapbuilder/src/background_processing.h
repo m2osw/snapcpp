@@ -20,18 +20,13 @@
 
 // self
 //
-#include    "snap_builder.h"
+#include    "project.h"
 
 
-// eventdispatcher lib
+// cppthread
 //
-#include    <eventdispatcher/timer.h>
-
-
-
-
-
-
+#include    <cppthread/fifo.h>
+#include    <cppthread/runner.h>
 
 
 
@@ -40,22 +35,84 @@ namespace builder
 
 
 
-class background_processing
-    : public ed::timer_connection
+class snap_builder;
+class background_worker;
+
+
+class job
 {
 public:
-                                background_processing(snap_builder * sb);
-                                background_processing(background_processing const &) = delete;
-    background_processing &     operator = (background_processing const &) = delete;
+    typedef std::shared_ptr<job>    pointer_t;
+    typedef std::list<pointer_t>    list_t;
 
-    void                        add_project(project::pointer_t p);
+    enum class work_t
+    {
+        WORK_UNKNOWN, // if not properly defined, default
 
-    // timer implementation
-    void                        process_timeout();
+        WORK_LOAD_PROJECT,
+        WORK_ADJUST_COLUMNS,
+        WORK_RETRIEVE_PPA_STATUS,
+        WORK_START_BUILD,
+        WORK_WATCH_BUILD,
+    };
+
+                                    job(work_t w);
+                                    job(job const &) = delete;
+    job &                           operator = (job const &) = delete;
+
+    //work_t                          get_work() const;
+
+    void                            set_snap_builder(snap_builder * sb);
+
+    void                            set_project(project::pointer_t p);
+    project::pointer_t              get_project() const;
+
+    void                            set_next_attempt(int seconds_from_now);
+    snapdev::timespec_ex const &    get_next_attempt() const;
+
+    bool                            process(background_worker * w);
 
 private:
-    snap_builder *              f_snap_builder = nullptr;
-    project::deque_t            f_projects = project::deque_t();
+    bool                            load_project(background_worker * w);
+    bool                            adjust_columns();
+    bool                            retrieve_ppa_status();
+    bool                            start_build(background_worker * w);
+    bool                            watch_build();
+
+    work_t                          f_work = work_t::WORK_UNKNOWN;
+    project::pointer_t              f_project = project::pointer_t();
+    snap_builder *                  f_snap_builder = nullptr;
+    snapdev::timespec_ex            f_next_attempt = snapdev::timespec_ex();
+    int                             f_retries = 0;
+};
+
+
+class background_worker
+    : public cppthread::runner
+{
+public:
+    typedef std::shared_ptr<background_worker>
+                                pointer_t;
+
+                                background_worker();
+                                background_worker(background_worker const &) = delete;
+    background_worker &         operator = (background_worker const &) = delete;
+
+    void                        send_job(job::pointer_t j);
+
+    // cppthread::runner implementation
+    //
+    virtual void                run();
+
+    void                        stop();
+
+private:
+    typedef cppthread::fifo<job::pointer_t>    job_fifo_t;
+
+    std::int64_t                get_timeout();
+
+    job_fifo_t                  f_job_fifo = job_fifo_t();
+    job::list_t                 f_extra_work = job::list_t();
 };
 
 

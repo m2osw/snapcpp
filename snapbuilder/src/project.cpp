@@ -24,40 +24,45 @@
 #include    "snap_builder.h"
 
 
-// cppprocess lib
+// cppprocess
 //
 #include    <cppprocess/io_capture_pipe.h>
 #include    <cppprocess/io_data_pipe.h>
 
 
-// as2js lib
+// as2js
 //
 #include    <as2js/json.h>
 
 
-// snaplogger lib
+// cppthread
+//
+#include    <cppthread/guard.h>
+
+
+// snaplogger
 //
 #include    <snaplogger/message.h>
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/string_replace_many.h>
 #include    <snapdev/trim_string.h>
 
 
-// Qt lib
+// Qt
 //
 #include    <QtWidgets>
 
 
-// C++ lib
+// C++
 //
 #include    <algorithm>
 #include    <fstream>
 
 
-// C lib
+// C
 //
 #include    <curl/curl.h>
 #include    <sys/stat.h>
@@ -66,6 +71,9 @@
 
 namespace builder
 {
+
+
+#define guard_project   cppthread::guard lock(*cppthread::g_system_mutex)
 
 
 namespace
@@ -150,6 +158,36 @@ std::string const & project_remote_info::get_build_arch() const
 
 
 
+/** \brief Initialize a project.
+ *
+ * The project is given a name (as per deps.make) and the constructor also
+ * checks whether the project exists (i.e. we can find a folder with the
+ * same name in the top folder or under contrib/...).
+ *
+ * The state goes like this:
+ *
+ * * `f_exists` is false, then the folder does not exist, we abandon that
+ *   project altogether (not shown in the Qt table) -- this happens for
+ *   the snapbuilder project
+ * * `f_exists` is true, the folder exists, we will try to load it in our
+ *   background thread
+ * * `f_loaded` is false, either the project does not exist (see `f_exists`)
+ *   or it was not loaded yet
+ * * `f_loaded` is true, we successfully loaded the project once, most
+ *   of the project data has been updated to what was found on disk/remotely
+ * * `f_valid` is false, either the project does not exist (see `f_exists`)
+ *   or we did not yet load it, or we loaded it and it failed
+ * * `f_valid` is true, the project was loaded successfully
+ *
+ * Further, we determine a state using the `f_building` value, the `f_state`
+ * value, and compare various other fields to know whther the project is
+ * ready to be built, it is building now, packaging, etc.
+ *
+ * \param[in] parent  The snapbuilder object so we can access the root and
+ * other paths.
+ * \param[in] name  The name of the project as found in deps.make.
+ * \param[in] deps  The dependencies found so far.
+ */
 project::project(
           snap_builder * parent
         , std::string const & name
@@ -167,42 +205,45 @@ project::project(
         add_dependency(d);
     }
 
-    if(find_project())
-    {
-        SNAP_LOG_INFO
-            << "found project under: \""
-            << f_project_path
-            << "\""
-            << SNAP_LOG_SEND;
-
-        load_project();
-    }
+    find_project();
 }
 
 
-bool project::find_project()
+void project::find_project()
 {
     struct stat s;
 
     // top folder?
     //
     f_project_path = f_snap_builder->get_root_path() + "/" + f_name;
-    if(stat(f_project_path.c_str(), &s) == 0)
+    if(stat(f_project_path.c_str(), &s) != 0)
     {
-        return true;
+        // contrib?
+        //
+        f_project_path = f_snap_builder->get_root_path() + "/contrib/" + f_name;
+        if(stat(f_project_path.c_str(), &s) != 0)
+        {
+            f_project_path.clear();
+            f_exists = false;
+            return;
+        }
     }
 
-    // contrib?
-    //
-    f_project_path = f_snap_builder->get_root_path() + "/contrib/" + f_name;
-    if(stat(f_project_path.c_str(), &s) == 0)
-    {
-        return true;
-    }
+    SNAP_LOG_DEBUG
+        << "found project \""
+        << f_name
+        << "\" under: \""
+        << f_project_path
+        << "\"."
+        << SNAP_LOG_SEND;
 
-    // not found
-    //
-    return false;
+    f_exists = true;
+}
+
+
+void project::project_changed()
+{
+    f_snap_builder->project_changed(shared_from_this());
 }
 
 
@@ -214,6 +255,8 @@ void project::load_project()
         << "."
         << SNAP_LOG_SEND;
 
+    must_be_background_thread();
+
     if(!retrieve_version())
     {
         return;
@@ -222,6 +265,13 @@ void project::load_project()
     if(!check_state())
     {
         return;
+    }
+
+    // at this point we know about the other states
+    //
+    {
+        guard_project;
+        f_loaded = true;
     }
 
     if(!get_last_commit_timestamp())
@@ -241,7 +291,10 @@ void project::load_project()
 
     retrieve_building_state();
 
-    f_valid = true;
+    {
+        guard_project;
+        f_valid = true;
+    }
 
     load_remote_data(true);
 }
@@ -253,10 +306,10 @@ bool project::retrieve_version()
     cmd += f_project_path;
     cmd += "; dpkg-parsechangelog --show-field Version";
 
-    //SNAP_LOG_INFO
-    //    << "retrieve version with: "
-    //    << cmd
-    //    << SNAP_LOG_SEND;
+    SNAP_LOG_TRACE
+        << "retrieve version with: "
+        << cmd
+        << SNAP_LOG_SEND;
 
     FILE * p(popen(cmd.c_str(), "r"));
     char buf[256];
@@ -266,20 +319,22 @@ bool project::retrieve_version()
     }
     buf[sizeof(buf) - 1] = '\0';
     pclose(p);
-    f_version = buf;
+    std::string version(buf);
 
-    std::string::size_type tilde(f_version.find('~'));
+    std::string::size_type tilde(version.find('~'));
     if(tilde != std::string::npos)
     {
-        f_version = f_version.substr(0, tilde);
+        version = version.substr(0, tilde);
     }
 
-    //SNAP_LOG_INFO
-    //    << "local version: "
-    //    << f_version
-    //    << SNAP_LOG_SEND;
+    SNAP_LOG_TRACE
+        << "local version: "
+        << version
+        << SNAP_LOG_SEND;
 
-    return !f_version.empty();
+    set_version(version);
+
+    return !version.empty();
 }
 
 
@@ -300,7 +355,7 @@ bool project::check_state()
         int const r(system(cmd.c_str()));
         if(r != 0)
         {
-            f_state = "not committed";
+            set_state("not committed");
             return true;
         }
     }
@@ -320,14 +375,14 @@ bool project::check_state()
         int const r(system(cmd.c_str()));
         if(r != 0)
         {
-            f_state = "not pushed";
+            set_state("not pushed");
             return true;
         }
     }
 
     // state looks good so far
     //
-    f_state = "ready";
+    set_state("ready");
     return true;
 }
 
@@ -338,10 +393,10 @@ bool project::get_last_commit_timestamp()
     cmd += f_project_path;
     cmd += "; git log -1 --format=%ct";
 
-    //SNAP_LOG_INFO
-    //    << "get last commit timestamp with: "
-    //    << cmd
-    //    << SNAP_LOG_SEND;
+    SNAP_LOG_TRACE
+        << "get last commit timestamp with: "
+        << cmd
+        << SNAP_LOG_SEND;
 
     FILE * p(popen(cmd.c_str(), "r"));
     char buf[256];
@@ -352,13 +407,15 @@ bool project::get_last_commit_timestamp()
     buf[sizeof(buf) - 1] = '\0';
     pclose(p);
 
-    f_last_commit = atol(buf);
+    time_t const last_commit(atol(buf));
 
-    //SNAP_LOG_INFO
-    //    << "last commit timestamp: "
-    //    << f_last_commit
-    //    << SNAP_LOG_SEND;
+    SNAP_LOG_TRACE
+        << "last commit timestamp: "
+        << last_commit
+        << SNAP_LOG_SEND;
 
+    guard_project;
+    f_last_commit = last_commit;
     return f_last_commit > 0;
 }
 
@@ -396,10 +453,10 @@ bool project::get_last_commit_hash()
     cmd += f_project_path;
     cmd += "; git rev-parse HEAD";
 
-    //SNAP_LOG_INFO
-    //    << "get last commit hash with: "
-    //    << cmd
-    //    << SNAP_LOG_SEND;
+    SNAP_LOG_TRACE
+        << "get last commit hash with: "
+        << cmd
+        << SNAP_LOG_SEND;
 
     FILE * p(popen(cmd.c_str(), "r"));
     char buf[256];
@@ -410,13 +467,15 @@ bool project::get_last_commit_hash()
     buf[sizeof(buf) - 1] = '\0';
     pclose(p);
 
-    f_last_commit_hash = snapdev::trim_string(std::string(buf));
+    std::string const last_commit_hash(snapdev::trim_string(std::string(buf)));
 
-    //SNAP_LOG_INFO
-    //    << "last commit hash: "
-    //    << f_last_commit_hash
-    //    << SNAP_LOG_SEND;
+    SNAP_LOG_TRACE
+        << "last commit hash: "
+        << f_last_commit_hash
+        << SNAP_LOG_SEND;
 
+    guard_project;
+    f_last_commit_hash = last_commit_hash;
     return !f_last_commit_hash.empty();
 }
 
@@ -430,6 +489,7 @@ bool project::get_build_hash()
     hash.open(get_build_hash_filename());
     if(hash.is_open())
     {
+        guard_project;
         hash >> f_build_hash;
         f_build_hash = snapdev::trim_string(f_build_hash);
     }
@@ -450,7 +510,9 @@ void project::retrieve_building_state()
     //          is called about continuation, not startup and as a result
     //          it could mess up files and parameters
     //
-    f_building = flag.is_open() ? building_t::BUILDING_COMPILING : building_t::BUILDING_NOT_BUILDING;
+    set_building(flag.is_open()
+            ? building_t::BUILDING_COMPILING
+            : building_t::BUILDING_NOT_BUILDING);
 }
 
 
@@ -460,14 +522,50 @@ void project::mark_as_done_building()
 }
 
 
+/** \brief Check whether the folder exists.
+ *
+ * When we read the deps.make file, we could end up with a project name that
+ * was deleted. This function returns true if the project still exists.
+ *
+ * \return true if the project folder was found.
+ */
+bool project::exists() const
+{
+    // guard not necessary, this is set at construction time and never changes
+    return f_exists;
+}
+
+
 bool project::is_valid() const
 {
+    guard_project;
     return f_valid;
 }
 
 
+/** \brief Return the name of the project.
+ *
+ * This function returns the name of the project as found in the deps.make
+ * file.
+ *
+ * \warning
+ * The name of the project is the name of folder, not the name of the
+ * final package. Actually, the name of the packages are found inside
+ * the `debian/control` file. This is important since one project may
+ * generate many packages (such as the eventdispatcher).
+ *
+ * \warning
+ * Also we have a special case with the `cmake` folder. The name of that
+ * package on GIT is snapcmakemodules. So in some places we change that
+ * name to make things work.
+ *
+ * \return The name of the project folder.
+ */
 std::string const & project::get_name() const
 {
+    // no need for a mutex, the name is set on construction and it cannot
+    // be changed
+    //
     return f_name;
 }
 
@@ -495,20 +593,62 @@ std::string project::get_project_name() const
 }
 
 
-std::string const & project::get_version() const
+void project::set_version(std::string const & version)
 {
+    guard_project;
+    f_version = version;
+}
+
+
+std::string project::get_version() const
+{
+    guard_project;
     return f_version;
+}
+
+
+void project::clear_remote_info(std::size_t size)
+{
+    guard_project;
+    f_remote_info.clear();
+    f_remote_info.reserve(size);
+}
+
+
+void project::add_remote_info(project_remote_info::pointer_t info)
+{
+    guard_project;
+    f_remote_info.push_back(info);
 }
 
 
 std::string project::get_remote_version() const
 {
+    guard_project;
     if(f_remote_info.size() == 0)
     {
         return std::string("-");
     }
 
     return f_remote_info[0]->get_build_version();
+}
+
+
+/** \brief Set the current state.
+ *
+ * Change the f_state variable with the specified string.
+ *
+ * \warning
+ * This function is not symetrical to the get_state(). This function changes
+ * the f_state variable. The other returns a state that dependends on many
+ * variables such as f_loaded, f_building, versions, etc.
+ *
+ * \param[in] state  The new state, as a string.
+ */
+void project::set_state(std::string const & state)
+{
+    guard_project;
+    f_state = state;
 }
 
 
@@ -535,6 +675,15 @@ std::string project::get_remote_version() const
  */
 std::string project::get_state() const
 {
+    guard_project;
+
+    // state is unknown until the project is loaded
+    //
+    if(!f_loaded)
+    {
+        return "unknown";
+    }
+
     // building has priority
     //
     switch(f_building)
@@ -551,9 +700,10 @@ std::string project::get_state() const
 
     }
 
-    // "not committed" and "not pushed" are returned as is
+    // "not committed" and "not pushed" are always returned as is
     //
-    if(f_state != "ready")
+    if(f_state != "ready"
+    && f_state != "sending")
     {
         return f_state;
     }
@@ -565,7 +715,7 @@ std::string project::get_state() const
         return "never built";
     }
 
-    if(get_build_failed())
+    if(get_build_status() == build_status_t::BUILD_STATUS_FAILED)
     {
         return "build failed";
     }
@@ -599,16 +749,24 @@ std::string project::get_state() const
 
 time_t project::get_last_commit() const
 {
+    guard_project;
     return f_last_commit;
 }
 
 
 std::string project::get_last_commit_as_string() const
 {
+    time_t const last_commit(get_last_commit());
+    if(last_commit == 0)
+    {
+        return "-";
+    }
+
     char buf[256];
     tm t;
-    localtime_r(&f_last_commit, &t);
-    strftime(buf, sizeof(buf), "%D %T", &t);
+    localtime_r(&last_commit, &t);
+    buf[0] = '\0';
+    strftime(buf, sizeof(buf), "%Y-%m-%d %T", &t); // use same format as in JSON
     buf[sizeof(buf) - 1];
     return buf;
 }
@@ -616,6 +774,7 @@ std::string project::get_last_commit_as_string() const
 
 std::string project::get_remote_build_state() const
 {
+    guard_project;
     if(f_remote_info.size() == 0)
     {
         return std::string("-");
@@ -627,6 +786,7 @@ std::string project::get_remote_build_state() const
 
 std::string project::get_remote_build_date() const
 {
+    guard_project;
     if(f_remote_info.size() == 0)
     {
         return std::string("-");
@@ -661,13 +821,15 @@ std::string project::get_remote_build_date() const
  */
 void project::load_remote_data(bool loading)
 {
+    must_be_background_thread();
+
     // a build is complete only once all the releases are built (or failed to)
     //
     // we can download a JSON file from launchpad that gives us the information
     // about the latest build(s)
     //
     if(loading
-    || f_building == building_t::BUILDING_COMPILING
+    || get_building() == building_t::BUILDING_COMPILING
     || f_list_of_codenames_and_archs.empty())
     {
         std::string const cache_filename(get_ppa_json_filename());
@@ -703,6 +865,16 @@ void project::load_remote_data(bool loading)
         std::string json_filename(cache_filename);
         as2js::json json;
         as2js::json::json_value::pointer_t root(json.load(json_filename));
+        if(root == nullptr)
+        {
+            SNAP_LOG_ERROR
+                << "file \""
+                << cache_filename
+                << "\" does not represent a valid JSON file. Deleting."
+                << SNAP_LOG_SEND;
+            unlink(cache_filename.c_str());
+            return;
+        }
         if(root->get_type() != as2js::json::json_value::type_t::JSON_TYPE_OBJECT)
         {
             SNAP_LOG_ERROR
@@ -755,11 +927,10 @@ void project::load_remote_data(bool loading)
 
         std::set<std::string> built_list_of_codenames_and_archs;
         f_list_of_codenames_and_archs.clear();
-        f_built_successfully = -1;
+        set_build_status(build_status_t::BUILD_STATUS_UNKNOWN);
 
         as2js::json::json_value::array_t const & entries(it->second->get_array());
-        f_remote_info.clear();
-        f_remote_info.reserve(entries.size());
+        clear_remote_info(entries.size());
         for(as2js::json::json_value::pointer_t const & e : entries)
         {
             // just in case, verify that the entry is an object, if not, just
@@ -912,7 +1083,7 @@ void project::load_remote_data(bool loading)
             //       though, we take 1 min. to re-read the state so we
             //       should be good... assuming no huge delay on launchpad
             //
-            if(build_version == f_version)
+            if(build_version == get_version())
             {
                 f_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
             }
@@ -927,7 +1098,7 @@ void project::load_remote_data(bool loading)
                 {
                     build_state = build_state_it->second->get_string();
 
-                    if(build_version == f_version)
+                    if(build_version == get_version())
                     {
                         if(build_state == "Successfully built")
                         {
@@ -937,16 +1108,16 @@ void project::load_remote_data(bool loading)
                             // and if set to 0, we keep it in the "failed" state
                             // because at least one version failed
                             //
-                            if(f_built_successfully == -1)
+                            if(get_build_status() == build_status_t::BUILD_STATUS_UNKNOWN)
                             {
-                                f_built_successfully = 1;
+                                set_build_status(build_status_t::BUILD_STATUS_SUCCEEDED);
                             }
                         }
                         else if(build_state == "Failed to build"
                              || build_state == "Dependency wait")
                         {
                             built_list_of_codenames_and_archs.insert(build_codename + ':' + build_arch);
-                            f_built_successfully = 0;
+                            set_build_status(build_status_t::BUILD_STATUS_FAILED);
                         }
 
                         auto const build_self_link(build.find("self_link"));
@@ -968,7 +1139,7 @@ void project::load_remote_data(bool loading)
                                 << "\" with self-link \""
                                 << build_self_link->second->get_string()
                                 << "\". (success? "
-                                << f_built_successfully
+                                << get_build_status_string()
                                 << ")"
                                 << SNAP_LOG_SEND;
                         }
@@ -983,8 +1154,6 @@ void project::load_remote_data(bool loading)
                 continue;
             }
 
-            find_remote_info(build_codename, build_arch);
-
             project_remote_info::pointer_t info(std::make_shared<project_remote_info>());
             info->set_date(date);
             info->set_build_codename(build_codename);
@@ -992,19 +1161,19 @@ void project::load_remote_data(bool loading)
             info->set_build_version(build_version);
             info->set_build_arch(build_arch);
 
-            f_remote_info.push_back(info);
+            add_remote_info(info);
         }
 
-        if(f_building == building_t::BUILDING_COMPILING)
+        if(get_building() == building_t::BUILDING_COMPILING)
         {
             if(!f_list_of_codenames_and_archs.empty()
             && f_list_of_codenames_and_archs == built_list_of_codenames_and_archs)
             {
                 // the compiling is done, switch to packaging mode
                 //
-                if(f_built_successfully == 1)
+                if(get_build_status() == build_status_t::BUILD_STATUS_SUCCEEDED)
                 {
-                    f_building = building_t::BUILDING_PACKAGING;
+                    set_building(building_t::BUILDING_PACKAGING);
 
                     SNAP_LOG_INFO
                         << "Done compiling \""
@@ -1014,7 +1183,7 @@ void project::load_remote_data(bool loading)
                 }
                 else
                 {
-                    f_building = building_t::BUILDING_NOT_BUILDING;
+                    set_building(building_t::BUILDING_NOT_BUILDING);
 
                     // delete the flag, we are done with it
                     //
@@ -1050,29 +1219,34 @@ void project::load_remote_data(bool loading)
     //          timer comes off and then we test those files in the
     //          background (on the timer)
     //
+    // TODO: with the way our backend is testing things, we could return
+    //       here and have the following code in the dot_deb_exists()
+    //       and call that on our watch instead of this load function
+    //       (at least I'm pretty sure we could tweak things that way)
+    //       this would allow us to change the "building" to "packaging"
+    //       in the interface before attempting the `curl --head ...` calls
+    //
     if(!loading
-    && f_building == building_t::BUILDING_PACKAGING)
+    && get_building() == building_t::BUILDING_PACKAGING)
     {
         // we want to make sure that the .deb are indeed available
         // before marking the system as built
         //
         if(dot_deb_exists())
         {
-            f_building = building_t::BUILDING_NOT_BUILDING;
+            set_building(building_t::BUILDING_NOT_BUILDING);
 
             // delete the flag, we are done with it
             //
             mark_as_done_building();
 
+            check_state();
+
             SNAP_LOG_INFO
                 << "Done building \""
                 << f_name
                 << "\", new status is: \""
-                << (f_built_successfully == -1
-                    ? "unknown"
-                    : (f_built_successfully == 1
-                        ? "Built successfully"
-                        : "Build failed"))
+                << get_build_status_string()
                 << "\""
                 << SNAP_LOG_SEND;
         }
@@ -1116,18 +1290,6 @@ void project::load_remote_data(bool loading)
 
 bool project::dot_deb_exists()
 {
-    // Note: I added a pause of 5 min. to check for packages because it can
-    //       already take 1 to 2 minutes to check one .deb
-    //
-    static int pause = 0;
-
-    if(pause > 0)
-    {
-        --pause;
-        return false;
-    }
-    pause = 5; // minutes
-
     // the URL looks like this:
     // https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+files/snapdev_1.1.34.0~jammy_amd64.deb
     // and a HEAD against it has to return a 3XX result if the file
@@ -1165,14 +1327,15 @@ bool project::dot_deb_exists()
             return false;
         }
 
+        SNAP_LOG_NOTICE
+            << "checking whether .deb exists with `curl --head "
+            << url
+            << "`"
+            << SNAP_LOG_SEND;
+
         curl_easy_setopt(curl.get(), CURLOPT_CUSTOMREQUEST, "HEAD");
         curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl.get(), CURLOPT_DEFAULT_PROTOCOL, "https");
-        //curl_slist * headers(NULL);
-        //headers = curl_slist_append(headers, "Accept: application/json");
-        //headers = curl_slist_append(headers, "Authorization: Bearer secretkeyHere");
-        //headers = curl_slist_append(headers, "Content-Type: application/json");
-        //curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers);
 
         CURLcode const res(curl_easy_perform(curl.get()));
         if(res != CURLE_OK)
@@ -1206,30 +1369,10 @@ bool project::dot_deb_exists()
 
     // all the .deb seem to be available at the moment
     //
-    pause = 0;
     return true;
 }
 
 
-project_remote_info::pointer_t project::find_remote_info(
-      std::string const & build_codename
-    , std::string const & build_arch)
-{
-    auto const it(std::find_if(
-          f_remote_info.cbegin()
-        , f_remote_info.cend()
-        , [build_codename, build_arch](project_remote_info::pointer_t info)
-        {
-            return info->get_build_codename() == build_codename
-                && info->get_build_arch() == build_arch;
-        }));
-    if(it != f_remote_info.end())
-    {
-        return *it;
-    }
-
-    return project_remote_info::pointer_t();
-}
 
 
 
@@ -1332,6 +1475,8 @@ std::string project::get_build_hash_filename() const
  */
 bool project::retrieve_ppa_status()
 {
+    must_be_background_thread();
+
     std::string cmd("wget -q -O '");
     cmd += get_ppa_json_filename();
     cmd += "' '";
@@ -1351,19 +1496,7 @@ bool project::retrieve_ppa_status()
     int const r(system(cmd.c_str()));
     if(r != 0)
     {
-        // When within the QTimerEvent this blocks everything, so not a good
-        // idea, using a log message instead
-        //
-        //QMessageBox msg(
-        //      QMessageBox::Critical
-        //    , "Error Retrieving Remote Project Data"
-        //    , QString("We had trouble retrieving the remote project data from LaunchPad.")
-        //    , QMessageBox::Close
-        //    , const_cast<snap_builder *>(f_snap_builder)
-        //    , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
-        //msg.exec();
-
-        SNAP_LOG_INFO
+        SNAP_LOG_WARNING
             << "Cache of \""
             << f_name
             << "\" could not be updated (r = "
@@ -1386,12 +1519,37 @@ bool project::retrieve_ppa_status()
 
 bool project::is_building() const
 {
+    guard_project;
     return f_building != building_t::BUILDING_NOT_BUILDING;
 }
 
 
-void project::started_building()
+bool project::is_packaging() const
 {
+    guard_project;
+    return f_building == building_t::BUILDING_PACKAGING;
+}
+
+
+void project::start_build()
+{
+    must_be_background_thread();
+
+    std::string cmd(f_snap_builder->get_root_path());
+    cmd += "/bin/send-to-launchpad.sh ";
+    cmd += f_name;
+
+    int const r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        SNAP_LOG_ERROR
+            << "could not properly start building project \""
+            << f_name
+            << "\"."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
     // create a <project-name>.building flag in the cache folder, as long as
     // this is there, we want to continue checking the status on launchpad
     // until the package is built or it failed
@@ -1404,6 +1562,7 @@ void project::started_building()
         tm t;
         gmtime_r(&now, &t);
         char buf[256];
+        buf[0] = '\0';
         strftime(buf, sizeof(buf) - 1, "Date: %y/%m/%d %H:%M:%S", &t);
         buf[sizeof(buf) - 1] = '\0';
         flag << buf << "\n"
@@ -1423,33 +1582,66 @@ void project::started_building()
             << "\" for now."
             << SNAP_LOG_SEND;
     }
-    f_build_hash = f_last_commit_hash;
+    {
+        guard_project;
+        f_build_hash = f_last_commit_hash;
+    }
 
     std::ofstream hash;
     hash.open(get_build_hash_filename());
     if(hash.is_open())
     {
+        guard_project;
         hash << f_last_commit_hash << std::endl;
     }
 
-    f_building = building_t::BUILDING_COMPILING;
+    set_building(building_t::BUILDING_COMPILING);
 }
 
 
-bool project::get_build_succeeded() const
+void project::set_building(building_t building)
 {
-    // this value has 3 states:
-    //    -1 -- unknown
-    //     0 -- build failed
-    //     1 -- build succeeded
-    //
-    return f_built_successfully == 1;
+    guard_project;
+    f_building = building;
 }
 
 
-bool project::get_build_failed() const
+project::building_t project::get_building() const
 {
-    return f_built_successfully == 0;
+    guard_project;
+    return f_building;
+}
+
+
+void project::set_build_status(build_status_t status)
+{
+    guard_project;
+    f_build_status = status;
+}
+
+
+project::build_status_t project::get_build_status() const
+{
+    guard_project;
+    return f_build_status;
+}
+
+
+char const * project::get_build_status_string() const
+{
+    build_status_t const build_status(get_build_status());
+
+    if(build_status == build_status_t::BUILD_STATUS_UNKNOWN)
+    {
+        return "unknown";
+    }
+
+    if(build_status == build_status_t::BUILD_STATUS_SUCCEEDED)
+    {
+        return "Build succeeded";
+    }
+
+    return "Build failed";
 }
 
 
@@ -1642,6 +1834,133 @@ void project::add_missing_dependencies(pointer_t p, map_t & m)
 }
 
 
+QColor project::get_state_color() const
+{
+    // TODO: properly handle the default background color
+    //
+    QColor color(255, 255, 255);
+
+    std::string state(get_state());
+    if(state.empty())
+    {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+        state = "?";
+#pragma GCC diagnostic pop
+    }
+
+    bool found(true);
+    switch(state[0])
+    {
+    case 'b':
+        if(state == "bad version")
+        {
+            // there are changes in your local version but the version is
+            // the same as a successful build on the remote (i.e. you need
+            // to click on "Edit Changelog")
+            //
+            color = QColor(222, 119, 153);
+        }
+        else if(state == "building")
+        {
+            // the project is being built right now
+            //
+            color = QColor(211, 255, 78);
+        }
+        else if(state == "build failed")
+        {
+            // the last build failed
+            //
+            color = QColor(243, 140, 246);
+        }
+        else if(state == "built")
+        {
+            // the last build succeeded and we do not have changes on our end
+            //
+            color = QColor(240, 255, 240);
+        }
+        else
+        {
+            found = false;
+        }
+        break;
+
+    case 'n':
+        if(state == "never built")
+        {
+            // this means we never got info from the remote (or the file
+            // is empty) and that means it was never built there
+            //
+            color = QColor(200, 200, 200);
+        }
+        else if(state == "not committed")
+        {
+            color = QColor(255, 248, 240);
+        }
+        else if(state == "not pushed")
+        {
+            color = QColor(255, 240, 230);
+        }
+        else
+        {
+            found = false;
+        }
+        break;
+
+    case 'p':
+        if(state == "packaging")
+        {
+            // the project is being packaged (built but .deb not yet available)
+            //
+            color = QColor(225, 255, 78);
+        }
+        else
+        {
+            found = false;
+        }
+        break;
+
+    case 'r':
+        if(state == "ready")
+        {
+            // this is the default
+            //
+            color = QColor(255, 255, 255);
+        }
+        else
+        {
+            found = false;
+        }
+        break;
+
+    case 's':
+        if(state == "sending")
+        {
+            // the project is being built right now
+            //
+            color = QColor(78, 237, 255);
+        }
+        else
+        {
+            found = false;
+        }
+        break;
+
+    }
+
+    if(!found)
+    {
+        SNAP_LOG_WARNING
+            << "unknown (unhandled) project state -> color: \""
+            << state
+            << "\"."
+            << SNAP_LOG_SEND;
+    }
+
+    return color;
+}
+
+
 void project::generate_svg(
       vector_t & v
     , cppprocess::io::process_io_done_t output_captured)
@@ -1654,10 +1973,39 @@ void project::generate_svg(
         {
             continue;
         }
+
+        // define background color
+        //
+        QColor const color(p->get_state_color());
+        std::stringstream style;
+        style
+            << "style=filled,color=black,fillcolor=\"#"
+            << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << color.red()
+            << color.green()
+            << color.blue()
+            << "\"";
+
+            // The URL is not useful at the moment and probably won't be even
+            // to support clicks on packages to open a popup menu
+            //
+            // See https://forum.qt.io/topic/99524/qsvgwidget-and-uris-can-i-emit-a-signal-by-clicking-on-a-link-in-an-svg-image/2
+            //
+            // A user says we can use QSvgRenderer::boundsOnElement(<id>) where
+            // the <id> would be the project name in our case. Then with a
+            // derived QSvgWidget of our own, we can capture clicks and check
+            // against those bounds. If one clicked inside an element, open
+            // a popup menu
+            //
+            //<< "\",URL=\"http://snapwebsites.org/project/"
+            //<< p->get_name()
+
         dependencies_t const dependencies(p->get_trimmed_dependencies());
         if(!dependencies.empty())
         {
-            dot << "\"" << p->get_name() << "\" [shape=box];\n";
+            dot << "\"" << p->get_name() << "\" [shape=box," << style.str() << "];\n";
             for(auto const & n : dependencies)
             {
                 dot << "\"" << p->get_name() << "\" -> \"" << n << "\";\n";
@@ -1665,10 +2013,15 @@ void project::generate_svg(
         }
         else
         {
-            dot << "\"" << p->get_name() << "\" [shape=ellipse];\n";
+            dot << "\"" << p->get_name() << "\" [shape=ellipse," << style.str() << "];\n";
         }
     }
     dot << "}\n";
+
+//std::cerr
+//    << "------------------------------------- dot file\n"
+//    << dot
+//    << "-------------------------------------\n";
 
     SNAP_LOG_INFO
         << "Run dot command: `dot -Tsvg`"
@@ -1721,6 +2074,44 @@ void project::view_svg(vector_t & v, std::string const & root_path)
             << SNAP_LOG_SEND;
     }
 }
+
+
+std::string project::get_error() const
+{
+    guard_project;
+    return f_error_message;
+}
+
+
+void project::clear_error()
+{
+    guard_project;
+    f_error_message.clear();
+}
+
+
+void project::add_error(std::string const & msg)
+{
+    guard_project;
+    f_error_message += msg;
+    if(msg.back() != '\n')
+    {
+        f_error_message += '\n';
+    }
+}
+
+
+void project::must_be_background_thread()
+{
+    if(!f_snap_builder->is_background_thread())
+    {
+        SNAP_LOG_FATAL
+            << "this function was called from the main thread when it should only be called by the background thread."
+            << SNAP_LOG_SEND;
+        throw std::runtime_error("this function was called from the main thread when it should only be called by the background thread.");
+    }
+}
+
 
 
 } // builder namespace

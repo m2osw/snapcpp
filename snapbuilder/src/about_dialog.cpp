@@ -24,7 +24,7 @@
 #include    "version.h"
 
 
-// Qt lib
+// Qt
 //
 #include    <QCoreApplication>
 #include    <QMessageBox>
@@ -55,11 +55,11 @@ AboutDialog::AboutDialog(QWidget *p)
              "<p><span style=\"font-size:22pt; font-weight:600;\">Snap! Builder</span></p>\n"
              "<p><span style=\"font-style:italic;\">v" SNAPBUILDER_VERSION_STRING "</span></p>\n"
              "<p style=\"-qt-paragraph-type:empty;\"><br /></p>\n"
-             "<p>Helper tool used to build the Snap! Websites packages.</p>\n"
+             "<p>Helper tool used to build the Snap! Websites packages on Launchpad.</p>\n"
              "<p style=\"-qt-paragraph-type:empty;\"><br /></p>\n"
              "<p><span style=\" font-weight:600;\">Snap! Builder<br />by<br />Made to Order Software Corporation<br />All Rights Reserved</span></p>"
              "<p style=\"-qt-paragraph-type:empty;\"><br /></p>\n"
-             "<p><a href=\"/usr/share/common-licenses/GPL-2\">License GPL 2.0</a></p>"
+             "<p><a href=\"/usr/share/common-licenses/GPL-3\">License GPL 3.0</a></p>"
              "</body></html>"
             , 0
             //, QApplication::UnicodeUTF8
