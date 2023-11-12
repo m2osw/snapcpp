@@ -99,6 +99,7 @@ public:
 
     void                            project_changed(project::pointer_t p);
     void                            adjust_columns();
+    bool                            is_background_thread() const;
 
 protected:
     virtual void                    closeEvent(QCloseEvent * event) override;
@@ -112,7 +113,8 @@ private slots:
     void                            on_project_changed(project_ptr p);
     void                            on_adjust_columns();
     void                            on_refresh_list_triggered();
-    void                            on_refresh_clicked();
+    void                            on_local_refresh_clicked();
+    void                            on_remote_refresh_clicked();
     void                            on_coverage_clicked();
     void                            on_build_release_triggered();
     void                            on_build_debug_triggered();
@@ -151,7 +153,7 @@ private:
     std::string                     f_root_path = std::string();
     std::string                     f_config_path = std::string();
     std::string                     f_cache_path = std::string();
-    std::string                     f_launchpad_url = std::string("https://api.launchpad.net/devel/~snapcpp/+archive/ubuntu/ppa?ws.op=getBuildRecords&ws.size=10&ws.start=0&source_name=@PROJECT_NAME@");
+    std::string                     f_launchpad_url = std::string();
     std::string                     f_distribution = std::string("bionic");
     project::vector_t               f_projects = project::vector_t();
     project::pointer_t              f_current_project = project::pointer_t();
@@ -159,6 +161,7 @@ private:
     int                             f_timer_id = 0;
     std::shared_ptr<snapdev::lockfile>
                                     f_lockfile = std::shared_ptr<snapdev::lockfile>();
+    bool                            f_auto_update_svg = false;
     background_worker::pointer_t    f_background_worker = background_worker::pointer_t();
     cppthread::thread::pointer_t    f_worker_thread = cppthread::thread::pointer_t();
 };

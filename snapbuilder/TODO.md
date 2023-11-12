@@ -1,13 +1,24 @@
 
-* Use thread to work on the packages in a separate task
+* Allow for an old project name
 
-  I want to create a version where I have a separate task (a thread)
-  because right now it takes forever to load all the data and it can very
-  badly block the main process.
+  Right now, the murmur3 project generates warnings about finding entries
+  that have a different name: libmurmur3. That older name was in conflict
+  so I change the name of my project. What I think I should do is add a
+  file with old valid names so we can avoid the warning altogether. I
+  don't think having such under `debian/...` would be wise, but maybe under
+  `conf/...`. If the file exists, load it and memorize the old names. We
+  could still generate one warning the very first time we find that old
+  name so we know it happens, but not on every refresh.
 
-  I need proper synchronization when updating a project, but other than
-  that, I think it's doable. I also need a signal to the main thread so
-  the window can be updated.
+* Implement a Refresh for the currently selected project
+
+  With the backend tasks, it is possible to just update one package instead
+  of resetting the whole list with F5 so we should implement that now.
+
+  Also we could look at having Ctrl-F5 to reload everything (as F5 does
+  now) and have F5 to send a reload signal but not reset the list.
+  The difference would be F5 does not detect old & new project changes.
+  It only works with its existing list.
 
 * New Version while building
 
@@ -24,20 +35,59 @@
   part, and I'm going to also save the list of package/arch because we
   need those too in order to verify that the packages were built.
 
-* Add a file so we can know whether the tests passed.
+* Full Build Capabilities
 
-  i.e. if we run `./mk -t` then we can know whether the tests pass or not.
-  If not, delete the file, if it passes create the file. If the binary file
-  to run the test has a timestamp more recent than the test file the
-  snapbuilder creates, then the tests were not yet run against the latest
-  version and we should do so before we run a Launchpad build.
+  * Have several "Build Level"
 
-  (i.e. the file is like a flag, similar to the one we use with the build
-  to know whether we sent the latest version to the server or not)
+    Implement the complete process with:
 
-* Verify that the new package is indeed available
+    * local compile in Debug, Sanitize, Release
+    * run tests in Debug, Sanitize, Release
+    * run coverage
+    * make sure the project is committed & pushed
+    * make sure the version is valid for an upload to launchpad
+      - if rebuilding the tree, auto-bump version as required
+    * load to launchpad
+    * wait for status "built" (or some error)
+    * repeat with the next project so the entire tree can be reworked
 
-  This somewhat works, I have an issue with the name & architecture which
-  may not match the folder name one to one. Also I want to move that code
-  in a thread so it doesn't completely block the interface.
+    In some cases we can build multiple projects simultaneously because
+    they do not depend on each other. In that case, run the processes
+    simultaneously (especially on launchpad, it reduces the total amount
+    it takes to build everything).
+
+  * Add a file so we can know whether the tests/coverage passed.
+
+    i.e. if we run `./mk -t` then we can know whether the tests pass or not.
+    If not, delete the file, if it passes create the file. If the binary file
+    to run the test has a timestamp more recent than the test file the
+    snapbuilder created, then the tests were not yet run against the latest
+    version and we should do so before we run a Launchpad build.
+
+    (i.e. the file is like a flag, similar to the one we use with the build
+    to know whether we sent the latest version to the server or not)
+
+  * Verify that the new package is indeed available
+
+    This somewhat works, I have an issue with the name & architecture which
+    may not match the folder name one to one. Also I want to move that code
+    in a thread so it doesn't completely block the interface.
+
+* Icon showing status/backend process
+
+  It would be cool to add one column with an icon representing the status
+  and when the backend is doing work, show that instead. Use animated GIF
+  images to dislpay an animation so it is even more exiting.
+
+* Add error field to the project
+
+  Whenever something fails with loading a project info, building, packaging,
+  etc. we do not get any feedback in the interface.
+
+  This is to add an `f_error_message` field to the project so the interface
+  can retrieve that and display it somewhere. Also if there is an error, we
+  can show an icon about it so we can see that there is trouble to take
+  care of.
+
+* The About box shows GPL-3 text file as HTML
 

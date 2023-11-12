@@ -36,6 +36,7 @@ namespace builder
 
 
 class snap_builder;
+class background_worker;
 
 
 class job
@@ -50,6 +51,9 @@ public:
 
         WORK_LOAD_PROJECT,
         WORK_ADJUST_COLUMNS,
+        WORK_RETRIEVE_PPA_STATUS,
+        WORK_START_BUILD,
+        WORK_WATCH_BUILD,
     };
 
                                     job(work_t w);
@@ -63,19 +67,23 @@ public:
     void                            set_project(project::pointer_t p);
     project::pointer_t              get_project() const;
 
-    //void                            set_next_attempt(int seconds_from_now);
+    void                            set_next_attempt(int seconds_from_now);
     snapdev::timespec_ex const &    get_next_attempt() const;
 
-    bool                            process();
+    bool                            process(background_worker * w);
 
 private:
-    bool                            load_project();
+    bool                            load_project(background_worker * w);
     bool                            adjust_columns();
+    bool                            retrieve_ppa_status();
+    bool                            start_build(background_worker * w);
+    bool                            watch_build();
 
     work_t                          f_work = work_t::WORK_UNKNOWN;
     project::pointer_t              f_project = project::pointer_t();
     snap_builder *                  f_snap_builder = nullptr;
     snapdev::timespec_ex            f_next_attempt = snapdev::timespec_ex();
+    int                             f_retries = 0;
 };
 
 

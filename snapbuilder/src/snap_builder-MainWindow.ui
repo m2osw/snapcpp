@@ -242,7 +242,17 @@ Compiled Date</string>
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QPushButton" name="refresh">
+           <widget class="QPushButton" name="local_refresh">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Local Refresh</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="remote_refresh">
             <property name="enabled">
              <bool>false</bool>
             </property>

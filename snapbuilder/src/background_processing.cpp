@@ -68,6 +68,14 @@ project::pointer_t job::get_project() const
 }
 
 
+void job::set_next_attempt(int delay)
+{
+    snapdev::timespec_ex interval(delay, 0);
+    snapdev::timespec_ex const now(snapdev::now());
+    f_next_attempt = snapdev::now() + interval;
+}
+
+
 snapdev::timespec_ex const & job::get_next_attempt() const
 {
     return f_next_attempt;
@@ -84,9 +92,11 @@ snapdev::timespec_ex const & job::get_next_attempt() const
  * work has to be done) and setting the f_next_attempt parameter to when
  * the additional work should happen.
  *
+ * \param[in] w  The worker processing this job.
+ *
  * \return true if the process is not finished but is on pause for a while.
  */
-bool job::process()
+bool job::process(background_worker * w)
 {
     switch(f_work)
     {
@@ -97,17 +107,26 @@ bool job::process()
         throw std::runtime_error("cannot process a job of type WORK_UNKNOWN.");
 
     case work_t::WORK_LOAD_PROJECT:
-        return load_project();
+        return load_project(w);
 
     case work_t::WORK_ADJUST_COLUMNS:
         return adjust_columns();
+
+    case work_t::WORK_RETRIEVE_PPA_STATUS:
+        return retrieve_ppa_status();
+
+    case work_t::WORK_START_BUILD:
+        return start_build(w);
+
+    case work_t::WORK_WATCH_BUILD:
+        return watch_build();
 
     }
     snapdev::NOT_REACHED();
 }
 
 
-bool job::load_project()
+bool job::load_project(background_worker * w)
 {
     SNAP_LOG_DEBUG
         << "worker: read project \""
@@ -116,27 +135,15 @@ bool job::load_project()
         << SNAP_LOG_SEND;
 
     f_project->load_project();
+    f_project->project_changed();
 
     if(f_project->is_building())
     {
-        // we need to continue to work on this one
+        // watch this build
         //
-        // retry in 60 seconds
-        //
-        // TODO: look into testing one project per minute, with this
-        //       implementation (like the older one) all the building
-        //       projects are being checked in a row
-        //
-        snapdev::timespec_ex pause(60, 0);
-        if(f_project->is_packaging())
-        {
-            // packaging is really slow, only check once every 5 min.
-            //
-            pause.tv_sec= 60 * 5;
-        }
-        snapdev::timespec_ex const now(snapdev::now());
-        f_next_attempt = snapdev::now() + pause;
-        return false;
+        job::pointer_t j(std::make_shared<job>(job::work_t::WORK_WATCH_BUILD));
+        j->set_project(f_project);
+        w->send_job(j);
     }
 
     return true;
@@ -147,6 +154,93 @@ bool job::adjust_columns()
 {
     f_snap_builder->adjust_columns();
 
+    return true;
+}
+
+
+bool job::retrieve_ppa_status()
+{
+    // try to get the remote data, if it fails, try again up to 5 times
+    //
+    bool success(f_project->retrieve_ppa_status());
+    if(!success
+    && f_retries < 5)
+    {
+        ++f_retries;
+        set_next_attempt(60 * 3 * f_retries);
+        return false;
+    }
+
+    // we just updated the PPA status file so we force a reload of the
+    // remote data to see the results
+    //
+    f_project->load_remote_data(true);
+    f_project->project_changed();
+
+    return true;
+}
+
+
+bool job::start_build(background_worker * w)
+{
+    f_project->start_build();
+
+    job::pointer_t j(std::make_shared<job>(job::work_t::WORK_WATCH_BUILD));
+    j->set_project(f_project);
+    w->send_job(j);
+
+    return true;
+}
+
+
+bool job::watch_build()
+{
+    if(!f_project->is_valid())
+    {
+        SNAP_LOG_ERROR
+            << "watch_build() called with an invalid project."
+            << SNAP_LOG_SEND;
+        return true;
+    }
+
+    if(!f_project->is_building())
+    {
+        SNAP_LOG_RECOVERABLE_ERROR
+            << "watch_build() called with a project that is not being built."
+            << SNAP_LOG_SEND;
+        return true;
+    }
+
+    if(!f_project->retrieve_ppa_status())
+    {
+        // we need to continue to work on this one
+        //
+        // retry in 60 seconds
+        //
+        // TODO: look into testing one project per minute, with this
+        //       implementation (like the older one) all the building
+        //       projects are being checked in a row
+        //
+        // packaging is really slow, only check once every 5 min.
+        //
+        set_next_attempt(f_project->is_packaging() ? 60 * 5 : 60);
+        return false;
+    }
+
+    f_project->load_remote_data(false);
+    f_project->project_changed();
+
+    if(f_project->is_building())
+    {
+        // as above, while building, we need to repeat the check over and
+        // over until everything is done one way or the other
+        //
+        set_next_attempt(f_project->is_packaging() ? 60 * 5 : 60);
+        return false;
+    }
+
+    // success
+    //
     return true;
 }
 
@@ -183,7 +277,7 @@ void background_worker::run()
         job::pointer_t j;
         if(f_job_fifo.pop_front(j, usecs))
         {
-            if(!j->process())
+            if(!j->process(this))
             {
                 f_extra_work.push_back(j);
             }
@@ -204,7 +298,7 @@ void background_worker::run()
             {
                 throw std::runtime_error("somehow f_work_fifo returned false when it is not done and there isn't extra work.");
             }
-            if(f_extra_work.front()->process())
+            if(f_extra_work.front()->process(this))
             {
                 // done with that one
                 //
