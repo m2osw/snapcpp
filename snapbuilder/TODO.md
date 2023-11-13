@@ -89,5 +89,12 @@
   can show an icon about it so we can see that there is trouble to take
   care of.
 
-* The About box shows GPL-3 text file as HTML
+* The About box shows GPL-3 text file as HTML (i.e. not properly formatted)
+
+* Make proper use of the status bar message
+
+  Right now I have some `statusbar->showMessage()` calls but none of them
+  are visible. Although the backend process may be working on multiple
+  projects, it could still be useful when working on just one. At least
+  showing that some things are happening.
 

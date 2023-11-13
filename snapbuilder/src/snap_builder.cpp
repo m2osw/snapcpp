@@ -1500,13 +1500,14 @@ void snap_builder::on_build_package_clicked()
     f_background_worker->send_job(j);
 
     int const row(find_row(f_current_project));
-    if(row < 0)
+    if(row >= 0)
     {
-        return;
-    }
+        QTableWidgetItem * item(f_table->item(row, COLUMN_CHANGES));
+        item->setText("sending");
 
-    QTableWidgetItem * item(f_table->item(row, COLUMN_CHANGES));
-    item->setText("sending");
+        update_state(row);
+        set_button_status();
+    }
 
 #if 0
     std::string const selection(get_selection());
