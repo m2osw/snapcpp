@@ -1507,6 +1507,7 @@ void snap_builder::on_build_package_clicked()
 
         update_state(row);
         set_button_status();
+        on_generate_dependency_svg_triggered();
     }
 
 #if 0
