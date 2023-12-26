@@ -316,15 +316,26 @@ Compiled Date</string>
     <bool>false</bool>
    </property>
   </action>
+  <action name="refresh_project">
+   <property name="text">
+    <string>&amp;Refresh Project</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Refresh the currently selected project.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
   <action name="refresh_list">
    <property name="text">
     <string>&amp;Refresh List</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Refresh the list of projects.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Refresh the complete list of projects.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="shortcut">
-    <string>F5</string>
+    <string>Ctrl+F5</string>
    </property>
   </action>
   <action name="build_release">
@@ -373,7 +384,7 @@ Compiled Date</string>
   </action>
   <action name="mark_build_done">
    <property name="text">
-    <string>&amp;Mark Build as Done</string>
+    <string>&amp;Mark Selected Project Build as Done</string>
    </property>
   </action>
  </widget>

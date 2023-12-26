@@ -98,6 +98,7 @@ public:
     advgetopt::string_list_t const &get_release_names() const;
 
     void                            project_changed(project::pointer_t p);
+    void                            process_git_push(project::pointer_t p);
     void                            adjust_columns();
     bool                            is_background_thread() const;
 
@@ -108,11 +109,14 @@ protected:
 signals:
     void                            projectChanged(project_ptr p);
     void                            adjustColumns();
+    void                            gitPush(project_ptr p);
 
 private slots:
     void                            on_project_changed(project_ptr p);
     void                            on_adjust_columns();
+    void                            on_git_push(project_ptr p);
     void                            on_refresh_list_triggered();
+    void                            on_refresh_project_triggered();
     void                            on_local_refresh_clicked();
     void                            on_remote_refresh_clicked();
     void                            on_coverage_clicked();
@@ -121,6 +125,7 @@ private slots:
     void                            on_build_sanitize_triggered();
     void                            on_generate_dependency_svg_triggered();
     void                            on_mark_build_done_triggered();
+    void                            on_clear_launchpad_caches_triggered();
     void                            on_action_quit_triggered();
     void                            on_about_snapbuilder_triggered();
     void                            on_f_table_clicked(QModelIndex const & index);
@@ -138,8 +143,9 @@ private slots:
 private:
     void                            read_list_of_projects();
     std::string                     get_selection() const;
-    std::string                     get_selection_with_path() const;
+    std::string                     get_selection_with_path(std::string path = std::string()) const;
     void                            set_button_status();
+    bool                            git_push_project(std::string const & selection);
     bool                            svg_ready(
                                           cppprocess::io * output_pipe
                                         , cppprocess::done_reason_t reason);

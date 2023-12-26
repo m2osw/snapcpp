@@ -112,6 +112,9 @@ bool job::process(background_worker * w)
     case work_t::WORK_ADJUST_COLUMNS:
         return adjust_columns();
 
+    case work_t::WORK_GIT_PUSH:
+        return git_push();
+
     case work_t::WORK_RETRIEVE_PPA_STATUS:
         return retrieve_ppa_status();
 
@@ -153,6 +156,14 @@ bool job::load_project(background_worker * w)
 bool job::adjust_columns()
 {
     f_snap_builder->adjust_columns();
+
+    return true;
+}
+
+
+bool job::git_push()
+{
+    f_snap_builder->process_git_push(f_project);
 
     return true;
 }

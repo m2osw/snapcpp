@@ -304,6 +304,7 @@ snap_builder::snap_builder(int argc, char * argv[])
 
     connect(this, &snap_builder::projectChanged, this, &snap_builder::on_project_changed);
     connect(this, &snap_builder::adjustColumns, this, &snap_builder::on_adjust_columns);
+    connect(this, &snap_builder::gitPush, this, &snap_builder::on_git_push);
 }
 
 
@@ -362,6 +363,14 @@ void snap_builder::project_changed(project::pointer_t p)
     project_ptr ptr;
     ptr.f_ptr = p;
     emit projectChanged(ptr);
+}
+
+
+void snap_builder::process_git_push(project::pointer_t p)
+{
+    project_ptr ptr;
+    ptr.f_ptr = p;
+    emit gitPush(ptr);
 }
 
 
@@ -429,50 +438,44 @@ void snap_builder::on_project_changed(project_ptr p)
 }
 
 
-//void snap_builder::timerEvent(QTimerEvent * timer_event)
-//{
-//    snapdev::NOT_USED(timer_event);
-//
-//    // TODO: change this loop to run it in a QThread [DONE]
-//    //
-//    //       for graphical updates, we need to send message instead of
-//    //       doing the work directly (i.e. the setText() cannot be called
-//    //       directly from a QThread and other similar things)
-//    //
-//    //       that will also introduce the need for a mutex when accessing
-//    //       a project object
-//
-//    QTableWidgetItem * item(nullptr);
-//    int row(0);
-//    for(auto const & p : f_projects)
-//    {
-//        if(p->is_valid())
-//        {
-//            if(p->is_building())
-//            {
-//                if(p->retrieve_ppa_status())
-//                {
-//                    p->load_remote_data(false);
-//
-//                    item = f_table->item(row, 2);
-//                    item->setText(QString::fromUtf8(p->get_remote_version().c_str()));
-//
-//                    item = f_table->item(row, 3);
-//                    item->setText(QString::fromUtf8(p->get_state().c_str()));
-//
-//                    item = f_table->item(row, 5);
-//                    item->setText(QString::fromUtf8(p->get_remote_build_state().c_str()));
-//
-//                    item = f_table->item(row, 6);
-//                    item->setText(QString::fromUtf8(p->get_remote_build_date().c_str()));
-//
-//                    update_state(row);
-//                }
-//            }
-//            ++row;
-//        }
-//    }
-//}
+void snap_builder::on_git_push(project_ptr p)
+{
+    project::pointer_t project(p.f_ptr);
+    int const row(find_row(project));
+    if(row < 0)
+    {
+        return;
+    }
+    if(project->get_state() != "not pushed")
+    {
+        SNAP_LOG_WARNING
+            << "project \""
+            << project->get_name()
+            << "\" on row #"
+            << row
+            << " won't be pushed because its state is not \"not pushed\"."
+            << SNAP_LOG_SEND;
+        return;
+    }
+
+    // push
+    //
+    std::string const selection(get_selection_with_path(project->get_name()));
+    if(!selection.empty()
+    && git_push_project(selection))
+    {
+        on_local_refresh_clicked();
+    }
+
+    if(f_auto_update_svg)
+    {
+        // at this time I simply regenerate the whole thing... it would be
+        // good if we could avoid that by editing the XML file but I don't
+        // really want to spend time on that at the moment
+        //
+        on_generate_dependency_svg_triggered();
+    }
+}
 
 
 /** \brief This function computes a state for each row (project).
@@ -718,6 +721,13 @@ void snap_builder::on_refresh_list_triggered()
 }
 
 
+void snap_builder::on_refresh_project_triggered()
+{
+    on_local_refresh_clicked();
+    on_remote_refresh_clicked();
+}
+
+
 void snap_builder::on_local_refresh_clicked()
 {
     if(f_current_project == nullptr)
@@ -879,8 +889,28 @@ void snap_builder::on_mark_build_done_triggered()
         return;
     }
 
-std::cerr << "on_mark_build_done_triggered() called!\n";
     f_current_project->mark_as_done_building();
+
+    int const row(find_row(f_current_project));
+    if(row >= 0)
+    {
+        update_state(row);
+        set_button_status();
+        on_generate_dependency_svg_triggered();
+    }
+}
+
+
+void snap_builder::on_clear_launchpad_caches_triggered()
+{
+    QMessageBox msg(
+          QMessageBox::Critical
+        , "Feature Not Implemented"
+        , "It looks like I've not yet implemented this one!"
+        , QMessageBox::Close
+        , this
+        , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+    msg.exec();
 }
 
 
@@ -1033,9 +1063,12 @@ std::string snap_builder::get_selection() const
 }
 
 
-std::string snap_builder::get_selection_with_path() const
+std::string snap_builder::get_selection_with_path(std::string path) const
 {
-    std::string path(get_selection());
+    if(path.empty())
+    {
+        path = get_selection();
+    }
     if(path.empty())
     {
         return path;
@@ -1206,6 +1239,10 @@ void snap_builder::on_bump_version_clicked()
             + '.'
             + numbers[3]);
 
+    // TODO: offer the user to choose the email address
+    //
+    setenv("DEBEMAIL", "alexis@m2osw.com", 0);
+
     std::string cmd("cd ");
     cmd += selection;
     cmd += " && dch --newversion ";
@@ -1233,7 +1270,7 @@ void snap_builder::on_bump_version_clicked()
     {
         bool refresh_status(true);
 
-        // I don't think that testing the state makes sense herel
+        // I don't think that testing the state makes sense here
         // if we had the right to bump the version, we should have the
         // right to commit + push automatically
         //
@@ -1268,21 +1305,22 @@ void snap_builder::on_bump_version_clicked()
                 {
                     refresh_status = false;
 
-                    //read_list_of_projects();
                     on_local_refresh_clicked();
 
-                    if(f_current_project->get_state() == "not pushed")
-                    {
-                        // push
-                        //
-                        on_git_push_clicked();
-                    }
+                    // the project is updated by the background process
+                    // so we need to check for the new state after that
+                    // process happens; this means we need to create a
+                    // job like so:
+                    //
+                    job::pointer_t j(std::make_shared<job>(job::work_t::WORK_GIT_PUSH));
+                    j->set_project(f_current_project);
+                    j->set_snap_builder(this);
+                    f_background_worker->send_job(j);
                 }
             }
         }
         if(refresh_status)
         {
-            //read_list_of_projects();
             on_local_refresh_clicked();
         }
     }
@@ -1414,7 +1452,6 @@ void snap_builder::on_git_commit_clicked()
     }
     else
     {
-        //read_list_of_projects();
         on_local_refresh_clicked();
     }
 }
@@ -1428,6 +1465,15 @@ void snap_builder::on_git_push_clicked()
         return;
     }
 
+    if(git_push_project(selection))
+    {
+        on_local_refresh_clicked();
+    }
+}
+
+
+bool snap_builder::git_push_project(std::string const & selection)
+{
     std::string cmd("cd ");
     cmd += selection;
     cmd += " && git push";
@@ -1444,12 +1490,10 @@ void snap_builder::on_git_push_clicked()
             , this
             , Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
         msg.exec();
+        return false;
     }
-    else
-    {
-        //read_list_of_projects();
-        on_local_refresh_clicked();
-    }
+
+    return true;
 }
 
 
@@ -1480,7 +1524,6 @@ void snap_builder::on_git_pull_clicked()
     }
     else
     {
-        //read_list_of_projects();
         on_local_refresh_clicked();
     }
 }

@@ -54,6 +54,7 @@ public:
         WORK_RETRIEVE_PPA_STATUS,
         WORK_START_BUILD,
         WORK_WATCH_BUILD,
+        WORK_GIT_PUSH,
     };
 
                                     job(work_t w);
@@ -75,6 +76,7 @@ public:
 private:
     bool                            load_project(background_worker * w);
     bool                            adjust_columns();
+    bool                            git_push();
     bool                            retrieve_ppa_status();
     bool                            start_build(background_worker * w);
     bool                            watch_build();

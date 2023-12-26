@@ -10,16 +10,6 @@
   could still generate one warning the very first time we find that old
   name so we know it happens, but not on every refresh.
 
-* Implement a Refresh for the currently selected project
-
-  With the backend tasks, it is possible to just update one package instead
-  of resetting the whole list with F5 so we should implement that now.
-
-  Also we could look at having Ctrl-F5 to reload everything (as F5 does
-  now) and have F5 to send a reload signal but not reset the list.
-  The difference would be F5 does not detect old & new project changes.
-  It only works with its existing list.
-
 * New Version while building
 
   If you change the version in a changelog file before the build is finished,
@@ -70,8 +60,9 @@
   * Verify that the new package is indeed available
 
     This somewhat works, I have an issue with the name & architecture which
-    may not match the folder name one to one. Also I want to move that code
-    in a thread so it doesn't completely block the interface.
+    may not match the folder name one to one. The name has to be taken from
+    the control file and all the files defined in the control file should
+    be checked for availability.
 
 * Icon showing status/backend process
 
