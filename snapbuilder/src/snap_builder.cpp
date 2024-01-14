@@ -288,7 +288,7 @@ snap_builder::snap_builder(int argc, char * argv[])
     // make sure only one instance is running, otherwise the cache can
     // get messed up -- if the lock fails, it throws
     //
-    f_lockfile = std::make_shared<snapdev::lockfile>(f_cache_path + "/snap_builder.lock", snapdev::lockfile::mode_t::LOCKFILE_EXCLUSIVE);
+    f_lockfile = std::make_shared<snapdev::lockfile>(f_cache_path + "/snap_builder.lock", snapdev::operation_t::OPERATION_EXCLUSIVE);
     f_lockfile->lock();
 
     f_launchpad_url = f_opt.get_string("launchpad-url");
