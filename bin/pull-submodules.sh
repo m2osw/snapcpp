@@ -46,7 +46,15 @@ SUBMODULES="
 
 for submodule in $SUBMODULES
 do
-	if test -d contrib/$submodule
+	if test -d ../$submodule
+	then
+		echo "Retrieve ../$submodule (main)"
+		(
+			cd ../$submodule
+			git checkout main
+			git pull origin main
+		)
+	elif test -d contrib/$submodule
 	then
 		echo "Retrieve contrib/$submodule (main)"
 		(
