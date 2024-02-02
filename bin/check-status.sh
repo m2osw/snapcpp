@@ -32,29 +32,31 @@ do
 	esac
 done
 
-TMPDIR=`pwd`/tmp
-CONTRIB=contrib
-if ! test -d ${CONTRIB}
+# Go to the root folder
+#
+if test -d ../contrib
 then
-	if test -d ../contrib
-	then
-		CONTRIB=../contrib
-		TMPDIR=`pwd`/../tmp
-	elif test -d ../../contrib
-	then
-		CONTRIB=../../contrib
-		TMPDIR=`pwd`/../../tmp
-	else
-		echo "error: could not find the contrib/... directory."
-		exit 1
-	fi
+	cd ..
+elif test -d ../../contrib
+then
+	cd ../..
+elif ! test -d contrib
+then
+	echo "error: could not find the contrib/... directory."
+	exit 1
 fi
 
 trap 'rm -f status.txt checkout.txt error.txt pull.txt' EXIT
 
+TMPDIR=`pwd`/tmp
 mkdir -p "${TMPDIR}"
 
-for f in ${CONTRIB}/*
+# Properly initialize new submodules first
+#
+git submodule init
+git submodule update
+
+for f in contrib/*
 do
 	# The dev/coverage of zipios still creates this folder...
 	#
@@ -63,9 +65,12 @@ do
 		continue
 	fi
 
-	if test -d ${f}/debian
+	if !  test -d ${f}/debian
 	then
-		(
+		continue
+	fi
+
+	(
 		up_to_date=false
 		checkout=true
 		pull=true
@@ -138,8 +143,7 @@ do
 
 			echo
 		fi
-		)
-	fi
+	)
 done
 
 
