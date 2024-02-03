@@ -132,18 +132,24 @@ do
 			echo "$ git status ."
 			cat ${TMPDIR}/status.txt
 
-			echo
-			echo "$ git checkout main"
-			cat ${TMPDIR}/error.txt
-			cat ${TMPDIR}/checkout.txt
+			if test -f ${TMPDIR}/error.txt -a -f ${TMPDIR}/checkout.txt -a -f ${TMPDIR}/pull.txt
+			then
+				echo
+				echo "$ git checkout main"
+				cat ${TMPDIR}/error.txt
+				cat ${TMPDIR}/checkout.txt
 
-			echo
-			echo "$ git pull"
-			cat ${TMPDIR}/pull.txt
+				echo
+				echo "$ git pull"
+				cat ${TMPDIR}/pull.txt
+			fi
 
 			echo
 		fi
 	)
 done
 
-
+if ! ${FULL_REPORT}
+then
+	echo "\033[K\c"
+fi
