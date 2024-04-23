@@ -65,6 +65,13 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
+        cluck
+    COMPONENT
+        contrib
+)
+
+ConfigureMakeProject(
+    PROJECT_NAME
         commonmarkcpp
     COMPONENT
         contrib
