@@ -1,4 +1,6 @@
 
+* The automatic build+1 code uses a hard coded distribution name.
+
 * Allow for an old project name
 
   Right now, the murmur3 project generates warnings about finding entries

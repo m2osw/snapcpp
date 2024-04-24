@@ -160,7 +160,7 @@ private:
     std::string                     f_config_path = std::string();
     std::string                     f_cache_path = std::string();
     std::string                     f_launchpad_url = std::string();
-    std::string                     f_distribution = std::string("bionic");
+    std::string                     f_distribution = std::string("jammy");
     project::vector_t               f_projects = project::vector_t();
     project::pointer_t              f_current_project = project::pointer_t();
     advgetopt::string_list_t        f_release_names = advgetopt::string_list_t();
