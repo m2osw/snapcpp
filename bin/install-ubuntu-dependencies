@@ -36,6 +36,7 @@ apt-get install \
     g++ \
     ipset \
     libboost-all-dev \
+    libcurl4-openssl-dev \
     libhiredis-dev \
     libicu-dev \
     libmagic-dev \
