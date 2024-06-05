@@ -148,7 +148,6 @@
 
 # snapbuilder
 
-* Information from Launchpad: still missing .deb in repo event.
 * Review the dependency tree of the list (or keep alphabetized but have clicks
   work in the graph!).
 * Implement the "one click" build process.
@@ -197,7 +196,7 @@
 
 # Local Build Server
 
-* Test that it works with Ubuntu 20.04 & 22.04.
+* Test that it works with Ubuntu 24.04.
 * Look into running all unit tests on our build server (not launchpad).
 
 
