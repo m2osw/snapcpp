@@ -61,12 +61,12 @@ assign the same port number to two different services.
 * sendmail / udp -- 4005
 * pagelist / udp -- 4006
 * snapserver / udp -- 4007
-* snapcommunicatord / tcp / local network (loopback) -- 4040 (sc)
-* snapcommunicatord / udp -- 4041 (scu)
-* snapcommunicatord / tcp / private network (remote) -- 4042 (sc)
-* snapcommunicatord / tcp / secure -- 4043 (scs)
-* snapcommunicatord / stream -- (sc) /run/communicatord/communicatord.sock
-* snapcommunicatord / datagram -- (scu) -- NOT AVAILABLE
+* communicatord / tcp / local network (loopback) -- 4040 (sc)
+* communicatord / udp -- 4041 (scu)
+* communicatord / tcp / private network (remote) -- 4042 (sc)
+* communicatord / tcp / secure -- 4043 (scs)
+* communicatord / stream -- (sc) /run/communicatord/communicatord.sock
+* communicatord / datagram -- (scu) -- NOT AVAILABLE
 * snaprfs / tcp | udp / private network -- 4044 (rfs -- plain data connection)
 * snaprfs / tcp / secure -- 4045 (rfs -- encrypted data connection)
 * snapdbproxy / tcp -- 4048 (will be retired--was 4042)
