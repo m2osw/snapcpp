@@ -9,8 +9,9 @@ do
 	"--help"|"-h")
 		echo "Usage: $0 [--opts]"
 		echo "where --opts is one or more of the following:"
-		echo "  --help | -h      print out this help screen"
-		echo "  --latest | -l    pull the latest"
+		echo "  --help | -h         print out this help screen"
+		echo "  --full-report | -f  report success too"
+		echo "  --latest | -l       pull the latest"
 		exit 1
 		;;
 
@@ -65,7 +66,7 @@ do
 		continue
 	fi
 
-	if !  test -d ${f}/debian
+	if ! test -d ${f}/debian
 	then
 		continue
 	fi
