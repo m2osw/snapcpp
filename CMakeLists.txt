@@ -65,12 +65,14 @@ ConfigureMakeProject(
         build
 )
 
-ConfigureMakeProject(
-    PROJECT_NAME
-        snapwebsites
-    COMPONENT
-        main
-)
+# This doesn't compile at the moment, I can as well leave it out until
+# I start working on it again
+#ConfigureMakeProject(
+#    PROJECT_NAME
+#        snapwebsites
+#    COMPONENT
+#        main
+#)
 
 BuildRepro("main")
 CreateTargets("top")
