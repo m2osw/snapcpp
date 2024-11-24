@@ -65,16 +65,16 @@ ConfigureMakeProject(
         build
 )
 
-# This doesn't compile at the moment, I can as well leave it out until
-# I start working on it again
+# at the moment snapwebsites does not compile
+#
 #ConfigureMakeProject(
 #    PROJECT_NAME
 #        snapwebsites
 #    COMPONENT
 #        main
 #)
-
-BuildRepro("main")
+#
+#BuildRepro("main")
 CreateTargets("top")
 
 # vim: ts=4 sw=4 et nocindent
