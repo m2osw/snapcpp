@@ -61,6 +61,8 @@ assign the same port number to two different services.
 * sendmail / udp -- 4005
 * pagelist / udp -- 4006
 * snapserver / udp -- 4007
+* prinbeed / tcp (proxy listener) -- 4010
+* prinbeed / tcp (node listener) -- 4011
 * communicatord / tcp / local network (loopback) -- 4040 (sc)
 * communicatord / udp -- 4041 (scu)
 * communicatord / tcp / private network (remote) -- 4042 (sc)
