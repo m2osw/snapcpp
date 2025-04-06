@@ -31,6 +31,7 @@ echo "--- Install generic packages (mandatory)"
 apt-get install \
     cmake \
     dpkg-dev \
+    eu-elfutils \
     freeglut3-dev \
     gcc \
     g++ \
