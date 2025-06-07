@@ -406,21 +406,26 @@ and compile it all:
        or
     git clone --recursive git@github.com:m2osw/snapcpp.git
     cd snapcpp
-    sudo bin/snap-ubuntu-packages --optional
+    bin/check-status.sh -l
+    sudo bin/install-ubuntu-dependencies --optional
     bin/build-snap
 
 The first time you try to build on your system, we suggest you run the
 `bin/snap-ubuntu-packages` script to get all the dependencies installed.
 Then the `build-snap` script does most everything else.
 
-**NOTE:** The `git clone` command is going to download all the contribs
-which are in separate git repositories. This causes an issue: the scheme
-will change to `git@github.com:` under your feet. So that means you need
-to have an account or do not use the recursive and manually get each
-project with `https:`.
+**NOTE:** The `bin/check-status.sh -l` fixes the separate contrib projects
+which are checked out as `HEAD detached at ###`. Instead, it will force
+all the projects to be checked out in the main branch.
 
-**IMPORTANT:** to run the `snap-build` script, you must be right outside of
-the snapcpp environment.
+**NOTE:** The `git clone --recursive https://...` command is going to
+download all the contribs which are in separate git repositories. This
+causes an issue: the scheme changes to `git@github.com:` under your feet.
+So that means you need to have an account or do not use the `--recursive`
+option and manually get each project with `https:`.
+
+**IMPORTANT:** to run the `snap-build` script, you must be in the
+snapcpp folder (inside the project, but at the root of the project).
 
 ### `git` Fails with Permission Errors
 

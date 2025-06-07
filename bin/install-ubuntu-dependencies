@@ -26,12 +26,20 @@ then
 else
     extra_2104_plus="dh-make"
 fi
+if dpkg --compare-versions "${OS_VERSION}" "lt" "25.04"
+then
+    extra_to_2404="
+        eu-elfutils
+        libqt5webkit5-dev"
+else
+    extra_2504_plus="
+        "
+fi
 
 echo "--- Install generic packages (mandatory)"
 apt-get install \
     cmake \
     dpkg-dev \
-    eu-elfutils \
     freeglut3-dev \
     gcc \
     g++ \
@@ -49,12 +57,10 @@ apt-get install \
     libqt5svg5-dev \
     libqt5x11extras5-dev \
     libqt5xmlpatterns5-dev \
-    libqt5webkit5-dev \
     libreadline-dev \
     libssl-dev \
     libxml2-utils \
     libyaml-cpp-dev \
-    mysql-server \
     qtscript5-dev \
     txt2html \
     uuid-dev \
@@ -63,7 +69,13 @@ apt-get install \
     $extra_1604_1804 \
     $extra_to_2004 \
     $extra_2004_plus \
-    $extra_2104_plus
+    $extra_2104_plus \
+    $extra_to_2404 \
+    $extra_2504_plus
+
+# This is not necessary at the moment; plus we really just want to use
+# out prinbee database for everything at the moment
+#    mysql-server
 
 # Build
 

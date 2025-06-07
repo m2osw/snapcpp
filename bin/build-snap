@@ -18,6 +18,8 @@ then
 	echo "error: For this script to work, you must install the dependencies"
 	echo "error: with the following command:"
 	echo "error:           sudo bin/install-ubuntu-dependencies"
+	echo "error:              -- or --"
+	echo "error:           sudo bin/install-ubuntu-dependencies --optional"
 	exit 1
 fi
 
