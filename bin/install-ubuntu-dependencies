@@ -101,7 +101,7 @@ then
         echo "  if the X server (because of graphviz)"
         echo "  Are you sure you want to proceed? yes/[no] \c"
         read answer
-        if test answer != "yes"
+        if test "$answer" != "yes"
         then
             echo "warning: optional packages not installed."
             exit 1
