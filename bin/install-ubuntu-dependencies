@@ -29,7 +29,7 @@ fi
 if dpkg --compare-versions "${OS_VERSION}" "lt" "25.04"
 then
     extra_to_2404="
-        eu-elfutils
+        elfutils
         libqt5webkit5-dev"
 else
     extra_2504_plus="
