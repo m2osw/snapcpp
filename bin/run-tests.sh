@@ -23,27 +23,31 @@ TYPE=console
 while test -n "${1}"
 do
     case "${1}" in
+    "--console")
+        TYPE=console
+        shift
+        ;;
+
     "-h"|"--help")
         echo "Usage: `basename ${0}` [--opts]"
         echo "where --opts is one or more of:"
         echo "       --console           output results in plain text"
         echo "  -h | --help              print out this help screen"
         echo "       --html              output results in HTML"
-        echo
-        echo "TOPDIR = ${TOPDIR}"
-        echo "CONTRIBS = ${CONTRIBS}"
-        echo "SNAPWEBSITES = ${CONTRIBS}"
+        echo "       --info              display some information (variables)"
         exit 1
-        ;;
-
-    "--console")
-        TYPE=console
-        shift
         ;;
 
     "--html")
         TYPE=html
         shift
+        ;;
+
+    "--info")
+        echo "TOPDIR = ${TOPDIR}"
+        echo "CONTRIBS = ${CONTRIBS}"
+        echo "SNAPWEBSITES = ${CONTRIBS}"
+        exit 1
         ;;
 
     *)
@@ -68,7 +72,7 @@ then
     echo "<tr><th>Project</th><th>Test Results</th></tr>" >> "${HTML}"
 fi
 
-SUCCESS=true
+FAILURES=0
 for d in ${CONTRIBS} snapwebsites
 do
     (
@@ -104,7 +108,7 @@ do
                     echo "   an error occurred, see output here: ${OUTPUT}"
                     echo
                 fi
-                SUCCESS=false
+                FAILURES=`expr ${FAILURES} + 1`
             else
                 if test "${TYPE}" = "html"
                 then
@@ -124,10 +128,19 @@ done
 
 if test "${TYPE}" = "html"
 then
+    if test ${FAILURES} -eq 0
+    then
+        echo "<p>Got ${FAILURES} errors.</p>" >> "${HTML}"
+    fi
     echo "</body>" >> "${HTML}"
     echo "</html>" >> "${HTML}"
 fi
 
-$SUCCESS
+if test ${FAILURES} -eq 0
+then
+    exit 0
+fi
+
+echo "error: ${FAILURES} projects failed."
 
 # vim: ts=4 sw=4 et

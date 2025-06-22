@@ -1,0 +1,12 @@
+# crontab to run the tests automatically
+#
+# i.e. I create a separate server and run the bin/run-tests.sh automatically
+#      once a day so as to get an idea of how many tests work and fail over
+#      time as to try to keep them up to date and working as much as possible
+#
+
+HOME=/home/alexis
+
+# m h  dom mon dow   command
+0   5  *   *   *     cd /home/alexis/snapwebsites/snapcpp && bin/run-tests.sh --html
+
