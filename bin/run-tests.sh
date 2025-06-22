@@ -19,6 +19,7 @@ BUILD="${TOPDIR}/BUILD/Debug"
 CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d`"
 SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d`"
 
+SYNC=false
 TYPE=console
 while test -n "${1}"
 do
@@ -35,6 +36,7 @@ do
         echo "  -h | --help              print out this help screen"
         echo "       --html              output results in HTML"
         echo "       --info              display some information (variables)"
+        echo "       --sync              synchronize the git environment"
         exit 1
         ;;
 
@@ -50,6 +52,11 @@ do
         exit 1
         ;;
 
+    "--sync")
+        SYNC=true
+        shift
+        ;;
+
     *)
         echo "error: unknown command line option \"${1}\"."
         exit 1
@@ -57,6 +64,11 @@ do
 
     esac
 done
+
+if test "${SYNC}" = "true"
+then
+    bin/check-status.sh -l
+fi
 
 if test "${TYPE}" = "html"
 then
@@ -128,6 +140,7 @@ done
 
 if test "${TYPE}" = "html"
 then
+    echo "</table>" >> "${HTML}"
     if test ${FAILURES} -eq 0
     then
         echo "<p>Got ${FAILURES} errors.</p>" >> "${HTML}"

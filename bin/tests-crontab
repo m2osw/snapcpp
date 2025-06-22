@@ -8,5 +8,5 @@
 HOME=/home/alexis
 
 # m h  dom mon dow   command
-0   5  *   *   *     cd /home/alexis/snapwebsites/snapcpp && bin/run-tests.sh --html
+0   5  *   *   *     cd /home/alexis/snapwebsites/snapcpp && bin/run-tests.sh --html --sync
 
