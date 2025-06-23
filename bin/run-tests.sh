@@ -19,6 +19,8 @@ BUILD="${TOPDIR}/BUILD/Debug"
 CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d`"
 SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d`"
 
+PUBLISH=false
+PUBLISHDIR="/mnt/lcov/tests"
 SYNC=false
 TYPE=console
 while test -n "${1}"
@@ -36,6 +38,7 @@ do
         echo "  -h | --help              print out this help screen"
         echo "       --html              output results in HTML"
         echo "       --info              display some information (variables)"
+        echo "  -p | --publish [dir]     send HTML output to lcov website"
         echo "       --sync              synchronize the git environment"
         exit 1
         ;;
@@ -52,6 +55,25 @@ do
         exit 1
         ;;
 
+    "-p"|"--publish")
+        PUBLISH=true
+        shift
+        if test -n "${1}"
+        then
+            case "${1}" in
+            "-"*)
+                # assume this is another option
+                ;;
+
+            *)
+                PUBLISHDIR="${1}"
+                shift
+                ;;
+
+            esac
+        fi
+        ;;
+
     "--sync")
         SYNC=true
         shift
@@ -65,14 +87,10 @@ do
     esac
 done
 
-if test "${SYNC}" = "true"
-then
-    bin/check-status.sh -l
-fi
-
 if test "${TYPE}" = "html"
 then
     HTMLDIR="${TOPDIR}/BUILD/html"
+    rm -rf "${HTMLDIR}"
     mkdir -p "${HTMLDIR}"
     HTML="${HTMLDIR}/index.html"
     echo "<html>" > "${HTML}"
@@ -82,6 +100,27 @@ then
     echo "<body>" >> "${HTML}"
     echo "<table>" >> "${HTML}"
     echo "<tr><th>Project</th><th>Test Results</th></tr>" >> "${HTML}"
+fi
+
+if test "${SYNC}" = "true"
+then
+    if test "${TYPE}" = "html"
+    then
+        SYNC_OUTPUT="${HTMLDIR}/sync.html"
+        echo "<html>" > "${SYNC_OUTPUT}"
+        echo "<head>" >> "${SYNC_OUTPUT}"
+        echo "</head>" >> "${SYNC_OUTPUT}"
+        echo "<body>" >> "${SYNC_OUTPUT}"
+        echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
+        echo "<pre>" >> "${SYNC_OUTPUT}"
+        bin/check-status.sh -l >> "${SYNC_OUTPUT}"
+        echo "</pre>" >> "${SYNC_OUTPUT}"
+        echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
+        echo "</body>" >> "${SYNC_OUTPUT}"
+        echo "</html>" >> "${SYNC_OUTPUT}"
+    else
+        bin/check-status.sh -l
+    fi
 fi
 
 FAILURES=0
@@ -141,12 +180,31 @@ done
 if test "${TYPE}" = "html"
 then
     echo "</table>" >> "${HTML}"
-    if test ${FAILURES} -eq 0
+    if test "${SYNC}" = "true"
     then
-        echo "<p>Got ${FAILURES} errors.</p>" >> "${HTML}"
+        echo "<p><a href=\"sync.html\">Sync output</a></p>" >> "${HTML}"
+    fi
+    if test ${FAILURES} -ne 0
+    then
+        PLURAL="s"
+        if test ${FAILURES} -ne 0
+        then
+            PLURAL=""
+        fi
+        echo "<p>Got ${FAILURES} error${PLURAL}.</p>" >> "${HTML}"
     fi
     echo "</body>" >> "${HTML}"
     echo "</html>" >> "${HTML}"
+
+    # publish the results, that means deleting now working tests
+    # and then replacing with newly failing ones (or none if it's
+    # all in working order which is probably going to be rare)
+    #
+    if test "${PUBLISH}" = "true" -a -d "${PUBLISHDIR}"
+    then
+        rm -f "${PUBLISHDIR}/"*
+        cp -r "${HTMLDIR}/"* "${PUBLISHDIR}/."
+    fi
 fi
 
 if test ${FAILURES} -eq 0
