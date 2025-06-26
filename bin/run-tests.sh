@@ -87,6 +87,8 @@ do
     esac
 done
 
+START_DATE=`date -u`
+
 if test "${TYPE}" = "html"
 then
     HTMLDIR="${TOPDIR}/BUILD/html"
@@ -96,6 +98,12 @@ then
     echo "<html>" > "${HTML}"
     echo "<head>" >> "${HTML}"
     echo "<title>Test Results</title>" >> "${HTML}"
+    echo "<style>" >> "${HTML}"
+    echo "body{font-family:sans-serif;}" >> "${HTML}"
+    echo "table{border-collapse:collapse;}" >> "${HTML}"
+    echo "th{background-color:#f0f0f0;}" >> "${HTML}"
+    echo "td,th{border:1px solid black;padding:5px;}" >> "${HTML}"
+    echo "</style>" >> "${HTML}"
     echo "</head>" >> "${HTML}"
     echo "<body>" >> "${HTML}"
     echo "<table>" >> "${HTML}"
@@ -104,6 +112,10 @@ fi
 
 if test "${SYNC}" = "true"
 then
+    # sync-ing requires us to also sync the main folder
+    #
+    git pull
+
     if test "${TYPE}" = "html"
     then
         SYNC_OUTPUT="${HTMLDIR}/sync.html"
@@ -113,13 +125,13 @@ then
         echo "<body>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
         echo "<pre>" >> "${SYNC_OUTPUT}"
-        bin/check-status.sh -l >> "${SYNC_OUTPUT}"
+        bin/check-status.sh --latest >> "${SYNC_OUTPUT}" 2>&1
         echo "</pre>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
         echo "</body>" >> "${SYNC_OUTPUT}"
         echo "</html>" >> "${SYNC_OUTPUT}"
     else
-        bin/check-status.sh -l
+        bin/check-status.sh --latest
     fi
 fi
 
@@ -177,6 +189,8 @@ do
     )
 done
 
+END_DATE=`date -u`
+
 if test "${TYPE}" = "html"
 then
     echo "</table>" >> "${HTML}"
@@ -187,12 +201,13 @@ then
     if test ${FAILURES} -ne 0
     then
         PLURAL="s"
-        if test ${FAILURES} -ne 0
+        if test ${FAILURES} -eq 1
         then
             PLURAL=""
         fi
         echo "<p>Got ${FAILURES} error${PLURAL}.</p>" >> "${HTML}"
     fi
+    echo "<p>Process started on ${START_DATE} and ending on ${END_DATE}.</p>" >> "${HTML}"
     echo "</body>" >> "${HTML}"
     echo "</html>" >> "${HTML}"
 

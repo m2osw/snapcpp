@@ -57,7 +57,7 @@ mkdir -p "${TMPDIR}"
 git submodule init
 git submodule update
 
-for f in contrib/*
+for f in cmake contrib/*
 do
 	# The dev/coverage of zipios still creates this folder...
 	#
