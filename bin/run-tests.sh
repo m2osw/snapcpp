@@ -103,6 +103,9 @@ then
     echo "table{border-collapse:collapse;}" >> "${HTML}"
     echo "th{background-color:#f0f0f0;}" >> "${HTML}"
     echo "td,th{border:1px solid black;padding:5px;}" >> "${HTML}"
+    echo "tr.no-test{background-color:#eeeeee;}" >> "${HTML}"
+    echo "tr.success{background-color:#eeffee;}" >> "${HTML}"
+    echo "tr.error{background-color:#ffeeee;}" >> "${HTML}"
     echo "</style>" >> "${HTML}"
     echo "</head>" >> "${HTML}"
     echo "<body>" >> "${HTML}"
@@ -154,7 +157,8 @@ do
                 if test "${TYPE}" = "html"
                 then
                     ERROR="`basename ${d}`.html"
-                    echo "<tr><td>${d}</td><td>error -- <a href=\"${ERROR}\">see output</a></td></tr>" >> "${HTML}"
+                    echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\">see output</a></td></tr>" >> "${HTML}"
+
                     echo "<html>" > "${HTMLDIR}/${ERROR}"
                     echo "<head>" >> "${HTMLDIR}/${ERROR}"
                     echo "<title>Output of ${d} tests</title>" >> "${HTMLDIR}/${ERROR}"
@@ -175,13 +179,13 @@ do
             else
                 if test "${TYPE}" = "html"
                 then
-                    echo "<tr><td>${d}</td><td>success</td></tr>" >> "${HTML}"
+                    echo "<tr class=\"success\"><td>${d}</td><td>success</td></tr>" >> "${HTML}"
                 fi
             fi
         else
             if test "${TYPE}" = "html"
             then
-                echo "<tr><td>${d}</td><td>no tests found -- skipped</td></tr>" >> "${HTML}"
+                echo "<tr class=\"no-test\"><td>${d}</td><td>no tests found -- skipped</td></tr>" >> "${HTML}"
             else
                 echo "--- SKIPPING: ${d} ---"
             fi
