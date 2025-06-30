@@ -16,8 +16,8 @@ done
 cd "${TOPDIR}"
 
 BUILD="${TOPDIR}/BUILD/Debug"
-CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d`"
-SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d`"
+CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d` | sort"
+SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d` | sort"
 
 PUBLISH=false
 PUBLISHDIR="/mnt/lcov/tests"
@@ -212,6 +212,8 @@ then
         echo "<p>Got ${FAILURES} error${PLURAL}.</p>" >> "${HTML}"
     fi
     echo "<p>Process started on ${START_DATE} and ending on ${END_DATE}.</p>" >> "${HTML}"
+    echo "<br/>" >> "${HTML}"
+    echo '<div style="text-align:center;"><a href="https://snapwebsites.org/">Snap C++</a> | <a href="..">List of projects</a></div>' >> "${HTML}"
     echo "</body>" >> "${HTML}"
     echo "</html>" >> "${HTML}"
 
