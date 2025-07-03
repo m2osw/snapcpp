@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # Install various packages in order for the snap-server to compile
 # at once--this is also available on our website; make sure to use sudo
@@ -133,5 +133,8 @@ else
     echo "  of the optional packages."
     echo
 fi
+
+echo "Note: if you want to setup the environment to auto-run the tests"
+echo "      you may also want to run the install-for-tests.sh script."
 
 # vim: ts=4 sw=4 et

@@ -89,6 +89,14 @@ done
 
 START_DATE=`date -u`
 
+IS_SNAPWEBSITES_DEFINED=false
+if getent passwd snapwebsites >/dev/null \
+    && getent group snapwebsites >/dev/null \
+    && getent group adm | sed -e 's/.*://' -e 's/,/ /' | grep "\<${USER}\>" > /dev/null
+then
+    IS_SNAPWEBSITES_DEFINED=true
+fi
+
 if test "${TYPE}" = "html"
 then
     HTMLDIR="${TOPDIR}/BUILD/html"
@@ -109,6 +117,10 @@ then
     echo "</style>" >> "${HTML}"
     echo "</head>" >> "${HTML}"
     echo "<body>" >> "${HTML}"
+    if test "${IS_SNAPWEBSITES_DEFINED}" != "true"
+    then
+        echo "<p style=\"color:red;font-size:135%\">WARNING: snapwebsites user/group not properly setup. See bin/install-for-tests.sh for details.</p>" >> "${HTML}"
+    fi
     echo "<table>" >> "${HTML}"
     echo "<tr><th>Project</th><th>Test Results</th></tr>" >> "${HTML}"
 fi
