@@ -5,10 +5,6 @@
 #      time as to try to keep them up to date and working as much as possible
 #
 
-# TODO: find a way to setup the name dynamically for the current user
-HOME=/home/alexis
-USER=alexis
-
 # m h  dom mon dow   command
-0   5  *   *   *     cd /home/alexis/snapwebsites/snapcpp && bin/run-tests.sh --html --sync --publish
+0   5  *   *   *     cd snapwebsites/snapcpp && bin/run-tests.sh --html --sync --publish
 

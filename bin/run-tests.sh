@@ -2,6 +2,8 @@
 #
 # Run all the tests
 
+export HOME=`cd && pwd`
+
 TOPDIR="`pwd`"
 while true
 do
