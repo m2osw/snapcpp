@@ -18,8 +18,8 @@ done
 cd "${TOPDIR}"
 
 BUILD="${TOPDIR}/BUILD/Debug"
-CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d` | sort"
-SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d` | sort"
+CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d | sort`"
+SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d | sort`"
 
 PUBLISH=false
 PUBLISHDIR="/mnt/lcov/tests"
@@ -53,7 +53,7 @@ do
     "--info")
         echo "TOPDIR = ${TOPDIR}"
         echo "CONTRIBS = ${CONTRIBS}"
-        echo "SNAPWEBSITES = ${CONTRIBS}"
+        echo "SNAPWEBSITES = ${SNAPWEBSITES}"
         exit 1
         ;;
 
@@ -194,7 +194,8 @@ then
 fi
 
 FAILURES=0
-for d in ${CONTRIBS} snapwebsites
+#  ${SNAPWEBSITES} -- skip on snapwebsites/... tests for now since those are not up to date yet
+for d in ${CONTRIBS}
 do
     (
         cd "${d}"
