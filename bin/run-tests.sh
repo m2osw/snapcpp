@@ -91,9 +91,11 @@ done
 
 START_DATE=`date -u`
 
-CONVERT="BUILD/Debug/contrib/snaplogger/tools/convert-ansi --output-style-tag"
-if ! test -x "${CONVERT}"
+CONVERTER="BUILD/Debug/contrib/snaplogger/tools/convert-ansi"
+if test -x "${CONVERTER}"
 then
+    CONVERT="${CONVERTER} --output-style-tag"
+else
     CONVERT=cat
 fi
 
