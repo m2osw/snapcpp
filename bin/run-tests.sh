@@ -135,10 +135,8 @@ fi
 
 if test "${SYNC}" = "true"
 then
-    # sync-ing requires us to also sync the main folder
+    # sync the repo
     #
-    git pull
-
     if test "${TYPE}" = "html"
     then
         SYNC_OUTPUT="${HTMLDIR}/sync.html"
@@ -174,7 +172,18 @@ then
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${COMPILE_OUTPUT}"
         echo "<h1>Snap! C++ Compile</h1>" >> "${COMPILE_OUTPUT}"
         echo "<pre>" >> "${COMPILE_OUTPUT}"
-        make -C BUILD/Debug 2>&1 | ${CONVERT} >> "${COMPILE_OUTPUT}" 2>&1
+
+        # We want to detect whether make returns an error or not
+        # so we save the output in an intermediate file
+        #
+        RAW_COMPILE_OUTPUT="${HTMLDIR}/raw-compile.txt"
+        if ! make -C BUILD/Debug > "${RAW_COMPILE_OUTPUT}" 2>&1
+        then
+            echo "<p style=\"color:red;font-size:135%\">ERROR: the <a href=\"compile.html\" rel=\"nofollow\">compile step</a> failed.</p>" >> "${HTML}"
+        fi
+        ${CONVERT} "${RAW_COMPILE_OUTPUT}" >> "${COMPILE_OUTPUT}" 2>&1
+        rm -f "${RAW_COMPILE_OUTPUT}"
+
         echo "</pre>" >> "${COMPILE_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${COMPILE_OUTPUT}"
         echo "</body>" >> "${COMPILE_OUTPUT}"
