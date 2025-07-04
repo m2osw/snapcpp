@@ -91,6 +91,12 @@ done
 
 START_DATE=`date -u`
 
+CONVERT="BUILD/Debug/contrib/snaplogger/tools/convert-ansi --output-style-tag"
+if ! test -x "${CONVERT}"
+then
+    CONVERT=cat
+fi
+
 IS_SNAPWEBSITES_DEFINED=false
 if getent passwd snapwebsites >/dev/null \
     && getent group snapwebsites >/dev/null \
@@ -138,17 +144,43 @@ then
         SYNC_OUTPUT="${HTMLDIR}/sync.html"
         echo "<html>" > "${SYNC_OUTPUT}"
         echo "<head>" >> "${SYNC_OUTPUT}"
+        echo "<title>Source Synchronization</title>" >> "${SYNC_OUTPUT}"
+        echo "</head>" >> "${SYNC_OUTPUT}"
         echo "</head>" >> "${SYNC_OUTPUT}"
         echo "<body>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
+        echo "<h1>Source Synchronization</h1>" >> "${SYNC_OUTPUT}"
         echo "<pre>" >> "${SYNC_OUTPUT}"
-        bin/check-status.sh --latest >> "${SYNC_OUTPUT}" 2>&1
+        bin/check-status.sh --latest 2>&1 | ${CONVERT} >> "${SYNC_OUTPUT}" 2>&1
         echo "</pre>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
         echo "</body>" >> "${SYNC_OUTPUT}"
         echo "</html>" >> "${SYNC_OUTPUT}"
     else
         bin/check-status.sh --latest
+    fi
+
+    # and after sync-ing we need to recompile
+    #
+    if test "${TYPE}" = "html"
+    then
+        COMPILE_OUTPUT="${HTMLDIR}/compile.html"
+        echo "<html>" > "${COMPILE_OUTPUT}"
+        echo "<head>" >> "${COMPILE_OUTPUT}"
+        echo "<title>Source Synchronization</title>" >> "${COMPILE_OUTPUT}"
+        echo "</head>" >> "${COMPILE_OUTPUT}"
+        echo "</head>" >> "${COMPILE_OUTPUT}"
+        echo "<body>" >> "${COMPILE_OUTPUT}"
+        echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${COMPILE_OUTPUT}"
+        echo "<h1>Snap! C++ Compile</h1>" >> "${COMPILE_OUTPUT}"
+        echo "<pre>" >> "${COMPILE_OUTPUT}"
+        make -C BUILD/Debug 2>&1 | ${CONVERT} >> "${COMPILE_OUTPUT}" 2>&1
+        echo "</pre>" >> "${COMPILE_OUTPUT}"
+        echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${COMPILE_OUTPUT}"
+        echo "</body>" >> "${COMPILE_OUTPUT}"
+        echo "</html>" >> "${COMPILE_OUTPUT}"
+    else
+        make -C BUILD/Debug
     fi
 fi
 
@@ -171,16 +203,17 @@ do
                 if test "${TYPE}" = "html"
                 then
                     ERROR="`basename ${d}`.html"
-                    echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\">see output</a></td></tr>" >> "${HTML}"
+                    echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\" rel=\"nofollow\">see output</a></td></tr>" >> "${HTML}"
 
                     echo "<html>" > "${HTMLDIR}/${ERROR}"
                     echo "<head>" >> "${HTMLDIR}/${ERROR}"
                     echo "<title>Output of ${d} tests</title>" >> "${HTMLDIR}/${ERROR}"
+                    echo "<meta name=\"robots\" content=\"noindex\"/>" >> "${HTMLDIR}/${ERROR}"
                     echo "</head>" >> "${HTMLDIR}/${ERROR}"
                     echo "<body>" >> "${HTMLDIR}/${ERROR}"
                     echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${HTMLDIR}/${ERROR}"
                     echo "<pre>" >> "${HTMLDIR}/${ERROR}"
-                    cat "${OUTPUT}" >> "${HTMLDIR}/${ERROR}"
+                    ${CONVERT} "${OUTPUT}" >> "${HTMLDIR}/${ERROR}"
                     echo "</pre>" >> "${HTMLDIR}/${ERROR}"
                     echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${HTMLDIR}/${ERROR}"
                     echo "</body>" >> "${HTMLDIR}/${ERROR}"
@@ -215,6 +248,7 @@ then
     if test "${SYNC}" = "true"
     then
         echo "<p><a href=\"sync.html\">Sync output</a></p>" >> "${HTML}"
+        echo "<p><a href=\"compile.html\">Snap! C++ Compile</a></p>" >> "${HTML}"
     fi
     if test ${FAILURES} -ne 0
     then

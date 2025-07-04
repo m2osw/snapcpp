@@ -57,7 +57,7 @@ mkdir -p "${TMPDIR}"
 git submodule init
 git submodule update
 
-for f in cmake contrib/*
+for f in . cmake contrib/*
 do
 	# The dev/coverage of zipios still creates this folder...
 	#
@@ -79,8 +79,8 @@ do
 		cd ${f}
 		echo "`pwd`\033[K\r\c"
 		git status . >${TMPDIR}/status.txt
-		report=`cat ${TMPDIR}/status.txt | tr '\n' ' '`
-		if test "${report}" = "On branch main Your branch is up to date with 'origin/main'.  nothing to commit, working tree clean "
+		report=`sed -e '3,$ d' ${TMPDIR}/status.txt | tr '\n' '_'`
+		if test "${report}" = "On branch main_Your branch is up to date with 'origin/main'._"
 		then
 			up_to_date=true
 		fi
@@ -122,7 +122,7 @@ do
 			fi
 			if ! ${checkout}
 			then
-				echo "  Not Up to Date\c"
+				echo "  Not On 'main' Branch\c"
 			fi
 			if ! ${pull}
 			then
