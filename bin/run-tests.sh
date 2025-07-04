@@ -94,7 +94,8 @@ START_DATE=`date -u`
 CONVERTER="BUILD/Debug/contrib/snaplogger/tools/convert-ansi"
 if test -x "${CONVERTER}"
 then
-    CONVERT="${CONVERTER} --output-style-tag"
+    # make sure it's a full path so we an use it anywhere
+    CONVERT="${TOPDIR}/${CONVERTER} --output-style-tag"
 else
     CONVERT=cat
 fi
