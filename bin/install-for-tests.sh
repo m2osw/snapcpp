@@ -18,7 +18,7 @@ then
 	sudo groupadd snapwebsites
 fi
 
-if ! getent group adm | sed -e 's/.*://' -e 's/,/ /' | grep "\<${USER}\>" > /dev/null
+if ! getent group snapwebsites | sed -e 's/.*://' -e 's/,/ /' | grep "\<${USER}\>" > /dev/null
 then
 	sudo groupmod snapwebsites --append --users "${USER}"
 fi
