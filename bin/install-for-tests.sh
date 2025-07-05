@@ -23,7 +23,7 @@ then
 	sudo groupmod snapwebsites --append --users "${USER}"
 fi
 
-if ! grep lcov /etc/fstab
+if ! grep lcov /etc/fstab > /dev/null
 then
 	# This requires the folder to be shared in the domain
 	# definitions which cannot be done here...
