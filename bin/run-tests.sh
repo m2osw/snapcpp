@@ -95,7 +95,7 @@ CONVERTER="BUILD/Debug/contrib/snaplogger/tools/convert-ansi"
 if test -x "${CONVERTER}"
 then
     # make sure it's a full path so we an use it anywhere
-    CONVERT="${TOPDIR}/${CONVERTER} --output-style-tag"
+    CONVERT="${TOPDIR}/${CONVERTER} --output-style-tag --no-br"
 else
     CONVERT=cat
 fi
