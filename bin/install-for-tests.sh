@@ -34,3 +34,9 @@ then
 	sudo echo "# shared folder" >> /etc/fstab
 	sudo echo "lcov /mnt/lcov virtiofs rw 0 0" >> /etc/fstab
 fi
+
+# Also install apache2, the libaddr checks port 80 so we need to have it
+# open -- maybe I'll fix that once of these days...
+#
+sudo apt-get install apache2
+
