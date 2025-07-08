@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 # List the distributions you want to build on the PPA
-DISTRIBUTIONS="jammy lunar mantic"
+DISTRIBUTIONS="jammy noble oracular plucky"
 
 while ! test -d BUILD/Debug -a -d BUILD/Release
 do
