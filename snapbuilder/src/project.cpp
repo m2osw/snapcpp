@@ -22,6 +22,7 @@
 #include    "project.h"
 
 #include    "snap_builder.h"
+#include    "version.h"
 
 
 // cppprocess
@@ -47,7 +48,9 @@
 
 // snapdev
 //
+#include    <snapdev/join_strings.h>
 #include    <snapdev/string_replace_many.h>
+#include    <snapdev/to_lower.h>
 #include    <snapdev/trim_string.h>
 
 
@@ -85,6 +88,43 @@ namespace
 // to avoid destroying an old version too soon)
 //
 cppprocess::process::pointer_t  g_dot_process = cppprocess::process::pointer_t();
+
+
+constexpr std::string_view  g_user_agent_name = "snapbuilder";
+constexpr std::string_view  g_user_agent_version = SNAPBUILDER_VERSION_STRING;
+constexpr std::string_view  g_user_agent_platform = "Linux; Ubuntu; x86_64";
+constexpr std::string_view  g_user_agent_curl = "curl/8.5.0+";
+constexpr std::string_view  g_user_agent_wget = "wget/1.21.4+";
+
+constexpr std::string_view  g_user_agent_space = " ";
+constexpr std::string_view  g_user_agent_separator = "/";
+constexpr std::string_view  g_user_agent_open_parenthesis = "(";
+constexpr std::string_view  g_user_agent_close_parenthesis = ")";
+
+constexpr std::string_view  g_curl_user_agent =
+    snapdev::join_string_views<
+        g_user_agent_name,
+        g_user_agent_separator,
+        g_user_agent_version,
+        g_user_agent_space,
+        g_user_agent_open_parenthesis,
+        g_user_agent_platform,
+        g_user_agent_close_parenthesis,
+        g_user_agent_space,
+        g_user_agent_curl>;
+
+constexpr std::string_view  g_wget_user_agent =
+    snapdev::join_string_views<
+        g_user_agent_name,
+        g_user_agent_separator,
+        g_user_agent_version,
+        g_user_agent_space,
+        g_user_agent_open_parenthesis,
+        g_user_agent_platform,
+        g_user_agent_close_parenthesis,
+        g_user_agent_space,
+        g_user_agent_wget>;
+
 
 
 } // no name namespace
@@ -584,11 +624,6 @@ std::string project::get_project_name() const
         return "snapcmakemodules";
     }
 
-    if(f_name == "libQtSerialization")
-    {
-        return "libqtserialization";
-    }
-
     return f_name;
 }
 
@@ -639,8 +674,8 @@ std::string project::get_remote_version() const
  * Change the f_state variable with the specified string.
  *
  * \warning
- * This function is not symetrical to the get_state(). This function changes
- * the f_state variable. The other returns a state that dependends on many
+ * This function is not symmetrical to the get_state(). This function changes
+ * the f_state variable. The other returns a state that dependents on many
  * variables such as f_loaded, f_building, versions, etc.
  *
  * \param[in] state  The new state, as a string.
@@ -1175,6 +1210,17 @@ void project::load_remote_data(bool loading)
                 {
                     set_building(building_t::BUILDING_PACKAGING);
 
+                    // TODO: find the location when the build process starts
+                    //       because it would be cleaner to clear this list
+                    //       at that point (especially if we want to show
+                    //       the end user the status of each package for
+                    //       a project)
+                    //
+                    for(auto & status : f_package_statuses)
+                    {
+                        status.second = false;
+                    }
+
                     SNAP_LOG_INFO
                         << "Done compiling \""
                         << f_name
@@ -1212,7 +1258,7 @@ void project::load_remote_data(bool loading)
         }
     }
 
-    // WARNING: the dot_deb_exists() call takes MUNITES PER .deb file
+    // WARNING: the dot_deb_exists() call takes MINUTES PER .deb file
     //          and I'm not too sure why; although it works, it's really
     //          really slow... so when loading the app. I skip that test
     //          and the package remains in "building" status until the
@@ -1288,6 +1334,79 @@ void project::load_remote_data(bool loading)
 */
 
 
+// TODO: not used yet although I'd like to test all the files instead of
+//       just the main one and the package name is what we need for that;
+//       however, at the moment, the input filename is incorrect (we're
+//       not in this project folder so just reading debian/control is
+//       not going to work well)
+//
+void project::read_control()
+{
+    if(!f_control_info.empty())
+    {
+        return;
+    }
+
+    // load the control file
+    //
+    std::ifstream in(f_project_path + "/debian/control");
+    int entry(0);
+    definition_t def;
+    std::string line;
+    while(getline(in, line))
+    {
+        if(line.empty())
+        {
+            if(entry == 0)
+            {
+                f_control_info = def;
+            }
+            else
+            {
+                auto const it(def.find("package"));
+                if(it == def.end())
+                {
+                    SNAP_LOG_ERROR
+                        << "found a package section without a name in \""
+                        << f_name
+                        << "\" project."
+                        << SNAP_LOG_SEND;
+                }
+                else
+                {
+                    f_control_packages[it->second] = def;
+                }
+            }
+            def.clear();
+            ++entry;
+        }
+        else
+        {
+            std::string::size_type const pos(line.find(':'));
+            std::string const name(line.substr(0, pos));
+            std::string value(line.substr(pos + 1));
+            while(value.back() == '\\')
+            {
+                value.pop_back();
+                getline(in, line);
+                if(line.empty())
+                {
+                    SNAP_LOG_ERROR
+                        << "found a field continuation followed by an empty line in \""
+                        << f_name
+                        << "\" project."
+                        << SNAP_LOG_SEND;
+                    return;
+                }
+                value += ' ';
+                value += snapdev::trim_string(line);
+            }
+            def[snapdev::to_lower(name)] = snapdev::trim_string(value);
+        }
+    }
+}
+
+
 bool project::dot_deb_exists()
 {
     // the URL looks like this:
@@ -1299,23 +1418,10 @@ bool project::dot_deb_exists()
     // TODO: we need to check all entries until a 3XX is returned and then
     //       stop checking that specific entry
     //
+    read_control();
     std::string const remote_version(get_remote_version());
     for(auto codename_and_arch : f_list_of_codenames_and_archs)
     {
-        std::string::size_type const pos(codename_and_arch.find(':'));
-        std::string const codename(codename_and_arch.substr(0, pos));
-        std::string const arch(codename_and_arch.substr(pos + 1));
-
-        std::string url("https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+files/");
-        url += f_name;
-        url += '_';
-        url += remote_version;
-        url += '~';
-        url += codename;
-        url += '_';
-        url += arch;
-        url += ".deb";
-
         std::unique_ptr<CURL, decltype(&::curl_easy_cleanup)> curl(curl_easy_init(), &::curl_easy_cleanup);
         if(curl == nullptr)
         {
@@ -1327,44 +1433,131 @@ bool project::dot_deb_exists()
             return false;
         }
 
-        SNAP_LOG_NOTICE
-            << "checking whether .deb exists with `curl --head "
-            << url
-            << "`"
-            << SNAP_LOG_SEND;
+        std::string::size_type const pos(codename_and_arch.find(':'));
+        std::string const codename(codename_and_arch.substr(0, pos));
+        std::string const arch(codename_and_arch.substr(pos + 1));
 
-        curl_easy_setopt(curl.get(), CURLOPT_CUSTOMREQUEST, "HEAD");
-        curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl.get(), CURLOPT_DEFAULT_PROTOCOL, "https");
-
-        CURLcode const res(curl_easy_perform(curl.get()));
-        if(res != CURLE_OK)
+        // check each package name, all the packages need to be available
+        // not just the main one (although the name of the project we
+        // have in our git environment is not always the name of the main
+        // package as for cmake and advgetopt)
+        //
+        for(auto it(f_control_packages.cbegin()); it != f_control_packages.cend(); ++it)
         {
-            SNAP_LOG_ERROR
-                << "curl HEAD to \""
-                << url
-                << "\" failed. ("
-                << curl_easy_strerror(res)
-                << ")."
-                << SNAP_LOG_SEND;
-            return false;
-        }
+            std::string architecture(arch);
+            auto const package_arch(it->second.find("architecture"));
+            if(package_arch != it->second.end())
+            {
+                if(package_arch->second == "any")
+                {
+                    architecture = arch;
+                }
+                else if(package_arch->second == "all")
+                {
+                    architecture = "all";
+                }
+                else if(package_arch->second != arch)
+                {
+                    // in all other cases it is specific and if we're not
+                    // compiling for that specific architecture, then that
+                    // package won't be created
+                    //
+                    // TODO: this is not 100% true since we have wildcards
+                    //       but in our case that should not matter because
+                    //       we only need to specify the CPU and just "any"
+                    //       is sufficient and already supported
+                    //       (i.e. at the moment we do not support <os>-any
+                    //       or any-<cpu>).
+                    //
+                    //       There is, it seems, a special "any all" case
+                    //       but I think that's only in the .dsc file.
+                    //
+                    //       Finally, the architecture could be a list of
+                    //       os/cpu separated by spaces so we should check
+                    //       whether any one of them is a match
+                    //
+                    SNAP_LOG_TODO
+                        << "skipping architecture \""
+                        << package_arch->second
+                        << "\" which is not a match; expected \""
+                        << arch
+                        << "\"."
+                        << SNAP_LOG_SEND;
+                    continue;
+                }
+            }
+            else
+            {
+                // this cannot happen unless your control file is invalid
+                // (i.e. the Architecture: ... field is mandatory)
+                //
+                SNAP_LOG_MAJOR
+                    << "no \"Architecture: ...\" field found in control file for package \""
+                    << it->first
+                    << "\"; using default architecture value: \""
+                    << arch
+                    << "\"."
+                    << SNAP_LOG_SEND;
+            }
+            std::string url("https://launchpad.net/~snapcpp/+archive/ubuntu/ppa/+files/");
+            url += it->first;
+            url += '_';
+            url += remote_version;
+            url += '~';
+            url += codename;
+            url += '_';
+            url += architecture;
+            url += ".deb";
 
-        long http_code(599);
-        curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
-        if(http_code >= 400)
-        {
-            SNAP_LOG_WARNING
-                << "curl HEAD to \""
-                << url
-                << "\" return HTTP error code: "
-                << http_code
-                << ". The package is not yet ready."
-                << SNAP_LOG_SEND;
-            return false;
-        }
+            if(f_package_statuses[url])
+            {
+                // we already found that package, no need to check for it again
+                //
+                continue;
+            }
 
-        // TBD: should we verify that it is a 301, 302, 303, 306, or 307?
+            SNAP_LOG_NOTICE
+                << "checking whether .deb exists with `curl --head "
+                << url
+                << "`"
+                << SNAP_LOG_SEND;
+
+            curl_easy_setopt(curl.get(), CURLOPT_CUSTOMREQUEST, "HEAD");
+            curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl.get(), CURLOPT_DEFAULT_PROTOCOL, "https");
+            curl_easy_setopt(curl.get(), CURLOPT_USERAGENT, g_curl_user_agent.data());
+
+            CURLcode const res(curl_easy_perform(curl.get()));
+            if(res != CURLE_OK)
+            {
+                SNAP_LOG_ERROR
+                    << "curl HEAD to \""
+                    << url
+                    << "\" failed. ("
+                    << curl_easy_strerror(res)
+                    << ")."
+                    << SNAP_LOG_SEND;
+                return false;
+            }
+
+            long http_code(599);
+            curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
+            if(http_code >= 400)
+            {
+                SNAP_LOG_WARNING
+                    << "curl HEAD to \""
+                    << url
+                    << "\" return HTTP error code: "
+                    << http_code
+                    << ". The package is not yet ready."
+                    << SNAP_LOG_SEND;
+                return false;
+            }
+
+            // TBD: should we verify that it is a 301, 302, 303, 306, or 307?
+
+            f_package_statuses[url] = true;
+        }
     }
 
     // all the .deb seem to be available at the moment
@@ -1477,7 +1670,9 @@ bool project::retrieve_ppa_status()
 {
     must_be_background_thread();
 
-    std::string cmd("wget -q -O '");
+    std::string cmd("wget -q --user-agent='");
+    cmd += g_wget_user_agent;
+    cmd += "' -O '";
     cmd += get_ppa_json_filename();
     cmd += "' '";
     cmd += snapdev::string_replace_many(

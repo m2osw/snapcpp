@@ -145,6 +145,10 @@ private:
         BUILD_STATUS_SUCCEEDED = 1,
     };
 
+    typedef std::map<std::string, std::string>          definition_t;
+    typedef std::map<std::string, definition_t>         package_t;
+    typedef std::map<std::string, bool>                 package_status_t;
+
     void                        add_dependency(std::string const & name);
     void                        add_missing_dependencies(pointer_t p, map_t & m);
     static bool                 compare(pointer_t a, pointer_t b);
@@ -170,6 +174,7 @@ private:
     char const *                get_build_status_string() const;
     void                        add_error(std::string const & msg);
     void                        must_be_background_thread();
+    void                        read_control();
 
     snap_builder *              f_snap_builder = nullptr;
     std::string                 f_name = std::string();
@@ -191,6 +196,9 @@ private:
     project_remote_info::vector_t
                                 f_remote_info = project_remote_info::vector_t();
     std::set<std::string>       f_list_of_codenames_and_archs = std::set<std::string>();
+    definition_t                f_control_info = definition_t();
+    package_t                   f_control_packages = package_t();
+    package_status_t            f_package_statuses = package_status_t();
 };
 
 
