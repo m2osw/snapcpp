@@ -130,7 +130,7 @@ then
     echo "<body>" >> "${HTML}"
     if test "${IS_SNAPWEBSITES_DEFINED}" != "true"
     then
-        echo "<p style=\"color:red;font-size:135%\">WARNING: snapwebsites user/group not properly setup. See bin/install-for-tests.sh for details (${IS_SNAPWEBSITES_DEFINED}).</p>" >> "${HTML}"
+        echo "<p style=\"color:red;font-size:135%\">WARNING: snapwebsites user/group or adm inclusion not properly setup. See bin/install-for-tests.sh for details (${IS_SNAPWEBSITES_DEFINED}).</p>" >> "${HTML}"
     fi
     echo "<table>" >> "${HTML}"
     echo "<tr><th>Project</th><th>Test Results</th></tr>" >> "${HTML}"
