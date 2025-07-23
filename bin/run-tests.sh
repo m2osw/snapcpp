@@ -272,7 +272,14 @@ then
         fi
         echo "<p>Got ${FAILURES} error${PLURAL}.</p>" >> "${HTML}"
     fi
-    echo "<p>Process started on ${START_DATE} and ending on ${END_DATE}.</p>" >> "${HTML}"
+    START_SECONDS=`date -d "${START_DATE}" +%s`
+    END_SECONDS=`date -d "${END_DATE}" +%s`
+    DURATION=`expr ${END_SECONDS} - ${START_SECONDS}`
+    DURATION_HOURS=`expr ${DURATION} / 3600`
+    DURATION_MINUTES=`expr \( ${DURATION} % 3600 \) / 60`
+    DURATION_SECONDS=`expr ${DURATION} % 60`
+    DURATION_HHMMSS=`printf "%02d:%02d:%02d" ${DURATION_HOURS} ${DURATION_MINUTES} ${DURATION_SECONDS}`
+    echo "<p>Process started on ${START_DATE} and ending on ${END_DATE} (elapsed time: ${DURATION_HHMMSS}).</p>" >> "${HTML}"
     echo "<br/>" >> "${HTML}"
     echo '<div style="text-align:center;"><a href="https://snapwebsites.org/">Snap C++</a> | <a href="..">List of projects</a></div>' >> "${HTML}"
     echo "</body>" >> "${HTML}"
