@@ -3,6 +3,7 @@
 # Run all the tests
 
 export HOME=`cd && pwd`
+export USER=`basename ${HOME}`
 
 TOPDIR="`pwd`"
 while true
