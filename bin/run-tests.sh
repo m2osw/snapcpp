@@ -2,8 +2,14 @@
 #
 # Run all the tests
 
-export HOME=`cd && pwd`
-export USER=`basename ${HOME}`
+if test -z "${HOME}"
+then
+    export HOME=`cd && pwd`
+fi
+if test -z "${USER}"
+then
+    export USER=`basename ${HOME}`
+fi
 
 TOPDIR="`pwd`"
 while true
@@ -103,8 +109,8 @@ fi
 
 IS_SNAPWEBSITES_DEFINED=false
 if getent passwd snapwebsites >/dev/null \
-    && getent group snapwebsites >/dev/null \
-    && getent group adm | sed -e 's/.*://' -e 's/,/ /' | grep "\<${USER}\>" > /dev/null
+    && getent group snapwebsites | sed -e 's/.*://' -e 's/,/ /' | grep "\<${USER}\>" >/dev/null
+    && getent group adm | sed -e 's/.*://' -e 's/,/ /' | grep "\<${USER}\>" >/dev/null
 then
     IS_SNAPWEBSITES_DEFINED=true
 fi
