@@ -160,12 +160,14 @@ then
         echo "<h1>Source Synchronization</h1>" >> "${SYNC_OUTPUT}"
         echo "<p>`date -u`</p>" >> "${SYNC_OUTPUT}"
         echo "<pre>" >> "${SYNC_OUTPUT}"
-        bin/check-status.sh --latest 2>&1 | ${CONVERT} >> "${SYNC_OUTPUT}" 2>&1
+        git pull 2>&1 | ${CONVERT} >> "${SYNC_OUTPUT}"
+        bin/check-status.sh --latest 2>&1 | ${CONVERT} >> "${SYNC_OUTPUT}"
         echo "</pre>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
         echo "</body>" >> "${SYNC_OUTPUT}"
         echo "</html>" >> "${SYNC_OUTPUT}"
     else
+        git pull
         bin/check-status.sh --latest
     fi
 
@@ -208,57 +210,56 @@ FAILURES=0
 #  ${SNAPWEBSITES} -- skip on snapwebsites/... tests for now since those are not up to date yet
 for d in ${CONTRIBS}
 do
-    (
-        cd "${d}"
-        if test -d tests
+    cd "${d}"
+    if test -d tests
+    then
+        if test "${TYPE}" = "console"
         then
-            if test "${TYPE}" = "console"
+            echo "--- RUNNING TESTS OF: ${d} ---"
+        fi
+        OUTPUTDIR="${BUILD}/${d}"
+        mkdir -p "${OUTPUTDIR}"
+        OUTPUT="${OUTPUTDIR}/test-full-output.txt"
+        if ! ./mk -t >"${OUTPUT}" 2>&1
+        then
+            if test "${TYPE}" = "html"
             then
-                echo "--- RUNNING TESTS OF: ${d} ---"
-            fi
-            OUTPUTDIR="${BUILD}/${d}"
-            mkdir -p "${OUTPUTDIR}"
-            OUTPUT="${OUTPUTDIR}/test-full-output.txt"
-            if ! ./mk -t >"${OUTPUT}" 2>&1
-            then
-                if test "${TYPE}" = "html"
-                then
-                    ERROR="`basename ${d}`.html"
-                    echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\" rel=\"nofollow\">see output</a></td></tr>" >> "${HTML}"
+                ERROR="`basename ${d}`.html"
+                echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\" rel=\"nofollow\">see output</a></td></tr>" >> "${HTML}"
 
-                    echo "<html>" > "${HTMLDIR}/${ERROR}"
-                    echo "<head>" >> "${HTMLDIR}/${ERROR}"
-                    echo "<title>Output of ${d} tests</title>" >> "${HTMLDIR}/${ERROR}"
-                    echo "<meta name=\"robots\" content=\"noindex\"/>" >> "${HTMLDIR}/${ERROR}"
-                    echo "</head>" >> "${HTMLDIR}/${ERROR}"
-                    echo "<body>" >> "${HTMLDIR}/${ERROR}"
-                    echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${HTMLDIR}/${ERROR}"
-                    echo "<pre>" >> "${HTMLDIR}/${ERROR}"
-                    ${CONVERT} "${OUTPUT}" >> "${HTMLDIR}/${ERROR}"
-                    echo "</pre>" >> "${HTMLDIR}/${ERROR}"
-                    echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${HTMLDIR}/${ERROR}"
-                    echo "</body>" >> "${HTMLDIR}/${ERROR}"
-                    echo "</html>" >> "${HTMLDIR}/${ERROR}"
-                else
-                    echo "   an error occurred, see output here: ${OUTPUT}"
-                    echo
-                fi
-                FAILURES=`expr ${FAILURES} + 1`
+                echo "<html>" > "${HTMLDIR}/${ERROR}"
+                echo "<head>" >> "${HTMLDIR}/${ERROR}"
+                echo "<title>Output of ${d} tests</title>" >> "${HTMLDIR}/${ERROR}"
+                echo "<meta name=\"robots\" content=\"noindex\"/>" >> "${HTMLDIR}/${ERROR}"
+                echo "</head>" >> "${HTMLDIR}/${ERROR}"
+                echo "<body>" >> "${HTMLDIR}/${ERROR}"
+                echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${HTMLDIR}/${ERROR}"
+                echo "<pre>" >> "${HTMLDIR}/${ERROR}"
+                ${CONVERT} "${OUTPUT}" >> "${HTMLDIR}/${ERROR}"
+                echo "</pre>" >> "${HTMLDIR}/${ERROR}"
+                echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${HTMLDIR}/${ERROR}"
+                echo "</body>" >> "${HTMLDIR}/${ERROR}"
+                echo "</html>" >> "${HTMLDIR}/${ERROR}"
             else
-                if test "${TYPE}" = "html"
-                then
-                    echo "<tr class=\"success\"><td>${d}</td><td>success</td></tr>" >> "${HTML}"
-                fi
+                echo "   an error occurred, see output here: ${OUTPUT}"
+                echo
             fi
+            FAILURES=`expr ${FAILURES} + 1`
         else
             if test "${TYPE}" = "html"
             then
-                echo "<tr class=\"no-test\"><td>${d}</td><td>no tests found -- skipped</td></tr>" >> "${HTML}"
-            else
-                echo "--- SKIPPING: ${d} ---"
+                echo "<tr class=\"success\"><td>${d}</td><td>success</td></tr>" >> "${HTML}"
             fi
         fi
-    )
+    else
+        if test "${TYPE}" = "html"
+        then
+            echo "<tr class=\"no-test\"><td>${d}</td><td>no tests found -- skipped</td></tr>" >> "${HTML}"
+        else
+            echo "--- SKIPPING: ${d} ---"
+        fi
+    fi
+    cd "${TOPDIR}"
 done
 
 END_DATE=`date -u`
@@ -282,10 +283,12 @@ then
     fi
     START_SECONDS=`date -d "${START_DATE}" +%s`
     END_SECONDS=`date -d "${END_DATE}" +%s`
+    set +e
     DURATION=`expr ${END_SECONDS} - ${START_SECONDS}`
     DURATION_HOURS=`expr ${DURATION} / 3600`
     DURATION_MINUTES=`expr \( ${DURATION} % 3600 \) / 60`
     DURATION_SECONDS=`expr ${DURATION} % 60`
+    set -e
     DURATION_HHMMSS=`printf "%02d:%02d:%02d" ${DURATION_HOURS} ${DURATION_MINUTES} ${DURATION_SECONDS}`
     echo "<p>Process started on ${START_DATE} and ending on ${END_DATE} (elapsed time: ${DURATION_HHMMSS}).</p>" >> "${HTML}"
     echo "<br/>" >> "${HTML}"
