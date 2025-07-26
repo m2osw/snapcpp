@@ -24,10 +24,20 @@
 #include    "version.h"
 
 
+// snaplogger
+//
+#include    <snaplogger/message.h>
+
+
 // Qt
 //
 #include    <QCoreApplication>
 #include    <QMessageBox>
+
+
+// C
+//
+#include    <sys/stat.h>
 
 
 // last include
@@ -43,12 +53,33 @@ AboutDialog::AboutDialog(QWidget *p)
 
     setStyleSheet("QTextBrowser{ min-width: 700px; min-height: 450px; }");
 
-    textBrowser->setHtml(
-        QCoreApplication::translate
-        (
-            "AboutDialog"
-            , "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-             "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+    // we install this one, so it may not be there if you did not
+    // yet install the application
+    //
+    std::string gpl("/usr/share/common-licenses/GPL-3.html");
+    struct stat s;
+    if(stat(gpl.c_str(), &s) != 0)
+    {
+        // while developing, you'd find it right here
+        //
+        gpl = "conf/GPL-3.html";
+        if(stat(gpl.c_str(), &s) != 0)
+        {
+            // fallback
+            //
+            gpl = "/usr/share/common-licenses/GPL-3";
+        }
+    }
+
+    SNAP_LOG_TRACE
+        << "found license \""
+        << gpl
+        << "\"."
+        << SNAP_LOG_SEND;
+
+    std::string const message(
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+             "<html><head><meta name=\"qrichtext\" content=\"1\"/><style type=\"text/css\">\n"
              "p, li { white-space: pre-wrap; }\n"
              "p { text-align: center; margin: 0; -qt-block-indent:0; text-indent:0px; }\n"
              "</style></head><body style=\"font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
@@ -57,14 +88,12 @@ AboutDialog::AboutDialog(QWidget *p)
              "<p style=\"-qt-paragraph-type:empty;\"><br /></p>\n"
              "<p>Helper tool used to build the Snap! Websites packages on Launchpad.</p>\n"
              "<p style=\"-qt-paragraph-type:empty;\"><br /></p>\n"
-             "<p><span style=\" font-weight:600;\">Snap! Builder<br />by<br />Made to Order Software Corporation<br />All Rights Reserved</span></p>"
+             "<p><span style=\" font-weight:600;\">Snap! Builder<br />by<br />Made to Order Software Corporation<br />All Rights Reserved</span></p>\n"
              "<p style=\"-qt-paragraph-type:empty;\"><br /></p>\n"
-             "<p><a href=\"/usr/share/common-licenses/GPL-3\">License GPL 3.0</a></p>"
-             "</body></html>"
-            , 0
-            //, QApplication::UnicodeUTF8
-        )
-    );
+             "<p><a href=\"" + gpl + "\">License GPL 3.0</a></p>\n"
+             "</body></html>");
+
+    textBrowser->setHtml(QCoreApplication::translate("AboutDialog", message.c_str(), 0 /*, QApplication::UnicodeUTF8*/ ));
 }
 
 AboutDialog::~AboutDialog()

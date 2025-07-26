@@ -124,32 +124,20 @@ constexpr char const * const g_configuration_files[]
     nullptr
 };
 
-// TODO: once we have stdc++20, remove all defaults
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 advgetopt::options_environment const g_options_environment =
 {
     .f_project_name = "snapbuilder",
     .f_group_name = "snapwebsites",
     .f_options = g_options,
-    .f_options_files_directory = nullptr,
     .f_environment_variable_name = "SNAP_BUILDER",
-    .f_environment_variable_intro = nullptr,
-    .f_section_variables_name = nullptr,
     .f_configuration_files = g_configuration_files,
-    .f_configuration_filename = nullptr,
-    .f_configuration_directories = nullptr,
     .f_environment_flags = advgetopt::GETOPT_ENVIRONMENT_FLAG_PROCESS_SYSTEM_PARAMETERS,
     .f_help_header = "Usage: %p [-<opt>]\n"
                      "where -<opt> is one or more of:",
     .f_help_footer = "%c",
     .f_version = SNAPBUILDER_VERSION_STRING,
-    .f_license = nullptr,
     .f_copyright = "Copyright (c) " BOOST_PP_STRINGIZE(UTC_BUILD_YEAR) "  Made to Order Software Corp.",
-    .f_build_date = UTC_BUILD_DATE,
-    .f_build_time = UTC_BUILD_TIME
 };
-#pragma GCC diagnostic pop
 
 
 
@@ -299,6 +287,8 @@ snap_builder::snap_builder(int argc, char * argv[])
 
     on_generate_dependency_svg_triggered();
 
+    get_system_distribution();
+
     // the timer is now in the background_processing job processor
     //f_timer_id = startTimer(1000 * 60); // 1 minute interval
 
@@ -316,6 +306,34 @@ snap_builder::~snap_builder()
 void snap_builder::run()
 {
     f_communicator->run();
+}
+
+
+void snap_builder::get_system_distribution()
+{
+    FILE * p = popen("/usr/bin/lsb_release -sc 2>/dev/null", "r");
+    if(p != nullptr)
+    {
+        char buf[1024];
+        fgets(buf, sizeof(buf), p);
+        snapdev::NOT_USED(pclose(p));
+        buf[sizeof(buf) - 1] = '\0';
+        size_t const l(strlen(buf));
+        if(l > 1)
+        {
+            if(buf[l - 1] == '\n')
+            {
+                buf[l - 1] = '\0';
+            }
+            f_distribution = std::string(buf, l - 1);
+
+            SNAP_LOG_INFORMATION
+                << "found distribution \""
+                << f_distribution
+                << "\"; using that as the default."
+                << SNAP_LOG_SEND;
+        }
+    }
 }
 
 
@@ -598,6 +616,7 @@ void snap_builder::read_list_of_projects()
         advgetopt::split_string(s.substr(colon + 1), dep_list, {" "});
         project::pointer_t p(std::make_shared<project>(this, name, dep_list));
         f_projects.push_back(p);
+        ++line;
     }
     project::simplify(f_projects);
 
@@ -1212,14 +1231,10 @@ void snap_builder::on_bump_version_clicked()
 
     case 1:
         numbers.push_back("0");
-#if __cplusplus >= 201700
         [[fallthrough]];
-#endif
     case 2:
         numbers.push_back("0");
-#if __cplusplus >= 201700
         [[fallthrough]];
-#endif
     case 3:
         numbers.push_back("1");
         break;

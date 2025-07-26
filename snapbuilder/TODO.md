@@ -1,11 +1,14 @@
 
-* The automatic build+1 code uses a hard coded distribution name.
+* The automatic build+1 code uses the name of your current system distribution.
+
+  This is generally correct although I'd like a better way to determine the
+  name and offer the user to select the one they want to use.
 
 * Allow for an old project name
 
   Right now, the murmur3 project generates warnings about finding entries
   that have a different name: libmurmur3. That older name was in conflict
-  so I change the name of my project. What I think I should do is add a
+  so I changed the name of my project. What I think I should do is add a
   file with old valid names so we can avoid the warning altogether. I
   don't think having such under `debian/...` would be wise, but maybe under
   `conf/...`. If the file exists, load it and memorize the old names. We
@@ -26,6 +29,9 @@
   I now save the version & date to the .build file so we can reuse that
   part, and I'm going to also save the list of package/arch because we
   need those too in order to verify that the packages were built.
+  [well, for the list of package/arch, I read the debian/control file
+  and that works very well; although we should read it and cache the
+  data at the time we upload the source to launchpad]
 
 * Full Build Capabilities
 
@@ -70,7 +76,7 @@
 
   It would be cool to add one column with an icon representing the status
   and when the backend is doing work, show that instead. Use animated GIF
-  images to dislpay an animation so it is even more exiting.
+  images to dislpay an animation so it is even more exciting.
 
 * Add error field to the project
 
@@ -81,8 +87,6 @@
   can retrieve that and display it somewhere. Also if there is an error, we
   can show an icon about it so we can see that there is trouble to take
   care of.
-
-* The About box shows GPL-3 text file as HTML (i.e. not properly formatted)
 
 * Make proper use of the status bar message
 

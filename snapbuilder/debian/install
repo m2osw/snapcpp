@@ -1,2 +1,3 @@
 usr/bin/snapbuilder
 conf/snapbuilder.conf                     etc/snapwebsites/
+conf/GPL-3.conf                           usr/share/common-licenses/
