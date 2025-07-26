@@ -158,6 +158,7 @@ then
         echo "<body>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${SYNC_OUTPUT}"
         echo "<h1>Source Synchronization</h1>" >> "${SYNC_OUTPUT}"
+        echo "<p>`date -u`</p>" >> "${SYNC_OUTPUT}"
         echo "<pre>" >> "${SYNC_OUTPUT}"
         bin/check-status.sh --latest 2>&1 | ${CONVERT} >> "${SYNC_OUTPUT}" 2>&1
         echo "</pre>" >> "${SYNC_OUTPUT}"
