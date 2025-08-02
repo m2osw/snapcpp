@@ -12,6 +12,11 @@
   (and make the .service know that--see snaprfs daemon/.service)
 * Look into removing mysql from the list of dependencies.
 * Remove all the pragma -Wrestrict once we're done with Lunar.
+* The lcov now includes tests and docs and should have a top directory
+  that allows us to go to a specific project and then within that go
+  to a specific version (when available, like for coverage).
+  Also, the docs top folder needs a few images and the top lcov folder
+  should have a robots.txt defined there.
 
 
 # advgetopt

@@ -108,8 +108,8 @@ then
             exit 1
         fi
     fi
-    # cloc/lcov -- coverage
-    # doxygen/graphviz -- documentation
+    # lcov/cloc -- coverage/stats
+    # doxygen/graphviz/texlive-full/libgvpr2 -- documentation
     # libqxcppunit-dev -- unit testing (not working since 18.04)
     # qtxmlpatterns5-dev-tools -- for developers to run xmlpatterns
     echo "--- Install optional packages"
@@ -119,7 +119,8 @@ then
         graphviz \
         lcov \
         libgvpr2 \
-        qtxmlpatterns5-dev-tools
+        qtxmlpatterns5-dev-tools \
+        texlive-full
 
     if apt-cache show libqxcppunit-dev >/dev/null 2>&1
     then
