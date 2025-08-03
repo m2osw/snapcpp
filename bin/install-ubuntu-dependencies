@@ -109,7 +109,7 @@ then
         fi
     fi
     # lcov/cloc -- coverage/stats
-    # doxygen/graphviz/texlive-full/libgvpr2 -- documentation
+    # doxygen/graphviz/texlive-full/libgvpr2/mscgen -- documentation
     # libqxcppunit-dev -- unit testing (not working since 18.04)
     # qtxmlpatterns5-dev-tools -- for developers to run xmlpatterns
     echo "--- Install optional packages"
@@ -119,6 +119,7 @@ then
         graphviz \
         lcov \
         libgvpr2 \
+        mscgen \
         qtxmlpatterns5-dev-tools \
         texlive-full
 
