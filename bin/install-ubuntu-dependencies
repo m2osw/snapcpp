@@ -120,6 +120,7 @@ then
         lcov \
         libgvpr2 \
         mscgen \
+        pandoc \
         qtxmlpatterns5-dev-tools \
         texlive-full
 

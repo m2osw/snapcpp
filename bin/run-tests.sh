@@ -29,7 +29,7 @@ CONTRIBS="`find contrib -maxdepth 1 ! -path 'contrib' -type d | sort`"
 SNAPWEBSITES="`find snapwebsites -maxdepth 1 ! -path 'snapwebsites' -type d | sort`"
 
 PUBLISH=false
-PUBLISHDIR="/mnt/lcov/tests"
+PUBLISHDIR="/mnt/lcov"
 SYNC=false
 TYPE=console
 while test -n "${1}"
@@ -140,7 +140,7 @@ then
         echo "<p style=\"color:red;font-size:135%\">WARNING: snapwebsites user/group or adm inclusion not properly setup. See bin/install-for-tests.sh for details (${IS_SNAPWEBSITES_DEFINED}).</p>" >> "${HTML}"
     fi
     echo "<table>" >> "${HTML}"
-    echo "<tr><th>Project</th><th>Test Results</th></tr>" >> "${HTML}"
+    echo "<tr><th>Project</th><th>Test Results</th><th>Documentation</th></tr>" >> "${HTML}"
 fi
 
 if test "${SYNC}" = "true"
@@ -211,6 +211,23 @@ FAILURES=0
 for d in ${CONTRIBS}
 do
     cd "${d}"
+    PROJECT_NAME=`basename ${d}`
+    if test "${PROJECT_NAME}" = "snapcatch2"
+    then
+        # The docs for Catch2 don't use the project name
+        # (also below we convert the .md files to .html)
+        PROJECT_PATH="Catch2"
+    else
+        PROJECT_PATH="${PROJECT_NAME}"
+    fi
+    DOCUMENTATION="<td><a href=\"../docs/${PROJECT_PATH}\">${PROJECT_NAME}</a>"
+    if test "${PROJECT_NAME}" = "eventdispatcher"
+    then
+        # eventdispatcher includes an extra two sub-projects with their own docs
+        DOCUMENTATION="${DOCUMENTATION}<br/><a href=\"../docs/cppprocess\">cppprocess</a>"
+        DOCUMENTATION="${DOCUMENTATION}<br/><a href=\"../docs/snaplogger-network\">snaplogger-network</a>"
+    fi
+    DOCUMENTATION="${DOCUMENTATION}</td>"
     if test -d tests
     then
         if test "${TYPE}" = "console"
@@ -224,8 +241,8 @@ do
         then
             if test "${TYPE}" = "html"
             then
-                ERROR="`basename ${d}`.html"
-                echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\" rel=\"nofollow\">see output</a></td></tr>" >> "${HTML}"
+                ERROR="${PROJECT_NAME}.html"
+                echo "<tr class=\"error\"><td>${d}</td><td>error -- <a href=\"${ERROR}\" rel=\"nofollow\">see output</a></td>${DOCUMENTATION}</tr>" >> "${HTML}"
 
                 echo "<html>" > "${HTMLDIR}/${ERROR}"
                 echo "<head>" >> "${HTMLDIR}/${ERROR}"
@@ -248,13 +265,13 @@ do
         else
             if test "${TYPE}" = "html"
             then
-                echo "<tr class=\"success\"><td>${d}</td><td>success</td></tr>" >> "${HTML}"
+                echo "<tr class=\"success\"><td>${d}</td><td>success</td>${DOCUMENTATION}</tr>" >> "${HTML}"
             fi
         fi
     else
         if test "${TYPE}" = "html"
         then
-            echo "<tr class=\"no-test\"><td>${d}</td><td>no tests found -- skipped</td></tr>" >> "${HTML}"
+            echo "<tr class=\"no-test\"><td>${d}</td><td>no tests found -- skipped</td>${DOCUMENTATION}</tr>" >> "${HTML}"
         else
             echo "--- SKIPPING: ${d} ---"
         fi
@@ -302,8 +319,34 @@ then
     #
     if test "${PUBLISH}" = "true" -a -d "${PUBLISHDIR}"
     then
-        rm -f "${PUBLISHDIR}/"*
-        cp -r "${HTMLDIR}/"* "${PUBLISHDIR}/."
+        if test "${PUBLISHDIR}/tests"
+        then
+            rm -f "${PUBLISHDIR}/tests/"*
+            cp -r "${HTMLDIR}/"* "${PUBLISHDIR}/tests/."
+        fi
+        if test "${PUBLISHDIR}/docs"
+        then
+            rm -f "${PUBLISHDIR}/docs/"*
+            cp -r "${TOPDIR}/BUILD/dist/share/doc/"* "${PUBLISHDIR}/docs/."
+
+            HTML_INDEX="${TOPDIR}/BUILD/dist/share/doc/Catch2/index.html"
+            echo "<html>" > ${HTML_INDEX}
+            echo "<head>" >> ${HTML_INDEX}
+            echo "<title>Catch2 Documentation</title>" >> ${HTML_INDEX}
+            echo "</head>" >> ${HTML_INDEX}
+            echo "<body>" >> ${HTML_INDEX}
+            echo "<ul>" >> ${HTML_INDEX}
+            for m in "${TOPDIR}/BUILD/dist/share/doc/Catch2/"*.md
+            do
+                HTML_FILENAME="`echo "${m}" | sed -e /\.md$//`.html"
+                pandoc --from=markdown --to=html --standalone "${m}" > "${HTML_FILENAME}"
+                BASENAME=`basename ${m} .md`
+                echo "<li><a href=\"${BASENAME}.html\">${BASENAME}</a></li>" >> ${HTML_INDEX}
+            done
+            echo "</ul>" >> ${HTML_INDEX}
+            echo "</body>" >> ${HTML_INDEX}
+            echo "</html>" >> ${HTML_INDEX}
+        fi
     fi
 fi
 
