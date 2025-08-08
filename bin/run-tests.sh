@@ -319,17 +319,17 @@ then
     #
     if test "${PUBLISH}" = "true" -a -d "${PUBLISHDIR}"
     then
-        if test "${PUBLISHDIR}/tests"
+        if test -d "${PUBLISHDIR}/tests"
         then
             rm -f "${PUBLISHDIR}/tests/"*
             cp -r "${HTMLDIR}/"* "${PUBLISHDIR}/tests/."
         fi
-        if test "${PUBLISHDIR}/docs"
+        if test -d "${PUBLISHDIR}/docs"
         then
             rm -f "${PUBLISHDIR}/docs/"*
-            cp -r "${TOPDIR}/BUILD/dist/share/doc/"* "${PUBLISHDIR}/docs/."
+            cp -r "${TOPDIR}/BUILD/Debug/dist/share/doc/"* "${PUBLISHDIR}/docs/."
 
-            HTML_INDEX="${TOPDIR}/BUILD/dist/share/doc/Catch2/index.html"
+            HTML_INDEX="${TOPDIR}/BUILD/Debug/dist/share/doc/Catch2/index.html"
             echo "<html>" > ${HTML_INDEX}
             echo "<head>" >> ${HTML_INDEX}
             echo "<title>Catch2 Documentation</title>" >> ${HTML_INDEX}
