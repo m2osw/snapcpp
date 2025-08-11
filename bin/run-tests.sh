@@ -327,7 +327,12 @@ then
         if test -d "${PUBLISHDIR}/docs"
         then
             rm -rf "${PUBLISHDIR}/docs/"*
-            cp -r "${TOPDIR}/BUILD/Debug/dist/share/doc/"* "${PUBLISHDIR}/docs/."
+            for d in "${TOPDIR}/BUILD/Debug/dist/share/doc/"*
+            do
+                PROJECT=`basename "${d}"`
+                mkdir -p "${PUBLISHDIR}/docs/${PROJECT}"
+                cp -r "${d}/html/"* "${PUBLISHDIR}/docs/${PROJECT}/."
+            done
 
             HTML_INDEX="${TOPDIR}/BUILD/Debug/dist/share/doc/Catch2/index.html"
             echo "<html>" > ${HTML_INDEX}
