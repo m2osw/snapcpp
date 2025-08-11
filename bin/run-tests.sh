@@ -321,12 +321,12 @@ then
     then
         if test -d "${PUBLISHDIR}/tests"
         then
-            rm -f "${PUBLISHDIR}/tests/"*
+            rm -rf "${PUBLISHDIR}/tests/"*
             cp -r "${HTMLDIR}/"* "${PUBLISHDIR}/tests/."
         fi
         if test -d "${PUBLISHDIR}/docs"
         then
-            rm -f "${PUBLISHDIR}/docs/"*
+            rm -rf "${PUBLISHDIR}/docs/"*
             cp -r "${TOPDIR}/BUILD/Debug/dist/share/doc/"* "${PUBLISHDIR}/docs/."
 
             HTML_INDEX="${TOPDIR}/BUILD/Debug/dist/share/doc/Catch2/index.html"
