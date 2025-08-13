@@ -331,7 +331,16 @@ then
             do
                 PROJECT=`basename "${d}"`
                 mkdir -p "${PUBLISHDIR}/docs/${PROJECT}"
-                cp -r "${d}/html/"* "${PUBLISHDIR}/docs/${PROJECT}/."
+                if test -d "${d}/html"
+                then
+                    # doxygen adds that /html/... folder
+                    #
+                    cp -r "${d}/html/"* "${PUBLISHDIR}/docs/${PROJECT}/."
+                else
+                    # Catch2 does not use doxygen
+                    #
+                    cp -r "${d}/"* "${PUBLISHDIR}/docs/${PROJECT}/."
+                fi
             done
 
             HTML_INDEX="${TOPDIR}/BUILD/Debug/dist/share/doc/Catch2/index.html"
