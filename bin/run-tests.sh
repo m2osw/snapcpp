@@ -237,7 +237,11 @@ do
         OUTPUTDIR="${BUILD}/${d}"
         mkdir -p "${OUTPUTDIR}"
         OUTPUT="${OUTPUTDIR}/test-full-output.txt"
-        if ! ./mk -t >"${OUTPUT}" 2>&1
+
+        # Since we want to save the documentation, we need to renew it
+        # to get the latest so it means using the -d option
+        #
+        if ! ./mk -d -t >"${OUTPUT}" 2>&1
         then
             if test "${TYPE}" = "html"
             then
