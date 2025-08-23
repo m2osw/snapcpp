@@ -98,11 +98,12 @@ done
 
 START_DATE=`date -u`
 
-CONVERTER="BUILD/Debug/contrib/snaplogger/tools/convert-ansi"
+# make sure it's a full path so we an use it anywhere
+# WARNING: this test assumes we manually ran a Debug build at least once
+CONVERTER="${BUILD}/contrib/snaplogger/tools/convert-ansi"
 if test -x "${CONVERTER}"
 then
-    # make sure it's a full path so we an use it anywhere
-    CONVERT="${TOPDIR}/${CONVERTER} --output-style-tag --no-br"
+    CONVERT="${CONVERTER} --output-style-tag --no-br"
 else
     CONVERT=cat
 fi
@@ -171,6 +172,11 @@ then
         bin/check-status.sh --latest
     fi
 
+    # We want the docs to be rebuilt so delete the existing version first
+    # (i.e. the ./mk --documentation is not sufficient because it would not get installed)
+    #
+    rm -rf ${BUILD}/contrib/*/doc/*-doc-*
+
     # and after sync-ing we need to recompile
     #
     if test "${TYPE}" = "html"
@@ -238,10 +244,7 @@ do
         mkdir -p "${OUTPUTDIR}"
         OUTPUT="${OUTPUTDIR}/test-full-output.txt"
 
-        # Since we want to save the documentation, we need to renew it
-        # to get the latest so it means using the -d option
-        #
-        if ! ./mk -d -t >"${OUTPUT}" 2>&1
+        if ! ./mk --test >"${OUTPUT}" 2>&1
         then
             if test "${TYPE}" = "html"
             then
