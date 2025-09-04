@@ -334,7 +334,7 @@ then
         if test -d "${PUBLISHDIR}/docs"
         then
             rm -rf "${PUBLISHDIR}/docs/"*
-            for d in "${TOPDIR}/BUILD/Debug/dist/share/doc/"*
+            for d in "${BUILD}/dist/share/doc/"*
             do
                 PROJECT=`basename "${d}"`
                 mkdir -p "${PUBLISHDIR}/docs/${PROJECT}"
@@ -350,14 +350,14 @@ then
                 fi
             done
 
-            HTML_INDEX="${TOPDIR}/BUILD/Debug/dist/share/doc/Catch2/index.html"
+            HTML_INDEX="${BUILD}/dist/share/doc/Catch2/index.html"
             echo "<html>" > ${HTML_INDEX}
             echo "<head>" >> ${HTML_INDEX}
             echo "<title>Catch2 Documentation</title>" >> ${HTML_INDEX}
             echo "</head>" >> ${HTML_INDEX}
             echo "<body>" >> ${HTML_INDEX}
             echo "<ul>" >> ${HTML_INDEX}
-            for m in "${TOPDIR}/BUILD/dist/share/doc/Catch2/"*.md
+            for m in "${BUILD}/dist/share/doc/Catch2/"*.md
             do
                 HTML_FILENAME="`echo "${m}" | sed -e /\.md$//`.html"
                 pandoc --from=markdown --to=html --standalone "${m}" > "${HTML_FILENAME}"
