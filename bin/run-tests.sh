@@ -359,7 +359,7 @@ then
             echo "<ul>" >> ${HTML_INDEX}
             for m in "${BUILD}/dist/share/doc/Catch2/"*.md
             do
-                HTML_FILENAME="`echo "${m}" | sed -e /\.md$//`.html"
+                HTML_FILENAME="`echo "${m}" | sed -e 's/\.md$//'`.html"
                 pandoc --from=markdown --to=html --standalone "${m}" > "${HTML_FILENAME}"
                 BASENAME=`basename ${m} .md`
                 echo "<li><a href=\"${BASENAME}.html\">${BASENAME}</a></li>" >> ${HTML_INDEX}
