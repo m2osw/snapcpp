@@ -63,6 +63,7 @@ assign the same port number to two different services.
 * snapserver / udp -- 4007
 * prinbeed / tcp (proxy listener) -- 4010
 * prinbeed / tcp (node listener) -- 4011
+* prinbeed / tcp (direct listener) -- 4012
 * communicatord / tcp / local network (loopback) -- 4040 (sc)
 * communicatord / udp -- 4041 (scu)
 * communicatord / tcp / private network (remote) -- 4042 (sc)
