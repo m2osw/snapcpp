@@ -333,23 +333,6 @@ then
         fi
         if test -d "${PUBLISHDIR}/docs"
         then
-            rm -rf "${PUBLISHDIR}/docs/"*
-            for d in "${BUILD}/dist/share/doc/"*
-            do
-                PROJECT=`basename "${d}"`
-                mkdir -p "${PUBLISHDIR}/docs/${PROJECT}"
-                if test -d "${d}/html"
-                then
-                    # doxygen adds that /html/... folder
-                    #
-                    cp -r "${d}/html/"* "${PUBLISHDIR}/docs/${PROJECT}/."
-                else
-                    # Catch2 does not use doxygen
-                    #
-                    cp -r "${d}/"* "${PUBLISHDIR}/docs/${PROJECT}/."
-                fi
-            done
-
             HTML_INDEX="${BUILD}/dist/share/doc/Catch2/index.html"
             echo "<html>" > ${HTML_INDEX}
             echo "<head>" >> ${HTML_INDEX}
@@ -369,6 +352,23 @@ then
             echo "</ul>" >> ${HTML_INDEX}
             echo "</body>" >> ${HTML_INDEX}
             echo "</html>" >> ${HTML_INDEX}
+
+            rm -rf "${PUBLISHDIR}/docs/"*
+            for d in "${BUILD}/dist/share/doc/"*
+            do
+                PROJECT=`basename "${d}"`
+                mkdir -p "${PUBLISHDIR}/docs/${PROJECT}"
+                if test -d "${d}/html"
+                then
+                    # doxygen adds that /html/... folder
+                    #
+                    cp -r "${d}/html/"* "${PUBLISHDIR}/docs/${PROJECT}/."
+                else
+                    # Catch2 does not use doxygen
+                    #
+                    cp -r "${d}/"* "${PUBLISHDIR}/docs/${PROJECT}/."
+                fi
+            done
         fi
     fi
 fi
