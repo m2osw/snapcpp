@@ -345,7 +345,7 @@ then
                 HTML_FILENAME="`echo "${m}" | sed -e 's/\.md$//'`.html"
                 # the links use "<name>.md" so we have to change them to use .html
                 pandoc --from=markdown --to=html --standalone "${m}" \
-                    | sed -e 's/href="\([^#][^"]\+\)\.md\(#[^"]\+\)\?"/href="\1.html\2"/' "${HTML_FILENAME}"
+                    | sed -e 's/href="\([^#][^"]\+\)\.md\(#[^"]\+\)\?"/href="\1.html\2"/' > "${HTML_FILENAME}"
                 BASENAME=`basename ${m} .md`
                 echo "<li><a href=\"${BASENAME}.html\">${BASENAME}</a></li>" >> ${HTML_INDEX}
             done
