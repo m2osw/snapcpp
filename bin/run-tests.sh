@@ -98,7 +98,7 @@ done
 
 START_DATE=`date -u`
 
-# make sure it's a full path so we an use it anywhere
+# make sure it's a full path so we can use it anywhere
 # WARNING: this test assumes we manually ran a Debug build at least once
 CONVERTER="${BUILD}/contrib/snaplogger/tools/convert-ansi"
 if test -x "${CONVERTER}"
