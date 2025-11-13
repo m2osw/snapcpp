@@ -315,23 +315,25 @@ void snap_builder::get_system_distribution()
     if(p != nullptr)
     {
         char buf[1024];
-        fgets(buf, sizeof(buf), p);
-        snapdev::NOT_USED(pclose(p));
-        buf[sizeof(buf) - 1] = '\0';
-        size_t const l(strlen(buf));
-        if(l > 1)
+        if(fgets(buf, sizeof(buf), p) != nullptr)
         {
-            if(buf[l - 1] == '\n')
+            snapdev::NOT_USED(pclose(p));
+            buf[sizeof(buf) - 1] = '\0';
+            std::size_t l(strlen(buf));
+            if(l > 1)
             {
-                buf[l - 1] = '\0';
-            }
-            f_distribution = std::string(buf, l - 1);
+                if(buf[l - 1] == '\n')
+                {
+                    --l;
+                }
+                f_distribution = std::string(buf, l);
 
-            SNAP_LOG_INFORMATION
-                << "found distribution \""
-                << f_distribution
-                << "\"; using that as the default."
-                << SNAP_LOG_SEND;
+                SNAP_LOG_INFORMATION
+                    << "found distribution \""
+                    << f_distribution
+                    << "\"; using that as the default."
+                    << SNAP_LOG_SEND;
+            }
         }
     }
 }
