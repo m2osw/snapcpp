@@ -79,7 +79,7 @@ ConfigureMakeProject(
 
 ConfigureMakeProject(
     PROJECT_NAME
-        communicatord
+        communicator
     COMPONENT
         contrib
 )

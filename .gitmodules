@@ -73,15 +73,12 @@
 [submodule "contrib/serverplugins"]
 	path = contrib/serverplugins
 	url = git@github.com:m2osw/serverplugins.git
-[submodule "contrib/snapcommunicator"]
-	path = contrib/snapcommunicator
-	url = git@github.com:m2osw/snapcommunicator.git
 [submodule "contrib/fluid-settings"]
 	path = contrib/fluid-settings
 	url = git@github.com:m2osw/fluid-settings.git
-[submodule "contrib/snapcommunicatord"]
-	path = contrib/communicatord
-	url = git@github.com:m2osw/snapcommunicatord.git
+[submodule "contrib/communicator"]
+	path = contrib/communicator
+	url = git@github.com:m2osw/communicator.git
 [submodule "contrib/murmur3"]
 	path = contrib/murmur3
 	url = git@github.com:m2osw/murmur3.git
