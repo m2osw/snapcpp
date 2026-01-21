@@ -17,6 +17,10 @@
   to a specific version (when available, like for coverage).
   Also, the docs top folder needs a few images and the top lcov folder
   should have a robots.txt defined there.
+* Look at the clean-dependencies.svg creation; it seems to work with
+  development dependencies opposed to installation dependencies and
+  thus it may look a bit funky at times (or there is a bug in the
+  _simplifier_)
 
 
 # advgetopt
