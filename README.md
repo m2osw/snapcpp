@@ -124,13 +124,24 @@ multiple backend run against the same website in parallel.
 To test or as a developer, you can test on a single machine, but of
 course that won't prove the cluster mechanisms work as expected. For
 such a test, you should at least have 8Gb or have another machine to run
-a Cassandra node.
+a Prinbee node.
 
 In other words, you do not need to have a cluster to work on Snap! Websites
-as a developer. You can even have a single Cassandra node. It will be
+as a developer. You can even have a single Prinbee node. It will be
 somewhat slower, but it is bearable. Of course, as a developer with a
 single node, you may lose the data in that node, but I would imagine it
 would only be test data...
+
+### Type of Tests
+
+The type of tests we use throughout the stack:
+
+* unit tests,
+* integration tests,
+* workbench/performance tests (these are often create and throw away),
+* test runs,
+* replay tests, and
+* shadow tests.
 
 ## A Snap! Websites Cluster
 

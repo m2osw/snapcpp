@@ -60,6 +60,7 @@ do
     "--info")
         echo "TOPDIR = ${TOPDIR}"
         echo "CONTRIBS = ${CONTRIBS}"
+        echo "PUBLISHDIR = ${PUBLISHDIR}"
         echo "SNAPWEBSITES = ${SNAPWEBSITES}"
         exit 1
         ;;
@@ -190,6 +191,7 @@ then
         echo "<body>" >> "${COMPILE_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${COMPILE_OUTPUT}"
         echo "<h1>Snap! C++ Compile</h1>" >> "${COMPILE_OUTPUT}"
+        echo "<p>Started on `date -u`</p>" >> "${SYNC_OUTPUT}"
         echo "<pre>" >> "${COMPILE_OUTPUT}"
 
         # We want to detect whether make returns an error or not
@@ -204,6 +206,7 @@ then
         rm -f "${RAW_COMPILE_OUTPUT}"
 
         echo "</pre>" >> "${COMPILE_OUTPUT}"
+        echo "<p>Ended on `date -u`</p>" >> "${SYNC_OUTPUT}"
         echo "<p><a href=\"index.html\">Back to list</a></p>" >> "${COMPILE_OUTPUT}"
         echo "</body>" >> "${COMPILE_OUTPUT}"
         echo "</html>" >> "${COMPILE_OUTPUT}"
