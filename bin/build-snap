@@ -175,7 +175,7 @@ then
 	echo "warning: you are low on memory..."
 	if test ${PROCESSORS} -eq 1
 	then
-		echo "warning: since you requested a single processor, you probably don't have much chose at the moment."
+		echo "warning: since you requested a single processor, you probably don't have much choice at the moment."
 	else
 		MAX_PROCESSORS=`expr ${FREE_MEM} / 4`
 		if test ${MAX_PROCESSORS} -le 0
@@ -185,6 +185,13 @@ then
 			echo "warning: we suggest you try compiling with only ${MAX_PROCESSORS} processors"
 		fi
 	fi
+	echo "warning: the number of processors is exponential: when you say 4 here,"
+	echo "warning: you really mean 4 projects compiled in parallel and each project"
+	echo "warning: using 4 CPUs, so 16 instances of g++ running together."
+	echo "warning: that being said, we successfully ran with 4 processors on"
+	echo "warning: a small virtual machine assigned 4 CPUs and 8Gb of RAM"
+	echo "warning: and no X-Windows (the OS uses under 512M only)"
+	echo
 	echo -n "warning: do you want to continue with ${PROCESSORS} processors? (y/[N]) "
 	read ANSWER
 	if test "${ANSWER}" != "y" -a "${ANSWER}" != "Y"

@@ -90,7 +90,7 @@ then
     shift
 fi
 
-# Optional:
+# Optional
 
 if test "$1" = "--optional"
 then
@@ -98,8 +98,9 @@ then
     then
         echo
         echo "WARNING:"
-        echo "  Installing the optional dependencies will force an installation"
-        echo "  if the X server (because of graphviz)"
+        echo "  Installing the optional dependencies was forcing an installation"
+        echo "  if the X server (because of graphviz) on older systems."
+        echo
         echo "  Are you sure you want to proceed? yes/[no] \c"
         read answer
         if test "$answer" != "yes"
@@ -110,7 +111,6 @@ then
     fi
     # lcov/cloc -- coverage/stats
     # doxygen/graphviz/texlive-full/libgvpr2/mscgen -- documentation
-    # libqxcppunit-dev -- unit testing (not working since 18.04)
     # qtxmlpatterns5-dev-tools -- for developers to run xmlpatterns
     echo "--- Install optional packages"
     apt-get install \
@@ -123,12 +123,6 @@ then
         pandoc \
         qtxmlpatterns5-dev-tools \
         texlive-full
-
-    if apt-cache show libqxcppunit-dev >/dev/null 2>&1
-    then
-        echo "--- Install old libqxcppunit"
-        apt-get install libqxcppunit-dev
-    fi
 else
     echo
     echo "WARNING:"

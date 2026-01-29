@@ -80,9 +80,9 @@ assign the same port number to two different services.
 * fluid-settings-gui / udp -- 4052 (log rotate)
 
 At this time, the number of ports is relatively small because most of our
-services connect to the snapcommunicatord and then it sends messages
+services connect to the communicatord and then it sends messages
 through that system instead of each service having a listening server
-and making sure that all IPs and Ports are correct. The snapcommunicator
+and making sure that all IPs and Ports are correct. The communicatord
 sends the messages between services making it really easy for each service
 to send and receive messages. That also means those services connect to
 port 4040 locally and then communicate to all the other services anywhere
@@ -421,11 +421,19 @@ and compile it all:
     cd snapcpp
     bin/check-status.sh -l
     sudo bin/install-ubuntu-dependencies --optional
+    # create a ~/.build-snap.rc
     bin/build-snap
 
 The first time you try to build on your system, we suggest you run the
 `bin/snap-ubuntu-packages` script to get all the dependencies installed.
 Then the `build-snap` script does most everything else.
+
+The `~/.build-snap.rc` is practical since it includes command line options
+to the `bin/build-snap` that stick around. It is not otherwise required.
+For example:
+
+    PROCESSORS=4
+    DEBUILD_EMAIL="debian@example.com"
 
 **NOTE:** The `bin/check-status.sh -l` fixes the separate contrib projects
 which are checked out as `HEAD detached at ###`. Instead, it will force
