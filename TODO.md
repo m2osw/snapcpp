@@ -21,6 +21,8 @@
   development dependencies opposed to installation dependencies and
   thus it may look a bit funky at times (or there is a bug in the
   _simplifier_)
+* Now that we have a clean implementation of the random() function in
+  the snapdev library (math.h), reuse that everywhere else.
 
 
 # advgetopt
