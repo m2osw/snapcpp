@@ -823,6 +823,46 @@ Make sure to bump the version in the changelog and try running that build
 again.
 
 
+# Philosophy
+
+In general, we try to follow the S.O.L.I.D. concepts in order to keep each
+class as simple as possible. Of course, that's not always that easy to do,
+but by doing so, we still are able to simplify most of our tests.
+
+Here are the five letters detailed:
+
+* SRP -- Single Responsibility Principle
+
+  A class should do just one thing. That means a class is as simple as can be
+  (albeit, the one thing may be really complex and require many other classes).
+
+* OCP -- Open/Closed Principle
+
+  In order to avoid modifying a lot of code throughout a large portion of
+  the code base, using an interface concept when creating a class is allows
+  for the open/closed principle. The idea being that you have a frozen
+  interface, but you can still do edits to enhance your class as long as
+  the interface doesn't need to change. Changing the interface is what
+  forces others to also change their code.
+
+* LSP -- Liskov Substitution Principle
+
+  Using an interface means that multiple implementations of a sub-class
+  are interchangeable with no other modifications.
+
+* ISP -- Interface Segregation Principle
+
+  Keep interfaces small so implementation is not a high burden. Implement
+  multiple small interfaces is much easier than one large one, especially
+  if many of the functions would end up not being implemented.
+
+* DIP -- Dependency Inversion Principle
+
+  The use of interfaces allows for much less dependency nightmares.
+  You define an interface and depend on that, not the implementations,
+  which may be difficult.
+
+
 # Bugs
 
 Submit bug reports and patches on
