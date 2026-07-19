@@ -23,6 +23,13 @@
   _simplifier_)
 * Now that we have a clean implementation of the random() function in
   the snapdev library (math.h), reuse that everywhere else.
+* C++ actually destroys all static variables that represent C++ objects.
+  In order words, we do not lose those object that get destroyed when we
+  properly call exit() or return from main(). We need to look at all our
+  factories / singletons to see the ones we can change to make use of that
+  feature when not already in place. Unfortunately, that's not compatible
+  with the Sanitizer (i.e. the sanitizer checks for memory leaks before
+  the C++ `_atexit` gets called).
 
 
 # advgetopt
