@@ -30,6 +30,7 @@
   feature when not already in place. Unfortunately, that's not compatible
   with the Sanitizer (i.e. the sanitizer checks for memory leaks before
   the C++ `_atexit` gets called).
+* Start renaming the project "inline".
 
 
 # advgetopt
