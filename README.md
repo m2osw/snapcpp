@@ -425,7 +425,7 @@ and compile it all:
     bin/build-snap
 
 The first time you try to build on your system, we suggest you run the
-`bin/snap-ubuntu-packages` script to get all the dependencies installed.
+`bin/install-ubuntu-dependencies` script to get all the dependencies installed.
 Then the `build-snap` script does most everything else.
 
 The `~/.build-snap.rc` is practical since it includes command line options
@@ -546,7 +546,7 @@ The following commands add a module:
 
 ### Installing the Dependencies
 
-The `snap-ubuntu-packages` command installs many packages that the build
+The `install-ubuntu-dependencies` command installs many packages that the build
 requires. This is done automatically in the build system using the control
 file information. For a developer, that's not automatic. So the easiest
 is to run that command. Although we try to keep it up to date, if something

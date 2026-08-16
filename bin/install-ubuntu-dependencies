@@ -36,6 +36,16 @@ else
         "
 fi
 
+echo "--- Do you want to update to the latest first? [Yes]/No"
+read answer
+a=`echo $answer | tr '[:upper:]' '[:lower:]'`
+if test "$a" = "yes" -o "$a" = "y"
+then
+    sudo apt-get update
+    sudo apt-get dist-upgrade
+fi
+
+
 echo "--- Install generic packages (mandatory)"
 apt-get install \
     cmake \

@@ -2176,10 +2176,12 @@ void project::generate_svg(
         style
             << "style=filled,color=black,fillcolor=\"#"
             << std::hex
-            << std::setw(2)
             << std::setfill('0')
+            << std::setw(2)
             << color.red()
+            << std::setw(2)
             << color.green()
+            << std::setw(2)
             << color.blue()
             << "\"";
 
