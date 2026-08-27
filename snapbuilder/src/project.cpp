@@ -1842,25 +1842,29 @@ char const * project::get_build_status_string() const
 
 bool project::operator < (project const & rhs) const
 {
-    // B E A/dependencies => A > B
-    //
-    // (i.e. if B is a dependency of A then B appears before A)
-    //
-    auto it(std::find(f_dependencies.begin(), f_dependencies.end(), rhs.f_name));
-    if(it != f_dependencies.end())
-    {
-        return false;
-    }
-
-    // A E B/dependencies => A < B
-    //
-    // (i.e. if A is a dependency of B then A appears before B)
-    //
-    auto jt(std::find(rhs.f_dependencies.begin(), rhs.f_dependencies.end(), f_name));
-    if(jt != rhs.f_dependencies.end())
-    {
-        return true;
-    }
+// The dependency sort never worked properly, but since we now have the
+// tree on the side, having the projects sorted by name is going to make
+// it easier to find them
+//
+//    // B E A/dependencies => A > B
+//    //
+//    // (i.e. if B is a dependency of A then B appears before A)
+//    //
+//    auto it(std::find(f_dependencies.begin(), f_dependencies.end(), rhs.f_name));
+//    if(it != f_dependencies.end())
+//    {
+//        return false;
+//    }
+//
+//    // A E B/dependencies => A < B
+//    //
+//    // (i.e. if A is a dependency of B then A appears before B)
+//    //
+//    auto jt(std::find(rhs.f_dependencies.begin(), rhs.f_dependencies.end(), f_name));
+//    if(jt != rhs.f_dependencies.end())
+//    {
+//        return true;
+//    }
 
     // A and B do not depend on each other, sort by name
     //
@@ -1888,7 +1892,7 @@ bool project::compare(pointer_t a, pointer_t b)
 
 void project::simplify(vector_t & v)
 {
-    // add all the project to a map so we can search them painlessly
+    // add all the projects to a map so we can search them painlessly
     //
     map_t m;
     for(auto & p : v)

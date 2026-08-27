@@ -711,7 +711,7 @@ void snap_builder::read_list_of_projects()
 
 bool snap_builder::is_background_thread() const
 {
-    return f_worker_thread->get_thread_tid() == cppthread::gettid();
+    return f_worker_thread->get_thread_tid() == gettid();
 }
 
 
