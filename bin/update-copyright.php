@@ -400,7 +400,7 @@ echo "\n";
 if($errcount > 0)
 {
     echo "\n",
-         "WARNING: $errcount occurred while processing your data.\n";
+         "WARNING: $errcount errors occurred while processing your data.\n";
 }
 
 // vim: ts=4 sw=4 et
