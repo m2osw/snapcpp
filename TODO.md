@@ -31,6 +31,7 @@
   with the Sanitizer (i.e. the sanitizer checks for memory leaks before
   the C++ `_atexit` gets called).
 * Start renaming the project "inline".
+* Move the `verify_inherited_files()` to snaplogger a la `set_collect_stack()`.
 
 
 # advgetopt
