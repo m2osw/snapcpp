@@ -50,8 +50,9 @@ int main(int argc, char * argv[])
     {
         QT_REQUIRE_VERSION(argc, argv, QT_VERSION_STR)
 
-        QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-        QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+        QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+            Qt::HighDpiScaleFactorRoundingPolicy::PassThrough
+        );
 
         QApplication app(argc, argv);
         app.setApplicationName("snapbuilder");

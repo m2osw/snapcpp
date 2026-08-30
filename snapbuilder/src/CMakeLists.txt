@@ -29,11 +29,11 @@ configure_file(
 )
 
 
-qt5_wrap_ui(WINDOW_UI snap_builder-MainWindow.ui)
-qt5_wrap_ui(ABOUT_UI about_dialog.ui)
+#qt5_wrap_ui(WINDOW_UI snap_builder-MainWindow.ui)
+#qt5_wrap_ui(ABOUT_UI about_dialog.ui)
 
 
-qt5_add_resources(RESOURCE_FILES resources.qrc)
+#qt5_add_resources(RESOURCE_FILES resources.qrc)
 
 
 #find_package(DumpCMakeVariables)
@@ -49,9 +49,15 @@ add_executable(${PROJECT_NAME}
     snap_builder.cpp
     version.cpp
 
-    ${RESOURCE_FILES}
-    ${WINDOW_UI}
-    ${ABOUT_UI}
+    about_dialog.ui
+    snap_builder-MainWindow.ui
+    resources.qrc
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    AUTOMOC TRUE
+    AUTORCC TRUE
+    AUTOUIC TRUE
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -64,8 +70,6 @@ target_include_directories(${PROJECT_NAME}
         ${EVENTDISPATCHER_INCLUDE_DIRS}
         ${EVENTDISPATCHER_QT_INCLUDE_DIRS}
         ${SNAPLOGGER_INCLUDE_DIRS}
-        ${Qt5Core_INCLUDE_DIRS}
-        ${Qt5Widgets_INCLUDE_DIRS}
         ${X11_INCLUDE_DIR}
         ${CPPPROCESS_INCLUDE_DIR}
 )
@@ -80,9 +84,11 @@ target_link_libraries(${PROJECT_NAME}
     ${SNAPLOGGER_LIBRARIES}
     ${CPPPROCESS_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
-    ${Qt5Core_LIBRARIES}
-    ${Qt5Svg_LIBRARIES}
-    ${Qt5Widgets_LIBRARIES}
+
+    Qt6::Core
+    Qt6::Svg
+    Qt6::SvgWidgets
+    Qt6::Widgets
 )
 
 install(
