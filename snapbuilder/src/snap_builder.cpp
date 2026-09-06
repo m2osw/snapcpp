@@ -305,6 +305,7 @@ snap_builder::~snap_builder()
 
 void snap_builder::run()
 {
+    show();
     f_communicator->run();
 }
 

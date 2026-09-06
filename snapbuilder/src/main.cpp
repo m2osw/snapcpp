@@ -61,7 +61,6 @@ int main(int argc, char * argv[])
         app.setOrganizationName("Made to Order Software Corp.");
 
         builder::snap_builder window(argc, argv);
-        window.show();
         window.run();
     }
     catch(advgetopt::getopt_exit const & e)
