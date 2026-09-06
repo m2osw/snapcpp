@@ -65,6 +65,7 @@ apt-get install \
     libqrencode-dev \
     libreadline-dev \
     libssl-dev \
+    libwayland-dev \
     libxml2-utils \
     libyaml-cpp-dev \
     qt6-base-dev \
