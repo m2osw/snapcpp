@@ -63,16 +63,12 @@ apt-get install \
     libmagick++-dev \
     libncurses-dev \
     libqrencode-dev \
-    libqt5script5 \
-    libqt5scripttools5 \
-    libqt5svg5-dev \
-    libqt5x11extras5-dev \
-    libqt5xmlpatterns5-dev \
     libreadline-dev \
     libssl-dev \
     libxml2-utils \
     libyaml-cpp-dev \
-    qtscript5-dev \
+    qt6-base-dev \
+    qt6-svg-dev \
     txt2html \
     uuid-dev \
     zip \
@@ -83,6 +79,19 @@ apt-get install \
     $extra_2104_plus \
     $extra_to_2404 \
     $extra_2504_plus
+
+# I switch to Qt6, so removing the Qt5 libraries
+#
+# There is probably a lot missing because I do not yet compile the snapwebsites
+# folder itself, however, that doesn't work at all and many things should not
+# be using Qt anymore anyway.
+#
+#    libqt5script5
+#    libqt5scripttools5
+#    libqt5svg5-dev
+#    libqt5x11extras5-dev
+#    libqt5xmlpatterns5-dev
+#    qtscript5-dev
 
 # This is not necessary at the moment; plus we really just want to use
 # out prinbee database for everything at the moment
