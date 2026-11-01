@@ -53,6 +53,12 @@ PROCESSORS=1
 #DEBUILD_EMAIL="Build Server <build@m2osw.com>"
 #DEBUILD_PLATFORM=hirsute
 
+# Define whether the sanitizer builds with the Address Sanitizer extension
+# (the default, 0) or the Thread Sanitizer (1).
+#
+SANITIZE="-DSANITIZE:BOOL=ON"
+THREAD=0
+
 
 # Source the user defined .build-snap.rc file
 # In most cases this is used to define the DEBUILD_EMAIL to your own
@@ -69,12 +75,12 @@ fi
 
 # Check the command line options if any
 #
-while test -n "$1"
+while test -n "${1}"
 do
-	case "$1" in
+	case "${1}" in
 	-h|--help)
 		echo
-		echo "Usage: $0 [--opts]"
+		echo "Usage: ${0} [--opts]"
 		echo
 		echo "where --opts can be one of:"
 		echo "   --email \"name <name@example.com>\"      define the debuild email"
@@ -85,11 +91,15 @@ do
 		echo "     | --no-build                         do not build"
 		echo "   --help | -h                            print out this screen"
 		echo "   --processors <count>                   processors used to compile"
+		echo "   --sanitize-thread                      use the thread sanitizer"
 		echo
 		echo "note: default parameters can be saved in ~/.build-snap.rc"
-		echo "      for --email use DEBUILD_EMAIL=..."
 		echo "      for --build use DO_BUILD=..."
+		echo "      for --email use DEBUILD_EMAIL=..."
 		echo "      for --processors use PROCESSORS=..."
+		echo "      for --sanitize-address use SANITIZE='-DSANITIZE:BOOL=ON'"
+		echo "      for --sanitize-thread use SANITIZE='-DSANITIZE_THREAD:BOOL=ON'"
+		echo "                            and THREAD=1"
 		echo
 		echo "The valid DO_BUILD values are:"
 		echo "      all, debug, no, parallel, release, sanitize"
@@ -98,12 +108,12 @@ do
 
 	--email)
 		shift
-		if test -z "$1"
+		if test -z "${1}"
 		then
 			echo "the --email is expected to be followed by an email address"
 			exit 1;
 		fi
-		DEBUILD_EMAIL="$1"
+		DEBUILD_EMAIL="${1}"
 		shift
 		;;
 
@@ -145,6 +155,17 @@ do
 			exit 1;
 		fi
 		PROCESSORS="$1"
+		shift
+		;;
+
+	--sanitize-address)
+		SANITIZE="-DSANITIZE:BOOL=ON"
+		shift
+		;;
+
+	--sanitize-thread)
+		SANITIZE="-DSANITIZE_THREAD:BOOL=ON"
+		THREAD=1
 		shift
 		;;
 
@@ -220,22 +241,28 @@ rm -rf BUILD /tmp/SnapFindDeps.pl.hash
 mkdir BUILD
 cd BUILD
 
-# TODO: would we have a better way to create that file?
+# TODO: would there be a better way to create that file?
 #
+if test "$THREAD" = "1"
+then
+    LAUNCH_COMMAND="setarch $(uname -m) --addr-no-randomize "
+else
+    LAUNCH_COMMAND=""
+fi
 cat > Makefile <<EOM
 # Auto-generated Top Makefile (See bin/build-snap)
 # Stop on first with errors
 all:
 	make -C Debug
 	make -C Release
-	make -C Sanitize
+	${LAUNCH_COMMAND}make -C Sanitize
 
 # Try compiling everything, ignore errors until the end
 most:
 	ret=0; \\
 	make -C Debug; ret=\`expr \$\$ret + \$\$?\`; \\
 	make -C Release; ret=\`expr \$\$ret + \$\$?\`; \\
-	make -C Sanitize; ret=\`expr \$\$ret + \$\$?\`; \\
+	${LAUNCH_COMMAND}make -C Sanitize; ret=\`expr \$\$ret + \$\$?\`; \\
 	exit \$\$ret
 EOM
 
@@ -249,10 +276,10 @@ EOM
 	cd Release
 	cmake \
 		-DCMAKE_BUILD_TYPE=Release \
-		-DMAKEFLAGS=-j$PROCESSORS \
+		-DMAKEFLAGS=-j${PROCESSORS} \
 		-DBUILD_ONCE=OFF \
 		-DSANITIZE=OFF \
-		"$DEBUILD_EMAIL_VAR" \
+		"${DEBUILD_EMAIL_VAR}" \
 			../..
 )
 
@@ -270,10 +297,10 @@ EOM
 	cd Debug
 	cmake \
 		-DCMAKE_BUILD_TYPE=Debug \
-		-DMAKEFLAGS=-j$PROCESSORS \
+		-DMAKEFLAGS=-j${PROCESSORS} \
 		-DBUILD_ONCE=OFF \
 		-DSANITIZE=OFF \
-		"$DEBUILD_EMAIL_VAR" \
+		"${DEBUILD_EMAIL_VAR}" \
 			../..
 )
 
@@ -287,37 +314,37 @@ EOM
 	cd Sanitize
 	cmake \
 		-DCMAKE_BUILD_TYPE=Debug \
-		-DMAKEFLAGS=-j$PROCESSORS \
+		-DMAKEFLAGS=-j${PROCESSORS} \
 		-DBUILD_ONCE=OFF \
-		-DSANITIZE=ON \
-		"$DEBUILD_EMAIL_VAR" \
+		"${SANITIZE}" \
+		"${DEBUILD_EMAIL_VAR}" \
 			../..
 )
 
 # Build the Debug version
 #
-case $DO_BUILD in
+case "${DO_BUILD}" in
 "all")
 	(
 		echo
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
-		make -j$PROCESSORS
+		make -j${PROCESSORS}
 	)
 	(
 		echo
 		echo "========================== BUILD SANITIZE =========================="
 		echo
 		cd Sanitize
-		make -j$PROCESSORS
+		${LAUNCH_COMMAND}make -j${PROCESSORS}
 	)
 	(
 		echo
 		echo "========================== BUILD RELEASE =========================="
 		echo
 		cd Release
-		make -j$PROCESSORS
+		make -j${PROCESSORS}
 	)
 	;;
 
@@ -327,21 +354,21 @@ case $DO_BUILD in
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
-		make -j$PROCESSORS
+		make -j${PROCESSORS}
 	) &
 	(
 		echo
 		echo "========================== BUILD SANITIZE =========================="
 		echo
 		cd Sanitize
-		make -j$PROCESSORS
+		${LAUNCH_COMMAND}make -j${PROCESSORS}
 	) &
 	(
 		echo
 		echo "========================== BUILD RELEASE =========================="
 		echo
 		cd Release
-		make -j$PROCESSORS
+		make -j${PROCESSORS}
 	) &
 	wait
 	;;
@@ -352,7 +379,7 @@ case $DO_BUILD in
 		echo "========================== BUILD DEBUG =========================="
 		echo
 		cd Debug
-		make -j$PROCESSORS
+		make -j${PROCESSORS}
 	)
 	;;
 
@@ -362,7 +389,7 @@ case $DO_BUILD in
 		echo "========================== BUILD SANITIZE =========================="
 		echo
 		cd Sanitize
-		make -j$PROCESSORS
+		${LAUNCH_COMMAND}make -j${PROCESSORS}
 	)
 	;;
 
@@ -372,7 +399,7 @@ case $DO_BUILD in
 		echo "========================== BUILD RELEASE =========================="
 		echo
 		cd Release
-		make -j$PROCESSORS
+		make -j${PROCESSORS}
 	)
 	;;
 
@@ -383,7 +410,7 @@ case $DO_BUILD in
 	;;
 
 *)
-	echo "error: unexpected value for DO_BUILD ($DO_BUILD)"
+	echo "error: unexpected value for DO_BUILD (${DO_BUILD})"
 	exit 1
 	;;
 

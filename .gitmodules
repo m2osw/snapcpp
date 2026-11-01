@@ -97,3 +97,6 @@
 [submodule "contrib/cluck"]
 	path = contrib/cluck
 	url = git@github.com:m2osw/cluck.git
+[submodule "contrib/magpie"]
+	path = contrib/magpie
+	url = git@github.com:m2osw/magpie.git
