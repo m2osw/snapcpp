@@ -62,6 +62,7 @@ apt-get install \
     libmagic-dev \
     libmagick++-dev \
     libncurses-dev \
+    libnghttp2-dev \
     libqrencode-dev \
     libreadline-dev \
     libssl-dev \
