@@ -32,6 +32,11 @@
   the C++ `_atexit` gets called).
 * Start renaming the project "inline".
 * Move the `verify_inherited_files()` to snaplogger a la `set_collect_stack()`.
+* Any time we retrieve a time that will be used for an elapsed time such as
+  a call to poll() [a.k.a. all our eventdispatcher timers]; we need to use
+  the monotonic click (`CLOCK_MONOTONIC`) instead of realtime which can
+  jump backward or forward as NTP adjusts the computer's clock (or the
+  admin using `date -s ...`).
 
 
 # advgetopt
